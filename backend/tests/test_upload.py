@@ -1,0 +1,70 @@
+import io
+
+import pytest
+from fastapi.testclient import TestClient
+
+from backend.app import database
+from backend.app import models as app_models
+
+
+@pytest.fixture
+def test_db(tmp_path, monkeypatch):
+    db_path = tmp_path / "documents.db"
+    monkeypatch.setenv("VET_RECORDS_DB_PATH", str(db_path))
+    database.ensure_schema()
+    return db_path
+
+
+@pytest.fixture
+def test_client(test_db):
+    from backend.app.main import app
+
+    with TestClient(app) as client:
+        yield client
+
+
+def test_upload_success_creates_document(test_client):
+    files = {
+        "file": ("record.pdf", io.BytesIO(b"%PDF-1.5 sample"), "application/pdf")
+    }
+    response = test_client.post("/documents/upload", files=files)
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["state"] == app_models.ProcessingStatus.UPLOADED.value
+    assert payload["message"] == "Document registered successfully."
+    document_id = payload["document_id"]
+
+    with database.get_connection() as conn:
+        document = conn.execute(
+            "SELECT * FROM documents WHERE document_id = ?",
+            (document_id,),
+        ).fetchone()
+        assert document, "Document should exist in the database."
+        assert document["state"] == app_models.ProcessingStatus.UPLOADED.value
+        history = conn.execute(
+            "SELECT * FROM document_status_history WHERE document_id = ?",
+            (document_id,),
+        ).fetchall()
+        assert len(history) == 1
+        assert history[0]["state"] == app_models.ProcessingStatus.UPLOADED.value
+
+
+def test_upload_rejects_unsupported_type(test_client):
+    files = {
+        "file": ("record.txt", io.BytesIO(b"plain text"), "text/plain")
+    }
+    response = test_client.post("/documents/upload", files=files)
+    assert response.status_code == 415
+    assert "Unsupported file type" in response.json()["detail"]
+
+
+def test_upload_limits_size(test_client):
+    from backend.app.main import MAX_UPLOAD_SIZE
+
+    large_content = b"A" * (MAX_UPLOAD_SIZE + 1)
+    files = {
+        "file": ("record.pdf", io.BytesIO(large_content), "application/pdf")
+    }
+    response = test_client.post("/documents/upload", files=files)
+    assert response.status_code == 413
+    assert "maximum allowed size" in response.json()["detail"]

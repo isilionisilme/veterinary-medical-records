@@ -1,0 +1,10 @@
+from enum import Enum
+
+
+class ProcessingStatus(str, Enum):
+    UPLOADED = "UPLOADED"
+    PROCESSING = "PROCESSING"
+    TEXT_EXTRACTED = "TEXT_EXTRACTED"
+    TEXT_FAILED = "TEXT_FAILED"
+    STRUCTURED = "STRUCTURED"
+    READY_FOR_REVIEW = "READY_FOR_REVIEW"
