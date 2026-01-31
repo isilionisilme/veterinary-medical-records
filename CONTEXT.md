@@ -1,227 +1,164 @@
-# Prompt: General Instructions for the AI Coding Assistant
-
-You are an **AI Coding Assistant** collaborating on this project.
-
-Your role is to assist human developers while operating under **explicit human approval** and a **planning-first, human-in-the-loop workflow**.
-
-Your default mode is **analysis and planning**, not implementation.
-
-⚠️ **Do NOT write production code unless explicitly instructed to do so.**
-
-## Instruction Precedence (IMPORTANT)
-
-If there is any conflict between instructions, you MUST resolve it using the following order:
-
-1. Mandatory workflow and approval rules
-2. User story–driven planning rules
-3. Engineering guidelines and constraints
-4. Definition of Done
-5. Any other contextual or advisory guidance
-
-If instructions are unclear or conflicting, **STOP and ask for clarification** before proceeding.
-
-## Mandatory Workflow (STRICT)
-
-You MUST follow this workflow in order.  
-Skipping, merging, or reordering steps is not allowed.
-
-### Step 1 — Read and internalize context
-
-Carefully read and internalize all provided project context, including:
-- Architecture and design decisions
-- Engineering guidelines and constraints
-- Definition of Done
-- Prompt Library references
-
-Do NOT summarize them unless explicitly asked.
-
-### Step 2 — Produce a User Story–Driven Implementation Plan (NO CODE)
-
-Before writing any code, you MUST produce an **implementation plan structured around User Stories**.
-
-Rules:
-- **User Stories are the primary unit of functional value and approval**
-- The plan MUST align with the existing project planning and defined User Stories
-- Do NOT invent new User Stories unless explicitly asked to do so
-- Each User Story may be implemented through one or more **internal implementation steps (technical chunks)**
-
-For each User Story:
-- Focus on delivering a **small, coherent vertical slice of value**
-- Ensure the story is realistically completable in short, reviewable iterations
-- Avoid cross-cutting changes whenever possible
-
-❌ Large refactors, broad scaffolding, or “building ahead” are not allowed.
-
-### Step 3 — Describe each User Story and its implementation steps
-
-For each User Story, provide the following structure:
-
-**User Story N — <Short descriptive name>**
-
-- User Story statement (As a <user>, I want <capability>, so that <outcome>)
-- Goal
-- Scope (In / Out)
-- Observable outcome
-- Internal implementation steps (technical chunks)
-- Files / components likely to be touched (high-level only)
-- Dependencies
-- Validation & Done criteria (aligned with the Definition of Done)
-
-### Step 4 — Ask for approval
-
-After listing all proposed User Stories:
-- STOP
-- Explicitly ask: **“Do you want me to implement User Story 1?”**
-- Wait for confirmation or requested changes
-
-Do NOT implement anything until approval is given.
-
-## Execution Principles
-
-- Planning always precedes implementation.
-- Control remains with humans at all times.
-- Work proceeds **one User Story at a time**.
-- Do NOT anticipate future work or scaffold unused abstractions.
-- Prefer minimal viable structure over over-engineering.
-- Consistency and clarity beat cleverness.
-
-## Application of Technical Rules
-
-Engineering Guidelines, Definition of Done, testing rules, logging requirements, commit discipline, and other technical constraints:
-- Apply **ONLY after a User Story is explicitly approved for implementation**
-- Do NOT authorize writing code by themselves
-
-When in doubt about scope or intent, **ask before acting**.
-
-
 # Engineering Playbook: Engineering Guidelines
 
-You are implementing production-quality software and must strictly follow the Engineering Guidelines described below.  
-These guidelines apply by default across the codebase unless explicitly overridden by an initiative-specific prompt.
+**Purpose**  
+These guidelines define the **mandatory engineering standards** for this project.  
+They apply to **all approved implementations** and must be followed consistently by the AI Coding Assistant.
 
-If an implementation decision conflicts with any of these guidelines, stop and explain the conflict instead of proceeding.
+If any guideline cannot be satisfied, **STOP and explain the blocker before proceeding**.
+
+---
 
 ## Code style & consistency
-- Follow PEP 8 conventions consistently across the codebase.
-- Use clear, readable naming over brevity.
-- Prefer explicitness to cleverness.
-- Use type hints where they add clarity, especially in:
+- Follow **PEP 8** conventions consistently across the codebase.
+- Prefer **clear, readable naming** over brevity.
+- Prefer **explicitness to cleverness**.
+- Use **type hints** where they add clarity, especially in:
   - Public APIs
   - Domain services
   - Schemas and data transfer objects
 
+---
+
 ## Structure & separation of concerns
-- Keep domain logic independent from frameworks and infrastructure.
-- FastAPI routes must act as thin adapters (validation + orchestration only).
-- Business rules must live in domain services, not in API handlers.
-- Access persistence, file storage, and external services through explicit interfaces or adapters.
+- Keep **domain logic independent** from frameworks and infrastructure.
+- FastAPI routes must act as **thin adapters only**, limited to:
+  - Input validation
+  - Orchestration
+  - Response mapping
+- **Business rules must live in domain services**, never in API handlers.
+- Access persistence, file storage, and external services **only through explicit interfaces or adapters**.
+
+---
 
 ## Explicit contracts & schemas
-- Define and validate all API inputs and outputs using schemas.
-- Internal data passed between components must follow explicit, well-defined contracts.
-- Structured domain records must be schema-validated and versioned.
+- Define and validate **all API inputs and outputs** using explicit schemas.
+- Internal data passed between components must follow **well-defined contracts**.
+- Structured domain records must be **schema-validated and versioned**.
+
+---
 
 ## State management & workflow safety
-- Model lifecycle states explicitly and persist them.
-- State transitions must be deterministic and safe to retry.
-- Every state change must be observable and auditable.
+- Model **lifecycle states explicitly** and persist them.
+- State transitions must be **deterministic and safe to retry**.
+- Every state change must be **observable and auditable**.
+
+---
 
 ## Traceability & human control
-- Never silently overwrite human edits.
-- Persist human corrections as append-only revisions with before/after values and timestamps.
-- Preserve the ability to distinguish machine-generated data from human-validated data.
+- **Never silently overwrite human edits**.
+- Persist human corrections as **append-only revisions**, including:
+  - Before value
+  - After value
+  - Timestamp
+- Preserve the ability to **distinguish machine-generated data from human-validated data**.
+
+---
 
 ## Error handling & observability
-- Classify errors clearly (user-facing vs internal).
-- Fail explicitly and early when inputs or states are invalid.
-- Log key operations and state transitions using correlation identifiers.
+- Classify errors clearly:
+  - User-facing errors
+  - Internal/system errors
+- **Fail explicitly and early** when inputs or states are invalid.
+- Log key operations and state transitions using **correlation identifiers**.
+
+---
 
 ## Observability & metrics
-- Key pipeline stages must be measurable (e.g. processing time per stage).
-- Failures must be attributable to specific workflow stages.
+- Key pipeline stages must be **measurable** (e.g. processing time per stage).
+- Failures must be **attributable to specific workflow stages**.
+
+---
 
 ## Testing discipline
-- Domain logic must be testable independently from frameworks and infrastructure.
+- Domain logic must be **testable independently** from frameworks and infrastructure.
 - Automated tests must cover:
   - Happy paths
   - Meaningful failure scenarios
-- Integration tests must validate critical end-to-end flows.
+- Integration tests must validate **critical end-to-end flows**.
+
+---
 
 ## Data handling & safety
-- Treat external inputs as untrusted by default.
-- Validate type and size before processing files.
-- Store raw files outside the database; persist only references.
+- Treat **external inputs as untrusted by default**.
+- Validate file **type and size before processing**.
+- Store **raw files outside the database**; persist only references.
 - Persist metadata, states, structured outputs, and audit information in the database.
 
+---
+
 ## Configuration & environment separation
-- Configuration must be environment-driven.
+- Configuration must be **environment-driven**.
 - No environment-specific values are hardcoded.
-- Secrets are never committed to the repository.
+- **Secrets are never committed** to the repository.
+
+---
 
 ## Versioning & evolution
-- APIs and schemas are versioned from the start.
-- Prefer backward-compatible changes over breaking ones.
-- Schema evolution must be explicit and intentional.
+- APIs and schemas must be **versioned from the start**.
+- Prefer **backward-compatible changes** over breaking ones.
+- Schema evolution must be **explicit and intentional**.
+
+---
 
 ## Dependency management
-- Keep the dependency footprint minimal.
-- Do not introduce new third-party dependencies by default.
-- Prefer standard library solutions when reasonable.
-- Any new dependency must be explicitly justified.
+- Keep the dependency footprint **minimal**.
+- Do **not introduce new third-party dependencies by default**.
+- Prefer **standard library solutions** when reasonable.
+- Any new dependency must be **explicitly justified**.
+
+---
 
 ## Naming conventions
-Use these naming conventions by default to ensure consistency across projects and AI-assisted workflows.
 
 ### Git and delivery workflow
-- Branch format: `feature/Story-<N>-<short-slug>`
-- Allowed prefixes:
-  - `feat/...`
-  - `fix/...`
-  - `docs/...`
-  - `chore/...`
+- **Branches**:
+  `feature/story-<ID>-<short-representative-slug>`
+  *The slug must directly represent the specific capability being implemented.*
+- **Commits**:
+  `Story <ID>: <short imperative description>`
+- **Pull Requests**:
+  `Story <ID> — <Full User Story Title>`
+  *The PR title must match the User Story title exactly as defined in the planning section.*
 
-- Commit format: `Story <N>: <short description>`
-  - Descriptions must be imperative and specific.
-
-- Pull request title format: `Story <N> — <short description>`
+---
 
 ### API and endpoints
-Use clear, predictable REST conventions, for example:
-- `POST /documents/upload`
-- `GET /documents/{id}`
-- `GET /documents/{id}/download`
-- `GET /documents/{id}/text`
-- `PUT /documents/{id}/structured-data`
+- Use clear, predictable REST conventions, for example:
+  - `POST /documents/upload`
+  - `GET /documents/{id}`
+  - `GET /documents/{id}/download`
+  - `GET /documents/{id}/text`
+  - `PUT /documents/{id}/structured-data`
+
+---
 
 ### Domain concepts and models
-Use explicit, domain-oriented names for core concepts, such as:
-- `Document`
-- `ProcessingStatus`
-- `ExtractedText`
-- `StructuredMedicalRecord`
-- `FieldEvidence`
-- `RecordRevision`
+- Use explicit, domain-oriented names, such as:
+  - `Document`
+  - `ProcessingStatus`
+  - `ExtractedText`
+  - `StructuredMedicalRecord`
+  - `FieldEvidence`
+  - `RecordRevision`
+
+---
 
 ### Lifecycle states
-- States are enums and must use `UPPERCASE_SNAKE_CASE`.
-- Examples:
+- States are enums and must use **UPPERCASE_SNAKE_CASE**, for example:
   - `UPLOADED`
   - `TEXT_EXTRACTED`
   - `STRUCTURED`
   - `READY_FOR_REVIEW`
 
-### Persistence artifacts
-Use consistent, descriptive table names, for example:
-- `documents`
-- `document_status_history`
-- `document_text_artifacts`
-- `document_structured_artifacts`
-- `field_evidence`
-- `record_revisions`
+---
 
-## Final instruction
-Generate code that is easy to understand, safe to modify, and consistent with these guidelines.  
-Long-term maintainability and clarity take precedence over short-term convenience.
+### Persistence artifacts
+- Use consistent, descriptive table names, such as:
+  - `documents`
+  - `document_status_history`
+  - `document_text_artifacts`
+  - `document_structured_artifacts`
+  - `field_evidence`
 
 # Engineering Playbook: Way of Working – Execution Prompt
 
