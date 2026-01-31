@@ -1,4 +1,4 @@
-# General Operating Instructions for the AI Coding Assistant
+# Engineering Playbook: General Operating Instructions for the AI Coding Assistant
 
 ## Role and Operating Mode
 
@@ -118,201 +118,167 @@ Engineering Guidelines, Definition of Done, testing, logging, commit discipline,
 When in doubt about whether something belongs to the current User Story:
 **Do not implement it. Ask first.**
 
-
 # Engineering Playbook: Engineering Guidelines
 
-You are implementing production-quality software and must strictly follow the Engineering Guidelines described below.  
-These guidelines apply by default across the codebase unless explicitly overridden by an initiative-specific prompt.
+**Purpose**  
+These guidelines define the **mandatory engineering standards** for this project.  
+They apply to **all approved implementations** and must be followed consistently by the AI Coding Assistant.
 
-If an implementation decision conflicts with any of these guidelines, stop and explain the conflict instead of proceeding.
+If any guideline cannot be satisfied, **STOP and explain the blocker before proceeding**.
+
+---
 
 ## Code style & consistency
-- Follow PEP 8 conventions consistently across the codebase.
-- Use clear, readable naming over brevity.
-- Prefer explicitness to cleverness.
-- Use type hints where they add clarity, especially in:
+- Follow **PEP 8** conventions consistently across the codebase.
+- Prefer **clear, readable naming** over brevity.
+- Prefer **explicitness to cleverness**.
+- Use **type hints** where they add clarity, especially in:
   - Public APIs
   - Domain services
   - Schemas and data transfer objects
 
+---
+
 ## Structure & separation of concerns
-- Keep domain logic independent from frameworks and infrastructure.
-- FastAPI routes must act as thin adapters (validation + orchestration only).
-- Business rules must live in domain services, not in API handlers.
-- Access persistence, file storage, and external services through explicit interfaces or adapters.
+- Keep **domain logic independent** from frameworks and infrastructure.
+- FastAPI routes must act as **thin adapters only**, limited to:
+  - Input validation
+  - Orchestration
+  - Response mapping
+- **Business rules must live in domain services**, never in API handlers.
+- Access persistence, file storage, and external services **only through explicit interfaces or adapters**.
+
+---
 
 ## Explicit contracts & schemas
-- Define and validate all API inputs and outputs using schemas.
-- Internal data passed between components must follow explicit, well-defined contracts.
-- Structured domain records must be schema-validated and versioned.
+- Define and validate **all API inputs and outputs** using explicit schemas.
+- Internal data passed between components must follow **well-defined contracts**.
+- Structured domain records must be **schema-validated and versioned**.
+
+---
 
 ## State management & workflow safety
-- Model lifecycle states explicitly and persist them.
-- State transitions must be deterministic and safe to retry.
-- Every state change must be observable and auditable.
+- Model **lifecycle states explicitly** and persist them.
+- State transitions must be **deterministic and safe to retry**.
+- Every state change must be **observable and auditable**.
+
+---
 
 ## Traceability & human control
-- Never silently overwrite human edits.
-- Persist human corrections as append-only revisions with before/after values and timestamps.
-- Preserve the ability to distinguish machine-generated data from human-validated data.
+- **Never silently overwrite human edits**.
+- Persist human corrections as **append-only revisions**, including:
+  - Before value
+  - After value
+  - Timestamp
+- Preserve the ability to **distinguish machine-generated data from human-validated data**.
+
+---
 
 ## Error handling & observability
-- Classify errors clearly (user-facing vs internal).
-- Fail explicitly and early when inputs or states are invalid.
-- Log key operations and state transitions using correlation identifiers.
+- Classify errors clearly:
+  - User-facing errors
+  - Internal/system errors
+- **Fail explicitly and early** when inputs or states are invalid.
+- Log key operations and state transitions using **correlation identifiers**.
+
+---
 
 ## Observability & metrics
-- Key pipeline stages must be measurable (e.g. processing time per stage).
-- Failures must be attributable to specific workflow stages.
+- Key pipeline stages must be **measurable** (e.g. processing time per stage).
+- Failures must be **attributable to specific workflow stages**.
+
+---
 
 ## Testing discipline
-- Domain logic must be testable independently from frameworks and infrastructure.
+- Domain logic must be **testable independently** from frameworks and infrastructure.
 - Automated tests must cover:
   - Happy paths
   - Meaningful failure scenarios
-- Integration tests must validate critical end-to-end flows.
+- Integration tests must validate **critical end-to-end flows**.
+
+---
 
 ## Data handling & safety
-- Treat external inputs as untrusted by default.
-- Validate type and size before processing files.
-- Store raw files outside the database; persist only references.
+- Treat **external inputs as untrusted by default**.
+- Validate file **type and size before processing**.
+- Store **raw files outside the database**; persist only references.
 - Persist metadata, states, structured outputs, and audit information in the database.
 
+---
+
 ## Configuration & environment separation
-- Configuration must be environment-driven.
+- Configuration must be **environment-driven**.
 - No environment-specific values are hardcoded.
-- Secrets are never committed to the repository.
+- **Secrets are never committed** to the repository.
+
+---
 
 ## Versioning & evolution
-- APIs and schemas are versioned from the start.
-- Prefer backward-compatible changes over breaking ones.
-- Schema evolution must be explicit and intentional.
+- APIs and schemas must be **versioned from the start**.
+- Prefer **backward-compatible changes** over breaking ones.
+- Schema evolution must be **explicit and intentional**.
+
+---
 
 ## Dependency management
-- Keep the dependency footprint minimal.
-- Do not introduce new third-party dependencies by default.
-- Prefer standard library solutions when reasonable.
-- Any new dependency must be explicitly justified.
+- Keep the dependency footprint **minimal**.
+- Do **not introduce new third-party dependencies by default**.
+- Prefer **standard library solutions** when reasonable.
+- Any new dependency must be **explicitly justified**.
+
+---
 
 ## Naming conventions
-Use these naming conventions by default to ensure consistency across projects and AI-assisted workflows.
 
 ### Git and delivery workflow
-- Branch format: `feature/slice-<N>-<short-slug>`
-- Allowed prefixes:
-  - `feat/...`
-  - `fix/...`
-  - `docs/...`
-  - `chore/...`
+- **Branches**:  
+  `feature/story-<ID>-<short-slug>`  
+  Use prefixes when appropriate: `fix/`, `docs/`, `chore/`
+- **Commits**:  
+  `Story <ID>: <short imperative description>`
+- **Pull Requests**:  
+  `Story <ID> — <short description>`  
+  Pull requests should normally relate to a single User Story.
 
-- Commit format: `Slice <N>: <short description>`
-  - Descriptions must be imperative and specific.
-
-- Pull request title format: `Slice <N> — <short description>`
+---
 
 ### API and endpoints
-Use clear, predictable REST conventions, for example:
-- `POST /documents/upload`
-- `GET /documents/{id}`
-- `GET /documents/{id}/download`
-- `GET /documents/{id}/text`
-- `PUT /documents/{id}/structured-data`
+- Use clear, predictable REST conventions, for example:
+  - `POST /documents/upload`
+  - `GET /documents/{id}`
+  - `GET /documents/{id}/download`
+  - `GET /documents/{id}/text`
+  - `PUT /documents/{id}/structured-data`
+
+---
 
 ### Domain concepts and models
-Use explicit, domain-oriented names for core concepts, such as:
-- `Document`
-- `ProcessingStatus`
-- `ExtractedText`
-- `StructuredMedicalRecord`
-- `FieldEvidence`
-- `RecordRevision`
+- Use explicit, domain-oriented names, such as:
+  - `Document`
+  - `ProcessingStatus`
+  - `ExtractedText`
+  - `StructuredMedicalRecord`
+  - `FieldEvidence`
+  - `RecordRevision`
+
+---
 
 ### Lifecycle states
-- States are enums and must use `UPPERCASE_SNAKE_CASE`.
-- Examples:
+- States are enums and must use **UPPERCASE_SNAKE_CASE**, for example:
   - `UPLOADED`
   - `TEXT_EXTRACTED`
   - `STRUCTURED`
   - `READY_FOR_REVIEW`
 
+---
+
 ### Persistence artifacts
-Use consistent, descriptive table names, for example:
-- `documents`
-- `document_status_history`
-- `document_text_artifacts`
-- `document_structured_artifacts`
-- `field_evidence`
-- `record_revisions`
-
-## Final instruction
-Generate code that is easy to understand, safe to modify, and consistent with these guidelines.  
-Long-term maintainability and clarity take precedence over short-term convenience.
-
-# Engineering Playbook: Way of Working – Execution Prompt
-
-You are implementing work for this initiative and must strictly follow the Way of Working described below.
-
-If an implementation conflicts with any of these rules, stop and explain the conflict instead of proceeding.
-
-## Delivery Model (Releases)
-- Work is delivered using vertical slices, referred to as releases.
-- A release represents a complete increment of user-facing value.
-- A release may span multiple user stories across different epics.
-- Each release must be coherent, end-to-end, and meaningful from a user perspective.
-- Releases must not be isolated technical components.
-
-Each release must result in:
-- A runnable and testable system state
-- Clear, observable user-facing behavior
-- Explicitly persisted data and state transitions
-- Automated test coverage for the delivered functionality
-
-## Branching Strategy
-- The default branching strategy is Feature Branching.
-- Work is developed in short-lived feature branches on top of a stable `main` branch.
-- `main` always reflects a runnable, test-passing state.
-- Each user story is implemented in a dedicated feature branch.
-- Feature branches are merged once the user story is complete and reviewed.
-- Teams are encouraged to adopt a different strategy if they believe it better suits their context.
-
-## Commit Discipline
-- Commits are small and scoped to a single logical change.
-- A commit must never span multiple user stories.
-- A user story may be implemented through multiple commits.
-- Each commit represents a coherent step toward completing a user story.
-- Commit messages are descriptive and follow a consistent convention.
-- Commit history must remain readable to support reasoning and review.
-
-## Pull Requests
-- A pull request is opened for each user story.
-- Pull requests are opened once the user story is fully implemented and all automated tests are passing.
-- Each pull request must be small enough to be reviewed comfortably in isolation.
-
-## Code Reviews
-- Code reviews are performed for every pull request.
-- Reviews focus on:
-  - Correctness and alignment with the intended behavior
-  - Clarity, readability, and maintainability
-  - Adherence to the Engineering Guidelines and architectural intent
-  - Explicit handling of edge cases, errors, and state transitions
-  - Test coverage and test quality
-- Reviews must be constructive and pragmatic.
-- Prioritize shared understanding and long-term code health over stylistic preferences.
-
-## Definition of Done
-A user story is considered done only when all of the following are true:
-- It delivers a complete vertical slice of user-facing value.
-- It is documented (README and/or ADR if a design decision was made).
-- Automated tests cover the expected behavior, including:
-  - The happy path
-  - At least one meaningful failure scenario
-- All tests pass.
-- The resulting code remains easy to understand, extend, and evolve without refactoring core logic.
-
-## Execution Rule
-- Always prefer completing a smaller, well-defined user story over partially implementing a larger one.
-- Validate every implementation explicitly against the Definition of Done.
-- Do not bypass reviews, tests, or workflow rules to accelerate delivery.
+- Use consistent, descriptive table names, such as:
+  - `documents`
+  - `document_status_history`
+  - `document_text_artifacts`
+  - `document_structured_artifacts`
+  - `field_evidence`
 
 
 # Exercise 2: System Design
