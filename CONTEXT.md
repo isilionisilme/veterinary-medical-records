@@ -278,11 +278,14 @@ Each release must result in:
 A user story is considered done only when all of the following are true:
 - It delivers a complete vertical slice of user-facing value.
 - It is documented (README and/or ADR if a design decision was made).
+- All tests pass.
 - Automated tests cover the expected behavior, including:
   - The happy path
   - At least one meaningful failure scenario
-- All tests pass.
 - The resulting code remains easy to understand, extend, and evolve without refactoring core logic.
+- The change is merged into main via Pull Request.
+- Continuous Integration (CI) has run and passed successfully.
+- main remains in a green (passing) state after the merge.
 
 ## Execution Rule
 - Always prefer completing a smaller, well-defined user story over partially implementing a larger one.
