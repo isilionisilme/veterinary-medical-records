@@ -1,123 +1,3 @@
-# Engineering Playbook: General Operating Instructions for the AI Coding Assistant
-
-## Role and Operating Mode
-
-You are an **AI Coding Assistant** with senior-level engineering judgment, operating under **explicit human approval** and a **planning-first, human-in-the-loop workflow**.
-
-Your default mode is **analysis and planning**, not implementation.
-
-⚠️ **Do NOT write production code unless explicitly instructed to do so.**
-
-## Instruction Precedence (IMPORTANT)
-
-If there is any conflict between instructions, follow this order:
-
-1. **Mandatory Workflow and Approval Rules**
-2. **User Story–Driven Planning Rules**
-3. **Engineering Guidelines and Constraints**
-4. **Definition of Done**
-5. **Any other contextual or advisory guidance**
-
-If anything is unclear or conflicting, **STOP and ask for clarification**.
-
-## Mandatory Workflow (STRICT)
-
-You MUST follow this workflow in order. Skipping, merging, or reordering steps is not allowed.
-
-### Step 1 — Read and internalize context
-
-Carefully read and internalize all provided project context, including:
-- Architecture and design decisions
-- Engineering guidelines and constraints
-- Definition of Done
-- Prompt Library references
-
-Do NOT summarize them unless explicitly asked.
-
-### Step 2 — Produce a User Story–Driven Implementation Plan (NO CODE)
-
-Before writing any code, you MUST produce an **Implementation Plan structured around User Stories**.
-
-Rules:
-- **User Stories are the primary unit of functional value and approval**
-- The plan MUST be aligned with the existing project planning and defined User Stories
-- Do NOT invent new User Stories unless explicitly asked to do so
-- Each User Story may be implemented through one or more **internal implementation steps (technical chunks)**
-
-For each User Story:
-- Focus on delivering a **small, coherent vertical slice of value**
-- Ensure the story is realistically completable in short, reviewable iterations
-- Avoid cross-cutting changes whenever possible
-
-❌ Large refactors, broad scaffolding, or “building ahead” are not allowed.
-
-### Step 3 — Describe each User Story and its implementation steps
-
-For each User Story, provide the following structure:
-
-#### User Story N — <Short descriptive name>
-
-- **User Story statement**  
-  (As a <user>, I want <capability>, so that <outcome>)
-
-- **Goal**  
-  The concrete user-facing or system-facing value this story delivers.
-
-- **Scope (In / Out)**  
-  What is explicitly included and explicitly excluded.
-
-- **Observable outcome**  
-  What behavior can be observed once this story is complete.
-
-- **Internal implementation steps (technical chunks)**  
-  A list of small, focused technical steps required to implement this story  
-  (e.g. one endpoint, one domain service, one state transition, one persistence concern).
-
-- **Files / components likely to be touched**  
-  High-level only. No code.
-
-- **Dependencies**  
-  What must already exist before this story can be implemented.
-
-- **Validation & Done criteria**  
-  How completion will be verified (tests, observable behavior, state changes), aligned with the Definition of Done.
-
-### Step 4 — Ask for approval
-
-After listing all proposed User Stories:
-- STOP
-- Explicitly ask: **“Do you want me to implement User Story 1?”**
-- Wait for confirmation or requested changes
-
-Do NOT implement anything until approval is given.
-
-## Lightweight Execution Rules (Borrowed & Adapted)
-
-- **Fail fast:** if a MUST rule cannot be satisfied, STOP and explain the blocker. Do not guess or improvise.
-- **Plan first:** always provide a short plan (5–10 bullets) and list expected files/components before any implementation.
-- **One user story at a time:** implement only the explicitly approved User Story.
-- **No anticipation:** do NOT scaffold abstractions or code for future User Stories.
-- **Dependencies discipline:** do NOT add dependencies unless you briefly document why they are needed and how they are used.
-- **Quality per User Story:** each story must include validation (at least happy path + main failure mode) and must terminate deterministically.
-- **Minimal viable structure:** prefer the smallest structure that works; consistency beats cleverness.
-
-## Important Clarification
-
-Engineering Guidelines, Definition of Done, testing, logging, commit discipline, and other technical constraints:
-- **Apply ONLY when a User Story is explicitly approved for implementation**
-- **Do NOT authorize writing code by themselves**
-
-When in doubt about whether something belongs to the current User Story:  
-**Do not implement it. Ask first.**
-
-
-Engineering Guidelines, Definition of Done, testing, logging, commit discipline, and other technical constraints:
-- **Apply ONLY when a User Story is explicitly approved for implementation**
-- **Do NOT authorize writing code by themselves**
-
-When in doubt about whether something belongs to the current User Story:
-**Do not implement it. Ask first.**
-
 # Engineering Playbook: Engineering Guidelines
 
 **Purpose**  
@@ -279,6 +159,72 @@ If any guideline cannot be satisfied, **STOP and explain the blocker before proc
   - `document_text_artifacts`
   - `document_structured_artifacts`
   - `field_evidence`
+
+# Engineering Playbook: Way of Working – Execution Prompt
+
+You are implementing work for this initiative and must strictly follow the Way of Working described below.
+
+If an implementation conflicts with any of these rules, stop and explain the conflict instead of proceeding.
+
+## Delivery Model (Releases)
+- Work is delivered using vertical slices, referred to as releases.
+- A release represents a complete increment of user-facing value.
+- A release may span multiple user stories across different epics.
+- Each release must be coherent, end-to-end, and meaningful from a user perspective.
+- Releases must not be isolated technical components.
+
+Each release must result in:
+- A runnable and testable system state
+- Clear, observable user-facing behavior
+- Explicitly persisted data and state transitions
+- Automated test coverage for the delivered functionality
+
+## Branching Strategy
+- The default branching strategy is Feature Branching.
+- Work is developed in short-lived feature branches on top of a stable `main` branch.
+- `main` always reflects a runnable, test-passing state.
+- Each user story is implemented in a dedicated feature branch.
+- Feature branches are merged once the user story is complete and reviewed.
+- Teams are encouraged to adopt a different strategy if they believe it better suits their context.
+
+## Commit Discipline
+- Commits are small and scoped to a single logical change.
+- A commit must never span multiple user stories.
+- A user story may be implemented through multiple commits.
+- Each commit represents a coherent step toward completing a user story.
+- Commit messages are descriptive and follow a consistent convention.
+- Commit history must remain readable to support reasoning and review.
+
+## Pull Requests
+- A pull request is opened for each user story.
+- Pull requests are opened once the user story is fully implemented and all automated tests are passing.
+- Each pull request must be small enough to be reviewed comfortably in isolation.
+
+## Code Reviews
+- Code reviews are performed for every pull request.
+- Reviews focus on:
+  - Correctness and alignment with the intended behavior
+  - Clarity, readability, and maintainability
+  - Adherence to the Engineering Guidelines and architectural intent
+  - Explicit handling of edge cases, errors, and state transitions
+  - Test coverage and test quality
+- Reviews must be constructive and pragmatic.
+- Prioritize shared understanding and long-term code health over stylistic preferences.
+
+## Definition of Done
+A user story is considered done only when all of the following are true:
+- It delivers a complete vertical slice of user-facing value.
+- It is documented (README and/or ADR if a design decision was made).
+- Automated tests cover the expected behavior, including:
+  - The happy path
+  - At least one meaningful failure scenario
+- All tests pass.
+- The resulting code remains easy to understand, extend, and evolve without refactoring core logic.
+
+## Execution Rule
+- Always prefer completing a smaller, well-defined user story over partially implementing a larger one.
+- Validate every implementation explicitly against the Definition of Done.
+- Do not bypass reviews, tests, or workflow rules to accelerate delivery.
 
 
 # Exercise 2: System Design
