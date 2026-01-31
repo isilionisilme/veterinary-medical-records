@@ -111,14 +111,14 @@ If any guideline cannot be satisfied, **STOP and explain the blocker before proc
 ## Naming conventions
 
 ### Git and delivery workflow
-- **Branches**:  
-  `feature/story-<ID>-<short-slug>`  
-  Use prefixes when appropriate: `fix/`, `docs/`, `chore/`
-- **Commits**:  
+- **Branches**:
+  `feature/story-<ID>-<short-representative-slug>`
+  *The slug must directly represent the specific capability being implemented.*
+- **Commits**:
   `Story <ID>: <short imperative description>`
-- **Pull Requests**:  
-  `Story <ID> — <short description>`  
-  Pull requests should normally relate to a single User Story.
+- **Pull Requests**:
+  `Story <ID> — <Full User Story Title>`
+  *The PR title must match the User Story title exactly as defined in the planning section.*
 
 ---
 
