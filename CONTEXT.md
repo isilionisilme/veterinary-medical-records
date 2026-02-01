@@ -108,6 +108,73 @@ If any guideline cannot be satisfied, **STOP and explain the blocker before proc
 
 ---
 
+## Documentation guidelines
+- Documentation is a **mandatory code quality rule** and must be applied whenever code is created or modified.
+- Goal: document **intent, contracts, constraints, and rationale**, not obvious behavior.
+- The AI Coding Assistant must generate and maintain:
+  - In-code documentation (docstrings / structured comments)
+  - Public interface documentation
+- The AI must **not invent or modify architecture or design decision documents** unless explicitly instructed.
+
+### Docstring standard
+- Use a **single consistent structured docstring style** across the codebase: **Google-style**.
+- Follow **PEP 257–equivalent structure**:
+  - First line: short summary sentence.
+  - Blank line.
+  - Structured sections when relevant: Args/Parameters, Returns, Raises, Side Effects, Notes.
+- Use precise, technical wording.
+
+### Where docstrings are required
+Add structured docstrings to:
+- Public modules and components
+- Domain and business services
+- Public functions and methods
+- Non-trivial orchestration logic
+- Public adapters and integration boundaries
+
+When relevant, document:
+- Purpose and responsibility
+- Inputs and outputs
+- Contracts and invariants
+- Error conditions and exceptions
+- Side effects and state changes
+
+### Where documentation must not be added
+Do not add docstrings or comments for:
+- Trivial helpers
+- Self-explanatory one-liners
+- Code fully expressed by clear names and types
+- Simple pass-through logic
+
+### Types and contracts
+- Treat **type annotations, signatures, and schemas** as part of the documentation contract.
+- Ensure all public interfaces include explicit types or schemas when supported.
+- Do not duplicate type information already present in signatures.
+
+### Public interface documentation
+For any public interface (API, service, adapter, or module boundary):
+- Add a short summary.
+- Add a behavior description if not obvious.
+- Document input/output contracts.
+- Add parameter/field descriptions where they add clarity.
+- Prefer metadata compatible with automatic documentation generators when available.
+
+### Comments policy
+Write comments only to explain:
+- Rationale and why-decisions
+- Domain assumptions
+- Non-obvious constraints
+- Tradeoffs and rejected alternatives
+
+Do not restate the code. Remove or update outdated comments when modifying code.
+
+### Style and maintenance
+- Keep documentation consistent and aligned with project code style.
+- Keep summaries concise and imperative.
+- When changing public behavior, contracts, schemas, or responsibilities, update documentation in the same change.
+
+---
+
 ## Naming conventions
 
 ### Git and delivery workflow
