@@ -16,3 +16,13 @@ class DocumentRepository(Protocol):
     def create(self, document: Document) -> None:
         """Persist a new document and its initial status history entry."""
 
+    def get(self, document_id: str) -> Document | None:
+        """Return a document by id, if it exists.
+
+        Args:
+            document_id: Unique identifier for the document.
+
+        Returns:
+            The stored document metadata, or None when not found.
+        """
+

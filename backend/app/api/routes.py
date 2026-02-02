@@ -7,8 +7,8 @@ from typing import cast
 
 from fastapi import APIRouter, File, HTTPException, Request, UploadFile, status
 
-from backend.app.api.schemas import DocumentUploadResponse
-from backend.app.application.document_service import register_document_upload
+from backend.app.api.schemas import DocumentResponse, DocumentUploadResponse
+from backend.app.application.document_service import get_document, register_document_upload
 from backend.app.ports.document_repository import DocumentRepository
 
 router = APIRouter()
@@ -34,6 +34,42 @@ def health() -> dict[str, str]:
     """Health check endpoint."""
 
     return {"status": "ok"}
+
+
+@router.get(
+    "/documents/{document_id}",
+    response_model=DocumentResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get document processing status",
+    description="Return document metadata and its current processing state.",
+    responses={404: {"description": "Document not found."}},
+)
+def get_document_status(request: Request, document_id: str) -> DocumentResponse:
+    """Return the document processing status for a given document id.
+
+    Args:
+        request: Incoming FastAPI request (used to access app state).
+        document_id: Unique identifier for the document.
+
+    Returns:
+        Document metadata including its current processing state.
+
+    Raises:
+        HTTPException: If the document does not exist.
+    """
+
+    repository = cast(DocumentRepository, request.app.state.document_repository)
+    document = get_document(document_id=document_id, repository=repository)
+    if document is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found.")
+
+    return DocumentResponse(
+        document_id=document.document_id,
+        filename=document.filename,
+        content_type=document.content_type,
+        created_at=document.created_at,
+        state=document.state.value,
+    )
 
 
 @router.post(

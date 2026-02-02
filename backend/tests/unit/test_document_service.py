@@ -11,6 +11,9 @@ class FakeDocumentRepository:
     def create(self, document: Document) -> None:
         self.created.append(document)
 
+    def get(self, document_id: str) -> Document | None:
+        return None
+
 
 def test_register_document_upload_persists_document_and_returns_response_fields() -> None:
     repository = FakeDocumentRepository()
