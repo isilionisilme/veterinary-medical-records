@@ -1,3 +1,5 @@
+"""Integration tests covering the HTTP upload endpoint."""
+
 import io
 
 import pytest
