@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
 from pathlib import Path
-from uuid import uuid4
 
 from fastapi import FastAPI, File, HTTPException, UploadFile, status
 
-from backend.app import database, models, schemas
+from backend.app.api.schemas import DocumentUploadResponse
+from backend.app.application.document_service import register_document_upload
+from backend.app.infra import database
+from backend.app.infra.sqlite_document_repository import SqliteDocumentRepository
 
 MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10 MB
 ALLOWED_CONTENT_TYPES = {
@@ -22,6 +23,7 @@ ALLOWED_EXTENSIONS = {".pdf", ".doc", ".docx", ".png", ".jpg", ".jpeg", ".tiff"}
 
 def create_app() -> FastAPI:
     app = FastAPI(title="Veterinary Medical Records API", version="0.1")
+    app.state.document_repository = SqliteDocumentRepository()
 
     @app.on_event("startup")
     def on_startup() -> None:
@@ -33,12 +35,12 @@ def create_app() -> FastAPI:
 
     @app.post(
         "/documents/upload",
-        response_model=schemas.DocumentUploadResponse,
+        response_model=DocumentUploadResponse,
         status_code=status.HTTP_201_CREATED,
     )
     async def upload_document(
         file: UploadFile = File(...),
-    ) -> schemas.DocumentUploadResponse:  # noqa: B008
+    ) -> DocumentUploadResponse:  # noqa: B008
         _validate_upload(file)
         contents = await file.read()
         if len(contents) > MAX_UPLOAD_SIZE:
@@ -47,31 +49,16 @@ def create_app() -> FastAPI:
                 detail="Document exceeds the maximum allowed size of 10 MB.",
             )
 
-        document_id = str(uuid4())
-        now = datetime.now(UTC).isoformat()
-        state = models.ProcessingStatus.UPLOADED.value
+        result = register_document_upload(
+            filename=Path(file.filename).name,
+            content_type=file.content_type or "",
+            repository=app.state.document_repository,
+        )
 
-        with database.get_connection() as conn:
-            conn.execute(
-                """
-                INSERT INTO documents (document_id, filename, content_type, created_at, state)
-                VALUES (?, ?, ?, ?, ?)
-                """,
-                (document_id, Path(file.filename).name, file.content_type, now, state),
-            )
-            conn.execute(
-                """
-                INSERT INTO document_status_history (document_id, state, created_at)
-                VALUES (?, ?, ?)
-                """,
-                (document_id, state, now),
-            )
-            conn.commit()
-
-        return schemas.DocumentUploadResponse(
-            document_id=document_id,
-            state=state,
-            message="Document registered successfully.",
+        return DocumentUploadResponse(
+            document_id=result.document_id,
+            state=result.state,
+            message=result.message,
         )
 
     return app
