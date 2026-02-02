@@ -46,8 +46,8 @@ def health() -> dict[str, str]:
         "Release 0 stores metadata only (no file persistence)."
     ),
     responses={
-        413: {"description": "Uploaded file exceeds the maximum allowed size."},
-        415: {"description": "Unsupported file type or file extension."},
+        413: {"description": "Uploaded file exceeds the maximum allowed size (10 MB)."},
+        415: {"description": "Unsupported content type or file extension."},
     },
 )
 async def upload_document(

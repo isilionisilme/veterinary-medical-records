@@ -41,7 +41,15 @@ def create_app() -> FastAPI:
         database.ensure_schema()
         yield
 
-    app = FastAPI(title="Veterinary Medical Records API", version="0.1", lifespan=lifespan)
+    app = FastAPI(
+        title="Veterinary Medical Records API",
+        description=(
+            "API for registering veterinary medical record documents and tracking their "
+            "processing lifecycle (Release 0: metadata only)."
+        ),
+        version="0.1",
+        lifespan=lifespan,
+    )
     app.state.document_repository = SqliteDocumentRepository()
     global MAX_UPLOAD_SIZE
     MAX_UPLOAD_SIZE = ROUTE_MAX_UPLOAD_SIZE  # re-export for compatibility
