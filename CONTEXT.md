@@ -783,14 +783,9 @@ Exit criteria:
 - Validate each release explicitly against its exit criteria.
 - Prefer completing a smaller release over expanding scope.
 
-## Code Review Guidelines (Maintainability-Focused, Take-Home Pragmatic)
+## Code Review Guidelines
 
-When performing code reviews in this repository, use a **maintainability-focused, take-home pragmatic** review style.
-
-Review stance:
-- Optimize for clarity, testability, and low coupling.
-- Prefer minimal, high-impact fixes over large refactors.
-- Avoid overengineering suggestions.
+When performing code reviews in this repository, use a **maintainability-focused** review style.
 
 Global constraints:
 - No behavior or public API changes unless explicitly requested.
@@ -862,9 +857,15 @@ Each finding must include:
 - Short rationale
 - Minimal suggested change
 
+### PR review visibility
+
+After producing the automatic PR code review, the AI assistant must publish the review output as a comment in the Pull Request (or update an existing “AI Code Review” comment), using the mandatory review output format.
+
+If the PR changes after review (new commits that materially affect the diff), the AI assistant must add a follow-up comment summarizing what changed and whether the previous findings are still applicable.
+
 ### Review stance
 
-- Take-home pragmatic: optimize for maintainability signal and clarity.
+- Optimize for clarity, testability, and low coupling.
 - Prefer small, high-impact fixes over large refactors.
 - Avoid overengineering suggestions.
 - Do not propose new dependencies or new architectural patterns unless explicitly required.
