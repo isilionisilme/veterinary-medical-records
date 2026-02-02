@@ -53,3 +53,13 @@ pytest
 
 ### Continuous integration
 GitHub Actions runs the same checks (`ruff check .` and `pytest`) on every push and pull request to `main`. The workflow is defined in `.github/workflows/ci.yml` and installs `requirements-dev.txt` before execution.
+
+## API endpoints (current slice)
+- `GET /health`
+- `POST /documents/upload` (validates file, stores it on disk, persists metadata)
+- `GET /documents/{document_id}` (returns metadata + current lifecycle state)
+- `GET /documents/{document_id}/download` (downloads the stored file bytes)
+
+## Configuration
+- `VET_RECORDS_DB_PATH`: override SQLite file path (defaults to `backend/app/data/documents.db`).
+- `VET_RECORDS_STORAGE_DIR`: override uploads directory (defaults to `backend/app/data/uploads/`).

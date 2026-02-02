@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import cast
 
 from fastapi import APIRouter, File, HTTPException, Request, UploadFile, status
+from fastapi.responses import FileResponse
 
 from backend.app.api.schemas import DocumentResponse, DocumentUploadResponse
 from backend.app.application.document_service import get_document, register_document_upload
@@ -79,7 +80,7 @@ def get_document_status(request: Request, document_id: str) -> DocumentResponse:
     summary="Register a document upload",
     description=(
         "Validate an uploaded file and register its metadata. "
-        "Release 0 stores metadata only (no file persistence)."
+        "Release 1 stores the file on disk and persists a reference path."
     ),
     responses={
         413: {"description": "Uploaded file exceeds the maximum allowed size (10 MB)."},
@@ -93,7 +94,7 @@ async def upload_document(
         description="Document file to register (validated for type/extension and size).",
     ),
 ) -> DocumentUploadResponse:
-    """Register a document upload (metadata only for Release 0).
+    """Register a document upload and persist it on disk.
 
     Args:
         request: Incoming FastAPI request (used to access app state).
@@ -119,6 +120,7 @@ async def upload_document(
     result = register_document_upload(
         filename=Path(file.filename).name,
         content_type=file.content_type or "",
+        file_bytes=contents,
         repository=repository,
     )
 
@@ -126,6 +128,55 @@ async def upload_document(
         document_id=result.document_id,
         state=result.state,
         message=result.message,
+    )
+
+
+@router.get(
+    "/documents/{document_id}/download",
+    status_code=status.HTTP_200_OK,
+    summary="Download the uploaded document",
+    description="Return the original uploaded file bytes for a given document id.",
+    responses={
+        404: {"description": "Document not found."},
+        500: {"description": "Stored file is missing or unavailable."},
+    },
+)
+def download_document(request: Request, document_id: str) -> FileResponse:
+    """Download the stored file for a document.
+
+    Args:
+        request: Incoming FastAPI request (used to access app state).
+        document_id: Unique identifier for the document.
+
+    Returns:
+        A streaming response containing the stored file bytes.
+
+    Raises:
+        HTTPException: If the document does not exist or the stored file is missing.
+    """
+
+    repository = cast(DocumentRepository, request.app.state.document_repository)
+    document = get_document(document_id=document_id, repository=repository)
+    if document is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found.")
+
+    if not document.file_path:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Stored file path is missing.",
+        )
+
+    path = Path(document.file_path)
+    if not path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Stored file is missing.",
+        )
+
+    return FileResponse(
+        path=path,
+        media_type=document.content_type or "application/octet-stream",
+        filename=document.filename,
     )
 
 

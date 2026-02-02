@@ -32,6 +32,7 @@ def register_document_upload(
     *,
     filename: str,
     content_type: str,
+    file_bytes: bytes,
     repository: DocumentRepository,
     id_provider: Callable[[], str] = _default_id,
     now_provider: Callable[[], str] = _default_now_iso,
@@ -41,6 +42,7 @@ def register_document_upload(
     Args:
         filename: Sanitized basename of the uploaded file.
         content_type: MIME type provided at upload time.
+        file_bytes: Raw bytes for the uploaded file.
         repository: Persistence port used to store document metadata.
         id_provider: Provider for generating new document ids.
         now_provider: Provider for generating the creation timestamp (UTC ISO).
@@ -53,15 +55,14 @@ def register_document_upload(
     created_at = now_provider()
     state = ProcessingStatus.UPLOADED
 
-    repository.create(
-        Document(
-            document_id=document_id,
-            filename=filename,
-            content_type=content_type,
-            created_at=created_at,
-            state=state,
-        )
+    document = Document(
+        document_id=document_id,
+        filename=filename,
+        content_type=content_type,
+        created_at=created_at,
+        state=state,
     )
+    repository.create(document, file_bytes)
 
     return DocumentUploadResult(
         document_id=document_id,

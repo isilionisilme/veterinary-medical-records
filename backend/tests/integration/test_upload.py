@@ -1,6 +1,7 @@
 """Integration tests covering the document HTTP endpoints."""
 
 import io
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -12,7 +13,9 @@ from backend.app.infra import database
 @pytest.fixture
 def test_db(tmp_path, monkeypatch):
     db_path = tmp_path / "documents.db"
+    storage_dir = tmp_path / "uploads"
     monkeypatch.setenv("VET_RECORDS_DB_PATH", str(db_path))
+    monkeypatch.setenv("VET_RECORDS_STORAGE_DIR", str(storage_dir))
     database.ensure_schema()
     return db_path
 
@@ -43,6 +46,8 @@ def test_upload_success_creates_document(test_client):
         ).fetchone()
         assert document, "Document should exist in the database."
         assert document["state"] == app_models.ProcessingStatus.UPLOADED.value
+        assert document["file_path"]
+        assert Path(document["file_path"]).exists()
         history = conn.execute(
             "SELECT * FROM document_status_history WHERE document_id = ?",
             (document_id,),
@@ -89,6 +94,43 @@ def test_get_document_returns_metadata_and_state(test_client):
     assert payload["state"] == app_models.ProcessingStatus.UPLOADED.value
     assert isinstance(payload["created_at"], str)
     assert payload["created_at"]
+
+
+def test_download_returns_original_bytes(test_client):
+    file_bytes = b"%PDF-1.5 sample"
+    files = {
+        "file": ("record.pdf", io.BytesIO(file_bytes), "application/pdf")
+    }
+    upload_response = test_client.post("/documents/upload", files=files)
+    assert upload_response.status_code == 201
+    document_id = upload_response.json()["document_id"]
+
+    response = test_client.get(f"/documents/{document_id}/download")
+    assert response.status_code == 200
+    assert response.content == file_bytes
+    assert "application/pdf" in response.headers.get("content-type", "")
+
+
+def test_download_returns_500_when_file_missing(test_client):
+    file_bytes = b"%PDF-1.5 sample"
+    files = {
+        "file": ("record.pdf", io.BytesIO(file_bytes), "application/pdf")
+    }
+    upload_response = test_client.post("/documents/upload", files=files)
+    assert upload_response.status_code == 201
+    document_id = upload_response.json()["document_id"]
+
+    with database.get_connection() as conn:
+        row = conn.execute(
+            "SELECT file_path FROM documents WHERE document_id = ?",
+            (document_id,),
+        ).fetchone()
+        assert row and row["file_path"]
+        Path(row["file_path"]).unlink()
+
+    response = test_client.get(f"/documents/{document_id}/download")
+    assert response.status_code == 500
+    assert "Stored file is missing" in response.json()["detail"]
 
 
 def test_get_document_returns_404_when_missing(test_client):

@@ -45,7 +45,7 @@ def create_app() -> FastAPI:
         title="Veterinary Medical Records API",
         description=(
             "API for registering veterinary medical record documents and tracking their "
-            "processing lifecycle (Release 0: metadata only)."
+            "processing lifecycle (Release 1: file storage + download)."
         ),
         version="0.1",
         lifespan=lifespan,

@@ -58,7 +58,7 @@ def ensure_schema() -> None:
     """Ensure required tables exist for the current application slice.
 
     Side Effects:
-        Creates tables when they do not already exist.
+        Creates tables and adds new columns when they do not already exist.
     """
 
     with get_connection() as conn:
@@ -69,7 +69,8 @@ def ensure_schema() -> None:
                 filename TEXT NOT NULL,
                 content_type TEXT NOT NULL,
                 created_at TEXT NOT NULL,
-                state TEXT NOT NULL
+                state TEXT NOT NULL,
+                file_path TEXT
             );
 
             CREATE TABLE IF NOT EXISTS document_status_history (
@@ -81,4 +82,8 @@ def ensure_schema() -> None:
             );
             """
         )
+
+        columns = {row["name"] for row in conn.execute("PRAGMA table_info(documents)").fetchall()}
+        if "file_path" not in columns:
+            conn.execute("ALTER TABLE documents ADD COLUMN file_path TEXT")
         conn.commit()

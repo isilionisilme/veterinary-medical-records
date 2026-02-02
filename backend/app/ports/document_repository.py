@@ -13,8 +13,8 @@ from backend.app.domain.models import Document
 class DocumentRepository(Protocol):
     """Persistence contract for storing documents and their initial state."""
 
-    def create(self, document: Document) -> None:
-        """Persist a new document and its initial status history entry."""
+    def create(self, document: Document, file_bytes: bytes) -> None:
+        """Persist a new document, store its file on disk, and write status history."""
 
     def get(self, document_id: str) -> Document | None:
         """Return a document by id, if it exists.
