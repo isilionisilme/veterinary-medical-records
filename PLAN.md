@@ -33,6 +33,10 @@ Validation & Done criteria
 - Documented behavior in README or plan.  
 - PR + code review.
 
+Delivery note (traceability)  
+- Story 1 functionality landed on `main` as commit `914470d` ("Story 1: Add document upload baseline", 2026-01-30) before the repo adopted the "one PR per user story" workflow, so there is no historical PR for Story 1.  
+- Later maintainability/layering changes were applied in PR #2 (refactor) without changing the Story 1 observable outcome.  
+
 #### User Story 2 — Clear error when a file is not supported
 User Story statement  
 As a user, I want to be notified when a file is not supported.
