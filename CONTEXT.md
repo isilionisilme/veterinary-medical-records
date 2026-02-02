@@ -178,18 +178,47 @@ Do not restate the code. Remove or update outdated comments when modifying code.
 ## Naming conventions
 
 ### Git and delivery workflow
-- **Branches**:
-  `feature/story-<ID>-<short-representative-slug>`
-  *The slug must directly represent the specific capability being implemented.*
-- **Commits**:
-  `Story <ID>: <short imperative description>`
-- **Pull Requests**:
-  `Story <ID> — <Full User Story Title>`
-  *The PR title must match the User Story title exactly as defined in the planning section.*
 
----
+- **Branches**
+  - User stories:
+    - `feature/story-<ID>-<short-representative-slug>`
+    - The slug must be concise and describe the purpose of the user story.
+  - Technical non-user-facing work (refactors, chores, CI, docs, fixes):
+    - `refactor/<short-slug>`
+    - `chore/<short-slug>`
+    - `ci/<short-slug>`
+    - `docs/<short-slug>`
+    - `fix/<short-slug>`
+  - Branches must be short-lived and focused on a single user story or a single technical concern.
+
+- **Commits**
+  - User stories:
+    - `Story <ID>: <short imperative description>`
+  - Technical work:
+    - `<type>: <short imperative description>`
+    - Allowed types:
+      - `refactor`
+      - `chore`
+      - `ci`
+      - `docs`
+      - `test`
+      - `build`
+      - `fix`
+  - Commit messages must be clear, specific, and written in imperative form.
+  - Each commit should represent a coherent logical step.
+
+- **Pull Requests**
+  - User stories:
+    - `Story <ID> — <Full User Story Title>`
+  - Technical work:
+    - `<type>: <short description>`
+  - Each Pull Request must relate to:
+    - exactly one user story, or
+    - exactly one technical concern.
+  - Pull Requests must remain small enough to be reviewed comfortably in isolation.
 
 ### API and endpoints
+
 - Use clear, predictable REST conventions, for example:
   - `POST /documents/upload`
   - `GET /documents/{id}`
@@ -197,10 +226,9 @@ Do not restate the code. Remove or update outdated comments when modifying code.
   - `GET /documents/{id}/text`
   - `PUT /documents/{id}/structured-data`
 
----
-
 ### Domain concepts and models
-- Use explicit, domain-oriented names, such as:
+
+- Use explicit, domain-oriented names for core concepts, such as:
   - `Document`
   - `ProcessingStatus`
   - `ExtractedText`
@@ -208,24 +236,24 @@ Do not restate the code. Remove or update outdated comments when modifying code.
   - `FieldEvidence`
   - `RecordRevision`
 
----
-
 ### Lifecycle states
-- States are enums and must use **UPPERCASE_SNAKE_CASE**, for example:
+
+- Lifecycle states must be enums using **UPPERCASE_SNAKE_CASE**, for example:
   - `UPLOADED`
   - `TEXT_EXTRACTED`
   - `STRUCTURED`
   - `READY_FOR_REVIEW`
 
----
-
 ### Persistence artifacts
+
 - Use consistent, descriptive table names, such as:
   - `documents`
   - `document_status_history`
   - `document_text_artifacts`
   - `document_structured_artifacts`
   - `field_evidence`
+
+---
 
 # Engineering Playbook: Way of Working – Execution Prompt
 
@@ -248,24 +276,24 @@ Each release must result in:
 
 ## Branching Strategy
 - The default branching strategy is Feature Branching.
-- Work is developed in short-lived feature branches on top of a stable `main` branch.
+- Work is developed in short-lived branches on top of a stable `main` branch.
 - `main` always reflects a runnable, test-passing state.
-- Each user story is implemented in a dedicated feature branch.
-- Feature branches are merged once the user story is complete and reviewed.
+- Each change is implemented in a dedicated branch:
+  - User stories use the story branch naming convention.
+  - Technical non user-facing work (refactors, chores, CI, docs, fixes) uses the technical branch naming convention.
+- Branches are merged once the change is complete and reviewed.
 - Teams are encouraged to adopt a different strategy if they believe it better suits their context.
 
 ## Commit Discipline
 - Commits are small and scoped to a single logical change.
 - A commit must never span multiple user stories.
-- A user story may be implemented through multiple commits.
-- Each commit represents a coherent step toward completing a user story.
-- Commit messages are descriptive and follow a consistent convention.
+- A change may be implemented through multiple commits.
 - Commit history must remain readable to support reasoning and review.
 
 ## Pull Requests
-- A pull request is opened for each user story.
-- Pull requests are opened once the user story is fully implemented and all automated tests are passing.
-- Each pull request must be small enough to be reviewed comfortably in isolation.
+- A pull request is opened for each user story or each technical non user-facing change (refactors, chores, CI, docs, fixes).
+- Pull requests are opened once the change is fully implemented and all automated tests are passing.
+- Each pull request must be small enough to be reviewed comfortably in isolation and should focus on a single user story or a single technical concern.
 
 ## Code Reviews
 - Code reviews are performed for every pull request.
@@ -279,17 +307,22 @@ Each release must result in:
 - Prioritize shared understanding and long-term code health over stylistic preferences.
 
 ## Definition of Done
-A user story is considered done only when all of the following are true:
+A change is considered done when it satisfies the criteria that apply to its type (user story or technical change).
+
+For user stories:
 - It delivers a complete vertical slice of user-facing value.
 - It is documented (README and/or ADR if a design decision was made).
-- All tests pass.
-- Automated tests cover the expected behavior, including:
-  - The happy path
-  - At least one meaningful failure scenario
+
+For technical non user-facing changes (refactors, chores, CI, docs, fixes):
+- The change intent and scope are explicitly documented in the Pull Request.
+- Behavior is preserved, or any intended behavior change is clearly explained and justified.
+
+For all changes:
 - The resulting code remains easy to understand, extend, and evolve without refactoring core logic.
+- Automated tests pass, and test coverage is updated where applicable.
 - The change is merged into main via Pull Request.
 - Continuous Integration (CI) has run and passed successfully.
-- main remains in a green (passing) state after the merge.
+- `main` remains in a green (passing) state after the merge.
 
 ## Execution Rule
 - Always prefer completing a smaller, well-defined user story over partially implementing a larger one.
@@ -629,3 +662,118 @@ Exit criteria:
 - Validate each release explicitly against its exit criteria.
 - Prefer completing a smaller release over expanding scope.
 
+## Code Review Guidelines (Maintainability-Focused, Take-Home Pragmatic)
+
+When performing code reviews in this repository, use a **maintainability-focused, take-home pragmatic** review style.
+
+Review stance:
+- Optimize for clarity, testability, and low coupling.
+- Prefer minimal, high-impact fixes over large refactors.
+- Avoid overengineering suggestions.
+
+Global constraints:
+- No behavior or public API changes unless explicitly requested.
+- No new dependencies unless strictly necessary.
+- Do not introduce extra architectural patterns or ports beyond what is already agreed (currently max: `DocumentRepository`).
+- Keep solutions lightweight and easy to explain to evaluators.
+
+Primary review focus (in order):
+1) Layering and dependency direction:
+   - `domain` has no framework/db imports
+   - `application` depends only on `domain` + `ports`
+   - `api` is thin (HTTP + mapping only; no SQL/business logic)
+   - `infra` contains persistence/IO only
+2) Maintainability:
+   - clear naming and responsibilities
+   - low duplication
+   - small, cohesive modules/functions
+   - logic located in the correct layer
+3) Testability:
+   - core application logic testable without FastAPI or sqlite
+   - presence and quality of unit tests for services
+   - integration tests cover HTTP + wiring
+4) Simplicity over purity:
+   - flag overengineering risks
+   - prefer removing complexity over adding abstraction
+5) CI and tooling sanity:
+   - workflows valid
+   - tests and lint runnable and reproducible
+
+Review output format:
+- Must-fix (blocking maintainability issues)
+- Should-fix (strong recommendations)
+- Nice-to-have (optional improvements)
+- Questions / assumptions
+
+Each finding should include file references and a minimal suggested change.
+
+Apply these rules by default to every future code review in this repo unless explicitly overridden.
+
+## Pull Request Automation (AI Assistants)
+
+When an AI coding assistant or automation tool is used to create or update a Pull Request in this repository, it must follow this procedure automatically. This operational rule complements the existing Pull Request and Code Review policies and does not replace them.
+
+### Procedure
+
+1) Confirm repository state before creating the PR:
+   - Current branch name
+   - Base branch (main)
+   - Working tree status (report if not clean)
+
+2) Create or update the Pull Request to `main` using the standard branching and naming conventions already defined in this document.
+
+3) Check CI status (if configured):
+   - Report whether CI is pending, passing, or failing.
+
+4) Automatically perform a maintainability-focused code review of the PR diff:
+   - Use `git diff main...HEAD` as the review input.
+   - Apply all rules from:
+     "Code Review Guidelines (Maintainability-Focused, Take-Home Pragmatic)"
+
+5) Produce the review using this mandatory output format:
+   - Must-fix (blocking maintainability or correctness issues)
+   - Should-fix (strong recommendations)
+   - Nice-to-have (optional improvements)
+   - Questions / assumptions
+
+Each finding must include:
+- File reference(s)
+- Short rationale
+- Minimal suggested change
+
+### Review stance
+
+- Take-home pragmatic: optimize for maintainability signal and clarity.
+- Prefer small, high-impact fixes over large refactors.
+- Avoid overengineering suggestions.
+- Do not propose new dependencies or new architectural patterns unless explicitly required.
+
+### Safety rule
+
+After producing the automatic PR code review, STOP and wait for explicit user instruction before making any code changes.
+
+Do not modify code as part of the review step unless explicitly asked to do so.
+
+## PR Checklist (Maintainability Signal)
+
+Use this checklist in every Pull Request description (user story or technical change) to maximize reviewer clarity and traceability.
+
+- **Intent**: What problem does this change solve (in 1–3 sentences)?
+- **Scope**: What is explicitly in scope, and what is explicitly out of scope?
+- **Behavior**:
+  - Is behavior/public API preserved? If yes, state "Behavior preserved".
+  - If not, list the intentional behavior changes and justify them.
+- **Architecture & layering**:
+  - API layer is thin (HTTP validation + mapping only).
+  - Application logic lives in `application`.
+  - Domain is framework/DB-free.
+  - Infra contains persistence/IO only.
+- **Contracts**: Any schema/DTO changes? If yes, describe the contract impact.
+- **Testing**:
+  - `pytest` passes locally.
+  - Unit tests added/updated where workflow logic changed.
+  - Integration tests cover the critical HTTP + wiring path.
+- **Alternatives**: If you chose between approaches, note the main tradeoff in 1–2 bullets.
+- **How to verify**: Commands and/or manual steps (e.g., `pytest`, curl examples) that a reviewer can run quickly.
+
+Guiding principle: prefer small, high-quality slices; avoid quick patches that reduce maintainability signal—restore from the correct branch/commit or re-implement cleanly within the current architecture.

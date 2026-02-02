@@ -1,10 +1,12 @@
+"""Integration tests covering the HTTP upload endpoint."""
+
 import io
 
 import pytest
 from fastapi.testclient import TestClient
 
-from backend.app import database
-from backend.app import models as app_models
+from backend.app.domain import models as app_models
+from backend.app.infra import database
 
 
 @pytest.fixture

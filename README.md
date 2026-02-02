@@ -1,6 +1,30 @@
 # veterinary-medical-records
 This system allows vets to upload docs with a pet's medical record, extracts and analyzes its content and identifies and structure the most relevant info in a standardized way.
 
+## Maintainability Approach (layered, minimal)
+
+This take-home optimizes for maintainability by keeping responsibilities separated, enforcing a strict dependency direction, and enabling unit-first testing. FastAPI routes are intentionally thin (HTTP validation only): workflow logic lives in application services, and SQL/persistence details live only in the infrastructure layer.
+
+### Layers
+- `backend/app/domain/`: pure domain types and rules (stdlib-only)
+- `backend/app/application/`: use-cases/workflows (depends on `domain` + `ports` only)
+- `backend/app/ports/`: minimal interfaces (Protocols) required by the application (e.g., `DocumentRepository`)
+- `backend/app/infra/`: concrete implementations (SQLite, filesystem, external libs)
+- `backend/app/api/`: HTTP layer only (routes + Pydantic request/response schemas)
+
+### Dependency / import rules
+- `domain` → stdlib only
+- `application` → `domain` + `ports` only
+- `api` → `application` + `api.schemas` only
+- `infra` → implements ports; may depend on DB/fs/third-party libs; no business rules
+
+### Testing strategy (unit-first)
+- Unit tests: `backend/tests/unit/` (no FastAPI, no sqlite; use fakes/in-memory ports)
+- Integration tests: `backend/tests/integration/` (FastAPI TestClient + temporary SQLite)
+
+Run tests with:
+`pytest`
+
 ## Development workflow
 
 ### Install tooling
