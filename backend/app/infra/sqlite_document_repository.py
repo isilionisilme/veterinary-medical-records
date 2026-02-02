@@ -7,10 +7,22 @@ from backend.app.infra import database
 
 
 class SqliteDocumentRepository:
-    """SQLite-backed document repository."""
+    """SQLite-backed document repository.
+
+    This adapter persists document metadata and records an append-only status
+    history entry for the initial state.
+    """
 
     def create(self, document: Document) -> None:
-        """Insert a new document and its initial status history row."""
+        """Insert a new document and its initial status history row.
+
+        Args:
+            document: Immutable document metadata to persist.
+
+        Side Effects:
+            Writes to the `documents` and `document_status_history` tables in the
+            configured SQLite database.
+        """
 
         with database.get_connection() as conn:
             conn.execute(
