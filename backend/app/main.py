@@ -1,5 +1,13 @@
+"""FastAPI application factory and composition root.
+
+This module wires the HTTP API layer to application services and infrastructure
+adapters. It is intentionally lightweight: routes remain thin adapters and
+business logic lives in the application/domain layers.
+"""
+
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -11,8 +19,25 @@ from backend.app.infra.sqlite_document_repository import SqliteDocumentRepositor
 
 
 def create_app() -> FastAPI:
+    """Create and configure the FastAPI application.
+
+    This function is the composition root for the backend service. It wires the
+    API router, configures the document repository adapter, and ensures the
+    database schema exists at startup.
+
+    Returns:
+        The configured FastAPI application instance.
+
+    Side Effects:
+        - Ensures the SQLite schema exists on application startup.
+        - Sets `app.state.document_repository` for request handlers.
+        - Re-exports `MAX_UPLOAD_SIZE` for compatibility with existing imports.
+    """
+
     @asynccontextmanager
-    async def lifespan(app: FastAPI):
+    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        """FastAPI lifespan handler used to perform startup initialization."""
+
         database.ensure_schema()
         yield
 

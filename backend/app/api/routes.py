@@ -25,7 +25,11 @@ ALLOWED_CONTENT_TYPES = {
 ALLOWED_EXTENSIONS = {".pdf", ".doc", ".docx", ".png", ".jpg", ".jpeg", ".tiff"}
 
 
-@router.get("/health")
+@router.get(
+    "/health",
+    summary="Health check",
+    description="Return a minimal status payload for uptime monitoring.",
+)
 def health() -> dict[str, str]:
     """Health check endpoint."""
 
@@ -36,12 +40,36 @@ def health() -> dict[str, str]:
     "/documents/upload",
     response_model=DocumentUploadResponse,
     status_code=status.HTTP_201_CREATED,
+    summary="Register a document upload",
+    description=(
+        "Validate an uploaded file and register its metadata. "
+        "Release 0 stores metadata only (no file persistence)."
+    ),
+    responses={
+        413: {"description": "Uploaded file exceeds the maximum allowed size."},
+        415: {"description": "Unsupported file type or file extension."},
+    },
 )
 async def upload_document(
     request: Request,
-    file: UploadFile = File(...),  # noqa: B008
+    file: UploadFile = File(  # noqa: B008
+        ...,
+        description="Document file to register (validated for type/extension and size).",
+    ),
 ) -> DocumentUploadResponse:
-    """Register a document upload (metadata only for Release 0)."""
+    """Register a document upload (metadata only for Release 0).
+
+    Args:
+        request: Incoming FastAPI request (used to access app state).
+        file: Uploaded file sent as multipart/form-data.
+
+    Returns:
+        Metadata about the registered document and its initial lifecycle state.
+
+    Raises:
+        HTTPException: If the upload is invalid (unsupported type/extension) or
+            exceeds the maximum allowed size.
+    """
 
     _validate_upload(file)
     contents = await file.read()
@@ -66,6 +94,15 @@ async def upload_document(
 
 
 def _validate_upload(file: UploadFile) -> None:
+    """Validate uploaded file content type and file extension.
+
+    Args:
+        file: Uploaded file to validate.
+
+    Raises:
+        HTTPException: If the content type or extension is not allowed.
+    """
+
     if file.content_type not in ALLOWED_CONTENT_TYPES:
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
