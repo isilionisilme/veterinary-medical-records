@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 from backend.app.application.document_service import register_document_upload
-from backend.app.domain.models import ProcessingStatus
+from backend.app.domain.models import Document, ProcessingStatus
 
 
 class FakeDocumentRepository:
     def __init__(self) -> None:
-        self.created = []
+        self.created: list[Document] = []
 
-    def create(self, document) -> None:  # type: ignore[no-untyped-def]
+    def create(self, document: Document) -> None:
         self.created.append(document)
 
 
