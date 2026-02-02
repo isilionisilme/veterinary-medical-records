@@ -69,3 +69,17 @@ def register_document_upload(
         message="Document registered successfully.",
     )
 
+
+def get_document(*, document_id: str, repository: DocumentRepository) -> Document | None:
+    """Retrieve document metadata for status visibility.
+
+    Args:
+        document_id: Unique identifier for the document.
+        repository: Persistence port used to fetch the document.
+
+    Returns:
+        The document metadata, or None when not found.
+    """
+
+    return repository.get(document_id)
+

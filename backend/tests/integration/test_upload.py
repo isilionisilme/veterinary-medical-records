@@ -1,4 +1,4 @@
-"""Integration tests covering the HTTP upload endpoint."""
+"""Integration tests covering the document HTTP endpoints."""
 
 import io
 
@@ -70,3 +70,28 @@ def test_upload_limits_size(test_client):
     response = test_client.post("/documents/upload", files=files)
     assert response.status_code == 413
     assert "maximum allowed size" in response.json()["detail"]
+
+
+def test_get_document_returns_metadata_and_state(test_client):
+    files = {
+        "file": ("record.pdf", io.BytesIO(b"%PDF-1.5 sample"), "application/pdf")
+    }
+    upload_response = test_client.post("/documents/upload", files=files)
+    assert upload_response.status_code == 201
+    document_id = upload_response.json()["document_id"]
+
+    response = test_client.get(f"/documents/{document_id}")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["document_id"] == document_id
+    assert payload["filename"] == "record.pdf"
+    assert payload["content_type"] == "application/pdf"
+    assert payload["state"] == app_models.ProcessingStatus.UPLOADED.value
+    assert isinstance(payload["created_at"], str)
+    assert payload["created_at"]
+
+
+def test_get_document_returns_404_when_missing(test_client):
+    response = test_client.get("/documents/does-not-exist")
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Document not found."
