@@ -676,3 +676,47 @@ Each finding should include file references and a minimal suggested change.
 
 Apply these rules by default to every future code review in this repo unless explicitly overridden.
 
+## Pull Request Automation (Codex)
+
+When Codex creates or updates a Pull Request in this repository, it must follow this procedure automatically. This operational rule complements the existing Pull Request and Code Review policies and does not replace them.
+
+### Procedure
+
+1) Confirm repository state before creating the PR:
+   - Current branch name
+   - Base branch (main)
+   - Working tree status (report if not clean)
+
+2) Create or update the Pull Request to `main` using the standard branching and naming conventions already defined in this document.
+
+3) Check CI status (if configured):
+   - Report whether CI is pending, passing, or failing.
+
+4) Automatically perform a maintainability-focused code review of the PR diff:
+   - Use `git diff main...HEAD` as the review input.
+   - Apply all rules from:
+     "Code Review Guidelines (Maintainability-Focused, Take-Home Pragmatic)"
+
+5) Produce the review using this mandatory output format:
+   - Must-fix (blocking maintainability or correctness issues)
+   - Should-fix (strong recommendations)
+   - Nice-to-have (optional improvements)
+   - Questions / assumptions
+
+Each finding must include:
+- File reference(s)
+- Short rationale
+- Minimal suggested change
+
+### Review stance
+
+- Take-home pragmatic: optimize for maintainability signal and clarity.
+- Prefer small, high-impact fixes over large refactors.
+- Avoid overengineering suggestions.
+- Do not propose new dependencies or new architectural patterns unless explicitly required.
+
+### Safety rule
+
+After producing the automatic PR code review, STOP and wait for explicit user instruction before making any code changes.
+
+Do not modify code as part of the review step unless explicitly asked to do so.
