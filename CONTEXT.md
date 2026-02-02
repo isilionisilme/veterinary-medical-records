@@ -108,70 +108,137 @@ If any guideline cannot be satisfied, **STOP and explain the blocker before proc
 
 ---
 
-## Documentation guidelines
-- Documentation is a **mandatory code quality rule** and must be applied whenever code is created or modified.
-- Goal: document **intent, contracts, constraints, and rationale**, not obvious behavior.
-- The AI Coding Assistant must generate and maintain:
-  - In-code documentation (docstrings / structured comments)
-  - Public interface documentation
-- The AI must **not invent or modify architecture or design decision documents** unless explicitly instructed.
+## Documentation Guidelines (Mandatory)
 
-### Docstring standard
-- Use a **single consistent structured docstring style** across the codebase: **Google-style**.
-- Follow **PEP 257–equivalent structure**:
-  - First line: short summary sentence.
-  - Blank line.
-  - Structured sections when relevant: Args/Parameters, Returns, Raises, Side Effects, Notes.
-- Use precise, technical wording.
+Documentation is a code quality requirement. All AI coding assistants must treat documentation as part of the deliverable and keep it consistent with the implementation.
 
-### Where docstrings are required
-Add structured docstrings to:
-- Public modules and components
-- Domain and business services
+### Purpose
+
+Documentation must make the system understandable, maintainable, and reviewable by other engineers.
+
+Document:
+- Intent and responsibility
+- Contracts and schemas
+- Design decisions and tradeoffs
+
+Do not restate obvious code behavior.
+
+Documentation is reviewed together with the code.
+
+### Documentation layers
+
+The project uses three complementary documentation layers. All must stay consistent:
+
+- In-code documentation (docstrings and types)
+- API documentation (auto-generated from FastAPI + schemas)
+- Repository and architecture documentation (Engineering Playbook; ADR-style notes when explicitly requested)
+
+### In-code documentation rules
+
+AI assistants must add docstrings to:
+
+- Public modules
+- Domain and application services
 - Public functions and methods
 - Non-trivial orchestration logic
-- Public adapters and integration boundaries
+- Integration and adapter boundaries
 
-When relevant, document:
+Docstrings must include when relevant:
+
 - Purpose and responsibility
 - Inputs and outputs
-- Contracts and invariants
+- Constraints and invariants
 - Error conditions and exceptions
 - Side effects and state changes
 
-### Where documentation must not be added
-Do not add docstrings or comments for:
+Docstring style requirements:
+
+- Use Google-style docstrings
+- Follow PEP 257 structure
+- First line: short summary sentence
+- Then structured sections when applicable (Args, Returns, Raises, Side Effects, Notes)
+
+Do NOT add docstrings for:
+
 - Trivial helpers
 - Self-explanatory one-liners
-- Code fully expressed by clear names and types
 - Simple pass-through logic
+- Code already fully clear from names and types
 
 ### Types and contracts
+
+- All public functions and methods must include type hints.
 - Treat **type annotations, signatures, and schemas** as part of the documentation contract.
 - Ensure all public interfaces include explicit types or schemas when supported.
-- Do not duplicate type information already present in signatures.
+- Do not duplicate type information in docstrings when already explicit in signatures.
+
+### API documentation rules
+
+For every HTTP endpoint, AI assistants must ensure:
+
+- Route includes summary and description
+- Explicit request and response models are defined
+- Schema fields include meaningful descriptions
+
+API documentation generated via OpenAPI/Swagger from:
+
+- FastAPI route metadata
+- Pydantic model field descriptions
+- Type annotations
+
+This auto-generated API documentation is considered part of the deliverable.
 
 ### Public interface documentation
+
 For any public interface (API, service, adapter, or module boundary):
+
 - Add a short summary.
 - Add a behavior description if not obvious.
 - Document input/output contracts.
 - Add parameter/field descriptions where they add clarity.
 - Prefer metadata compatible with automatic documentation generators when available.
 
-### Comments policy
-Write comments only to explain:
-- Rationale and why-decisions
+### Architecture and design documentation
+
+Architecture and structural rules must be documented outside the code in the Engineering Playbook.
+
+AI assistants must NOT invent or modify architecture or design documents unless explicitly instructed.
+
+When explicitly requested, record non-obvious technical decisions as short ADR-style notes including:
+
+- Decision
+- Rationale
+- Tradeoffs
+
+### Commenting rules
+
+Comments must explain:
+
+- Why a decision was made
+- Why alternatives were rejected
 - Domain assumptions
 - Non-obvious constraints
-- Tradeoffs and rejected alternatives
 
-Do not restate the code. Remove or update outdated comments when modifying code.
+Comments must NOT:
 
-### Style and maintenance
-- Keep documentation consistent and aligned with project code style.
-- Keep summaries concise and imperative.
-- When changing public behavior, contracts, schemas, or responsibilities, update documentation in the same change.
+- Repeat what the code literally does
+- Describe syntax-level behavior
+- Drift from the implementation
+
+Outdated comments must be removed or updated in the same change.
+
+### Documentation maintenance rule
+
+When a change modifies:
+
+- Public behavior
+- Contracts
+- Data schemas
+- Module responsibilities
+
+AI assistants must update the corresponding documentation in the same change set.
+
+A change is not complete if implementation and documentation diverge.
 
 ---
 
@@ -252,8 +319,6 @@ Do not restate the code. Remove or update outdated comments when modifying code.
   - `document_text_artifacts`
   - `document_structured_artifacts`
   - `field_evidence`
-
----
 
 # Engineering Playbook: Way of Working – Execution Prompt
 
@@ -662,14 +727,9 @@ Exit criteria:
 - Validate each release explicitly against its exit criteria.
 - Prefer completing a smaller release over expanding scope.
 
-## Code Review Guidelines (Maintainability-Focused, Take-Home Pragmatic)
+## Code Review Guidelines
 
-When performing code reviews in this repository, use a **maintainability-focused, take-home pragmatic** review style.
-
-Review stance:
-- Optimize for clarity, testability, and low coupling.
-- Prefer minimal, high-impact fixes over large refactors.
-- Avoid overengineering suggestions.
+When performing code reviews in this repository, use a **maintainability-focused** review style.
 
 Global constraints:
 - No behavior or public API changes unless explicitly requested.
@@ -741,9 +801,15 @@ Each finding must include:
 - Short rationale
 - Minimal suggested change
 
+### PR review visibility
+
+After producing the automatic PR code review, the AI assistant must publish the review output as a comment in the Pull Request (or update an existing “AI Code Review” comment), using the mandatory review output format.
+
+If the PR changes after review (new commits that materially affect the diff), the AI assistant must add a follow-up comment summarizing what changed and whether the previous findings are still applicable.
+
 ### Review stance
 
-- Take-home pragmatic: optimize for maintainability signal and clarity.
+- Optimize for clarity, testability, and low coupling.
 - Prefer small, high-impact fixes over large refactors.
 - Avoid overengineering suggestions.
 - Do not propose new dependencies or new architectural patterns unless explicitly required.
