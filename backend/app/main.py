@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, File, HTTPException, UploadFile, status
@@ -22,12 +23,13 @@ ALLOWED_EXTENSIONS = {".pdf", ".doc", ".docx", ".png", ".jpg", ".jpeg", ".tiff"}
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="Veterinary Medical Records API", version="0.1")
-    app.state.document_repository = SqliteDocumentRepository()
-
-    @app.on_event("startup")
-    def on_startup() -> None:
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
         database.ensure_schema()
+        yield
+
+    app = FastAPI(title="Veterinary Medical Records API", version="0.1", lifespan=lifespan)
+    app.state.document_repository = SqliteDocumentRepository()
 
     @app.get("/health")
     def health() -> dict[str, str]:
