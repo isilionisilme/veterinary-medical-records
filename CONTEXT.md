@@ -629,3 +629,50 @@ Exit criteria:
 - Validate each release explicitly against its exit criteria.
 - Prefer completing a smaller release over expanding scope.
 
+## Code Review Guidelines (Maintainability-Focused, Take-Home Pragmatic)
+
+When performing code reviews in this repository, use a **maintainability-focused, take-home pragmatic** review style.
+
+Review stance:
+- Optimize for clarity, testability, and low coupling.
+- Prefer minimal, high-impact fixes over large refactors.
+- Avoid overengineering suggestions.
+
+Global constraints:
+- No behavior or public API changes unless explicitly requested.
+- No new dependencies unless strictly necessary.
+- Do not introduce extra architectural patterns or ports beyond what is already agreed (currently max: `DocumentRepository`).
+- Keep solutions lightweight and easy to explain to evaluators.
+
+Primary review focus (in order):
+1) Layering and dependency direction:
+   - `domain` has no framework/db imports
+   - `application` depends only on `domain` + `ports`
+   - `api` is thin (HTTP + mapping only; no SQL/business logic)
+   - `infra` contains persistence/IO only
+2) Maintainability:
+   - clear naming and responsibilities
+   - low duplication
+   - small, cohesive modules/functions
+   - logic located in the correct layer
+3) Testability:
+   - core application logic testable without FastAPI or sqlite
+   - presence and quality of unit tests for services
+   - integration tests cover HTTP + wiring
+4) Simplicity over purity:
+   - flag overengineering risks
+   - prefer removing complexity over adding abstraction
+5) CI and tooling sanity:
+   - workflows valid
+   - tests and lint runnable and reproducible
+
+Review output format:
+- Must-fix (blocking maintainability issues)
+- Should-fix (strong recommendations)
+- Nice-to-have (optional improvements)
+- Questions / assumptions
+
+Each finding should include file references and a minimal suggested change.
+
+Apply these rules by default to every future code review in this repo unless explicitly overridden.
+
