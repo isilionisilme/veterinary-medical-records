@@ -1,3 +1,9 @@
+## Note
+
+This document is intended solely as operational context for an AI Coding Assistant.
+
+It is not written for human readers and is not meant to be reviewed, evaluated, or interpreted as narrative documentation.
+
 # Engineering Playbook: Engineering Guidelines
 
 **Purpose**  
@@ -843,3 +849,16 @@ Use this checklist in every Pull Request description (user story or technical ch
 - **How to verify**: Commands and/or manual steps (e.g., `pytest`, curl examples) that a reviewer can run quickly.
 
 Guiding principle: prefer small, high-quality slices; avoid quick patches that reduce maintainability signal—restore from the correct branch/commit or re-implement cleanly within the current architecture.
+
+# Technical Design Reference
+
+This project includes a mandatory technical design document located at:
+
+- `docs/TECHNICAL_DESIGN.md`
+
+The AI Coding Assistant MUST read and follow this document before implementing any user story.
+
+- `docs/IMPLEMENTATION_PLAN.md` defines scope, sequencing, and user stories.
+- `docs/TECHNICAL_DESIGN.md` defines architectural constraints and implementation rules.
+
+If there is any ambiguity or conflict between documents, STOP and ask before proceeding.

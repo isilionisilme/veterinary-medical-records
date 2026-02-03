@@ -1,55 +1,106 @@
-# veterinary-medical-records
-This system allows vets to upload docs with a pet's medical record, extracts and analyzes its content and identifies and structure the most relevant info in a standardized way.
+# Veterinary Medical Records Processing — Technical Exercise
 
-## Maintainability Approach (layered, minimal)
+This repository contains the implementation and supporting materials for a technical exercise focused on **interpreting and processing veterinary medical records**.
 
-This take-home optimizes for maintainability by keeping responsibilities separated, enforcing a strict dependency direction, and enabling unit-first testing. FastAPI routes are intentionally thin (HTTP validation only): workflow logic lives in application services, and SQL/persistence details live only in the infrastructure layer.
+The purpose of the exercise is to demonstrate **product thinking, architectural judgment, and a scalable approach to document interpretation in a regulated domain**, rather than to deliver a fully automated system.
 
-### Layers
-- `backend/app/domain/`: pure domain types and rules (stdlib-only)
-- `backend/app/application/`: use-cases/workflows (depends on `domain` + `ports` only)
-- `backend/app/ports/`: minimal interfaces (Protocols) required by the application (e.g., `DocumentRepository`)
-- `backend/app/infra/`: concrete implementations (SQLite, filesystem, external libs)
-- `backend/app/api/`: HTTP layer only (routes + Pydantic request/response schemas)
+---
 
-### Dependency / import rules
-- `domain` → stdlib only
-- `application` → `domain` + `ports` only
-- `api` → `application` + `api.schemas` only
-- `infra` → implements ports; may depend on DB/fs/third-party libs; no business rules
+## Problem context
 
-### Testing strategy (unit-first)
-- Unit tests: `backend/tests/unit/` (no FastAPI, no sqlite; use fakes/in-memory ports)
-- Integration tests: `backend/tests/integration/` (FastAPI TestClient + temporary SQLite)
+Barkibu processes veterinary insurance claims based on **heterogeneous, unstructured medical documents**, typically PDFs originating from different clinics, countries, and formats.
 
-Run tests with:
-`pytest`
+The core operational challenge is not claim decision logic, but:
 
-## Development workflow
+- interpreting documents consistently,
+- extracting relevant medical and financial information,
+- and reducing repetitive manual work for veterinarians,
+while preserving safety, traceability, and trust.
 
-### Install tooling
-Install development dependencies before editing any code:
-```
-python -m pip install --upgrade pip
-pip install -r requirements-dev.txt
-```
+This project explores an approach that assists veterinarians during document review and improves incrementally over time without disrupting existing workflows.
 
-### Git hooks and checks
-Install the Git hook once after cloning:
-```
-pre-commit install
-```
-You can run the full suite locally with:
-```
-pre-commit run --all-files
-```
+---
 
-### Linting and tests
-Run Ruff and the test suite with:
-```
-ruff check .
-pytest
-```
+## Repository structure
 
-### Continuous integration
-GitHub Actions runs the same checks (`ruff check .` and `pytest`) on every push and pull request to `main`. The workflow is defined in `.github/workflows/ci.yml` and installs `requirements-dev.txt` before execution.
+
+---
+
+## Documentation overview
+
+The repository documentation is intentionally split by audience and purpose.
+
+### Product design (human-oriented)
+
+📄 **`docs/PRODUCT_DESIGN.md`**
+
+Provides a short summary and a direct link to the **canonical product design document** (Google Docs), which contains the full problem framing, user experience design, and business rationale.
+
+This is the recommended starting point for reviewers interested in product and UX decisions.
+
+---
+
+### Technical design (human-oriented)
+
+📄 **`docs/TECHNICAL_DESIGN.md`**
+
+Describes the system architecture, processing model, data versioning strategy, confidence handling, and explicit non-goals.
+
+A narrative, human-oriented version of the technical design is linked from this document and maintained separately as a single source of truth.
+
+---
+
+### Implementation plan (operational)
+
+📄 **`docs/IMPLEMENTATION_PLAN.md`**
+
+Defines:
+- the MVP scope,
+- user-facing releases,
+- detailed user stories with acceptance criteria,
+- and story-level technical requirements.
+
+This document is the **source of truth for implementation sequencing and scope**.
+
+---
+
+### AI-assisted development context
+
+📄 **`docs/CONTEXT.md`**  
+📄 **`docs/AGENTS.md`**
+
+These documents define engineering rules, architectural constraints, and working instructions for AI-assisted development.
+
+They are operational in nature and not intended as narrative documentation.
+
+---
+
+## Backend implementation
+
+The backend is implemented using:
+
+- **Python**
+- **FastAPI**
+- **SQLite** (metadata and structured artifacts)
+- **Filesystem storage** (original documents and large artifacts)
+
+The system follows a **modular monolith architecture** with clear separation of concerns and explicit state transitions.
+
+Key characteristics include:
+- append-only persistence for extracted and structured data,
+- explicit processing runs and failure modes,
+- and full traceability from document upload to review.
+
+---
+
+## Notes for evaluators
+
+This exercise is intentionally structured to show:
+
+- how product and technical design inform each other,
+- how scope and risk are actively controlled,
+- and how a system can scale safely in a sensitive, regulated context.
+
+The focus is on **clarity, judgment, and maintainability**, rather than feature completeness.
+
+---
