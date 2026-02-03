@@ -1,6 +1,7 @@
 """Integration tests covering the document HTTP endpoints."""
 
 import io
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -12,7 +13,9 @@ from backend.app.infra import database
 @pytest.fixture
 def test_db(tmp_path, monkeypatch):
     db_path = tmp_path / "documents.db"
+    storage_dir = tmp_path / "uploads"
     monkeypatch.setenv("VET_RECORDS_DB_PATH", str(db_path))
+    monkeypatch.setenv("VET_RECORDS_STORAGE_DIR", str(storage_dir))
     database.ensure_schema()
     return db_path
 
@@ -43,6 +46,8 @@ def test_upload_success_creates_document(test_client):
         ).fetchone()
         assert document, "Document should exist in the database."
         assert document["state"] == app_models.ProcessingStatus.UPLOADED.value
+        assert document["file_path"]
+        assert Path(document["file_path"]).exists()
         history = conn.execute(
             "SELECT * FROM document_status_history WHERE document_id = ?",
             (document_id,),

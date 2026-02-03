@@ -26,3 +26,4 @@ class Document:
     content_type: str
     created_at: str
     state: ProcessingStatus
+    file_path: str | None = None

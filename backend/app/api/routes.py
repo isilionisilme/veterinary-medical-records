@@ -14,15 +14,8 @@ from backend.app.ports.document_repository import DocumentRepository
 router = APIRouter()
 
 MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10 MB
-ALLOWED_CONTENT_TYPES = {
-    "application/pdf",
-    "application/msword",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "image/png",
-    "image/jpeg",
-    "image/tiff",
-}
-ALLOWED_EXTENSIONS = {".pdf", ".doc", ".docx", ".png", ".jpg", ".jpeg", ".tiff"}
+ALLOWED_CONTENT_TYPES = {"application/pdf"}
+ALLOWED_EXTENSIONS = {".pdf"}
 
 
 @router.get(
@@ -79,7 +72,7 @@ def get_document_status(request: Request, document_id: str) -> DocumentResponse:
     summary="Register a document upload",
     description=(
         "Validate an uploaded file and register its metadata. "
-        "Release 0 stores metadata only (no file persistence)."
+        "Release 1 stores the file on disk and persists a reference path."
     ),
     responses={
         413: {"description": "Uploaded file exceeds the maximum allowed size (10 MB)."},
@@ -93,7 +86,7 @@ async def upload_document(
         description="Document file to register (validated for type/extension and size).",
     ),
 ) -> DocumentUploadResponse:
-    """Register a document upload (metadata only for Release 0).
+    """Register a document upload and persist it on disk.
 
     Args:
         request: Incoming FastAPI request (used to access app state).
@@ -116,9 +109,16 @@ async def upload_document(
         )
 
     repository = cast(DocumentRepository, request.app.state.document_repository)
+    filename = Path(file.filename or "").name
+    if not filename:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail="Missing filename.",
+        )
     result = register_document_upload(
-        filename=Path(file.filename).name,
+        filename=filename,
         content_type=file.content_type or "",
+        file_bytes=contents,
         repository=repository,
     )
 

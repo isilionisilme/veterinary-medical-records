@@ -8,7 +8,8 @@ class FakeDocumentRepository:
     def __init__(self) -> None:
         self.created: list[Document] = []
 
-    def create(self, document: Document) -> None:
+    def create(self, document: Document, file_bytes: bytes) -> None:
+        _ = file_bytes
         self.created.append(document)
 
     def get(self, document_id: str) -> Document | None:
@@ -21,6 +22,7 @@ def test_register_document_upload_persists_document_and_returns_response_fields(
     result = register_document_upload(
         filename="record.pdf",
         content_type="application/pdf",
+        file_bytes=b"%PDF-1.5 sample",
         repository=repository,
         id_provider=lambda: "doc-123",
         now_provider=lambda: "2026-02-02T09:00:00+00:00",
@@ -45,6 +47,7 @@ def test_register_document_upload_uses_provided_id_and_time_sources() -> None:
     result = register_document_upload(
         filename="x.pdf",
         content_type="application/pdf",
+        file_bytes=b"%PDF-1.5 sample",
         repository=repository,
         id_provider=lambda: "fixed-id",
         now_provider=lambda: "fixed-time",
