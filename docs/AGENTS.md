@@ -11,6 +11,7 @@ This document complements:
 - `docs/CONTEXT.md` — global engineering rules and constraints
 - `docs/TECHNICAL_DESIGN.md` — architectural and system design
 - `docs/IMPLEMENTATION_PLAN.md` — scope, sequencing, and story-level requirements
+- `docs/UX_GUIDELINES.md` — user experience principles and interaction constraints
 
 All documents must be read and followed before implementing any change.
 
