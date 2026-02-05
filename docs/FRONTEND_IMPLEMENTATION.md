@@ -15,71 +15,81 @@ Those are defined in:
 - `UX_GUIDELINES.md`
 - `TECHNICAL_DESIGN.md`
 
-This document exists solely to clarify **technical frontend decisions** and **implementation strategies** for complex requirements.
+This document exists solely to clarify:
+- frontend technology choices,
+- architectural decisions,
+- and implementation strategies for complex UI requirements.
 
 ---
 
-## Frontend Stack Decision
+## Frontend Stack
 
 The frontend is implemented using:
 
 - **React + TypeScript (Vite)**  
-  Chosen to explicitly satisfy the “Frontend (ReactJS)” requirement and to keep setup fast and standard.
+  Chosen to explicitly satisfy the React frontend requirement while keeping setup fast and standard.
 
 - **Tailwind CSS**  
-  Enables rapid iteration and consistent styling with minimal custom CSS.
+  Used for styling, layout, responsiveness, and dark mode support with minimal custom CSS.
 
 - **shadcn/ui (Radix UI)**  
   Provides accessible, composable UI primitives suitable for review-heavy interfaces.
 
 - **TanStack Query**  
-  Manages server state (loading, error, invalidation) cleanly without introducing global state complexity.
+  Used for server state management (loading, error, invalidation) without introducing global client state complexity.
 
 - **Lucide React**  
-  Lightweight, consistent iconography.
+  Lightweight and consistent iconography.
 
 - **Framer Motion (minimal usage)**  
-  Used only for subtle transitions (e.g. skeleton → content).
+  Used only for subtle transitions (e.g. skeleton → content), never for core logic.
 
 - **PDF.js (`pdfjs-dist`)**  
   Used to render PDFs and support evidence-based review and highlighting.
 
-Explicitly excluded from MVP:
-- global state libraries (Redux, Zustand),
-- coordinate-based PDF overlays,
-- advanced annotation systems.
+---
+
+## Project Structure
+
+The repository uses a single repo with explicit separation:
+
+- `/frontend` contains all React code.
+- `/backend` remains the FastAPI application.
+- `/docs` contains all design, plan, and guideline documents.
+
+The frontend is built and served independently but lives in the same repository.
 
 ---
 
 ## Key Implementation Decisions
 
-### PDF Review and Evidence Rendering
+## PDF Review and Evidence Rendering
 
-The frontend implements document review using **evidence-based navigation**, not precise spatial annotation.
+Document review is implemented using **evidence-based navigation**, not precise spatial annotation.
 
-For each structured field, the backend provides:
+For each structured field, the backend provides (when available):
 - a page number,
-- and a text snippet.
+- a text snippet representing the origin of the value.
 
 Frontend behaviour:
-- when a field is selected, the PDF viewer navigates to the relevant page,
+- when a field is selected, the PDF viewer navigates to the referenced page,
 - the snippet is displayed as explicit evidence,
-- review remains fully usable even if no highlight is possible.
+- the review flow remains usable even if highlighting fails.
 
-This guarantees:
+This ensures:
 - traceability,
 - explainability,
-- and zero blocking of the review flow.
+- and zero blocking of the review experience.
 
 ---
 
-### Highlight Strategy (Progressive Enhancement)
+## Highlight Strategy (Progressive Enhancement)
 
-Highlighting text inside the PDF is implemented as **progressive enhancement**, never as a dependency for usability.
+Text highlighting inside the PDF is implemented as **progressive enhancement**, never as a dependency for usability.
 
 Implementation approach:
-- use PDF.js text layer,
-- attempt to locate the snippet text on the target page,
+- render the PDF using PDF.js,
+- use the text layer to search for the provided snippet on the target page,
 - highlight the closest or first matching occurrence.
 
 If matching fails:
@@ -91,35 +101,38 @@ Bounding boxes and exact coordinates are deliberately excluded from MVP.
 
 ---
 
-### Confidence Rendering
+## Confidence Rendering
 
-Confidence is rendered as a **visual attention signal**, not as a control mechanism.
+Confidence values are rendered as **visual attention signals**, not as control mechanisms.
 
 Frontend representation:
-- qualitative signal first (e.g. red / yellow / green),
-- numeric confidence value visible (inline or via tooltip).
+- qualitative signal first (e.g. color or emphasis),
+- numeric confidence value visible inline or via tooltip.
 
-Confidence:
-- never blocks editing,
-- never triggers confirmation flows,
-- and never implies correctness.
+The frontend must treat confidence as:
+- non-blocking,
+- non-authoritative,
+- and purely assistive.
 
-The frontend treats confidence as **guidance for attention**, not as validation logic.
+No frontend logic may interpret confidence as correctness or validation.
 
 ---
 
-## API Integration Notes
+## API Integration
 
 Server state is managed exclusively via **TanStack Query**.
 
 Patterns:
-- `useQuery` for fetching document status and interpretations.
+- `useQuery` for fetching:
+  - document lists,
+  - document status,
+  - document interpretations.
 - `useMutation` for:
   - persisting field edits,
   - marking documents as reviewed.
-- query invalidation is used to keep UI state consistent after edits.
+- query invalidation is used to keep UI state consistent after mutations.
 
-No client-side caching logic is duplicated manually.
+No custom caching or duplication of server state logic is introduced.
 
 ---
 
@@ -135,6 +148,21 @@ This order is advisory and intended to reduce risk:
 6. Add PDF page navigation.
 7. Add snippet-based highlight.
 8. Polish transitions, skeletons, and dark mode.
+
+---
+
+## Installation Notes (for Codex)
+
+The frontend must install and configure the following dependencies:
+
+```bash
+npm install react react-dom
+npm install -D typescript @types/react @types/react-dom
+npm install tailwindcss postcss autoprefixer
+npm install @tanstack/react-query
+npm install lucide-react
+npm install framer-motion
+npm install pdfjs-dist
 
 ---
 
