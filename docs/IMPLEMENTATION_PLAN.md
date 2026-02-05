@@ -202,6 +202,27 @@ As a user, I want to download or preview the original uploaded document so that 
 
 ---
 
+## US-04 — List uploaded documents and their status
+
+### User Story
+As a veterinarian, I want to see a list of uploaded documents and their current status so that I can understand what has been processed and what still requires review.
+
+### Acceptance Criteria
+- I can see a list of all uploaded documents.
+- For each document, I can see its filename, upload date, and current processing status.
+- The status clearly reflects the document lifecycle (e.g. uploaded, processing, extracted, ready for review, failed).
+- Failed documents are clearly distinguishable from successfully processed ones.
+- **Statuses are informative and non-blocking; documents marked as requiring review do not prevent veterinarians from continuing their workflow.**
+- **List-level statuses communicate system progress and confidence, not approval requirements or mandatory actions.**
+
+### Technical Requirements
+- Expose an API endpoint to list documents with metadata and current status.
+- Persist document status consistently across processing steps.
+- Ensure the list can be refreshed to reflect ongoing processing.
+- Map internal processing states to user-friendly status labels.
+
+---
+
 ## US-05 — Process document
 
 **User Story**  
@@ -336,6 +357,48 @@ As a veterinarian, I want the system to learn from my normal corrections without
 
 ---
 
+## US-10 — Change document language and reprocess
+
+### User Story
+As a veterinarian, I want to change the detected language of a document so that it can be reprocessed correctly if the automatic detection was wrong.
+
+### Acceptance Criteria
+- I can see the language automatically detected for a document.
+- I can manually select a different language.
+- I can trigger reprocessing of the document after changing the language.
+- The system clearly indicates that the document has been reprocessed using the new language.
+- **Changing the language is an explicit context override and does not block review or editing.**
+- **Previous interpretations remain visible for traceability and confidence comparison.**
+
+### Technical Requirements
+- Persist detected language as part of document metadata.
+- Allow manual override of the detected language.
+- Trigger reprocessing using the selected language.
+- Version document interpretations so previous results remain traceable.
+
+---
+
+## US-11 — View document processing history
+
+### User Story
+As a veterinarian, I want to see the processing history of a document so that I can understand which steps were executed and whether any failures occurred.
+
+### Acceptance Criteria
+- I can see a chronological list of processing steps for a document.
+- Each step shows its status (success or failure) and timestamp.
+- Failures are clearly identified and explained in non-technical terms.
+- The processing history is read-only.
+- **Processing history is explanatory and non-blocking; it does not introduce actions, approvals, or workflow decisions.**
+- **History helps understand system behavior and limitations, not to drive clinical decisions.**
+
+### Technical Requirements
+- Persist processing events as an append-only history.
+- Expose an API endpoint to retrieve processing history.
+- Translate technical failures into user-friendly explanations.
+- Ensure historical records cannot be modified.
+
+---
+
 ## US-12 — Mark document as reviewed
 
 **User Story**  
@@ -355,3 +418,122 @@ As a veterinarian, I want to mark a document as reviewed once I have finished ch
 - Frontend uses a single primary action for completion and keeps the rest of the flow non-blocking.
 
 ---
+
+## US-13 — Review aggregated pending structural changes
+
+### User Story
+As a reviewer, I want to review aggregated pending structural changes so that I can validate or reject schema-level evolution based on recurring patterns.
+
+### Acceptance Criteria
+- I can see pending structural changes grouped by pattern, not by individual documents.
+- For each pending change, I can see:
+  - the affected field
+  - the proposed mapping or new field
+  - confidence evolution
+  - representative evidence snippets
+- Reviewing pending changes never blocks veterinarians or document processing.
+- **This review flow is strictly reviewer-facing and is never exposed in veterinarian-facing UIs.**
+- **Reviewer actions affect schema evolution only and do not alter document-level workflows.**
+
+### Technical Requirements
+- Aggregate document-level corrections into structural change candidates.
+- Persist pending structural changes separately from document revisions.
+- Expose aggregated pending changes via a reviewer-facing API.
+- Ensure reviewer actions do not affect document-level workflows.
+
+---
+
+## US-14 — Filter and prioritize pending structural changes
+
+### User Story
+As a reviewer, I want to filter and prioritize pending structural changes so that I can focus on the most relevant and stable patterns.
+
+### Acceptance Criteria
+- I can filter pending changes by confidence range.
+- I can sort pending changes by frequency or stability over time.
+- Low-signal and high-signal changes are clearly distinguishable.
+- **Filtering and prioritization affect reviewer focus only and do not change system behavior or schema application.**
+
+### Technical Requirements
+- Compute and persist confidence metrics for each pending change.
+- Support filtering and sorting parameters in the reviewer API.
+- Keep confidence thresholds configurable.
+- Ensure prioritization affects only visibility, not system behavior.
+
+---
+
+## US-15 — Approve structural changes into the global schema
+
+### User Story
+As a reviewer, I want to approve a structural change so that future documents are interpreted using the updated global schema.
+
+### Acceptance Criteria
+- I can explicitly approve a pending structural change.
+- Approved changes apply only to newly processed documents.
+- Past documents remain unchanged.
+- Approval actions are fully traceable.
+- **Approval does not trigger reprocessing of existing documents unless explicitly requested.**
+- **Approval never blocks veterinarian workflows.**
+
+### Technical Requirements
+- Promote approved changes into the canonical schema.
+- Version the schema upon each approval.
+- Persist reviewer identity and timestamp.
+- Apply schema updates prospectively only.
+
+---
+## US-16 — Reject or defer structural changes
+
+### User Story
+As a reviewer, I want to reject or defer a structural change so that unstable or incorrect patterns do not affect the global schema.
+
+### Acceptance Criteria
+- I can reject a pending change with an optional explanation.
+- I can defer a change without making a final decision.
+- Rejected changes stop accumulating confidence.
+- Rejecting or deferring a change never blocks veterinarians.
+- **Rejecting or deferring changes affects only schema evolution, not document interpretations already delivered.**
+
+### Technical Requirements
+- Support explicit states for pending changes (pending, approved, rejected).
+- Persist rejection reasons and timestamps.
+- Exclude rejected changes from future confidence aggregation.
+- Keep deferred changes visible and reviewable.
+
+---
+
+## US-17 — Govern critical (non-reversible) structural changes
+
+### User Story
+As a reviewer, I want to identify and govern critical structural changes so that high-impact concepts are handled with extra care.
+
+### Acceptance Criteria
+- The system flags changes involving critical concepts.
+- Critical changes are never auto-promoted, regardless of confidence.
+- I can see why a change is classified as critical.
+- Criticality does not block document-level edits by veterinarians.
+- **Critical governance decisions are isolated from veterinarian-facing workflows and never introduce blocking behavior.**
+
+### Technical Requirements
+- Define and persist criticality metadata for structural changes.
+- Associate criticality information with pending changes.
+- Prevent automatic promotion of critical changes.
+- Ensure all critical decisions are auditable.
+
+---
+
+## US-18 — Audit trail of schema governance decisions
+
+### User Story
+As a reviewer, I want to see an audit trail of schema governance decisions so that all structural evolution is transparent and traceable.
+
+### Acceptance Criteria
+- I can see a chronological list of schema governance decisions.
+- Each entry shows the decision taken, the reviewer, and the timestamp.
+- The audit trail is read-only and append-only.
+
+### Technical Requirements
+- Persist all governance decisions in an append-only log.
+- Expose a read-only API to retrieve governance history.
+- Prevent modification or deletion of audit records.
+- Keep governance data separate from document-level data.
