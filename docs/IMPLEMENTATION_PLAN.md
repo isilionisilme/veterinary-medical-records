@@ -16,6 +16,8 @@ It is the **primary source of truth for development sequencing, scope, and user 
 All architectural and system-level decisions referenced in this plan are defined in:
 
 - `docs/TECHNICAL_DESIGN.md`
+- `docs/FRONTEND_IMPLEMENTATION.md` 
+- `docs/UX_GUIDELINES.md` 
 
 If any requirement in this plan conflicts with the technical design, **STOP and ask before implementing**.
 
@@ -26,7 +28,7 @@ If any requirement in this plan conflicts with the technical design, **STOP and 
 The AI Coding Assistant must implement user stories **strictly in the order and scope defined in this plan**.
 
 - User-facing intent is expressed in the user story descriptions and acceptance criteria.
-- Technical constraints and implementation rules are defined in `docs/TECHNICAL_DESIGN.md`.
+- Technical constraints and implementation rules are defined in `docs/TECHNICAL_DESIGN.md`, `docs/FRONTEND_IMPLEMENTATION.md` and `docs/UX_GUIDELINES.md`.
 - Story-specific technical requirements are defined in the **User Story Details** section of this document.
 - Features or behaviors not explicitly listed here are considered **out of scope**.
 
@@ -38,86 +40,159 @@ If any story is unclear or appears underspecified, **STOP and ask before proceed
 
 ### Goal
 
-Allow users to upload documents and download them.
+Allow users to upload documents and access them reliably, establishing a stable and observable foundation.
 
 ### Scope
 
 - Upload PDF documents
 - Persist original documents
-- View document status
-- Download / preview original documents
+- Initialize and expose document status
+- Download and preview original documents
+- List uploaded documents with their status
 
 ### User Stories
 
-- **US-01 - Upload document**
-- **US-02 - View document status**
-- **US-03 - Download / preview original document**
+- US-01 — Upload document  
+- US-02 — View document status  
+- US-03 — Download / preview original document  
+- US-04 — List uploaded documents and their status  
 
 ---
 
-## Release 2 — Document interpretation & visualization
+## Release 2 — Automatic processing & traceability
 
 ### Goal
 
-Extract information from uploaded documents and show it.
+Automatically process uploaded documents in a **non-blocking** way, with full traceability and safe reprocessing.
 
 ### Scope
 
-- Automatic document processing after upload
-- Explicit processing states and failure types
+- Automatic processing after upload
+- Explicit processing states
+- Failure classification
+- Manual reprocessing
+- Append-only processing history
+
+### User Stories
+
+- US-05 — Process document  
+- US-11 — View document processing history  
+
+---
+
+## Release 3 — Extraction transparency (trust & debuggability)
+
+### Goal
+
+Make visible and explainable **what the system has read**, before any interpretation is applied, to build trust and enable debugging.
+
+This release is explicitly about **observability, transparency, and confidence calibration**, not productivity.
+
+### Scope
+
 - Raw text extraction
-- Detected language visibility
-- Structured data visualization
-- Confidence indicators per field
-- Original document shown side-by-side with extracted data
+- Language detection
+- Persistent extraction artifacts
+- On-demand visibility via progressive disclosure
 
 ### User Stories
 
-- **US-05 - Process document**
-- **US-06 - View extracted text**
-- **US-07 - Review document in context**
+- US-06 — View extracted text  
 
 ---
 
-## Release 3 — Document correction & closure
+## Release 4 — Assisted review in context (high value / higher risk)
 
 ### Goal
 
-Allow veterinarians to edit extracted information.
+Enable veterinarians to review the system’s interpretation **in context**, side-by-side with the original document, supported by confidence and evidence.
+
+This is a **high-value but higher-risk release**, due to UI complexity and interaction design.
 
 ### Scope
 
-- Edit structured data
-- Create new structured fields
-- Visual indicators for modified fields
-- Reset all changes via document reprocessing
-- Passive capture of confidence signals
-- Explicit document review completion
+- Structured extracted data
+- Per-field confidence signals
+- Evidence via page + snippet (no exact coordinates)
+- Side-by-side document review
+- Progressive enhancement (review usable even if highlighting fails)
+- Non-blocking, explainable UX
 
 ### User Stories
 
-- **US-08 - Edit structured data**
-- **US-09 - Capture confidence signals**
-- **US-12 - Mark document as reviewed**
+- US-07 — Review document in context  
 
 ---
 
-## Out of scope (explicit)
+## Release 5 — Editing & learning signals (human corrections)
 
-The following user stories and capabilities are intentionally excluded from the MVP:
+### Goal
 
-- **US-10 - Change document language and reprocess**
-- **US-11 - Add review comments**
+Allow veterinarians to correct structured data naturally, while implicitly capturing learning signals—without changing their workflow.
 
-Additional non-goals:
+### Scope
 
-- Operator review workflows
-- Automatic layout evolution
-- Confidence-driven automation
-- Model retraining or fine-tuning
-- Field-level undo functionality
+- Edit existing structured fields
+- Create new structured fields
+- Versioned structured records
+- Field-level change logs
+- Capture implicit confidence signals
+- Clear separation between document edits and schema governance
 
-These items are deliberately deferred to avoid over-engineering and reduce implementation risk.
+### User Stories
+
+- US-08 — Edit structured data  
+- US-09 — Capture confidence signals  
+
+---
+
+## Release 6 — Explicit overrides & workflow closure
+
+### Goal
+
+Give veterinarians explicit control over processing context and a clear way to close work on a document.
+
+This release groups **explicit human overrides** (language) with **workflow completion** (reviewed).
+
+### Scope
+
+- Manual language override
+- Reprocessing with new language context
+- Explicit “reviewed” status
+- Automatic reopening on edits
+
+### User Stories
+
+- US-10 — Change document language and reprocess  
+- US-12 — Mark document as reviewed  
+
+---
+
+## Release 7 — Schema evolution (isolated reviewer workflows)
+
+### Goal
+
+Introduce explicit, reviewer-facing governance for global schema evolution, fully isolated from veterinary workflows.
+
+Governance latency **never blocks or retroactively alters** veterinary work or document interpretations.
+
+### Scope
+
+- Aggregation of pending structural changes
+- Reviewer-facing inspection
+- Filtering and prioritization
+- Approval, rejection, or deferral
+- Schema versioning
+- Audit trail of governance decisions
+
+### User Stories
+
+- US-13 — Review aggregated pending structural changes  
+- US-14 — Filter and prioritize pending structural changes  
+- US-15 — Approve structural changes into the global schema  
+- US-16 — Reject or defer structural changes  
+- US-17 — Govern critical structural changes  
+- US-18 — Audit trail of schema governance decisions  
 
 ---
 
