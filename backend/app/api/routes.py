@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
 
-from fastapi import APIRouter, File, HTTPException, Request, UploadFile, status
+from fastapi import APIRouter, File, Request, UploadFile, status
 from fastapi.responses import JSONResponse
 
 from backend.app.api.schemas import DocumentResponse, DocumentUploadResponse
@@ -44,9 +44,9 @@ def health() -> dict[str, str]:
     status_code=status.HTTP_200_OK,
     summary="Get document processing status",
     description="Return document metadata and its current processing state.",
-    responses={404: {"description": "Document not found."}},
+    responses={404: {"description": "Document not found (DOCUMENT_NOT_FOUND)."}},
 )
-def get_document_status(request: Request, document_id: str) -> DocumentResponse:
+def get_document_status(request: Request, document_id: str) -> DocumentResponse | JSONResponse:
     """Return the document processing status for a given document id.
 
     Args:
@@ -63,7 +63,11 @@ def get_document_status(request: Request, document_id: str) -> DocumentResponse:
     repository = cast(DocumentRepository, request.app.state.document_repository)
     document = get_document(document_id=document_id, repository=repository)
     if document is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found.")
+        return _error_response(
+            status_code=status.HTTP_404_NOT_FOUND,
+            error_code="DOCUMENT_NOT_FOUND",
+            message="Document not found.",
+        )
 
     return DocumentResponse(
         document_id=document.document_id,

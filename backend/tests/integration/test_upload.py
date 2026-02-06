@@ -114,4 +114,6 @@ def test_get_document_returns_metadata_and_state(test_client):
 def test_get_document_returns_404_when_missing(test_client):
     response = test_client.get("/documents/does-not-exist")
     assert response.status_code == 404
-    assert response.json()["detail"] == "Document not found."
+    payload = response.json()
+    assert payload["error_code"] == "DOCUMENT_NOT_FOUND"
+    assert payload["message"] == "Document not found."
