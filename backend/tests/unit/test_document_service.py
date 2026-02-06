@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from backend.app.application.document_service import register_document_upload
-from backend.app.domain.models import Document, ProcessingStatus, ReviewStatus
+from backend.app.domain.models import Document, ProcessingRunSummary, ProcessingStatus, ReviewStatus
 from backend.app.ports.file_storage import StoredFile
 
 
@@ -13,6 +13,9 @@ class FakeDocumentRepository:
         self.created.append((document, status))
 
     def get(self, document_id: str) -> Document | None:
+        return None
+
+    def get_latest_run(self, document_id: str) -> ProcessingRunSummary | None:
         return None
 
 

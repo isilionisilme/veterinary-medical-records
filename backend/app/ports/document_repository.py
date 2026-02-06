@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from backend.app.domain.models import Document, ProcessingStatus
+from backend.app.domain.models import Document, ProcessingRunSummary, ProcessingStatus
 
 
 class DocumentRepository(Protocol):
@@ -25,4 +25,7 @@ class DocumentRepository(Protocol):
         Returns:
             The stored document metadata, or None when not found.
         """
+
+    def get_latest_run(self, document_id: str) -> ProcessingRunSummary | None:
+        """Return the latest processing run summary for a document, if any."""
 
