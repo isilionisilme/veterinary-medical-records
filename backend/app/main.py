@@ -7,10 +7,12 @@ business logic lives in the application/domain layers.
 
 from __future__ import annotations
 
+import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from backend.app.api.routes import MAX_UPLOAD_SIZE as ROUTE_MAX_UPLOAD_SIZE
 from backend.app.api.routes import router as api_router
@@ -51,6 +53,15 @@ def create_app() -> FastAPI:
         version="0.1",
         lifespan=lifespan,
     )
+    cors_origins = _get_cors_origins()
+    if cors_origins:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=cors_origins,
+            allow_credentials=False,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
     app.state.document_repository = SqliteDocumentRepository()
     app.state.file_storage = LocalFileStorage()
     global MAX_UPLOAD_SIZE
@@ -58,6 +69,20 @@ def create_app() -> FastAPI:
     app.include_router(api_router)
 
     return app
+
+
+def _get_cors_origins() -> list[str]:
+    """Return the configured list of CORS origins for local development.
+
+    Uses the comma-separated `VET_RECORDS_CORS_ORIGINS` environment variable.
+    Defaults to the local Vite dev server origins when unset.
+    """
+
+    raw = os.environ.get("VET_RECORDS_CORS_ORIGINS")
+    if raw is None:
+        return ["http://localhost:5173", "http://127.0.0.1:5173"]
+    origins = [origin.strip() for origin in raw.split(",") if origin.strip()]
+    return origins
 
 
 app = create_app()

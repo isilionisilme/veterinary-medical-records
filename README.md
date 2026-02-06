@@ -96,6 +96,7 @@ Key characteristics include:
 Environment variables:
 - `VET_RECORDS_DB_PATH`: override the SQLite database location.
 - `VET_RECORDS_STORAGE_PATH`: override the filesystem root for stored documents.
+- `VET_RECORDS_CORS_ORIGINS`: comma-separated list of allowed frontend origins.
 
 ---
 
