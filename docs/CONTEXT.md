@@ -381,6 +381,20 @@ Each release must result in:
 - Reviews must be constructive and pragmatic.
 - Prioritize shared understanding and long-term code health over stylistic preferences.
 
+## User Story kickoff checklist (AI assistants)
+
+Before implementing each user story (US-XX) in `docs/IMPLEMENTATION_PLAN.md`, the AI assistant must:
+
+1) Read the story requirements and the relevant authoritative design constraints (especially `docs/TECHNICAL_DESIGN.md` appendices).
+2) Identify **decision points** required to implement the story that are not explicitly specified.
+   - Examples: file size limits, storage roots, timeout values, retry counts, error code enums, default configuration values.
+3) Resolve **discoverable facts** by inspecting the repository first (code/config/docs).
+   - Do not ask the user questions that can be answered by reading the repo.
+4) Ask the user to confirm or choose for **non-discoverable preferences/tradeoffs**.
+   - Present 2–4 meaningful options and recommend a default.
+   - Do not proceed while any high-impact ambiguity remains; **STOP and ask**.
+5) Record the resulting decisions/assumptions explicitly in the PR description (and/or ADR-style note when requested).
+
 ## Definition of Done
 A change is considered done when it satisfies the criteria that apply to its type (user story or technical change).
 
