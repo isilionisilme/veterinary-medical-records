@@ -368,6 +368,10 @@ Each release must result in:
 
 ## Code Reviews
 - Code reviews are performed for every pull request.
+- Exception: **docs-only PRs** do not require code review.
+  - Docs-only means the diff contains **only**:
+    - `docs/**`
+    - `*.md`, `*.txt`, `*.rst`, `*.adoc`
 - Reviews focus on:
   - Correctness and alignment with the intended behavior
   - Clarity, readability, and maintainability
@@ -791,12 +795,21 @@ When an AI coding assistant or automation tool is used to create or update a Pul
 3) Check CI status (if configured):
    - Report whether CI is pending, passing, or failing.
 
-4) Automatically perform a maintainability-focused code review of the PR diff:
+4) Determine whether the PR is **docs-only**:
+   - Docs-only means the diff contains **only**:
+     - `docs/**`
+     - `*.md`, `*.txt`, `*.rst`, `*.adoc`
+   - If docs-only:
+     - **Skip** steps 5–6 (code review + review comment).
+     - State explicitly that the PR is docs-only and review was skipped by policy.
+   - Otherwise continue with steps 5–6.
+
+5) Automatically perform a maintainability-focused code review of the PR diff:
    - Use `git diff main...HEAD` as the review input.
    - Apply all rules from:
      "Code Review Guidelines (Maintainability-Focused, Take-Home Pragmatic)"
 
-5) Produce the review using this mandatory output format:
+6) Produce the review using this mandatory output format:
    - Must-fix (blocking maintainability or correctness issues)
    - Should-fix (strong recommendations)
    - Nice-to-have (optional improvements)
@@ -812,6 +825,8 @@ Each finding must include:
 After producing the automatic PR code review, the AI assistant must publish the review output as a comment in the Pull Request (or update an existing “AI Code Review” comment), using the mandatory review output format.
 
 If the PR changes after review (new commits that materially affect the diff), the AI assistant must add a follow-up comment summarizing what changed and whether the previous findings are still applicable.
+
+For docs-only PRs, no review comment is required (review is skipped by policy).
 
 ### Review stance
 
