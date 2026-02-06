@@ -130,9 +130,9 @@ If a reprocess is requested while a run is active:
 - Structured interpretations are stored as **versioned records**.
 - Any user edit creates a **new version**.
 - Previous versions are retained.
-- One version may be marked as:
+- One interpretation version may be marked as:
   - `active`
-  - `pending_review`
+- Structural changes (add/remove/rename field) set an internal `pending_review = true` flag (Appendix A3.2).
 - Field-level change history must be tracked.
 
 ---
@@ -928,3 +928,201 @@ Mapping:
 Rule:
 - Step artifacts never overwrite previous artifacts.
 - Terminal run states are immutable.
+
+---
+
+# Appendix D — Structured Interpretation Schema (v0) (Normative)
+
+This appendix defines the **authoritative minimum JSON schema** for structured interpretations in the MVP.
+It exists to remove ambiguity for implementation (especially AI-assisted coding) and to support:
+- **Review in context** (US-07)
+- **Editing with traceability** (US-08)
+
+If any conflict exists, **Appendix A, Appendix B, Appendix C, and this appendix take precedence**.
+
+## D1. Scope and Design Principles
+
+This is a deliberately small MVP contract, **not a full medical ontology**.
+
+- **Assistive, not authoritative**: outputs are explainable and editable.
+- **Non-blocking**: confidence and governance never block veterinarians.
+- **Run-scoped & append-only**: nothing is overwritten; every interpretation belongs to a processing run.
+- **Approximate evidence**: page + snippet; no PDF coordinates in v0.
+- **Flat structure (v0)**: optimize for flexibility and speed, not completeness.
+
+## D2. Versioning
+
+- `schema_version` is a string. Current value: `"v0"`.
+- Future versions must be explicit and intentional.
+- Additive changes are preferred; breaking changes require a new version.
+
+## D3. Relationship to Persistent Model (Authoritative)
+
+The JSON object defined in this appendix is stored as the `data` payload of `InterpretationVersion` (Appendix B2.4).
+
+## D4. Top-Level Object: StructuredInterpretation (JSON)
+
+```json
+{
+  "schema_version": "v0",
+  "document_id": "uuid",
+  "processing_run_id": "uuid",
+  "created_at": "2026-02-05T12:34:56Z",
+  "fields": []
+}
+```
+
+| Field | Type | Required | Notes |
+|---|---|---:|---|
+| schema_version | string | ✓ | Always `"v0"` |
+| document_id | uuid | ✓ | Convenience for debugging |
+| processing_run_id | uuid | ✓ | Links to a specific processing attempt |
+| created_at | ISO 8601 string | ✓ | Snapshot creation time |
+| fields | array of `StructuredField` | ✓ | Flat list of structured fields |
+
+## D5. StructuredField (Authoritative)
+
+A single extracted or edited data point with confidence and optional evidence.
+
+```json
+{
+  "field_id": "uuid",
+  "key": "pet_name",
+  "value": "Luna",
+  "value_type": "string",
+  "confidence": 0.82,
+  "origin": "machine",
+  "evidence": { "page": 2, "snippet": "Patient: Luna" }
+}
+```
+
+**Field identity rule (Authoritative)**
+- `field_id` identifies a **specific field instance**, not a conceptual slot.
+- Human edits create new interpretation versions (Appendix A3.1) and are tracked via `FieldChangeLog` (Appendix B2.5).
+
+| Field | Type | Required | Notes |
+|---|---|---:|---|
+| field_id | uuid | ✓ | Stable identifier for this field instance |
+| key | string | ✓ | Lowercase `snake_case` |
+| value | string \| number \| boolean \| null | ✓ | Dates stored as ISO strings |
+| value_type | `"string"` \| `"number"` \| `"boolean"` \| `"date"` \| `"unknown"` | ✓ | Explicit typing |
+| confidence | number (0–1) | ✓ | Attention signal only |
+| origin | `"machine"` \| `"human"` | ✓ | Distinguishes machine output vs human edits |
+| evidence | `Evidence` | ✗ | Optional; expected for machine output when available |
+
+## D6. Evidence (Approximate by Design)
+
+```json
+{ "page": 2, "snippet": "Patient: Luna" }
+```
+
+| Field | Type | Required | Notes |
+|---|---|---:|---|
+| page | integer | ✓ | 1-based page index |
+| snippet | string | ✓ | Short excerpt shown to the user |
+
+## D7. Semantics & Rules (Authoritative)
+
+### D7.1 Confidence
+- Confidence never blocks: editing, marking reviewed, or accessing data.
+- UI may render qualitatively (e.g., low / medium / high).
+
+### D7.2 Multiple Values
+Repeated concepts (e.g., medications) are represented by multiple fields with the same `key` and different `field_id`s.
+
+### D7.3 Governance (Future-Facing)
+Structural changes (new keys, key remapping) may later be marked as pending review for schema evolution.
+This is never exposed or actionable in veterinarian-facing workflows in the MVP.
+
+### D7.4 Critical Concepts (US-17, Authoritative)
+
+Some fields are designated as critical concepts in the MVP for US-17.
+
+Rules:
+- is_critical is derived from the field key (not model-decided).
+- A field is critical if and only if key belongs to the closed set CRITICAL_KEYS_V0.
+- This designation never blocks workflows; it only drives UI signaling and internal flags.
+
+Closed set (v0):
+- pet_name
+- species
+- visit_date
+- invoice_total
+
+Derivation:
+- StructuredField.is_critical = (StructuredField.key ∈ CRITICAL_KEYS_V0)
+
+## D8. Example (Multiple Fields)
+
+```json
+{
+  "schema_version": "v0",
+  "document_id": "doc-123",
+  "processing_run_id": "run-456",
+  "created_at": "2026-02-05T12:34:56Z",
+  "fields": [
+    {
+      "field_id": "f1",
+      "key": "pet_name",
+      "value": "Luna",
+      "value_type": "string",
+      "confidence": 0.82,
+      "is_critical": true,
+      "origin": "machine",
+      "evidence": { "page": 2, "snippet": "Patient: Luna" }
+    },
+    {
+      "field_id": "f2",
+      "key": "pet_name",
+      "value": "Luna",
+      "value_type": "string",
+      "confidence": 1.0,
+      "origin": "human"
+    }
+  ]
+}
+```
+
+---
+
+# Appendix E — Minimal Libraries for PDF Text Extraction & Language Detection (Normative)
+
+This appendix closes the minimum dependency decisions required to implement:
+- Text extraction (step `EXTRACTION`, Appendix C),
+- Language detection (persisted as `ProcessingRun.language_used`, Appendix B2.2).
+
+If any conflict exists, Appendix A and Appendix B take precedence for invariants and persistence rules.
+
+## E1. PDF Text Extraction (MVP)
+
+Decision (Authoritative):
+- Use **PyMuPDF** (`pymupdf`, imported as `fitz`) as the sole PDF text extraction library in the MVP.
+
+Rationale:
+- Good text extraction quality for “digital text” PDFs.
+- Fast and simple to integrate in an in-process worker.
+- Keeps the dependency surface small (single primary extractor).
+
+Explicit non-goals (MVP):
+- OCR for scanned PDFs is out of scope.
+- If a PDF is scanned and yields empty/near-empty extracted text, the run may fail as `EXTRACTION_FAILED`.
+
+## E2. Language Detection (MVP)
+
+Decision (Authoritative):
+- Use **langdetect** as the language detection library.
+
+Rationale:
+- Lightweight dependency sufficient for MVP.
+- Provides deterministic-enough output to populate `ProcessingRun.language_used`.
+
+Rules:
+- Language detection is best-effort and must never block processing.
+- If detection fails, `language_used` is set to `"unknown"` (or equivalent) and processing continues.
+
+## E3. Dependency Justification (Repository Requirement)
+
+The repository must include a short justification (e.g., in `README.md` or an ADR) explaining:
+- Why PyMuPDF was chosen for extraction,
+- Why langdetect was chosen for language detection,
+- What is explicitly out of scope (OCR).
