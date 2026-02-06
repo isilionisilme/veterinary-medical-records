@@ -88,6 +88,9 @@ This ensures:
 The document preview renders all PDF pages in a single vertical scroll so users
 can read continuously without manual page switching.
 
+Implementation uses `pdfjs-dist` for PDF rendering and `vitest` for component
+tests of the preview behavior.
+
 Navigation buttons remain available:
 - **Next** scrolls to the top of the next page in the continuous stack.
 - **Previous** scrolls to the top of the previous page.
