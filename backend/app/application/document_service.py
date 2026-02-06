@@ -7,7 +7,8 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from backend.app.domain.models import Document, ProcessingStatus, ReviewStatus
+from backend.app.domain.models import Document, ProcessingRunSummary, ProcessingStatus, ReviewStatus
+from backend.app.domain.status import DocumentStatusView, derive_document_status
 from backend.app.ports.document_repository import DocumentRepository
 from backend.app.ports.file_storage import FileStorage
 
@@ -92,4 +93,35 @@ def get_document(*, document_id: str, repository: DocumentRepository) -> Documen
     """
 
     return repository.get(document_id)
+
+
+@dataclass(frozen=True, slots=True)
+class DocumentStatusDetails:
+    """Document status details derived from the latest processing run."""
+
+    document: Document
+    latest_run: ProcessingRunSummary | None
+    status_view: DocumentStatusView
+
+
+def get_document_status_details(
+    *, document_id: str, repository: DocumentRepository
+) -> DocumentStatusDetails | None:
+    """Return document metadata with derived status details.
+
+    Args:
+        document_id: Unique identifier for the document.
+        repository: Persistence port used to fetch document and run summaries.
+
+    Returns:
+        Document status details or None when the document does not exist.
+    """
+
+    document = repository.get(document_id)
+    if document is None:
+        return None
+
+    latest_run = repository.get_latest_run(document_id)
+    status_view = derive_document_status(latest_run)
+    return DocumentStatusDetails(document=document, latest_run=latest_run, status_view=status_view)
 

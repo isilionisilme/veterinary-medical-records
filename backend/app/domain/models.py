@@ -16,6 +16,16 @@ class ProcessingStatus(str, Enum):
     TIMED_OUT = "TIMED_OUT"
 
 
+class ProcessingRunState(str, Enum):
+    """Processing run lifecycle states."""
+
+    QUEUED = "QUEUED"
+    RUNNING = "RUNNING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+    TIMED_OUT = "TIMED_OUT"
+
+
 class ReviewStatus(str, Enum):
     """Human review status for a document."""
 
@@ -35,3 +45,12 @@ class Document:
     created_at: str
     updated_at: str
     review_status: ReviewStatus
+
+
+@dataclass(frozen=True, slots=True)
+class ProcessingRunSummary:
+    """Minimal view of a processing run for status derivation."""
+
+    run_id: str
+    state: ProcessingRunState
+    failure_type: str | None

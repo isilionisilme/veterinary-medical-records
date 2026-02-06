@@ -11,9 +11,11 @@ from typing import Any, cast
 from fastapi import APIRouter, File, Request, UploadFile, status
 from fastapi.responses import JSONResponse
 
-from backend.app.api.schemas import DocumentResponse, DocumentUploadResponse
-from backend.app.application.document_service import get_document, register_document_upload
-from backend.app.domain.models import ProcessingStatus
+from backend.app.api.schemas import DocumentResponse, DocumentUploadResponse, LatestRunResponse
+from backend.app.application.document_service import (
+    get_document_status_details,
+    register_document_upload,
+)
 from backend.app.ports.document_repository import DocumentRepository
 from backend.app.ports.file_storage import FileStorage
 
@@ -61,22 +63,39 @@ def get_document_status(request: Request, document_id: str) -> DocumentResponse 
     """
 
     repository = cast(DocumentRepository, request.app.state.document_repository)
-    document = get_document(document_id=document_id, repository=repository)
-    if document is None:
+    details = get_document_status_details(document_id=document_id, repository=repository)
+    if details is None:
         return _error_response(
             status_code=status.HTTP_404_NOT_FOUND,
             error_code="DOCUMENT_NOT_FOUND",
             message="Document not found.",
         )
 
+    latest_run = None
+    if details.latest_run is not None:
+        latest_run = LatestRunResponse(
+            run_id=details.latest_run.run_id,
+            state=details.latest_run.state.value,
+            failure_type=details.latest_run.failure_type,
+        )
+
+    _log_event(
+        event_type="DOCUMENT_METADATA_VIEWED",
+        document_id=details.document.document_id,
+        run_id=details.latest_run.run_id if details.latest_run else None,
+    )
+
     return DocumentResponse(
-        document_id=document.document_id,
-        original_filename=document.original_filename,
-        content_type=document.content_type,
-        file_size=document.file_size,
-        created_at=document.created_at,
-        # US-01: no processing runs exist yet, so the derived document status is always UPLOADED.
-        status=ProcessingStatus.UPLOADED.value,
+        document_id=details.document.document_id,
+        original_filename=details.document.original_filename,
+        content_type=details.document.content_type,
+        file_size=details.document.file_size,
+        created_at=details.document.created_at,
+        updated_at=details.document.updated_at,
+        status=details.status_view.status.value,
+        status_message=details.status_view.status_message,
+        failure_type=details.status_view.failure_type,
+        latest_run=latest_run,
     )
 
 
@@ -216,13 +235,14 @@ def _log_event(
     *,
     event_type: str,
     document_id: str | None,
+    run_id: str | None = None,
     error_code: str | None = None,
     failure_reason: str | None = None,
 ) -> None:
     payload: dict[str, Any] = {
         "event_type": event_type,
         "document_id": document_id,
-        "run_id": None,
+        "run_id": run_id,
         "step_name": None,
         "timestamp": datetime.now(UTC).isoformat(),
     }

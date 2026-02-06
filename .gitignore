@@ -67,6 +67,9 @@ backend/data/*.db-journal
 backend/data/*.db-wal
 backend/data/*.db-shm
 
+# Local filesystem storage (app runtime artifacts)
+backend/storage/
+
 # Flask stuff:
 instance/
 .webassets-cache

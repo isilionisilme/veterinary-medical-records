@@ -65,6 +65,7 @@ def ensure_schema() -> None:
     with get_connection() as conn:
         _ensure_documents_schema(conn)
         _ensure_status_history_schema(conn)
+        _ensure_processing_runs_schema(conn)
         conn.commit()
 
 
@@ -185,3 +186,74 @@ def _ensure_status_history_schema(conn: sqlite3.Connection) -> None:
         )
     conn.execute("DROP TABLE document_status_history;")
     conn.execute("ALTER TABLE document_status_history_new RENAME TO document_status_history;")
+
+
+def _ensure_processing_runs_schema(conn: sqlite3.Connection) -> None:
+    columns = _table_columns(conn, "processing_runs")
+    if not columns:
+        conn.execute(
+            """
+            CREATE TABLE processing_runs (
+                run_id TEXT PRIMARY KEY,
+                document_id TEXT NOT NULL,
+                state TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                started_at TEXT,
+                completed_at TEXT,
+                failure_type TEXT,
+                FOREIGN KEY(document_id) REFERENCES documents(document_id)
+            );
+            """
+        )
+        return
+
+    required_columns = {
+        "run_id",
+        "document_id",
+        "state",
+        "created_at",
+        "started_at",
+        "completed_at",
+        "failure_type",
+    }
+    if required_columns.issubset(columns):
+        return
+
+    conn.executescript(
+        """
+        CREATE TABLE processing_runs_new (
+            run_id TEXT PRIMARY KEY,
+            document_id TEXT NOT NULL,
+            state TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            started_at TEXT,
+            completed_at TEXT,
+            failure_type TEXT,
+            FOREIGN KEY(document_id) REFERENCES documents(document_id)
+        );
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO processing_runs_new (
+            run_id,
+            document_id,
+            state,
+            created_at,
+            started_at,
+            completed_at,
+            failure_type
+        )
+        SELECT
+            run_id,
+            document_id,
+            state,
+            created_at,
+            started_at,
+            completed_at,
+            failure_type
+        FROM processing_runs;
+        """
+    )
+    conn.execute("DROP TABLE processing_runs;")
+    conn.execute("ALTER TABLE processing_runs_new RENAME TO processing_runs;")

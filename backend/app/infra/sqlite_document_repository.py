@@ -4,7 +4,13 @@ from __future__ import annotations
 
 from uuid import uuid4
 
-from backend.app.domain.models import Document, ProcessingStatus, ReviewStatus
+from backend.app.domain.models import (
+    Document,
+    ProcessingRunState,
+    ProcessingRunSummary,
+    ProcessingStatus,
+    ReviewStatus,
+)
 from backend.app.infra import database
 
 
@@ -101,5 +107,32 @@ class SqliteDocumentRepository:
             created_at=row["created_at"],
             updated_at=row["updated_at"],
             review_status=ReviewStatus(row["review_status"]),
+        )
+
+    def get_latest_run(self, document_id: str) -> ProcessingRunSummary | None:
+        """Fetch the latest processing run summary for a document."""
+
+        with database.get_connection() as conn:
+            row = conn.execute(
+                """
+                SELECT
+                    run_id,
+                    state,
+                    failure_type
+                FROM processing_runs
+                WHERE document_id = ?
+                ORDER BY created_at DESC
+                LIMIT 1
+                """,
+                (document_id,),
+            ).fetchone()
+
+        if row is None:
+            return None
+
+        return ProcessingRunSummary(
+            run_id=row["run_id"],
+            state=ProcessingRunState(row["state"]),
+            failure_type=row["failure_type"],
         )
 
