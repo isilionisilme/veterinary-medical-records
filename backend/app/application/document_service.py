@@ -7,8 +7,9 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from backend.app.domain.models import Document, ProcessingStatus
+from backend.app.domain.models import Document, ProcessingStatus, ReviewStatus
 from backend.app.ports.document_repository import DocumentRepository
+from backend.app.ports.file_storage import FileStorage
 
 
 def _default_now_iso() -> str:
@@ -24,15 +25,17 @@ class DocumentUploadResult:
     """Result returned after registering an uploaded document."""
 
     document_id: str
-    state: str
-    message: str
+    status: str
+    created_at: str
 
 
 def register_document_upload(
     *,
     filename: str,
     content_type: str,
+    content: bytes,
     repository: DocumentRepository,
+    storage: FileStorage,
     id_provider: Callable[[], str] = _default_id,
     now_provider: Callable[[], str] = _default_now_iso,
 ) -> DocumentUploadResult:
@@ -51,22 +54,29 @@ def register_document_upload(
 
     document_id = id_provider()
     created_at = now_provider()
-    state = ProcessingStatus.UPLOADED
+    stored_file = storage.save(document_id=document_id, content=content)
 
-    repository.create(
-        Document(
-            document_id=document_id,
-            filename=filename,
-            content_type=content_type,
-            created_at=created_at,
-            state=state,
-        )
+    document = Document(
+        document_id=document_id,
+        original_filename=filename,
+        content_type=content_type,
+        file_size=stored_file.file_size,
+        storage_path=stored_file.storage_path,
+        created_at=created_at,
+        updated_at=created_at,
+        review_status=ReviewStatus.IN_REVIEW,
     )
+
+    try:
+        repository.create(document, ProcessingStatus.UPLOADED)
+    except Exception:
+        storage.delete(storage_path=stored_file.storage_path)
+        raise
 
     return DocumentUploadResult(
         document_id=document_id,
-        state=state.value,
-        message="Document registered successfully.",
+        status=ProcessingStatus.UPLOADED.value,
+        created_at=created_at,
     )
 
 

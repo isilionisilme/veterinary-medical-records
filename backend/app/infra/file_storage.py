@@ -1,0 +1,56 @@
+"""Filesystem storage adapter for uploaded documents."""
+
+from __future__ import annotations
+
+import os
+from pathlib import Path
+
+from backend.app.ports.file_storage import FileStorage, StoredFile
+
+BASE_DIR = Path(__file__).resolve().parents[2]
+DEFAULT_STORAGE_ROOT = BASE_DIR / "storage"
+
+
+def get_storage_root() -> Path:
+    """Resolve the storage root for uploaded files.
+
+    The path can be overridden via the `VET_RECORDS_STORAGE_PATH` environment
+    variable. The directory is created if it does not exist.
+    """
+
+    env_override = os.environ.get("VET_RECORDS_STORAGE_PATH")
+    root = Path(env_override) if env_override else DEFAULT_STORAGE_ROOT
+    root.mkdir(parents=True, exist_ok=True)
+    return root
+
+
+class LocalFileStorage(FileStorage):
+    """Filesystem-backed storage adapter."""
+
+    def save(self, *, document_id: str, content: bytes) -> StoredFile:
+        """Persist a document file using an atomic write."""
+
+        relative_path = Path(document_id) / "original.pdf"
+        storage_root = get_storage_root()
+        target_path = storage_root / relative_path
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+
+        temp_path = target_path.with_suffix(".tmp")
+        try:
+            with open(temp_path, "wb") as handle:
+                handle.write(content)
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(temp_path, target_path)
+        finally:
+            if temp_path.exists():
+                temp_path.unlink(missing_ok=True)
+
+        return StoredFile(storage_path=str(relative_path), file_size=len(content))
+
+    def delete(self, *, storage_path: str) -> None:
+        """Best-effort cleanup of a stored file."""
+
+        target_path = get_storage_root() / storage_path
+        if target_path.exists():
+            target_path.unlink(missing_ok=True)

@@ -7,14 +7,20 @@ from enum import Enum
 
 
 class ProcessingStatus(str, Enum):
-    """High-level lifecycle states for a document processing workflow."""
+    """Derived document status values exposed to clients."""
 
     UPLOADED = "UPLOADED"
     PROCESSING = "PROCESSING"
-    TEXT_EXTRACTED = "TEXT_EXTRACTED"
-    TEXT_FAILED = "TEXT_FAILED"
-    STRUCTURED = "STRUCTURED"
-    READY_FOR_REVIEW = "READY_FOR_REVIEW"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+    TIMED_OUT = "TIMED_OUT"
+
+
+class ReviewStatus(str, Enum):
+    """Human review status for a document."""
+
+    IN_REVIEW = "IN_REVIEW"
+    REVIEWED = "REVIEWED"
 
 
 @dataclass(frozen=True, slots=True)
@@ -22,7 +28,10 @@ class Document:
     """Immutable document metadata record stored by the system."""
 
     document_id: str
-    filename: str
+    original_filename: str
     content_type: str
+    file_size: int
+    storage_path: str
     created_at: str
-    state: ProcessingStatus
+    updated_at: str
+    review_status: ReviewStatus

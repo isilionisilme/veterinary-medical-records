@@ -15,6 +15,7 @@ from fastapi import FastAPI
 from backend.app.api.routes import MAX_UPLOAD_SIZE as ROUTE_MAX_UPLOAD_SIZE
 from backend.app.api.routes import router as api_router
 from backend.app.infra import database
+from backend.app.infra.file_storage import LocalFileStorage
 from backend.app.infra.sqlite_document_repository import SqliteDocumentRepository
 
 
@@ -51,6 +52,7 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
     app.state.document_repository = SqliteDocumentRepository()
+    app.state.file_storage = LocalFileStorage()
     global MAX_UPLOAD_SIZE
     MAX_UPLOAD_SIZE = ROUTE_MAX_UPLOAD_SIZE  # re-export for compatibility
     app.include_router(api_router)

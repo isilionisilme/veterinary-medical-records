@@ -7,13 +7,13 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from backend.app.domain.models import Document
+from backend.app.domain.models import Document, ProcessingStatus
 
 
 class DocumentRepository(Protocol):
     """Persistence contract for storing documents and their initial state."""
 
-    def create(self, document: Document) -> None:
+    def create(self, document: Document, status: ProcessingStatus) -> None:
         """Persist a new document and its initial status history entry."""
 
     def get(self, document_id: str) -> Document | None:
