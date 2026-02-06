@@ -1,6 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { Download, FileSearch } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { PdfViewer } from "./components/PdfViewer";
 import { Button } from "./components/ui/button";
@@ -10,6 +10,22 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000
 type LoadResult = {
   url: string;
   filename: string | null;
+};
+
+type DocumentListItem = {
+  document_id: string;
+  original_filename: string;
+  created_at: string;
+  status: string;
+  status_label: string;
+  failure_type: string | null;
+};
+
+type DocumentListResponse = {
+  items: DocumentListItem[];
+  limit: number;
+  offset: number;
+  total: number;
 };
 
 function parseFilename(contentDisposition: string | null): string | null {
@@ -37,11 +53,38 @@ async function fetchOriginalPdf(documentId: string): Promise<LoadResult> {
   return { url: URL.createObjectURL(blob), filename };
 }
 
+async function fetchDocuments(): Promise<DocumentListResponse> {
+  const response = await fetch(`${API_BASE_URL}/documents?limit=50&offset=0`);
+  if (!response.ok) {
+    let errorMessage = "No pudimos cargar la lista de documentos.";
+    try {
+      const payload = await response.json();
+      errorMessage = payload.message ?? errorMessage;
+    } catch {
+      // Ignore JSON parse errors for non-JSON responses.
+    }
+    throw new Error(errorMessage);
+  }
+  return response.json();
+}
+
+function formatTimestamp(value: string): string {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+  return parsed.toLocaleString("es-ES", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
+
 export function App() {
   const [documentId, setDocumentId] = useState("");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [filename, setFilename] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   const downloadUrl = useMemo(() => {
     if (!activeId) {
@@ -84,6 +127,15 @@ export function App() {
       return;
     }
     loadPdf.mutate(trimmed);
+  };
+
+  const documentList = useQuery({
+    queryKey: ["documents", "list"],
+    queryFn: fetchDocuments,
+  });
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["documents", "list"] });
   };
 
   return (
@@ -143,17 +195,81 @@ export function App() {
           </div>
         </section>
 
-        <aside className="rounded-3xl border border-black/10 bg-white/60 p-6 shadow-xl">
-          <h2 className="font-display text-xl font-semibold">Panel de contexto</h2>
-          <p className="mt-3 text-sm text-muted">
-            Este panel esta listo para mostrar los datos estructurados cuando la
-            interpretacion automatica este disponible. La vista previa del PDF
-            funciona de manera independiente del estado del procesamiento.
-          </p>
-          <div className="mt-6 rounded-2xl border border-dashed border-black/10 bg-white/70 p-4 text-sm text-muted">
-            Proximamente: datos estructurados, evidencias por pagina y niveles de
-            confianza.
-          </div>
+        <aside className="flex flex-col gap-6">
+          <section className="rounded-3xl border border-black/10 bg-white/60 p-6 shadow-xl">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="font-display text-xl font-semibold">Documentos cargados</h2>
+                <p className="mt-2 text-xs text-muted">
+                  Lista informativa con el estado actual de procesamiento.
+                </p>
+              </div>
+              <Button variant="ghost" onClick={handleRefresh}>
+                Actualizar
+              </Button>
+            </div>
+
+            {documentList.isLoading && (
+              <div className="mt-4 rounded-2xl border border-black/10 bg-white/70 p-4 text-sm text-muted">
+                Cargando documentos...
+              </div>
+            )}
+
+            {documentList.isError && (
+              <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                {(documentList.error as Error).message}
+              </div>
+            )}
+
+            {documentList.data && (
+              <div className="mt-4 space-y-3">
+                {documentList.data.items.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-black/10 bg-white/70 p-4 text-sm text-muted">
+                    Aun no hay documentos cargados.
+                  </div>
+                ) : (
+                  documentList.data.items.map((item) => (
+                    <div
+                      key={item.document_id}
+                      className="rounded-2xl border border-black/10 bg-white/80 p-4"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="text-sm font-semibold text-ink">
+                            {item.original_filename}
+                          </p>
+                          <p className="mt-1 text-xs text-muted">
+                            Subido: {formatTimestamp(item.created_at)}
+                          </p>
+                        </div>
+                        <span className="rounded-full bg-black/5 px-3 py-1 text-xs font-semibold text-ink">
+                          {item.status_label}
+                        </span>
+                      </div>
+                      {item.failure_type && (
+                        <p className="mt-2 text-xs text-red-600">
+                          Error: {item.failure_type}
+                        </p>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </section>
+
+          <section className="rounded-3xl border border-black/10 bg-white/60 p-6 shadow-xl">
+            <h2 className="font-display text-xl font-semibold">Panel de contexto</h2>
+            <p className="mt-3 text-sm text-muted">
+              Este panel esta listo para mostrar los datos estructurados cuando la
+              interpretacion automatica este disponible. La vista previa del PDF
+              funciona de manera independiente del estado del procesamiento.
+            </p>
+            <div className="mt-6 rounded-2xl border border-dashed border-black/10 bg-white/70 p-4 text-sm text-muted">
+              Proximamente: datos estructurados, evidencias por pagina y niveles de
+              confianza.
+            </div>
+          </section>
         </aside>
       </main>
     </div>
