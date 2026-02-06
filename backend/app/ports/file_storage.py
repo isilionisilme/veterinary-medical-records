@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Protocol
 
 
@@ -23,9 +22,3 @@ class FileStorage(Protocol):
 
     def delete(self, *, storage_path: str) -> None:
         """Remove a stored file if it exists."""
-
-    def resolve(self, *, storage_path: str) -> Path:
-        """Return the absolute filesystem path for a stored file."""
-
-    def exists(self, *, storage_path: str) -> bool:
-        """Return True when the stored file exists."""
