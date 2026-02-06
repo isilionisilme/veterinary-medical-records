@@ -84,6 +84,7 @@ export function App() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [filename, setFilename] = useState<string | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const queryClient = useQueryClient();
 
   const downloadUrl = useMemo(() => {
@@ -129,6 +130,12 @@ export function App() {
     loadPdf.mutate(trimmed);
   };
 
+  const handleSelectDocument = (docId: string) => {
+    setDocumentId(docId);
+    loadPdf.mutate(docId);
+    setIsSidebarOpen(false);
+  };
+
   const documentList = useQuery({
     queryKey: ["documents", "list"],
     queryFn: fetchDocuments,
@@ -165,112 +172,141 @@ export function App() {
         </div>
       </header>
 
-      <main className="mx-auto mt-10 grid w-full max-w-6xl gap-6 lg:grid-cols-[2fr,1fr]">
-        <section className="rounded-3xl border border-black/10 bg-white/70 p-6 shadow-xl">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-            <div className="flex-1">
-              <label className="text-sm font-semibold text-ink">ID del documento</label>
-              <input
-                className="mt-2 w-full rounded-2xl border border-black/10 bg-white/80 px-4 py-3 text-sm outline-none focus:border-accent"
-                placeholder="Ejemplo: 9efc8f7b-0a1f-4c6b-8e9b-1f1a3a"
-                value={documentId}
-                onChange={(event) => setDocumentId(event.target.value)}
-              />
-            </div>
-            <Button
-              onClick={handleSubmit}
-              disabled={loadPdf.isPending || !documentId.trim()}
-            >
-              <FileSearch size={16} />
-              {loadPdf.isPending ? "Cargando" : "Abrir"}
-            </Button>
-          </div>
-          {loadPdf.isError && (
-            <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {(loadPdf.error as Error).message}
-            </div>
-          )}
-          <div className="mt-6 h-[65vh]">
-            <PdfViewer fileUrl={fileUrl} filename={filename} />
-          </div>
-        </section>
+      <main className="relative mx-auto mt-10 w-full max-w-6xl">
+        <div className="mb-4 flex items-center gap-3">
+          <Button
+            variant="ghost"
+            type="button"
+            onClick={() => setIsSidebarOpen((prev) => !prev)}
+            aria-label={isSidebarOpen ? "Cerrar lista de documentos" : "Abrir lista de documentos"}
+          >
+            <span className="text-lg font-semibold">{isSidebarOpen ? "←" : "≡"}</span>
+          </Button>
+          <span className="text-sm text-muted">
+            {isSidebarOpen ? "Ocultar lista" : "Mostrar lista"}
+          </span>
+        </div>
 
-        <aside className="flex flex-col gap-6">
-          <section className="rounded-3xl border border-black/10 bg-white/60 p-6 shadow-xl">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h2 className="font-display text-xl font-semibold">Documentos cargados</h2>
-                <p className="mt-2 text-xs text-muted">
-                  Lista informativa con el estado actual de procesamiento.
-                </p>
+        {isSidebarOpen && (
+          <div
+            className="fixed inset-0 z-10 bg-transparent"
+            onClick={() => setIsSidebarOpen(false)}
+            aria-hidden="true"
+          />
+        )}
+
+        <div className="relative z-20 flex gap-6">
+          <aside
+            className={`flex-shrink-0 transition-all duration-300 ${
+              isSidebarOpen ? "w-80" : "w-0"
+            }`}
+          >
+            <div
+              className={`overflow-hidden rounded-3xl border border-black/10 bg-white/80 shadow-xl transition-all ${
+                isSidebarOpen ? "opacity-100" : "opacity-0"
+              }`}
+            >
+              <section className="p-6">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="font-display text-xl font-semibold">Documentos cargados</h2>
+                    <p className="mt-2 text-xs text-muted">
+                      Lista informativa con el estado actual de procesamiento.
+                    </p>
+                  </div>
+                  <Button variant="ghost" onClick={handleRefresh} type="button">
+                    Actualizar
+                  </Button>
+                </div>
+
+                {documentList.isLoading && (
+                  <div className="mt-4 rounded-2xl border border-black/10 bg-white/70 p-4 text-sm text-muted">
+                    Cargando documentos...
+                  </div>
+                )}
+
+                {documentList.isError && (
+                  <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                    {(documentList.error as Error).message}
+                  </div>
+                )}
+
+                {documentList.data && (
+                  <div className="mt-4 space-y-3">
+                    {documentList.data.items.length === 0 ? (
+                      <div className="rounded-2xl border border-dashed border-black/10 bg-white/70 p-4 text-sm text-muted">
+                        Aun no hay documentos cargados.
+                      </div>
+                    ) : (
+                      documentList.data.items.map((item) => {
+                        const isActive = activeId === item.document_id;
+                        return (
+                          <button
+                            key={item.document_id}
+                            type="button"
+                            onClick={() => handleSelectDocument(item.document_id)}
+                            className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
+                              isActive
+                                ? "border-accent bg-accentSoft font-semibold text-ink"
+                                : "border-black/10 bg-white/80 text-ink hover:bg-white"
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div>
+                                <p className="text-sm">{item.original_filename}</p>
+                                <p className="mt-1 text-xs text-muted">
+                                  Subido: {formatTimestamp(item.created_at)}
+                                </p>
+                              </div>
+                              <span className="rounded-full bg-black/5 px-3 py-1 text-xs font-semibold text-ink">
+                                {item.status_label}
+                              </span>
+                            </div>
+                            {item.failure_type && (
+                              <p className="mt-2 text-xs text-red-600">
+                                Error: {item.failure_type}
+                              </p>
+                            )}
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                )}
+              </section>
+            </div>
+          </aside>
+
+          <section className="flex-1 rounded-3xl border border-black/10 bg-white/70 p-6 shadow-xl">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+              <div className="flex-1">
+                <label className="text-sm font-semibold text-ink">ID del documento</label>
+                <input
+                  className="mt-2 w-full rounded-2xl border border-black/10 bg-white/80 px-4 py-3 text-sm outline-none focus:border-accent"
+                  placeholder="Ejemplo: 9efc8f7b-0a1f-4c6b-8e9b-1f1a3a"
+                  value={documentId}
+                  onChange={(event) => setDocumentId(event.target.value)}
+                />
               </div>
-              <Button variant="ghost" onClick={handleRefresh}>
-                Actualizar
+              <Button
+                onClick={handleSubmit}
+                disabled={loadPdf.isPending || !documentId.trim()}
+                type="button"
+              >
+                <FileSearch size={16} />
+                {loadPdf.isPending ? "Cargando" : "Abrir"}
               </Button>
             </div>
-
-            {documentList.isLoading && (
-              <div className="mt-4 rounded-2xl border border-black/10 bg-white/70 p-4 text-sm text-muted">
-                Cargando documentos...
+            {loadPdf.isError && (
+              <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {(loadPdf.error as Error).message}
               </div>
             )}
-
-            {documentList.isError && (
-              <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                {(documentList.error as Error).message}
-              </div>
-            )}
-
-            {documentList.data && (
-              <div className="mt-4 space-y-3">
-                {documentList.data.items.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-black/10 bg-white/70 p-4 text-sm text-muted">
-                    Aun no hay documentos cargados.
-                  </div>
-                ) : (
-                  documentList.data.items.map((item) => (
-                    <div
-                      key={item.document_id}
-                      className="rounded-2xl border border-black/10 bg-white/80 p-4"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="text-sm font-semibold text-ink">
-                            {item.original_filename}
-                          </p>
-                          <p className="mt-1 text-xs text-muted">
-                            Subido: {formatTimestamp(item.created_at)}
-                          </p>
-                        </div>
-                        <span className="rounded-full bg-black/5 px-3 py-1 text-xs font-semibold text-ink">
-                          {item.status_label}
-                        </span>
-                      </div>
-                      {item.failure_type && (
-                        <p className="mt-2 text-xs text-red-600">
-                          Error: {item.failure_type}
-                        </p>
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-          </section>
-
-          <section className="rounded-3xl border border-black/10 bg-white/60 p-6 shadow-xl">
-            <h2 className="font-display text-xl font-semibold">Panel de contexto</h2>
-            <p className="mt-3 text-sm text-muted">
-              Este panel esta listo para mostrar los datos estructurados cuando la
-              interpretacion automatica este disponible. La vista previa del PDF
-              funciona de manera independiente del estado del procesamiento.
-            </p>
-            <div className="mt-6 rounded-2xl border border-dashed border-black/10 bg-white/70 p-4 text-sm text-muted">
-              Proximamente: datos estructurados, evidencias por pagina y niveles de
-              confianza.
+            <div className="mt-6 h-[65vh]">
+              <PdfViewer fileUrl={fileUrl} filename={filename} />
             </div>
           </section>
-        </aside>
+        </div>
       </main>
     </div>
   );
