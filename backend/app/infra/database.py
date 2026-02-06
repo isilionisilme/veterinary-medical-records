@@ -126,7 +126,7 @@ def _ensure_documents_schema(conn: sqlite3.Connection) -> None:
             filename,
             content_type,
             0,
-            '',
+            document_id || '/original.pdf',
             created_at,
             created_at,
             'IN_REVIEW'

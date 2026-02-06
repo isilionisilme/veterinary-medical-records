@@ -75,6 +75,7 @@ def get_document_status(request: Request, document_id: str) -> DocumentResponse 
         content_type=document.content_type,
         file_size=document.file_size,
         created_at=document.created_at,
+        # US-01: no processing runs exist yet, so the derived document status is always UPLOADED.
         status=ProcessingStatus.UPLOADED.value,
     )
 
@@ -101,18 +102,14 @@ async def upload_document(
         description="Document file to register (validated for type/extension and size).",
     ),
 ) -> DocumentUploadResponse:
-    """Register a document upload (metadata only for Release 0).
+    """Register a document upload (Release 1: store original PDF + persist metadata).
 
     Args:
         request: Incoming FastAPI request (used to access app state).
         file: Uploaded file sent as multipart/form-data.
 
     Returns:
-        Metadata about the registered document and its initial lifecycle state.
-
-    Raises:
-        HTTPException: If the upload is invalid (unsupported type/extension) or
-            exceeds the maximum allowed size.
+        Metadata about the registered document and its initial derived status.
     """
 
     validation_error = _validate_upload(file)
