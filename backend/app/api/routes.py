@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from fastapi import APIRouter, File, Query, Request, UploadFile, status
-from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.responses import JSONResponse
 
 from backend.app.api.schemas import (
     DocumentListItemResponse,
@@ -19,7 +19,6 @@ from backend.app.api.schemas import (
     LatestRunResponse,
 )
 from backend.app.application.document_service import (
-    get_document_original_location,
     get_document_status_details,
     list_documents,
     register_document_upload,
@@ -180,99 +179,6 @@ def get_document_status(request: Request, document_id: str) -> DocumentResponse 
     )
 
 
-@router.get(
-    "/documents/{document_id}/original",
-    status_code=status.HTTP_200_OK,
-    response_class=FileResponse,
-    response_model=None,
-    summary="Download or preview an original document",
-    description="Return the original uploaded PDF for preview or download.",
-    responses={
-        404: {"description": "Document not found (DOCUMENT_NOT_FOUND)."},
-        410: {"description": "Original file missing (ORIGINAL_FILE_MISSING)."},
-        500: {"description": "Unexpected filesystem or I/O failure."},
-    },
-)
-def get_document_original(
-    request: Request,
-    document_id: str,
-    download: bool = Query(
-        False,
-        description="Return the document as an attachment when true; inline preview otherwise.",
-    ),
-) -> Response:
-    """Return the original uploaded document file.
-
-    Args:
-        request: Incoming FastAPI request (used to access app state).
-        document_id: Unique identifier for the document.
-        download: When true, set Content-Disposition to attachment for download.
-
-    Returns:
-        A streamed PDF response or an error payload.
-    """
-
-    repository = cast(DocumentRepository, request.app.state.document_repository)
-    storage = cast(FileStorage, request.app.state.file_storage)
-    location = get_document_original_location(
-        document_id=document_id,
-        repository=repository,
-        storage=storage,
-    )
-    if location is None:
-        _log_event(
-            event_type="DOCUMENT_ORIGINAL_ACCESS_FAILED",
-            document_id=document_id,
-            failure_reason="Document metadata not found.",
-        )
-        return _error_response(
-            status_code=status.HTTP_404_NOT_FOUND,
-            error_code="DOCUMENT_NOT_FOUND",
-            message="Document not found.",
-        )
-    if not location.exists:
-        _log_event(
-            event_type="DOCUMENT_ORIGINAL_ACCESS_FAILED",
-            document_id=document_id,
-            failure_reason="Original document file is missing.",
-        )
-        return _error_response(
-            status_code=status.HTTP_410_GONE,
-            error_code="ORIGINAL_FILE_MISSING",
-            message="Original document file is missing.",
-        )
-
-    disposition_type = "attachment" if download else "inline"
-    _log_event(
-        event_type="DOCUMENT_ORIGINAL_ACCESSED",
-        document_id=document_id,
-        access_type="download" if download else "preview",
-    )
-
-    headers = {
-        "Content-Disposition": (
-            f'{disposition_type}; filename="{location.document.original_filename}"'
-        )
-    }
-    try:
-        return FileResponse(
-            path=location.file_path,
-            media_type="application/pdf",
-            headers=headers,
-        )
-    except Exception as exc:  # pragma: no cover - defensive
-        _log_event(
-            event_type="DOCUMENT_ORIGINAL_ACCESS_FAILED",
-            document_id=document_id,
-            failure_reason=str(exc),
-        )
-        return _error_response(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            error_code="ORIGINAL_FILE_ACCESS_FAILED",
-            message="Unexpected error while accessing the original document.",
-        )
-
-
 @router.post(
     "/documents",
     response_model=DocumentUploadResponse,
@@ -412,7 +318,6 @@ def _log_event(
     run_id: str | None = None,
     error_code: str | None = None,
     failure_reason: str | None = None,
-    access_type: str | None = None,
     count_returned: int | None = None,
 ) -> None:
     payload: dict[str, Any] = {
@@ -426,8 +331,6 @@ def _log_event(
         payload["error_code"] = error_code
     if failure_reason:
         payload["failure_reason"] = failure_reason
-    if access_type:
-        payload["access_type"] = access_type
     if count_returned is not None:
         payload["count_returned"] = count_returned
     logger.info(json.dumps(payload))
