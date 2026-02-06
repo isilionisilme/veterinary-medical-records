@@ -53,6 +53,9 @@ def derive_document_status(latest_run: ProcessingRunSummary | None) -> DocumentS
             failure_type=None,
         )
 
+    # Failure category is always exposed for terminal failure states to keep
+    # status explainable. If a run does not provide a known category, we fall
+    # back to UNKNOWN_ERROR.
     failure_type = _FAILURE_TYPE_MAP.get(latest_run.failure_type or "", "UNKNOWN_ERROR")
 
     if latest_run.state == ProcessingRunState.FAILED:

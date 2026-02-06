@@ -74,3 +74,14 @@ def test_derive_status_for_timed_out_run_includes_failure_type() -> None:
     status_view = derive_document_status(latest_run)
     assert status_view.status.value == "TIMED_OUT"
     assert status_view.failure_type == "INTERPRETATION_FAILED"
+
+
+def test_derive_status_for_timed_out_run_defaults_unknown_failure() -> None:
+    latest_run = ProcessingRunSummary(
+        run_id="run-1",
+        state=ProcessingRunState.TIMED_OUT,
+        failure_type=None,
+    )
+    status_view = derive_document_status(latest_run)
+    assert status_view.status.value == "TIMED_OUT"
+    assert status_view.failure_type == "UNKNOWN_ERROR"
