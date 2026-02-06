@@ -83,6 +83,20 @@ This ensures:
 
 ---
 
+## Continuous Scroll Preview
+
+The document preview renders all PDF pages in a single vertical scroll so users
+can read continuously without manual page switching.
+
+Navigation buttons remain available:
+- **Next** scrolls to the top of the next page in the continuous stack.
+- **Previous** scrolls to the top of the previous page.
+
+The viewer tracks the active page based on scroll position, keeping the page
+index in sync with what is visible.
+
+---
+
 ## Highlight Strategy (Progressive Enhancement)
 
 Text highlighting inside the PDF is implemented as **progressive enhancement**, never as a dependency for usability.

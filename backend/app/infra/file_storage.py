@@ -54,3 +54,13 @@ class LocalFileStorage(FileStorage):
         target_path = get_storage_root() / storage_path
         if target_path.exists():
             target_path.unlink(missing_ok=True)
+
+    def resolve(self, *, storage_path: str) -> Path:
+        """Resolve a stored file path to an absolute filesystem path."""
+
+        return get_storage_root() / storage_path
+
+    def exists(self, *, storage_path: str) -> bool:
+        """Check whether the stored file exists."""
+
+        return self.resolve(storage_path=storage_path).exists()
