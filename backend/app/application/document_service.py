@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from pathlib import Path
 from uuid import uuid4
 
 from backend.app.domain.models import (
@@ -110,6 +111,15 @@ class DocumentStatusDetails:
     status_view: DocumentStatusView
 
 
+@dataclass(frozen=True, slots=True)
+class DocumentOriginalLocation:
+    """Resolved location and metadata for an original stored document file."""
+
+    document: Document
+    file_path: Path
+    exists: bool
+
+
 def get_document_status_details(
     *, document_id: str, repository: DocumentRepository
 ) -> DocumentStatusDetails | None:
@@ -130,6 +140,31 @@ def get_document_status_details(
     latest_run = repository.get_latest_run(document_id)
     status_view = derive_document_status(latest_run)
     return DocumentStatusDetails(document=document, latest_run=latest_run, status_view=status_view)
+
+
+def get_document_original_location(
+    *, document_id: str, repository: DocumentRepository, storage: FileStorage
+) -> DocumentOriginalLocation | None:
+    """Resolve the stored location for an original uploaded document.
+
+    Args:
+        document_id: Unique identifier for the document.
+        repository: Persistence port used to fetch document metadata.
+        storage: File storage adapter used to resolve file locations.
+
+    Returns:
+        The resolved file location and metadata, or None when the document is missing.
+    """
+
+    document = repository.get(document_id)
+    if document is None:
+        return None
+
+    return DocumentOriginalLocation(
+        document=document,
+        file_path=storage.resolve(storage_path=document.storage_path),
+        exists=storage.exists(storage_path=document.storage_path),
+    )
 
 
 @dataclass(frozen=True, slots=True)
