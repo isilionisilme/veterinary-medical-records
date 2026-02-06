@@ -166,7 +166,6 @@ def get_document_original_location(
         exists=storage.exists(storage_path=document.storage_path),
     )
 
-
 @dataclass(frozen=True, slots=True)
 class DocumentListItem:
     """Document list entry with derived status metadata."""
@@ -219,4 +218,3 @@ def _to_list_item(row: DocumentWithLatestRun) -> DocumentListItem:
         status_label=map_status_label(status_view.status),
         failure_type=status_view.failure_type,
     )
-
