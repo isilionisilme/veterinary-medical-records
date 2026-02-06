@@ -38,3 +38,25 @@ class DocumentResponse(BaseModel):
     latest_run: LatestRunResponse | None = Field(
         None, description="Latest processing run summary when available."
     )
+
+
+class DocumentListItemResponse(BaseModel):
+    document_id: str = Field(..., description="Unique identifier of the document.")
+    original_filename: str = Field(..., description="Original filename recorded at upload time.")
+    created_at: str = Field(..., description="UTC ISO timestamp when the document was registered.")
+    status: str = Field(..., description="Current processing status of the document.")
+    status_label: str = Field(
+        ..., description="User-facing status label for list display."
+    )
+    failure_type: str | None = Field(
+        None, description="Failure category when processing failed or timed out."
+    )
+
+
+class DocumentListResponse(BaseModel):
+    items: list[DocumentListItemResponse] = Field(
+        ..., description="Paginated list of documents with derived status."
+    )
+    limit: int = Field(..., description="Maximum number of items returned.")
+    offset: int = Field(..., description="Pagination offset.")
+    total: int = Field(..., description="Total number of documents available.")

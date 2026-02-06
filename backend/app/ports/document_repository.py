@@ -7,7 +7,12 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from backend.app.domain.models import Document, ProcessingRunSummary, ProcessingStatus
+from backend.app.domain.models import (
+    Document,
+    DocumentWithLatestRun,
+    ProcessingRunSummary,
+    ProcessingStatus,
+)
 
 
 class DocumentRepository(Protocol):
@@ -28,4 +33,10 @@ class DocumentRepository(Protocol):
 
     def get_latest_run(self, document_id: str) -> ProcessingRunSummary | None:
         """Return the latest processing run summary for a document, if any."""
+
+    def list_documents(self, *, limit: int, offset: int) -> list[DocumentWithLatestRun]:
+        """Return documents with their latest processing run summaries."""
+
+    def count_documents(self) -> int:
+        """Return total number of documents."""
 

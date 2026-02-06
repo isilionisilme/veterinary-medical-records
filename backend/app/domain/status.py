@@ -85,3 +85,25 @@ def _failed_message(failure_type: str) -> str:
     if failure_type == "INTERPRETATION_FAILED":
         return "Processing failed during interpretation."
     return "Processing failed due to an unknown error."
+
+
+_STATUS_LABELS = {
+    ProcessingStatus.UPLOADED: "Uploaded",
+    ProcessingStatus.PROCESSING: "Processing",
+    ProcessingStatus.COMPLETED: "Ready for review",
+    ProcessingStatus.FAILED: "Failed",
+    ProcessingStatus.TIMED_OUT: "Processing timed out",
+}
+
+
+def map_status_label(status: ProcessingStatus) -> str:
+    """Map internal status to a user-facing, non-blocking label.
+
+    Args:
+        status: Derived document status value.
+
+    Returns:
+        User-facing status label.
+    """
+
+    return _STATUS_LABELS.get(status, "Unknown")

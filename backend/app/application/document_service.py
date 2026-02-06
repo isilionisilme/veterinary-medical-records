@@ -8,8 +8,14 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
-from backend.app.domain.models import Document, ProcessingRunSummary, ProcessingStatus, ReviewStatus
-from backend.app.domain.status import DocumentStatusView, derive_document_status
+from backend.app.domain.models import (
+    Document,
+    DocumentWithLatestRun,
+    ProcessingRunSummary,
+    ProcessingStatus,
+    ReviewStatus,
+)
+from backend.app.domain.status import DocumentStatusView, derive_document_status, map_status_label
 from backend.app.ports.document_repository import DocumentRepository
 from backend.app.ports.file_storage import FileStorage
 
@@ -160,3 +166,55 @@ def get_document_original_location(
         exists=storage.exists(storage_path=document.storage_path),
     )
 
+@dataclass(frozen=True, slots=True)
+class DocumentListItem:
+    """Document list entry with derived status metadata."""
+
+    document_id: str
+    original_filename: str
+    created_at: str
+    status: str
+    status_label: str
+    failure_type: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class DocumentListResult:
+    """Paginated document list result."""
+
+    items: list[DocumentListItem]
+    limit: int
+    offset: int
+    total: int
+
+
+def list_documents(
+    *, repository: DocumentRepository, limit: int, offset: int
+) -> DocumentListResult:
+    """List documents with derived status for list views.
+
+    Args:
+        repository: Persistence port used to fetch documents and run summaries.
+        limit: Maximum number of documents to return.
+        offset: Pagination offset.
+
+    Returns:
+        Paginated list of document entries with derived status.
+    """
+
+    rows = repository.list_documents(limit=limit, offset=offset)
+    total = repository.count_documents()
+    items = [_to_list_item(row) for row in rows]
+    return DocumentListResult(items=items, limit=limit, offset=offset, total=total)
+
+
+def _to_list_item(row: DocumentWithLatestRun) -> DocumentListItem:
+    status_view = derive_document_status(row.latest_run)
+    return DocumentListItem(
+        document_id=row.document.document_id,
+        original_filename=row.document.original_filename,
+        created_at=row.document.created_at,
+        status=status_view.status.value,
+        status_label=map_status_label(status_view.status),
+        failure_type=status_view.failure_type,
+    )

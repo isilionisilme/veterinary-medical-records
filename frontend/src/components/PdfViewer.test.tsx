@@ -78,19 +78,46 @@ describe("PdfViewer", () => {
   });
 
   it("scrolls to next and previous pages on button click", async () => {
-    const scrollSpy = vi.spyOn(HTMLElement.prototype, "scrollIntoView");
+    const windowScrollSpy = vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
 
     render(<PdfViewer fileUrl="blob://sample" filename="record.pdf" />);
 
     const pages = await screen.findAllByTestId("pdf-page");
+    const container = screen.getByTestId("pdf-scroll-container");
+    const containerScrollTo = vi.fn();
+    (container as HTMLElement & { scrollTo: typeof container.scrollTo }).scrollTo = containerScrollTo;
+    Object.defineProperty(container, "scrollTop", { value: 10, writable: true });
+    vi.spyOn(container, "getBoundingClientRect").mockReturnValue({
+      x: 0,
+      y: 100,
+      top: 100,
+      left: 0,
+      right: 600,
+      bottom: 800,
+      width: 600,
+      height: 700,
+      toJSON: () => "",
+    });
+    vi.spyOn(pages[1], "getBoundingClientRect").mockReturnValue({
+      x: 0,
+      y: 500,
+      top: 500,
+      left: 0,
+      right: 600,
+      bottom: 1300,
+      width: 600,
+      height: 800,
+      toJSON: () => "",
+    });
+
     const [nextButton] = screen.getAllByRole("button", { name: /Siguiente/i });
     await waitFor(() => {
       expect(nextButton).not.toBeDisabled();
     });
     fireEvent.click(nextButton);
 
-    expect(scrollSpy).toHaveBeenCalled();
-    expect(scrollSpy.mock.instances[0]).toBe(pages[1]);
+    expect(containerScrollTo).toHaveBeenCalledWith({ top: 410, behavior: "smooth" });
+    expect(windowScrollSpy).not.toHaveBeenCalled();
     expect(screen.getByText(/Pagina 2 de 3/)).toBeInTheDocument();
 
     const [prevButton] = screen.getAllByRole("button", { name: /Anterior/i });
@@ -98,7 +125,8 @@ describe("PdfViewer", () => {
       expect(prevButton).not.toBeDisabled();
     });
     fireEvent.click(prevButton);
-    expect(scrollSpy.mock.instances[1]).toBe(pages[0]);
+    expect(containerScrollTo).toHaveBeenCalledTimes(2);
+    expect(windowScrollSpy).not.toHaveBeenCalled();
     expect(screen.getByText(/Pagina 1 de 3/)).toBeInTheDocument();
   });
 

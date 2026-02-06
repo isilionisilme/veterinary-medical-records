@@ -11,10 +11,17 @@ from typing import Any, cast
 from fastapi import APIRouter, File, Query, Request, UploadFile, status
 from fastapi.responses import FileResponse, JSONResponse, Response
 
-from backend.app.api.schemas import DocumentResponse, DocumentUploadResponse, LatestRunResponse
+from backend.app.api.schemas import (
+    DocumentListItemResponse,
+    DocumentListResponse,
+    DocumentResponse,
+    DocumentUploadResponse,
+    LatestRunResponse,
+)
 from backend.app.application.document_service import (
     get_document_original_location,
     get_document_status_details,
+    list_documents,
     register_document_upload,
 )
 from backend.app.ports.document_repository import DocumentRepository
@@ -28,6 +35,7 @@ ALLOWED_CONTENT_TYPES = {
     "application/pdf",
 }
 ALLOWED_EXTENSIONS = {".pdf"}
+DEFAULT_LIST_LIMIT = 50
 
 
 @router.get(
@@ -39,6 +47,78 @@ def health() -> dict[str, str]:
     """Health check endpoint."""
 
     return {"status": "ok"}
+
+
+@router.get(
+    "/documents",
+    response_model=DocumentListResponse,
+    status_code=status.HTTP_200_OK,
+    summary="List uploaded documents and their status",
+    description="Return paginated documents with derived processing status.",
+    responses={500: {"description": "Unexpected system failure."}},
+)
+def list_documents_route(
+    request: Request,
+    limit: int = Query(
+        DEFAULT_LIST_LIMIT,
+        ge=1,
+        description="Maximum number of documents to return.",
+    ),
+    offset: int = Query(
+        0,
+        ge=0,
+        description="Pagination offset.",
+    ),
+) -> DocumentListResponse | JSONResponse:
+    """Return a paginated list of documents with derived status labels.
+
+    Args:
+        request: Incoming FastAPI request (used to access app state).
+        limit: Maximum number of documents to return.
+        offset: Pagination offset.
+
+    Returns:
+        Paginated document list response or error payload.
+    """
+
+    repository = cast(DocumentRepository, request.app.state.document_repository)
+    try:
+        result = list_documents(repository=repository, limit=limit, offset=offset)
+    except Exception as exc:  # pragma: no cover - defensive
+        _log_event(
+            event_type="DOCUMENT_LIST_VIEW_FAILED",
+            document_id=None,
+            failure_reason=str(exc),
+        )
+        return _error_response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            error_code="DOCUMENT_LIST_FAILED",
+            message="Unexpected error while listing documents.",
+        )
+
+    _log_event(
+        event_type="DOCUMENT_LIST_VIEWED",
+        document_id=None,
+        count_returned=len(result.items),
+    )
+
+    items = [
+        DocumentListItemResponse(
+            document_id=item.document_id,
+            original_filename=item.original_filename,
+            created_at=item.created_at,
+            status=item.status,
+            status_label=item.status_label,
+            failure_type=item.failure_type,
+        )
+        for item in result.items
+    ]
+    return DocumentListResponse(
+        items=items,
+        limit=result.limit,
+        offset=result.offset,
+        total=result.total,
+    )
 
 
 @router.get(
@@ -333,6 +413,7 @@ def _log_event(
     error_code: str | None = None,
     failure_reason: str | None = None,
     access_type: str | None = None,
+    count_returned: int | None = None,
 ) -> None:
     payload: dict[str, Any] = {
         "event_type": event_type,
@@ -347,5 +428,7 @@ def _log_event(
         payload["failure_reason"] = failure_reason
     if access_type:
         payload["access_type"] = access_type
+    if count_returned is not None:
+        payload["count_returned"] = count_returned
     logger.info(json.dumps(payload))
 

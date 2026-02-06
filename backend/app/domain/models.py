@@ -54,3 +54,11 @@ class ProcessingRunSummary:
     run_id: str
     state: ProcessingRunState
     failure_type: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class DocumentWithLatestRun:
+    """Document metadata paired with the latest processing run summary."""
+
+    document: Document
+    latest_run: ProcessingRunSummary | None
