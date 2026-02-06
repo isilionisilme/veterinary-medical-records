@@ -91,6 +91,12 @@ Key characteristics include:
 - explicit processing runs and failure modes,
 - and full traceability from document upload to review.
 
+### Backend configuration (MVP)
+
+Environment variables:
+- `VET_RECORDS_DB_PATH`: override the SQLite database location.
+- `VET_RECORDS_STORAGE_PATH`: override the filesystem root for stored documents.
+
 ---
 
 ## Notes for evaluators

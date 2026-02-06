@@ -11,6 +11,7 @@ import sqlite3
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
+from uuid import uuid4
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 DEFAULT_DB_PATH = BASE_DIR / "data" / "documents.db"
@@ -62,23 +63,125 @@ def ensure_schema() -> None:
     """
 
     with get_connection() as conn:
-        conn.executescript(
-            """
-            CREATE TABLE IF NOT EXISTS documents (
-                document_id TEXT PRIMARY KEY,
-                filename TEXT NOT NULL,
-                content_type TEXT NOT NULL,
-                created_at TEXT NOT NULL,
-                state TEXT NOT NULL
-            );
+        _ensure_documents_schema(conn)
+        _ensure_status_history_schema(conn)
+        conn.commit()
 
-            CREATE TABLE IF NOT EXISTS document_status_history (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+def _table_columns(conn: sqlite3.Connection, table: str) -> set[str]:
+    rows = conn.execute(f"PRAGMA table_info({table})").fetchall()
+    return {row["name"] for row in rows}
+
+
+def _ensure_documents_schema(conn: sqlite3.Connection) -> None:
+    columns = _table_columns(conn, "documents")
+    if not columns:
+        conn.execute(
+            """
+            CREATE TABLE documents (
+                document_id TEXT PRIMARY KEY,
+                original_filename TEXT NOT NULL,
+                content_type TEXT NOT NULL,
+                file_size INTEGER NOT NULL,
+                storage_path TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                review_status TEXT NOT NULL
+            );
+            """
+        )
+        return
+
+    if "original_filename" in columns and "storage_path" in columns:
+        return
+
+    conn.executescript(
+        """
+        CREATE TABLE documents_new (
+            document_id TEXT PRIMARY KEY,
+            original_filename TEXT NOT NULL,
+            content_type TEXT NOT NULL,
+            file_size INTEGER NOT NULL,
+            storage_path TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            review_status TEXT NOT NULL
+        );
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO documents_new (
+            document_id,
+            original_filename,
+            content_type,
+            file_size,
+            storage_path,
+            created_at,
+            updated_at,
+            review_status
+        )
+        SELECT
+            document_id,
+            filename,
+            content_type,
+            0,
+            document_id || '/original.pdf',
+            created_at,
+            created_at,
+            'IN_REVIEW'
+        FROM documents;
+        """
+    )
+    conn.execute("DROP TABLE documents;")
+    conn.execute("ALTER TABLE documents_new RENAME TO documents;")
+
+
+def _ensure_status_history_schema(conn: sqlite3.Connection) -> None:
+    columns = _table_columns(conn, "document_status_history")
+    if not columns:
+        conn.execute(
+            """
+            CREATE TABLE document_status_history (
+                id TEXT PRIMARY KEY,
                 document_id TEXT NOT NULL,
-                state TEXT NOT NULL,
+                status TEXT NOT NULL,
+                run_id TEXT,
                 created_at TEXT NOT NULL,
                 FOREIGN KEY(document_id) REFERENCES documents(document_id)
             );
             """
         )
-        conn.commit()
+        return
+
+    if {"id", "document_id", "status", "run_id", "created_at"}.issubset(columns):
+        return
+
+    conn.executescript(
+        """
+        CREATE TABLE document_status_history_new (
+            id TEXT PRIMARY KEY,
+            document_id TEXT NOT NULL,
+            status TEXT NOT NULL,
+            run_id TEXT,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY(document_id) REFERENCES documents(document_id)
+        );
+        """
+    )
+    legacy_rows = conn.execute(
+        """
+        SELECT document_id, state, created_at
+        FROM document_status_history
+        """
+    ).fetchall()
+    for row in legacy_rows:
+        conn.execute(
+            """
+            INSERT INTO document_status_history_new (id, document_id, status, run_id, created_at)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (str(uuid4()), row["document_id"], row["state"], None, row["created_at"]),
+        )
+    conn.execute("DROP TABLE document_status_history;")
+    conn.execute("ALTER TABLE document_status_history_new RENAME TO document_status_history;")
