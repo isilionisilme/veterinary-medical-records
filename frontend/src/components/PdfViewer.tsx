@@ -185,9 +185,12 @@ export function PdfViewer({ fileUrl, filename }: PdfViewerProps) {
     [totalPages]
   );
 
-  const scrollToPage = (targetPage: number) => {
+  const scrollToPage = (targetPage: number, event?: React.MouseEvent<HTMLButtonElement>) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+    const container = scrollRef.current;
     const page = pageRefs.current[targetPage - 1];
-    if (!page) {
+    if (!page || !container) {
       return;
     }
     if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_PDF_VIEWER === "true") {
@@ -199,7 +202,10 @@ export function PdfViewer({ fileUrl, filename }: PdfViewerProps) {
       });
     }
     setPageNumber(targetPage);
-    page.scrollIntoView({ behavior: "smooth", block: "start" });
+    const containerRect = container.getBoundingClientRect();
+    const pageRect = page.getBoundingClientRect();
+    const targetTop = pageRect.top - containerRect.top + container.scrollTop;
+    container.scrollTo({ top: targetTop, behavior: "smooth" });
   };
 
   const canGoBack = pageNumber > 1;
@@ -218,7 +224,8 @@ export function PdfViewer({ fileUrl, filename }: PdfViewerProps) {
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
-            onClick={() => scrollToPage(Math.max(1, pageNumber - 1))}
+            type="button"
+            onClick={(event) => scrollToPage(Math.max(1, pageNumber - 1), event)}
             disabled={navDisabled || !canGoBack}
           >
             <ChevronLeft size={16} />
@@ -226,7 +233,8 @@ export function PdfViewer({ fileUrl, filename }: PdfViewerProps) {
           </Button>
           <Button
             variant="ghost"
-            onClick={() => scrollToPage(Math.min(totalPages, pageNumber + 1))}
+            type="button"
+            onClick={(event) => scrollToPage(Math.min(totalPages, pageNumber + 1), event)}
             disabled={navDisabled || !canGoForward}
           >
             Siguiente
@@ -236,6 +244,7 @@ export function PdfViewer({ fileUrl, filename }: PdfViewerProps) {
       </div>
       <div
         ref={scrollRef}
+        data-testid="pdf-scroll-container"
         className="mt-4 flex-1 overflow-auto rounded-2xl border border-black/10 bg-white/60 p-4 shadow-sm"
       >
         <div ref={contentRef} className="mx-auto w-full max-w-3xl">
