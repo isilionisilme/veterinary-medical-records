@@ -5,51 +5,51 @@ The version of this document written for evaluators and reviewers is available h
 https://docs.google.com/document/d/1b1rvBJu9bGjv8Z42OdDz9qwjecbqDbpilkn0KkYuD-M
 
 
-# Implementation Plan — Incremental Document Processing MVP
+# Implementation Plan 
 
 ## Purpose
 
-This document defines the implementation plan for the Veterinary Medical Records Processing MVP.
+This document defines the implementation plan for this project.
+
+- User-facing intent is expressed in the user story descriptions and acceptance criteria.
+- Story-specific technical requirements are defined in the **User Story Details** section of this document.
+- Features or behaviors not explicitly listed here are considered **out of scope** unless the user explicitly says otherwise. 
 
 It is the **primary source of truth for development sequencing, scope, and user story requirements** and must be followed by the AI Coding Assistant (Codex).
-
-All architectural and system-level decisions referenced in this plan are defined in:
-
-- `docs/TECHNICAL_DESIGN.md`
-- `docs/FRONTEND_IMPLEMENTATION.md` 
-- `docs/UX_GUIDELINES.md` 
-
-If any requirement in this plan conflicts with the technical design, **STOP and ask before implementing**.
 
 ---
 
 ## How to use this document
 
-The AI Coding Assistant must implement user stories **strictly in the order and scope defined in this plan**.
+The AI Coding Assistant must follow the planning principles, user stories, and release plan described below.
 
-- User-facing intent is expressed in the user story descriptions and acceptance criteria.
-- Technical constraints and implementation rules are defined in `docs/TECHNICAL_DESIGN.md`, `docs/FRONTEND_IMPLEMENTATION.md` and `docs/UX_GUIDELINES.md`.
-- Story-specific technical requirements are defined in the **User Story Details** section of this document.
-- Features or behaviors not explicitly listed here are considered **out of scope**.
 
-If any story is unclear or appears underspecified, **STOP and ask before proceeding**.
+## User stories & acceptance criteria
 
-## API Error Response Format (Normative)
+Implement functionality strictly according to the user stories and acceptance criteria below.  
+Do not implement features that are not explicitly covered.
+User stories must be implemented **strictly in the order and scope defined in this plan**.
+If any story is unclear or appears underspecified,or if a requested change conflicts with the defined scope or exit criteria of a release, **STOP and ask before proceeding**.
 
-All API errors MUST return a JSON body with a stable, machine-readable structure:
+## Planning principles
 
-```json
-{
-  "error_code": "STRING_ENUM",
-  "message": "Human-readable explanation",
-  "details": { "optional": "object" }
-}
-```
+- Prioritize low-risk, high-leverage reductions in manual work while building foundational capabilities.
+- Sequence automation by confidence:
+  - Start with deterministic decisions.
+  - Expand to assistive reasoning only once confidence, data quality, and feedback loops are in place.
+- Instrument first (or in parallel) so impact and regressions are measurable from day one.
+- Ship in small increments using progressive delivery patterns when applicable.
 
-Rules:
-- `error_code` is stable and suitable for frontend branching.
-- `message` is safe for user display (no stack traces).
-- `details` is optional and must not expose filesystem paths or secrets.
+--- 
+
+## Implementation principles
+
+- Favor clarity and explicitness over cleverness.
+- Keep all intermediate artifacts explicit and inspectable.
+- Use append-only persistence for extracted and structured data.
+- Avoid global side effects derived from individual user actions.
+- Never silently overwrite data.
+- If a requirement or expected behavior is unclear, **STOP and ask before implementing**.
 
 ---
 
@@ -216,22 +216,12 @@ Governance latency **never blocks or retroactively alters** veterinary work or d
 
 ---
 
-## Implementation principles
 
-- Favor clarity and explicitness over cleverness.
-- Keep all intermediate artifacts explicit and inspectable.
-- Use append-only persistence for extracted and structured data.
-- Avoid global side effects derived from individual user actions.
-- Never silently overwrite data.
-- If a requirement or expected behavior is unclear, **STOP and ask before implementing**.
 
 ---
 
-## API Naming Authority (Normative)
 
-The authoritative endpoint map is defined in `docs/TECHNICAL_DESIGN.md` Appendix B3 (+ B3.1).
-
-If any user story lists different endpoint paths, treat them as non-normative examples and implement the authoritative map.
+---
 
 ---
 
@@ -244,65 +234,65 @@ This section defines the **complete, authoritative specification** for each user
 ## US-01 — Upload document
 
 **User Story**  
-As a user, I want to upload a PDF document so that it is stored and available for processing.
+As a user, I want to upload a document (PDF, Word, or image) so that it is stored and available for processing.
 
 **Acceptance Criteria**
-- I can upload a PDF document.
+- I can upload a PDF, Word, or image document.
 - I receive immediate confirmation that the document was uploaded.
 - The document appears in the system with an initial status.
 - The UI communicates that processing is assistive and may be incomplete, without blocking the user.
 - The UI follows progressive disclosure: status is visible immediately, details are on demand.
 
 **Technical Requirements**
-- Accept only PDF files.
-- Validate file size and content type.
+- Accept PDF, Word, and image files.
+- Validate file size, content type, and file extension.
 - Persist document metadata in the database.
 - Store the original file in filesystem storage.
 - Initialize document state as `UPLOADED`.
 - Record initial status in status history.
 - The API response includes the document id and current status so the frontend can render state immediately.
 
-## Scope Clarification 
+### Scope Clarification 
 - This story **does not** start processing.
 - This story **only** handles upload, persistence, and initial state.
 - Any background processing is triggered by later stories.
 - Note: automatic post-upload processing is introduced in **Release 2 (US-05)**, not in Release 1.
-- When **US-05 is implemented**, `POST /documents` MUST enqueue or create a ProcessingRun asynchronously (non-blocking).
+- When **US-05 is implemented**, `POST /documents/upload` MUST enqueue or create a ProcessingRun asynchronously (non-blocking).
 
 ---
 
-## API (Contract Checklist)
+### API (Contract Checklist)
 
-### Endpoint
-- `POST /documents`
+#### Endpoint
+- `POST /documents/upload`
 
-### Request
+#### Request
 - `multipart/form-data`
-  - `file` (required): PDF file
+  - `file` (required): PDF, Word, or image file
 
-### Validation
-- Reject non-PDF files (`Content-Type`, extension).
+#### Validation
+- Reject unsupported file types (`Content-Type`, extension).
 - Enforce maximum file size (configurable constant).
 - Reject empty uploads (0 bytes).
-- Deep PDF validity (e.g., unreadable/corrupted structure) is NOT enforced at upload time in Release 1; it is handled during extraction (US-05).
+- Deep file validity (e.g., unreadable/corrupted structure) is NOT enforced at upload time in Release 1; it is handled during extraction (US-05).
  
 
-### Response (success)
+#### Response (success)
 - HTTP `201 Created`
 - Body includes:
   - `document_id`
   - `status` = `UPLOADED`
   - `created_at`
 
-### Response (failure)
+#### Response (failure)
 - `400 Bad Request`: invalid file type or empty upload
 - `413 Payload Too Large`: file exceeds max size
 - `500 Internal Server Error`: unexpected storage/database failure
-
 Error body MUST follow **API Error Response Format (Normative)**.
+
 ---
 
-## Database (Persistence Checklist)
+### Database (Persistence Checklist)
 
 ### Tables / Entities
 **Document**
@@ -338,16 +328,16 @@ Note:
 
 ---
 
-## Filesystem Storage Checklist
+### Filesystem Storage Checklist
 
-- Store the original PDF in filesystem storage.
+- Store the original file in filesystem storage.
 - Storage path must be deterministic and unique (e.g. by `document_id`).
 - The filesystem write must complete **before** returning success.
 - No processing or transformation of the file is done at this stage.
 
 ---
 
-## State & Processing Model
+### State & Processing Model
 
 - Initial document state: `UPLOADED`
 - No processing run is created in this story.
@@ -355,7 +345,7 @@ Note:
 
 ---
 
-## UI / UX Checklist
+### UI / UX Checklist
 
 - After upload:
   - Show document immediately in list/detail view.
@@ -367,7 +357,7 @@ Note:
 
 ---
 
-## Observability Checklist (MVP)
+### Observability Checklist (MVP)
 
 - Emit structured log on upload success:
   - `document_id`
@@ -380,7 +370,7 @@ Note:
 
 ---
 
-## Tests Checklist
+### Tests Checklist
 
 ### Unit Tests
 - File validation (PDF only).
@@ -395,7 +385,7 @@ Note:
 
 ---
 
-## Definition of Done (DoD)
+### Definition of Done (DoD)
 
 - [ ] API endpoint implemented and documented
 - [ ] PDF-only validation enforced
@@ -429,7 +419,7 @@ As a user, I want to see the current status of a document so that I understand i
 - Expose failure type / category in the status response when processing fails (to keep uncertainty explainable).
 - Ensure “pending_review” is not used as a blocking status for veterinary workflow.
 
-## Scope Clarification
+### Scope Clarification
 - This story **does not** start or control processing.
 - This story **does not** expose processing internals beyond status and failure category.
 - This story **does not** expose run history or per-step details (future concern).
@@ -437,7 +427,7 @@ As a user, I want to see the current status of a document so that I understand i
 
 ---
 
-## Status Model (Conceptual)
+### Status Model (Conceptual)
 
 ### Document-level Status (derived)
 The document exposes a single **current status**, derived from its processing runs:
@@ -462,16 +452,16 @@ When status is `FAILED` or `TIMED_OUT`, a failure category is exposed:
 These categories are **explanatory**, not technical diagnostics.
 
 Note:
-- Upload failures are returned as request errors from `POST /documents` and do not create a ProcessingRun.
+- Upload failures are returned as request errors from `POST /documents/upload` and do not create a ProcessingRun.
 
 ---
 
-## API (Contract Checklist)
+### API (Contract Checklist)
 
-### Endpoint
+#### Endpoint
 - `GET /documents/{document_id}`
 
-### Response (success)
+#### Response (success)
 - HTTP `200 OK`
 - Body includes:
   - `document_id`
@@ -484,22 +474,23 @@ Note:
     - `failure_type` (nullable)
   - `updated_at`
 
-### Response (failure)
+#### Response (failure)
 - `404 Not Found`: document does not exist
 - `500 Internal Server Error`: unexpected system failure
 
 Error body MUST follow **API Error Response Format (Normative)**
+
 ---
 
-## Database (Persistence Checklist)
+### Database (Persistence Checklist)
 
-### Source of Truth
+#### Source of Truth
 - Document status is **derived**, not manually set.
 - The system determines status based on:
   - latest processing run state,
   - upload state if no runs exist.
 
-### Tables / Entities
+#### Tables / Entities
 Uses:
 - `Document`
 - `DocumentStatusHistory`
@@ -509,7 +500,7 @@ No new tables are introduced by this story.
 
 ---
 
-## State Derivation Rules
+### State Derivation Rules
 
 - If no processing run exists:
   - status = `UPLOADED`
@@ -524,13 +515,13 @@ No new tables are introduced by this story.
 
 The document status must always be **deterministic**.
 
-### Implementation Rule (Normative)
+#### Implementation Rule (Normative)
 - Status derivation MUST be implemented in a single, shared domain service used by:
   - `GET /documents/{id}`
   - `GET /documents` (list)
 ---
 
-## UI / UX Checklist
+### UI / UX Checklist
 
 - Status is visible wherever the document is listed or viewed.
 - Status is displayed using human-readable language (not enums).
@@ -540,7 +531,7 @@ The document status must always be **deterministic**.
 
 ---
 
-## Observability Checklist (MVP)
+### Observability Checklist (MVP)
 
 - Emit structured log when document status is queried:
   - `document_id`
@@ -555,13 +546,13 @@ Logs are best-effort and must not block requests.
 
 ---
 
-## Tests Checklist
+### Tests Checklist
 
-### Unit Tests
+#### Unit Tests
 - Status derivation logic for all run states.
 - Failure category mapping.
 
-### Integration Tests
+#### Integration Tests
 - `GET /documents/{id}` returns correct status after:
   - upload only,
   - processing started,
@@ -572,7 +563,7 @@ Logs are best-effort and must not block requests.
 
 ---
 
-## Definition of Done (DoD)
+### Definition of Done (DoD)
 
 - [ ] Status derivation logic implemented and documented
 - [ ] API endpoint returns correct current status
@@ -605,7 +596,7 @@ As a user, I want to download or preview the original uploaded document so that 
 - No exact PDF coordinate overlays are implemented in the MVP.
 
 
-## Scope Clarification
+### Scope Clarification
 - This story only handles **original document access**.
 - This story does **not**:
   - modify documents,
@@ -616,10 +607,10 @@ As a user, I want to download or preview the original uploaded document so that 
 
 ---
 
-## API (Contract Checklist)
+### API (Contract Checklist)
 
 ### Download Endpoint
-- `GET /documents/{document_id}/original`
+- `GET /documents/{document_id}/download`
 
 ### Response (success)
 - HTTP `200 OK`
@@ -637,7 +628,7 @@ Error body MUST follow **API Error Response Format (Normative)**.
 
 ---
 
-## Filesystem Access Rules
+### Filesystem Access Rules
 
 - Original PDFs are retrieved from filesystem storage using `storage_path`.
 - File access must be read-only.
@@ -648,7 +639,7 @@ Error body MUST follow **API Error Response Format (Normative)**.
 
 ---
 
-## UI / UX Checklist
+### UI / UX Checklist
 
 ### Preview
 - The UI renders PDFs using **PDF.js (`pdfjs-dist`)**.
@@ -666,7 +657,7 @@ Error body MUST follow **API Error Response Format (Normative)**.
 
 ---
 
-## State & Processing Independence
+### State & Processing Independence
 
 - Document preview and download:
   - are allowed regardless of processing state,
@@ -675,7 +666,7 @@ Error body MUST follow **API Error Response Format (Normative)**.
 
 ---
 
-## Observability Checklist (MVP)
+### Observability Checklist (MVP)
 
 - Emit structured log on access:
   - `document_id`
@@ -691,7 +682,7 @@ Logs must be best-effort and must not block access.
 
 ---
 
-## Tests Checklist
+### Tests Checklist
 
 ### Unit Tests
 - Filesystem retrieval logic.
@@ -706,7 +697,7 @@ Logs must be best-effort and must not block access.
 
 ---
 
-## Definition of Done (DoD)
+### Definition of Done (DoD)
 
 - [ ] Download endpoint implemented
 - [ ] Original file retrieved from filesystem
@@ -739,7 +730,7 @@ As a veterinarian, I want to see a list of uploaded documents and their current 
 - Ensure the list can be refreshed to reflect ongoing processing.
 - Map internal processing states to user-friendly status labels.
 
-## Scope Clarification
+### Scope Clarification
 - This story provides a **read-only list view** of documents and their derived status.
 - This story does **not**:
   - introduce reviewer/gating workflows,
@@ -749,7 +740,7 @@ As a veterinarian, I want to see a list of uploaded documents and their current 
 
 ---
 
-## API (Contract Checklist)
+### API (Contract Checklist)
 
 ### Endpoint
 - `GET /documents`
@@ -781,7 +772,7 @@ Error body MUST follow **API Error Response Format (Normative)**.
 
 ---
 
-## Status Model & Mapping
+### Status Model & Mapping
 
 ### Internal (system) status (derived)
 The API uses the derived document status:
@@ -815,7 +806,7 @@ No governance concepts (e.g., "approval", "operator review") are exposed.
 
 ---
 
-## Database (Read Model Checklist)
+### Database (Read Model Checklist)
 
 - The list view reads from `Document` and derived status rules.
 - Status must remain consistent with:
@@ -829,7 +820,7 @@ No new tables are required for this story.
 
 ---
 
-## UI / UX Checklist
+### UI / UX Checklist
 
 - Provide a list/table view with:
   - filename
@@ -845,7 +836,7 @@ No new tables are required for this story.
 
 ---
 
-## Observability Checklist (MVP)
+### Observability Checklist (MVP)
 
 - Emit structured log on list retrieval:
   - `event_type = DOCUMENT_LIST_VIEWED`
@@ -859,7 +850,7 @@ Logs must be best-effort and must not block requests.
 
 ---
 
-## Tests Checklist
+### Tests Checklist
 
 ### Unit Tests
 - Status mapping rules (`internal_status` → `status_label`)
@@ -874,7 +865,7 @@ Logs must be best-effort and must not block requests.
 
 ---
 
-## Definition of Done (DoD)
+### Definition of Done (DoD)
 
 - [ ] List endpoint implemented and documented
 - [ ] Returns filename, upload date, status, and failure_type (when applicable)
@@ -914,7 +905,7 @@ As a veterinarian, I want uploaded PDF documents to be processed automatically s
 - Ensure downstream features (raw text, structured data, confidence) are always linked to a specific processing run.
 - Expose enough processing context (latest run + failure type) for the frontend to explain what happened without additional screens.
 
-## Scope Clarification
+### Scope Clarification
 - This story introduces **automatic background processing**.
 - This story does **not**:
   - introduce concurrent processing runs,
@@ -924,7 +915,7 @@ As a veterinarian, I want uploaded PDF documents to be processed automatically s
 
 ---
 
-## Processing Model
+### Processing Model
 
 ### Automatic Trigger
 - A processing run is automatically created after a document is uploaded.
@@ -932,8 +923,8 @@ As a veterinarian, I want uploaded PDF documents to be processed automatically s
 - API requests must never block on processing.
 
 ### Activation Note (Normative)
-- In Release 1, `POST /documents` does NOT create runs.
-- Starting in Release 2 (US-05), `POST /documents` MUST create/enqueue a ProcessingRun non-blockingly.
+- In Release 1, `POST /documents/upload` does NOT create runs.
+- Starting in Release 2 (US-05), `POST /documents/upload` MUST create/enqueue a ProcessingRun non-blockingly.
  
 ---
 
@@ -964,7 +955,7 @@ As a veterinarian, I want uploaded PDF documents to be processed automatically s
 
 ---
 
-## Failure Classification
+### Failure Classification
 
 When a run fails, a **single high-level failure type** must be recorded:
 
@@ -980,7 +971,7 @@ Failure types are:
 
 ---
 
-## State Transitions
+### State Transitions
 
 - `PROCESSING` → `COMPLETED`
 - `PROCESSING` → `FAILED`
@@ -990,7 +981,7 @@ The document’s derived status must always reflect the **latest known run state
 
 ---
 
-## Reprocessing Rules
+### Reprocessing Rules
 
 - Reprocessing is **manual only**.
 - Triggered via explicit user action.
@@ -1002,7 +993,7 @@ The document’s derived status must always reflect the **latest known run state
 
 ---
 
-## Data Persistence Rules
+### Data Persistence Rules
 
 ### ProcessingRun Entity
 Each run persists:
@@ -1026,7 +1017,7 @@ Each run persists:
 
 ---
 
-## API (Contract Checklist)
+### API (Contract Checklist)
 
 ### Trigger Processing (automatic)
 - Implicitly triggered after upload (no direct API call).
@@ -1052,7 +1043,7 @@ Error body MUST follow **API Error Response Format (Normative)**.
 
 ---
 
-## Frontend Context Requirements
+### Frontend Context Requirements
 
 The API must expose enough context for the UI to explain processing without extra screens:
 
@@ -1069,7 +1060,7 @@ The UI must be able to answer:
 
 ---
 
-## Observability Checklist (MVP)
+### Observability Checklist (MVP)
 
 - Emit structured logs for:
   - run creation
@@ -1085,7 +1076,7 @@ The UI must be able to answer:
 
 ---
 
-## Tests Checklist
+### Tests Checklist
 
 ### Unit Tests
 - Processing run state transitions.
@@ -1101,7 +1092,7 @@ The UI must be able to answer:
 
 ---
 
-## Definition of Done (DoD)
+### Definition of Done (DoD)
 
 - [ ] Automatic processing triggered after upload
 - [ ] Processing runs persisted as first-class entities
@@ -1138,7 +1129,7 @@ As a veterinarian, I want to view the raw text extracted from a document so that
 - Allow the frontend to toggle visibility of raw text without reprocessing the document.
 - Frontend uses TanStack Query to manage loading/error states for extracted text (no custom client caching logic).
 
-## Scope Clarification
+### Scope Clarification
 - This story exposes **read-only** access to extracted text artifacts.
 - This story does **not**:
   - trigger reprocessing,
@@ -1148,7 +1139,7 @@ As a veterinarian, I want to view the raw text extracted from a document so that
 
 ---
 
-## Data Model (Artifacts)
+### Data Model (Artifacts)
 
 ### Artifact: ExtractedText
 Extracted text is a first-class, versioned artifact **per processing run**.
@@ -1167,7 +1158,7 @@ Minimum fields (conceptual):
 
 ---
 
-## Processing Dependencies
+### Processing Dependencies
 - Extracted text is produced by the extraction step of **US-05** processing.
 - If the latest run is:
   - `RUNNING` / `QUEUED`: extracted text may not exist yet
@@ -1176,7 +1167,7 @@ Minimum fields (conceptual):
 
 ---
 
-## API (Contract Checklist)
+### API (Contract Checklist)
 
 ### Endpoint
 - `GET /documents/{document_id}/runs/{run_id}/extracted-text`
@@ -1206,7 +1197,7 @@ Error body MUST follow **API Error Response Format (Normative)**.
 
 ---
 
-## UI / UX Checklist
+### UI / UX Checklist
 
 - Extracted text is hidden by default.
 - A single action (e.g., “Show extracted text”) reveals it inline (no navigation to a separate workflow).
@@ -1224,7 +1215,7 @@ Error body MUST follow **API Error Response Format (Normative)**.
 
 ---
 
-## Observability Checklist (MVP)
+### Observability Checklist (MVP)
 
 - Emit structured log when extracted text is requested:
   - `document_id`
@@ -1239,7 +1230,7 @@ Logs must be best-effort and must not block the request.
 
 ---
 
-## Tests Checklist
+### Tests Checklist
 
 ### Unit Tests
 - Artifact retrieval logic (by `document_id` + `run_id`)
@@ -1255,7 +1246,7 @@ Logs must be best-effort and must not block the request.
 
 ---
 
-## Definition of Done (DoD)
+### Definition of Done (DoD)
 
 - [ ] Extracted text persisted as a first-class artifact per run
 - [ ] Document language detected and persisted per run
@@ -1301,7 +1292,7 @@ As a veterinarian, I want to review the system’s interpretation of a document 
 - Confidence is rendered as a visual attention signal (qualitative first, numeric optional), and never disables actions or triggers confirmation flows.
 - Frontend uses TanStack Query (useQuery / useMutation) and invalidation for status/interpretation/edits/review completion.
 
-## Scope Clarification
+### Scope Clarification
 - This story introduces the **core review experience**.
 - This story does **not**:
   - enforce approvals or gating,
@@ -1311,7 +1302,7 @@ As a veterinarian, I want to review the system’s interpretation of a document 
 
 ---
 
-## Data Model (Structured Interpretation)
+### Data Model (Structured Interpretation)
 
 ### StructuredInterpretation (per processing run)
 Structured data is a **versioned, first-class artifact** linked to a specific run.
@@ -1336,7 +1327,7 @@ Minimum fields (conceptual):
 
 ---
 
-## Evidence Model (Approximate by Design)
+### Evidence Model (Approximate by Design)
 
 - Evidence is stored per field as:
   - `page_number`
@@ -1351,7 +1342,7 @@ Failure to highlight evidence must **never block review**.
 
 ---
 
-## API (Contract Checklist)
+### API (Contract Checklist)
 
 ### Review Endpoint
 - `GET /documents/{document_id}/runs/{run_id}/review`
@@ -1379,7 +1370,7 @@ Failure to highlight evidence must **never block review**.
 
 ---
 
-## UI / UX Checklist
+### UI / UX Checklist
 
 ### Layout
 - Side-by-side view:
@@ -1419,7 +1410,7 @@ Failure to highlight evidence must **never block review**.
 
 ---
 
-## Processing & State Independence
+### Processing & State Independence
 
 - Review is allowed when:
   - the latest run is `COMPLETED`.
@@ -1430,7 +1421,7 @@ Failure to highlight evidence must **never block review**.
 
 ---
 
-## Observability Checklist (MVP)
+### Observability Checklist (MVP)
 
 - Emit structured log when review view is opened:
   - `document_id`
@@ -1446,7 +1437,7 @@ Logs must be best-effort and must not block rendering.
 
 ---
 
-## Tests Checklist
+### Tests Checklist
 
 ### Unit Tests
 - Confidence rendering rules (qualitative mapping).
@@ -1461,7 +1452,7 @@ Logs must be best-effort and must not block rendering.
 
 ---
 
-## Definition of Done (DoD)
+### Definition of Done (DoD)
 
 - [ ] Structured interpretations generated per run
 - [ ] Per-field confidence persisted and exposed
@@ -1501,7 +1492,7 @@ As a veterinarian, I want to edit the structured information extracted from a do
 - pending_review only affects global schema evolution; it must not change or block the veterinarian workflow in the MVP.
 - Frontend clearly distinguishes machine-extracted values from veterinarian-edited values (scan-friendly visual indicator).
 
-## Scope Clarification
+### Scope Clarification
 - This story covers **veterinarian edits only**.
 - This story does **not**:
   - update global schemas,
@@ -1511,7 +1502,7 @@ As a veterinarian, I want to edit the structured information extracted from a do
 
 ---
 
-## Data Model (Versioned Structured Records)
+### Data Model (Versioned Structured Records)
 
 ### StructuredInterpretationVersion
 Edits create a **new version** of structured data linked to a processing run.
@@ -1536,7 +1527,7 @@ Minimum fields (conceptual):
 
 ---
 
-## Field-Level Change Log
+### Field-Level Change Log
 
 Each edit must generate a change log entry.
 
@@ -1554,7 +1545,7 @@ Minimum fields:
 
 ---
 
-## Structural Change Detection
+### Structural Change Detection
 
 - Structural changes include:
   - adding a new field,
@@ -1569,7 +1560,7 @@ Minimum fields:
 
 ---
 
-## API (Contract Checklist)
+### API (Contract Checklist)
 
 ### Edit Structured Data
 - `POST /documents/{document_id}/runs/{run_id}/interpretations`
@@ -1598,7 +1589,7 @@ Minimum fields:
 
 ---
 
-## Reset via Reprocess
+### Reset via Reprocess
 
 - Reprocessing the document:
   - creates a new processing run,
@@ -1608,7 +1599,7 @@ Minimum fields:
 
 ---
 
-## UI / UX Checklist
+### UI / UX Checklist
 
 - Edited fields are visually distinguishable from machine-extracted fields
   (e.g., icon, color, or label).
@@ -1620,7 +1611,7 @@ Minimum fields:
 
 ---
 
-## Observability Checklist (MVP)
+### Observability Checklist (MVP)
 
 - Emit structured log for each edit:
   - `document_id`
@@ -1636,7 +1627,7 @@ Logs must be best-effort and must not block the edit flow.
 
 ---
 
-## Tests Checklist
+### Tests Checklist
 
 ### Unit Tests
 - Version creation logic (append-only).
@@ -1653,7 +1644,7 @@ Logs must be best-effort and must not block the edit flow.
 
 ---
 
-## Definition of Done (DoD)
+### Definition of Done (DoD)
 
 - [ ] Structured data edits accepted via API
 - [ ] New interpretation version created per edit
@@ -1686,7 +1677,7 @@ As a veterinarian, I want the system to learn from my normal corrections without
 - Do not trigger global behavior changes in the MVP.
 - Do not implement confidence-driven automation or any action gating based on confidence.
 
-## Scope Clarification
+### Scope Clarification
 - This story captures **learning signals only**.
 - This story does **not**:
   - retrain models,
@@ -1697,7 +1688,7 @@ As a veterinarian, I want the system to learn from my normal corrections without
 
 ---
 
-## Learning Signal Model (Conceptual)
+### Learning Signal Model (Conceptual)
 
 ### LearningSignal
 A learning signal represents an implicit correction derived from normal editing.
@@ -1727,7 +1718,7 @@ Minimum fields:
 
 ---
 
-## Signal Capture Rules
+### Signal Capture Rules
 
 - A learning signal is recorded **automatically** whenever:
   - a veterinarian edits a machine-extracted field.
@@ -1740,7 +1731,7 @@ Minimum fields:
 
 ---
 
-## Confidence Adjustment Rules (MVP)
+### Confidence Adjustment Rules (MVP)
 
 - Confidence updates are:
   - **local** (field-level, interpretation-level),
@@ -1759,7 +1750,7 @@ Minimum fields:
 
 ---
 
-## Non-Goals (Explicit)
+### Non-Goals (Explicit)
 
 Do **not** implement:
 - confidence-driven automation,
@@ -1770,7 +1761,7 @@ Do **not** implement:
 
 ---
 
-## API (Internal Only)
+### API (Internal Only)
 
 - No new public API endpoints are required.
 - Learning signal capture is **side-effect only** of structured data edits (US-08).
@@ -1778,7 +1769,7 @@ Do **not** implement:
 
 ---
 
-## Observability Checklist (MVP)
+### Observability Checklist (MVP)
 
 - Emit structured log when a learning signal is recorded:
   - `document_id`
@@ -1791,7 +1782,7 @@ Do **not** implement:
 
 ---
 
-## Tests Checklist
+### Tests Checklist
 
 ### Unit Tests
 - Learning signal creation on field edit.
@@ -1806,7 +1797,7 @@ Do **not** implement:
 
 ---
 
-## Definition of Done (DoD)
+### Definition of Done (DoD)
 
 - [ ] Learning signals captured automatically on edits
 - [ ] Signals linked to document, run, version, and field
@@ -1819,16 +1810,16 @@ Do **not** implement:
 
 ---
 
-# US-10 — Change document language and reprocess
+## US-10 — Change document language and reprocess
 
-## User Story
+### User Story
 **As a veterinarian**,  
 I want to change the detected language of a document  
 **so that** it can be reprocessed correctly if the automatic detection was wrong.
 
 ---
 
-## Acceptance Criteria
+### Acceptance Criteria
 - The user can see the language automatically detected for a document.
 - The user can manually select a different language.
 - The user can trigger reprocessing after changing the language.
@@ -1840,7 +1831,7 @@ I want to change the detected language of a document
 
 ---
 
-## Scope Clarification
+### Scope Clarification
 - This story introduces a **manual context override** (language).
 - This story does **not**:
   - change language automatically after user edits,
@@ -1850,7 +1841,7 @@ I want to change the detected language of a document
 
 ---
 
-## Language Model
+### Language Model
 
 ### Detected vs Overridden Language
 For each document:
@@ -1866,7 +1857,7 @@ For each document:
 
 ---
 
-## Persistence Rules
+### Persistence Rules
 
 ### Document Metadata
 Extend document metadata to include:
@@ -1885,7 +1876,7 @@ This ensures:
 
 ---
 
-## Reprocessing Behavior
+### Reprocessing Behavior
 
 - Changing the language **does not automatically reprocess**.
 - The user must explicitly trigger reprocessing.
@@ -1897,7 +1888,7 @@ This ensures:
 
 ---
 
-## API (Contract Checklist)
+### API (Contract Checklist)
 
 ### Update Language Override
 - `PATCH /documents/{document_id}/language`
@@ -1924,7 +1915,7 @@ Note:
 
 ---
 
-## Reprocess with New Language
+### Reprocess with New Language
 
 Reuse existing endpoint:
 - `POST /documents/{document_id}/reprocess`
@@ -1934,7 +1925,7 @@ The newly created run must record:
 
 ---
 
-## UI / UX Checklist
+### UI / UX Checklist
 
 **Display:**
 - detected language
@@ -1959,7 +1950,7 @@ The newly created run must record:
 
 ---
 
-## Observability Checklist (MVP)
+### Observability Checklist (MVP)
 
 Emit structured log when language override is set:
 - `document_id`
@@ -1985,7 +1976,7 @@ Error body MUST follow **API Error Response Format (Normative)**.
 
 ---
 
-## Tests Checklist
+### Tests Checklist
 
 ### Unit Tests
 - Effective language derivation logic
@@ -2001,7 +1992,7 @@ Error body MUST follow **API Error Response Format (Normative)**.
 
 ---
 
-## Definition of Done (DoD)
+### Definition of Done (DoD)
 
 - [ ] Detected language persisted per document
 - [ ] Manual language override supported
@@ -2034,7 +2025,7 @@ As a veterinarian, I want to see the processing history of a document so that I 
 - Translate technical failures into user-friendly explanations.
 - Ensure historical records cannot be modified.
 
-## Scope Clarification
+### Scope Clarification
 - This story provides **visibility only**.
 - This story does **not**:
   - control processing,
@@ -2044,7 +2035,7 @@ As a veterinarian, I want to see the processing history of a document so that I 
 
 ---
 
-## Processing History Model (Authoritative)
+### Processing History Model (Authoritative)
 
 Processing history is derived from:
 - `ProcessingRun` records (run lifecycle)
@@ -2068,7 +2059,7 @@ Minimum derived fields:
 
 ---
 
-## Failure Explanation Mapping
+### Failure Explanation Mapping
 
 - Technical failure types (e.g. `EXTRACTION_FAILED`) must be mapped to
   **user-friendly explanations**, such as:
@@ -2081,7 +2072,7 @@ Minimum derived fields:
 
 ---
 
-## API (Contract Checklist)
+### API (Contract Checklist)
 
 ### Endpoint
 - `GET /documents/{document_id}/processing-history`
@@ -2113,7 +2104,7 @@ Error body MUST follow **API Error Response Format (Normative)**.
 
 ---
 
-## UI / UX Checklist
+### UI / UX Checklist
 
 - Display processing history as a **timeline or ordered list**.
 - Group steps by processing run.
@@ -2129,7 +2120,7 @@ Error body MUST follow **API Error Response Format (Normative)**.
 
 ---
 
-## Observability Checklist (MVP)
+### Observability Checklist (MVP)
 
 - Emit structured log when history is viewed:
   - `document_id`
@@ -2139,7 +2130,7 @@ Error body MUST follow **API Error Response Format (Normative)**.
 
 ---
 
-## Tests Checklist
+### Tests Checklist
 
 ### Unit Tests
 - Correct ordering of events by timestamp.
@@ -2154,7 +2145,7 @@ Error body MUST follow **API Error Response Format (Normative)**.
 
 ---
 
-## Definition of Done (DoD)
+### Definition of Done (DoD)
 
 - [ ] Processing events persisted as append-only records
 - [ ] History API endpoint implemented and documented
@@ -2184,7 +2175,7 @@ As a veterinarian, I want to mark a document as reviewed once I have finished ch
 - Ensure review status remains consistent with edits.
 - Frontend uses a single primary action for completion and keeps the rest of the flow non-blocking.
 
-## Scope Clarification
+### Scope Clarification
 - This story introduces a **human review completion flag**.
 - This story does **not**:
   - approve data,
@@ -2195,7 +2186,7 @@ As a veterinarian, I want to mark a document as reviewed once I have finished ch
 
 ---
 
-## Review Status Model
+### Review Status Model
 
 ### ReviewStatus (document-level, independent)
 Review status is **separate from processing state**.
@@ -2211,7 +2202,7 @@ Allowed values:
 
 ---
 
-## Consistency Rules
+### Consistency Rules
 
 - Default state after upload: `IN_REVIEW`.
 - When the user marks the document as reviewed:
@@ -2224,7 +2215,7 @@ Allowed values:
 
 ---
 
-## Persistence
+### Persistence
 
 ### Document Review Metadata
 Persist review status separately from processing data.
@@ -2237,10 +2228,10 @@ Minimum fields (conceptual):
 
 ---
 
-## API (Contract Checklist)
+### API (Contract Checklist)
 
 ### Mark as Reviewed
-- `POST /documents/{document_id}/mark-reviewed`
+- `POST /documents/{document_id}/reviewed`
 
 #### Response (success)
 - HTTP `200 OK`
@@ -2265,7 +2256,7 @@ No separate endpoint is required for read access.
 
 ---
 
-## UI / UX Checklist
+### UI / UX Checklist
 
 - Provide a **single primary action**:
   - “Mark as reviewed”
@@ -2281,7 +2272,7 @@ No separate endpoint is required for read access.
 
 ---
 
-## Observability Checklist (MVP)
+### Observability Checklist (MVP)
 
 - Emit structured log when document is marked as reviewed:
   - `document_id`
@@ -2297,7 +2288,7 @@ Logs must be best-effort and must not block actions.
 
 ---
 
-## Tests Checklist
+### Tests Checklist
 
 ### Unit Tests
 - Review status transitions (`IN_REVIEW` → `REVIEWED`).
@@ -2312,7 +2303,7 @@ Logs must be best-effort and must not block actions.
 
 ---
 
-## Definition of Done (DoD)
+### Definition of Done (DoD)
 
 - [ ] Review status persisted independently of processing
 - [ ] Mark-reviewed endpoint implemented
@@ -2346,7 +2337,7 @@ As a reviewer, I want to review aggregated pending structural changes so that I 
 - Expose aggregated pending changes via a reviewer-facing API.
 - Ensure reviewer actions do not affect document-level workflows.
 
-## Scope Clarification
+### Scope Clarification
 - This story introduces **schema governance tooling** for reviewers.
 - This story does **not**:
   - modify existing document interpretations,
@@ -2356,7 +2347,7 @@ As a reviewer, I want to review aggregated pending structural changes so that I 
 
 ---
 
-## Structural Change Aggregation Model
+### Structural Change Aggregation Model
 
 ### StructuralChangeCandidate
 A structural change candidate represents an **aggregated pattern** derived from multiple document-level edits.
@@ -2383,7 +2374,7 @@ Minimum fields (conceptual):
 
 ---
 
-## Aggregation Rules
+### Aggregation Rules
 
 - Document-level structural changes (from US-08 / US-09):
   - are collected as raw signals,
@@ -2396,7 +2387,7 @@ Minimum fields (conceptual):
 
 ---
 
-## Reviewer Actions
+### Reviewer Actions
 
 ### Allowed Actions
 - **Accept** a structural change:
@@ -2414,7 +2405,7 @@ Reviewer actions must **not**:
 
 ---
 
-## API (Reviewer-Facing Only)
+### API (Reviewer-Facing Only)
 
 ### List Pending Structural Changes
 - `GET /reviewer/structural-changes`
@@ -2444,7 +2435,7 @@ Reviewer actions must **not**:
 }
 ```
 
-## Response (success)
+### Response (success)
 
 **HTTP 200 OK**
 
@@ -2455,7 +2446,7 @@ Reviewer actions must **not**:
 
 ---
 
-## Persistence Rules
+### Persistence Rules
 
 Structural change candidates are stored separately from:
 - document data
@@ -2469,7 +2460,7 @@ Reviewer decisions are:
 
 ---
 
-## UI / UX Checklist (Reviewer)
+### UI / UX Checklist (Reviewer)
 
 - Reviewer UI is separate from veterinarian UI.
 - Changes are displayed:
@@ -2484,7 +2475,7 @@ Reviewer decisions are:
 
 ---
 
-## Observability Checklist (MVP)
+### Observability Checklist (MVP)
 
 Emit structured log when:
 - structural change candidates are listed
@@ -2500,7 +2491,7 @@ Logs must be best-effort and must not block reviewer actions.
 
 ---
 
-## Tests Checklist
+### Tests Checklist
 
 ### Unit Tests
 - Aggregation logic from document-level signals
@@ -2515,7 +2506,7 @@ Logs must be best-effort and must not block reviewer actions.
 
 ---
 
-## Definition of Done (DoD)
+### Definition of Done (DoD)
 
 - [ ] Structural changes aggregated by pattern (not per document)
 - [ ] Pending structural change candidates persisted separately
@@ -2566,7 +2557,7 @@ As a reviewer, I want to approve a structural change so that future documents ar
 - Persist reviewer identity and timestamp.
 - Apply schema updates prospectively only.
 
-## Scope Clarification
+### Scope Clarification
 - This story introduces **canonical schema evolution**.
 - This story does **not**:
   - automatically reprocess existing documents,
@@ -2576,7 +2567,7 @@ As a reviewer, I want to approve a structural change so that future documents ar
 
 ---
 
-## Canonical Schema Model
+### Canonical Schema Model
 
 ### CanonicalSchema (versioned)
 A canonical schema is a versioned contract used by the interpretation step.
@@ -2596,7 +2587,7 @@ Minimum fields (conceptual):
 
 ---
 
-## Promotion Rules (Prospective Only)
+### Promotion Rules (Prospective Only)
 
 - Approving a structural change:
   - creates a new canonical schema version,
@@ -2609,7 +2600,7 @@ Minimum fields (conceptual):
 
 ---
 
-## Traceability & Audit
+### Traceability & Audit
 
 Each approval must persist:
 - `candidate_id`
@@ -2622,7 +2613,7 @@ All actions are auditable and immutable.
 
 ---
 
-## API (Reviewer-Facing Only)
+### API (Reviewer-Facing Only)
 
 ### Approve Structural Change
 - `POST /reviewer/structural-changes/{candidate_id}/approve`
@@ -2654,7 +2645,7 @@ Returns:
 
 ---
 
-## Processing Integration
+### Processing Integration
 
 - Interpretation logic must reference the **current canonical schema version** when starting a new run.
 - Each processing run persists:
@@ -2664,7 +2655,7 @@ Returns:
 
 ---
 
-## UI / UX Checklist (Reviewer)
+### UI / UX Checklist (Reviewer)
 
 - Reviewer UI clearly shows:
   - pending candidate details,
@@ -2678,7 +2669,7 @@ Returns:
 
 ---
 
-## Observability Checklist (MVP)
+### Observability Checklist (MVP)
 
 - Emit structured log on approval:
   - `candidate_id`
@@ -2695,7 +2686,7 @@ Logs must be best-effort and must not block reviewer actions.
 
 ---
 
-## Tests Checklist
+### Tests Checklist
 
 ### Unit Tests
 - Canonical schema version creation (append-only).
@@ -2711,7 +2702,7 @@ Logs must be best-effort and must not block reviewer actions.
 
 ---
 
-## Definition of Done (DoD)
+### Definition of Done (DoD)
 
 - [ ] Approved changes promoted into canonical schema
 - [ ] Canonical schema versioned on each approval
@@ -2724,6 +2715,7 @@ Logs must be best-effort and must not block reviewer actions.
 - [ ] Unit and integration tests passing
 
 ---
+
 ## US-16 — Reject or defer structural changes
 
 ### User Story
@@ -2742,7 +2734,7 @@ As a reviewer, I want to reject or defer a structural change so that unstable or
 - Exclude rejected changes from future confidence aggregation.
 - Keep deferred changes visible and reviewable.
 
-## Scope Clarification
+### Scope Clarification
 - This story governs **reviewer decision states** for structural change candidates.
 - This story does **not**:
   - modify existing document data,
@@ -2752,7 +2744,7 @@ As a reviewer, I want to reject or defer a structural change so that unstable or
 
 ---
 
-## Structural Change Decision Model
+### Structural Change Decision Model
 
 ### StructuralChangeCandidate (state machine)
 Candidates support the following states:
@@ -2769,7 +2761,7 @@ Candidates support the following states:
 
 ---
 
-## Decision Semantics
+### Decision Semantics
 
 ### Reject
 - Marks the candidate as `REJECTED`.
@@ -2785,7 +2777,7 @@ Candidates support the following states:
 
 ---
 
-## Confidence Aggregation Rules
+### Confidence Aggregation Rules
 
 - `REJECTED` candidates:
   - are excluded from future confidence and stability aggregation,
@@ -2797,7 +2789,7 @@ Candidates support the following states:
 
 ---
 
-## Persistence Rules
+### Persistence Rules
 
 ### Decision Record
 Persist reviewer decisions as immutable records:
@@ -2816,7 +2808,7 @@ Minimum fields (conceptual):
 
 ---
 
-## API (Reviewer-Facing Only)
+### API (Reviewer-Facing Only)
 
 ### Reject Structural Change
 - `POST /reviewer/structural-changes/{candidate_id}/reject`
@@ -2827,7 +2819,7 @@ Minimum fields (conceptual):
   "reason": "Optional explanation"
 }
 ```
-## Response (success)
+### Response (success)
 
 **HTTP 200 OK**
 
@@ -2839,7 +2831,7 @@ Minimum fields (conceptual):
 
 ---
 
-## Defer Structural Change
+### Defer Structural Change
 
 **POST** `/reviewer/structural-changes/{candidate_id}/defer`
 
@@ -2855,7 +2847,7 @@ Minimum fields (conceptual):
 
 ---
 
-## UI / UX Checklist (Reviewer)
+### UI / UX Checklist (Reviewer)
 
 - Reviewer UI clearly supports:
   - approve (US-15)
@@ -2868,7 +2860,7 @@ Minimum fields (conceptual):
 
 ---
 
-## Observability Checklist (MVP)
+### Observability Checklist (MVP)
 
 Emit structured log when a candidate is rejected:
 - `candidate_id`
@@ -2887,7 +2879,7 @@ Logs must be best-effort and must not block reviewer actions.
 
 ---
 
-## Tests Checklist
+### Tests Checklist
 
 ### Unit Tests
 - State transition rules (`PENDING → REJECTED | DEFERRED`)
@@ -2902,7 +2894,7 @@ Logs must be best-effort and must not block reviewer actions.
 
 ---
 
-## Definition of Done (DoD)
+### Definition of Done (DoD)
 
 - [ ] Structural change candidates support `REJECTED` and `DEFERRED` states
 - [ ] Rejection reason and timestamps persisted
@@ -2934,7 +2926,7 @@ As a reviewer, I want to identify and govern critical structural changes so that
 - Prevent automatic promotion of critical changes.
 - Ensure all critical decisions are auditable.
 
-## Scope Clarification
+### Scope Clarification
 - This story introduces **risk-aware governance** for schema evolution.
 - This story does **not**:
   - change document interpretations,
@@ -2944,7 +2936,7 @@ As a reviewer, I want to identify and govern critical structural changes so that
 
 ---
 
-## Criticality Model
+### Criticality Model
 
 ### CriticalConcept (configuration)
 A critical concept is a schema element whose change is **non-reversible or high-impact**.
@@ -2981,7 +2973,7 @@ Minimum fields (conceptual):
 
 ---
 
-## Governance Rules
+### Governance Rules
 
 - If `is_critical = true`:
   - the change **cannot** be auto-promoted,
@@ -2994,7 +2986,7 @@ Minimum fields (conceptual):
 
 ---
 
-## Reviewer Experience
+### Reviewer Experience
 
 - Reviewer can see:
   - critical flag,
@@ -3007,7 +2999,7 @@ Minimum fields (conceptual):
 
 ---
 
-## Persistence Rules
+### Persistence Rules
 
 - Criticality metadata is persisted **with the structural change candidate**.
 - Manual changes to criticality (future concern) are:
@@ -3016,7 +3008,7 @@ Minimum fields (conceptual):
 
 ---
 
-## API (Reviewer-Facing Only)
+### API (Reviewer-Facing Only)
 
 ### List Structural Changes (with criticality)
 - `GET /reviewer/structural-changes`
@@ -3034,7 +3026,7 @@ No additional endpoints are required for the MVP.
 
 ---
 
-## Observability Checklist (MVP)
+### Observability Checklist (MVP)
 
 - Emit structured log when a candidate is flagged as critical:
   - `candidate_id`
@@ -3051,7 +3043,7 @@ Logs must be best-effort and must not block reviewer actions.
 
 ---
 
-## Tests Checklist
+### Tests Checklist
 
 ### Unit Tests
 - Criticality rule evaluation.
@@ -3066,7 +3058,7 @@ Logs must be best-effort and must not block reviewer actions.
 
 ---
 
-## Definition of Done (DoD)
+### Definition of Done (DoD)
 
 - [ ] Criticality rules defined and configurable
 - [ ] Structural change candidates carry criticality metadata
@@ -3095,7 +3087,7 @@ As a reviewer, I want to see an audit trail of schema governance decisions so th
 - Prevent modification or deletion of audit records.
 - Keep governance data separate from document-level data.
 
-## Scope Clarification
+### Scope Clarification
 - This story provides **visibility and compliance-grade traceability**.
 - This story does **not**:
   - change schema behavior,
@@ -3105,7 +3097,7 @@ As a reviewer, I want to see an audit trail of schema governance decisions so th
 
 ---
 
-## Governance Audit Model
+### Governance Audit Model
 
 ### GovernanceDecision (append-only)
 Each governance action is persisted as an immutable record.
@@ -3133,7 +3125,7 @@ Minimum fields (conceptual):
 
 ---
 
-## Data Separation Rules
+### Data Separation Rules
 
 - Governance audit data is stored separately from:
   - document data,
@@ -3143,7 +3135,7 @@ Minimum fields (conceptual):
 
 ---
 
-## API (Reviewer-Facing, Read-Only)
+### API (Reviewer-Facing, Read-Only)
 
 ### Endpoint
 - `GET /reviewer/governance/audit-trail`
@@ -3170,7 +3162,7 @@ Minimum fields (conceptual):
 
 ---
 
-## UI / UX Checklist (Reviewer)
+### UI / UX Checklist (Reviewer)
 
 - Display as a chronological list (timeline or table).
 - Provide basic filtering (optional) to find decisions by:
@@ -3181,7 +3173,7 @@ Minimum fields (conceptual):
 
 ---
 
-## Observability Checklist (MVP)
+### Observability Checklist (MVP)
 
 - Emit structured log when audit trail is viewed:
   - `event_type = GOVERNANCE_AUDIT_TRAIL_VIEWED`
@@ -3191,7 +3183,7 @@ Minimum fields (conceptual):
 
 ---
 
-## Tests Checklist
+### Tests Checklist
 
 ### Unit Tests
 - Append-only enforcement (no update/delete paths).
@@ -3206,7 +3198,7 @@ Minimum fields (conceptual):
 
 ---
 
-## Definition of Done (DoD)
+### Definition of Done (DoD)
 
 - [ ] All governance decisions persisted in append-only log
 - [ ] Read-only reviewer API to retrieve governance history implemented
