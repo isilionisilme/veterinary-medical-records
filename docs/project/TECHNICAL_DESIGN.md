@@ -1615,3 +1615,17 @@ The repository must include a short justification (e.g., in `README.md` or an AD
 - Why PyMuPDF was chosen for extraction,
 - Why langdetect was chosen for language detection,
 - What is explicitly out of scope (OCR).
+
+## E4. Image OCR (MVP)
+
+Decision (Authoritative):
+- Use **Tesseract OCR** (system binary `tesseract`) for OCR of supported image uploads (`.png`, `.jpg`, `.jpeg`).
+
+Rationale:
+- Mature, widely available OCR engine.
+- Keeps Python dependencies lightweight (wrapper only).
+
+Rules:
+- OCR support must be available in the evaluator run path (recommended: Docker image includes tesseract).
+- If OCR is not available at runtime (e.g. local dev without tesseract), image extraction may fail as
+  `EXTRACTION_FAILED` with a visible, actionable message.

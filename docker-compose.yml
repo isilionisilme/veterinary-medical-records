@@ -1,0 +1,15 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - VET_RECORDS_DB_PATH=/app/backend/data/documents.db
+      - VET_RECORDS_STORAGE_PATH=/app/backend/storage
+      - VET_RECORDS_CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+    volumes:
+      - ./backend/data:/app/backend/data
+      - ./backend/storage:/app/backend/storage
+
