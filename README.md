@@ -30,48 +30,48 @@ This project explores an approach that assists veterinarians during document rev
 
 The repository documentation is intentionally split by audience and purpose.
 
-### Product design (human-oriented)
+Start here:
 
-📄 **`docs/PRODUCT_DESIGN.md`**
-
-Provides a short summary and a direct link to the **canonical product design document** (Google Docs), which contains the full problem framing, user experience design, and business rationale.
-
-This is the recommended starting point for reviewers interested in product and UX decisions.
+📄 **`docs/README.md`** — reading order + document authority.
 
 ---
 
-### Technical design (human-oriented)
+### Project documentation (authoritative)
 
-📄 **`docs/TECHNICAL_DESIGN.md`**
-
-Describes the system architecture, processing model, data versioning strategy, confidence handling, and explicit non-goals.
-
-A narrative, human-oriented version of the technical design is linked from this document and maintained separately as a single source of truth.
+📄 **`docs/project/PRODUCT_DESIGN.md`**  
+Product intent + semantics summary (with canonical Google Doc link).
 
 ---
 
-### Implementation plan (operational)
+📄 **`docs/project/UX_DESIGN.md`**  
+UX interaction contract (roles, workflow guarantees, confidence UX rules).
 
-📄 **`docs/IMPLEMENTATION_PLAN.md`**
-
-Defines:
-- the MVP scope,
-- user-facing releases,
-- detailed user stories with acceptance criteria,
-- and story-level technical requirements.
-
-This document is the **source of truth for implementation sequencing and scope**.
+📄 **`docs/project/TECHNICAL_DESIGN.md`**  
+Architecture + invariants + authoritative contracts (endpoint map, error semantics, state rules, schemas).
 
 ---
 
-### AI-assisted development context
+📄 **`docs/project/IMPLEMENTATION_PLAN.md`**  
+MVP scope + story order + acceptance criteria (sequencing authority).
 
-📄 **`docs/CONTEXT.md`**  
-📄 **`docs/AGENTS.md`**
+📄 **`docs/project/BACKEND_IMPLEMENTATION.md`**  
+Backend implementation details (“how”).
 
-These documents define engineering rules, architectural constraints, and working instructions for AI-assisted development.
+📄 **`docs/project/FRONTEND_IMPLEMENTATION.md`**  
+Frontend implementation details (“how”).
 
-They are operational in nature and not intended as narrative documentation.
+---
+
+### Shared engineering rules
+
+📄 **`docs/shared/AGENTS.md`**  
+AI Coding Assistant behavior rules for this repo.
+
+📄 **`docs/shared/ENGINEERING_PLAYBOOK.md`**  
+Engineering standards for implementation and changes.
+
+📄 **`docs/shared/UX_GUIDELINES.md`**  
+Shared UX principles referenced by project UX design.
 
 ---
 

@@ -542,8 +542,13 @@ Step-level:
 User actions:
 - `DOCUMENT_UPLOADED`
 - `REPROCESS_REQUESTED`
+- `DOCUMENT_LANGUAGE_OVERRIDDEN`
 - `MARK_REVIEWED`
 - `INTERPRETATION_EDITED`
+
+Reviewer actions:
+- `GOVERNANCE_DECISION_RECORDED`
+- `SCHEMA_VERSION_CREATED`
 
 Rules:
 - Structured logs remain best-effort and never block processing.
@@ -725,9 +730,12 @@ Key fields:
 - `storage_path`
 - `created_at`
 
+Stored workflow fields:
+- `review_status` (`IN_REVIEW | REVIEWED`)
+- `language_override` (nullable; see B3.1 “Language override endpoint”)
+
 Derived / external:
 - `status` (derived; see Appendix A)
-- `review_status` (`IN_REVIEW | REVIEWED`)
 
 Invariants:
 - A document must exist before any run.
@@ -853,6 +861,70 @@ If any user story lists different endpoint paths, treat them as non-normative ex
 
 ---
 
+### B2.7 SchemaVersion (MVP, Authoritative)
+
+**Purpose**: Stores the canonical schema versions used by new processing runs.
+
+Key fields:
+- `schema_version_id` (PK)
+- `version_number` (monotonic integer)
+- `schema_definition` (JSON)
+- `created_at`
+- `created_by` (reviewer identity)
+- `change_summary` (nullable)
+
+Invariants:
+- Append-only; schema versions are immutable.
+- “Current schema” is resolved as the schema version with the highest `version_number`.
+- New processing runs MUST persist `schema_version_used` resolved at run creation time (B2.2).
+
+---
+
+### B2.8 StructuralChangeCandidate (MVP, Authoritative)
+
+**Purpose**: Represents an aggregated, reviewer-facing candidate for schema evolution derived from repeated document-level edit patterns.
+
+Key fields:
+- `candidate_id` (PK)
+- `change_type` (closed set; e.g. `NEW_KEY | KEY_RENAME | KEY_DEPRECATION | KEY_MAPPING`)
+- `source_key` (nullable)
+- `target_key`
+- `occurrence_count`
+- `status` (`PENDING | APPROVED | REJECTED | DEFERRED`)
+- `created_at`
+- `updated_at`
+- `evidence_samples` (JSON; small, representative samples: page + snippet + optional document reference)
+
+Invariants:
+- Candidates are reviewer-facing only.
+- Candidate details are never exposed in veterinarian workflows.
+- Status changes MUST be traceable via append-only `GovernanceDecision` (B2.9).
+- Candidate decisions apply prospectively only (Appendix A7).
+
+---
+
+### B2.9 GovernanceDecision (MVP, Authoritative)
+
+**Purpose**: Append-only audit log of reviewer governance actions (schema evolution decisions).
+
+Key fields:
+- `decision_id` (PK)
+- `candidate_id` (nullable)
+- `decision_type` (closed set; `APPROVE | REJECT | DEFER | FLAG_CRITICAL`)
+- `previous_status` (nullable)
+- `new_status` (nullable)
+- `schema_version_id` (nullable; present when approval creates a new schema version)
+- `reviewer_id`
+- `reason` (nullable)
+- `created_at`
+
+Invariants:
+- Append-only and immutable.
+- Stored separately from document-level data (Appendix A8).
+- Reviewer actions never modify existing documents or trigger implicit reprocessing (Appendix A7).
+
+---
+
 ## B3. Minimal API Endpoint Map (Authoritative)
 
 This section defines the **minimum endpoint surface** for the MVP.
@@ -873,6 +945,10 @@ This section defines the **minimum endpoint surface** for the MVP.
   - Create new processing run.
 - `POST /documents/{id}/reviewed`
   - Mark as reviewed.
+- `PATCH /documents/{id}/language`
+  - Set or clear a document-level language override (affects subsequent runs only).
+- `GET /documents/{id}/processing-history`
+  - Read-only processing history (runs + step statuses).
 
 ### Supported upload types (Normative, MVP)
 
@@ -909,10 +985,25 @@ Rules:
     - confidence and evidence.
 - `GET /runs/{run_id}/artifacts/raw-text`
   - Retrieve extracted text.
+- `POST /runs/{run_id}/interpretations`
+  - Apply veterinarian edits by creating a new interpretation version (append-only).
 
 Rules:
 - Status views use **latest run**.
 - Review views use **latest completed run**.
+
+---
+
+### Reviewer / Governance (Reviewer-facing only)
+
+- `GET /reviewer/structural-changes`
+  - List pending structural change candidates.
+- `POST /reviewer/structural-changes/{candidate_id}/decision`
+  - Record a governance decision (approve/reject/defer).
+- `GET /reviewer/schema/current`
+  - Retrieve the current canonical schema version.
+- `GET /reviewer/governance/audit-trail`
+  - Retrieve append-only governance decision history.
 
 ---
 
@@ -921,13 +1012,17 @@ Rules:
 - `GET /documents`
   Returns each document with:
   - derived `document_status` (from latest run; Appendix A),
-  - `latest_run_id`, `latest_run_state` (nullable if none exists).
+  - `latest_run_id`, `latest_run_state` (nullable if none exists),
+  - `latest_run_failure_type` (nullable),
+  - `latest_run_language_used` (nullable),
+  - `latest_run_schema_version_used` (nullable).
 
 - `GET /documents/{id}`
   Returns:
   - document metadata,
   - derived `document_status`,
-  - `latest_run` summary (id, state, timestamps, failure_type).
+  - `latest_run` summary (id, state, timestamps, failure_type, language_used, schema_version_used).
+  - `language_override` (nullable).
 
 - `GET /documents/{id}/review`
   Resolves **latest completed run**:
@@ -951,6 +1046,111 @@ Rule:
 - `latest_completed_run`: { `run_id`, `state`, `completed_at`, `failure_type` }
 - `active_interpretation`: { `interpretation_id`, `version_number`, `data` }
 - `raw_text_artifact`: { `run_id`, `available`: boolean }  (do not inline raw text here)
+
+---
+
+### Processing history endpoint (minimum, normative)
+`GET /documents/{id}/processing-history` returns:
+- `document_id`
+- `runs[]` ordered by `created_at` ascending (chronological)
+  - `run_id`
+  - `state`
+  - `failure_type` (nullable)
+  - `started_at` (nullable)
+  - `completed_at` (nullable)
+  - `steps[]` (derived from STEP_STATUS artifacts; Appendix C)
+    - `step_name`
+    - `step_status`
+    - `attempt`
+    - `started_at` (nullable)
+    - `ended_at` (nullable)
+    - `error_code` (nullable)
+
+Rules:
+- Read-only; does not introduce actions.
+- Uses persisted artifacts as the source of truth (Appendix C4).
+
+---
+
+### Language override endpoint (minimum, normative)
+`PATCH /documents/{id}/language`:
+- Request body:
+  - `language_override` (string ISO 639-1 like `"en"`, or `null` to clear)
+- Response body includes:
+  - `document_id`
+  - `language_override` (nullable)
+
+Rules:
+- Does not trigger processing or reprocessing.
+- Affects only **new** runs created after the override is set.
+- Must not block review or editing workflows.
+
+---
+
+### Interpretation edit endpoint (minimum, normative)
+`POST /runs/{run_id}/interpretations` creates a new, active interpretation version for the run (append-only).
+
+Request body (minimum):
+- `base_version_number` (integer; must match the currently active version number)
+- `changes[]`
+  - `op` (`ADD | UPDATE | DELETE`)
+  - `field_id` (uuid; required for `UPDATE | DELETE`)
+  - `key` (string; required for `ADD`)
+  - `value` (string|number|boolean|null; required for `ADD | UPDATE`)
+  - `value_type` (string; required for `ADD | UPDATE`)
+
+Response body (minimum):
+- `run_id`
+- `interpretation_id`
+- `version_number` (new active version number)
+- `data` (Structured Interpretation Schema v0; Appendix D)
+
+Rules:
+- Human edits MUST produce `origin = "human"` fields (Appendix D) and append `FieldChangeLog` entries (B2.5).
+- This endpoint never mutates existing interpretation versions (Appendix A3).
+
+---
+
+### Reviewer governance endpoints (minimum, normative)
+
+`GET /reviewer/structural-changes` returns:
+- `items[]`
+  - `candidate_id`
+  - `change_type`
+  - `source_key` (nullable)
+  - `target_key`
+  - `occurrence_count`
+  - `status`
+  - `evidence_samples` (JSON; page + snippet + optional document reference)
+  - `created_at`
+  - `updated_at`
+
+`POST /reviewer/structural-changes/{candidate_id}/decision`:
+- Request body (minimum):
+  - `decision_type` (`APPROVE | REJECT | DEFER | FLAG_CRITICAL`)
+  - `reason` (nullable)
+- Response body (minimum):
+  - `decision_id`
+  - `candidate_id` (nullable)
+  - `decision_type`
+  - `schema_version_id` (nullable)
+  - `created_at`
+
+`GET /reviewer/schema/current` returns:
+- `schema_version_id`
+- `version_number`
+- `created_at`
+- `change_summary` (nullable)
+
+`GET /reviewer/governance/audit-trail` returns:
+- `items[]` ordered by `created_at` ascending
+  - `decision_id`
+  - `candidate_id` (nullable)
+  - `decision_type`
+  - `schema_version_id` (nullable)
+  - `reviewer_id`
+  - `reason` (nullable)
+  - `created_at`
 
 
 ---
@@ -986,6 +1186,9 @@ All error responses MUST follow Appendix **B2.6**:
   - Specific reasons (closed set):
     - `NO_COMPLETED_RUN`
     - `REVIEW_BLOCKED_BY_ACTIVE_RUN`
+    - `RAW_TEXT_NOT_READY`
+    - `RAW_TEXT_NOT_AVAILABLE`
+    - `STALE_INTERPRETATION_VERSION`
 
 - `410 Gone`
   - Persistent reference exists, but the underlying filesystem artifact is missing.
@@ -1025,7 +1228,15 @@ Returns:
 
 Errors:
 - 404 NOT_FOUND if run does not exist
+- 409 CONFLICT with `details.reason = RAW_TEXT_NOT_READY` if run exists but extraction artifact is not produced yet
+- 409 CONFLICT with `details.reason = RAW_TEXT_NOT_AVAILABLE` if extraction failed or no raw-text artifact exists for the run
 - 410 ARTIFACT_MISSING if the artifact reference exists but filesystem content is missing
+
+### POST /runs/{run_id}/interpretations (Normative)
+Errors (minimum):
+- 404 NOT_FOUND if run does not exist
+- 409 CONFLICT with `details.reason = REVIEW_BLOCKED_BY_ACTIVE_RUN` if the run is currently `RUNNING`
+- 409 CONFLICT with `details.reason = STALE_INTERPRETATION_VERSION` if the client’s base version is not the active version
 
 ---
 
