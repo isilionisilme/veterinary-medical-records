@@ -1,4 +1,6 @@
- # Frontend Implementation Notes
+# Frontend Implementation Notes
+
+> Deprecated: Use `docs/project/FRONTEND_IMPLEMENTATION.md` (project-specific authority).
 
 ## Purpose
 
