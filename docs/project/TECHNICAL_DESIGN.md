@@ -4,18 +4,113 @@ This document is intended to provide structured context to an AI Coding Assistan
 The version of this document written for evaluators and reviewers is available here:
 https://docs.google.com/document/d/16lgxuT48fA5ZCnEpR4rokl4hLbyM0yfTszlu6vHrHtM
 
+Reading order and cross-document precedence are defined in `docs/README.md`.
+
 # Technical Design — Instructions for Implementation
 
 ## Purpose
 
-This document defines the **technical design and constraints** that must be followed when implementing the system.
-
-It complements `IMPLEMENTATION_PLAN.md` and is **mandatory reading** for the AI Coding Assistant.
+This document defines the **technical design, system contracts, and invariants** that must be followed when implementing the system.
 
 Your goal is to **implement exactly this design**, respecting all constraints and decisions.
 Do **not** add features, infrastructure, or abstractions that are not explicitly described.
 
 If any requirement in this document cannot be satisfied, STOP and explain the blocker before proceeding.
+
+---
+
+## 1. System Overview (Technical)
+
+The MVP is implemented as a **modular monolith** with an **explicit, observable, step-based processing pipeline**.
+
+---
+
+## 1.1 Deployment Model (Intent)
+
+The system is implemented as a **modular monolith**.
+
+- Logical boundaries must be preserved in code (modules, explicit interfaces).
+- Domain logic must remain independent from infrastructure.
+- The design must remain evolvable into independent services in the future.
+- Do not introduce infrastructure complexity that is not strictly required for the MVP.
+
+---
+
+## 1.2 Logical Pipeline (Conceptual)
+
+The implementation follows a logical pipeline (single-process, in-process execution) without introducing distributed infrastructure.
+
+### Upload / Ingestion
+- Receive veterinary documents.
+- Generate a `document_id`.
+- Persist basic document metadata.
+- Ensure safe retry behavior on retries (no partial persistence).
+
+### Text Extraction
+- Extract raw text from documents.
+- Attach standard metadata.
+- Produce a canonical representation suitable for downstream processing.
+
+### Interpretation
+- Convert free text into a structured medical record.
+- Attach basic confidence or evidence metadata where applicable.
+
+### State Management
+- Model explicit document lifecycle states.
+- Persist all state transitions.
+- Provide clear visibility into progress and failures.
+
+### Human Review & Feedback
+- Allow veterinarians to review and edit extracted fields.
+- Capture all corrections as structured, append-only feedback.
+
+---
+
+## 1.3 Domain Model Overview (Conceptual)
+
+The system is built around a small set of explicit, persistent domain concepts.  
+All relevant domain concepts must be persisted to support auditability, traceability, and human-in-the-loop workflows.
+
+Core concepts (conceptual overview):
+- **Document**: submitted medical document with identity, metadata, lifecycle state, and raw file reference.
+- **ProcessingRun / ProcessingStatus**: explicit lifecycle states representing progress through the pipeline.
+- **ExtractedText**: extracted text with provenance and diagnostics.
+- **StructuredMedicalRecord / InterpretationVersion**: schema-validated structured medical data.
+- **FieldEvidence**: lightweight links between structured fields and their source (page/snippet).
+- **RecordRevisions / FieldChangeLog**: append-only records of human edits.
+
+This section provides conceptual orientation only.  
+Authoritative contracts and invariants are defined in **Appendix A and Appendix B**.
+
+---
+
+## 1.4 Persistence Strategy (Intent)
+
+Intent:  
+Persist the **minimum set of artifacts** required to make the system debuggable, auditable, and safe for human-in-the-loop workflows.
+
+Persistence moments:
+- On ingestion: persist document metadata and initial lifecycle state.
+- After each pipeline stage: persist produced artifacts and state transitions.
+- On human edits: persist new append-only revisions; never overwrite silently.
+
+Storage mapping and invariants are defined normatively in **Appendix B**.
+
+---
+
+## 1.5 Safety & Design Guardrails
+
+- Do not collapse logical stages into opaque code paths.
+- Do not bypass explicit state transitions.
+- Do not silently merge machine-generated data with human-validated data.
+- Prefer clarity and traceability over performance or abstraction.
+- Preserve the ability to evolve this modular monolith into independent services.
+
+Technical guardrails:
+- Machine-produced structured outputs MUST be stored as run-scoped artifacts and MUST NOT overwrite prior artifacts.
+- Structured interpretation outputs MUST conform to the schema in Appendix D (schema validation required).
+- Human edits MUST create new interpretation versions (append-only) and MUST NOT be silently merged into machine output.
+ 
 
 ---
 
@@ -71,7 +166,8 @@ The pipeline is **observable** and **step-based**.
 - A document may have many historical runs.
 
 #### Active Run Rule
-- **Only one processing run may be active per document at any time**.
+- **Only one processing run may be `RUNNING` per document at any time**.
+
 - States:
   - `QUEUED`
   - `RUNNING`
@@ -79,10 +175,13 @@ The pipeline is **observable** and **step-based**.
   - `FAILED`
   - `TIMED_OUT`
 
-If a reprocess is requested while a run is active:
+Multiple `QUEUED` runs may exist per document (append-only history).
+
+If a reprocess is requested while a run is `RUNNING`:
+
 - A new run is created in `QUEUED`
-- It starts only after the active run finishes or times out
-- Active runs are **never cancelled**
+- It starts only after the `RUNNING` run finishes or times out
+- `RUNNING` runs are **never cancelled**
 
 ---
 
@@ -99,10 +198,10 @@ If a reprocess is requested while a run is active:
 
 ## 5. Review & Editing Rules
 
-- **Human review is blocked while a processing run is active**.
-- Review and edits are allowed **only when no run is active**.
-- This avoids conflicts between system-generated data and human edits.
-
+UI and API MUST prevent conflicting edits while processing is active.
+If a client attempts to edit/review while a `RUNNING` run exists, the API MUST respond with:
+- `409 Conflict` (`error_code = CONFLICT`) and `details.reason = REVIEW_BLOCKED_BY_ACTIVE_RUN`.
+ 
 ---
 
 ## 6. Data Persistence Rules
@@ -118,7 +217,7 @@ If a reprocess is requested while a run is active:
 ### 6.2 Storage
 
 - Primary database: **SQLite**
-- Large artifacts (PDFs, raw extracted text):
+- Large artifacts (original uploaded files, raw extracted text):
   - stored in the filesystem
   - referenced from the database
 - Use JSON columns where flexibility is required.
@@ -137,18 +236,11 @@ If a reprocess is requested while a run is active:
 
 ---
 
-## 7. Confidence & Learning Signals
+## 7. Confidence (Technical Contract)
 
-- Each structured field carries a **confidence score**.
-- Confidence is:
-  - contextual
-  - conservative
-  - explainable
-- Confidence **does not mean correctness**.
-- User corrections generate **learning signals**.
-- Learning signals:
-  - must be stored
-  - must **not** change global system behavior in the MVP
+- Each structured field MUST carry a `confidence` number in range 0–1 (see Appendix D).
+- Confidence is a stored **attention signal** only.
+- The meaning/governance of confidence in veterinarian workflows is defined in `docs/project/PRODUCT_DESIGN.md`.
 
 ---
 
@@ -158,6 +250,8 @@ If a reprocess is requested while a run is active:
   - `UPLOAD_FAILED`
   - `EXTRACTION_FAILED`
   - `INTERPRETATION_FAILED`
+  - `PROCESS_TERMINATED` (crash/restart recovery only; Appendix B1.3)
+
 - Document status must always reflect the **last known state**.
 - Failed runs remain visible and auditable.
 - Stuck runs must be detectable via timeout and transitioned to `TIMED_OUT`.
@@ -191,8 +285,7 @@ Metrics and persistent event tracing are **explicitly out of scope** for the MVP
 ## 10. API Constraints
 
 - The API is **internal only** in the MVP.
-- Contracts are best-effort and may evolve.
-- No strict backward compatibility is required at this stage.
+- No strict backward compatibility is required across releases at this stage.
 - Formal versioning and public hardening are future concerns.
 
 ---
@@ -320,7 +413,8 @@ Allowed values:
 - Reprocessing:
   - creates a new run,
   - never mutates previous runs or artifacts,
-  - may queue if another run is active.
+  - may remain `QUEUED` if another run is `RUNNING`.
+
 
 ---
 
@@ -332,6 +426,13 @@ Allowed values:
 - Any edit creates a **new interpretation version**.
 - Previous versions are retained and immutable.
 - Exactly one interpretation version is **active** at a time per run.
+
+#### Active version invariant (Operational, normative)
+- When creating a new InterpretationVersion for a run:
+  - It MUST be done in a single transaction:
+    1) set all previous versions for that `run_id` to `is_active = false`
+    2) insert the new version with `is_active = true` and `version_number = previous_max + 1`
+- At no point may two rows be active for the same `run_id`.
 
 ---
 
@@ -386,7 +487,7 @@ These principles apply to **all endpoints**:
 
 ## A6. Concurrency & Idempotency Rules
 
-- Only one active run per document is allowed.
+- At most one `RUNNING` run per document is allowed (multiple `QUEUED` runs may exist).
 - Guards must exist at persistence level (transactional or equivalent).
 - Repeated user actions (upload, reprocess, mark reviewed):
   - must be safe to retry,
@@ -509,17 +610,17 @@ This choice prioritizes simplicity and debuggability over throughput.
 
 ---
 
-### B1.2 Single Active Run Guarantee
+### B1.2 Single `RUNNING` Run Guarantee
 
 Definitions:
-- An **active run** is a `ProcessingRun` in state `QUEUED` or `RUNNING`.
+- A **running run** is a `ProcessingRun` in state `RUNNING`.
 
 Rules:
-- At most **one active run per document** is allowed.
+- At most **one `RUNNING` run per document** is allowed.
 - This invariant is enforced at the **persistence layer**, not in memory.
-- Any attempt to create a new run when an active run exists must:
-  - either fail explicitly,
-  - or enqueue logically (by remaining `QUEUED`) until the active run reaches a terminal state.
+- Any attempt to create a new run when a `RUNNING` run exists must:
+  - be accepted as a new run in `QUEUED` (append-only),
+  - and will only start once no other run is `RUNNING` for that document.
 
 No background worker may start a run without verifying this invariant.
 
@@ -527,22 +628,22 @@ No background worker may start a run without verifying this invariant.
 
 ### B1.2.1 Persistence-Level Guard Pattern (SQLite, Authoritative)
 
-To enforce “at most one active run per document” in the MVP, run creation and run start transitions must follow a persistence-level guard pattern that prevents race conditions.
+To enforce “at most one `RUNNING` run per document” in the MVP, run creation and run start transitions must follow a persistence-level guard pattern that prevents race conditions.
 
 Definitions:
-- An active run is a run with state `QUEUED` or `RUNNING`.
+- A running run is a run with state `RUNNING`.
 
 Pattern (normative):
 - Create or start a run only under a write-locking transaction (e.g., `BEGIN IMMEDIATE` in SQLite).
 - Under the same transaction scope:
-  1) Query whether an active run exists for the target `document_id`.
+  1) Query whether a `RUNNING` run exists for the target `document_id`.
   2) Apply the rules below.
 
 Rules:
 - Creating a run:
   - Always allowed to insert a new run in `QUEUED` (append-only history).
 - Starting a run (`QUEUED → RUNNING`):
-  - Allowed only if **no other run is `RUNNING`** for that `document_id`.
+  - Allowed only if **no other run is `RUNNING`** for that `document_id` (multiple `QUEUED` runs may exist).
   - The check and the state transition must happen under the same lock/transaction scope.
 
 No worker may transition a run to `RUNNING` without verifying these invariants at persistence level.
@@ -554,7 +655,7 @@ No worker may transition a run to `RUNNING` without verifying these invariants a
 
 On application startup:
 - Any run found in state `RUNNING` is considered **orphaned**.
-- Orphaned runs must be transitioned to `FAILED` with reason `PROCESS_TERMINATED`.
+- Orphaned runs must be transitioned to `FAILED` with `failure_type = PROCESS_TERMINATED`.
 
 Rationale:
 - Avoids “stuck” runs.
@@ -574,6 +675,11 @@ Rationale:
 
 Reprocessing always creates a **new run**.
 
+### B1.4.1 Fixed defaults (Normative)
+- Step retry limit: 2 attempts total (1 initial + 1 retry).
+- Run timeout: 120 seconds wall-clock from `RUN_STARTED`.
+
+
 ---
 
 ### B1.5 In-Process Scheduler Semantics (Authoritative)
@@ -592,6 +698,13 @@ Rules:
   - Crash/restart relies on B1.3 (startup recovery) and future scheduler cycles.
 
 ---
+
+### B1.5.1 Scheduler tick & fairness (Normative)
+- The scheduler runs on a fixed tick (e.g. every 1s).
+- On each tick, it attempts to start runs in FIFO order by `created_at`.
+- It MUST NOT busy-loop; it sleeps between ticks.
+- If a start attempt fails due to transient DB lock/contention, it logs `STEP_RETRIED` (or a dedicated scheduler event) and retries on the next tick.
+
 
 ## B2. Minimal Persistent Data Model (Textual ERD)
 
@@ -638,7 +751,7 @@ Key fields:
 
 Invariants:
 - Append-only.
-- Exactly one active run per document.
+- At most one `RUNNING` run per document (multiple `QUEUED` runs may exist).
 - Terminal states are immutable.
 
 ---
@@ -657,6 +770,10 @@ Key fields:
 Invariants:
 - Artifacts are immutable.
 - Artifacts are always linked to exactly one run.
+
+#### ArtifactType (Closed Set, normative)
+- `RAW_TEXT` (filesystem reference)
+- `STEP_STATUS` (JSON payload; Appendix C)
 
 ---
 
@@ -697,6 +814,45 @@ Invariants:
 
 ---
 
+#### B2.5.1 Field path format (Authoritative)
+`field_path` MUST be stable across versions and MUST NOT rely on array indices.
+
+Format (normative):
+- `field_path = "fields.{field_id}.value"`
+
+Notes:
+- `field_id` refers to `StructuredField.field_id` in Appendix D.
+- This allows a reviewer to trace changes even if the `fields[]` order changes between versions.
+ 
+ ---
+
+### B2.6 API Error Response Format & Naming Authority (Normative)
+
+### API Error Response Format (Normative)
+All API errors MUST return a JSON body with a stable, machine-readable structure:
+
+```json
+{
+  "error_code": "STRING_ENUM",
+  "message": "Human-readable explanation",
+  "details": { "optional": "object" }
+}
+```
+
+Rules:
+- `error_code` is stable and suitable for frontend branching.
+- `message` is safe for user display (no stack traces).
+- `details` is optional and must not expose filesystem paths or secrets.
+
+---
+
+### API Naming Authority (Normative)
+The authoritative endpoint map is defined in **Appendix B3 (+ B3.1)**.
+
+If any user story lists different endpoint paths, treat them as non-normative examples and implement the authoritative map.
+
+---
+
 ## B3. Minimal API Endpoint Map (Authoritative)
 
 This section defines the **minimum endpoint surface** for the MVP.
@@ -705,16 +861,42 @@ This section defines the **minimum endpoint surface** for the MVP.
 
 ### Document-Level
 
-- `POST /documents`
-  - Upload document.
+- `POST /documents/upload`
+  - Upload a document (PDF, Word, or image).
 - `GET /documents`
   - List documents with derived status.
 - `GET /documents/{id}`
   - Document metadata + latest run info.
+- `GET /documents/{id}/download`
+  - Download (and when supported, preview) the original uploaded file.
 - `POST /documents/{id}/reprocess`
   - Create new processing run.
 - `POST /documents/{id}/reviewed`
   - Mark as reviewed.
+
+### Supported upload types (Normative, MVP)
+
+The system MUST accept only the following document types:
+
+PDF:
+- `.pdf`
+- `application/pdf`
+
+Word:
+- `.docx`
+- `application/vnd.openxmlformats-officedocument.wordprocessingml.document`
+  - `.doc` is NOT supported in MVP (must return 415 `UNSUPPORTED_MEDIA_TYPE`)
+
+
+Images:
+- `.png` (`image/png`)
+- `.jpg`, `.jpeg` (`image/jpeg`)
+
+Rules:
+- Any other content type MUST return:
+  - HTTP 415
+  - `error_code = UNSUPPORTED_MEDIA_TYPE`
+- MIME type detection MUST be based on server-side inspection, not only filename.
 
 ---
 
@@ -750,6 +932,10 @@ Rules:
 - `GET /documents/{id}/review`
   Resolves **latest completed run**:
   - if none exists, return an explicit error (e.g., 409) with reason `NO_COMPLETED_RUN`.
+  
+Rationale (authoritative):
+- `/documents/{id}/review` is a derived “review view” that requires a completed run; if none exists yet, this is a **state conflict**, not a missing resource.
+
   Returns:
   - `latest_completed_run_id`,
   - active interpretation for that run,
@@ -758,6 +944,88 @@ Rules:
 Rule:
 - Status views always use **latest run**.
 - Review views always use **latest completed run**.
+
+#### Response shape (minimum, normative)
+`GET /documents/{id}/review` returns:
+- `document_id`
+- `latest_completed_run`: { `run_id`, `state`, `completed_at`, `failure_type` }
+- `active_interpretation`: { `interpretation_id`, `version_number`, `data` }
+- `raw_text_artifact`: { `run_id`, `available`: boolean }  (do not inline raw text here)
+
+
+---
+
+## B3.2 Endpoint error semantics & error codes (Normative)
+
+This section defines **stable HTTP semantics** and `error_code` values for the MVP.
+It prevents user stories from redefining per-endpoint behavior.
+
+### Error response format (Authoritative)
+All error responses MUST follow Appendix **B2.6**:
+
+- `error_code` (stable enum for frontend branching)
+- `message` (safe for user display)
+- `details` (optional object; must not expose secrets or filesystem paths)
+
+### Common HTTP statuses (MVP)
+
+- `400 Bad Request`
+  - Invalid request body, missing required fields, invalid parameters.
+  - `error_code`: `INVALID_REQUEST`
+
+- `404 Not Found`
+  - Document or run does not exist.
+  - `error_code`: `NOT_FOUND`
+
+- `409 Conflict`
+  - Request is valid, but cannot be fulfilled due to current state.
+  - Examples:
+    - Review requested but no completed run exists.
+    - Attempt to edit when blocked by a `RUNNING` run (if applicable).
+  - `error_code`: `CONFLICT`, plus a specific reason in `details.reason`.
+  - Specific reasons (closed set):
+    - `NO_COMPLETED_RUN`
+    - `REVIEW_BLOCKED_BY_ACTIVE_RUN`
+
+- `410 Gone`
+  - Persistent reference exists, but the underlying filesystem artifact is missing.
+  - Applies to file downloads and raw text retrieval when stored in filesystem.
+  - `error_code`: `ARTIFACT_MISSING`
+
+- `413 Payload Too Large`
+  - Upload exceeds size limit.
+  - `error_code`: `FILE_TOO_LARGE`
+
+- `415 Unsupported Media Type`
+  - Unsupported upload type.
+  - `error_code`: `UNSUPPORTED_MEDIA_TYPE`
+
+- `500 Internal Server Error`
+  - Unhandled exception or unexpected system failure.
+  - `error_code`: `INTERNAL_ERROR`
+
+### Notes
+- Frontend MUST branch on `error_code` (and optional `details.reason`) only.
+- User stories may list example error cases, but must not redefine these semantics.
+- Upload type support is defined in Appendix B3 (“Supported upload types (Normative, MVP)”).
+
+
+### Upload size limit (Normative)
+- Maximum upload size: 20 MB (MVP default).
+- Exceeding the limit returns:
+  - HTTP 413
+  - `error_code = FILE_TOO_LARGE`
+
+### GET /runs/{run_id}/artifacts/raw-text (Normative)
+Returns:
+- `run_id`
+- `artifact_type = RAW_TEXT`
+- `content_type = text/plain`
+- `text` (string)
+
+Errors:
+- 404 NOT_FOUND if run does not exist
+- 410 ARTIFACT_MISSING if the artifact reference exists but filesystem content is missing
 
 ---
 
@@ -770,7 +1038,7 @@ The following actions must be safe to retry:
 
 Mechanisms:
 - Persistence-level guards (see B1.2.1).
-- Explicit checks for invariants (single active/run-start rule).
+- Explicit checks for invariants (single `RUNNING` run rule + run-start guard).
 - No reliance on client-provided idempotency keys in the MVP.
 
 “Safe to retry” means:
@@ -779,7 +1047,7 @@ Mechanisms:
 
 ### B4.1 Endpoint Semantics
 
-**POST /documents**
+**POST /documents/upload**
 - Retrying may create a new document (no deduplication in MVP).
 - The system must avoid partial persistence:
   - no DB row without filesystem artifact on success,
@@ -806,7 +1074,10 @@ Non-negotiable invariant:
 ## B5. Filesystem Management Rules
 
 - Files are stored under deterministic paths:
-  - `/storage/{document_id}/original.pdf`
+  - `/storage/{document_id}/original{ext}`
+  - `ext` is derived from the normalized file type (e.g. `.pdf`, `.docx`, `.png`, `.jpg`, `.jpeg`).
+
+  
 - Writes must be atomic.
 - DB persistence must complete **before** returning success.
 - Temporary files must be cleaned up on failure.
@@ -931,6 +1202,13 @@ Rule:
 
 ---
 
+## C4. Relationship between Step Artifacts and Logs (Normative)
+- Step artifacts (`artifact_type = STEP_STATUS`) are the source of truth for step state.
+- Structured logs emit corresponding `STEP_*` events best-effort.
+- If logs and artifacts disagree, artifacts win.
+
+---
+
 # Appendix D — Structured Interpretation Schema (v0) (Normative)
 
 This appendix defines the **authoritative minimum JSON schema** for structured interpretations in the MVP.
@@ -991,6 +1269,7 @@ A single extracted or edited data point with confidence and optional evidence.
   "value": "Luna",
   "value_type": "string",
   "confidence": 0.82,
+  "is_critical": true,
   "origin": "machine",
   "evidence": { "page": 2, "snippet": "Patient: Luna" }
 }
@@ -1007,6 +1286,7 @@ A single extracted or edited data point with confidence and optional evidence.
 | value | string \| number \| boolean \| null | ✓ | Dates stored as ISO strings |
 | value_type | `"string"` \| `"number"` \| `"boolean"` \| `"date"` \| `"unknown"` | ✓ | Explicit typing |
 | confidence | number (0–1) | ✓ | Attention signal only |
+| is_critical | boolean | ✓ | Derived: `key ∈ CRITICAL_KEYS_V0` (Appendix D7.4) |
 | origin | `"machine"` \| `"human"` | ✓ | Distinguishes machine output vs human edits |
 | evidence | `Evidence` | ✗ | Optional; expected for machine output when available |
 
@@ -1034,23 +1314,20 @@ Repeated concepts (e.g., medications) are represented by multiple fields with th
 Structural changes (new keys, key remapping) may later be marked as pending review for schema evolution.
 This is never exposed or actionable in veterinarian-facing workflows in the MVP.
 
-### D7.4 Critical Concepts (US-17, Authoritative)
+### D7.4 Critical Concepts (Authoritative)
 
-Some fields are designated as critical concepts in the MVP for US-17.
+Derivation (authoritative):
+- `StructuredField.is_critical = (StructuredField.key ∈ CRITICAL_KEYS_V0)`
 
-Rules:
-- is_critical is derived from the field key (not model-decided).
-- A field is critical if and only if key belongs to the closed set CRITICAL_KEYS_V0.
-- This designation never blocks workflows; it only drives UI signaling and internal flags.
+Rules (technical, authoritative):
+- `is_critical` MUST be derived from the field key (not model-decided).
+- `CRITICAL_KEYS_V0` is a closed set (no heuristics, no model output).
+- This designation MUST NOT block workflows; it only drives UI signaling and internal flags.
 
-Closed set (v0):
-- pet_name
-- species
-- visit_date
-- invoice_total
+Source of truth for `CRITICAL_KEYS_V0`:
+- Defined in `docs/project/PRODUCT_DESIGN.md` (product authority).
 
-Derivation:
-- StructuredField.is_critical = (StructuredField.key ∈ CRITICAL_KEYS_V0)
+---
 
 ## D8. Example (Multiple Fields)
 
@@ -1077,6 +1354,7 @@ Derivation:
       "value": "Luna",
       "value_type": "string",
       "confidence": 1.0,
+      "is_critical": true,
       "origin": "human"
     }
   ]
