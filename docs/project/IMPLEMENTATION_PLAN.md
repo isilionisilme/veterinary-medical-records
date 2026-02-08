@@ -72,7 +72,7 @@ The project owner decides when to stop.
 File-type boundary:
 - Supported upload types are defined by `docs/project/TECHNICAL_DESIGN.md` Appendix B3.
 - The processing pipeline (extraction → interpretation → review-in-context) is guaranteed only for **PDF** inputs.
-- Additional file types (DOCX, images) are tracked as **post-MVP** work in `docs/project/POST_MVP_BACKLOG.md` (US-19 / US-20).
+- DOCX and image format expansion are sequenced as the final stories (US-19 and US-20).
 
 Explicit non-goals:
 - Production hardening
@@ -125,7 +125,7 @@ Automatically process uploaded **PDF** documents in a **non-blocking** way, with
 - Append-only processing history
 
 ### Format support note
-Supported upload types are defined by `docs/project/TECHNICAL_DESIGN.md` Appendix B3. Additional file types are tracked as post-MVP work in `docs/project/POST_MVP_BACKLOG.md` (US-19 / US-20).
+Supported upload types are defined by `docs/project/TECHNICAL_DESIGN.md` Appendix B3. DOCX and image format expansion are sequenced as the final stories (US-19 and US-20).
 
 ### User Stories (in order)
 - US-05 — Process document
@@ -221,6 +221,17 @@ Introduce reviewer-facing governance for global schema evolution, fully isolated
 - US-16 — Reject or defer structural changes
 - US-17 — Govern critical (non-reversible) structural changes
 - US-18 — Audit trail of schema governance decisions
+
+---
+
+## Release 8 — Additional formats (sequenced last)
+
+### Goal
+Sequence DOCX and image format expansion as explicit, optional stories that are implemented only if/when the project owner chooses to continue.
+
+### User Stories (in order)
+- US-19 — Add DOCX end-to-end support
+- US-20 — Add Images end-to-end support
 
 ---
 
@@ -757,3 +768,76 @@ As a reviewer, I want to see an audit trail of schema governance decisions so th
 - Unit + integration tests per `docs/project/TECHNICAL_DESIGN.md` Appendix B7.
 
 ---
+
+## US-19 — Add DOCX end-to-end support
+
+**User Story**
+As a user, I want to upload, access, and process DOCX documents so that the same workflow supported for PDFs applies to Word documents.
+
+**Acceptance Criteria**
+- I can upload supported `.docx` documents.
+- I can download the original DOCX at any time without blocking on processing.
+- DOCX documents are processed in the same step-based, non-blocking pipeline as PDFs (extraction → interpretation), producing the same visibility and artifacts.
+- Review-in-context and editing behave the same as for PDFs once extracted text exists.
+
+**Scope Clarification**
+- This story changes format support only; the processing pipeline, contracts, versioning rules, and review workflow semantics remain unchanged.
+- If preview is not implemented for DOCX, the UI must clearly fall back to download-only without blocking workflows.
+- This story requires updating the authoritative format constraints in `docs/project/TECHNICAL_DESIGN.md` (supported upload types and any related filesystem rules).
+
+**Authoritative References**
+- Tech: Endpoint surface and error semantics: `docs/project/TECHNICAL_DESIGN.md` Appendix B3/B3.2
+- Tech: Processing model and run invariants: `docs/project/TECHNICAL_DESIGN.md` Sections 3–4 + Appendix A2
+- Tech: Step model + failure mapping: `docs/project/TECHNICAL_DESIGN.md` Appendix C
+- UX: Review flow guarantees: `docs/project/UX_DESIGN.md` Sections 2–4
+
+**Story-specific technical requirements**
+- Add server-side type detection for DOCX (do not rely on filename alone).
+- Add DOCX text extraction using a minimal dependency surface (choose one library during implementation and document the choice; candidates include `python-docx` or `mammoth`).
+- Store the original under the deterministic path rules with the appropriate extension (e.g., `original.docx`).
+
+**Test Expectations**
+- DOCX inputs behave like PDFs for upload/download/status visibility.
+- Extraction produces a raw-text artifact for DOCX runs, enabling the same review/edit endpoints once processing completes.
+
+**Definition of Done (DoD)**
+- Acceptance criteria satisfied.
+- Unit + integration tests per `docs/project/TECHNICAL_DESIGN.md` Appendix B7.
+
+---
+
+## US-20 — Add Images end-to-end support
+
+**User Story**
+As a user, I want to upload, access, and process image documents so that scans and photographs can be handled in the same workflow.
+
+**Acceptance Criteria**
+- I can upload supported image types (at minimum PNG and JPEG).
+- I can download and preview the original image at any time without blocking on processing.
+- Image documents are processed in the same step-based, non-blocking pipeline as PDFs, producing the same visibility and artifacts.
+- Extraction for images uses OCR to produce raw text suitable for downstream interpretation and review.
+- Review-in-context and editing behave the same as for PDFs once extracted text exists.
+
+**Scope Clarification**
+- This story changes format support only; the processing pipeline, contracts, versioning rules, and review workflow semantics remain unchanged.
+- This story requires updating the authoritative format constraints in `docs/project/TECHNICAL_DESIGN.md` (supported upload types and any related filesystem rules).
+
+**Authoritative References**
+- Tech: Endpoint surface and error semantics: `docs/project/TECHNICAL_DESIGN.md` Appendix B3/B3.2
+- Tech: Processing model and run invariants: `docs/project/TECHNICAL_DESIGN.md` Sections 3–4 + Appendix A2
+- Tech: Step model + failure mapping: `docs/project/TECHNICAL_DESIGN.md` Appendix C
+- Tech: OCR approach guidance: `docs/project/TECHNICAL_DESIGN.md` Appendix E4
+- UX: Review flow guarantees: `docs/project/UX_DESIGN.md` Sections 2–4
+
+**Story-specific technical requirements**
+- Add server-side type detection for images (do not rely on filename alone).
+- Implement OCR-based extraction for images using the minimal approach described in the Technical Design (Appendix E4).
+- Store the original under the deterministic path rules with the appropriate extension (e.g., `original.png`, `original.jpg`).
+
+**Test Expectations**
+- Image inputs behave like PDFs for upload/download/status visibility.
+- OCR extraction produces a raw-text artifact for image runs, enabling the same review/edit endpoints once processing completes.
+
+**Definition of Done (DoD)**
+- Acceptance criteria satisfied.
+- Unit + integration tests per `docs/project/TECHNICAL_DESIGN.md` Appendix B7.

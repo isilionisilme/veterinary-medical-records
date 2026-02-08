@@ -934,7 +934,7 @@ This section defines the **minimum endpoint surface**.
 ### Document-Level
 
 - `POST /documents/upload`
-  - Upload a document (PDF in MVP; additional file types tracked post-MVP).
+  - Upload a document (PDF only in the current implementation).
 - `GET /documents`
   - List documents with derived status.
 - `GET /documents/{id}`
@@ -952,7 +952,7 @@ This section defines the **minimum endpoint surface**.
 
 ### Supported upload types (Normative)
 
-The system MUST accept only PDF uploads (Releases 1–7 scope):
+The system MUST accept only PDF uploads in the current implementation:
 - `.pdf`
 - `application/pdf`
 
@@ -962,11 +962,11 @@ Rules:
   - `error_code = UNSUPPORTED_MEDIA_TYPE`
 - MIME type detection MUST be based on server-side inspection, not only filename.
 
-### Additional file types (Post-MVP)
+### Additional file types (Not supported yet)
 
-DOCX and image support are introduced as separate post-MVP user stories (see `docs/project/POST_MVP_BACKLOG.md`: US-19 / US-20).
-
-This section does not define their acceptance lists or behavior; those are defined when implementing US-19 / US-20.
+DOCX and image uploads are not supported in the current implementation.
+They are planned as sequenced-last user stories in `docs/project/IMPLEMENTATION_PLAN.md` (US-19 and US-20).
+This section does not define their acceptance lists or behavior.
 
 ---
 
@@ -1282,7 +1282,7 @@ Non-negotiable invariant:
   - `/storage/{document_id}/original.pdf`
 
 Note:
-- Additional extensions may be introduced when non-PDF file types are added (post-MVP: US-19 / US-20 in `docs/project/POST_MVP_BACKLOG.md`).
+- Additional extensions may be introduced when non-PDF upload types are supported.
 
   
 - Writes must be atomic.
@@ -1622,5 +1622,7 @@ Rationale:
 - Keeps Python dependencies lightweight (wrapper only).
 
 Rules:
-- OCR is out of scope until image processing (US-20) is implemented (post-MVP: `docs/project/POST_MVP_BACKLOG.md`).
-- This section documents a recommended approach to implement image processing when US-20 is taken.
+- OCR is not implemented until image upload processing is implemented.
+- This section documents a recommended approach if/when image upload processing is implemented.
+Implementation sequencing:
+- Image upload processing is sequenced as `docs/project/IMPLEMENTATION_PLAN.md` US-20.

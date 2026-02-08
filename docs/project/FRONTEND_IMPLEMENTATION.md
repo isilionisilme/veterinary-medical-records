@@ -140,8 +140,9 @@ Frontend implications:
 
 ## Additional File Types
 
-Support for DOCX and images is tracked as post-MVP work in `docs/project/POST_MVP_BACKLOG.md` (US-19 / US-20).
-This document does not define preview behavior for those types until those stories are implemented.
+DOCX and image uploads are not supported in the current implementation.
+This document does not define preview behavior for those types.
+They are planned as sequenced-last user stories in `docs/project/IMPLEMENTATION_PLAN.md` (US-19 and US-20).
 
 ---
 
