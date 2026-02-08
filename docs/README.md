@@ -24,5 +24,4 @@ This folder is split into two areas:
 
 ## Running the MVP (Evaluator Path)
 
-The MVP is PDF-only. Docker is the recommended evaluator path to run the backend in a reproducible environment.
-Use the Docker quickstart in `README.md`.
+The MVP is PDF-only. Follow the run instructions in the repository root `README.md`.

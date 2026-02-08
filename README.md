@@ -100,23 +100,6 @@ Environment variables:
 
 ---
 
-## Quickstart (Docker, recommended)
-
-Docker is the recommended way to run the backend in a reproducible environment.
-
-```bash
-docker compose up --build
-```
-
-Health check:
-
-```bash
-curl http://localhost:8000/health
-```
-
-Note:
-- The Docker image may include additional system packages intended for post-MVP work; MVP behavior remains PDF-only.
-
 ## Notes for evaluators
 
 This exercise is intentionally structured to show:

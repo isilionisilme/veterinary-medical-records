@@ -33,25 +33,9 @@ This document translates the **authoritative system design** into backend implem
 - OCR for scanned PDFs
 - Product meaning, governance, or UX rules
 
-## Running With Docker (Evaluator Path)
+## Running The Backend (MVP)
 
-The MVP is PDF-only. Docker is the recommended evaluator path to run the backend in a reproducible environment.
-
-Authority:
-- Filesystem/DB storage knobs: `docs/project/TECHNICAL_DESIGN.md` Appendix B5
-
-Quickstart:
-```bash
-docker compose up --build
-```
-
-Health check:
-```bash
-curl http://localhost:8000/health
-```
-
-Notes:
-- The Docker image may include additional system packages intended for post-MVP work; MVP behavior remains PDF-only.
+The MVP is PDF-only. Run instructions live in the repository root `README.md`.
 
 
 ## Backend architecture
