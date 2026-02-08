@@ -35,11 +35,9 @@ This document translates the **authoritative system design** into backend implem
 
 ## Running With Docker (Evaluator Path)
 
-The MVP requires OCR for image uploads. Because OCR depends on the system `tesseract` binary, the
-recommended evaluator path is Docker.
+The MVP is PDF-only. Docker is the recommended evaluator path to run the backend in a reproducible environment.
 
 Authority:
-- OCR requirement and behavior: `docs/project/TECHNICAL_DESIGN.md` Appendix E4
 - Filesystem/DB storage knobs: `docs/project/TECHNICAL_DESIGN.md` Appendix B5
 
 Quickstart:
@@ -53,8 +51,7 @@ curl http://localhost:8000/health
 ```
 
 Notes:
-- Docker image installs `tesseract-ocr` and the English/Spanish language packs.
-- Outside Docker, missing OCR dependencies must fail explicitly during extraction for image documents.
+- The Docker image may include additional system packages intended for post-MVP work; MVP behavior remains PDF-only.
 
 
 ## Backend architecture

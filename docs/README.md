@@ -24,5 +24,5 @@ This folder is split into two areas:
 
 ## Running the MVP (Evaluator Path)
 
-The MVP requires OCR support (Tesseract) for image documents.
-Use the Docker quickstart in `README.md` to run the backend with all system dependencies installed.
+The MVP is PDF-only. Docker is the recommended evaluator path to run the backend in a reproducible environment.
+Use the Docker quickstart in `README.md`.

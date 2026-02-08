@@ -83,7 +83,6 @@ The backend is implemented using:
 - **FastAPI**
 - **SQLite** (metadata and structured artifacts)
 - **Filesystem storage** (original documents and large artifacts)
-- **Tesseract OCR** (image text extraction for the MVP; installed via Docker)
 
 The system follows a **modular monolith architecture** with clear separation of concerns and explicit state transitions.
 
@@ -103,8 +102,7 @@ Environment variables:
 
 ## Quickstart (Docker, recommended)
 
-The MVP requires OCR support, which depends on the system `tesseract` binary. The recommended way to run
-the backend with all dependencies installed is Docker.
+Docker is the recommended way to run the backend in a reproducible environment.
 
 ```bash
 docker compose up --build
@@ -115,6 +113,9 @@ Health check:
 ```bash
 curl http://localhost:8000/health
 ```
+
+Note:
+- The Docker image may include additional system packages intended for post-MVP work; MVP behavior remains PDF-only.
 
 ## Notes for evaluators
 

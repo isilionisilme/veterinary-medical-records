@@ -130,21 +130,18 @@ Tests should validate the scroll + navigation behavior at the component level, w
 
 ---
 
-## Non-PDF Preview (MVP)
+## File-Type Support (MVP)
 
-The backend accepts PDF, DOCX, and image uploads. The frontend preview behavior is intentionally minimal:
+The MVP supports **PDF-only** end-to-end.
 
-- PDF (`application/pdf`, `.pdf`):
-  - Use the existing PDF.js viewer and continuous scroll strategy.
-- Images (`image/png`, `image/jpeg`, `.png`, `.jpg`, `.jpeg`):
-  - Render via a native `<img>` preview (no PDF.js).
-  - Provide a "Download" action using `GET /documents/{id}/download`.
-- DOCX (`application/vnd.openxmlformats-officedocument.wordprocessingml.document`, `.docx`):
-  - Download-only in the MVP (no in-browser DOCX rendering requirement).
-  - Provide a clear "Download" action using `GET /documents/{id}/download`.
+Frontend implications:
+- Preview behavior is implemented for PDFs via PDF.js (continuous scroll).
+- Download behavior must work for PDFs via `GET /documents/{id}/download`.
 
-Rule:
-- Preview must never block document access; download must always work when the artifact exists.
+## Additional File Types (Post-MVP)
+
+Support for DOCX and images is introduced post-MVP (see `docs/project/IMPLEMENTATION_PLAN.md` Release 8: US-19 / US-20).
+This document does not define preview behavior for those types until those stories are implemented.
 
 ---
 
