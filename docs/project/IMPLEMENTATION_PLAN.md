@@ -70,9 +70,9 @@ Work is implemented sequentially following the release/story order in this docum
 The project owner decides when to stop.
 
 File-type boundary:
-- Upload supports the file types allowed by the Technical Design endpoint contract.
+- Supported upload types are defined by `docs/project/TECHNICAL_DESIGN.md` Appendix B3.
 - The processing pipeline (extraction → interpretation → review-in-context) is guaranteed only for **PDF** inputs.
-- DOCX and image uploads remain non-blocking for storage/access, but may not produce extraction/interpretation artifacts until Release 8 is implemented.
+- Additional file types are introduced in Release 8 (US-19 / US-20).
 
 Explicit non-goals:
 - Production hardening
@@ -125,9 +125,7 @@ Automatically process uploaded **PDF** documents in a **non-blocking** way, with
 - Append-only processing history
 
 ### Format support note
-The system accepts multiple upload types (Technical Design Appendix B3), but the processing pipeline is guaranteed only for PDFs:
-- Non-PDF behavior follows the failure classification and artifact rules in `docs/project/TECHNICAL_DESIGN.md` Appendices C3 and E and must remain non-blocking and explainable.
-- Full DOCX and image processing is handled in Release 8 (US-19 / US-20).
+Supported upload types are defined by `docs/project/TECHNICAL_DESIGN.md` Appendix B3. Additional file types are introduced in Release 8 (US-19 / US-20).
 
 ### User Stories (in order)
 - US-05 — Process document
@@ -380,7 +378,6 @@ As a veterinarian, I want uploaded PDF documents to be processed automatically s
 
 **Scope Clarification**
 - Processing follows the execution model defined in `docs/project/TECHNICAL_DESIGN.md` Appendix B1.
-- Non-PDF behavior follows the failure classification and artifact rules in `docs/project/TECHNICAL_DESIGN.md` Appendices C3 and E and must remain non-blocking and explainable.
 
 **Authoritative References**
 - Tech: Processing model and run invariants: `docs/project/TECHNICAL_DESIGN.md` Sections 3–4 + Appendix A2
