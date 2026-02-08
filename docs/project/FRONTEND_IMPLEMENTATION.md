@@ -140,7 +140,7 @@ Frontend implications:
 
 ## Additional File Types
 
-Support for DOCX and images is introduced in `docs/project/IMPLEMENTATION_PLAN.md` Release 8 (US-19 / US-20).
+Support for DOCX and images is tracked as post-MVP work in `docs/project/POST_MVP_BACKLOG.md` (US-19 / US-20).
 This document does not define preview behavior for those types until those stories are implemented.
 
 ---

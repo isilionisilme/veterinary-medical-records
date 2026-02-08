@@ -72,7 +72,7 @@ The project owner decides when to stop.
 File-type boundary:
 - Supported upload types are defined by `docs/project/TECHNICAL_DESIGN.md` Appendix B3.
 - The processing pipeline (extraction → interpretation → review-in-context) is guaranteed only for **PDF** inputs.
-- Additional file types are introduced in Release 8 (US-19 / US-20).
+- Additional file types (DOCX, images) are tracked as **post-MVP** work in `docs/project/POST_MVP_BACKLOG.md` (US-19 / US-20).
 
 Explicit non-goals:
 - Production hardening
@@ -125,7 +125,7 @@ Automatically process uploaded **PDF** documents in a **non-blocking** way, with
 - Append-only processing history
 
 ### Format support note
-Supported upload types are defined by `docs/project/TECHNICAL_DESIGN.md` Appendix B3. Additional file types are introduced in Release 8 (US-19 / US-20).
+Supported upload types are defined by `docs/project/TECHNICAL_DESIGN.md` Appendix B3. Additional file types are tracked as post-MVP work in `docs/project/POST_MVP_BACKLOG.md` (US-19 / US-20).
 
 ### User Stories (in order)
 - US-05 — Process document
@@ -223,19 +223,6 @@ Introduce reviewer-facing governance for global schema evolution, fully isolated
 - US-18 — Audit trail of schema governance decisions
 
 ---
-
-## Release 8 — Additional file types
-
-### Goal
-Add end-to-end support for additional upload types beyond PDF.
-
-### Scope
-- DOCX end-to-end support
-- Image end-to-end support
-
-### User Stories (in order)
-- US-19 — Full DOCX support
-- US-20 — Full Image support
 
 # User Story Details
 
@@ -770,57 +757,3 @@ As a reviewer, I want to see an audit trail of schema governance decisions so th
 - Unit + integration tests per `docs/project/TECHNICAL_DESIGN.md` Appendix B7.
 
 ---
-
-## US-19 — Full DOCX support
-
-**User Story**
-As a user, I want to upload, access, and process DOCX documents so that the same workflow supported for PDFs applies to Word documents.
-
-**Acceptance Criteria**
-- I can upload a supported DOCX document type.
-- I can download the original DOCX at any time without blocking on processing.
-- The system can process DOCX documents and expose the same processing visibility as PDFs.
-- Review-in-context remains non-blocking and preserves traceability for DOCX inputs.
-
-**Scope Clarification**
-- This story expands file-type support beyond PDF.
-
-**Authoritative References**
-- Tech: Endpoint surface and error semantics: `docs/project/TECHNICAL_DESIGN.md` Appendix B3/B3.2
-- Tech: Processing model and run invariants: `docs/project/TECHNICAL_DESIGN.md` Sections 3–4 + Appendix A2
-- UX: Review flow guarantees: `docs/project/UX_DESIGN.md`
-
-**Test Expectations**
-- DOCX inputs behave like PDFs for upload/download/status visibility.
-
-**Definition of Done (DoD)**
-- Acceptance criteria satisfied.
-- Unit + integration tests per `docs/project/TECHNICAL_DESIGN.md` Appendix B7.
-
----
-
-## US-20 — Full Image support
-
-**User Story**
-As a user, I want to upload, access, and process image documents so that scans and photographs can be handled in the same workflow.
-
-**Acceptance Criteria**
-- I can upload a supported image document type.
-- I can download and preview the original image at any time without blocking on processing.
-- The system can process image documents and expose the same processing visibility as PDFs.
-- Review-in-context remains non-blocking and preserves traceability for image inputs.
-
-**Scope Clarification**
-- This story expands file-type support beyond PDF.
-
-**Authoritative References**
-- Tech: Endpoint surface and error semantics: `docs/project/TECHNICAL_DESIGN.md` Appendix B3/B3.2
-- Tech: Processing model and run invariants: `docs/project/TECHNICAL_DESIGN.md` Sections 3–4 + Appendix A2
-- UX: Review flow guarantees: `docs/project/UX_DESIGN.md`
-
-**Test Expectations**
-- Image inputs behave like PDFs for upload/download/status visibility.
-
-**Definition of Done (DoD)**
-- Acceptance criteria satisfied.
-- Unit + integration tests per `docs/project/TECHNICAL_DESIGN.md` Appendix B7.

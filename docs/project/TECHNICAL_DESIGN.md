@@ -934,7 +934,7 @@ This section defines the **minimum endpoint surface**.
 ### Document-Level
 
 - `POST /documents/upload`
-  - Upload a document (PDF; additional file types in Release 8).
+  - Upload a document (PDF in MVP; additional file types tracked post-MVP).
 - `GET /documents`
   - List documents with derived status.
 - `GET /documents/{id}`
@@ -952,7 +952,7 @@ This section defines the **minimum endpoint surface**.
 
 ### Supported upload types (Normative)
 
-The system MUST accept only PDF uploads (Releases 1–7 scope; Release 8 adds additional file types):
+The system MUST accept only PDF uploads (Releases 1–7 scope):
 - `.pdf`
 - `application/pdf`
 
@@ -962,9 +962,9 @@ Rules:
   - `error_code = UNSUPPORTED_MEDIA_TYPE`
 - MIME type detection MUST be based on server-side inspection, not only filename.
 
-### Release 8 (file types)
+### Additional file types (Post-MVP)
 
-DOCX and image support are introduced as separate user stories (see `docs/project/IMPLEMENTATION_PLAN.md` Release 8: US-19 / US-20).
+DOCX and image support are introduced as separate post-MVP user stories (see `docs/project/POST_MVP_BACKLOG.md`: US-19 / US-20).
 
 This section does not define their acceptance lists or behavior; those are defined when implementing US-19 / US-20.
 
@@ -1282,7 +1282,7 @@ Non-negotiable invariant:
   - `/storage/{document_id}/original.pdf`
 
 Note:
-- Additional extensions may be introduced when non-PDF file types are added (US-19 / US-20).
+- Additional extensions may be introduced when non-PDF file types are added (post-MVP: US-19 / US-20 in `docs/project/POST_MVP_BACKLOG.md`).
 
   
 - Writes must be atomic.
@@ -1622,5 +1622,5 @@ Rationale:
 - Keeps Python dependencies lightweight (wrapper only).
 
 Rules:
-- OCR is out of scope until image processing (US-20) is implemented.
+- OCR is out of scope until image processing (US-20) is implemented (post-MVP: `docs/project/POST_MVP_BACKLOG.md`).
 - This section documents a recommended approach to implement image processing when US-20 is taken.
