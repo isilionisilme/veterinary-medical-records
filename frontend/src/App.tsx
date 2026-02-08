@@ -37,7 +37,7 @@ function parseFilename(contentDisposition: string | null): string | null {
 }
 
 async function fetchOriginalPdf(documentId: string): Promise<LoadResult> {
-  const response = await fetch(`${API_BASE_URL}/documents/${documentId}/original`);
+  const response = await fetch(`${API_BASE_URL}/documents/${documentId}/download`);
   if (!response.ok) {
     let errorMessage = "No pudimos cargar el documento.";
     try {
@@ -91,7 +91,7 @@ export function App() {
     if (!activeId) {
       return null;
     }
-    return `${API_BASE_URL}/documents/${activeId}/original?download=true`;
+    return `${API_BASE_URL}/documents/${activeId}/download?download=true`;
   }, [activeId]);
 
   useEffect(() => {

@@ -182,7 +182,7 @@ def get_document_status(request: Request, document_id: str) -> DocumentResponse 
 
 
 @router.get(
-    "/documents/{document_id}/original",
+    "/documents/{document_id}/download",
     status_code=status.HTTP_200_OK,
     response_class=FileResponse,
     response_model=None,
@@ -275,7 +275,7 @@ def get_document_original(
 
 
 @router.post(
-    "/documents",
+    "/documents/upload",
     response_model=DocumentUploadResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Register a document upload",
