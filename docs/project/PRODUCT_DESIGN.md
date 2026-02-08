@@ -79,7 +79,7 @@ observed across multiple documents under comparable conditions.
 Structural signals:
 - are accumulated over time,
 - are evaluated in aggregate,
-- never trigger automatic system changes in the MVP.
+- never trigger automatic system changes.
 
 They exist to support **deliberate, informed human governance**.
 
@@ -204,9 +204,9 @@ and system governance within the same workflow.
 
 ---
 
-## 6. Product Non-Goals (MVP)
+## 6. Product Non-Goals
 
-The MVP explicitly does **not** include:
+This project explicitly does **not** include:
 
 - automatic schema evolution,
 - confidence-driven automation,

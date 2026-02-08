@@ -52,7 +52,7 @@ Architecture + invariants + authoritative contracts (endpoint map, error semanti
 ---
 
 📄 **`docs/project/IMPLEMENTATION_PLAN.md`**  
-MVP scope + story order + acceptance criteria (sequencing authority).
+Scope + story order + acceptance criteria (sequencing authority).
 
 📄 **`docs/project/BACKEND_IMPLEMENTATION.md`**  
 Backend implementation details (“how”).
@@ -91,7 +91,7 @@ Key characteristics include:
 - explicit processing runs and failure modes,
 - and full traceability from document upload to review.
 
-### Backend configuration (MVP)
+### Backend configuration
 
 Environment variables:
 - `VET_RECORDS_DB_PATH`: override the SQLite database location.

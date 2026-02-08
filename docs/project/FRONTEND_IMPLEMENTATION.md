@@ -32,7 +32,7 @@ The frontend is implemented using:
 - **Tailwind CSS**  
   Used for styling, layout, responsiveness, and dark mode support with minimal custom CSS.
 
-- **Local UI primitives (MVP)**  
+- **Local UI primitives**  
   Prefer lightweight, local components under `/frontend/src/components/ui/*`.
   Do not add a UI component library unless required to satisfy accessibility or interaction constraints,
   and justify any new dependency.
@@ -63,7 +63,7 @@ The frontend is built and served independently but lives in the same repository.
 
 ---
 
-## Frontend Architecture (MVP)
+## Frontend Architecture
 
 The frontend is implemented as a small set of explicit, testable modules.
 
@@ -81,7 +81,7 @@ Suggested structure:
 State rules:
 - **Server state** (documents, status, review payloads, raw text) lives in TanStack Query only.
 - **Local UI state** (selected field, raw text panel open, current active page) lives in the view component(s).
-- Avoid introducing a global client-state store in the MVP.
+- Avoid introducing a global client-state store.
 
 ---
 
@@ -130,17 +130,17 @@ Tests should validate the scroll + navigation behavior at the component level, w
 
 ---
 
-## File-Type Support (MVP)
+## File-Type Support
 
-The MVP supports **PDF-only** end-to-end.
+End-to-end review is implemented for PDFs.
 
 Frontend implications:
 - Preview behavior is implemented for PDFs via PDF.js (continuous scroll).
 - Download behavior must work for PDFs via `GET /documents/{id}/download`.
 
-## Additional File Types (Post-MVP)
+## Additional File Types
 
-Support for DOCX and images is introduced post-MVP (see `docs/project/IMPLEMENTATION_PLAN.md` Release 8: US-19 / US-20).
+Support for DOCX and images is introduced in `docs/project/IMPLEMENTATION_PLAN.md` Release 8 (US-19 / US-20).
 This document does not define preview behavior for those types until those stories are implemented.
 
 ---
@@ -159,7 +159,7 @@ If matching fails:
 - page navigation and snippet evidence remain visible,
 - the UI does not attempt to fake precision.
 
-Bounding boxes and exact coordinates are deliberately excluded from MVP.
+Bounding boxes and exact coordinates are deliberately excluded.
 
 ---
 
@@ -217,7 +217,7 @@ This document must not introduce or reorder stories; it only provides implementa
 
 ---
 
-## Testing Strategy (MVP)
+## Testing Strategy
 
 Use Vitest + React Testing Library (already used by the repository frontend).
 
@@ -229,7 +229,7 @@ Minimum coverage:
 
 ---
 
-## Explicit Non-Goals (MVP)
+## Explicit Non-Goals
 
 The following are intentionally out of scope:
 

@@ -21,7 +21,7 @@ If any requirement in this document cannot be satisfied, STOP and explain the bl
 
 ## 1. System Overview (Technical)
 
-The MVP is implemented as a **modular monolith** with an **explicit, observable, step-based processing pipeline**.
+The system is implemented as a **modular monolith** with an **explicit, observable, step-based processing pipeline**.
 
 ---
 
@@ -32,7 +32,7 @@ The system is implemented as a **modular monolith**.
 - Logical boundaries must be preserved in code (modules, explicit interfaces).
 - Domain logic must remain independent from infrastructure.
 - The design must remain evolvable into independent services in the future.
-- Do not introduce infrastructure complexity that is not strictly required for the MVP.
+- Do not introduce infrastructure complexity that is not strictly required for the scope defined in this repository.
 
 ---
 
@@ -258,7 +258,7 @@ If a client attempts to edit/review while a `RUNNING` run exists, the API MUST r
 
 ---
 
-## 9. Observability (MVP Level)
+## 9. Observability
 
 ### 9.1 Logging
 
@@ -278,19 +278,19 @@ Logs must be best-effort and must **never block processing**.
 
 ### 9.2 Future Observability (Not Implemented)
 
-Metrics and persistent event tracing are **explicitly out of scope** for the MVP, but must be supported by design.
+Metrics and persistent event tracing are **explicitly out of scope**, but must be supported by design.
 
 ---
 
 ## 10. API Constraints
 
-- The API is **internal only** in the MVP.
+- The API is **internal only**.
 - No strict backward compatibility is required across releases at this stage.
 - Formal versioning and public hardening are future concerns.
 
 ---
 
-## 11. Explicit Non-Goals (MVP)
+## 11. Explicit Non-Goals
 
 Do **not** implement:
 - automatic layout evolution
@@ -305,7 +305,7 @@ Do **not** implement:
 
 ## 12. Data Lifecycle & Compliance (Future Concern)
 
-Data deletion and compliance are **not implemented** in the MVP.
+Data deletion and compliance are **not implemented**.
 
 However, the design assumes future support for:
 - soft delete of documents
@@ -332,7 +332,7 @@ Implement exactly what is described.
 ---
 # Appendix A — Contracts, States & Invariants (Normative)
 
-This appendix defines **system-wide, authoritative rules** for the MVP.  
+This appendix defines **system-wide, authoritative rules**.  
 If any conflict exists between this appendix and other documents (User Stories, Implementation Plan, examples), **this appendix takes precedence**.
 
 Its purpose is to remove ambiguity for implementation (human or AI-assisted) and to prevent divergent interpretations.
@@ -446,7 +446,7 @@ Allowed values:
 
 ---
 
-## A4. Confidence Rules (MVP)
+## A4. Confidence Rules
 
 - Confidence is:
   - contextual,
@@ -459,7 +459,7 @@ Allowed values:
 - Confidence updates:
   - are local,
   - are non-immediate,
-  - never trigger automation in the MVP.
+  - never trigger automation.
 
 ---
 
@@ -467,7 +467,7 @@ Allowed values:
 
 These principles apply to **all endpoints**:
 
-- APIs are **internal** in the MVP.
+- APIs are **internal**.
 - Contracts are explicit and deterministic.
 - Responses always include enough context for the UI to explain:
   - current state,
@@ -565,7 +565,7 @@ Rules:
 
 ## A9. Explicit Non-Goals (Normative)
 
-The MVP explicitly does **not** implement:
+This system explicitly does **not** implement:
 
 - automatic schema evolution,
 - confidence-driven automation,
@@ -602,13 +602,13 @@ If any conflict exists between this appendix and other documents, **Appendix A a
 
 ## B1. Asynchronous In-Process Processing Model (Authoritative)
 
-### B1.1 Assumed Execution Model (MVP)
+### B1.1 Assumed Execution Model
 
 - Background processing is executed **in-process**, using:
   - a controlled background task runner (e.g. internal task loop or executor),
   - **no external queues, brokers, or services**.
-- The MVP assumes a **single-process deployment**.
-  - Multi-worker deployments are **out of scope** for the MVP.
+- The system assumes a **single-process deployment**.
+  - Multi-worker deployments are **out of scope**.
   - The design must not rely on shared in-memory state across processes.
 
 This choice prioritizes simplicity and debuggability over throughput.
@@ -633,7 +633,7 @@ No background worker may start a run without verifying this invariant.
 
 ### B1.2.1 Persistence-Level Guard Pattern (SQLite, Authoritative)
 
-To enforce “at most one `RUNNING` run per document” in the MVP, run creation and run start transitions must follow a persistence-level guard pattern that prevents race conditions.
+To enforce “at most one `RUNNING` run per document”, run creation and run start transitions must follow a persistence-level guard pattern that prevents race conditions.
 
 Definitions:
 - A running run is a run with state `RUNNING`.
@@ -668,7 +668,7 @@ Rationale:
 
 ---
 
-### B1.4 Retry & Timeout Policy (MVP)
+### B1.4 Retry & Timeout Policy
 
 - Retries:
   - Are local to a single run.
@@ -689,7 +689,7 @@ Reprocessing always creates a **new run**.
 
 ### B1.5 In-Process Scheduler Semantics (Authoritative)
 
-The MVP includes an in-process scheduler that periodically attempts to start queued runs.
+The system includes an in-process scheduler that periodically attempts to start queued runs.
 
 Rules:
 - Selection:
@@ -739,7 +739,7 @@ Derived / external:
 
 Invariants:
 - A document must exist before any run.
-- A document is never deleted in the MVP.
+- A document is never deleted.
 
 ---
 
@@ -861,7 +861,7 @@ If any user story lists different endpoint paths, treat them as non-normative ex
 
 ---
 
-### B2.7 SchemaVersion (MVP, Authoritative)
+### B2.7 SchemaVersion (Authoritative)
 
 **Purpose**: Stores the canonical schema versions used by new processing runs.
 
@@ -880,7 +880,7 @@ Invariants:
 
 ---
 
-### B2.8 StructuralChangeCandidate (MVP, Authoritative)
+### B2.8 StructuralChangeCandidate (Authoritative)
 
 **Purpose**: Represents an aggregated, reviewer-facing candidate for schema evolution derived from repeated document-level edit patterns.
 
@@ -903,7 +903,7 @@ Invariants:
 
 ---
 
-### B2.9 GovernanceDecision (MVP, Authoritative)
+### B2.9 GovernanceDecision (Authoritative)
 
 **Purpose**: Append-only audit log of reviewer governance actions (schema evolution decisions).
 
@@ -927,14 +927,14 @@ Invariants:
 
 ## B3. Minimal API Endpoint Map (Authoritative)
 
-This section defines the **minimum endpoint surface** for the MVP.
+This section defines the **minimum endpoint surface**.
 
 ---
 
 ### Document-Level
 
 - `POST /documents/upload`
-  - Upload a document (PDF in MVP; additional file types post-MVP).
+  - Upload a document (PDF; additional file types in Release 8).
 - `GET /documents`
   - List documents with derived status.
 - `GET /documents/{id}`
@@ -950,9 +950,9 @@ This section defines the **minimum endpoint surface** for the MVP.
 - `GET /documents/{id}/processing-history`
   - Read-only processing history (runs + step statuses).
 
-### Supported upload types (Normative, MVP)
+### Supported upload types (Normative)
 
-The system MUST accept only PDF uploads in the MVP:
+The system MUST accept only PDF uploads (Releases 1–7 scope; Release 8 adds additional file types):
 - `.pdf`
 - `application/pdf`
 
@@ -962,13 +962,11 @@ Rules:
   - `error_code = UNSUPPORTED_MEDIA_TYPE`
 - MIME type detection MUST be based on server-side inspection, not only filename.
 
-### Post-MVP / future stories (file types)
+### Release 8 (file types)
 
-DOCX and image support are intentionally out of scope for the MVP and are introduced later
-as separate user stories (see `docs/project/IMPLEMENTATION_PLAN.md` Release 8: US-19 / US-20).
+DOCX and image support are introduced as separate user stories (see `docs/project/IMPLEMENTATION_PLAN.md` Release 8: US-19 / US-20).
 
-This section does not define their acceptance lists or behavior; those are deferred to the
-post-MVP stories to avoid expanding MVP scope.
+This section does not define their acceptance lists or behavior; those are defined when implementing US-19 / US-20.
 
 ---
 
@@ -1153,7 +1151,7 @@ Rules:
 
 ## B3.2 Endpoint error semantics & error codes (Normative)
 
-This section defines **stable HTTP semantics** and `error_code` values for the MVP.
+This section defines **stable HTTP semantics** and `error_code` values.
 It prevents user stories from redefining per-endpoint behavior.
 
 ### Error response format (Authoritative)
@@ -1163,7 +1161,7 @@ All error responses MUST follow Appendix **B2.6**:
 - `message` (safe for user display)
 - `details` (optional object; must not expose secrets or filesystem paths)
 
-### Common HTTP statuses (MVP)
+### Common HTTP statuses
 
 - `400 Bad Request`
   - Invalid request body, missing required fields, invalid parameters.
@@ -1206,11 +1204,11 @@ All error responses MUST follow Appendix **B2.6**:
 ### Notes
 - Frontend MUST branch on `error_code` (and optional `details.reason`) only.
 - User stories may list example error cases, but must not redefine these semantics.
-- Upload type support is defined in Appendix B3 (“Supported upload types (Normative, MVP)”).
+- Upload type support is defined in Appendix B3 (“Supported upload types (Normative)”).
 
 
 ### Upload size limit (Normative)
-- Maximum upload size: 20 MB (MVP default).
+- Maximum upload size: 20 MB (default).
 - Exceeding the limit returns:
   - HTTP 413
   - `error_code = FILE_TOO_LARGE`
@@ -1246,7 +1244,7 @@ The following actions must be safe to retry:
 Mechanisms:
 - Persistence-level guards (see B1.2.1).
 - Explicit checks for invariants (single `RUNNING` run rule + run-start guard).
-- No reliance on client-provided idempotency keys in the MVP.
+- No reliance on client-provided idempotency keys.
 
 “Safe to retry” means:
 - Retrying does not corrupt state.
@@ -1255,14 +1253,14 @@ Mechanisms:
 ### B4.1 Endpoint Semantics
 
 **POST /documents/upload**
-- Retrying may create a new document (no deduplication in MVP).
+- Retrying may create a new document (no deduplication).
 - The system must avoid partial persistence:
   - no DB row without filesystem artifact on success,
   - no filesystem artifact without DB row on success.
 
 **POST /documents/{id}/reprocess**
 - Always creates a new `ProcessingRun` in `QUEUED`.
-- Retrying may create multiple queued runs. This is acceptable in MVP.
+- Retrying may create multiple queued runs. This is acceptable.
 - The system must remain consistent:
   - runs are append-only,
   - only one run may be `RUNNING` per document at any time.
@@ -1281,9 +1279,9 @@ Non-negotiable invariant:
 ## B5. Filesystem Management Rules
 
 - Files are stored under deterministic paths:
-  - `/storage/{document_id}/original.pdf` (MVP)
+  - `/storage/{document_id}/original.pdf`
 
-Post-MVP note:
+Note:
 - Additional extensions may be introduced when non-PDF file types are added (US-19 / US-20).
 
   
@@ -1295,7 +1293,7 @@ Inconsistencies:
 - FS exists, DB missing → treat as invalid artifact.
 - DB exists, FS missing → surface explicit error on access.
 
-No background cleanup is required in the MVP.
+No background cleanup is required.
 
 ---
 
@@ -1311,7 +1309,7 @@ Only explicit user actions change review state.
 
 ---
 
-## B7. Testability Expectations (MVP)
+## B7. Testability Expectations
 
 Expected test layers:
 - Unit tests:
@@ -1420,7 +1418,7 @@ Rule:
 
 # Appendix D — Structured Interpretation Schema (v0) (Normative)
 
-This appendix defines the **authoritative minimum JSON schema** for structured interpretations in the MVP.
+This appendix defines the **authoritative minimum JSON schema** for structured interpretations.
 It exists to remove ambiguity for implementation (especially AI-assisted coding) and to support:
 - **Review in context** (US-07)
 - **Editing with traceability** (US-08)
@@ -1429,7 +1427,7 @@ If any conflict exists, **Appendix A, Appendix B, Appendix C, and this appendix 
 
 ## D1. Scope and Design Principles
 
-This is a deliberately small MVP contract, **not a full medical ontology**.
+This is a deliberately small contract, **not a full medical ontology**.
 
 - **Assistive, not authoritative**: outputs are explainable and editable.
 - **Non-blocking**: confidence and governance never block veterinarians.
@@ -1521,7 +1519,7 @@ Repeated concepts (e.g., medications) are represented by multiple fields with th
 
 ### D7.3 Governance (Future-Facing)
 Structural changes (new keys, key remapping) may later be marked as pending review for schema evolution.
-This is never exposed or actionable in veterinarian-facing workflows in the MVP.
+This is never exposed or actionable in veterinarian-facing workflows.
 
 ### D7.4 Critical Concepts (Authoritative)
 
@@ -1580,27 +1578,27 @@ This appendix closes the minimum dependency decisions required to implement:
 
 If any conflict exists, Appendix A and Appendix B take precedence for invariants and persistence rules.
 
-## E1. PDF Text Extraction (MVP)
+## E1. PDF Text Extraction
 
 Decision (Authoritative):
-- Use **PyMuPDF** (`pymupdf`, imported as `fitz`) as the sole PDF text extraction library in the MVP.
+- Use **PyMuPDF** (`pymupdf`, imported as `fitz`) as the sole PDF text extraction library.
 
 Rationale:
 - Good text extraction quality for “digital text” PDFs.
 - Fast and simple to integrate in an in-process worker.
 - Keeps the dependency surface small (single primary extractor).
 
-Explicit non-goals (MVP):
+Explicit non-goals:
 - OCR for scanned PDFs is out of scope.
 - If a PDF is scanned and yields empty/near-empty extracted text, the run may fail as `EXTRACTION_FAILED`.
 
-## E2. Language Detection (MVP)
+## E2. Language Detection
 
 Decision (Authoritative):
 - Use **langdetect** as the language detection library.
 
 Rationale:
-- Lightweight dependency sufficient for MVP.
+- Lightweight dependency sufficient for this scope.
 - Provides deterministic-enough output to populate `ProcessingRun.language_used`.
 
 Rules:
@@ -1614,7 +1612,7 @@ The repository must include a short justification (e.g., in `README.md` or an AD
 - Why langdetect was chosen for language detection,
 - What is explicitly out of scope (OCR for scanned PDFs).
 
-## E4. Image OCR (Post-MVP candidate)
+## E4. Image OCR (Future candidate)
 
 Decision (Authoritative):
 - Use **Tesseract OCR** (system binary `tesseract`) for OCR of supported image uploads (`.png`, `.jpg`, `.jpeg`).
@@ -1624,5 +1622,5 @@ Rationale:
 - Keeps Python dependencies lightweight (wrapper only).
 
 Rules:
-- Image uploads are post-MVP; OCR is therefore out of MVP scope.
+- OCR is out of scope until image processing (US-20) is implemented.
 - This section documents a recommended approach to implement image processing when US-20 is taken.

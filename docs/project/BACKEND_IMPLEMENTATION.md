@@ -33,9 +33,9 @@ This document translates the **authoritative system design** into backend implem
 - OCR for scanned PDFs
 - Product meaning, governance, or UX rules
 
-## Running The Backend (MVP)
+## Running The Backend
 
-The MVP is PDF-only. Run instructions live in the repository root `README.md`.
+Run instructions live in the repository root `README.md`.
 
 
 ## Backend architecture
@@ -103,7 +103,7 @@ Store the original upload under:
 Where `ext` is derived from the normalized file type.
 
 ### Run-scoped artifacts (implementation)
-Define deterministic run artifact paths (minimum required for MVP):
+Define deterministic run artifact paths (minimum required):
 - `RAW_TEXT`: `/storage/{document_id}/runs/{run_id}/raw-text.txt`
 
 Note:
@@ -138,8 +138,8 @@ Authority: `docs/project/TECHNICAL_DESIGN.md` Appendix B3.2 + Appendix B5.
 
 ## Processing execution model (in-process)
 
-### Single-process MVP constraint
-The MVP assumes **single-process deployment**. Multi-worker deployments are out of scope.
+### Single-process constraint
+The system assumes **single-process deployment**. Multi-worker deployments are out of scope.
 
 ### Asynchronous behavior
 - API requests MUST NOT block on processing completion.
@@ -247,7 +247,7 @@ Implementation guidance:
 ## Text extraction + language detection 
 
 ### PDF extraction
-Authority: `docs/project/TECHNICAL_DESIGN.md` (PyMuPDF extraction; OCR is out of scope in MVP).
+Authority: `docs/project/TECHNICAL_DESIGN.md` (PyMuPDF extraction; OCR is out of scope).
 
 Implementation note: if extracted text is empty/near-empty, the run may fail as `EXTRACTION_FAILED` (per Technical Design step failure mapping; Appendix C3).
 
