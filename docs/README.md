@@ -23,6 +23,17 @@ This folder is split into two areas:
 - `docs/project/FRONTEND_IMPLEMENTATION.md` — frontend implementation details (if applicable) (project-specific)
 - `docs/project/IMPLEMENTATION_PLAN.md` — scope + story order + acceptance criteria (if applicable) (project-specific)
 
+## Authority & precedence
+
+If documents conflict, resolve in this order:
+1) `docs/project/TECHNICAL_DESIGN.md` — contracts and invariants
+2) `docs/project/UX_DESIGN.md` — interaction contract
+3) `docs/project/PRODUCT_DESIGN.md` — system meaning and governance boundary
+4) `docs/project/IMPLEMENTATION_PLAN.md` — sequencing and acceptance criteria
+5) `docs/project/BACKEND_IMPLEMENTATION.md` and `docs/project/FRONTEND_IMPLEMENTATION.md` — implementation notes
+
+Shared docs (`docs/shared/*`) apply globally within their scope.
+
 ## Dependency justification (Technical Design Appendix E3)
 
 PDF text extraction uses **PyMuPDF** because it provides strong extraction quality for “digital text” PDFs with a small dependency footprint and straightforward integration.
