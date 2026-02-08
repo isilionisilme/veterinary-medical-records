@@ -62,11 +62,11 @@ def test_get_document_original_returns_410_when_missing_file(test_client):
     response = test_client.get(f"/documents/{document_id}/original")
     assert response.status_code == 410
     payload = response.json()
-    assert payload["error_code"] == "ORIGINAL_FILE_MISSING"
+    assert payload["error_code"] == "ARTIFACT_MISSING"
 
 
 def test_get_document_original_returns_404_when_document_missing(test_client):
     response = test_client.get("/documents/does-not-exist/original")
     assert response.status_code == 404
     payload = response.json()
-    assert payload["error_code"] == "DOCUMENT_NOT_FOUND"
+    assert payload["error_code"] == "NOT_FOUND"

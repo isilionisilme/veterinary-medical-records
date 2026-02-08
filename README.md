@@ -23,6 +23,9 @@ This project explores an approach that assists veterinarians during document rev
 
 ## Repository structure
 
+- `backend/` — FastAPI API + persistence (SQLite + filesystem) + tests
+- `frontend/` — React app for document upload/list/review flows
+- `docs/` — authoritative documentation (start at `docs/README.md`)
 
 ---
 
@@ -46,13 +49,16 @@ Product intent + semantics summary (with canonical Google Doc link).
 📄 **`docs/project/UX_DESIGN.md`**  
 UX interaction contract (roles, workflow guarantees, confidence UX rules).
 
+📄 **`docs/project/BRAND_GUIDELINES.md`**  
+Visual identity and tone of user-facing copy.
+
 📄 **`docs/project/TECHNICAL_DESIGN.md`**  
 Architecture + invariants + authoritative contracts (endpoint map, error semantics, state rules, schemas).
 
 ---
 
 📄 **`docs/project/IMPLEMENTATION_PLAN.md`**  
-MVP scope + story order + acceptance criteria (sequencing authority).
+Scope + story order + acceptance criteria (sequencing authority).
 
 📄 **`docs/project/BACKEND_IMPLEMENTATION.md`**  
 Backend implementation details (“how”).
@@ -75,6 +81,24 @@ Shared UX principles referenced by project UX design.
 
 ---
 
+## Quickstart (Evaluator)
+
+Prereqs: Python 3.11 and Node.js 18+.
+
+Backend (Windows PowerShell):
+- `python -m venv .venv`
+- `.\.venv\Scripts\activate`
+- `pip install -r requirements-dev.txt`
+- `uvicorn backend.app.main:create_app --factory --reload`
+
+Frontend (new shell):
+- `cd frontend`
+- `npm install`
+- `npm run dev`
+
+OpenAPI and API docs:
+- `http://localhost:8000/docs`
+
 ## Backend implementation
 
 The backend is implemented using:
@@ -91,7 +115,7 @@ Key characteristics include:
 - explicit processing runs and failure modes,
 - and full traceability from document upload to review.
 
-### Backend configuration (MVP)
+### Backend configuration
 
 Environment variables:
 - `VET_RECORDS_DB_PATH`: override the SQLite database location.
@@ -109,5 +133,9 @@ This exercise is intentionally structured to show:
 - and how a system can scale safely in a sensitive, regulated context.
 
 The focus is on **clarity, judgment, and maintainability**, rather than feature completeness.
+
+## Implementation status
+
+The current code covers Release 1 user stories (US-01 through US-04). Later releases are defined in `docs/project/IMPLEMENTATION_PLAN.md` for sequencing and acceptance criteria.
 
 ---
