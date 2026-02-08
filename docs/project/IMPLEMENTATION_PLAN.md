@@ -65,7 +65,9 @@ If a story depends on any of the above, it MUST reference the authoritative sect
 
 ## Scope and Non-Goals
 
-This plan covers the **Veterinary Medical Records Processing MVP** only.
+This plan defines the executable **Veterinary Medical Records Processing MVP** scope (Releases 1–7).
+
+Release 8 is included as post-MVP sequencing context and is not executable as part of the MVP unless explicitly scheduled.
 
 MVP scope boundary (file types):
 - The MVP supports upload for the file types allowed by the Technical Design endpoint contract.
@@ -237,6 +239,8 @@ Add end-to-end support for additional upload types beyond PDF.
 - US-19 — Full DOCX support (post-MVP)
 - US-20 — Full Image support (post-MVP)
 
+Note: Release 8 is post-MVP only; do not implement as part of the MVP scope.
+
 # User Story Details
 
 Each story below contains only:
@@ -377,7 +381,7 @@ As a veterinarian, I want uploaded PDF documents to be processed automatically s
 - Each processing attempt is traceable and does not overwrite prior runs/artifacts.
 
 **Scope Clarification**
-- No external queues or distributed infrastructure are introduced in the MVP.
+- No external queues or distributed infrastructure are introduced in the MVP (see `docs/project/TECHNICAL_DESIGN.md` Appendix B1).
 - For non-PDF uploads, processing may fail during extraction in MVP; this must be non-blocking and explainable (Technical Design Appendices C3 and E).
 
 **Authoritative References**
