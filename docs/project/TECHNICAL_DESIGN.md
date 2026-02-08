@@ -4,7 +4,7 @@ This document is intended to provide structured context to an AI Coding Assistan
 The version of this document written for evaluators and reviewers is available here:
 https://docs.google.com/document/d/16lgxuT48fA5ZCnEpR4rokl4hLbyM0yfTszlu6vHrHtM
 
-Reading order and cross-document precedence are defined in `docs/README.md`.
+Reading order and cross-document precedence are defined in [`docs/README.md`](../README.md).
 
 # Technical Design — Instructions for Implementation
 
@@ -148,7 +148,7 @@ The pipeline is **observable** and **step-based**.
 - Processing is **asynchronous** and runs in the background.
 - API requests must **never block** waiting for processing to complete.
 - Processing is executed internally (in-process worker or equivalent).
-This document describes an in-process execution model; story-specific scope boundaries live in `docs/project/IMPLEMENTATION_PLAN.md`.
+This document describes an in-process execution model; story-specific scope boundaries live in [`docs/project/IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md).
 
 ---
 
@@ -235,7 +235,7 @@ If a client attempts to edit/review while a `RUNNING` run exists, the API MUST r
 
 - Each structured field MUST carry a `confidence` number in range 0–1 (see Appendix D).
 - Confidence is a stored **attention signal** only.
-- The meaning/governance of confidence in veterinarian workflows is defined in `docs/project/PRODUCT_DESIGN.md`.
+- The meaning/governance of confidence in veterinarian workflows is defined in [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md).
 
 ---
 
@@ -286,7 +286,7 @@ If public exposure, formal versioning, or hardening is introduced, it should be 
 
 ## 11. Scope Ownership
 
-Story-specific scope boundaries are defined per user story in `docs/project/IMPLEMENTATION_PLAN.md` (Scope Clarification).
+Story-specific scope boundaries are defined per user story in [`docs/project/IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md) (Scope Clarification).
 This Technical Design defines the technical contracts and invariants needed to implement those stories.
 
 ---
@@ -1484,7 +1484,7 @@ Rules (technical, authoritative):
 - This designation MUST NOT block workflows; it only drives UI signaling and internal flags.
 
 Source of truth for `CRITICAL_KEYS_V0`:
-- Defined in `docs/project/PRODUCT_DESIGN.md` (product authority).
+- Defined in [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md) (product authority).
 
 ---
 
@@ -1558,6 +1558,6 @@ Rules:
 
 ## E3. Dependency Justification (Repository Requirement)
 
-The repository must include a short justification (e.g., in `README.md` or an ADR) explaining:
+The repository must include a short justification (e.g., in [`README.md`](../../README.md) or an ADR) explaining:
 - Why PyMuPDF was chosen for extraction,
 - Why langdetect was chosen for language detection.
