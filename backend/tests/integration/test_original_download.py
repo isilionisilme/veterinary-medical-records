@@ -29,7 +29,7 @@ def test_client(test_db):
 def _upload_sample_document(test_client: TestClient) -> tuple[str, bytes]:
     sample_content = b"%PDF-1.5 sample"
     files = {"file": ("record.pdf", io.BytesIO(sample_content), "application/pdf")}
-    response = test_client.post("/documents", files=files)
+    response = test_client.post("/documents/upload", files=files)
     assert response.status_code == 201
     return response.json()["document_id"], sample_content
 
@@ -37,7 +37,7 @@ def _upload_sample_document(test_client: TestClient) -> tuple[str, bytes]:
 def test_get_document_original_returns_pdf_inline(test_client):
     document_id, sample_content = _upload_sample_document(test_client)
 
-    response = test_client.get(f"/documents/{document_id}/original")
+    response = test_client.get(f"/documents/{document_id}/download")
     assert response.status_code == 200
     assert response.content == sample_content
     assert response.headers["content-type"].startswith("application/pdf")
@@ -48,7 +48,7 @@ def test_get_document_original_returns_pdf_inline(test_client):
 def test_get_document_original_returns_attachment_when_download_true(test_client):
     document_id, _ = _upload_sample_document(test_client)
 
-    response = test_client.get(f"/documents/{document_id}/original?download=true")
+    response = test_client.get(f"/documents/{document_id}/download?download=true")
     assert response.status_code == 200
     assert "attachment" in response.headers["content-disposition"].lower()
 
@@ -59,14 +59,14 @@ def test_get_document_original_returns_410_when_missing_file(test_client):
     storage_path = get_storage_root() / document_id / "original.pdf"
     storage_path.unlink()
 
-    response = test_client.get(f"/documents/{document_id}/original")
+    response = test_client.get(f"/documents/{document_id}/download")
     assert response.status_code == 410
     payload = response.json()
     assert payload["error_code"] == "ARTIFACT_MISSING"
 
 
 def test_get_document_original_returns_404_when_document_missing(test_client):
-    response = test_client.get("/documents/does-not-exist/original")
+    response = test_client.get("/documents/does-not-exist/download")
     assert response.status_code == 404
     payload = response.json()
     assert payload["error_code"] == "NOT_FOUND"

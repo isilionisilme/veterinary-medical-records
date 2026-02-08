@@ -31,7 +31,7 @@ def test_upload_success_creates_document(test_client):
     files = {
         "file": ("record.pdf", io.BytesIO(b"%PDF-1.5 sample"), "application/pdf")
     }
-    response = test_client.post("/documents", files=files)
+    response = test_client.post("/documents/upload", files=files)
     assert response.status_code == 201
     payload = response.json()
     assert payload["status"] == app_models.ProcessingStatus.UPLOADED.value
@@ -64,7 +64,7 @@ def test_upload_rejects_unsupported_type(test_client):
     files = {
         "file": ("record.txt", io.BytesIO(b"plain text"), "text/plain")
     }
-    response = test_client.post("/documents", files=files)
+    response = test_client.post("/documents/upload", files=files)
     assert response.status_code == 415
     payload = response.json()
     assert payload["error_code"] == "UNSUPPORTED_MEDIA_TYPE"
@@ -77,7 +77,7 @@ def test_upload_limits_size(test_client):
     files = {
         "file": ("record.pdf", io.BytesIO(large_content), "application/pdf")
     }
-    response = test_client.post("/documents", files=files)
+    response = test_client.post("/documents/upload", files=files)
     assert response.status_code == 413
     assert response.json()["error_code"] == "FILE_TOO_LARGE"
 
@@ -86,7 +86,7 @@ def test_upload_rejects_empty_file(test_client):
     files = {
         "file": ("record.pdf", io.BytesIO(b""), "application/pdf")
     }
-    response = test_client.post("/documents", files=files)
+    response = test_client.post("/documents/upload", files=files)
     assert response.status_code == 400
     assert response.json()["error_code"] == "INVALID_REQUEST"
 
@@ -95,7 +95,7 @@ def test_get_document_returns_metadata_and_state(test_client):
     files = {
         "file": ("record.pdf", io.BytesIO(b"%PDF-1.5 sample"), "application/pdf")
     }
-    upload_response = test_client.post("/documents", files=files)
+    upload_response = test_client.post("/documents/upload", files=files)
     assert upload_response.status_code == 201
     document_id = upload_response.json()["document_id"]
 

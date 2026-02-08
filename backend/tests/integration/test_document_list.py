@@ -29,7 +29,7 @@ def test_client(test_db):
 def _upload_sample_document(test_client: TestClient, filename: str) -> str:
     content = b"%PDF-1.5 sample"
     files = {"file": (filename, io.BytesIO(content), "application/pdf")}
-    response = test_client.post("/documents", files=files)
+    response = test_client.post("/documents/upload", files=files)
     assert response.status_code == 201
     return response.json()["document_id"]
 
