@@ -204,18 +204,11 @@ and system governance within the same workflow.
 
 ---
 
-## 6. Product Non-Goals
+## 6. Learning & Governance
 
-This project explicitly does **not** include:
+This project is designed to keep veterinary workflows operational and safe while enabling deliberate, auditable system-level evolution over time.
 
-- automatic schema evolution,
-- confidence-driven automation,
-- blocking approvals for veterinarians,
-- retroactive changes to past documents,
-- model training or fine-tuning,
-- implicit system learning.
-
-These are future concerns and must not be approximated implicitly.
+Any change that affects global behavior or schema meaning should be introduced via explicit governance and corresponding product, UX, and technical design updates.
 
 ---
 
@@ -223,10 +216,7 @@ These are future concerns and must not be approximated implicitly.
 
 This document defines **what the system means and why**.
 
-It does not define:
-- UI layout or interaction patterns,
-- architectural or implementation details,
-- API contracts or persistence models.
+It does not define UI layout or interaction patterns, architectural or implementation details, or API/persistence contracts.
 
 If a decision cannot be justified using:
 - this document,

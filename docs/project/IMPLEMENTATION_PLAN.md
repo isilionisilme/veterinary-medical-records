@@ -27,7 +27,7 @@ This document does **not** define:
 
 Those are defined in their respective authoritative documents as described in `docs/README.md`.
 
-Features or behaviors not explicitly listed here are considered **out of scope**.
+Features or behaviors not explicitly listed here are not part of this plan.
 
 ---
 
@@ -63,23 +63,13 @@ If a story depends on any of the above, it MUST reference the authoritative sect
 
 ---
 
-## Scope and Non-Goals
+## Scope
 
 This plan defines releases and user stories, in execution order.
 Work is implemented sequentially following the release/story order in this document.
-The project owner decides when to stop.
 
-File-type boundary:
-- Supported upload types are defined by `docs/project/TECHNICAL_DESIGN.md` Appendix B3.
-- The processing pipeline (extraction → interpretation → review-in-context) is guaranteed only for **PDF** inputs.
-- DOCX and image format expansion are sequenced as the final stories (US-19 and US-20).
-
-Explicit non-goals:
-- Production hardening
-- Multi-tenant support
-- Advanced ML training loops
-- Full policy automation
-- Performance optimization beyond correctness
+All scope boundaries must be expressed inside each user story’s **Scope Clarification** section.
+If a behavior is not described by the currently scheduled stories, it should be introduced via a dedicated user story (and any required design updates).
 
 ---
 
@@ -262,9 +252,10 @@ As a user, I want to upload a document so that it is stored and available for pr
 **Scope Clarification**
 - This story does not start processing.
 - Background processing is introduced later (US-05).
+- This story supports the upload types defined in `docs/project/TECHNICAL_DESIGN.md` Appendix B3; format expansion is introduced via later user stories.
 
 **Authoritative References**
-- Tech: API surface + upload constraints + errors: `docs/project/TECHNICAL_DESIGN.md` Appendix B3/B3.2
+- Tech: API surface + upload requirements + errors: `docs/project/TECHNICAL_DESIGN.md` Appendix B3/B3.2
 - Tech: Derived document status: `docs/project/TECHNICAL_DESIGN.md` Appendix A1.2
 - Tech: Filesystem rules: `docs/project/TECHNICAL_DESIGN.md` Appendix B5
 
@@ -376,6 +367,9 @@ As a veterinarian, I want uploaded PDF documents to be processed automatically s
 
 **Scope Clarification**
 - Processing follows the execution model defined in `docs/project/TECHNICAL_DESIGN.md` Appendix B1.
+- This story does not introduce external queues or worker infrastructure; processing runs in-process and is non-blocking.
+- This story does not require OCR for scanned PDFs; extraction relies on embedded text when available.
+- This story does not execute multiple runs concurrently for the same document.
 
 **Authoritative References**
 - Tech: Processing model and run invariants: `docs/project/TECHNICAL_DESIGN.md` Sections 3–4 + Appendix A2
@@ -462,7 +456,7 @@ As a veterinarian, I want to review the system’s interpretation while viewing 
 
 **Scope Clarification**
 - No approval/gating flows are introduced.
-- Exact coordinate evidence is out of scope.
+- This story does not require exact coordinate evidence.
 - Review requires a completed run with an active interpretation; this is expected for PDFs (see Technical Design Appendix E).
 
 **Authoritative References**
@@ -531,7 +525,7 @@ As a veterinarian, I want the system to record my normal corrections as append-o
 - Capture-only in this story: no confidence adjustment, no model training, no schema changes.
 
 **Authoritative References**
-- Product: Non-goals (no implicit learning behavior changes): `docs/project/PRODUCT_DESIGN.md` Section 6
+- Product: Learning and governance principles: `docs/project/PRODUCT_DESIGN.md` Section 6
 - Tech: Field change log is append-only and can serve as correction signal storage: `docs/project/TECHNICAL_DESIGN.md` Appendix B2.5
 - UX: No explicit feedback flows: `docs/project/UX_DESIGN.md` Section 4
 
@@ -782,8 +776,8 @@ As a user, I want to upload, access, and process DOCX documents so that the same
 
 **Scope Clarification**
 - This story changes format support only; the processing pipeline, contracts, versioning rules, and review workflow semantics remain unchanged.
-- If preview is not implemented for DOCX, the UI must clearly fall back to download-only without blocking workflows.
-- This story requires updating the authoritative format constraints in `docs/project/TECHNICAL_DESIGN.md` (supported upload types and any related filesystem rules).
+- This story does not require preview for DOCX; if preview is unavailable, the UI must clearly fall back to download-only without blocking workflows.
+- This story requires updating the authoritative format support contract in `docs/project/TECHNICAL_DESIGN.md` (supported upload types and any related filesystem rules).
 
 **Authoritative References**
 - Tech: Endpoint surface and error semantics: `docs/project/TECHNICAL_DESIGN.md` Appendix B3/B3.2
@@ -792,7 +786,7 @@ As a user, I want to upload, access, and process DOCX documents so that the same
 - UX: Review flow guarantees: `docs/project/UX_DESIGN.md` Sections 2–4
 
 **Story-specific technical requirements**
-- Add server-side type detection for DOCX (do not rely on filename alone).
+- Add server-side type detection for DOCX based on server-side inspection.
 - Add DOCX text extraction using a minimal dependency surface (choose one library during implementation and document the choice; candidates include `python-docx` or `mammoth`).
 - Store the original under the deterministic path rules with the appropriate extension (e.g., `original.docx`).
 
@@ -820,18 +814,18 @@ As a user, I want to upload, access, and process image documents so that scans a
 
 **Scope Clarification**
 - This story changes format support only; the processing pipeline, contracts, versioning rules, and review workflow semantics remain unchanged.
-- This story requires updating the authoritative format constraints in `docs/project/TECHNICAL_DESIGN.md` (supported upload types and any related filesystem rules).
+- This story requires updating the authoritative format support contract in `docs/project/TECHNICAL_DESIGN.md` (supported upload types and any related filesystem rules).
 
 **Authoritative References**
 - Tech: Endpoint surface and error semantics: `docs/project/TECHNICAL_DESIGN.md` Appendix B3/B3.2
 - Tech: Processing model and run invariants: `docs/project/TECHNICAL_DESIGN.md` Sections 3–4 + Appendix A2
 - Tech: Step model + failure mapping: `docs/project/TECHNICAL_DESIGN.md` Appendix C
-- Tech: OCR approach guidance: `docs/project/TECHNICAL_DESIGN.md` Appendix E4
+- Tech: Extraction library decisions (appendix): `docs/project/TECHNICAL_DESIGN.md` Appendix E
 - UX: Review flow guarantees: `docs/project/UX_DESIGN.md` Sections 2–4
 
 **Story-specific technical requirements**
-- Add server-side type detection for images (do not rely on filename alone).
-- Implement OCR-based extraction for images using the minimal approach described in the Technical Design (Appendix E4).
+- Add server-side type detection for images based on server-side inspection.
+- Define the OCR extraction approach in `docs/project/TECHNICAL_DESIGN.md` Appendix E during this story, then implement it.
 - Store the original under the deterministic path rules with the appropriate extension (e.g., `original.png`, `original.jpg`).
 
 **Test Expectations**

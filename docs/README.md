@@ -10,17 +10,26 @@ This folder is split into two areas:
 
 ## Reading order (mandatory)
 ### Documentation shared across projects
-- `docs/shared/AGENTS.md` —
-- `docs/shared/ENGINEERING_PLAYBOOK.md` —
-- `docs/shared/UX_GUIDELINES.md` —
+- `docs/shared/AGENTS.md` — AI Coding Assistant rules for this repo (STOP rules, safety, behavior).
+- `docs/shared/ENGINEERING_PLAYBOOK.md` — engineering standards (architecture discipline, testing, observability).
+- `docs/shared/UX_GUIDELINES.md` — global UX principles and shared interaction heuristics.
 
 ### Documentation specific to the project
 - `docs/project/PRODUCT_DESIGN.md` — product summary for technical context (project-specific)
 - `docs/project/UX_DESIGN.md` — project UX interaction contract (project-specific)
-- `docs/project/TECHNICAL_DESIGN.md` — architecture + constraints + invariants (project-specific)
+- `docs/project/BRAND_GUIDELINES.md` — visual identity + tone for user-facing copy (project-specific)
+- `docs/project/TECHNICAL_DESIGN.md` — architecture + contracts + invariants (project-specific)
 - `docs/project/BACKEND_IMPLEMENTATION.md` — backend implementation details (if applicable) (project-specific)
 - `docs/project/FRONTEND_IMPLEMENTATION.md` — frontend implementation details (if applicable) (project-specific)
 - `docs/project/IMPLEMENTATION_PLAN.md` — scope + story order + acceptance criteria (if applicable) (project-specific)
+
+## Dependency justification (Technical Design Appendix E3)
+
+PDF text extraction uses **PyMuPDF** because it provides strong extraction quality for “digital text” PDFs with a small dependency footprint and straightforward integration.
+
+Language detection uses **langdetect** because it is lightweight and sufficient to populate a best-effort `language_used` value for processing runs.
+
+Current extraction and processing stories rely on text extraction; OCR for scanned PDFs is not required by the currently scheduled stories. OCR may be introduced by a future user story if/when needed.
 
 ## Running (Evaluator Path)
 

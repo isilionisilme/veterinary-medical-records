@@ -34,7 +34,7 @@ The frontend is implemented using:
 
 - **Local UI primitives**  
   Prefer lightweight, local components under `/frontend/src/components/ui/*`.
-  Do not add a UI component library unless required to satisfy accessibility or interaction constraints,
+  Do not add a UI component library unless required to satisfy accessibility or interaction requirements,
   and justify any new dependency.
 
 - **TanStack Query**  
@@ -140,9 +140,7 @@ Frontend implications:
 
 ## Additional File Types
 
-DOCX and image uploads are not supported in the current implementation.
-This document does not define preview behavior for those types.
-They are planned as sequenced-last user stories in `docs/project/IMPLEMENTATION_PLAN.md` (US-19 and US-20).
+Format expansion is handled by dedicated user stories in `docs/project/IMPLEMENTATION_PLAN.md` (US-19 and US-20).
 
 ---
 
@@ -159,8 +157,6 @@ If matching fails:
 - no highlight is shown,
 - page navigation and snippet evidence remain visible,
 - the UI does not attempt to fake precision.
-
-Bounding boxes and exact coordinates are deliberately excluded.
 
 ---
 
@@ -230,14 +226,7 @@ Minimum coverage:
 
 ---
 
-## Explicit Non-Goals
+## Implementation note
 
-The following are intentionally out of scope:
-
-- exact PDF coordinate highlighting,
-- historical reprocessing in the UI,
-- advanced annotation or markup tools,
-- frontend-driven inference or automation.
-
-These constraints preserve clarity and reduce implementation risk.
+Keep the review experience explainable and non-blocking; introduce additional tooling only when required by a user story.
 

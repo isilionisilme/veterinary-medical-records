@@ -12,7 +12,7 @@ Reading order and cross-document precedence are defined in `docs/README.md`.
 
 This document defines the **technical design, system contracts, and invariants** that must be followed when implementing the system.
 
-Your goal is to **implement exactly this design**, respecting all constraints and decisions.
+Your goal is to **implement exactly this design**, respecting all requirements and decisions.
 Do **not** add features, infrastructure, or abstractions that are not explicitly described.
 
 If any requirement in this document cannot be satisfied, STOP and explain the blocker before proceeding.
@@ -38,7 +38,7 @@ The system is implemented as a **modular monolith**.
 
 ## 1.2 Logical Pipeline (Conceptual)
 
-The implementation follows a logical pipeline (single-process, in-process execution) without introducing distributed infrastructure.
+The implementation follows a logical pipeline (in-process execution) without introducing distributed infrastructure.
 
 ### Upload / Ingestion
 - Receive veterinary documents.
@@ -100,21 +100,21 @@ Storage mapping and invariants are defined normatively in **Appendix B**.
 
 ## 1.5 Safety & Design Guardrails
 
-- Do not collapse logical stages into opaque code paths.
-- Do not bypass explicit state transitions.
-- Do not silently merge machine-generated data with human-validated data.
+- Logical stages remain explicit and observable.
+- State transitions remain explicit and persisted.
+- Machine-generated data and human-validated data remain separate and traceable.
 - Prefer clarity and traceability over performance or abstraction.
 - Preserve the ability to evolve this modular monolith into independent services.
 
 Technical guardrails:
-- Machine-produced structured outputs MUST be stored as run-scoped artifacts and MUST NOT overwrite prior artifacts.
+- Machine-produced structured outputs are stored as run-scoped artifacts; prior artifacts remain unchanged.
 - Structured interpretation outputs MUST conform to the schema in Appendix D (schema validation required).
-- Human edits MUST create new interpretation versions (append-only) and MUST NOT be silently merged into machine output.
+- Human edits create new interpretation versions (append-only); machine-produced outputs remain preserved as produced.
  
 
 ---
 
-## 2. Architectural Constraints
+## 2. Architecture
 
 - Implement a **modular monolith**.
 - Use a layered architecture:
@@ -123,11 +123,6 @@ Technical guardrails:
   - `ports`
   - `infrastructure`
   - `api`
-- Do **not** introduce:
-  - microservices
-  - message queues
-  - distributed systems
-  - external workers
 - Prefer **explicit, readable code** over abstractions.
 
 ---
@@ -153,7 +148,7 @@ The pipeline is **observable** and **step-based**.
 - Processing is **asynchronous** and runs in the background.
 - API requests must **never block** waiting for processing to complete.
 - Processing is executed internally (in-process worker or equivalent).
-- No external queues or infrastructure are allowed.
+This document describes an in-process execution model; story-specific scope boundaries live in `docs/project/IMPLEMENTATION_PLAN.md`.
 
 ---
 
@@ -276,44 +271,29 @@ Logs must be best-effort and must **never block processing**.
 
 ---
 
-### 9.2 Future Observability (Not Implemented)
+### 9.2 Future Observability
 
-Metrics and persistent event tracing are **explicitly out of scope**, but must be supported by design.
-
----
-
-## 10. API Constraints
-
-- The API is **internal only**.
-- No strict backward compatibility is required across releases at this stage.
-- Formal versioning and public hardening are future concerns.
+Metrics and persistent event tracing may be introduced by a future user story; the current stories rely on structured logs.
 
 ---
 
-## 11. Explicit Non-Goals
+## 10. API Notes
 
-Do **not** implement:
-- automatic layout evolution
-- concurrent processing runs per document
-- background auto-retries creating new runs
-- model training or fine-tuning
-- confidence-driven automation
-- public API versioning
-- data deletion or retention enforcement
+This repository’s API is intended for the project UI and internal integration.
+If public exposure, formal versioning, or hardening is introduced, it should be defined via a dedicated user story and updated contracts.
 
 ---
 
-## 12. Data Lifecycle & Compliance (Future Concern)
+## 11. Scope Ownership
 
-Data deletion and compliance are **not implemented**.
+Story-specific scope boundaries are defined per user story in `docs/project/IMPLEMENTATION_PLAN.md` (Scope Clarification).
+This Technical Design defines the technical contracts and invariants needed to implement those stories.
 
-However, the design assumes future support for:
-- soft delete of documents
-- hard purge of all related data (DB + filesystem)
-- retention policies
-- data export / DSAR
+---
 
-These concerns must be documented but not enforced.
+## 12. Data Lifecycle
+
+Data lifecycle behaviors (retention, deletion, export) must be introduced by a dedicated user story and corresponding design updates.
 
 ---
 
@@ -325,8 +305,8 @@ Follow:
 
 If any conflict exists, **STOP and ask for clarification**.
 
-Do not extend the design.
-Do not optimize prematurely.
+Keep the implementation aligned with this design.
+Optimize only when required by a user story.
 Implement exactly what is described.
 
 ---
@@ -563,20 +543,6 @@ Rules:
 
 ---
 
-## A9. Explicit Non-Goals (Normative)
-
-This system explicitly does **not** implement:
-
-- automatic schema evolution,
-- confidence-driven automation,
-- blocking approvals for veterinarians,
-- retroactive schema application,
-- model training or fine-tuning,
-- deletion or retention enforcement,
-- public API hardening.
-
----
-
 ## A10. Final Rule
 
 If a future feature, story, or implementation choice conflicts with any rule in this appendix:
@@ -604,12 +570,9 @@ If any conflict exists between this appendix and other documents, **Appendix A a
 
 ### B1.1 Assumed Execution Model
 
-- Background processing is executed **in-process**, using:
-  - a controlled background task runner (e.g. internal task loop or executor),
-  - **no external queues, brokers, or services**.
-- The system assumes a **single-process deployment**.
-  - Multi-worker deployments are **out of scope**.
-  - The design must not rely on shared in-memory state across processes.
+Background processing is executed **in-process**, using a controlled background task runner (e.g. internal task loop or executor).
+
+If future user stories introduce multi-instance execution or external workers/queues, they must define the additional coordination contracts explicitly.
 
 This choice prioritizes simplicity and debuggability over throughput.
 
@@ -961,12 +924,6 @@ Rules:
   - HTTP 415
   - `error_code = UNSUPPORTED_MEDIA_TYPE`
 - MIME type detection MUST be based on server-side inspection, not only filename.
-
-### Additional file types (Not supported yet)
-
-DOCX and image uploads are not supported in the current implementation.
-They are planned as sequenced-last user stories in `docs/project/IMPLEMENTATION_PLAN.md` (US-19 and US-20).
-This section does not define their acceptance lists or behavior.
 
 ---
 
@@ -1321,11 +1278,6 @@ Expected test layers:
   - reprocessing behavior,
   - crash recovery behavior.
 
-Out of scope:
-- Performance testing
-- Load testing
-- Chaos testing
-
 ---
 
 ## Final Rule
@@ -1588,9 +1540,8 @@ Rationale:
 - Fast and simple to integrate in an in-process worker.
 - Keeps the dependency surface small (single primary extractor).
 
-Explicit non-goals:
-- OCR for scanned PDFs is out of scope.
-- If a PDF is scanned and yields empty/near-empty extracted text, the run may fail as `EXTRACTION_FAILED`.
+Notes:
+- If a PDF yields empty/near-empty extracted text, the run may fail as `EXTRACTION_FAILED`.
 
 ## E2. Language Detection
 
@@ -1609,20 +1560,4 @@ Rules:
 
 The repository must include a short justification (e.g., in `README.md` or an ADR) explaining:
 - Why PyMuPDF was chosen for extraction,
-- Why langdetect was chosen for language detection,
-- What is explicitly out of scope (OCR for scanned PDFs).
-
-## E4. Image OCR (Future candidate)
-
-Decision (Authoritative):
-- Use **Tesseract OCR** (system binary `tesseract`) for OCR of supported image uploads (`.png`, `.jpg`, `.jpeg`).
-
-Rationale:
-- Mature, widely available OCR engine.
-- Keeps Python dependencies lightweight (wrapper only).
-
-Rules:
-- OCR is not implemented until image upload processing is implemented.
-- This section documents a recommended approach if/when image upload processing is implemented.
-Implementation sequencing:
-- Image upload processing is sequenced as `docs/project/IMPLEMENTATION_PLAN.md` US-20.
+- Why langdetect was chosen for language detection.

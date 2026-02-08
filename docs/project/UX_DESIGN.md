@@ -119,7 +119,7 @@ The veterinarian can:
 - reassign information,
 - create new fields when needed.
 
-UX constraints:
+UX rules:
 - Changes apply immediately to the current document.
 - No explicit actions exist to submit feedback or “teach” the system.
 - A single explicit action may exist to mark the document as reviewed.
@@ -148,7 +148,7 @@ From a UX standpoint:
 
 ---
 
-## 6. Sensitive Changes — UX Constraints
+## 6. Sensitive Changes — UX Rules
 
 Some edits may be considered more sensitive at system level.
 
@@ -158,7 +158,7 @@ UX implications:
 - Sensitive edits never block completion of review.
 
 Any escalation, prioritization, or governance resulting from these edits
-is **out of scope for this document** and must not surface in the veterinarian UI.
+is **not defined by this document** and must not surface in the veterinarian UI.
 
 ---
 

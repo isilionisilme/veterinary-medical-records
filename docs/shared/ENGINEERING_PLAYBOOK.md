@@ -151,7 +151,7 @@ Docstrings must include when relevant:
 
 - Purpose and responsibility
 - Inputs and outputs
-- Constraints and invariants
+- Requirements and invariants
 - Error conditions and exceptions
 - Side effects and state changes
 
@@ -221,7 +221,7 @@ Comments must explain:
 - Why a decision was made
 - Why alternatives were rejected
 - Domain assumptions
-- Non-obvious constraints
+- Non-obvious requirements
 
 Comments must NOT:
 
@@ -427,10 +427,10 @@ Apply the following rules by default to every future code review in this repo un
 
 When performing code reviews in this repository, use a **maintainability-focused** review style.
 
-Global constraints:
-- No behavior or public API changes unless explicitly requested.
-- No new dependencies unless strictly necessary.
-- Do not introduce extra architectural patterns or ports beyond what is already agreed (currently max: `DocumentRepository`).
+Review emphasis:
+- Keep changes within the requested scope.
+- Keep the dependency footprint minimal; add dependencies only when needed.
+- Keep architecture consistent with the agreed design; introduce new patterns only when a story/design requires it.
 - Keep solutions lightweight and easy to explain to evaluators.
 
 Primary review focus (in order):
@@ -478,7 +478,7 @@ Do not modify code as part of the review step unless explicitly asked to do so.
 
 Before implementing each user story (US-XX), the AI assistant must:
 
-1) Read the story requirements and the relevant authoritative design constraints.
+1) Read the story requirements and the relevant authoritative design requirements.
 2) Identify **decision points** required to implement the story that are not explicitly specified.
    - Examples: file size limits, storage roots, timeout values, retry counts, error code enums, default configuration values.
 3) Resolve **discoverable facts** by inspecting the repository first (code/config/docs).

@@ -14,10 +14,7 @@ Act as a senior software engineer:
 - avoid adding scope
 - never introduce silent assumptions
 
-Out of scope by default:
-- new features not requested
-- infra expansions
-- speculative refactors
+Default scope is exactly the requested work; avoid adding new features, infra expansions, or speculative refactors unless explicitly requested.
 
 ---
 

@@ -27,12 +27,6 @@ This document translates the **authoritative system design** into backend implem
 - Structured logging and event taxonomy
 - Unit and integration testing expectations
 
-### Out of scope
-- Multi-process / multi-worker deployments
-- External queues, workers, or brokers
-- OCR for scanned PDFs
-- Product meaning, governance, or UX rules
-
 ## Running The Backend
 
 Run instructions live in the repository root `README.md`.
@@ -138,13 +132,9 @@ Authority: `docs/project/TECHNICAL_DESIGN.md` Appendix B3.2 + Appendix B5.
 
 ## Processing execution model (in-process)
 
-### Single-process constraint
-The system assumes **single-process deployment**. Multi-worker deployments are out of scope.
-
 ### Asynchronous behavior
 - API requests MUST NOT block on processing completion.
 - Processing runs in background, in-process (task runner / executor / internal loop).
-- No external queues or workers are allowed.
 
 ### Scheduler semantics
 Authority: `docs/project/TECHNICAL_DESIGN.md` Appendix B1.5 + B1.5.1.
@@ -247,7 +237,7 @@ Implementation guidance:
 ## Text extraction + language detection 
 
 ### PDF extraction
-Authority: `docs/project/TECHNICAL_DESIGN.md` (PyMuPDF extraction; OCR is out of scope).
+Authority: `docs/project/TECHNICAL_DESIGN.md` (PyMuPDF extraction).
 
 Implementation note: if extracted text is empty/near-empty, the run may fail as `EXTRACTION_FAILED` (per Technical Design step failure mapping; Appendix C3).
 
