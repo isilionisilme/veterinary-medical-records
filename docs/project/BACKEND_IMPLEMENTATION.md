@@ -33,6 +33,29 @@ This document translates the **authoritative system design** into backend implem
 - OCR for scanned PDFs
 - Product meaning, governance, or UX rules
 
+## Running With Docker (Evaluator Path)
+
+The MVP requires OCR for image uploads. Because OCR depends on the system `tesseract` binary, the
+recommended evaluator path is Docker.
+
+Authority:
+- OCR requirement and behavior: `docs/project/TECHNICAL_DESIGN.md` Appendix E4
+- Filesystem/DB storage knobs: `docs/project/TECHNICAL_DESIGN.md` Appendix B5
+
+Quickstart:
+```bash
+docker compose up --build
+```
+
+Health check:
+```bash
+curl http://localhost:8000/health
+```
+
+Notes:
+- Docker image installs `tesseract-ocr` and the English/Spanish language packs.
+- Outside Docker, missing OCR dependencies must fail explicitly during extraction for image documents.
+
 
 ## Backend architecture
 

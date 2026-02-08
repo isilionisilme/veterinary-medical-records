@@ -130,6 +130,24 @@ Tests should validate the scroll + navigation behavior at the component level, w
 
 ---
 
+## Non-PDF Preview (MVP)
+
+The backend accepts PDF, DOCX, and image uploads. The frontend preview behavior is intentionally minimal:
+
+- PDF (`application/pdf`, `.pdf`):
+  - Use the existing PDF.js viewer and continuous scroll strategy.
+- Images (`image/png`, `image/jpeg`, `.png`, `.jpg`, `.jpeg`):
+  - Render via a native `<img>` preview (no PDF.js).
+  - Provide a "Download" action using `GET /documents/{id}/download`.
+- DOCX (`application/vnd.openxmlformats-officedocument.wordprocessingml.document`, `.docx`):
+  - Download-only in the MVP (no in-browser DOCX rendering requirement).
+  - Provide a clear "Download" action using `GET /documents/{id}/download`.
+
+Rule:
+- Preview must never block document access; download must always work when the artifact exists.
+
+---
+
 ## Highlight Strategy (Progressive Enhancement)
 
 Text highlighting inside the PDF is implemented as **progressive enhancement**, never as a dependency for usability.

@@ -293,6 +293,8 @@ As a user, I want to download and preview the original uploaded document so that
 
 **Acceptance Criteria**
 - I can access the original uploaded file for a document.
+- Preview is supported when the file type is natively renderable in the browser (PDF and images in MVP).
+- For DOCX, download is supported in the MVP; in-browser preview is not required.
 - If the stored file is missing, the system returns the normative missing-artifact behavior.
 - Accessing the original file is non-blocking and does not depend on processing success.
 

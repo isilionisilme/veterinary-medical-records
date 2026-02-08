@@ -1614,7 +1614,7 @@ Rules:
 The repository must include a short justification (e.g., in `README.md` or an ADR) explaining:
 - Why PyMuPDF was chosen for extraction,
 - Why langdetect was chosen for language detection,
-- What is explicitly out of scope (OCR).
+- What is explicitly out of scope (OCR for scanned PDFs).
 
 ## E4. Image OCR (MVP)
 
