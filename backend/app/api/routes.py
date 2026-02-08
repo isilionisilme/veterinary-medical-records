@@ -30,7 +30,8 @@ from backend.app.ports.file_storage import FileStorage
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10 MB
+# Normative default: 20 MB (see docs/project/TECHNICAL_DESIGN.md Appendix B3.2).
+MAX_UPLOAD_SIZE = 20 * 1024 * 1024  # 20 MB
 ALLOWED_CONTENT_TYPES = {
     "application/pdf",
 }
@@ -92,7 +93,7 @@ def list_documents_route(
         )
         return _error_response(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            error_code="DOCUMENT_LIST_FAILED",
+            error_code="INTERNAL_ERROR",
             message="Unexpected error while listing documents.",
         )
 
@@ -127,7 +128,7 @@ def list_documents_route(
     status_code=status.HTTP_200_OK,
     summary="Get document processing status",
     description="Return document metadata and its current processing state.",
-    responses={404: {"description": "Document not found (DOCUMENT_NOT_FOUND)."}},
+    responses={404: {"description": "Document not found (NOT_FOUND)."}},
 )
 def get_document_status(request: Request, document_id: str) -> DocumentResponse | JSONResponse:
     """Return the document processing status for a given document id.
@@ -148,7 +149,7 @@ def get_document_status(request: Request, document_id: str) -> DocumentResponse 
     if details is None:
         return _error_response(
             status_code=status.HTTP_404_NOT_FOUND,
-            error_code="DOCUMENT_NOT_FOUND",
+            error_code="NOT_FOUND",
             message="Document not found.",
         )
 
@@ -188,9 +189,9 @@ def get_document_status(request: Request, document_id: str) -> DocumentResponse 
     summary="Download or preview an original document",
     description="Return the original uploaded PDF for preview or download.",
     responses={
-        404: {"description": "Document not found (DOCUMENT_NOT_FOUND)."},
-        410: {"description": "Original file missing (ORIGINAL_FILE_MISSING)."},
-        500: {"description": "Unexpected filesystem or I/O failure."},
+        404: {"description": "Document not found (NOT_FOUND)."},
+        410: {"description": "Original file missing (ARTIFACT_MISSING)."},
+        500: {"description": "Unexpected filesystem or I/O failure (INTERNAL_ERROR)."},
     },
 )
 def get_document_original(
@@ -227,7 +228,7 @@ def get_document_original(
         )
         return _error_response(
             status_code=status.HTTP_404_NOT_FOUND,
-            error_code="DOCUMENT_NOT_FOUND",
+            error_code="NOT_FOUND",
             message="Document not found.",
         )
     if not location.exists:
@@ -238,7 +239,7 @@ def get_document_original(
         )
         return _error_response(
             status_code=status.HTTP_410_GONE,
-            error_code="ORIGINAL_FILE_MISSING",
+            error_code="ARTIFACT_MISSING",
             message="Original document file is missing.",
         )
 
@@ -268,7 +269,7 @@ def get_document_original(
         )
         return _error_response(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            error_code="ORIGINAL_FILE_ACCESS_FAILED",
+            error_code="INTERNAL_ERROR",
             message="Unexpected error while accessing the original document.",
         )
 
@@ -283,9 +284,10 @@ def get_document_original(
         "Release 1 stores the original PDF in filesystem storage."
     ),
     responses={
-        400: {"description": "Invalid file type or empty upload."},
-        413: {"description": "Uploaded file exceeds the maximum allowed size (10 MB)."},
-        500: {"description": "Unexpected storage or database failure."},
+        400: {"description": "Invalid request (INVALID_REQUEST)."},
+        413: {"description": "Uploaded file exceeds the maximum allowed size (FILE_TOO_LARGE)."},
+        415: {"description": "Unsupported upload type (UNSUPPORTED_MEDIA_TYPE)."},
+        500: {"description": "Unexpected storage or database failure (INTERNAL_ERROR)."},
     },
 )
 async def upload_document(
@@ -313,19 +315,19 @@ async def upload_document(
             error_code=validation_error["error_code"],
             failure_reason=validation_error["message"],
         )
-        return _error_response(status_code=status.HTTP_400_BAD_REQUEST, **validation_error)
+        return _error_response(**validation_error)
 
     contents = await file.read()
     if len(contents) == 0:
         _log_event(
             event_type="DOCUMENT_UPLOADED",
             document_id=None,
-            error_code="EMPTY_UPLOAD",
+            error_code="INVALID_REQUEST",
             failure_reason="The uploaded file is empty.",
         )
         return _error_response(
             status_code=status.HTTP_400_BAD_REQUEST,
-            error_code="EMPTY_UPLOAD",
+            error_code="INVALID_REQUEST",
             message="The uploaded file is empty.",
         )
     if len(contents) > MAX_UPLOAD_SIZE:
@@ -338,7 +340,7 @@ async def upload_document(
         return _error_response(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             error_code="FILE_TOO_LARGE",
-            message="Document exceeds the maximum allowed size of 10 MB.",
+            message="Document exceeds the maximum allowed size of 20 MB.",
         )
 
     repository = cast(DocumentRepository, request.app.state.document_repository)
@@ -355,12 +357,12 @@ async def upload_document(
         _log_event(
             event_type="DOCUMENT_UPLOADED",
             document_id=None,
-            error_code="UPLOAD_FAILED",
+            error_code="INTERNAL_ERROR",
             failure_reason=str(exc),
         )
         return _error_response(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            error_code="UPLOAD_FAILED",
+            error_code="INTERNAL_ERROR",
             message="Unexpected error while storing the document.",
         )
 
@@ -376,7 +378,7 @@ async def upload_document(
     )
 
 
-def _validate_upload(file: UploadFile) -> dict[str, str] | None:
+def _validate_upload(file: UploadFile) -> dict[str, Any] | None:
     """Validate uploaded file content type and file extension.
 
     Args:
@@ -387,11 +389,19 @@ def _validate_upload(file: UploadFile) -> dict[str, str] | None:
     """
 
     if file.content_type not in ALLOWED_CONTENT_TYPES:
-        return {"error_code": "INVALID_FILE_TYPE", "message": "Unsupported file type."}
+        return {
+            "status_code": status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            "error_code": "UNSUPPORTED_MEDIA_TYPE",
+            "message": "Unsupported file type.",
+        }
 
     extension = Path(file.filename or "").suffix.lower()
     if extension not in ALLOWED_EXTENSIONS:
-        return {"error_code": "INVALID_FILE_TYPE", "message": "Unsupported file extension."}
+        return {
+            "status_code": status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            "error_code": "UNSUPPORTED_MEDIA_TYPE",
+            "message": "Unsupported file extension.",
+        }
 
     return None
 

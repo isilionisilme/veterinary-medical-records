@@ -65,9 +65,9 @@ def test_upload_rejects_unsupported_type(test_client):
         "file": ("record.txt", io.BytesIO(b"plain text"), "text/plain")
     }
     response = test_client.post("/documents", files=files)
-    assert response.status_code == 400
+    assert response.status_code == 415
     payload = response.json()
-    assert payload["error_code"] == "INVALID_FILE_TYPE"
+    assert payload["error_code"] == "UNSUPPORTED_MEDIA_TYPE"
 
 
 def test_upload_limits_size(test_client):
@@ -88,7 +88,7 @@ def test_upload_rejects_empty_file(test_client):
     }
     response = test_client.post("/documents", files=files)
     assert response.status_code == 400
-    assert response.json()["error_code"] == "EMPTY_UPLOAD"
+    assert response.json()["error_code"] == "INVALID_REQUEST"
 
 
 def test_get_document_returns_metadata_and_state(test_client):
@@ -119,5 +119,5 @@ def test_get_document_returns_404_when_missing(test_client):
     response = test_client.get("/documents/does-not-exist")
     assert response.status_code == 404
     payload = response.json()
-    assert payload["error_code"] == "DOCUMENT_NOT_FOUND"
+    assert payload["error_code"] == "NOT_FOUND"
     assert payload["message"] == "Document not found."
