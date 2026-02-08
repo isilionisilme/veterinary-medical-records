@@ -21,3 +21,7 @@ This folder is split into two areas:
 - `docs/project/BACKEND_IMPLEMENTATION.md` — backend implementation details (if applicable) (project-specific)
 - `docs/project/FRONTEND_IMPLEMENTATION.md` — frontend implementation details (if applicable) (project-specific)
 - `docs/project/IMPLEMENTATION_PLAN.md` — scope + story order + acceptance criteria (if applicable) (project-specific)
+
+## Running the MVP (Evaluator Path)
+
+The MVP is PDF-only. Follow the run instructions in the repository root `README.md`.

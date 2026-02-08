@@ -33,6 +33,10 @@ This document translates the **authoritative system design** into backend implem
 - OCR for scanned PDFs
 - Product meaning, governance, or UX rules
 
+## Running The Backend (MVP)
+
+The MVP is PDF-only. Run instructions live in the repository root `README.md`.
+
 
 ## Backend architecture
 

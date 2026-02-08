@@ -67,6 +67,10 @@ If a story depends on any of the above, it MUST reference the authoritative sect
 
 This plan covers the **Veterinary Medical Records Processing MVP** only.
 
+MVP scope boundary (file types):
+- The MVP supports **PDF-only** end-to-end (upload + download + preview + review-in-context).
+- DOCX and image uploads are **out of scope for the MVP** and are delivered as post-MVP stories (Release 8).
+
 Explicit non-goals:
 - Production hardening
 - Multi-tenant support
@@ -214,6 +218,21 @@ Introduce reviewer-facing governance for global schema evolution, fully isolated
 
 ---
 
+## Release 8 — Additional file types (post-MVP)
+
+### Goal
+Add end-to-end support for additional upload types beyond PDF.
+
+### Scope
+- DOCX end-to-end support (post-MVP)
+- Image end-to-end support (post-MVP)
+
+### User Stories (in order)
+- US-19 — Full DOCX support (post-MVP)
+- US-20 — Full Image support (post-MVP)
+
+---
+
 # User Story Details
 
 Each story below contains only:
@@ -293,6 +312,7 @@ As a user, I want to download and preview the original uploaded document so that
 
 **Acceptance Criteria**
 - I can access the original uploaded file for a document.
+- Preview is supported for PDFs in the MVP.
 - If the stored file is missing, the system returns the normative missing-artifact behavior.
 - Accessing the original file is non-blocking and does not depend on processing success.
 
@@ -735,6 +755,62 @@ As a reviewer, I want to see an audit trail of schema governance decisions so th
 
 **Test Expectations**
 - Audit trail ordering is chronological and records are immutable.
+
+**Definition of Done (DoD)**
+- Acceptance criteria satisfied.
+- Unit + integration tests per `docs/project/TECHNICAL_DESIGN.md` Appendix B7.
+
+---
+
+## US-19 — Full DOCX support (post-MVP)
+
+**User Story**
+As a user, I want to upload, access, and process DOCX documents so that the same workflow supported for PDFs applies to Word documents.
+
+**Acceptance Criteria**
+- I can upload a supported DOCX document type.
+- I can download the original DOCX at any time without blocking on processing.
+- The system can process DOCX documents and expose the same processing visibility as PDFs.
+- Review-in-context remains non-blocking and preserves traceability for DOCX inputs.
+
+**Scope Clarification**
+- This story expands file-type support beyond the PDF-only MVP scope.
+
+**Authoritative References**
+- Tech: Endpoint surface and error semantics: `docs/project/TECHNICAL_DESIGN.md` Appendix B3/B3.2
+- Tech: Processing model and run invariants: `docs/project/TECHNICAL_DESIGN.md` Sections 3–4 + Appendix A2
+- UX: Review flow guarantees: `docs/project/UX_DESIGN.md`
+
+**Test Expectations**
+- DOCX inputs behave like PDFs for upload/download/status visibility.
+
+**Definition of Done (DoD)**
+- Acceptance criteria satisfied.
+- Unit + integration tests per `docs/project/TECHNICAL_DESIGN.md` Appendix B7.
+
+---
+
+## US-20 — Full Image support (post-MVP)
+
+**User Story**
+As a user, I want to upload, access, and process image documents so that scans and photographs can be handled in the same workflow.
+
+**Acceptance Criteria**
+- I can upload a supported image document type.
+- I can download and preview the original image at any time without blocking on processing.
+- The system can process image documents and expose the same processing visibility as PDFs.
+- Review-in-context remains non-blocking and preserves traceability for image inputs.
+
+**Scope Clarification**
+- This story expands file-type support beyond the PDF-only MVP scope.
+
+**Authoritative References**
+- Tech: Endpoint surface and error semantics: `docs/project/TECHNICAL_DESIGN.md` Appendix B3/B3.2
+- Tech: Processing model and run invariants: `docs/project/TECHNICAL_DESIGN.md` Sections 3–4 + Appendix A2
+- UX: Review flow guarantees: `docs/project/UX_DESIGN.md`
+
+**Test Expectations**
+- Image inputs behave like PDFs for upload/download/status visibility.
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.

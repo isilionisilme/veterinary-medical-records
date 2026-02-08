@@ -934,7 +934,7 @@ This section defines the **minimum endpoint surface** for the MVP.
 ### Document-Level
 
 - `POST /documents/upload`
-  - Upload a document (PDF, Word, or image).
+  - Upload a document (PDF in MVP; additional file types post-MVP).
 - `GET /documents`
   - List documents with derived status.
 - `GET /documents/{id}`
@@ -952,27 +952,23 @@ This section defines the **minimum endpoint surface** for the MVP.
 
 ### Supported upload types (Normative, MVP)
 
-The system MUST accept only the following document types:
-
-PDF:
+The system MUST accept only PDF uploads in the MVP:
 - `.pdf`
 - `application/pdf`
-
-Word:
-- `.docx`
-- `application/vnd.openxmlformats-officedocument.wordprocessingml.document`
-  - `.doc` is NOT supported in MVP (must return 415 `UNSUPPORTED_MEDIA_TYPE`)
-
-
-Images:
-- `.png` (`image/png`)
-- `.jpg`, `.jpeg` (`image/jpeg`)
 
 Rules:
 - Any other content type MUST return:
   - HTTP 415
   - `error_code = UNSUPPORTED_MEDIA_TYPE`
 - MIME type detection MUST be based on server-side inspection, not only filename.
+
+### Post-MVP / future stories (file types)
+
+DOCX and image support are intentionally out of scope for the MVP and are introduced later
+as separate user stories (see `docs/project/IMPLEMENTATION_PLAN.md` Release 8: US-19 / US-20).
+
+This section does not define their acceptance lists or behavior; those are deferred to the
+post-MVP stories to avoid expanding MVP scope.
 
 ---
 
@@ -1285,8 +1281,10 @@ Non-negotiable invariant:
 ## B5. Filesystem Management Rules
 
 - Files are stored under deterministic paths:
-  - `/storage/{document_id}/original{ext}`
-  - `ext` is derived from the normalized file type (e.g. `.pdf`, `.docx`, `.png`, `.jpg`, `.jpeg`).
+  - `/storage/{document_id}/original.pdf` (MVP)
+
+Post-MVP note:
+- Additional extensions may be introduced when non-PDF file types are added (US-19 / US-20).
 
   
 - Writes must be atomic.
@@ -1614,4 +1612,17 @@ Rules:
 The repository must include a short justification (e.g., in `README.md` or an ADR) explaining:
 - Why PyMuPDF was chosen for extraction,
 - Why langdetect was chosen for language detection,
-- What is explicitly out of scope (OCR).
+- What is explicitly out of scope (OCR for scanned PDFs).
+
+## E4. Image OCR (Post-MVP candidate)
+
+Decision (Authoritative):
+- Use **Tesseract OCR** (system binary `tesseract`) for OCR of supported image uploads (`.png`, `.jpg`, `.jpeg`).
+
+Rationale:
+- Mature, widely available OCR engine.
+- Keeps Python dependencies lightweight (wrapper only).
+
+Rules:
+- Image uploads are post-MVP; OCR is therefore out of MVP scope.
+- This section documents a recommended approach to implement image processing when US-20 is taken.

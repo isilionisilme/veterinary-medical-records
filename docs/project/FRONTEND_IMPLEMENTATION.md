@@ -130,6 +130,21 @@ Tests should validate the scroll + navigation behavior at the component level, w
 
 ---
 
+## File-Type Support (MVP)
+
+The MVP supports **PDF-only** end-to-end.
+
+Frontend implications:
+- Preview behavior is implemented for PDFs via PDF.js (continuous scroll).
+- Download behavior must work for PDFs via `GET /documents/{id}/download`.
+
+## Additional File Types (Post-MVP)
+
+Support for DOCX and images is introduced post-MVP (see `docs/project/IMPLEMENTATION_PLAN.md` Release 8: US-19 / US-20).
+This document does not define preview behavior for those types until those stories are implemented.
+
+---
+
 ## Highlight Strategy (Progressive Enhancement)
 
 Text highlighting inside the PDF is implemented as **progressive enhancement**, never as a dependency for usability.
