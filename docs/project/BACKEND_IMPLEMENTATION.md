@@ -1,7 +1,7 @@
 # Note for readers
 This document is intended to provide **implementation guidance for backend work** and to provide structured context to an AI Coding Assistant during implementation.
 
-Reading order, document responsibilities, and precedence rules are defined in `docs/README.md`.
+Reading order, document responsibilities, and precedence rules are defined in [`docs/README.md`](../README.md).
 
 If any requirement here conflicts with a higher-precedence document, **STOP** and defer to the authority defined in the README.
 
@@ -29,7 +29,7 @@ This document translates the **authoritative system design** into backend implem
 
 ## Running The Backend
 
-Run instructions live in the repository root `README.md`.
+Run instructions live in the repository root [`README.md`](../../README.md).
 
 
 ## Backend architecture
@@ -57,7 +57,7 @@ Rules:
 ## Persistence model (SQLite)
 
 ### Minimum entities (authoritative)
-Authority: `docs/project/TECHNICAL_DESIGN.md` Appendix B2 (Minimal Persistent Data Model).
+Authority: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B2 (Minimal Persistent Data Model).
 
 Implementation responsibility: provide repositories/adapters for:
 - Document
@@ -67,19 +67,19 @@ Implementation responsibility: provide repositories/adapters for:
 - FieldChangeLog
 
 ### Document status derivation (authoritative)
-Authority: `docs/project/TECHNICAL_DESIGN.md` Appendix A (Contracts, States & Invariants).
+Authority: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix A (Contracts, States & Invariants).
 
 Implementation guidance:
 - Implement status derivation as a pure domain rule (e.g., a function that maps “latest run summary” to a status).
 - Do not store or mutate `Document.status`; it is derived.
 
 ### Run invariants (authoritative)
-Authority: `docs/project/TECHNICAL_DESIGN.md` Appendix A2 + Appendix B1.2.
+Authority: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix A2 + Appendix B1.2.
 
 Implementation reminder: enforce invariants transactionally at the persistence layer; never via in-memory locks.
 
 ### SQLite guard pattern (authoritative)
-Authority: `docs/project/TECHNICAL_DESIGN.md` Appendix B1.2.1 (Persistence-Level Guard Pattern).
+Authority: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B1.2.1 (Persistence-Level Guard Pattern).
 
 Implementation guidance:
 - Encapsulate `BEGIN IMMEDIATE` + “check for RUNNING” + “transition to RUNNING” into a single repository method.
@@ -89,7 +89,7 @@ Implementation guidance:
 ## Filesystem storage
 
 ### Deterministic paths (authoritative)
-Authority: `docs/project/TECHNICAL_DESIGN.md` Appendix B5 (Filesystem Management Rules).
+Authority: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B5 (Filesystem Management Rules).
 
 Store the original upload under:
 - `/storage/{document_id}/original{ext}`
@@ -127,7 +127,7 @@ Environment knobs (current codebase):
 If DB references an artifact but the filesystem is missing, return:
 - `410 Gone` with `error_code = ARTIFACT_MISSING`
 
-Authority: `docs/project/TECHNICAL_DESIGN.md` Appendix B3.2 + Appendix B5.
+Authority: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3.2 + Appendix B5.
 
 
 ## Processing execution model (in-process)
@@ -137,7 +137,7 @@ Authority: `docs/project/TECHNICAL_DESIGN.md` Appendix B3.2 + Appendix B5.
 - Processing runs in background, in-process (task runner / executor / internal loop).
 
 ### Scheduler semantics
-Authority: `docs/project/TECHNICAL_DESIGN.md` Appendix B1.5 + B1.5.1.
+Authority: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B1.5 + B1.5.1.
 
 Implementation guidance:
 - Use a fixed tick with sleep (no busy-loop).
@@ -161,10 +161,10 @@ On application startup:
 - Transition it to `FAILED` with `failure_type = PROCESS_TERMINATED`.
 - Emit log event `RUN_RECOVERED_AS_FAILED`.
 
-Authority: `docs/project/TECHNICAL_DESIGN.md` Appendix B1.3 + Appendix C3.
+Authority: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B1.3 + Appendix C3.
 
 ### Retry + timeout policy
-Authority: `docs/project/TECHNICAL_DESIGN.md` Appendix B1.4 + B1.4.1.
+Authority: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B1.4 + B1.4.1.
 
 Implementation guidance:
 - Retries are local to a single run and limited to the fixed default (no new runs).
@@ -175,7 +175,7 @@ Implementation guidance:
 ## Step model 
 
 ### Step names (closed set)
-Authority: `docs/project/TECHNICAL_DESIGN.md` Appendix C1.1 (StepName).
+Authority: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix C1.1 (StepName).
 
 - `EXTRACTION`
 - `INTERPRETATION`
@@ -183,20 +183,20 @@ Authority: `docs/project/TECHNICAL_DESIGN.md` Appendix C1.1 (StepName).
 ### Step tracking via artifacts
 Persist step lifecycle as append-only `Artifacts`:
 - `artifact_type = STEP_STATUS`
-- Payload schema is authoritative: `docs/project/TECHNICAL_DESIGN.md` Appendix C1.3.
+- Payload schema is authoritative: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix C1.3.
 
 ### Failure mapping 
-Authority: `docs/project/TECHNICAL_DESIGN.md` Appendix C3 (Error Codes and Failure Mapping).
+Authority: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix C3 (Error Codes and Failure Mapping).
 
 
 ## Structured interpretation schema 
-Authority: `docs/project/TECHNICAL_DESIGN.md` Appendix D (Structured Interpretation Schema v0).
+Authority: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix D (Structured Interpretation Schema v0).
 
 ### Storage contract
 Authority:
-- `docs/project/TECHNICAL_DESIGN.md` Appendix D3 (Relationship to Persistent Model)
-- `docs/project/TECHNICAL_DESIGN.md` Appendix B2.4 (InterpretationVersion)
-- `docs/project/TECHNICAL_DESIGN.md` Appendix A3 (Interpretation & Versioning Invariants)
+- [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix D3 (Relationship to Persistent Model)
+- [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B2.4 (InterpretationVersion)
+- [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix A3 (Interpretation & Versioning Invariants)
 
 Implementation responsibility:
 - Store the structured interpretation JSON as `InterpretationVersion.data`.
@@ -205,7 +205,7 @@ Implementation responsibility:
 
 ### Critical keys
 `StructuredField.is_critical` MUST be derived from `key ∈ CRITICAL_KEYS_V0`.
-Source of truth: `docs/project/PRODUCT_DESIGN.md`.
+Source of truth: [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md).
 
 Backend responsibility:
 - Apply deterministic derivation at write-time (or validate on write).
@@ -215,10 +215,10 @@ Backend responsibility:
 ## API implementation 
 
 ### Authoritative API contracts (do not duplicate)
-- Endpoint map: `docs/project/TECHNICAL_DESIGN.md` Appendix B3 (+ B3.1)
-- Run resolution per endpoint: `docs/project/TECHNICAL_DESIGN.md` Appendix B3.1
-- Error response format: `docs/project/TECHNICAL_DESIGN.md` Appendix B2.6
-- Endpoint error semantics & error codes: `docs/project/TECHNICAL_DESIGN.md` Appendix B3.2
+- Endpoint map: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3 (+ B3.1)
+- Run resolution per endpoint: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3.1
+- Error response format: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B2.6
+- Endpoint error semantics & error codes: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3.2
 
 Implementation guidance (wiring and enforcement):
 - Keep routers thin adapters: parse/validate → call an `application` use case → map to response schema.
@@ -228,7 +228,7 @@ Implementation guidance (wiring and enforcement):
 - When returning `409 CONFLICT`, ensure `details.reason` uses the Technical Design closed set (e.g., `NO_COMPLETED_RUN`, `REVIEW_BLOCKED_BY_ACTIVE_RUN`).
 
 ### Editing while active run exists 
-Authority: `docs/project/TECHNICAL_DESIGN.md` Appendix B3.2 (Conflict reasons and error semantics).
+Authority: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3.2 (Conflict reasons and error semantics).
 
 Implementation guidance:
 - When a workflow is blocked by an active run, return the authoritative conflict response using `details.reason = REVIEW_BLOCKED_BY_ACTIVE_RUN`.
@@ -237,12 +237,12 @@ Implementation guidance:
 ## Text extraction + language detection 
 
 ### PDF extraction
-Authority: `docs/project/TECHNICAL_DESIGN.md` (PyMuPDF extraction).
+Authority: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) (PyMuPDF extraction).
 
 Implementation note: if extracted text is empty/near-empty, the run may fail as `EXTRACTION_FAILED` (per Technical Design step failure mapping; Appendix C3).
 
 ### Language detection
-Authority: `docs/project/TECHNICAL_DESIGN.md` (langdetect selection and rationale).
+Authority: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) (langdetect selection and rationale).
 
 Implementation note: if detection fails, set `language_used = "unknown"` and continue best-effort.
 
@@ -257,11 +257,11 @@ Each log entry MUST include:
 - `timestamp`
 - `error_code` (nullable)
 
-Authority: `docs/project/TECHNICAL_DESIGN.md` Appendix A8.1 (Event Type Taxonomy).
+Authority: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix A8.1 (Event Type Taxonomy).
 
 
 ## Testing expectations 
-Authority: `docs/project/TECHNICAL_DESIGN.md` Appendix B7 (Testability Expectations).
+Authority: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7 (Testability Expectations).
 
 ### Unit tests (minimum)
 - `document_status` derivation from latest run state
@@ -278,8 +278,8 @@ Authority: `docs/project/TECHNICAL_DESIGN.md` Appendix B7 (Testability Expectati
 
 ## STOP rule
 If an implementation decision is not explicitly covered by:
-- `docs/project/TECHNICAL_DESIGN.md` (including appendices), or
-- `docs/project/IMPLEMENTATION_PLAN.md` (scope and sequencing), or
+- [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) (including appendices), or
+- [`docs/project/IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md) (scope and sequencing), or
 - this document,
 
 **STOP and clarify before implementing.** No implicit behavior is allowed.

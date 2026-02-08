@@ -4,7 +4,7 @@ This document is intended to provide structured context to an AI Coding Assistan
 The version of this document written for evaluators and reviewers is available here:
 https://docs.google.com/document/d/1b1rvBJu9bGjv8Z42OdDz9qwjecbqDbpilkn0KkYuD-M
 
-Reading order, document authority, and precedence rules are defined in `docs/README.md`.
+Reading order, document authority, and precedence rules are defined in [`docs/README.md`](../README.md).
 If any conflict is detected, **STOP and ask before proceeding**.
 
 # Implementation Plan
@@ -25,7 +25,7 @@ This document does **not** define:
 - cross-cutting implementation principles,
 - backend/frontend implementation details.
 
-Those are defined in their respective authoritative documents as described in `docs/README.md`.
+Those are defined in their respective authoritative documents as described in [`docs/README.md`](../README.md).
 
 Features or behaviors not explicitly listed here are not part of this plan.
 
@@ -34,7 +34,7 @@ Features or behaviors not explicitly listed here are not part of this plan.
 ## How to use this document
 
 The AI Coding Assistant must:
-- read all prerequisite documents defined in `docs/README.md`,
+- read all prerequisite documents defined in [`docs/README.md`](../README.md),
 - implement user stories **strictly in the order defined here**,
 - treat acceptance criteria as **exit conditions**, not suggestions.
 
@@ -57,9 +57,9 @@ This plan MUST NOT specify or restate cross-cutting technical contracts, even as
 - library/framework choices, module structure, or code patterns.
 
 If a story depends on any of the above, it MUST reference the authoritative sections in:
-- `docs/project/TECHNICAL_DESIGN.md` (Appendices A/B/C/D)
-- `docs/project/UX_DESIGN.md`
-- `docs/project/PRODUCT_DESIGN.md`
+- [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) (Appendices A/B/C/D)
+- [`docs/project/UX_DESIGN.md`](UX_DESIGN.md)
+- [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md)
 
 ---
 
@@ -115,7 +115,7 @@ Automatically process uploaded **PDF** documents in a **non-blocking** way, with
 - Append-only processing history
 
 ### Format support note
-Supported upload types are defined by `docs/project/TECHNICAL_DESIGN.md` Appendix B3. DOCX and image format expansion are sequenced as the final stories (US-19 and US-20).
+Supported upload types are defined by [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3. DOCX and image format expansion are sequenced as the final stories (US-19 and US-20).
 
 ### User Stories (in order)
 - US-05 — Process document
@@ -252,12 +252,12 @@ As a user, I want to upload a document so that it is stored and available for pr
 **Scope Clarification**
 - This story does not start processing.
 - Background processing is introduced later (US-05).
-- This story supports the upload types defined in `docs/project/TECHNICAL_DESIGN.md` Appendix B3; format expansion is introduced via later user stories.
+- This story supports the upload types defined in [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3; format expansion is introduced via later user stories.
 
 **Authoritative References**
-- Tech: API surface + upload requirements + errors: `docs/project/TECHNICAL_DESIGN.md` Appendix B3/B3.2
-- Tech: Derived document status: `docs/project/TECHNICAL_DESIGN.md` Appendix A1.2
-- Tech: Filesystem rules: `docs/project/TECHNICAL_DESIGN.md` Appendix B5
+- Tech: API surface + upload requirements + errors: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3/B3.2
+- Tech: Derived document status: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix A1.2
+- Tech: Filesystem rules: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B5
 
 **Test Expectations**
 - Uploading a supported type succeeds and persists the document.
@@ -265,7 +265,7 @@ As a user, I want to upload a document so that it is stored and available for pr
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests added/updated per `docs/project/TECHNICAL_DESIGN.md` Appendix B7.
+- Unit + integration tests added/updated per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
 
 ---
 
@@ -285,16 +285,16 @@ As a user, I want to see the current status of a document so that I understand i
 - This story does not expose run history or per-step details (US-11 covers history).
 
 **Authoritative References**
-- Tech: Derived status rules: `docs/project/TECHNICAL_DESIGN.md` Appendix A1.2
-- Tech: Failure types and mapping: `docs/project/TECHNICAL_DESIGN.md` Appendix C3
-- UX: Separation of responsibilities: `docs/project/UX_DESIGN.md` Sections 1 and 8
+- Tech: Derived status rules: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix A1.2
+- Tech: Failure types and mapping: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix C3
+- UX: Separation of responsibilities: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) Sections 1 and 8
 
 **Test Expectations**
 - Derived status matches the latest run state across all states.
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per `docs/project/TECHNICAL_DESIGN.md` Appendix B7.
+- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
 
 ---
 
@@ -313,8 +313,8 @@ As a user, I want to download and preview the original uploaded document so that
 - This story does not implement evidence overlays or highlighting.
 
 **Authoritative References**
-- Tech: API surface + errors: `docs/project/TECHNICAL_DESIGN.md` Appendix B3/B3.2
-- Tech: Filesystem artifact rules: `docs/project/TECHNICAL_DESIGN.md` Appendix B5
+- Tech: API surface + errors: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3/B3.2
+- Tech: Filesystem artifact rules: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B5
 
 **Test Expectations**
 - Successful download works for an uploaded document.
@@ -322,7 +322,7 @@ As a user, I want to download and preview the original uploaded document so that
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per `docs/project/TECHNICAL_DESIGN.md` Appendix B7.
+- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
 
 ---
 
@@ -340,8 +340,8 @@ As a user, I want to list uploaded documents and see their status so that I can 
 - This story does not add filtering/search (future concern).
 
 **Authoritative References**
-- Tech: Listing semantics and run resolution: `docs/project/TECHNICAL_DESIGN.md` Appendix B3/B3.1
-- Tech: Derived status rules: `docs/project/TECHNICAL_DESIGN.md` Appendix A1.2
+- Tech: Listing semantics and run resolution: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3/B3.1
+- Tech: Derived status rules: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix A1.2
 
 **Test Expectations**
 - Documents with no runs show the correct derived status.
@@ -349,7 +349,7 @@ As a user, I want to list uploaded documents and see their status so that I can 
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per `docs/project/TECHNICAL_DESIGN.md` Appendix B7.
+- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
 
 ---
 
@@ -366,16 +366,16 @@ As a veterinarian, I want uploaded PDF documents to be processed automatically s
 - Each processing attempt is traceable and does not overwrite prior runs/artifacts.
 
 **Scope Clarification**
-- Processing follows the execution model defined in `docs/project/TECHNICAL_DESIGN.md` Appendix B1.
+- Processing follows the execution model defined in [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B1.
 - This story does not introduce external queues or worker infrastructure; processing runs in-process and is non-blocking.
 - This story does not require OCR for scanned PDFs; extraction relies on embedded text when available.
 - This story does not execute multiple runs concurrently for the same document.
 
 **Authoritative References**
-- Tech: Processing model and run invariants: `docs/project/TECHNICAL_DESIGN.md` Sections 3–4 + Appendix A2
-- Tech: Step model + failure mapping: `docs/project/TECHNICAL_DESIGN.md` Appendix C
-- Tech: Reprocess endpoint and idempotency rules: `docs/project/TECHNICAL_DESIGN.md` Appendix B3 + Appendix B4
-- Tech: Extraction library scope (PDF): `docs/project/TECHNICAL_DESIGN.md` Appendix E
+- Tech: Processing model and run invariants: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Sections 3–4 + Appendix A2
+- Tech: Step model + failure mapping: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix C
+- Tech: Reprocess endpoint and idempotency rules: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3 + Appendix B4
+- Tech: Extraction library scope (PDF): [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix E
 
 **Test Expectations**
 - Upload triggers background processing without blocking the request.
@@ -383,7 +383,7 @@ As a veterinarian, I want uploaded PDF documents to be processed automatically s
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per `docs/project/TECHNICAL_DESIGN.md` Appendix B7.
+- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
 
 ---
 
@@ -402,15 +402,15 @@ As a veterinarian, I want to see the processing history of a document so that I 
 - This story does not introduce actions from the history view.
 
 **Authoritative References**
-- Tech: Processing history endpoint contract: `docs/project/TECHNICAL_DESIGN.md` Appendix B3.1
-- Tech: Step artifacts are the source of truth: `docs/project/TECHNICAL_DESIGN.md` Appendix C4
+- Tech: Processing history endpoint contract: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3.1
+- Tech: Step artifacts are the source of truth: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix C4
 
 **Test Expectations**
 - History reflects persisted step artifacts accurately.
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per `docs/project/TECHNICAL_DESIGN.md` Appendix B7.
+- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
 
 ---
 
@@ -429,15 +429,15 @@ As a veterinarian, I want to view the raw text extracted from a document so that
 - This story is read-only.
 
 **Authoritative References**
-- Tech: Raw-text artifact endpoint + “not ready vs not available” semantics: `docs/project/TECHNICAL_DESIGN.md` Appendix B3/B3.2
-- Tech: Extraction + language detection libraries: `docs/project/TECHNICAL_DESIGN.md` Appendix E
+- Tech: Raw-text artifact endpoint + “not ready vs not available” semantics: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3/B3.2
+- Tech: Extraction + language detection libraries: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix E
 
 **Test Expectations**
 - Raw text retrieval behaves correctly across run states and extraction failures.
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per `docs/project/TECHNICAL_DESIGN.md` Appendix B7.
+- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
 
 ---
 
@@ -460,10 +460,10 @@ As a veterinarian, I want to review the system’s interpretation while viewing 
 - Review requires a completed run with an active interpretation; this is expected for PDFs (see Technical Design Appendix E).
 
 **Authoritative References**
-- UX: Review flow + confidence meaning: `docs/project/UX_DESIGN.md` Sections 2–4
-- Tech: Review endpoint semantics (latest completed run): `docs/project/TECHNICAL_DESIGN.md` Appendix B3.1
-- Tech: Structured interpretation schema + evidence model: `docs/project/TECHNICAL_DESIGN.md` Appendix D + D6
-- Tech: Extraction/interpretation scope (PDF): `docs/project/TECHNICAL_DESIGN.md` Appendix E
+- UX: Review flow + confidence meaning: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) Sections 2–4
+- Tech: Review endpoint semantics (latest completed run): [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3.1
+- Tech: Structured interpretation schema + evidence model: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix D + D6
+- Tech: Extraction/interpretation scope (PDF): [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix E
 
 **Test Expectations**
 - Review uses the latest completed run rules.
@@ -471,7 +471,7 @@ As a veterinarian, I want to review the system’s interpretation while viewing 
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per `docs/project/TECHNICAL_DESIGN.md` Appendix B7.
+- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
 
 ---
 
@@ -494,11 +494,11 @@ As a veterinarian, I want to edit structured information extracted from a docume
 - Editing applies to runs that have an active interpretation; this is expected for PDFs (see Technical Design Appendix E).
 
 **Authoritative References**
-- Tech: Versioning invariants (append-only interpretations): `docs/project/TECHNICAL_DESIGN.md` Appendix A3 + Appendix B2.4
-- Tech: Field change log contract: `docs/project/TECHNICAL_DESIGN.md` Appendix B2.5
-- Tech: Edit endpoint contract: `docs/project/TECHNICAL_DESIGN.md` Appendix B3.1
-- UX: Immediate local correction, no extra feedback steps: `docs/project/UX_DESIGN.md` Section 4
-- Tech: Extraction/interpretation scope (PDF): `docs/project/TECHNICAL_DESIGN.md` Appendix E
+- Tech: Versioning invariants (append-only interpretations): [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix A3 + Appendix B2.4
+- Tech: Field change log contract: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B2.5
+- Tech: Edit endpoint contract: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3.1
+- UX: Immediate local correction, no extra feedback steps: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) Section 4
+- Tech: Extraction/interpretation scope (PDF): [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix E
 
 **Test Expectations**
 - Each edit produces a new interpretation version and appends change-log entries.
@@ -506,7 +506,7 @@ As a veterinarian, I want to edit structured information extracted from a docume
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per `docs/project/TECHNICAL_DESIGN.md` Appendix B7.
+- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
 
 ---
 
@@ -525,16 +525,16 @@ As a veterinarian, I want the system to record my normal corrections as append-o
 - Capture-only in this story: no confidence adjustment, no model training, no schema changes.
 
 **Authoritative References**
-- Product: Learning and governance principles: `docs/project/PRODUCT_DESIGN.md` Section 6
-- Tech: Field change log is append-only and can serve as correction signal storage: `docs/project/TECHNICAL_DESIGN.md` Appendix B2.5
-- UX: No explicit feedback flows: `docs/project/UX_DESIGN.md` Section 4
+- Product: Learning and governance principles: [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md) Section 6
+- Tech: Field change log is append-only and can serve as correction signal storage: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B2.5
+- UX: No explicit feedback flows: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) Section 4
 
 **Test Expectations**
 - Corrections are persisted append-only and do not alter current review/edit workflows.
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per `docs/project/TECHNICAL_DESIGN.md` Appendix B7.
+- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
 
 ---
 
@@ -554,9 +554,9 @@ As a veterinarian, I want to change the detected language of a document so that 
 - Changing the language does not automatically reprocess.
 
 **Authoritative References**
-- Tech: Language detection rules: `docs/project/TECHNICAL_DESIGN.md` Appendix E
-- Tech: Language override endpoint + rules: `docs/project/TECHNICAL_DESIGN.md` Appendix B3/B3.1
-- Tech: Run persistence of `language_used`: `docs/project/TECHNICAL_DESIGN.md` Appendix B2.2
+- Tech: Language detection rules: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix E
+- Tech: Language override endpoint + rules: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3/B3.1
+- Tech: Run persistence of `language_used`: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B2.2
 
 **Test Expectations**
 - New runs created after setting an override persist the overridden `language_used`.
@@ -564,7 +564,7 @@ As a veterinarian, I want to change the detected language of a document so that 
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per `docs/project/TECHNICAL_DESIGN.md` Appendix B7.
+- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
 
 ---
 
@@ -583,15 +583,15 @@ As a veterinarian, I want to mark a document as reviewed so that I can explicitl
 - No reviewer/governance behavior is introduced.
 
 **Authoritative References**
-- Tech: Review status rules: `docs/project/TECHNICAL_DESIGN.md` Appendix A1.3
-- Tech: Mark-reviewed endpoint idempotency and retry rules: `docs/project/TECHNICAL_DESIGN.md` Appendix B4
+- Tech: Review status rules: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix A1.3
+- Tech: Mark-reviewed endpoint idempotency and retry rules: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B4
 
 **Test Expectations**
 - Review status transitions follow the authoritative rules.
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per `docs/project/TECHNICAL_DESIGN.md` Appendix B7.
+- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
 
 ---
 
@@ -610,16 +610,16 @@ As a reviewer, I want to review aggregated pending structural changes so that I 
 - No retroactive changes to past documents.
 
 **Authoritative References**
-- Product: Separation of responsibilities and governance boundary: `docs/project/PRODUCT_DESIGN.md` Sections 5 and 4.3
-- Tech: Governance invariants: `docs/project/TECHNICAL_DESIGN.md` Appendix A7
-- Tech: Governance persistence + endpoints: `docs/project/TECHNICAL_DESIGN.md` Appendix B2.8–B2.9 + Appendix B3.1
+- Product: Separation of responsibilities and governance boundary: [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md) Sections 5 and 4.3
+- Tech: Governance invariants: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix A7
+- Tech: Governance persistence + endpoints: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B2.8–B2.9 + Appendix B3.1
 
 **Test Expectations**
 - Candidates are isolated from document workflows and apply prospectively only.
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per `docs/project/TECHNICAL_DESIGN.md` Appendix B7.
+- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
 
 ---
 
@@ -637,16 +637,16 @@ As a reviewer, I want to filter and prioritize pending structural changes so I c
 - This story does not introduce automatic decisions.
 
 **Authoritative References**
-- Product: Critical keys policy: `docs/project/PRODUCT_DESIGN.md` CRITICAL_KEYS_V0
-- Tech: Critical concept derivation: `docs/project/TECHNICAL_DESIGN.md` Appendix D7.4
-- Tech: Governance endpoints: `docs/project/TECHNICAL_DESIGN.md` Appendix B3
+- Product: Critical keys policy: [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md) CRITICAL_KEYS_V0
+- Tech: Critical concept derivation: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix D7.4
+- Tech: Governance endpoints: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3
 
 **Test Expectations**
 - Filters do not change underlying candidate data; they only change views.
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per `docs/project/TECHNICAL_DESIGN.md` Appendix B7.
+- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
 
 ---
 
@@ -666,9 +666,9 @@ As a reviewer, I want to approve structural changes so that future interpretatio
 - No automatic promotion without explicit reviewer action.
 
 **Authoritative References**
-- Tech: Schema version persistence and current schema rule: `docs/project/TECHNICAL_DESIGN.md` Appendix B2.7
-- Tech: `schema_version_used` persisted per run: `docs/project/TECHNICAL_DESIGN.md` Appendix B2.2
-- Tech: Governance invariants: `docs/project/TECHNICAL_DESIGN.md` Appendix A7
+- Tech: Schema version persistence and current schema rule: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B2.7
+- Tech: `schema_version_used` persisted per run: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B2.2
+- Tech: Governance invariants: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix A7
 
 **Test Expectations**
 - Approval creates a new schema version and new runs use it.
@@ -676,7 +676,7 @@ As a reviewer, I want to approve structural changes so that future interpretatio
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per `docs/project/TECHNICAL_DESIGN.md` Appendix B7.
+- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
 
 ---
 
@@ -695,16 +695,16 @@ As a reviewer, I want to reject or defer structural changes so that unsafe or lo
 - Rejection/deferral does not delete candidate history.
 
 **Authoritative References**
-- Tech: Governance decision log: `docs/project/TECHNICAL_DESIGN.md` Appendix B2.9
-- Tech: Governance endpoints: `docs/project/TECHNICAL_DESIGN.md` Appendix B3
-- Tech: Governance invariants: `docs/project/TECHNICAL_DESIGN.md` Appendix A7
+- Tech: Governance decision log: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B2.9
+- Tech: Governance endpoints: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3
+- Tech: Governance invariants: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix A7
 
 **Test Expectations**
 - Decisions append to the audit trail and update candidate status consistently.
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per `docs/project/TECHNICAL_DESIGN.md` Appendix B7.
+- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
 
 ---
 
@@ -723,16 +723,16 @@ As a reviewer, I want stricter handling for critical structural changes so that 
 - No veterinarian friction is introduced.
 
 **Authoritative References**
-- Product: Critical concept policy: `docs/project/PRODUCT_DESIGN.md` Section 4
-- Tech: Critical derivation rule: `docs/project/TECHNICAL_DESIGN.md` Appendix D7.4
-- UX: Sensitive changes never add veterinarian friction: `docs/project/UX_DESIGN.md` Section 6
+- Product: Critical concept policy: [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md) Section 4
+- Tech: Critical derivation rule: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix D7.4
+- UX: Sensitive changes never add veterinarian friction: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) Section 6
 
 **Test Expectations**
 - Critical designation affects reviewer prioritization only; it does not block veterinarian workflows.
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per `docs/project/TECHNICAL_DESIGN.md` Appendix B7.
+- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
 
 ---
 
@@ -750,16 +750,16 @@ As a reviewer, I want to see an audit trail of schema governance decisions so th
 - This story provides visibility only.
 
 **Authoritative References**
-- Tech: Governance decision log persistence: `docs/project/TECHNICAL_DESIGN.md` Appendix B2.9
-- Tech: Audit trail endpoint: `docs/project/TECHNICAL_DESIGN.md` Appendix B3
-- Tech: Audit immutability and separation: `docs/project/TECHNICAL_DESIGN.md` Appendix A8
+- Tech: Governance decision log persistence: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B2.9
+- Tech: Audit trail endpoint: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3
+- Tech: Audit immutability and separation: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix A8
 
 **Test Expectations**
 - Audit trail ordering is chronological and records are immutable.
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per `docs/project/TECHNICAL_DESIGN.md` Appendix B7.
+- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
 
 ---
 
@@ -777,13 +777,13 @@ As a user, I want to upload, access, and process DOCX documents so that the same
 **Scope Clarification**
 - This story changes format support only; the processing pipeline, contracts, versioning rules, and review workflow semantics remain unchanged.
 - This story does not require preview for DOCX; if preview is unavailable, the UI must clearly fall back to download-only without blocking workflows.
-- This story requires updating the authoritative format support contract in `docs/project/TECHNICAL_DESIGN.md` (supported upload types and any related filesystem rules).
+- This story requires updating the authoritative format support contract in [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) (supported upload types and any related filesystem rules).
 
 **Authoritative References**
-- Tech: Endpoint surface and error semantics: `docs/project/TECHNICAL_DESIGN.md` Appendix B3/B3.2
-- Tech: Processing model and run invariants: `docs/project/TECHNICAL_DESIGN.md` Sections 3–4 + Appendix A2
-- Tech: Step model + failure mapping: `docs/project/TECHNICAL_DESIGN.md` Appendix C
-- UX: Review flow guarantees: `docs/project/UX_DESIGN.md` Sections 2–4
+- Tech: Endpoint surface and error semantics: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3/B3.2
+- Tech: Processing model and run invariants: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Sections 3–4 + Appendix A2
+- Tech: Step model + failure mapping: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix C
+- UX: Review flow guarantees: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) Sections 2–4
 
 **Story-specific technical requirements**
 - Add server-side type detection for DOCX based on server-side inspection.
@@ -796,7 +796,7 @@ As a user, I want to upload, access, and process DOCX documents so that the same
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per `docs/project/TECHNICAL_DESIGN.md` Appendix B7.
+- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
 
 ---
 
@@ -814,18 +814,18 @@ As a user, I want to upload, access, and process image documents so that scans a
 
 **Scope Clarification**
 - This story changes format support only; the processing pipeline, contracts, versioning rules, and review workflow semantics remain unchanged.
-- This story requires updating the authoritative format support contract in `docs/project/TECHNICAL_DESIGN.md` (supported upload types and any related filesystem rules).
+- This story requires updating the authoritative format support contract in [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) (supported upload types and any related filesystem rules).
 
 **Authoritative References**
-- Tech: Endpoint surface and error semantics: `docs/project/TECHNICAL_DESIGN.md` Appendix B3/B3.2
-- Tech: Processing model and run invariants: `docs/project/TECHNICAL_DESIGN.md` Sections 3–4 + Appendix A2
-- Tech: Step model + failure mapping: `docs/project/TECHNICAL_DESIGN.md` Appendix C
-- Tech: Extraction library decisions (appendix): `docs/project/TECHNICAL_DESIGN.md` Appendix E
-- UX: Review flow guarantees: `docs/project/UX_DESIGN.md` Sections 2–4
+- Tech: Endpoint surface and error semantics: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3/B3.2
+- Tech: Processing model and run invariants: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Sections 3–4 + Appendix A2
+- Tech: Step model + failure mapping: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix C
+- Tech: Extraction library decisions (appendix): [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix E
+- UX: Review flow guarantees: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) Sections 2–4
 
 **Story-specific technical requirements**
 - Add server-side type detection for images based on server-side inspection.
-- Define the OCR extraction approach in `docs/project/TECHNICAL_DESIGN.md` Appendix E during this story, then implement it.
+- Define the OCR extraction approach in [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix E during this story, then implement it.
 - Store the original under the deterministic path rules with the appropriate extension (e.g., `original.png`, `original.jpg`).
 
 **Test Expectations**
@@ -834,4 +834,4 @@ As a user, I want to upload, access, and process image documents so that scans a
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per `docs/project/TECHNICAL_DESIGN.md` Appendix B7.
+- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.

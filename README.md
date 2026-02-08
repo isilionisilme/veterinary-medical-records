@@ -25,7 +25,7 @@ This project explores an approach that assists veterinarians during document rev
 
 - `backend/` — FastAPI API + persistence (SQLite + filesystem) + tests
 - `frontend/` — React app for document upload/list/review flows
-- `docs/` — authoritative documentation (start at `docs/README.md`)
+- [`docs/`](docs/) — authoritative documentation (start at [`docs/README.md`](docs/README.md))
 
 ---
 
@@ -35,48 +35,48 @@ The repository documentation is intentionally split by audience and purpose.
 
 Start here:
 
-📄 **`docs/README.md`** — reading order + document authority.
+📄 **[`docs/README.md`](docs/README.md)** — reading order + document authority.
 
 ---
 
 ### Project documentation (authoritative)
 
-📄 **`docs/project/PRODUCT_DESIGN.md`**  
+📄 **[`docs/project/PRODUCT_DESIGN.md`](docs/project/PRODUCT_DESIGN.md)**  
 Product intent + semantics summary (with canonical Google Doc link).
 
 ---
 
-📄 **`docs/project/UX_DESIGN.md`**  
+📄 **[`docs/project/UX_DESIGN.md`](docs/project/UX_DESIGN.md)**  
 UX interaction contract (roles, workflow guarantees, confidence UX rules).
 
-📄 **`docs/project/BRAND_GUIDELINES.md`**  
+📄 **[`docs/project/BRAND_GUIDELINES.md`](docs/project/BRAND_GUIDELINES.md)**  
 Visual identity and tone of user-facing copy.
 
-📄 **`docs/project/TECHNICAL_DESIGN.md`**  
+📄 **[`docs/project/TECHNICAL_DESIGN.md`](docs/project/TECHNICAL_DESIGN.md)**  
 Architecture + invariants + authoritative contracts (endpoint map, error semantics, state rules, schemas).
 
 ---
 
-📄 **`docs/project/IMPLEMENTATION_PLAN.md`**  
+📄 **[`docs/project/IMPLEMENTATION_PLAN.md`](docs/project/IMPLEMENTATION_PLAN.md)**  
 Scope + story order + acceptance criteria (sequencing authority).
 
-📄 **`docs/project/BACKEND_IMPLEMENTATION.md`**  
+📄 **[`docs/project/BACKEND_IMPLEMENTATION.md`](docs/project/BACKEND_IMPLEMENTATION.md)**  
 Backend implementation details (“how”).
 
-📄 **`docs/project/FRONTEND_IMPLEMENTATION.md`**  
+📄 **[`docs/project/FRONTEND_IMPLEMENTATION.md`](docs/project/FRONTEND_IMPLEMENTATION.md)**  
 Frontend implementation details (“how”).
 
 ---
 
 ### Shared engineering rules
 
-📄 **`docs/shared/AGENTS.md`**  
+📄 **[`docs/shared/AGENTS.md`](docs/shared/AGENTS.md)**  
 AI Coding Assistant behavior rules for this repo.
 
-📄 **`docs/shared/ENGINEERING_PLAYBOOK.md`**  
+📄 **[`docs/shared/ENGINEERING_PLAYBOOK.md`](docs/shared/ENGINEERING_PLAYBOOK.md)**  
 Engineering standards for implementation and changes.
 
-📄 **`docs/shared/UX_GUIDELINES.md`**  
+📄 **[`docs/shared/UX_GUIDELINES.md`](docs/shared/UX_GUIDELINES.md)**  
 Shared UX principles referenced by project UX design.
 
 ---
@@ -136,6 +136,6 @@ The focus is on **clarity, judgment, and maintainability**, rather than feature 
 
 ## Implementation status
 
-The current code covers Release 1 user stories (US-01 through US-04). Later releases are defined in `docs/project/IMPLEMENTATION_PLAN.md` for sequencing and acceptance criteria.
+The current code covers Release 1 user stories (US-01 through US-04). Later releases are defined in [`docs/project/IMPLEMENTATION_PLAN.md`](docs/project/IMPLEMENTATION_PLAN.md) for sequencing and acceptance criteria.
 
 ---

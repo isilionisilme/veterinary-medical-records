@@ -3,7 +3,7 @@
 This document defines the **project-specific UX and interaction design contract**
 for the Veterinary Medical Records Processing system.
 
-It complements the global UX principles defined in `docs/shared/UX_GUIDELINES.md`.
+It complements the global UX principles defined in [`docs/shared/UX_GUIDELINES.md`](../shared/UX_GUIDELINES.md).
 
 All UI and interaction decisions for this project must comply with this document.
 If a design choice conflicts with these rules, it must be reconsidered.
@@ -202,4 +202,4 @@ It does not define:
 - learning mechanisms.
 
 If a UX decision cannot be resolved using this document and
-`UX_GUIDELINES.md`, it must be escalated to Product Design.
+[`docs/shared/UX_GUIDELINES.md`](../shared/UX_GUIDELINES.md), it must be escalated to Product Design.
