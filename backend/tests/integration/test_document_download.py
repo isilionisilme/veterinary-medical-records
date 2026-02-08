@@ -34,7 +34,7 @@ def _upload_sample_document(test_client: TestClient) -> tuple[str, bytes]:
     return response.json()["document_id"], sample_content
 
 
-def test_get_document_original_returns_pdf_inline(test_client):
+def test_get_document_download_returns_pdf_inline(test_client):
     document_id, sample_content = _upload_sample_document(test_client)
 
     response = test_client.get(f"/documents/{document_id}/download")
@@ -45,7 +45,7 @@ def test_get_document_original_returns_pdf_inline(test_client):
     assert "record.pdf" in response.headers["content-disposition"]
 
 
-def test_get_document_original_returns_attachment_when_download_true(test_client):
+def test_get_document_download_returns_attachment_when_download_true(test_client):
     document_id, _ = _upload_sample_document(test_client)
 
     response = test_client.get(f"/documents/{document_id}/download?download=true")
@@ -53,7 +53,7 @@ def test_get_document_original_returns_attachment_when_download_true(test_client
     assert "attachment" in response.headers["content-disposition"].lower()
 
 
-def test_get_document_original_returns_410_when_missing_file(test_client):
+def test_get_document_download_returns_410_when_missing_file(test_client):
     document_id, _ = _upload_sample_document(test_client)
 
     storage_path = get_storage_root() / document_id / "original.pdf"
@@ -65,7 +65,7 @@ def test_get_document_original_returns_410_when_missing_file(test_client):
     assert payload["error_code"] == "ARTIFACT_MISSING"
 
 
-def test_get_document_original_returns_404_when_document_missing(test_client):
+def test_get_document_download_returns_404_when_document_missing(test_client):
     response = test_client.get("/documents/does-not-exist/download")
     assert response.status_code == 404
     payload = response.json()
