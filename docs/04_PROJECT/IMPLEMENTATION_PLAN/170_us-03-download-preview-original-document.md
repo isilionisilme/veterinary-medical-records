@@ -1,0 +1,27 @@
+# US-03 — Download / preview original document
+
+**User Story**
+As a user, I want to download and preview the original uploaded document so that I can access the source material.
+
+**Acceptance Criteria**
+- I can access the original uploaded file for a document.
+- Preview is supported for PDFs.
+- If the stored file is missing, the system returns the normative missing-artifact behavior.
+- Accessing the original file is non-blocking and does not depend on processing success.
+
+**Scope Clarification**
+- This story does not implement evidence overlays or highlighting.
+
+**Authoritative References**
+- Tech: API surface + errors: [`docs/project/TECHNICAL_DESIGN.md`](../TECHNICAL_DESIGN/00_entry.md) Appendix B3/B3.2
+- Tech: Filesystem artifact rules: [`docs/project/TECHNICAL_DESIGN.md`](../TECHNICAL_DESIGN/00_entry.md) Appendix B5
+
+**Test Expectations**
+- Successful download works for an uploaded document.
+- Missing artifact behavior matches the Technical Design contract.
+
+**Definition of Done (DoD)**
+- Acceptance criteria satisfied.
+- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](../TECHNICAL_DESIGN/00_entry.md) Appendix B7.
+
+---

@@ -1,7 +1,6 @@
 # Brand (Operational Rule)
 
 Follow:
-- `docs/project/BRAND_GUIDELINES.md`
+- `docs/04_PROJECT/BRAND_GUIDELINES/00_entry.md`
 
 If Brand conflicts with UX, UX takes precedence.
-

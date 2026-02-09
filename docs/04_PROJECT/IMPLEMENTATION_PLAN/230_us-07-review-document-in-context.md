@@ -1,0 +1,33 @@
+# US-07 — Review document in context
+
+**User Story**
+As a veterinarian, I want to review the system’s interpretation while viewing the original document so that I can verify it.
+
+**Acceptance Criteria**
+- I can see structured extracted data and the original document together.
+- Confidence is visible and non-blocking (guides attention, not decisions).
+- Evidence is available per field as page + snippet, accessible with minimal interaction.
+- Highlighting in the document is progressive enhancement: review remains usable if highlighting fails.
+- I can optionally view raw extracted text from the review context.
+- Reviewer/governance concepts are not exposed to veterinarians.
+
+**Scope Clarification**
+- No approval/gating flows are introduced.
+- This story does not require exact coordinate evidence.
+- Review requires a completed run with an active interpretation; this is expected for PDFs (see Technical Design Appendix E).
+
+**Authoritative References**
+- UX: Review flow + confidence meaning: [`docs/project/UX_DESIGN.md`](../UX_DESIGN/00_entry.md) Sections 2–4
+- Tech: Review endpoint semantics (latest completed run): [`docs/project/TECHNICAL_DESIGN.md`](../TECHNICAL_DESIGN/00_entry.md) Appendix B3.1
+- Tech: Structured interpretation schema + evidence model: [`docs/project/TECHNICAL_DESIGN.md`](../TECHNICAL_DESIGN/00_entry.md) Appendix D + D6
+- Tech: Extraction/interpretation scope (PDF): [`docs/project/TECHNICAL_DESIGN.md`](../TECHNICAL_DESIGN/00_entry.md) Appendix E
+
+**Test Expectations**
+- Review uses the latest completed run rules.
+- Lack of a completed run yields the normative conflict behavior.
+
+**Definition of Done (DoD)**
+- Acceptance criteria satisfied.
+- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](../TECHNICAL_DESIGN/00_entry.md) Appendix B7.
+
+---
