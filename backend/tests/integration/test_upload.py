@@ -15,6 +15,7 @@ def test_db(tmp_path, monkeypatch):
     db_path = tmp_path / "documents.db"
     monkeypatch.setenv("VET_RECORDS_DB_PATH", str(db_path))
     monkeypatch.setenv("VET_RECORDS_STORAGE_PATH", str(tmp_path / "storage"))
+    monkeypatch.setenv("VET_RECORDS_DISABLE_PROCESSING", "true")
     database.ensure_schema()
     return db_path
 
@@ -34,7 +35,7 @@ def test_upload_success_creates_document(test_client):
     response = test_client.post("/documents/upload", files=files)
     assert response.status_code == 201
     payload = response.json()
-    assert payload["status"] == app_models.ProcessingStatus.UPLOADED.value
+    assert payload["status"] == app_models.ProcessingStatus.PROCESSING.value
     assert payload["created_at"]
     document_id = payload["document_id"]
 
@@ -106,10 +107,11 @@ def test_get_document_returns_metadata_and_state(test_client):
     assert payload["original_filename"] == "record.pdf"
     assert payload["content_type"] == "application/pdf"
     assert payload["file_size"] == len(b"%PDF-1.5 sample")
-    assert payload["status"] == app_models.ProcessingStatus.UPLOADED.value
+    assert payload["status"] == app_models.ProcessingStatus.PROCESSING.value
     assert payload["status_message"]
     assert payload["failure_type"] is None
-    assert payload["latest_run"] is None
+    assert payload["latest_run"] is not None
+    assert payload["latest_run"]["state"] == app_models.ProcessingRunState.QUEUED.value
     assert isinstance(payload["created_at"], str)
     assert payload["created_at"]
     assert payload["updated_at"]

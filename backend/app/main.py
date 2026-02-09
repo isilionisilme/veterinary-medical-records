@@ -7,18 +7,38 @@ business logic lives in the application/domain layers.
 
 from __future__ import annotations
 
+import asyncio
+import logging
 import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime
+from typing import cast
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.app.api.routes import MAX_UPLOAD_SIZE as ROUTE_MAX_UPLOAD_SIZE
 from backend.app.api.routes import router as api_router
+from backend.app.application.processing_runner import processing_scheduler
 from backend.app.infra import database
 from backend.app.infra.file_storage import LocalFileStorage
 from backend.app.infra.sqlite_document_repository import SqliteDocumentRepository
+from backend.app.ports.document_repository import DocumentRepository
+from backend.app.ports.file_storage import FileStorage
+
+logger = logging.getLogger(__name__)
+
+
+def _now_iso() -> str:
+    return datetime.now(UTC).isoformat()
+
+
+def _processing_enabled() -> bool:
+    raw = os.environ.get("VET_RECORDS_DISABLE_PROCESSING")
+    if raw is None:
+        return True
+    return raw.strip().lower() not in {"1", "true", "yes", "on"}
 
 
 def create_app() -> FastAPI:
@@ -42,7 +62,28 @@ def create_app() -> FastAPI:
         """FastAPI lifespan handler used to perform startup initialization."""
 
         database.ensure_schema()
+        repository = cast(DocumentRepository, app.state.document_repository)
+        storage = cast(FileStorage, app.state.file_storage)
+        recovered = repository.recover_orphaned_runs(completed_at=_now_iso())
+        if recovered:
+            logger.info("Recovered %s orphaned runs", recovered)
+        if _processing_enabled():
+            stop_event = asyncio.Event()
+            app.state.processing_stop_event = stop_event
+            app.state.processing_task = asyncio.create_task(
+                processing_scheduler(
+                    repository=repository,
+                    storage=storage,
+                    stop_event=stop_event,
+                )
+            )
+        else:
+            app.state.processing_stop_event = None
+            app.state.processing_task = None
         yield
+        if app.state.processing_stop_event is not None:
+            app.state.processing_stop_event.set()
+            await app.state.processing_task
 
     app = FastAPI(
         title="Veterinary Medical Records API",

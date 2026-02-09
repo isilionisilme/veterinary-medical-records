@@ -17,13 +17,17 @@ from backend.app.api.schemas import (
     DocumentResponse,
     DocumentUploadResponse,
     LatestRunResponse,
+    ProcessingRunResponse,
 )
 from backend.app.application.document_service import (
+    get_document,
     get_document_original_location,
     get_document_status_details,
     list_documents,
     register_document_upload,
 )
+from backend.app.application.processing_runner import enqueue_processing_run
+from backend.app.domain.models import ProcessingStatus
 from backend.app.ports.document_repository import DocumentRepository
 from backend.app.ports.file_storage import FileStorage
 
@@ -353,6 +357,10 @@ async def upload_document(
             repository=repository,
             storage=storage,
         )
+        enqueue_processing_run(
+            document_id=result.document_id,
+            repository=repository,
+        )
     except Exception as exc:  # pragma: no cover - defensive
         _log_event(
             event_type="DOCUMENT_UPLOADED",
@@ -370,11 +378,45 @@ async def upload_document(
         event_type="DOCUMENT_UPLOADED",
         document_id=result.document_id,
     )
-
     return DocumentUploadResponse(
         document_id=result.document_id,
-        status=result.status,
+        status=ProcessingStatus.PROCESSING.value,
         created_at=result.created_at,
+    )
+
+
+@router.post(
+    "/documents/{document_id}/reprocess",
+    response_model=ProcessingRunResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a new processing run",
+    description="Create a new processing run for the document (append-only).",
+    responses={404: {"description": "Document not found (NOT_FOUND)."}},
+)
+def reprocess_document(
+    request: Request,
+    document_id: str,
+) -> ProcessingRunResponse | JSONResponse:
+    """Create a new queued processing run for an existing document."""
+
+    repository = cast(DocumentRepository, request.app.state.document_repository)
+    if get_document(document_id=document_id, repository=repository) is None:
+        return _error_response(
+            status_code=status.HTTP_404_NOT_FOUND,
+            error_code="NOT_FOUND",
+            message="Document not found.",
+        )
+
+    run = enqueue_processing_run(document_id=document_id, repository=repository)
+    _log_event(
+        event_type="REPROCESS_REQUESTED",
+        document_id=document_id,
+        run_id=run.run_id,
+    )
+    return ProcessingRunResponse(
+        run_id=run.run_id,
+        state=run.state.value,
+        created_at=run.created_at,
     )
 
 

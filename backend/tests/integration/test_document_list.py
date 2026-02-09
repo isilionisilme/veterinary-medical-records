@@ -14,6 +14,7 @@ def test_db(tmp_path, monkeypatch):
     db_path = tmp_path / "documents.db"
     monkeypatch.setenv("VET_RECORDS_DB_PATH", str(db_path))
     monkeypatch.setenv("VET_RECORDS_STORAGE_PATH", str(tmp_path / "storage"))
+    monkeypatch.setenv("VET_RECORDS_DISABLE_PROCESSING", "true")
     database.ensure_schema()
     return db_path
 
@@ -47,8 +48,8 @@ def test_list_documents_returns_uploaded_documents(test_client):
     item = payload["items"][0]
     assert item["document_id"] == doc_id
     assert item["original_filename"] == "record.pdf"
-    assert item["status"] == app_models.ProcessingStatus.UPLOADED.value
-    assert item["status_label"] == "Uploaded"
+    assert item["status"] == app_models.ProcessingStatus.PROCESSING.value
+    assert item["status_label"] == "Processing"
     assert item["failure_type"] is None
 
 
@@ -97,7 +98,7 @@ def test_list_documents_returns_failure_type_for_failed_run(test_client):
                 "run-456",
                 doc_id,
                 app_models.ProcessingRunState.FAILED.value,
-                "2026-02-06T11:00:00+00:00",
+                "2099-02-06T11:00:00+00:00",
                 "2026-02-06T11:00:01+00:00",
                 "2026-02-06T11:00:05+00:00",
                 "EXTRACTION_FAILED",
