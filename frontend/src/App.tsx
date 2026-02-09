@@ -28,6 +28,25 @@ type DocumentListResponse = {
   total: number;
 };
 
+type LatestRun = {
+  run_id: string;
+  state: string;
+  failure_type: string | null;
+};
+
+type DocumentDetailResponse = {
+  document_id: string;
+  original_filename: string;
+  content_type: string;
+  file_size: number;
+  created_at: string;
+  updated_at: string;
+  status: string;
+  status_message: string;
+  failure_type: string | null;
+  latest_run: LatestRun | null;
+};
+
 function parseFilename(contentDisposition: string | null): string | null {
   if (!contentDisposition) {
     return null;
@@ -57,6 +76,38 @@ async function fetchDocuments(): Promise<DocumentListResponse> {
   const response = await fetch(`${API_BASE_URL}/documents?limit=50&offset=0`);
   if (!response.ok) {
     let errorMessage = "No pudimos cargar la lista de documentos.";
+    try {
+      const payload = await response.json();
+      errorMessage = payload.message ?? errorMessage;
+    } catch {
+      // Ignore JSON parse errors for non-JSON responses.
+    }
+    throw new Error(errorMessage);
+  }
+  return response.json();
+}
+
+async function fetchDocumentDetails(documentId: string): Promise<DocumentDetailResponse> {
+  const response = await fetch(`${API_BASE_URL}/documents/${documentId}`);
+  if (!response.ok) {
+    let errorMessage = "No pudimos cargar el estado del documento.";
+    try {
+      const payload = await response.json();
+      errorMessage = payload.message ?? errorMessage;
+    } catch {
+      // Ignore JSON parse errors for non-JSON responses.
+    }
+    throw new Error(errorMessage);
+  }
+  return response.json();
+}
+
+async function triggerReprocess(documentId: string): Promise<LatestRun> {
+  const response = await fetch(`${API_BASE_URL}/documents/${documentId}/reprocess`, {
+    method: "POST",
+  });
+  if (!response.ok) {
+    let errorMessage = "No pudimos reprocesar el documento.";
     try {
       const payload = await response.json();
       errorMessage = payload.message ?? errorMessage;
@@ -141,8 +192,48 @@ export function App() {
     queryFn: fetchDocuments,
   });
 
+  const documentDetails = useQuery({
+    queryKey: ["documents", "detail", activeId],
+    queryFn: () => fetchDocumentDetails(activeId ?? ""),
+    enabled: Boolean(activeId),
+  });
+
+  useEffect(() => {
+    if (!activeId || !documentDetails.data) {
+      return;
+    }
+    const latestState = documentDetails.data.latest_run?.state;
+    const shouldPoll =
+      documentDetails.data.status === "PROCESSING" ||
+      latestState === "QUEUED" ||
+      latestState === "RUNNING";
+    if (!shouldPoll) {
+      return;
+    }
+    const intervalId = window.setInterval(() => {
+      documentDetails.refetch();
+    }, 1500);
+    return () => window.clearInterval(intervalId);
+  }, [
+    activeId,
+    documentDetails,
+    documentDetails.data?.status,
+    documentDetails.data?.latest_run?.state,
+  ]);
+
+  const reprocessMutation = useMutation({
+    mutationFn: async (docId: string) => triggerReprocess(docId),
+    onSuccess: (_, docId) => {
+      queryClient.invalidateQueries({ queryKey: ["documents", "list"] });
+      queryClient.invalidateQueries({ queryKey: ["documents", "detail", docId] });
+    },
+  });
+
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ["documents", "list"] });
+    if (activeId) {
+      queryClient.invalidateQueries({ queryKey: ["documents", "detail", activeId] });
+    }
   };
 
   return (
@@ -300,6 +391,74 @@ export function App() {
             {loadPdf.isError && (
               <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 {(loadPdf.error as Error).message}
+              </div>
+            )}
+            {activeId && (
+              <div className="mt-4 rounded-2xl border border-black/10 bg-white/80 px-4 py-3 text-sm text-ink">
+                {documentDetails.isLoading && (
+                  <p className="text-xs text-muted">Cargando estado del documento...</p>
+                )}
+                {documentDetails.isError && (
+                  <p className="text-xs text-red-600">
+                    {(documentDetails.error as Error).message}
+                  </p>
+                )}
+                {documentDetails.data && (
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
+                          Estado actual
+                        </span>
+                        <span className="rounded-full bg-black/5 px-3 py-1 text-xs font-semibold text-ink">
+                          {documentDetails.data.status}
+                        </span>
+                      </div>
+                      <Button
+                        type="button"
+                        className="shrink-0"
+                        disabled={reprocessMutation.isPending}
+                        onClick={() => {
+                          if (activeId) {
+                            reprocessMutation.mutate(activeId);
+                          }
+                        }}
+                      >
+                        {reprocessMutation.isPending ? "Reprocesando..." : "Reprocesar"}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted">{documentDetails.data.status_message}</p>
+                    <div className="text-xs text-muted">
+                      <span className="font-semibold text-ink">Run</span>:{" "}
+                      {documentDetails.data.latest_run?.run_id ?? "Sin ejecuciones"}
+                    </div>
+                    {documentDetails.data.latest_run && (
+                      <div className="flex flex-wrap gap-3 text-xs text-muted">
+                        <span>
+                          Estado run:{" "}
+                          <span className="font-semibold text-ink">
+                            {documentDetails.data.latest_run.state}
+                          </span>
+                        </span>
+                        {documentDetails.data.latest_run.failure_type && (
+                          <span className="text-red-600">
+                            Falla: {documentDetails.data.latest_run.failure_type}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {documentDetails.data.failure_type && (
+                      <div className="text-xs text-red-600">
+                        Falla actual: {documentDetails.data.failure_type}
+                      </div>
+                    )}
+                    {reprocessMutation.isError && (
+                      <div className="text-xs text-red-600">
+                        {(reprocessMutation.error as Error).message}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
             <div className="mt-6 h-[65vh]">

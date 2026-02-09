@@ -10,6 +10,8 @@ from typing import Protocol
 from backend.app.domain.models import (
     Document,
     DocumentWithLatestRun,
+    ProcessingRun,
+    ProcessingRunState,
     ProcessingRunSummary,
     ProcessingStatus,
 )
@@ -33,6 +35,41 @@ class DocumentRepository(Protocol):
 
     def get_latest_run(self, document_id: str) -> ProcessingRunSummary | None:
         """Return the latest processing run summary for a document, if any."""
+
+    def create_processing_run(
+        self,
+        *,
+        run_id: str,
+        document_id: str,
+        state: ProcessingRunState,
+        created_at: str,
+    ) -> None:
+        """Persist a new processing run."""
+
+    def list_queued_runs(self, *, limit: int) -> list[ProcessingRun]:
+        """Return queued processing runs in FIFO order."""
+
+    def try_start_run(self, *, run_id: str, document_id: str, started_at: str) -> bool:
+        """Attempt to transition a queued run to running.
+
+        Returns True if the run was started, False if the guard failed.
+        """
+
+    def complete_run(
+        self,
+        *,
+        run_id: str,
+        state: ProcessingRunState,
+        completed_at: str,
+        failure_type: str | None,
+    ) -> None:
+        """Finalize a run with a terminal state."""
+
+    def recover_orphaned_runs(self, *, completed_at: str) -> int:
+        """Mark any RUNNING runs as FAILED with PROCESS_TERMINATED.
+
+        Returns the number of runs updated.
+        """
 
     def list_documents(self, *, limit: int, offset: int) -> list[DocumentWithLatestRun]:
         """Return documents with their latest processing run summaries."""

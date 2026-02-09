@@ -57,6 +57,16 @@ class ProcessingRunSummary:
 
 
 @dataclass(frozen=True, slots=True)
+class ProcessingRun:
+    """Processing run record used by the in-process scheduler."""
+
+    run_id: str
+    document_id: str
+    state: ProcessingRunState
+    created_at: str
+
+
+@dataclass(frozen=True, slots=True)
 class DocumentWithLatestRun:
     """Document metadata paired with the latest processing run summary."""
 

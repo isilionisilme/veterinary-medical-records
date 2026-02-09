@@ -11,6 +11,12 @@ class DocumentUploadResponse(BaseModel):
     created_at: str = Field(..., description="UTC ISO timestamp when the document was registered.")
 
 
+class ProcessingRunResponse(BaseModel):
+    run_id: str = Field(..., description="Unique identifier of the processing run.")
+    state: str = Field(..., description="Current processing run state.")
+    created_at: str = Field(..., description="UTC ISO timestamp when the run was created.")
+
+
 class LatestRunResponse(BaseModel):
     run_id: str = Field(..., description="Unique identifier of the processing run.")
     state: str = Field(..., description="Current processing run state.")

@@ -15,6 +15,7 @@ def test_db(tmp_path, monkeypatch):
     db_path = tmp_path / "documents.db"
     monkeypatch.setenv("VET_RECORDS_DB_PATH", str(db_path))
     monkeypatch.setenv("VET_RECORDS_STORAGE_PATH", str(tmp_path / "storage"))
+    monkeypatch.setenv("VET_RECORDS_DISABLE_PROCESSING", "true")
     database.ensure_schema()
     return db_path
 

@@ -7,6 +7,7 @@ from uuid import uuid4
 from backend.app.domain.models import (
     Document,
     DocumentWithLatestRun,
+    ProcessingRun,
     ProcessingRunState,
     ProcessingRunSummary,
     ProcessingStatus,
@@ -136,6 +137,130 @@ class SqliteDocumentRepository:
             state=ProcessingRunState(row["state"]),
             failure_type=row["failure_type"],
         )
+
+    def create_processing_run(
+        self,
+        *,
+        run_id: str,
+        document_id: str,
+        state: ProcessingRunState,
+        created_at: str,
+    ) -> None:
+        """Insert a new processing run record."""
+
+        with database.get_connection() as conn:
+            conn.execute(
+                """
+                INSERT INTO processing_runs (
+                    run_id,
+                    document_id,
+                    state,
+                    created_at
+                )
+                VALUES (?, ?, ?, ?)
+                """,
+                (run_id, document_id, state.value, created_at),
+            )
+            conn.commit()
+
+    def list_queued_runs(self, *, limit: int) -> list[ProcessingRun]:
+        """Return queued processing runs in FIFO order."""
+
+        with database.get_connection() as conn:
+            rows = conn.execute(
+                """
+                SELECT
+                    run_id,
+                    document_id,
+                    state,
+                    created_at
+                FROM processing_runs
+                WHERE state = ?
+                ORDER BY created_at ASC
+                LIMIT ?
+                """,
+                (ProcessingRunState.QUEUED.value, limit),
+            ).fetchall()
+
+        return [
+            ProcessingRun(
+                run_id=row["run_id"],
+                document_id=row["document_id"],
+                state=ProcessingRunState(row["state"]),
+                created_at=row["created_at"],
+            )
+            for row in rows
+        ]
+
+    def try_start_run(self, *, run_id: str, document_id: str, started_at: str) -> bool:
+        """Attempt to transition a queued run to running with guard."""
+
+        with database.get_connection() as conn:
+            cursor = conn.execute(
+                """
+                UPDATE processing_runs
+                SET state = ?, started_at = ?
+                WHERE run_id = ?
+                  AND state = ?
+                  AND NOT EXISTS (
+                    SELECT 1
+                    FROM processing_runs
+                    WHERE document_id = ?
+                      AND state = ?
+                  )
+                """,
+                (
+                    ProcessingRunState.RUNNING.value,
+                    started_at,
+                    run_id,
+                    ProcessingRunState.QUEUED.value,
+                    document_id,
+                    ProcessingRunState.RUNNING.value,
+                ),
+            )
+            conn.commit()
+        return cursor.rowcount == 1
+
+    def complete_run(
+        self,
+        *,
+        run_id: str,
+        state: ProcessingRunState,
+        completed_at: str,
+        failure_type: str | None,
+    ) -> None:
+        """Finalize a run with a terminal state."""
+
+        with database.get_connection() as conn:
+            conn.execute(
+                """
+                UPDATE processing_runs
+                SET state = ?, completed_at = ?, failure_type = ?
+                WHERE run_id = ?
+                """,
+                (state.value, completed_at, failure_type, run_id),
+            )
+            conn.commit()
+
+    def recover_orphaned_runs(self, *, completed_at: str) -> int:
+        """Mark RUNNING runs as FAILED with PROCESS_TERMINATED."""
+
+        with database.get_connection() as conn:
+            cursor = conn.execute(
+                """
+                UPDATE processing_runs
+                SET state = ?, completed_at = ?, failure_type = ?
+                WHERE state = ?
+                """,
+                (
+                    ProcessingRunState.FAILED.value,
+                    completed_at,
+                    "PROCESS_TERMINATED",
+                    ProcessingRunState.RUNNING.value,
+                ),
+            )
+            conn.commit()
+        return cursor.rowcount
 
     def list_documents(self, *, limit: int, offset: int) -> list[DocumentWithLatestRun]:
         """Return documents with their latest processing runs for list views."""
