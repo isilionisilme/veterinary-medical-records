@@ -39,6 +39,13 @@ Start here:
 
 ---
 
+### Token optimization (exercise)
+
+The repository includes in-repo assistant usage benchmarks (docs consulted + token proxies) under:
+- `metrics/llm_benchmarks/`
+
+---
+
 ### Project documentation (authoritative)
 
 📄 **[`docs/project/PRODUCT_DESIGN.md`](docs/project/PRODUCT_DESIGN.md)**  
