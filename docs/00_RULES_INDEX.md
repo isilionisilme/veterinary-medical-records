@@ -15,5 +15,7 @@ If a rule changes, update **only** its owner module. Other docs may link to it.
 | R-USER-VISIBLE-TRIGGER | docs/02_PRODUCT/USER_VISIBLE/00_entry.md | UX/Brand trigger |
 | R-UX-APPLY | docs/02_PRODUCT/UX/00_entry.md | UX docs to follow |
 | R-BRAND-APPLY | docs/02_PRODUCT/BRAND/00_entry.md | Brand docs to follow |
+| R-SHARED-DOCS | docs/03_SHARED/00_entry.md | Split versions of `docs/shared/*` |
+| R-PROJECT-DOCS | docs/04_PROJECT/00_entry.md | Split versions of `docs/project/*` |
 | R-METRICS-OPTIN | metrics/llm_benchmarks/README.md | Benchmarks are opt-in |
 | R-GENERAL-BEHAVIOR | docs/shared/AGENTS.md | General assistant rules |

@@ -10,12 +10,10 @@ Use this file to route by **intent**. Load only the module(s) listed below.
 - Code review → `docs/01_WORKFLOW/CODE_REVIEW/00_entry.md`
 - Testing → `docs/01_WORKFLOW/TESTING/00_entry.md`
 - User-visible change → `docs/02_PRODUCT/USER_VISIBLE/00_entry.md`
-- UX guidance → `docs/02_PRODUCT/UX/00_entry.md`
-- Brand guidance → `docs/02_PRODUCT/BRAND/00_entry.md`
+- Engineering standards (shared) → `docs/03_SHARED/00_entry.md`
+- Project design / requirements / contracts → `docs/04_PROJECT/00_entry.md`
 - Assistant benchmarks → `metrics/llm_benchmarks/README.md`
-- General assistant behavior → `docs/shared/AGENTS.md`
 - Fallback / unclear intent → `docs/00_FALLBACK.md`
 
 ## Rule
 Load **only one** module unless it explicitly triggers another.
-
