@@ -119,6 +119,7 @@ Supported upload types are defined by [`docs/project/TECHNICAL_DESIGN.md`](TECHN
 
 ### User Stories (in order)
 - US-05 — Process document
+- US-21 — Upload medical documents
 - US-11 — View document processing history
 
 ---
@@ -245,14 +246,14 @@ As a user, I want to upload a document so that it is stored and available for pr
 
 **Acceptance Criteria**
 - I can upload a supported document type.
-- I receive immediate confirmation that the document was uploaded.
+- I receive immediate confirmation that the document was uploaded (without waiting on processing).
 - The document appears in the system with the initial derived status.
-- The UI communicates that processing is assistive and may be incomplete, without blocking the user.
 
 **Scope Clarification**
 - This story does not start processing.
 - Background processing is introduced later (US-05).
 - This story supports the upload types defined in [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3; format expansion is introduced via later user stories.
+- This story delivers the backend ingestion capability; user-facing upload UI/UX (including feedback copy) is introduced later (US-21).
 
 **Authoritative References**
 - Tech: API surface + upload requirements + errors: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3/B3.2
@@ -380,6 +381,52 @@ As a veterinarian, I want uploaded PDF documents to be processed automatically s
 **Test Expectations**
 - Upload triggers background processing without blocking the request.
 - Reprocess creates a new run and preserves prior runs/artifacts.
+
+**Definition of Done (DoD)**
+- Acceptance criteria satisfied.
+- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
+
+---
+
+## US-21 — Upload medical documents
+
+**User Story**
+As a user, I want to upload a medical document so that the system can start processing it.
+
+**Acceptance Criteria**
+- I can upload a medical document using the application.
+- The UI clearly communicates which document formats are supported (PDF only for the current scope).
+- After submitting a document, I receive clear feedback indicating whether the upload was successful.
+- If the upload fails, I receive a clear and user-friendly error message (without exposing internal technical details).
+- The UI communicates that processing is assistive and may be incomplete, without blocking the user.
+- When automatic processing-on-upload is enabled (introduced in US-05), uploading a document via the UI starts that existing processing flow in a non-blocking way; the UI relies only on the API response and derived status rules.
+- I do not need to use technical tools or interfaces to upload documents.
+- I am not shown document previews, extracted text, or review functionality as part of this story.
+
+**Scope Clarification**
+- This story is limited to the user-facing upload experience and feedback states; it reuses the existing upload contract and does not introduce new endpoint surface area.
+- This story does not implement or modify backend ingestion logic; it consumes the existing upload capability (US-01) and respects backend validation rules.
+- This story does not introduce new workflow states, reprocessing semantics, or observability contracts.
+- This story is limited to PDFs; additional formats are introduced only via the dedicated format expansion stories.
+- This story does not add preview/rendering, raw-text visibility, or review/edit experiences.
+
+**Authoritative References**
+- Tech: API surface + upload requirements + errors: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3/B3.2
+- Tech: Processing model and run invariants: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Sections 3–4 + Appendix A2
+- UX: Global upload experience and feedback heuristics: [`docs/shared/UX_GUIDELINES.md`](../shared/UX_GUIDELINES.md)
+- UX: Project interaction contract: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) Sections 1–4
+- UX: User-facing copy tone: [`docs/project/BRAND_GUIDELINES.md`](BRAND_GUIDELINES.md)
+
+**Story-specific technical requirements**
+- Reuse the existing upload contract and backend validation rules as defined in [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3/B3.2.
+- Do not introduce new ingestion endpoints, domain logic, or workflow states; rely only on the API response for UI behavior.
+- Preserve existing observability contracts (events/metrics/log taxonomy) as defined in [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md).
+- Follow implementation conventions in [`docs/project/BACKEND_IMPLEMENTATION.md`](BACKEND_IMPLEMENTATION.md) and [`docs/project/FRONTEND_IMPLEMENTATION.md`](FRONTEND_IMPLEMENTATION.md).
+
+**Test Expectations**
+- Upload succeeds for supported PDFs and provides the expected user-facing feedback states.
+- Upload failure cases map to user-friendly messages without leaking internal details.
+- Upload triggers background processing without blocking the request (per the processing model).
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
