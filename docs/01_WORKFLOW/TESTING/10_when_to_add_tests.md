@@ -1,7 +1,6 @@
 # When to Add Tests
 
-From `docs/shared/ENGINEERING_PLAYBOOK.md`:
-- Domain logic must be testable independently.
-- Automated tests must cover happy paths and meaningful failures.
-- Integration tests must validate critical end-to-end flows.
-
+Minimum expectation:
+- Domain logic is testable independently from frameworks and infrastructure.
+- Automated tests cover happy paths and meaningful failure scenarios.
+- Integration tests validate critical end-to-end flows.

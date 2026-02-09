@@ -1,7 +1,5 @@
 # Branch Naming
 
-From `docs/shared/ENGINEERING_PLAYBOOK.md`:
-
 ## User stories
 - `feature/<ID>-<short-representative-slug>`
 
@@ -11,4 +9,3 @@ From `docs/shared/ENGINEERING_PLAYBOOK.md`:
 - `ci/<short-slug>`
 - `docs/<short-slug>`
 - `fix/<short-slug>`
-

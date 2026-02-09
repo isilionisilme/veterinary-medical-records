@@ -1,7 +1,11 @@
 # How to Run Tests
 
-Follow the repository instructions in:
-- `README.md`
+Backend / repo root:
+- `ruff check .`
+- `pytest`
+
+Frontend (if applicable):
+- `cd frontend`
+- `npm run test`
 
 Use the smallest relevant test scope first.
-
