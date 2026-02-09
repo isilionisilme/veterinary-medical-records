@@ -2,6 +2,9 @@ This file defines:
 - what each document is in this repository
 - reading order
 
+# Assistant entrypoint (operational)
+- `docs/00_AUTHORITY.md` — router for small, intent-based modules (token-optimized).
+
 # Folder structure
 
 This folder is split into two areas:
