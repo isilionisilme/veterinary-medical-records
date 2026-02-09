@@ -1,7 +1,6 @@
 # LLM Benchmarks — Summary
 
-No benchmark runs recorded yet.
+| Scenario | Runs | Median docs | Median tok_est | Max max_doc_chars |
+|---|---:|---:|---:|---:|
+| start_new_work | 1 | 2 | 6073 | 22208 |
 
-Update this file by running:
-
-`python metrics/llm_benchmarks/scripts/summarize.py --write metrics/llm_benchmarks/summary.md`
