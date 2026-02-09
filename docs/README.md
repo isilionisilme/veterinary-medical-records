@@ -5,6 +5,9 @@ This file defines:
 # Assistant entrypoint (operational)
 - `docs/00_AUTHORITY.md` — router for small, intent-based modules (token-optimized).
 
+AI assistants should follow `AGENTS.md` (repo root) and then `docs/00_AUTHORITY.md`, loading only the module(s)
+needed for the current intent. The rest of this file is primarily for humans.
+
 # Folder structure
 
 This folder is split into two areas:
