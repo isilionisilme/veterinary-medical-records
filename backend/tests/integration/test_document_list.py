@@ -48,8 +48,8 @@ def test_list_documents_returns_uploaded_documents(test_client):
     item = payload["items"][0]
     assert item["document_id"] == doc_id
     assert item["original_filename"] == "record.pdf"
-    assert item["status"] == app_models.ProcessingStatus.PROCESSING.value
-    assert item["status_label"] == "Processing"
+    assert item["status"] == app_models.ProcessingStatus.UPLOADED.value
+    assert item["status_label"] == "Uploaded"
     assert item["failure_type"] is None
 
 

@@ -27,6 +27,7 @@ from backend.app.application.document_service import (
     register_document_upload,
 )
 from backend.app.application.processing_runner import enqueue_processing_run
+from backend.app.config import processing_enabled
 from backend.app.domain.models import ProcessingStatus
 from backend.app.ports.document_repository import DocumentRepository
 from backend.app.ports.file_storage import FileStorage
@@ -357,10 +358,11 @@ async def upload_document(
             repository=repository,
             storage=storage,
         )
-        enqueue_processing_run(
-            document_id=result.document_id,
-            repository=repository,
-        )
+        if processing_enabled():
+            enqueue_processing_run(
+                document_id=result.document_id,
+                repository=repository,
+            )
     except Exception as exc:  # pragma: no cover - defensive
         _log_event(
             event_type="DOCUMENT_UPLOADED",
@@ -378,9 +380,14 @@ async def upload_document(
         event_type="DOCUMENT_UPLOADED",
         document_id=result.document_id,
     )
+    status_value = (
+        ProcessingStatus.PROCESSING.value
+        if processing_enabled()
+        else ProcessingStatus.UPLOADED.value
+    )
     return DocumentUploadResponse(
         document_id=result.document_id,
-        status=ProcessingStatus.PROCESSING.value,
+        status=status_value,
         created_at=result.created_at,
     )
 
@@ -405,6 +412,13 @@ def reprocess_document(
             status_code=status.HTTP_404_NOT_FOUND,
             error_code="NOT_FOUND",
             message="Document not found.",
+        )
+
+    if not processing_enabled():
+        return _error_response(
+            status_code=status.HTTP_409_CONFLICT,
+            error_code="CONFLICT",
+            message="Processing is disabled.",
         )
 
     run = enqueue_processing_run(document_id=document_id, repository=repository)

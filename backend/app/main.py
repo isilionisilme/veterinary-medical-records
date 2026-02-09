@@ -21,6 +21,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.app.api.routes import MAX_UPLOAD_SIZE as ROUTE_MAX_UPLOAD_SIZE
 from backend.app.api.routes import router as api_router
 from backend.app.application.processing_runner import processing_scheduler
+from backend.app.config import processing_enabled
 from backend.app.infra import database
 from backend.app.infra.file_storage import LocalFileStorage
 from backend.app.infra.sqlite_document_repository import SqliteDocumentRepository
@@ -32,13 +33,6 @@ logger = logging.getLogger(__name__)
 
 def _now_iso() -> str:
     return datetime.now(UTC).isoformat()
-
-
-def _processing_enabled() -> bool:
-    raw = os.environ.get("VET_RECORDS_DISABLE_PROCESSING")
-    if raw is None:
-        return True
-    return raw.strip().lower() not in {"1", "true", "yes", "on"}
 
 
 def create_app() -> FastAPI:
@@ -67,7 +61,7 @@ def create_app() -> FastAPI:
         recovered = repository.recover_orphaned_runs(completed_at=_now_iso())
         if recovered:
             logger.info("Recovered %s orphaned runs", recovered)
-        if _processing_enabled():
+        if processing_enabled():
             stop_event = asyncio.Event()
             app.state.processing_stop_event = stop_event
             app.state.processing_task = asyncio.create_task(
