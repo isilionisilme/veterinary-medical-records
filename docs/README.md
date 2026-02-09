@@ -14,6 +14,9 @@ This folder is split into two areas:
 - [`docs/shared/ENGINEERING_PLAYBOOK.md`](shared/ENGINEERING_PLAYBOOK.md) — engineering standards (architecture discipline, testing, observability).
 - [`docs/shared/UX_GUIDELINES.md`](shared/UX_GUIDELINES.md) — global UX principles and shared interaction heuristics.
 
+### Tooling (optional)
+- [`metrics/llm_benchmarks/README.md`](../metrics/llm_benchmarks/README.md) — assistant usage benchmarks (opt-in; used only when requested, e.g. `#metrics`).
+
 ### Documentation specific to the project
 - [`docs/project/PRODUCT_DESIGN.md`](project/PRODUCT_DESIGN.md) — product summary for technical context (project-specific)
 - [`docs/project/UX_DESIGN.md`](project/UX_DESIGN.md) — project UX interaction contract (project-specific)

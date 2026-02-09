@@ -69,3 +69,11 @@ When in doubt:
 - preserve traceability and safety,
 - and defer complexity explicitly rather than hiding it.
 
+---
+
+### 6. Assistant benchmarks (opt-in)
+
+If the user asks to record or update assistant usage benchmarks (tokens/docs consulted proxies), follow:
+- `metrics/llm_benchmarks/README.md`
+
+Only produce or consume the final `METRICS ...` line when the user explicitly requests it (for example, prompts that include `#metrics`).
