@@ -16,9 +16,7 @@ Act as a senior software engineer:
 
 Default scope is exactly the requested work; avoid adding new features, infra expansions, or speculative refactors unless explicitly requested.
 
-Token-optimized workflow:
-- Start at the repo root `AGENTS.md`, then follow `docs/00_AUTHORITY.md` to load only the small module(s) needed for the current intent.
-- For PRs and code reviews, use the operational modules under `docs/01_WORKFLOW/` (they are designed to avoid reading large docs by default).
+For Pull Request workflows (creating/updating PRs and performing code reviews), follow `docs/shared/ENGINEERING_PLAYBOOK.md` as the authoritative procedure, including review triggering rules, required PR comment publishing, and the mandatory review output format.
 
 ---
 

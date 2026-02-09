@@ -3,43 +3,44 @@ This file defines:
 - reading order
 
 # Assistant entrypoint (operational)
-- `docs/00_AUTHORITY.md` — router for small, intent-based modules (token-optimized).
+- `docs/agent_router/00_AUTHORITY.md` — router for small, intent-based modules (token-optimized).
 
-AI assistants should follow `AGENTS.md` (repo root) and then `docs/00_AUTHORITY.md`, loading only the module(s)
+AI assistants should follow `AGENTS.md` (repo root) and then `docs/agent_router/00_AUTHORITY.md`, loading only the module(s)
 needed for the current intent. The rest of this file is primarily for humans.
 
 # Folder structure
 
-This folder is split into two areas:
-- [`docs/shared/`](shared/): company-wide, project-agnostic standards and guidelines
-- [`docs/project/`](project/): documents specific to this initiative (if applicable) 
+This folder is split into three areas:
+- [`docs/agent_router/`](agent_router/): token-optimized operational modules for AI assistants.
+- [`docs/shared/`](shared/): human-oriented, company-wide, project-agnostic standards and guidelines.
+- [`docs/project/`](project/): human-oriented documents specific to this initiative.
 
 ## Reading order (mandatory)
 ### Documentation shared across projects
 - [`docs/shared/AGENTS.md`](shared/AGENTS.md) — AI Coding Assistant rules for this repo (STOP rules, safety, behavior).
-- [`docs/03_SHARED/ENGINEERING_PLAYBOOK/00_entry.md`](03_SHARED/ENGINEERING_PLAYBOOK/00_entry.md) — engineering standards (split into small modules).
-- [`docs/03_SHARED/UX_GUIDELINES/00_entry.md`](03_SHARED/UX_GUIDELINES/00_entry.md) — global UX principles (split into small modules).
+- [`docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/00_entry.md`](agent_router/03_SHARED/ENGINEERING_PLAYBOOK/00_entry.md) — engineering standards (split into small modules).
+- [`docs/agent_router/03_SHARED/UX_GUIDELINES/00_entry.md`](agent_router/03_SHARED/UX_GUIDELINES/00_entry.md) — global UX principles (split into small modules).
 
 ### Tooling (optional)
 - [`metrics/llm_benchmarks/README.md`](../metrics/llm_benchmarks/README.md) — assistant usage benchmarks (opt-in; used only when requested, e.g. `#metrics`).
 
 ### Documentation specific to the project
-- [`docs/04_PROJECT/PRODUCT_DESIGN/00_entry.md`](04_PROJECT/PRODUCT_DESIGN/00_entry.md) — product summary (split into small modules)
-- [`docs/04_PROJECT/UX_DESIGN/00_entry.md`](04_PROJECT/UX_DESIGN/00_entry.md) — UX interaction contract (split into small modules)
-- [`docs/04_PROJECT/BRAND_GUIDELINES/00_entry.md`](04_PROJECT/BRAND_GUIDELINES/00_entry.md) — brand rules (split into small modules)
-- [`docs/04_PROJECT/TECHNICAL_DESIGN/00_entry.md`](04_PROJECT/TECHNICAL_DESIGN/00_entry.md) — architecture + contracts (split into small modules)
-- [`docs/04_PROJECT/BACKEND_IMPLEMENTATION/00_entry.md`](04_PROJECT/BACKEND_IMPLEMENTATION/00_entry.md) — backend implementation notes (split into small modules)
-- [`docs/04_PROJECT/FRONTEND_IMPLEMENTATION/00_entry.md`](04_PROJECT/FRONTEND_IMPLEMENTATION/00_entry.md) — frontend implementation notes (split into small modules)
-- [`docs/04_PROJECT/IMPLEMENTATION_PLAN/00_entry.md`](04_PROJECT/IMPLEMENTATION_PLAN/00_entry.md) — scope + story order + acceptance criteria (split into small modules)
+- [`docs/agent_router/04_PROJECT/PRODUCT_DESIGN/00_entry.md`](agent_router/04_PROJECT/PRODUCT_DESIGN/00_entry.md) — product summary (split into small modules)
+- [`docs/agent_router/04_PROJECT/UX_DESIGN/00_entry.md`](agent_router/04_PROJECT/UX_DESIGN/00_entry.md) — UX interaction contract (split into small modules)
+- [`docs/agent_router/04_PROJECT/BRAND_GUIDELINES/00_entry.md`](agent_router/04_PROJECT/BRAND_GUIDELINES/00_entry.md) — brand rules (split into small modules)
+- [`docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/00_entry.md`](agent_router/04_PROJECT/TECHNICAL_DESIGN/00_entry.md) — architecture + contracts (split into small modules)
+- [`docs/agent_router/04_PROJECT/BACKEND_IMPLEMENTATION/00_entry.md`](agent_router/04_PROJECT/BACKEND_IMPLEMENTATION/00_entry.md) — backend implementation notes (split into small modules)
+- [`docs/agent_router/04_PROJECT/FRONTEND_IMPLEMENTATION/00_entry.md`](agent_router/04_PROJECT/FRONTEND_IMPLEMENTATION/00_entry.md) — frontend implementation notes (split into small modules)
+- [`docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/00_entry.md`](agent_router/04_PROJECT/IMPLEMENTATION_PLAN/00_entry.md) — scope + story order + acceptance criteria (split into small modules)
 
 ## Authority & precedence
 
 If documents conflict, resolve in this order:
-1) [`docs/04_PROJECT/TECHNICAL_DESIGN/00_entry.md`](04_PROJECT/TECHNICAL_DESIGN/00_entry.md) — contracts and invariants
-2) [`docs/04_PROJECT/UX_DESIGN/00_entry.md`](04_PROJECT/UX_DESIGN/00_entry.md) — interaction contract
-3) [`docs/04_PROJECT/PRODUCT_DESIGN/00_entry.md`](04_PROJECT/PRODUCT_DESIGN/00_entry.md) — system meaning and governance boundary
-4) [`docs/04_PROJECT/IMPLEMENTATION_PLAN/00_entry.md`](04_PROJECT/IMPLEMENTATION_PLAN/00_entry.md) — sequencing and acceptance criteria
-5) [`docs/04_PROJECT/BACKEND_IMPLEMENTATION/00_entry.md`](04_PROJECT/BACKEND_IMPLEMENTATION/00_entry.md) and [`docs/04_PROJECT/FRONTEND_IMPLEMENTATION/00_entry.md`](04_PROJECT/FRONTEND_IMPLEMENTATION/00_entry.md) — implementation notes
+1) [`docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/00_entry.md`](agent_router/04_PROJECT/TECHNICAL_DESIGN/00_entry.md) — contracts and invariants
+2) [`docs/agent_router/04_PROJECT/UX_DESIGN/00_entry.md`](agent_router/04_PROJECT/UX_DESIGN/00_entry.md) — interaction contract
+3) [`docs/agent_router/04_PROJECT/PRODUCT_DESIGN/00_entry.md`](agent_router/04_PROJECT/PRODUCT_DESIGN/00_entry.md) — system meaning and governance boundary
+4) [`docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/00_entry.md`](agent_router/04_PROJECT/IMPLEMENTATION_PLAN/00_entry.md) — sequencing and acceptance criteria
+5) [`docs/agent_router/04_PROJECT/BACKEND_IMPLEMENTATION/00_entry.md`](agent_router/04_PROJECT/BACKEND_IMPLEMENTATION/00_entry.md) and [`docs/agent_router/04_PROJECT/FRONTEND_IMPLEMENTATION/00_entry.md`](agent_router/04_PROJECT/FRONTEND_IMPLEMENTATION/00_entry.md) — implementation notes
 
 Shared docs (`docs/shared/*`) apply globally within their scope.
 
