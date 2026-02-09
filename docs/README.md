@@ -3,9 +3,9 @@ This file defines:
 - reading order
 
 # Assistant entrypoint (operational)
-- `docs/agent_router/00_AUTHORITY.md` — router for small, intent-based modules (token-optimized).
+- `docs/00_AUTHORITY.md` — router for small, intent-based modules (token-optimized).
 
-AI assistants should follow `AGENTS.md` (repo root) and then `docs/agent_router/00_AUTHORITY.md`, loading only the module(s)
+AI assistants should follow `AGENTS.md` (repo root) and then `docs/00_AUTHORITY.md`, loading only the module(s)
 needed for the current intent. The rest of this file is primarily for humans.
 
 # Folder structure

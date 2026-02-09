@@ -38,7 +38,7 @@ Start here:
 📄 **[`docs/README.md`](docs/README.md)** — reading order + document authority.
 
 Operational router (AI assistants):
-- `docs/agent_router/00_AUTHORITY.md`
+- `docs/00_AUTHORITY.md`
 
 ---
 
