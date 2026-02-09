@@ -16,6 +16,8 @@ Act as a senior software engineer:
 
 Default scope is exactly the requested work; avoid adding new features, infra expansions, or speculative refactors unless explicitly requested.
 
+For Pull Request workflows (creating/updating PRs and performing code reviews), follow `docs/shared/ENGINEERING_PLAYBOOK.md` as the authoritative procedure, including review triggering rules, required PR comment publishing, and the mandatory review output format.
+
 ---
 
 ### 1. Prefer explicit, readable code
