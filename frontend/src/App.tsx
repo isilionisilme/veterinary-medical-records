@@ -642,7 +642,6 @@ export function App() {
                       </p>
                       <Button
                         type="button"
-                        variant="ghost"
                         disabled={isProcessing || reprocessMutation.isPending}
                         onClick={() => setShowRetryModal(true)}
                       >

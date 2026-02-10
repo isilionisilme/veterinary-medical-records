@@ -234,4 +234,10 @@ describe("App document navigation", () => {
       expect(screen.queryByText(/Estado actual/i)).toBeNull();
     });
   });
+
+  it("does not render Vista previa or Documento original header text", () => {
+    renderApp();
+    expect(screen.queryByText(/Vista previa/i)).toBeNull();
+    expect(screen.queryByText(/Documento original/i)).toBeNull();
+  });
 });
