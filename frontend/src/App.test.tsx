@@ -133,6 +133,10 @@ describe("App upload and list flow", () => {
     expect(screen.queryByText(/Documento no encontrado o falta ID/i)).toBeNull();
     expect(screen.queryByRole("button", { name: /Volver a la lista/i })).toBeNull();
     expect(screen.getByRole("button", { name: /Documentos cargados/i })).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Formatos admitidos: PDF \(\.pdf, application\/pdf\), hasta 20 MB\./i)
+    ).toBeNull();
+    expect(screen.getByText(/Formatos admitidos: PDF\./i)).toBeInTheDocument();
   });
 
   it("shows required list status labels", async () => {

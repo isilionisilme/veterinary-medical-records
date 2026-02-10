@@ -775,6 +775,39 @@ export function App() {
                   </Button>
                 </div>
 
+                <div className="mt-4 rounded-2xl border border-black/10 bg-white/70 p-4">
+                  <h3 className="text-sm font-semibold text-ink">Subir documento</h3>
+                  <p className="mt-1 text-xs text-muted">Formatos admitidos: PDF.</p>
+                  <label
+                    htmlFor="upload-document-input"
+                    className="mt-3 block text-xs font-semibold uppercase tracking-[0.12em] text-muted"
+                  >
+                    Selecciona un PDF
+                  </label>
+                  <div className="mt-2 flex flex-col gap-2">
+                    <input
+                      id="upload-document-input"
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".pdf,application/pdf"
+                      className="w-full rounded-2xl border border-black/10 bg-white/80 px-3 py-2 text-sm text-ink outline-none focus:border-accent"
+                      onChange={(event) => {
+                        setSelectedFile(event.target.files?.[0] ?? null);
+                        setUploadFeedback(null);
+                      }}
+                    />
+                    <Button
+                      onClick={handleUpload}
+                      disabled={uploadMutation.isPending || !selectedFile}
+                      type="button"
+                      className="w-full"
+                    >
+                      <Upload size={16} />
+                      {uploadMutation.isPending ? "Subiendo..." : "Subir documento"}
+                    </Button>
+                  </div>
+                </div>
+
                 {documentList.isLoading && (
                   <div className="mt-4 rounded-2xl border border-black/10 bg-white/70 p-4 text-sm text-muted">
                     Cargando documentos...
@@ -867,51 +900,13 @@ export function App() {
           </aside>
 
           <section className="flex-1 rounded-3xl border border-black/10 bg-white/70 p-6 shadow-xl">
-            <div className="rounded-2xl border border-black/10 bg-white/80 p-4">
-              <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">
-                Subir documento
-              </h2>
-              <p className="mt-2 text-sm text-ink">
-                Formatos admitidos: PDF (.pdf, application/pdf), hasta 20 MB.
-              </p>
-
-              <label
-                htmlFor="upload-document-input"
-                className="mt-4 block text-sm font-semibold text-ink"
-              >
-                Selecciona un PDF
-              </label>
-              <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center">
-                <input
-                  id="upload-document-input"
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".pdf,application/pdf"
-                  className="w-full rounded-2xl border border-black/10 bg-white/80 px-4 py-3 text-sm text-ink outline-none focus:border-accent"
-                  onChange={(event) => {
-                    setSelectedFile(event.target.files?.[0] ?? null);
-                    setUploadFeedback(null);
-                  }}
-                />
-                <Button
-                  onClick={handleUpload}
-                  disabled={uploadMutation.isPending || !selectedFile}
-                  type="button"
-                  className="sm:shrink-0"
-                >
-                  <Upload size={16} />
-                  {uploadMutation.isPending ? "Subiendo..." : "Subir documento"}
-                </Button>
-              </div>
-
-            </div>
             {loadPdf.isError && (
-              <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 {(loadPdf.error as Error).message}
               </div>
             )}
             {activeId && (
-              <div className="mt-4">
+              <div className={loadPdf.isError ? "mt-4" : ""}>
                 {documentDetails.isLoading && (
                   <p className="text-xs text-muted">Cargando estado del documento...</p>
                 )}
@@ -922,7 +917,7 @@ export function App() {
                 )}
               </div>
             )}
-            <div className="mt-6">
+            <div className="mt-4">
               <div className="flex flex-wrap items-center gap-2">
                 {viewerTabButton("document", "Documento")}
                 {viewerTabButton("raw_text", "Texto extraido")}
