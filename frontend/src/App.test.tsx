@@ -133,7 +133,8 @@ describe("App upload and list flow", () => {
     expect(screen.queryByText(/Documento no encontrado o falta ID/i)).toBeNull();
     expect(screen.queryByRole("button", { name: /Volver a la lista/i })).toBeNull();
     expect(screen.queryByRole("button", { name: /Documentos cargados/i })).toBeNull();
-    expect(screen.queryByText(/Formatos admitidos: PDF\./i)).toBeNull();
+    expect(screen.queryByText(/Formatos permitidos: PDF\./i)).toBeNull();
+    expect(screen.queryByText(/\(\.pdf \/ application\/pdf\)/i)).toBeNull();
     expect(screen.queryByText(/Tamaño maximo: 20 MB\./i)).toBeNull();
     expect(screen.getByLabelText(/Informacion de formatos y tamano/i)).toBeInTheDocument();
     expect(screen.queryByText(/Selecciona un PDF/i)).toBeNull();
@@ -352,6 +353,11 @@ describe("App upload and list flow", () => {
       await screen.findByText(/El archivo supera el tamaño máximo \(20 MB\)\./i)
     ).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Reintentar/i })).toBeNull();
-  });
+
+    await new Promise((resolve) => setTimeout(resolve, 5200));
+    await waitFor(() => {
+      expect(screen.queryByText(/El archivo supera el tamaño máximo \(20 MB\)\./i)).toBeNull();
+    });
+  }, 12000);
 });
 

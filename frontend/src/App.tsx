@@ -744,10 +744,11 @@ export function App() {
   }, [retryNotice]);
 
   useEffect(() => {
-    if (!uploadFeedback || uploadFeedback.kind !== "success") {
+    if (!uploadFeedback) {
       return;
     }
-    const timer = window.setTimeout(() => setUploadFeedback(null), 3500);
+    const timeoutMs = uploadFeedback.kind === "success" ? 3500 : 5000;
+    const timer = window.setTimeout(() => setUploadFeedback(null), timeoutMs);
     return () => window.clearTimeout(timer);
   }, [uploadFeedback]);
 
@@ -1320,7 +1321,7 @@ export function App() {
               }
             }}
           >
-            <p>Formatos admitidos: PDF (.pdf / application/pdf).</p>
+            <p>Formatos permitidos: PDF.</p>
             <p className="mt-1">Tamaño maximo: 20 MB.</p>
           </div>,
           document.body
@@ -1344,7 +1345,7 @@ export function App() {
         </div>
       )}
             {uploadFeedback && (
-              <div className="fixed left-1/2 top-28 z-[60] w-full max-w-lg -translate-x-1/2 px-4">
+              <div className="fixed left-1/2 top-44 z-[60] w-full max-w-lg -translate-x-1/2 px-4">
                 <div
             className={`rounded-2xl border px-5 py-4 text-base shadow-xl ${
               uploadFeedback.kind === "success"
@@ -1357,10 +1358,11 @@ export function App() {
                     <span>{uploadFeedback.message}</span>
               <button
                 type="button"
-                className="text-xs font-semibold text-ink"
+                aria-label="Cerrar notificacion"
+                className="text-lg font-semibold leading-none text-ink"
                 onClick={() => setUploadFeedback(null)}
               >
-                Cerrar
+                &times;
               </button>
             </div>
                   {uploadFeedback.kind === "success" &&
