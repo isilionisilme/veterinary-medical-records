@@ -12,6 +12,8 @@ If a rule changes, update **only** its owner module. Other docs may link to it.
 | R-REVIEW-PUBLISH | docs/agent_router/01_WORKFLOW/CODE_REVIEW/20_pr_commenting.md | Publish review comment |
 | R-TEST-WHEN | docs/agent_router/01_WORKFLOW/TESTING/10_when_to_add_tests.md | When tests are required |
 | R-TEST-HOW | docs/agent_router/01_WORKFLOW/TESTING/20_how_to_run.md | How to run tests |
+| R-DOC-UPDATES-TRIGGER | docs/01_WORKFLOW/DOC_UPDATES/00_entry.md | Intent-based, multilingual doc-update trigger |
+| R-DOC-UPDATES-NORMALIZE | docs/01_WORKFLOW/DOC_UPDATES/20_normalize_rules.md | Normalize docs after changes |
 | R-USER-VISIBLE-TRIGGER | docs/agent_router/02_PRODUCT/USER_VISIBLE/00_entry.md | UX/Brand trigger |
 | R-UX-APPLY | docs/agent_router/02_PRODUCT/UX/00_entry.md | UX docs to follow |
 | R-BRAND-APPLY | docs/agent_router/02_PRODUCT/BRAND/00_entry.md | Brand docs to follow |
