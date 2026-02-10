@@ -11,9 +11,11 @@ from backend.app.domain.models import (
     Document,
     DocumentWithLatestRun,
     ProcessingRun,
+    ProcessingRunDetail,
     ProcessingRunState,
     ProcessingRunSummary,
     ProcessingStatus,
+    StepArtifact,
 )
 
 
@@ -76,4 +78,20 @@ class DocumentRepository(Protocol):
 
     def count_documents(self) -> int:
         """Return total number of documents."""
+
+    def list_processing_runs(self, *, document_id: str) -> list[ProcessingRunDetail]:
+        """Return processing runs for a document ordered by creation time."""
+
+    def list_step_artifacts(self, *, run_id: str) -> list[StepArtifact]:
+        """Return STEP_STATUS artifacts for a run in chronological order."""
+
+    def append_artifact(
+        self,
+        *,
+        run_id: str,
+        artifact_type: str,
+        payload: dict[str, object],
+        created_at: str,
+    ) -> None:
+        """Persist a run-scoped artifact record."""
 
