@@ -134,7 +134,7 @@ describe("App upload and list flow", () => {
     expect(screen.queryByRole("button", { name: /Volver a la lista/i })).toBeNull();
     expect(screen.queryByRole("button", { name: /Documentos cargados/i })).toBeNull();
     expect(screen.queryByText(/Formatos admitidos: PDF\./i)).toBeNull();
-    expect(screen.getByText(/Tamaño maximo: 20 MB\./i)).not.toBeVisible();
+    expect(screen.queryByText(/Tamaño maximo: 20 MB\./i)).toBeNull();
     expect(screen.getByLabelText(/Informacion de formatos y tamano/i)).toBeInTheDocument();
     expect(screen.queryByText(/Selecciona un PDF/i)).toBeNull();
   });
@@ -351,6 +351,7 @@ describe("App upload and list flow", () => {
     expect(
       await screen.findByText(/El archivo supera el tamaño máximo \(20 MB\)\./i)
     ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Reintentar/i })).toBeNull();
   });
 });
 

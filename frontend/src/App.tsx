@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Download, Upload } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -398,7 +399,13 @@ export function App() {
   const [rawSearchNotice, setRawSearchNotice] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadFeedback, setUploadFeedback] = useState<UploadFeedback | null>(null);
+  const [showUploadInfo, setShowUploadInfo] = useState(false);
+  const [isHoverDevice, setIsHoverDevice] = useState(true);
+  const [uploadInfoPosition, setUploadInfoPosition] = useState({ top: 0, left: 0 });
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const uploadInfoTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const uploadInfoContentRef = useRef<HTMLDivElement | null>(null);
+  const uploadInfoCloseTimerRef = useRef<number | null>(null);
   const pendingAutoOpenDocumentIdRef = useRef<string | null>(null);
   const autoOpenRetryCountRef = useRef<Record<string, number>>({});
   const autoOpenRetryTimerRef = useRef<number | null>(null);
@@ -412,7 +419,29 @@ export function App() {
   }, [activeId]);
 
   useEffect(() => {
+    if (typeof window.matchMedia !== "function") {
+      setIsHoverDevice(true);
+      return;
+    }
+
+    const mediaQuery = window.matchMedia("(hover: hover)");
+    const syncInputMode = () => setIsHoverDevice(mediaQuery.matches);
+    syncInputMode();
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", syncInputMode);
+      return () => mediaQuery.removeEventListener("change", syncInputMode);
+    }
+
+    mediaQuery.addListener(syncInputMode);
+    return () => mediaQuery.removeListener(syncInputMode);
+  }, []);
+
+  useEffect(() => {
     return () => {
+      if (uploadInfoCloseTimerRef.current) {
+        window.clearTimeout(uploadInfoCloseTimerRef.current);
+      }
       if (autoOpenRetryTimerRef.current) {
         window.clearTimeout(autoOpenRetryTimerRef.current);
       }
@@ -421,6 +450,67 @@ export function App() {
       }
     };
   }, [fileUrl]);
+
+  useEffect(() => {
+    if (!showUploadInfo) {
+      return;
+    }
+
+    const updatePosition = () => {
+      if (!uploadInfoTriggerRef.current || !uploadInfoContentRef.current) {
+        return;
+      }
+
+      const triggerRect = uploadInfoTriggerRef.current.getBoundingClientRect();
+      const tooltipRect = uploadInfoContentRef.current.getBoundingClientRect();
+      const offset = 10;
+      const viewportPadding = 8;
+
+      let top = triggerRect.top - tooltipRect.height - offset;
+      if (top < viewportPadding) {
+        top = triggerRect.bottom + offset;
+      }
+
+      let left = triggerRect.left;
+      const maxLeft = window.innerWidth - tooltipRect.width - viewportPadding;
+      if (left > maxLeft) {
+        left = maxLeft;
+      }
+      if (left < viewportPadding) {
+        left = viewportPadding;
+      }
+
+      setUploadInfoPosition({ top, left });
+    };
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [showUploadInfo]);
+
+  useEffect(() => {
+    if (!showUploadInfo || isHoverDevice) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (
+        uploadInfoTriggerRef.current?.contains(target) ||
+        uploadInfoContentRef.current?.contains(target)
+      ) {
+        return;
+      }
+      setShowUploadInfo(false);
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [showUploadInfo, isHoverDevice]);
 
   const loadPdf = useMutation({
     mutationFn: async (docId: string) => fetchOriginalPdf(docId),
@@ -654,7 +744,7 @@ export function App() {
   }, [retryNotice]);
 
   useEffect(() => {
-    if (!uploadFeedback) {
+    if (!uploadFeedback || uploadFeedback.kind !== "success") {
       return;
     }
     const timer = window.setTimeout(() => setUploadFeedback(null), 3500);
@@ -694,6 +784,28 @@ export function App() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  };
+
+  const openUploadInfo = () => {
+    if (uploadInfoCloseTimerRef.current) {
+      window.clearTimeout(uploadInfoCloseTimerRef.current);
+      uploadInfoCloseTimerRef.current = null;
+    }
+    setShowUploadInfo(true);
+  };
+
+  const closeUploadInfo = (withDelay: boolean) => {
+    if (uploadInfoCloseTimerRef.current) {
+      window.clearTimeout(uploadInfoCloseTimerRef.current);
+      uploadInfoCloseTimerRef.current = null;
+    }
+    if (withDelay) {
+      uploadInfoCloseTimerRef.current = window.setTimeout(() => {
+        setShowUploadInfo(false);
+      }, 150);
+      return;
+    }
+    setShowUploadInfo(false);
   };
 
   const viewerTabButton = (key: "document" | "raw_text" | "technical", label: string) => (
@@ -786,18 +898,34 @@ export function App() {
                 <div className="mt-4 rounded-2xl border border-black/10 bg-white/70 p-4">
                   <div className="flex items-center gap-2">
                     <h3 className="text-sm font-semibold text-ink">Subir documento</h3>
-                    <details className="relative">
-                      <summary
-                        className="cursor-pointer list-none text-sm text-muted"
-                        aria-label="Informacion de formatos y tamano"
-                      >
-                        ⓘ
-                      </summary>
-                      <div className="absolute left-0 z-30 mt-2 w-64 rounded-xl border border-black/10 bg-white p-3 text-xs text-ink shadow-lg">
-                        <p>Formatos admitidos: PDF (.pdf / application/pdf).</p>
-                        <p className="mt-1">Tamaño maximo: 20 MB.</p>
-                      </div>
-                    </details>
+                    <button
+                      ref={uploadInfoTriggerRef}
+                      type="button"
+                      aria-label="Informacion de formatos y tamano"
+                      aria-expanded={showUploadInfo}
+                      onFocus={openUploadInfo}
+                      onBlur={() => closeUploadInfo(false)}
+                      onMouseEnter={() => {
+                        if (isHoverDevice) {
+                          openUploadInfo();
+                        }
+                      }}
+                      onMouseLeave={() => {
+                        if (isHoverDevice) {
+                          closeUploadInfo(true);
+                        }
+                      }}
+                      onClick={(event) => {
+                        if (isHoverDevice) {
+                          return;
+                        }
+                        event.stopPropagation();
+                        setShowUploadInfo((current) => !current);
+                      }}
+                      className="text-sm text-muted"
+                    >
+                      ⓘ
+                    </button>
                   </div>
                   <div className="mt-2 flex flex-col gap-2">
                     <input
@@ -1174,6 +1302,29 @@ export function App() {
           </section>
         </div>
       </main>
+      {showUploadInfo &&
+        createPortal(
+          <div
+            ref={uploadInfoContentRef}
+            role="tooltip"
+            style={{ top: `${uploadInfoPosition.top}px`, left: `${uploadInfoPosition.left}px` }}
+            className="fixed z-[70] w-64 rounded-xl border border-black/10 bg-white p-3 text-xs text-ink shadow-lg"
+            onMouseEnter={() => {
+              if (isHoverDevice) {
+                openUploadInfo();
+              }
+            }}
+            onMouseLeave={() => {
+              if (isHoverDevice) {
+                closeUploadInfo(true);
+              }
+            }}
+          >
+            <p>Formatos admitidos: PDF (.pdf / application/pdf).</p>
+            <p className="mt-1">Tamaño maximo: 20 MB.</p>
+          </div>,
+          document.body
+        )}
       {showRetryModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-6">
           <div className="w-full max-w-sm rounded-2xl border border-black/10 bg-white p-4 shadow-xl">
@@ -1193,7 +1344,7 @@ export function App() {
         </div>
       )}
             {uploadFeedback && (
-              <div className="fixed left-1/2 top-20 z-[60] w-full max-w-lg -translate-x-1/2 px-4">
+              <div className="fixed left-1/2 top-28 z-[60] w-full max-w-lg -translate-x-1/2 px-4">
                 <div
             className={`rounded-2xl border px-5 py-4 text-base shadow-xl ${
               uploadFeedback.kind === "success"
@@ -1229,14 +1380,6 @@ export function App() {
                   )}
                   {uploadFeedback.kind === "error" && (
                     <div className="mt-2 flex items-center gap-3">
-                      <button
-                        type="button"
-                        className="text-xs font-semibold text-ink underline"
-                        onClick={() => handleUpload()}
-                        disabled={uploadMutation.isPending || !selectedFile}
-                      >
-                        Reintentar
-                      </button>
                       {uploadFeedback.technicalDetails && (
                         <details className="text-xs text-muted">
                           <summary className="cursor-pointer">Ver detalles tecnicos</summary>
