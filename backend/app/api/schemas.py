@@ -66,3 +66,32 @@ class DocumentListResponse(BaseModel):
     limit: int = Field(..., description="Maximum number of items returned.")
     offset: int = Field(..., description="Pagination offset.")
     total: int = Field(..., description="Total number of documents available.")
+
+
+class ProcessingStepResponse(BaseModel):
+    step_name: str = Field(..., description="Step identifier.")
+    step_status: str = Field(..., description="Step execution status.")
+    attempt: int = Field(..., description="Attempt number for this step status.")
+    started_at: str | None = Field(None, description="UTC ISO timestamp for step start.")
+    ended_at: str | None = Field(None, description="UTC ISO timestamp for step end.")
+    error_code: str | None = Field(None, description="Step-level error code when failed.")
+
+
+class ProcessingHistoryRunResponse(BaseModel):
+    run_id: str = Field(..., description="Unique identifier of the processing run.")
+    state: str = Field(..., description="Processing run state.")
+    failure_type: str | None = Field(None, description="Run-level failure category.")
+    started_at: str | None = Field(None, description="UTC ISO timestamp when the run started.")
+    completed_at: str | None = Field(
+        None, description="UTC ISO timestamp when the run completed."
+    )
+    steps: list[ProcessingStepResponse] = Field(
+        ..., description="Step statuses derived from STEP_STATUS artifacts."
+    )
+
+
+class ProcessingHistoryResponse(BaseModel):
+    document_id: str = Field(..., description="Unique identifier of the document.")
+    runs: list[ProcessingHistoryRunResponse] = Field(
+        ..., description="Chronological processing runs and their steps."
+    )
