@@ -133,6 +133,10 @@ describe("App upload and list flow", () => {
     expect(screen.queryByText(/Documento no encontrado o falta ID/i)).toBeNull();
     expect(screen.queryByRole("button", { name: /Volver a la lista/i })).toBeNull();
     expect(screen.queryByRole("button", { name: /Documentos cargados/i })).toBeNull();
+    expect(
+      screen.getByText(/Selecciona un documento o carga uno para iniciar la vista previa\./i)
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Cargar documento/i })).toBeInTheDocument();
     expect(screen.queryByText(/Formatos permitidos: PDF\./i)).toBeNull();
     expect(screen.queryByText(/\(\.pdf \/ application\/pdf\)/i)).toBeNull();
     expect(screen.queryByText(/Tamaño maximo: 20 MB\./i)).toBeNull();
@@ -359,5 +363,60 @@ describe("App upload and list flow", () => {
       expect(screen.queryByText(/El archivo supera el tamaño máximo \(20 MB\)\./i)).toBeNull();
     });
   }, 12000);
+
+  it("keeps sidebar open by default when there are no documents and focuses upload on CTA", async () => {
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = input.toString();
+      const method = (init?.method ?? "GET").toUpperCase();
+
+      if (url.includes("/documents?") && method === "GET") {
+        return new Response(JSON.stringify({ items: [], limit: 50, offset: 0, total: 0 }), {
+          status: 200,
+        });
+      }
+
+      return new Response(JSON.stringify({ error_code: "NOT_FOUND" }), { status: 404 });
+    }) as typeof fetch;
+
+    renderApp();
+
+    expect(await screen.findByText(/Aun no hay documentos cargados\./i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Subir documento/i })).toBeInTheDocument();
+    expect(
+      screen.getByText(/Selecciona un documento o carga uno para iniciar la vista previa\./i)
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Cerrar lista de documentos/i }));
+    expect(screen.getByText(/Mostrar lista/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Cargar documento/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Ocultar lista/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/Archivo PDF/i)).toHaveFocus();
+    });
+  });
+
+  it("does not show select-or-upload empty state when document list fetch fails", async () => {
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = input.toString();
+      const method = (init?.method ?? "GET").toUpperCase();
+
+      if (url.includes("/documents?") && method === "GET") {
+        throw new TypeError("Failed to fetch");
+      }
+
+      return new Response(JSON.stringify({ error_code: "NOT_FOUND" }), { status: 404 });
+    }) as typeof fetch;
+
+    renderApp();
+
+    expect(await screen.findByRole("button", { name: /Reintentar/i })).toBeInTheDocument();
+    expect(screen.getByText(/Revisa la lista lateral para reintentar la carga de documentos\./i)).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Selecciona un documento o carga uno para iniciar la vista previa\./i)
+    ).toBeNull();
+    expect(screen.queryByText(/Failed to fetch/i)).toBeNull();
+  });
 });
 

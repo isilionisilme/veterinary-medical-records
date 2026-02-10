@@ -148,7 +148,18 @@ function parseFilename(contentDisposition: string | null): string | null {
 }
 
 async function fetchOriginalPdf(documentId: string): Promise<LoadResult> {
-  const response = await fetch(`${API_BASE_URL}/documents/${documentId}/download`);
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/documents/${documentId}/download`);
+  } catch (error) {
+    if (isNetworkFetchError(error)) {
+      throw new UiError(
+        "No se pudo conectar con el servidor.",
+        `Network error calling ${API_BASE_URL}/documents/${documentId}/download`
+      );
+    }
+    throw error;
+  }
   if (!response.ok) {
     let errorMessage = "No pudimos cargar el documento.";
     try {
@@ -157,7 +168,10 @@ async function fetchOriginalPdf(documentId: string): Promise<LoadResult> {
     } catch {
       // Ignore JSON parse errors for non-JSON responses.
     }
-    throw new Error(errorMessage);
+    throw new UiError(
+      errorMessage,
+      `HTTP ${response.status} calling ${API_BASE_URL}/documents/${documentId}/download`
+    );
   }
   const blob = await response.blob();
   const filename = parseFilename(response.headers.get("content-disposition"));
@@ -196,7 +210,18 @@ async function fetchDocuments(): Promise<DocumentListResponse> {
 }
 
 async function fetchDocumentDetails(documentId: string): Promise<DocumentDetailResponse> {
-  const response = await fetch(`${API_BASE_URL}/documents/${documentId}`);
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/documents/${documentId}`);
+  } catch (error) {
+    if (isNetworkFetchError(error)) {
+      throw new UiError(
+        "No se pudo conectar con el servidor.",
+        `Network error calling ${API_BASE_URL}/documents/${documentId}`
+      );
+    }
+    throw error;
+  }
   if (!response.ok) {
     let errorMessage = "No pudimos cargar el estado del documento.";
     try {
@@ -205,13 +230,27 @@ async function fetchDocumentDetails(documentId: string): Promise<DocumentDetailR
     } catch {
       // Ignore JSON parse errors for non-JSON responses.
     }
-    throw new Error(errorMessage);
+    throw new UiError(
+      errorMessage,
+      `HTTP ${response.status} calling ${API_BASE_URL}/documents/${documentId}`
+    );
   }
   return response.json();
 }
 
 async function fetchProcessingHistory(documentId: string): Promise<ProcessingHistoryResponse> {
-  const response = await fetch(`${API_BASE_URL}/documents/${documentId}/processing-history`);
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/documents/${documentId}/processing-history`);
+  } catch (error) {
+    if (isNetworkFetchError(error)) {
+      throw new UiError(
+        "No se pudo conectar con el servidor.",
+        `Network error calling ${API_BASE_URL}/documents/${documentId}/processing-history`
+      );
+    }
+    throw error;
+  }
   if (!response.ok) {
     let errorMessage = "No pudimos cargar el historial de procesamiento.";
     try {
@@ -220,7 +259,10 @@ async function fetchProcessingHistory(documentId: string): Promise<ProcessingHis
     } catch {
       // Ignore JSON parse errors for non-JSON responses.
     }
-    throw new Error(errorMessage);
+    throw new UiError(
+      errorMessage,
+      `HTTP ${response.status} calling ${API_BASE_URL}/documents/${documentId}/processing-history`
+    );
   }
   return response.json();
 }
@@ -378,6 +420,7 @@ export function App() {
   const [rawSearchNotice, setRawSearchNotice] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadFeedback, setUploadFeedback] = useState<UploadFeedback | null>(null);
+  const [hasShownListErrorToast, setHasShownListErrorToast] = useState(false);
   const [showUploadInfo, setShowUploadInfo] = useState(false);
   const [isHoverDevice, setIsHoverDevice] = useState(true);
   const [uploadInfoPosition, setUploadInfoPosition] = useState({ top: 0, left: 0 });
@@ -385,6 +428,7 @@ export function App() {
   const uploadInfoTriggerRef = useRef<HTMLButtonElement | null>(null);
   const uploadInfoContentRef = useRef<HTMLDivElement | null>(null);
   const uploadInfoCloseTimerRef = useRef<number | null>(null);
+  const uploadPanelRef = useRef<HTMLDivElement | null>(null);
   const pendingAutoOpenDocumentIdRef = useRef<string | null>(null);
   const autoOpenRetryCountRef = useRef<Record<string, number>>({});
   const autoOpenRetryTimerRef = useRef<number | null>(null);
@@ -612,6 +656,22 @@ export function App() {
     uploadMutation.mutate(selectedFile);
   };
 
+  const focusUploadControl = () => {
+    uploadPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    fileInputRef.current?.focus();
+  };
+
+  const handleOpenUploadArea = () => {
+    if (!isSidebarOpen) {
+      setIsSidebarOpen(true);
+      window.setTimeout(() => {
+        focusUploadControl();
+      }, 320);
+      return;
+    }
+    focusUploadControl();
+  };
+
   const handleSelectDocument = (docId: string) => {
     setActiveId(docId);
     loadPdf.mutate(docId);
@@ -701,6 +761,15 @@ export function App() {
     return () => window.clearInterval(intervalId);
   }, [documentList, documentList.data?.items]);
 
+  useEffect(() => {
+    if (documentList.status !== "success") {
+      return;
+    }
+    if (sortedDocuments.length === 0) {
+      setIsSidebarOpen(true);
+    }
+  }, [documentList.status, sortedDocuments.length]);
+
   const reprocessMutation = useMutation({
     mutationFn: async (docId: string) => triggerReprocess(docId),
     onSuccess: (_, docId) => {
@@ -748,6 +817,23 @@ export function App() {
     const timer = window.setTimeout(() => setUploadFeedback(null), timeoutMs);
     return () => window.clearTimeout(timer);
   }, [uploadFeedback]);
+
+  useEffect(() => {
+    if (documentList.isError) {
+      if (!hasShownListErrorToast) {
+        setUploadFeedback({
+          kind: "error",
+          message: getUserErrorMessage(documentList.error, "No se pudieron cargar los documentos."),
+          technicalDetails: getTechnicalDetails(documentList.error),
+        });
+        setHasShownListErrorToast(true);
+      }
+      return;
+    }
+    if (documentList.isSuccess && hasShownListErrorToast) {
+      setHasShownListErrorToast(false);
+    }
+  }, [documentList.isError, documentList.isSuccess, documentList.error, hasShownListErrorToast]);
 
   const handleConfirmRetry = () => {
     if (!activeId) {
@@ -895,7 +981,10 @@ export function App() {
                   </Button>
                 </div>
 
-                <div className="mt-4 rounded-2xl border border-black/10 bg-white/70 p-4">
+                <div
+                  ref={uploadPanelRef}
+                  className="mt-4 rounded-2xl border border-black/10 bg-white/70 p-4"
+                >
                   <div className="flex items-center gap-2">
                     <h3 className="text-sm font-semibold text-ink">Subir documento</h3>
                     <button
@@ -1060,18 +1149,13 @@ export function App() {
           <section className="flex-1 rounded-3xl border border-black/10 bg-white/70 p-6 shadow-xl">
             {loadPdf.isError && (
               <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {(loadPdf.error as Error).message}
+                {getUserErrorMessage(loadPdf.error, "No se pudo cargar la vista previa del documento.")}
               </div>
             )}
             {activeId && (
               <div className={loadPdf.isError ? "mt-4" : ""}>
                 {documentDetails.isLoading && (
                   <p className="text-xs text-muted">Cargando estado del documento...</p>
-                )}
-                {documentDetails.isError && (
-                  <p className="text-xs text-red-600">
-                    {(documentDetails.error as Error).message}
-                  </p>
                 )}
               </div>
             )}
@@ -1082,9 +1166,31 @@ export function App() {
                 {viewerTabButton("technical", "Detalles tecnicos")}
               </div>
               <div className="mt-4 h-[65vh]">
-                {activeViewerTab === "document" && (
-                  <PdfViewer fileUrl={fileUrl} filename={filename} />
-                )}
+                {activeViewerTab === "document" &&
+                  (!activeId ? (
+                    documentList.isError ? (
+                      <div className="flex h-full flex-col rounded-2xl border border-black/10 bg-white/80 p-6">
+                        <div className="flex flex-1 items-center justify-center text-center">
+                          <p className="text-sm text-muted">
+                            Revisa la lista lateral para reintentar la carga de documentos.
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex h-full flex-col rounded-2xl border border-black/10 bg-white/80 p-6">
+                        <div className="flex flex-1 flex-col items-center justify-center text-center">
+                          <p className="text-sm text-muted">
+                            Selecciona un documento o carga uno para iniciar la vista previa.
+                          </p>
+                          <Button type="button" className="mt-4" onClick={handleOpenUploadArea}>
+                            Cargar documento
+                          </Button>
+                        </div>
+                      </div>
+                    )
+                  ) : (
+                    <PdfViewer fileUrl={fileUrl} filename={filename} />
+                  ))}
                 {activeViewerTab === "raw_text" && (
                   <div className="flex h-full flex-col rounded-2xl border border-black/10 bg-white/80 p-4">
                     <div className="rounded-2xl border border-black/10 bg-white/90 p-3">
@@ -1173,7 +1279,10 @@ export function App() {
                     )}
                     {activeId && processingHistory.isError && (
                       <p className="mt-2 text-xs text-red-600">
-                        {(processingHistory.error as Error).message}
+                        {getUserErrorMessage(
+                          processingHistory.error,
+                          "No se pudo cargar el historial de procesamiento."
+                        )}
                       </p>
                     )}
                     {activeId &&

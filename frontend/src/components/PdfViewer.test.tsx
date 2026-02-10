@@ -110,7 +110,7 @@ describe("PdfViewer", () => {
       toJSON: () => "",
     });
 
-    const [nextButton] = screen.getAllByRole("button", { name: /Siguiente/i });
+    const [nextButton] = screen.getAllByRole("button", { name: /Pagina siguiente/i });
     await waitFor(() => {
       expect(nextButton).not.toBeDisabled();
     });
@@ -120,7 +120,7 @@ describe("PdfViewer", () => {
     expect(windowScrollSpy).not.toHaveBeenCalled();
     expect(screen.getByText(/Pagina 2 de 3/)).toBeInTheDocument();
 
-    const [prevButton] = screen.getAllByRole("button", { name: /Anterior/i });
+    const [prevButton] = screen.getAllByRole("button", { name: /Pagina anterior/i });
     await waitFor(() => {
       expect(prevButton).not.toBeDisabled();
     });
@@ -169,17 +169,15 @@ describe("PdfViewer", () => {
       expect(screen.getByText(/Pagina 3 de 3/)).toBeInTheDocument();
     });
 
-    const [nextButton] = screen.getAllByRole("button", { name: /Siguiente/i });
+    const [nextButton] = screen.getAllByRole("button", { name: /Pagina siguiente/i });
     expect(nextButton).toBeDisabled();
   });
 
-  it("keeps navigation disabled when no document is selected", () => {
+  it("hides page navigation when no document is selected", () => {
     render(<PdfViewer fileUrl={null} filename={null} />);
 
-    const [nextButton] = screen.getAllByRole("button", { name: /Siguiente/i });
-    const [prevButton] = screen.getAllByRole("button", { name: /Anterior/i });
-
-    expect(nextButton).toBeDisabled();
-    expect(prevButton).toBeDisabled();
+    expect(screen.queryByRole("button", { name: /Pagina siguiente/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Pagina anterior/i })).toBeNull();
   });
 });
+

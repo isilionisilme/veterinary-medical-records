@@ -211,31 +211,37 @@ export function PdfViewer({ fileUrl, filename }: PdfViewerProps) {
   const canGoBack = pageNumber > 1;
   const canGoForward = pageNumber < totalPages;
   const navDisabled = loading || !pdfDoc || !canvasesReady;
+  const showPageNavigation = Boolean(fileUrl) && !loading && !error && totalPages > 0 && canvasesReady;
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-end border-b border-black/10 pb-3">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            type="button"
-            onClick={(event) => scrollToPage(Math.max(1, pageNumber - 1), event)}
-            disabled={navDisabled || !canGoBack}
-          >
-            <ChevronLeft size={16} />
-            Anterior
-          </Button>
-          <Button
-            variant="ghost"
-            type="button"
-            onClick={(event) => scrollToPage(Math.min(totalPages, pageNumber + 1), event)}
-            disabled={navDisabled || !canGoForward}
-          >
-            Siguiente
-            <ChevronRight size={16} />
-          </Button>
+      {showPageNavigation && (
+        <div className="flex items-center justify-between border-b border-black/10 pb-3">
+          <p className="text-sm text-muted">
+            Pagina {pageNumber} / {totalPages}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              type="button"
+              onClick={(event) => scrollToPage(Math.max(1, pageNumber - 1), event)}
+              disabled={navDisabled || !canGoBack}
+            >
+              <ChevronLeft size={16} />
+              Pagina anterior
+            </Button>
+            <Button
+              variant="ghost"
+              type="button"
+              onClick={(event) => scrollToPage(Math.min(totalPages, pageNumber + 1), event)}
+              disabled={navDisabled || !canGoForward}
+            >
+              Pagina siguiente
+              <ChevronRight size={16} />
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
       <div
         ref={scrollRef}
         data-testid="pdf-scroll-container"
@@ -294,7 +300,7 @@ export function PdfViewer({ fileUrl, filename }: PdfViewerProps) {
           )}
         </div>
       </div>
-      {totalPages > 0 && (
+      {showPageNavigation && (
         <div className="mt-3 text-sm text-muted">
           Pagina {pageNumber} de {totalPages}
         </div>
