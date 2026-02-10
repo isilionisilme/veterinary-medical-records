@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type DragEvent, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Download, Upload } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -421,6 +421,7 @@ export function App() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadFeedback, setUploadFeedback] = useState<UploadFeedback | null>(null);
   const [hasShownListErrorToast, setHasShownListErrorToast] = useState(false);
+  const [isDragOverViewer, setIsDragOverViewer] = useState(false);
   const [showUploadInfo, setShowUploadInfo] = useState(false);
   const [isHoverDevice, setIsHoverDevice] = useState(true);
   const [uploadInfoPosition, setUploadInfoPosition] = useState({ top: 0, left: 0 });
@@ -429,6 +430,7 @@ export function App() {
   const uploadInfoContentRef = useRef<HTMLDivElement | null>(null);
   const uploadInfoCloseTimerRef = useRef<number | null>(null);
   const uploadPanelRef = useRef<HTMLDivElement | null>(null);
+  const viewerDragDepthRef = useRef(0);
   const pendingAutoOpenDocumentIdRef = useRef<string | null>(null);
   const autoOpenRetryCountRef = useRef<Record<string, number>>({});
   const autoOpenRetryTimerRef = useRef<number | null>(null);
@@ -642,18 +644,88 @@ export function App() {
     },
   });
 
+  const validateUploadFile = (file: File): string | null => {
+    const hasPdfMime = file.type === "application/pdf";
+    const hasPdfExtension = file.name.toLowerCase().endsWith(".pdf");
+    if (!hasPdfMime && !hasPdfExtension) {
+      return "Solo se admiten archivos PDF en esta etapa.";
+    }
+    if (file.size > MAX_UPLOAD_SIZE_BYTES) {
+      return "El archivo supera el tamaño máximo (20 MB).";
+    }
+    return null;
+  };
+
+  const queueUpload = (file: File) => {
+    const validationError = validateUploadFile(file);
+    if (validationError) {
+      setUploadFeedback({
+        kind: "error",
+        message: validationError,
+      });
+      return false;
+    }
+    setSelectedFile(file);
+    setUploadFeedback(null);
+    uploadMutation.mutate(file);
+    return true;
+  };
+
   const handleUpload = () => {
     if (!selectedFile) {
       return;
     }
-    if (selectedFile.size > MAX_UPLOAD_SIZE_BYTES) {
+    const validationError = validateUploadFile(selectedFile);
+    if (validationError) {
       setUploadFeedback({
         kind: "error",
-        message: "El archivo supera el tamaño máximo (20 MB).",
+        message: validationError,
       });
       return;
     }
     uploadMutation.mutate(selectedFile);
+  };
+
+  const handleViewerDragEnter = (event: DragEvent<HTMLDivElement>) => {
+    if (!event.dataTransfer.types.includes("Files")) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    viewerDragDepthRef.current += 1;
+    setIsDragOverViewer(true);
+  };
+
+  const handleViewerDragOver = (event: DragEvent<HTMLDivElement>) => {
+    if (!event.dataTransfer.types.includes("Files")) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    if (!isDragOverViewer) {
+      setIsDragOverViewer(true);
+    }
+  };
+
+  const handleViewerDragLeave = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    viewerDragDepthRef.current = Math.max(0, viewerDragDepthRef.current - 1);
+    if (viewerDragDepthRef.current === 0) {
+      setIsDragOverViewer(false);
+    }
+  };
+
+  const handleViewerDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    viewerDragDepthRef.current = 0;
+    setIsDragOverViewer(false);
+    const file = event.dataTransfer.files?.[0];
+    if (!file) {
+      return;
+    }
+    queueUpload(file);
   };
 
   const focusUploadControl = () => {
@@ -1026,12 +1098,18 @@ export function App() {
                       className="w-full rounded-2xl border border-black/10 bg-white/80 px-3 py-2 text-sm text-ink outline-none focus:border-accent"
                       onChange={(event) => {
                         const file = event.target.files?.[0] ?? null;
-                        if (file && file.size > MAX_UPLOAD_SIZE_BYTES) {
+                        if (!file) {
+                          setSelectedFile(null);
+                          setUploadFeedback(null);
+                          return;
+                        }
+                        const validationError = validateUploadFile(file);
+                        if (validationError) {
                           setSelectedFile(null);
                           event.currentTarget.value = "";
                           setUploadFeedback({
                             kind: "error",
-                            message: "El archivo supera el tamaño máximo (20 MB).",
+                            message: validationError,
                           });
                           return;
                         }
@@ -1166,8 +1244,21 @@ export function App() {
                 {viewerTabButton("technical", "Detalles tecnicos")}
               </div>
               <div className="mt-4 h-[65vh]">
-                {activeViewerTab === "document" &&
-                  (!activeId ? (
+                {activeViewerTab === "document" && (
+                  <div
+                    data-testid="viewer-dropzone"
+                    className="relative h-full"
+                    onDragEnter={handleViewerDragEnter}
+                    onDragOver={handleViewerDragOver}
+                    onDragLeave={handleViewerDragLeave}
+                    onDrop={handleViewerDrop}
+                  >
+                    {isDragOverViewer && (
+                      <div className="pointer-events-none absolute inset-3 z-10 flex items-center justify-center rounded-xl border-2 border-dashed border-accent bg-white/70">
+                        <p className="text-sm font-semibold text-ink">Suelta el PDF para subirlo</p>
+                      </div>
+                    )}
+                    {!activeId ? (
                     documentList.isError ? (
                       <div className="flex h-full flex-col rounded-2xl border border-black/10 bg-white/80 p-6">
                         <div className="flex flex-1 items-center justify-center text-center">
@@ -1177,7 +1268,10 @@ export function App() {
                         </div>
                       </div>
                     ) : (
-                      <div className="flex h-full flex-col rounded-2xl border border-black/10 bg-white/80 p-6">
+                      <div
+                        data-testid="viewer-empty-state"
+                        className="relative flex h-full flex-col rounded-2xl border border-black/10 bg-white/80 p-6"
+                      >
                         <div className="flex flex-1 flex-col items-center justify-center text-center">
                           <p className="text-sm text-muted">
                             Selecciona un documento o carga uno para iniciar la vista previa.
@@ -1185,12 +1279,17 @@ export function App() {
                           <Button type="button" className="mt-4" onClick={handleOpenUploadArea}>
                             Cargar documento
                           </Button>
+                          <p className="mt-3 text-xs text-muted">
+                            Tambien puedes arrastrar un PDF aqui.
+                          </p>
                         </div>
                       </div>
                     )
-                  ) : (
-                    <PdfViewer fileUrl={fileUrl} filename={filename} />
-                  ))}
+                    ) : (
+                      <PdfViewer fileUrl={fileUrl} filename={filename} />
+                    )}
+                  </div>
+                )}
                 {activeViewerTab === "raw_text" && (
                   <div className="flex h-full flex-col rounded-2xl border border-black/10 bg-white/80 p-4">
                     <div className="rounded-2xl border border-black/10 bg-white/90 p-3">

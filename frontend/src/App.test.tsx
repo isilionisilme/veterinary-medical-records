@@ -19,6 +19,14 @@ function renderApp() {
   );
 }
 
+function createDataTransfer(file: File): DataTransfer {
+  return {
+    files: [file],
+    items: [{ kind: "file", type: file.type }],
+    types: ["Files"],
+  } as unknown as DataTransfer;
+}
+
 describe("App upload and list flow", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -418,5 +426,85 @@ describe("App upload and list flow", () => {
     ).toBeNull();
     expect(screen.queryByText(/Failed to fetch/i)).toBeNull();
   });
+
+  it("supports drag and drop upload from the viewer empty state", async () => {
+    renderApp();
+
+    const emptyState = screen.getByTestId("viewer-empty-state");
+    const file = new File(["pdf"], "dragged.pdf", { type: "application/pdf" });
+    const dataTransfer = createDataTransfer(file);
+
+    fireEvent.dragEnter(emptyState, { dataTransfer });
+    expect(screen.getByText(/Suelta el PDF para subirlo/i)).toBeInTheDocument();
+
+    fireEvent.drop(emptyState, { dataTransfer });
+
+    expect(await screen.findByText(/Documento subido correctamente/i)).toBeInTheDocument();
+
+    await waitFor(() => {
+      const calls = (globalThis.fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls;
+      expect(calls.some(([url]) => String(url).includes("/documents/upload"))).toBe(true);
+      expect(calls.some(([url]) => String(url).includes("/documents/doc-new/download"))).toBe(true);
+    });
+  });
+
+  it("supports drag and drop upload when a document is already open", async () => {
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+    await waitFor(() => {
+      expect(screen.getByTestId("pdf-viewer")).toBeInTheDocument();
+    });
+
+    const dropzone = screen.getByTestId("viewer-dropzone");
+    const file = new File(["pdf"], "dragged-open.pdf", { type: "application/pdf" });
+    const dataTransfer = createDataTransfer(file);
+
+    fireEvent.dragEnter(dropzone, { dataTransfer });
+    expect(screen.getByText(/Suelta el PDF para subirlo/i)).toBeInTheDocument();
+
+    fireEvent.drop(dropzone, { dataTransfer });
+    expect(await screen.findByText(/Documento subido correctamente/i)).toBeInTheDocument();
+
+    await waitFor(() => {
+      const calls = (globalThis.fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls;
+      expect(calls.some(([url]) => String(url).includes("/documents/upload"))).toBe(true);
+      expect(calls.some(([url]) => String(url).includes("/documents/doc-new/download"))).toBe(true);
+    });
+  });
+
+  it("shows validation error when dropping a non-PDF file", async () => {
+    renderApp();
+
+    const emptyState = screen.getByTestId("viewer-empty-state");
+    const file = new File(["text"], "notes.txt", { type: "text/plain" });
+    const dataTransfer = createDataTransfer(file);
+
+    fireEvent.drop(emptyState, { dataTransfer });
+
+    expect(await screen.findByText(/Solo se admiten archivos PDF en esta etapa\./i)).toBeInTheDocument();
+
+    const calls = (globalThis.fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls;
+    expect(calls.some(([url]) => String(url).includes("/documents/upload"))).toBe(false);
+  });
+
+  it("shows size validation error when dropping a PDF over 20 MB", async () => {
+    renderApp();
+
+    const emptyState = screen.getByTestId("viewer-empty-state");
+    const file = new File([new Uint8Array(20 * 1024 * 1024 + 1)], "huge.pdf", {
+      type: "application/pdf",
+    });
+    const dataTransfer = createDataTransfer(file);
+
+    fireEvent.drop(emptyState, { dataTransfer });
+
+    expect(
+      await screen.findByText(/El archivo supera el tamaño máximo \(20 MB\)\./i)
+    ).toBeInTheDocument();
+
+    const calls = (globalThis.fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls;
+    expect(calls.some(([url]) => String(url).includes("/documents/upload"))).toBe(false);
+  }, 12000);
 });
 
