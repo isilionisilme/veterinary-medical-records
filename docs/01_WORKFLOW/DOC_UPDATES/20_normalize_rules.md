@@ -7,16 +7,16 @@ Apply this pass to each changed documentation file.
    - Prefer `git diff -- <path>`.
    - If unavailable, use a user-provided snippet with file path and section context.
 2) Classify each change:
-   - Rule change (affects behavior or process)
-   - Clarification (no behavior change)
-   - Navigation (structure or links)
+   - R = rule change (affects behavior or process)
+   - C = clarification (no behavior change)
+   - N = navigation, structure, or links
+   - Rule change / Clarification / Navigation naming remains valid in summaries.
    - Mixed classification is allowed within one file.
-3) For each Rule change:
-   - determine one owner module (atomic source of truth),
+3) For each R:
+   - determine the single owner module (atomic module) where the rule must live,
    - update/create owner module before summary output,
-   - update `docs/agent_router/00_RULES_INDEX.md` only if:
-     - a new rule id is introduced, or
-     - owner module changes.
+   - update or create that module (source of truth) before emitting the summary,
+   - update `docs/agent_router/00_RULES_INDEX.md` only if a new rule id is introduced or the owner module changes.
 4) Update `docs/agent_router/00_AUTHORITY.md` only if routing/intent changes.
 5) Ensure no drift:
    - no duplicated rules across modules,
@@ -24,6 +24,7 @@ Apply this pass to each changed documentation file.
 6) Run verification: `30_checklist.md`.
 7) Emit required summary (`00_entry.md`):
    - include docs table and propagation gaps.
+   - If an R change was detected but no owner module was updated and no blocker reason exists, treat it as failure.
    - if Rule change exists with no propagation and no blocker reason, treat as failure.
 
 ## Ambiguity handling

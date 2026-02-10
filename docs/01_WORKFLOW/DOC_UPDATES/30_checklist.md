@@ -7,7 +7,7 @@
 - Modules remain small and atomic.
 - No duplicated rules across modules.
 - Discovery considered untracked/new and renamed docs (`git status --porcelain` + `git diff --name-status`).
-- All Rule changes are propagated to owner modules, or an explicit blocker gap is recorded.
+- All R changes are propagated to owner modules, or an explicit blocker gap is recorded.
 - Normalization ran once at task end (no loop).
 - No unresolved propagation gaps remain unless explicitly approved as blockers.
 

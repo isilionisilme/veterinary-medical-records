@@ -103,6 +103,6 @@ font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 ```
 
 Recommended usage:
-- Body text: 400–500
+- Body text: 400–600
 - Headings: 600
 
