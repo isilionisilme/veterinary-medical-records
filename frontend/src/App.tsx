@@ -355,6 +355,7 @@ export function App() {
 
   const handleConfirmRetry = () => {
     if (!activeId) {
+      setShowRetryModal(false);
       return;
     }
     setShowRetryModal(false);
@@ -467,7 +468,7 @@ export function App() {
                   <div>
                     <h2 className="font-display text-xl font-semibold">Documentos cargados</h2>
                     <p className="mt-2 text-xs text-muted">
-                      Lista informativa con el estado actual de procesamiento.
+                      Lista informativa con el progreso de procesamiento.
                     </p>
                   </div>
                   <Button variant="ghost" onClick={handleRefresh} type="button">
@@ -585,7 +586,7 @@ export function App() {
                         <div className="flex flex-wrap items-center gap-2">
                           <Button
                             type="button"
-                            disabled={isProcessing || reprocessMutation.isPending}
+                            disabled={!activeId || isProcessing || reprocessMutation.isPending}
                             onClick={() => setShowRetryModal(true)}
                           >
                             {isProcessing
@@ -642,7 +643,7 @@ export function App() {
                       </p>
                       <Button
                         type="button"
-                        disabled={isProcessing || reprocessMutation.isPending}
+                        disabled={!activeId || isProcessing || reprocessMutation.isPending}
                         onClick={() => setShowRetryModal(true)}
                       >
                         {isProcessing

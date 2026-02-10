@@ -146,10 +146,18 @@ describe("App document navigation", () => {
     const itemButton = await screen.findByRole("button", { name: /record\.pdf/i });
     fireEvent.click(itemButton);
 
+    await waitFor(() => {
+      expect(screen.queryByText(/Documento no encontrado o falta ID/i)).toBeNull();
+    });
+
     fireEvent.click(screen.getByRole("button", { name: "Texto extraido" }));
     fireEvent.click(screen.getByRole("button", { name: /Reintentar procesamiento/i }));
 
-    expect(screen.getByText(/Reintentar procesamiento/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /Esto volvera a ejecutar extraccion e interpretacion y puede cambiar los resultados/i
+      )
+    ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Reintentar$/i }));
 
     await waitFor(() => {
@@ -221,6 +229,10 @@ describe("App document navigation", () => {
     const itemButton = await screen.findByRole("button", { name: /record\.pdf/i });
     fireEvent.click(itemButton);
 
+    await waitFor(() => {
+      expect(screen.queryByText(/Documento no encontrado o falta ID/i)).toBeNull();
+    });
+
     fireEvent.click(screen.getByRole("button", { name: "Texto extraido" }));
     expect(screen.getByRole("button", { name: /Procesando/i })).toBeDisabled();
   });
@@ -237,7 +249,7 @@ describe("App document navigation", () => {
 
   it("does not render Vista previa or Documento original header text", () => {
     renderApp();
-    expect(screen.queryByText(/Vista previa/i)).toBeNull();
-    expect(screen.queryByText(/Documento original/i)).toBeNull();
+    expect(screen.queryByText("Vista previa")).toBeNull();
+    expect(screen.queryByText("Documento original")).toBeNull();
   });
 });
