@@ -296,27 +296,6 @@ function formatTimestamp(value: string): string {
   });
 }
 
-function formatRelativeUploadAge(value: string): string | null {
-  const timestamp = Date.parse(value);
-  if (Number.isNaN(timestamp)) {
-    return null;
-  }
-  const elapsedMs = Date.now() - timestamp;
-  if (elapsedMs < 0) {
-    return null;
-  }
-  const elapsedSeconds = Math.floor(elapsedMs / 1000);
-  if (elapsedSeconds < 60) {
-    return `Subido hace ${elapsedSeconds}s`;
-  }
-  const elapsedMinutes = Math.floor(elapsedSeconds / 60);
-  if (elapsedMinutes < 60) {
-    return `Subido hace ${elapsedMinutes} min`;
-  }
-  const elapsedHours = Math.floor(elapsedMinutes / 60);
-  return `Subido hace ${elapsedHours} h`;
-}
-
 function isDocumentProcessing(status: string): boolean {
   return status === "PROCESSING" || status === "UPLOADED";
 }
@@ -656,6 +635,24 @@ export function App() {
     enabled: Boolean(activeId),
   });
 
+  const sortedDocuments = useMemo(() => {
+    const items = documentList.data?.items ?? [];
+    return [...items].sort((a, b) => {
+      const aTime = Date.parse(a.created_at);
+      const bTime = Date.parse(b.created_at);
+      if (Number.isNaN(aTime) && Number.isNaN(bTime)) {
+        return a.document_id.localeCompare(b.document_id);
+      }
+      if (Number.isNaN(aTime)) {
+        return 1;
+      }
+      if (Number.isNaN(bTime)) {
+        return -1;
+      }
+      return bTime - aTime;
+    });
+  }, [documentList.data?.items]);
+
   useEffect(() => {
     if (!activeId || !documentDetails.data) {
       return;
@@ -887,11 +884,13 @@ export function App() {
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <h2 className="font-display text-xl font-semibold">Documentos cargados</h2>
-                    <p className="mt-2 text-xs text-muted">
-                      Lista informativa con el progreso de procesamiento.
-                    </p>
                   </div>
-                  <Button variant="ghost" onClick={handleRefresh} type="button">
+                  <Button
+                    variant="ghost"
+                    onClick={handleRefresh}
+                    type="button"
+                    className="rounded-full border border-black/15 bg-white px-3 py-1.5 text-xs font-semibold text-ink shadow-sm hover:bg-accentSoft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                  >
                     Actualizar
                   </Button>
                 </div>
@@ -987,8 +986,8 @@ export function App() {
                 )}
 
                 {documentList.data && (
-                  <div className="mt-4 space-y-3">
-                    {documentList.data.items.length === 0 ? (
+                  <div className="mt-4 space-y-2">
+                    {sortedDocuments.length === 0 ? (
                       <div className="rounded-2xl border border-dashed border-black/10 bg-white/70 p-4 text-sm text-muted">
                         <p>Aun no hay documentos cargados.</p>
                         <Button
@@ -1001,33 +1000,37 @@ export function App() {
                         </Button>
                       </div>
                     ) : (
-                      documentList.data.items.map((item, index) => {
+                      sortedDocuments.map((item) => {
                         const isActive = activeId === item.document_id;
                         const status = mapDocumentStatus(item);
-                        const relativeUploadAge = index === 0 ? formatRelativeUploadAge(item.created_at) : null;
                         return (
                           <button
                             key={item.document_id}
                             type="button"
                             onClick={() => handleSelectDocument(item.document_id)}
                             aria-pressed={isActive}
-                            className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
+                            className={`w-full rounded-xl border px-3 py-2 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
                               isActive
-                                ? "border-accent bg-accentSoft font-semibold text-ink"
+                                ? "border-accent bg-accentSoft/80 text-ink shadow-sm ring-1 ring-accent"
                                 : "border-black/10 bg-white/80 text-ink hover:bg-white"
                             }`}
                           >
-                            <div className="flex items-start justify-between gap-4">
-                              <div>
-                                <p className="text-sm">{item.original_filename}</p>
-                                <p className="mt-1 text-xs text-muted">
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-medium">{item.original_filename}</p>
+                                <p className="mt-0.5 text-xs text-muted">
                                   Subido: {formatTimestamp(item.created_at)}
                                 </p>
-                                {relativeUploadAge && (
-                                  <p className="mt-1 text-xs text-muted">{relativeUploadAge}</p>
-                                )}
                               </div>
-                              <span className="rounded-full bg-black/5 px-3 py-1 text-xs font-semibold text-ink">
+                              <span
+                                className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                  status.tone === "ok"
+                                    ? "bg-emerald-100 text-emerald-700"
+                                    : status.tone === "error"
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-amber-100 text-amber-700"
+                                }`}
+                              >
                                 {status.tone === "warn" && (
                                   <span className="mr-1 inline-block h-2 w-2 animate-spin rounded-full border border-current border-r-transparent align-middle" />
                                 )}
