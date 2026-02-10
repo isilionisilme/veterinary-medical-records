@@ -24,6 +24,9 @@ This folder is split into three areas:
 ### Tooling (optional)
 - [`metrics/llm_benchmarks/README.md`](../metrics/llm_benchmarks/README.md) — assistant usage benchmarks (opt-in; used only when requested, e.g. `#metrics`).
 
+### Tooling (optional)
+- [`metrics/llm_benchmarks/README.md`](../metrics/llm_benchmarks/README.md) — assistant usage benchmarks (opt-in; used only when requested, e.g. `#metrics`).
+
 ### Documentation specific to the project
 - [`docs/agent_router/04_PROJECT/PRODUCT_DESIGN/00_entry.md`](agent_router/04_PROJECT/PRODUCT_DESIGN/00_entry.md) — product summary (split into small modules)
 - [`docs/agent_router/04_PROJECT/UX_DESIGN/00_entry.md`](agent_router/04_PROJECT/UX_DESIGN/00_entry.md) — UX interaction contract (split into small modules)
