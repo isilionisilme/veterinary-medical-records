@@ -94,6 +94,45 @@ Assume you are about to change an API schema in backend/app/api/schemas.py. Do t
 Follow the repo rules. At the end, print the METRICS line with docs consulted.
 ```
 
+## doc_updates_trigger_a
+
+```text
+#metrics
+I updated docs/shared/AGENTS.md. Run the documentation-update workflow exactly as defined by the router.
+Do the minimum doc reading needed to:
+1) classify the update
+2) run normalization for the specified file
+3) report the normalization output summary
+
+At the end, print the METRICS line with docs consulted.
+```
+
+## doc_updates_trigger_b
+
+```text
+#metrics
+Docs changed; please sync and normalize. No file paths are specified.
+Do the minimum doc reading needed to:
+1) discover changed docs from git status/diff
+2) apply normalization in stable order
+3) report detected files and normalization summary
+
+At the end, print the METRICS line with docs consulted.
+```
+
+## doc_updates_trigger_c
+
+```text
+#metrics
+Update the documentation section I mention below, then apply the required post-change normalization workflow.
+Do the minimum doc reading needed to:
+1) edit the requested reference document
+2) run one normalization pass at task end (no loop)
+3) report classifications and owner-module updates
+
+At the end, print the METRICS line with docs consulted.
+```
+
 ## doc_updates_trigger_d_no_git
 
 ```text
