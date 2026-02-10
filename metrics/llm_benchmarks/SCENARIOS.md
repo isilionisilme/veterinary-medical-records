@@ -133,3 +133,68 @@ Do the minimum doc reading needed to:
 At the end, print the METRICS line with docs consulted.
 ```
 
+## doc_updates_trigger_d_no_git
+
+```text
+#metrics
+Repository access is unavailable. I updated docs, please normalize.
+Do the minimum doc reading needed to:
+1) request required fallback inputs (file paths + snippet/diff)
+2) classify using snippet evidence only
+3) report that diff source is snippet
+
+At the end, print the METRICS line with docs consulted.
+```
+
+## doc_updates_trigger_e_rule_id
+
+```text
+#metrics
+Change rule R-DOC-UPDATES-NORMALIZE to tighten propagation behavior.
+Do the minimum doc reading needed to:
+1) resolve rule id in the rules index
+2) update owner module only
+3) update references only if needed
+
+At the end, print the METRICS line with docs consulted.
+```
+
+## doc_updates_mixed_classification
+
+```text
+#metrics
+A single doc change includes both a rule update and wording cleanup.
+Do the minimum doc reading needed to:
+1) classify mixed changes (Rule change + Clarification)
+2) propagate only rule portions to owner modules
+3) report mixed classification in summary output
+
+At the end, print the METRICS line with docs consulted.
+```
+
+## doc_updates_rename_untracked
+
+```text
+#metrics
+Docs include one renamed file and one new untracked markdown file.
+Do the minimum doc reading needed to:
+1) discover files with git status plus name-status diff
+2) normalize both renamed and untracked docs
+3) report deterministic processing order
+
+At the end, print the METRICS line with docs consulted.
+```
+
+## doc_updates_ambiguous_owner
+
+```text
+#metrics
+A rule change could map to UX or Brand ownership.
+Do the minimum doc reading needed to:
+1) evaluate known mapping hints
+2) avoid silent auto-pick when ambiguous
+3) ask for clarification or record a propagation gap with candidates
+
+At the end, print the METRICS line with docs consulted.
+```
+

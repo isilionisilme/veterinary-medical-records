@@ -21,3 +21,9 @@ If a rule changes, update **only** its owner module. Other docs may link to it.
 | R-PROJECT-DOCS | docs/agent_router/04_PROJECT/00_entry.md | Split versions of `docs/project/*` |
 | R-METRICS-OPTIN | metrics/llm_benchmarks/README.md | Benchmarks are opt-in |
 | R-GENERAL-BEHAVIOR | docs/shared/AGENTS.md | General assistant rules |
+
+## Known mapping hints
+- Typography ranges/weights -> `docs/agent_router/04_PROJECT/BRAND_GUIDELINES/50_3-typography-exact-fonts-mandatory.md`
+- Color tokens/palette changes -> `docs/agent_router/04_PROJECT/BRAND_GUIDELINES/40_2-color-system-exact-values-mandatory.md`
+- Spacing and visual component behavior -> `docs/agent_router/04_PROJECT/BRAND_GUIDELINES/00_entry.md`
+- UX interaction rule changes -> `docs/agent_router/04_PROJECT/UX_DESIGN/00_entry.md`
