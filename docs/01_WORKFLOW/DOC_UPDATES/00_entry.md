@@ -20,7 +20,7 @@ Treat paraphrases and other languages as the same intent.
 2) Run the Normalization Pass for each changed doc: `20_normalize_rules.md`.
 3) If git discovery/diff inspection is not possible, ask the user for file paths and a snippet/diff. Do not load large reference docs by default.
 4) Finish with the verification checklist: `30_checklist.md`.
-5) Propagation rule: for any Rule change, update the owner module before emitting the summary. Gaps are only allowed when the owner is ambiguous or the diff/snippet is unavailable.
+5) Propagation rule: for any R change, update the owner module before emitting the summary. Gaps are only allowed when the owner is ambiguous or the diff/snippet is unavailable.
 6) Anti-loop rule: run normalization once at task end; do not re-run for changes produced by normalization.
 
 ## Use cases
