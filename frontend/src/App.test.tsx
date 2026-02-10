@@ -132,11 +132,11 @@ describe("App upload and list flow", () => {
     renderApp();
     expect(screen.queryByText(/Documento no encontrado o falta ID/i)).toBeNull();
     expect(screen.queryByRole("button", { name: /Volver a la lista/i })).toBeNull();
-    expect(screen.getByRole("button", { name: /Documentos cargados/i })).toBeInTheDocument();
-    expect(
-      screen.queryByText(/Formatos admitidos: PDF \(\.pdf, application\/pdf\), hasta 20 MB\./i)
-    ).toBeNull();
-    expect(screen.getByText(/Formatos admitidos: PDF\./i)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Documentos cargados/i })).toBeNull();
+    expect(screen.queryByText(/Formatos admitidos: PDF\./i)).toBeNull();
+    expect(screen.getByText(/Tamaño maximo: 20 MB\./i)).not.toBeVisible();
+    expect(screen.getByLabelText(/Informacion de formatos y tamano/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Selecciona un PDF/i)).toBeNull();
   });
 
   it("shows required list status labels", async () => {
@@ -218,7 +218,7 @@ describe("App upload and list flow", () => {
   it("uploads a document, shows toast and auto-opens the uploaded document", async () => {
     renderApp();
 
-    const input = screen.getByLabelText(/Selecciona un PDF/i);
+    const input = screen.getByLabelText(/Archivo PDF/i);
     const file = new File(["pdf"], "nuevo.pdf", { type: "application/pdf" });
     fireEvent.change(input, { target: { files: [file] } });
     fireEvent.click(screen.getByRole("button", { name: /Subir documento/i }));
@@ -308,7 +308,7 @@ describe("App upload and list flow", () => {
 
     renderApp();
 
-    const input = screen.getByLabelText(/Selecciona un PDF/i);
+    const input = screen.getByLabelText(/Archivo PDF/i);
     const file = new File(["pdf"], "nuevo.pdf", { type: "application/pdf" });
     fireEvent.change(input, { target: { files: [file] } });
     fireEvent.click(screen.getByRole("button", { name: /Subir documento/i }));
@@ -326,7 +326,7 @@ describe("App upload and list flow", () => {
   it("auto-dismisses upload toast", async () => {
     renderApp();
 
-    const input = screen.getByLabelText(/Selecciona un PDF/i);
+    const input = screen.getByLabelText(/Archivo PDF/i);
     const file = new File(["pdf"], "nuevo.pdf", { type: "application/pdf" });
     fireEvent.change(input, { target: { files: [file] } });
     fireEvent.click(screen.getByRole("button", { name: /Subir documento/i }));
@@ -338,4 +338,19 @@ describe("App upload and list flow", () => {
       expect(screen.queryByText(/Documento subido correctamente/i)).toBeNull();
     });
   }, 10000);
+
+  it("shows a clear error when selected file exceeds 20 MB", async () => {
+    renderApp();
+
+    const input = screen.getByLabelText(/Archivo PDF/i);
+    const oversizedFile = new File([new Uint8Array(20 * 1024 * 1024 + 1)], "grande.pdf", {
+      type: "application/pdf",
+    });
+    fireEvent.change(input, { target: { files: [oversizedFile] } });
+
+    expect(
+      await screen.findByText(/El archivo supera el tamaño máximo \(20 MB\)\./i)
+    ).toBeInTheDocument();
+  });
 });
+

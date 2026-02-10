@@ -14,6 +14,7 @@ import {
 } from "./lib/processingHistoryView";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const MAX_UPLOAD_SIZE_BYTES = 20 * 1024 * 1024;
 
 type LoadResult = {
   url: string;
@@ -532,6 +533,13 @@ export function App() {
     if (!selectedFile) {
       return;
     }
+    if (selectedFile.size > MAX_UPLOAD_SIZE_BYTES) {
+      setUploadFeedback({
+        kind: "error",
+        message: "El archivo supera el tamaño máximo (20 MB).",
+      });
+      return;
+    }
     uploadMutation.mutate(selectedFile);
   };
 
@@ -776,23 +784,41 @@ export function App() {
                 </div>
 
                 <div className="mt-4 rounded-2xl border border-black/10 bg-white/70 p-4">
-                  <h3 className="text-sm font-semibold text-ink">Subir documento</h3>
-                  <p className="mt-1 text-xs text-muted">Formatos admitidos: PDF.</p>
-                  <label
-                    htmlFor="upload-document-input"
-                    className="mt-3 block text-xs font-semibold uppercase tracking-[0.12em] text-muted"
-                  >
-                    Selecciona un PDF
-                  </label>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-ink">Subir documento</h3>
+                    <details className="relative">
+                      <summary
+                        className="cursor-pointer list-none text-sm text-muted"
+                        aria-label="Informacion de formatos y tamano"
+                      >
+                        ⓘ
+                      </summary>
+                      <div className="absolute left-0 z-30 mt-2 w-64 rounded-xl border border-black/10 bg-white p-3 text-xs text-ink shadow-lg">
+                        <p>Formatos admitidos: PDF (.pdf / application/pdf).</p>
+                        <p className="mt-1">Tamaño maximo: 20 MB.</p>
+                      </div>
+                    </details>
+                  </div>
                   <div className="mt-2 flex flex-col gap-2">
                     <input
                       id="upload-document-input"
                       ref={fileInputRef}
                       type="file"
+                      aria-label="Archivo PDF"
                       accept=".pdf,application/pdf"
                       className="w-full rounded-2xl border border-black/10 bg-white/80 px-3 py-2 text-sm text-ink outline-none focus:border-accent"
                       onChange={(event) => {
-                        setSelectedFile(event.target.files?.[0] ?? null);
+                        const file = event.target.files?.[0] ?? null;
+                        if (file && file.size > MAX_UPLOAD_SIZE_BYTES) {
+                          setSelectedFile(null);
+                          event.currentTarget.value = "";
+                          setUploadFeedback({
+                            kind: "error",
+                            message: "El archivo supera el tamaño máximo (20 MB).",
+                          });
+                          return;
+                        }
+                        setSelectedFile(file);
                         setUploadFeedback(null);
                       }}
                     />
@@ -922,9 +948,6 @@ export function App() {
                 {viewerTabButton("document", "Documento")}
                 {viewerTabButton("raw_text", "Texto extraido")}
                 {viewerTabButton("technical", "Detalles tecnicos")}
-                <Button variant="ghost" type="button" onClick={() => setIsSidebarOpen(true)}>
-                  Documentos cargados
-                </Button>
               </div>
               <div className="mt-4 h-[65vh]">
                 {activeViewerTab === "document" && (
@@ -1170,9 +1193,9 @@ export function App() {
         </div>
       )}
             {uploadFeedback && (
-              <div className="fixed right-6 top-6 z-[60] max-w-sm">
+              <div className="fixed left-1/2 top-20 z-[60] w-full max-w-lg -translate-x-1/2 px-4">
                 <div
-            className={`rounded-2xl border px-4 py-3 text-sm shadow-xl ${
+            className={`rounded-2xl border px-5 py-4 text-base shadow-xl ${
               uploadFeedback.kind === "success"
                 ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                 : "border-red-200 bg-red-50 text-red-700"
