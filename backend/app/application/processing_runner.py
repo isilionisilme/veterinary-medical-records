@@ -8,12 +8,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from backend.app.domain.models import (
-    ProcessingRun,
-    ProcessingRunState,
-    StepName,
-    StepStatus,
-)
+from backend.app.domain.models import ProcessingRun, ProcessingRunState
 from backend.app.ports.document_repository import DocumentRepository
 from backend.app.ports.file_storage import FileStorage
 
@@ -104,12 +99,7 @@ async def _execute_run(
 ) -> None:
     try:
         await asyncio.wait_for(
-            _process_document(
-                run_id=run.run_id,
-                document_id=run.document_id,
-                repository=repository,
-                storage=storage,
-            ),
+            _process_document(document_id=run.document_id, repository=repository, storage=storage),
             timeout=PROCESSING_TIMEOUT_SECONDS,
         )
     except asyncio.TimeoutError:
@@ -147,124 +137,17 @@ async def _execute_run(
 
 
 async def _process_document(
-    *,
-    run_id: str,
-    document_id: str,
-    repository: DocumentRepository,
-    storage: FileStorage,
+    *, document_id: str, repository: DocumentRepository, storage: FileStorage
 ) -> None:
-    extraction_started_at = _default_now_iso()
-    _append_step_status(
-        repository=repository,
-        run_id=run_id,
-        step_name=StepName.EXTRACTION,
-        step_status=StepStatus.RUNNING,
-        attempt=1,
-        started_at=extraction_started_at,
-        ended_at=None,
-        error_code=None,
-    )
-
     document = repository.get(document_id)
     if document is None:
-        _append_step_status(
-            repository=repository,
-            run_id=run_id,
-            step_name=StepName.EXTRACTION,
-            step_status=StepStatus.FAILED,
-            attempt=1,
-            started_at=extraction_started_at,
-            ended_at=_default_now_iso(),
-            error_code="EXTRACTION_FAILED",
-        )
         raise ProcessingError("EXTRACTION_FAILED")
     if not storage.exists(storage_path=document.storage_path):
-        _append_step_status(
-            repository=repository,
-            run_id=run_id,
-            step_name=StepName.EXTRACTION,
-            step_status=StepStatus.FAILED,
-            attempt=1,
-            started_at=extraction_started_at,
-            ended_at=_default_now_iso(),
-            error_code="EXTRACTION_FAILED",
-        )
         raise ProcessingError("EXTRACTION_FAILED")
 
     file_path = storage.resolve(storage_path=document.storage_path)
     file_size = await asyncio.to_thread(lambda: file_path.stat().st_size)
     if file_size == 0:
-        _append_step_status(
-            repository=repository,
-            run_id=run_id,
-            step_name=StepName.EXTRACTION,
-            step_status=StepStatus.FAILED,
-            attempt=1,
-            started_at=extraction_started_at,
-            ended_at=_default_now_iso(),
-            error_code="EXTRACTION_FAILED",
-        )
         raise ProcessingError("EXTRACTION_FAILED")
 
-    _append_step_status(
-        repository=repository,
-        run_id=run_id,
-        step_name=StepName.EXTRACTION,
-        step_status=StepStatus.SUCCEEDED,
-        attempt=1,
-        started_at=extraction_started_at,
-        ended_at=_default_now_iso(),
-        error_code=None,
-    )
-
-    interpretation_started_at = _default_now_iso()
-    _append_step_status(
-        repository=repository,
-        run_id=run_id,
-        step_name=StepName.INTERPRETATION,
-        step_status=StepStatus.RUNNING,
-        attempt=1,
-        started_at=interpretation_started_at,
-        ended_at=None,
-        error_code=None,
-    )
     await asyncio.sleep(0.05)
-    _append_step_status(
-        repository=repository,
-        run_id=run_id,
-        step_name=StepName.INTERPRETATION,
-        step_status=StepStatus.SUCCEEDED,
-        attempt=1,
-        started_at=interpretation_started_at,
-        ended_at=_default_now_iso(),
-        error_code=None,
-    )
-
-
-def _append_step_status(
-    *,
-    repository: DocumentRepository,
-    run_id: str,
-    step_name: StepName,
-    step_status: StepStatus,
-    attempt: int,
-    started_at: str | None,
-    ended_at: str | None,
-    error_code: str | None,
-) -> None:
-    """Persist an append-only STEP_STATUS artifact for a run."""
-
-    repository.append_artifact(
-        run_id=run_id,
-        artifact_type="STEP_STATUS",
-        payload={
-            "step_name": step_name.value,
-            "step_status": step_status.value,
-            "attempt": attempt,
-            "started_at": started_at,
-            "ended_at": ended_at,
-            "error_code": error_code,
-            "details": None,
-        },
-        created_at=_default_now_iso(),
-    )

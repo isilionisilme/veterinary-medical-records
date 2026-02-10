@@ -214,7 +214,13 @@ export function PdfViewer({ fileUrl, filename }: PdfViewerProps) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-end border-b border-black/10 pb-3">
+      <div className="flex items-center justify-between border-b border-black/10 pb-3">
+        <div>
+          <p className="font-display text-lg font-semibold">Vista previa</p>
+          <p className="text-sm text-muted">
+            {filename ? filename : "Documento original"}
+          </p>
+        </div>
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
@@ -289,7 +295,7 @@ export function PdfViewer({ fileUrl, filename }: PdfViewerProps) {
             ))}
           {!fileUrl && !loading && (
             <div className="flex h-72 items-center justify-center text-sm text-muted">
-              Selecciona un documento para iniciar la vista previa.
+              Ingresa un ID de documento para iniciar la vista previa.
             </div>
           )}
         </div>

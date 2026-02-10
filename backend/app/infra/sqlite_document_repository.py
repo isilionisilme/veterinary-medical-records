@@ -2,21 +2,16 @@
 
 from __future__ import annotations
 
-import json
 from uuid import uuid4
 
 from backend.app.domain.models import (
     Document,
     DocumentWithLatestRun,
     ProcessingRun,
-    ProcessingRunDetail,
     ProcessingRunState,
     ProcessingRunSummary,
     ProcessingStatus,
     ReviewStatus,
-    StepArtifact,
-    StepName,
-    StepStatus,
 )
 from backend.app.infra import database
 
@@ -328,92 +323,4 @@ class SqliteDocumentRepository:
         with database.get_connection() as conn:
             row = conn.execute("SELECT COUNT(*) AS total FROM documents").fetchone()
         return int(row["total"]) if row else 0
-
-    def list_processing_runs(self, *, document_id: str) -> list[ProcessingRunDetail]:
-        """Return processing runs for a document in chronological order."""
-
-        with database.get_connection() as conn:
-            rows = conn.execute(
-                """
-                SELECT
-                    run_id,
-                    state,
-                    created_at,
-                    started_at,
-                    completed_at,
-                    failure_type
-                FROM processing_runs
-                WHERE document_id = ?
-                ORDER BY created_at ASC
-                """,
-                (document_id,),
-            ).fetchall()
-
-        return [
-            ProcessingRunDetail(
-                run_id=row["run_id"],
-                state=ProcessingRunState(row["state"]),
-                created_at=row["created_at"],
-                started_at=row["started_at"],
-                completed_at=row["completed_at"],
-                failure_type=row["failure_type"],
-            )
-            for row in rows
-        ]
-
-    def list_step_artifacts(self, *, run_id: str) -> list[StepArtifact]:
-        """Return STEP_STATUS artifacts for a run in chronological order."""
-
-        with database.get_connection() as conn:
-            rows = conn.execute(
-                """
-                SELECT payload, created_at
-                FROM artifacts
-                WHERE run_id = ? AND artifact_type = ?
-                ORDER BY created_at ASC
-                """,
-                (run_id, "STEP_STATUS"),
-            ).fetchall()
-
-        artifacts: list[StepArtifact] = []
-        for row in rows:
-            payload = json.loads(row["payload"])
-            artifacts.append(
-                StepArtifact(
-                    step_name=StepName(payload["step_name"]),
-                    step_status=StepStatus(payload["step_status"]),
-                    attempt=int(payload["attempt"]),
-                    started_at=payload.get("started_at"),
-                    ended_at=payload.get("ended_at"),
-                    error_code=payload.get("error_code"),
-                    created_at=row["created_at"],
-                )
-            )
-        return artifacts
-
-    def append_artifact(
-        self,
-        *,
-        run_id: str,
-        artifact_type: str,
-        payload: dict[str, object],
-        created_at: str,
-    ) -> None:
-        """Persist a run-scoped artifact payload."""
-
-        with database.get_connection() as conn:
-            conn.execute(
-                """
-                INSERT INTO artifacts (artifact_id, run_id, artifact_type, payload, created_at)
-                VALUES (?, ?, ?, ?, ?)
-                """,
-                (
-                    str(uuid4()),
-                    run_id,
-                    artifact_type,
-                    json.dumps(payload, separators=(",", ":")),
-                    created_at,
-                ),
-            )
-            conn.commit()
 

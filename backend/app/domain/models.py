@@ -26,22 +26,6 @@ class ProcessingRunState(str, Enum):
     TIMED_OUT = "TIMED_OUT"
 
 
-class StepName(str, Enum):
-    """Processing pipeline step identifiers."""
-
-    EXTRACTION = "EXTRACTION"
-    INTERPRETATION = "INTERPRETATION"
-
-
-class StepStatus(str, Enum):
-    """Per-step lifecycle state stored in STEP_STATUS artifacts."""
-
-    NOT_STARTED = "NOT_STARTED"
-    RUNNING = "RUNNING"
-    SUCCEEDED = "SUCCEEDED"
-    FAILED = "FAILED"
-
-
 class ReviewStatus(str, Enum):
     """Human review status for a document."""
 
@@ -79,31 +63,6 @@ class ProcessingRun:
     run_id: str
     document_id: str
     state: ProcessingRunState
-    created_at: str
-
-
-@dataclass(frozen=True, slots=True)
-class ProcessingRunDetail:
-    """Detailed processing run data for processing history views."""
-
-    run_id: str
-    state: ProcessingRunState
-    created_at: str
-    started_at: str | None
-    completed_at: str | None
-    failure_type: str | None
-
-
-@dataclass(frozen=True, slots=True)
-class StepArtifact:
-    """Persisted run-scoped STEP_STATUS artifact payload."""
-
-    step_name: StepName
-    step_status: StepStatus
-    attempt: int
-    started_at: str | None
-    ended_at: str | None
-    error_code: str | None
     created_at: str
 
 

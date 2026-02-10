@@ -11,11 +11,9 @@ from uuid import uuid4
 from backend.app.domain.models import (
     Document,
     DocumentWithLatestRun,
-    ProcessingRunDetail,
     ProcessingRunSummary,
     ProcessingStatus,
     ReviewStatus,
-    StepArtifact,
 )
 from backend.app.domain.status import DocumentStatusView, derive_document_status, map_status_label
 from backend.app.ports.document_repository import DocumentRepository
@@ -167,87 +165,6 @@ def get_document_original_location(
         file_path=storage.resolve(storage_path=document.storage_path),
         exists=storage.exists(storage_path=document.storage_path),
     )
-
-
-@dataclass(frozen=True, slots=True)
-class ProcessingStepHistory:
-    """Single step row for document processing history."""
-
-    step_name: str
-    step_status: str
-    attempt: int
-    started_at: str | None
-    ended_at: str | None
-    error_code: str | None
-
-
-@dataclass(frozen=True, slots=True)
-class ProcessingRunHistory:
-    """Run row for document processing history."""
-
-    run_id: str
-    state: str
-    failure_type: str | None
-    started_at: str | None
-    completed_at: str | None
-    steps: list[ProcessingStepHistory]
-
-
-@dataclass(frozen=True, slots=True)
-class ProcessingHistory:
-    """Document processing history response model for API adapters."""
-
-    document_id: str
-    runs: list[ProcessingRunHistory]
-
-
-def get_processing_history(
-    *, document_id: str, repository: DocumentRepository
-) -> ProcessingHistory | None:
-    """Return chronological processing history for a document.
-
-    Args:
-        document_id: Unique identifier for the document.
-        repository: Persistence port used to fetch runs and artifacts.
-
-    Returns:
-        Processing history when the document exists; otherwise None.
-    """
-
-    if repository.get(document_id) is None:
-        return None
-
-    run_rows = repository.list_processing_runs(document_id=document_id)
-    runs = [_to_processing_run_history(run, repository) for run in run_rows]
-    return ProcessingHistory(document_id=document_id, runs=runs)
-
-
-def _to_processing_run_history(
-    run: ProcessingRunDetail, repository: DocumentRepository
-) -> ProcessingRunHistory:
-    return ProcessingRunHistory(
-        run_id=run.run_id,
-        state=run.state.value,
-        failure_type=run.failure_type,
-        started_at=run.started_at,
-        completed_at=run.completed_at,
-        steps=[
-            _to_processing_step_history(step)
-            for step in repository.list_step_artifacts(run_id=run.run_id)
-        ],
-    )
-
-
-def _to_processing_step_history(step: StepArtifact) -> ProcessingStepHistory:
-    return ProcessingStepHistory(
-        step_name=step.step_name.value,
-        step_status=step.step_status.value,
-        attempt=step.attempt,
-        started_at=step.started_at,
-        ended_at=step.ended_at,
-        error_code=step.error_code,
-    )
-
 
 @dataclass(frozen=True, slots=True)
 class DocumentListItem:

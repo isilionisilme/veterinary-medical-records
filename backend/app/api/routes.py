@@ -17,16 +17,12 @@ from backend.app.api.schemas import (
     DocumentResponse,
     DocumentUploadResponse,
     LatestRunResponse,
-    ProcessingHistoryResponse,
-    ProcessingHistoryRunResponse,
     ProcessingRunResponse,
-    ProcessingStepResponse,
 )
 from backend.app.application.document_service import (
     get_document,
     get_document_original_location,
     get_document_status_details,
-    get_processing_history,
     list_documents,
     register_document_upload,
 )
@@ -187,58 +183,6 @@ def get_document_status(request: Request, document_id: str) -> DocumentResponse 
         status_message=details.status_view.status_message,
         failure_type=details.status_view.failure_type,
         latest_run=latest_run,
-    )
-
-
-@router.get(
-    "/documents/{document_id}/processing-history",
-    response_model=ProcessingHistoryResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Get processing history for a document",
-    description="Return chronological processing runs with step status artifacts.",
-    responses={404: {"description": "Document not found (NOT_FOUND)."}},
-)
-def get_document_processing_history(
-    request: Request, document_id: str
-) -> ProcessingHistoryResponse | JSONResponse:
-    """Return read-only processing history for a document."""
-
-    repository = cast(DocumentRepository, request.app.state.document_repository)
-    result = get_processing_history(document_id=document_id, repository=repository)
-    if result is None:
-        return _error_response(
-            status_code=status.HTTP_404_NOT_FOUND,
-            error_code="NOT_FOUND",
-            message="Document not found.",
-        )
-
-    _log_event(
-        event_type="DOCUMENT_PROCESSING_HISTORY_VIEWED",
-        document_id=document_id,
-    )
-    return ProcessingHistoryResponse(
-        document_id=result.document_id,
-        runs=[
-            ProcessingHistoryRunResponse(
-                run_id=run.run_id,
-                state=run.state,
-                failure_type=run.failure_type,
-                started_at=run.started_at,
-                completed_at=run.completed_at,
-                steps=[
-                    ProcessingStepResponse(
-                        step_name=step.step_name,
-                        step_status=step.step_status,
-                        attempt=step.attempt,
-                        started_at=step.started_at,
-                        ended_at=step.ended_at,
-                        error_code=step.error_code,
-                    )
-                    for step in run.steps
-                ],
-            )
-            for run in result.runs
-        ],
     )
 
 

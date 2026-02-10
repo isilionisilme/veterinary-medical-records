@@ -66,7 +66,6 @@ def ensure_schema() -> None:
         _ensure_documents_schema(conn)
         _ensure_status_history_schema(conn)
         _ensure_processing_runs_schema(conn)
-        _ensure_artifacts_schema(conn)
         conn.commit()
 
 
@@ -258,47 +257,3 @@ def _ensure_processing_runs_schema(conn: sqlite3.Connection) -> None:
     )
     conn.execute("DROP TABLE processing_runs;")
     conn.execute("ALTER TABLE processing_runs_new RENAME TO processing_runs;")
-
-
-def _ensure_artifacts_schema(conn: sqlite3.Connection) -> None:
-    columns = _table_columns(conn, "artifacts")
-    if not columns:
-        conn.execute(
-            """
-            CREATE TABLE artifacts (
-                artifact_id TEXT PRIMARY KEY,
-                run_id TEXT NOT NULL,
-                artifact_type TEXT NOT NULL,
-                payload TEXT NOT NULL,
-                created_at TEXT NOT NULL,
-                FOREIGN KEY(run_id) REFERENCES processing_runs(run_id)
-            );
-            """
-        )
-        return
-
-    required_columns = {"artifact_id", "run_id", "artifact_type", "payload", "created_at"}
-    if required_columns.issubset(columns):
-        return
-
-    conn.executescript(
-        """
-        CREATE TABLE artifacts_new (
-            artifact_id TEXT PRIMARY KEY,
-            run_id TEXT NOT NULL,
-            artifact_type TEXT NOT NULL,
-            payload TEXT NOT NULL,
-            created_at TEXT NOT NULL,
-            FOREIGN KEY(run_id) REFERENCES processing_runs(run_id)
-        );
-        """
-    )
-    conn.execute(
-        """
-        INSERT INTO artifacts_new (artifact_id, run_id, artifact_type, payload, created_at)
-        SELECT artifact_id, run_id, artifact_type, payload, created_at
-        FROM artifacts;
-        """
-    )
-    conn.execute("DROP TABLE artifacts;")
-    conn.execute("ALTER TABLE artifacts_new RENAME TO artifacts;")

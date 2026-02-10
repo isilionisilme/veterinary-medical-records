@@ -1,17 +1,9 @@
 ﻿import { useEffect, useMemo, useState } from "react";
-import { Download } from "lucide-react";
+import { Download, FileSearch } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { PdfViewer } from "./components/PdfViewer";
 import { Button } from "./components/ui/button";
-import { groupProcessingSteps } from "./lib/processingHistory";
-import {
-  formatDuration,
-  formatShortDate,
-  formatTime,
-  shouldShowDetails,
-  statusIcon,
-} from "./lib/processingHistoryView";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
@@ -53,29 +45,6 @@ type DocumentDetailResponse = {
   status_message: string;
   failure_type: string | null;
   latest_run: LatestRun | null;
-};
-
-type ProcessingStep = {
-  step_name: string;
-  step_status: string;
-  attempt: number;
-  started_at: string | null;
-  ended_at: string | null;
-  error_code: string | null;
-};
-
-type ProcessingHistoryRun = {
-  run_id: string;
-  state: string;
-  failure_type: string | null;
-  started_at: string | null;
-  completed_at: string | null;
-  steps: ProcessingStep[];
-};
-
-type ProcessingHistoryResponse = {
-  document_id: string;
-  runs: ProcessingHistoryRun[];
 };
 
 function parseFilename(contentDisposition: string | null): string | null {
@@ -133,21 +102,6 @@ async function fetchDocumentDetails(documentId: string): Promise<DocumentDetailR
   return response.json();
 }
 
-async function fetchProcessingHistory(documentId: string): Promise<ProcessingHistoryResponse> {
-  const response = await fetch(`${API_BASE_URL}/documents/${documentId}/processing-history`);
-  if (!response.ok) {
-    let errorMessage = "No pudimos cargar el historial de procesamiento.";
-    try {
-      const payload = await response.json();
-      errorMessage = payload.message ?? errorMessage;
-    } catch {
-      // Ignore JSON parse errors for non-JSON responses.
-    }
-    throw new Error(errorMessage);
-  }
-  return response.json();
-}
-
 async function triggerReprocess(documentId: string): Promise<LatestRun> {
   const response = await fetch(`${API_BASE_URL}/documents/${documentId}/reprocess`, {
     method: "POST",
@@ -176,60 +130,12 @@ function formatTimestamp(value: string): string {
   });
 }
 
-const RUN_STATE_LABELS: Record<string, string> = {
-  QUEUED: "En cola",
-  RUNNING: "En curso",
-  COMPLETED: "Completado",
-  FAILED: "Fallido",
-  TIMED_OUT: "Tiempo agotado",
-};
-
-const NON_TECHNICAL_FAILURE: Record<string, string> = {
-  EXTRACTION_FAILED: "No se pudo leer el contenido del documento.",
-  INTERPRETATION_FAILED: "No se pudo interpretar la informacion del documento.",
-  PROCESS_TERMINATED: "El procesamiento se interrumpio antes de terminar.",
-  UNKNOWN_ERROR: "Ocurrio un problema durante el procesamiento.",
-};
-
-function explainFailure(failureCode: string | null | undefined): string | null {
-  if (!failureCode) {
-    return null;
-  }
-  return (
-    NON_TECHNICAL_FAILURE[failureCode] ??
-    "Ocurrio un problema durante el procesamiento."
-  );
-}
-
-function formatRunHeader(run: ProcessingHistoryRun): string {
-  const runId = run.run_id;
-  const dateSource = run.started_at ?? run.completed_at;
-  const shortDate = formatShortDate(dateSource);
-  const startTime = formatTime(run.started_at);
-  const endTime = formatTime(run.completed_at);
-  const duration = formatDuration(run.started_at, run.completed_at);
-  const timeRange =
-    startTime && endTime ? `${startTime} \u2192 ${endTime}` : startTime ?? "--:--";
-  const datePrefix = shortDate ? `${shortDate} ` : "";
-  const durationPart = duration ? ` \u00b7 ${duration}` : "";
-  return `Run ${runId} \u00b7 ${datePrefix}${timeRange}${durationPart} \u00b7 ${
-    RUN_STATE_LABELS[run.state] ?? run.state
-  }`;
-}
-
 export function App() {
+  const [documentId, setDocumentId] = useState("");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [filename, setFilename] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [activeViewerTab, setActiveViewerTab] = useState<
-    "document" | "raw_text" | "technical"
-  >("document");
-  const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>({});
-  const [showRetryModal, setShowRetryModal] = useState(false);
-  const [retryNotice, setRetryNotice] = useState<string | null>(null);
-  const [rawSearch, setRawSearch] = useState("");
-  const [rawSearchNotice, setRawSearchNotice] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const downloadUrl = useMemo(() => {
@@ -267,7 +173,16 @@ export function App() {
     },
   });
 
+  const handleSubmit = () => {
+    const trimmed = documentId.trim();
+    if (!trimmed) {
+      return;
+    }
+    loadPdf.mutate(trimmed);
+  };
+
   const handleSelectDocument = (docId: string) => {
+    setDocumentId(docId);
     loadPdf.mutate(docId);
     setIsSidebarOpen(false);
   };
@@ -280,12 +195,6 @@ export function App() {
   const documentDetails = useQuery({
     queryKey: ["documents", "detail", activeId],
     queryFn: () => fetchDocumentDetails(activeId ?? ""),
-    enabled: Boolean(activeId),
-  });
-
-  const processingHistory = useQuery({
-    queryKey: ["documents", "history", activeId],
-    queryFn: () => fetchProcessingHistory(activeId ?? ""),
     enabled: Boolean(activeId),
   });
 
@@ -303,7 +212,6 @@ export function App() {
     }
     const intervalId = window.setInterval(() => {
       documentDetails.refetch();
-      processingHistory.refetch();
     }, 1500);
     return () => window.clearInterval(intervalId);
   }, [
@@ -311,7 +219,6 @@ export function App() {
     documentDetails,
     documentDetails.data?.status,
     documentDetails.data?.latest_run?.state,
-    processingHistory,
   ]);
 
   const reprocessMutation = useMutation({
@@ -319,11 +226,6 @@ export function App() {
     onSuccess: (_, docId) => {
       queryClient.invalidateQueries({ queryKey: ["documents", "list"] });
       queryClient.invalidateQueries({ queryKey: ["documents", "detail", docId] });
-      queryClient.invalidateQueries({ queryKey: ["documents", "history", docId] });
-      setRetryNotice("Procesamiento reiniciado");
-    },
-    onError: () => {
-      setRetryNotice("No pudimos reiniciar el procesamiento.");
     },
   });
 
@@ -331,76 +233,8 @@ export function App() {
     queryClient.invalidateQueries({ queryKey: ["documents", "list"] });
     if (activeId) {
       queryClient.invalidateQueries({ queryKey: ["documents", "detail", activeId] });
-      queryClient.invalidateQueries({ queryKey: ["documents", "history", activeId] });
     }
   };
-
-  const toggleStepDetails = (key: string) => {
-    setExpandedSteps((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  const latestState = documentDetails.data?.latest_run?.state;
-  const isProcessing =
-    documentDetails.data?.status === "PROCESSING" ||
-    latestState === "QUEUED" ||
-    latestState === "RUNNING";
-
-  useEffect(() => {
-    if (!retryNotice) {
-      return;
-    }
-    const timer = window.setTimeout(() => setRetryNotice(null), 3000);
-    return () => window.clearTimeout(timer);
-  }, [retryNotice]);
-
-  const handleConfirmRetry = () => {
-    if (!activeId) {
-      setShowRetryModal(false);
-      return;
-    }
-    setShowRetryModal(false);
-    reprocessMutation.mutate(activeId);
-  };
-
-  const rawTextContent: string | null = null;
-
-  const handleRawSearch = () => {
-    if (!rawTextContent || !rawSearch.trim()) {
-      setRawSearchNotice("No hay texto disponible para buscar.");
-      return;
-    }
-    const match = rawTextContent.toLowerCase().includes(rawSearch.trim().toLowerCase());
-    setRawSearchNotice(match ? "Coincidencia encontrada." : "No se encontraron coincidencias.");
-  };
-
-  const handleDownloadRawText = () => {
-    if (!rawTextContent) {
-      return;
-    }
-    const blob = new Blob([rawTextContent], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "texto-extraido.txt";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-  const viewerTabButton = (key: "document" | "raw_text" | "technical", label: string) => (
-    <button
-      type="button"
-      onClick={() => setActiveViewerTab(key)}
-      className={`rounded-full px-4 py-1 text-xs font-semibold transition ${
-        activeViewerTab === key
-          ? "bg-ink text-white"
-          : "border border-black/10 bg-white text-muted hover:text-ink"
-      }`}
-    >
-      {label}
-    </button>
-  );
 
   return (
     <div className="min-h-screen px-6 py-10">
@@ -468,7 +302,7 @@ export function App() {
                   <div>
                     <h2 className="font-display text-xl font-semibold">Documentos cargados</h2>
                     <p className="mt-2 text-xs text-muted">
-                      Lista informativa con el progreso de procesamiento.
+                      Lista informativa con el estado actual de procesamiento.
                     </p>
                   </div>
                   <Button variant="ghost" onClick={handleRefresh} type="button">
@@ -535,26 +369,32 @@ export function App() {
           </aside>
 
           <section className="flex-1 rounded-3xl border border-black/10 bg-white/70 p-6 shadow-xl">
-            {!activeId && (
-              <div className="rounded-2xl border border-black/10 bg-white/80 px-4 py-4 text-sm text-ink">
-                <p className="text-sm font-semibold">Documento no encontrado o falta ID.</p>
-                <p className="mt-2 text-xs text-muted">
-                  Selecciona un documento desde la lista para continuar.
-                </p>
-                <div className="mt-3">
-                  <Button type="button" onClick={() => setIsSidebarOpen(true)}>
-                    Volver a la lista
-                  </Button>
-                </div>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+              <div className="flex-1">
+                <label className="text-sm font-semibold text-ink">ID del documento</label>
+                <input
+                  className="mt-2 w-full rounded-2xl border border-black/10 bg-white/80 px-4 py-3 text-sm outline-none focus:border-accent"
+                  placeholder="Ejemplo: 9efc8f7b-0a1f-4c6b-8e9b-1f1a3a"
+                  value={documentId}
+                  onChange={(event) => setDocumentId(event.target.value)}
+                />
               </div>
-            )}
+              <Button
+                onClick={handleSubmit}
+                disabled={loadPdf.isPending || !documentId.trim()}
+                type="button"
+              >
+                <FileSearch size={16} />
+                {loadPdf.isPending ? "Cargando" : "Abrir"}
+              </Button>
+            </div>
             {loadPdf.isError && (
               <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 {(loadPdf.error as Error).message}
               </div>
             )}
             {activeId && (
-              <div className="mt-4">
+              <div className="mt-4 rounded-2xl border border-black/10 bg-white/80 px-4 py-3 text-sm text-ink">
                 {documentDetails.isLoading && (
                   <p className="text-xs text-muted">Cargando estado del documento...</p>
                 )}
@@ -563,257 +403,70 @@ export function App() {
                     {(documentDetails.error as Error).message}
                   </p>
                 )}
-              </div>
-            )}
-            <div className="mt-6">
-              <div className="flex flex-wrap gap-2">
-                {viewerTabButton("document", "Documento")}
-                {viewerTabButton("raw_text", "Texto extraido")}
-                {viewerTabButton("technical", "Detalles tecnicos")}
-              </div>
-              <div className="mt-4 h-[65vh]">
-                {activeViewerTab === "document" && (
-                  <PdfViewer fileUrl={fileUrl} filename={filename} />
-                )}
-                {activeViewerTab === "raw_text" && (
-                  <div className="flex h-full flex-col rounded-2xl border border-black/10 bg-white/80 p-4">
-                    <div className="rounded-2xl border border-black/10 bg-white/90 p-3">
-                      <div className="flex flex-col gap-2 text-xs text-ink">
-                        <span className="font-semibold">¿El texto parece incorrecto?</span>
-                        <span className="text-muted">
-                          Puedes reintentar el procesamiento para regenerar la extraccion.
+                {documentDetails.data && (
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
+                          Estado actual
                         </span>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Button
-                            type="button"
-                            disabled={!activeId || isProcessing || reprocessMutation.isPending}
-                            onClick={() => setShowRetryModal(true)}
-                          >
-                            {isProcessing
-                              ? "Procesando..."
-                              : reprocessMutation.isPending
-                              ? "Reprocesando..."
-                              : "Reintentar procesamiento"}
-                          </Button>
-                          {retryNotice && (
-                            <span className="text-xs text-muted">{retryNotice}</span>
-                          )}
-                        </div>
+                        <span className="rounded-full bg-black/5 px-3 py-1 text-xs font-semibold text-ink">
+                          {documentDetails.data.status}
+                        </span>
                       </div>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <input
-                        className="w-full rounded-full border border-black/10 bg-white px-3 py-2 text-xs text-muted outline-none sm:w-64"
-                        placeholder="Buscar en el texto"
-                        value={rawSearch}
-                        onChange={(event) => setRawSearch(event.target.value)}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") {
-                            handleRawSearch();
-                          }
-                        }}
-                      />
-                      <Button type="button" onClick={handleRawSearch}>
-                        Buscar
-                      </Button>
-                      <Button type="button" disabled={!rawTextContent}>
-                        Copiar todo
-                      </Button>
-                      <Button type="button" disabled={!rawTextContent} onClick={handleDownloadRawText}>
-                        Descargar texto (.txt)
-                      </Button>
-                    </div>
-                    {rawSearchNotice && (
-                      <p className="mt-2 text-xs text-muted">{rawSearchNotice}</p>
-                    )}
-                    <div className="mt-3 flex-1 overflow-y-auto rounded-xl border border-dashed border-black/10 bg-white/70 p-3 font-mono text-xs text-muted">
-                      {rawTextContent ? (
-                        <pre>{rawTextContent}</pre>
-                      ) : (
-                        "Texto extraido no disponible en esta version."
-                      )}
-                    </div>
-                  </div>
-                )}
-                {activeViewerTab === "technical" && (
-                  <div className="h-full overflow-y-auto rounded-2xl border border-black/10 bg-white/70 p-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
-                        Historial de procesamiento
-                      </p>
                       <Button
                         type="button"
-                        disabled={!activeId || isProcessing || reprocessMutation.isPending}
-                        onClick={() => setShowRetryModal(true)}
+                        className="shrink-0"
+                        disabled={reprocessMutation.isPending}
+                        onClick={() => {
+                          if (activeId) {
+                            reprocessMutation.mutate(activeId);
+                          }
+                        }}
                       >
-                        {isProcessing
-                          ? "Procesando..."
-                          : reprocessMutation.isPending
-                          ? "Reprocesando..."
-                          : "Reprocesar"}
+                        {reprocessMutation.isPending ? "Reprocesando..." : "Reprocesar"}
                       </Button>
                     </div>
-                    {!activeId && (
-                      <p className="mt-2 text-xs text-muted">
-                        Selecciona un documento para ver los detalles tecnicos.
-                      </p>
+                    <p className="text-xs text-muted">{documentDetails.data.status_message}</p>
+                    <div className="text-xs text-muted">
+                      <span className="font-semibold text-ink">Run</span>:{" "}
+                      {documentDetails.data.latest_run?.run_id ?? "Sin ejecuciones"}
+                    </div>
+                    {documentDetails.data.latest_run && (
+                      <div className="flex flex-wrap gap-3 text-xs text-muted">
+                        <span>
+                          Estado run:{" "}
+                          <span className="font-semibold text-ink">
+                            {documentDetails.data.latest_run.state}
+                          </span>
+                        </span>
+                        {documentDetails.data.latest_run.failure_type && (
+                          <span className="text-red-600">
+                            Falla: {documentDetails.data.latest_run.failure_type}
+                          </span>
+                        )}
+                      </div>
                     )}
-                    {activeId && processingHistory.isLoading && (
-                      <p className="mt-2 text-xs text-muted">Cargando historial...</p>
+                    {documentDetails.data.failure_type && (
+                      <div className="text-xs text-red-600">
+                        Falla actual: {documentDetails.data.failure_type}
+                      </div>
                     )}
-                    {activeId && processingHistory.isError && (
-                      <p className="mt-2 text-xs text-red-600">
-                        {(processingHistory.error as Error).message}
-                      </p>
+                    {reprocessMutation.isError && (
+                      <div className="text-xs text-red-600">
+                        {(reprocessMutation.error as Error).message}
+                      </div>
                     )}
-                    {activeId &&
-                      processingHistory.data &&
-                      processingHistory.data.runs.length === 0 && (
-                        <p className="mt-2 text-xs text-muted">
-                          No hay ejecuciones registradas para este documento.
-                        </p>
-                      )}
-                    {activeId &&
-                      processingHistory.data &&
-                      processingHistory.data.runs.length > 0 && (
-                        <div className="mt-2 space-y-2">
-                          {processingHistory.data.runs.map((run) => (
-                            <div
-                              key={run.run_id}
-                              className="rounded-xl border border-black/10 bg-white/90 p-2"
-                            >
-                              <div className="text-xs font-semibold text-ink">
-                                {formatRunHeader(run)}
-                              </div>
-                              {run.failure_type && (
-                                <p className="mt-1 text-xs text-red-600">
-                                  {explainFailure(run.failure_type)}
-                                </p>
-                              )}
-                              <div className="mt-2 space-y-1">
-                                {run.steps.length === 0 && (
-                                  <p className="text-xs text-muted">
-                                    Sin pasos registrados.
-                                  </p>
-                                )}
-                                {run.steps.length > 0 &&
-                                  groupProcessingSteps(run.steps).map((step, index) => {
-                                    const stepKey = `${run.run_id}-${step.step_name}-${step.attempt}-${index}`;
-                                    const duration = formatDuration(step.start_time, step.end_time);
-                                    const startTime = formatTime(step.start_time);
-                                    const endTime = formatTime(step.end_time);
-                                    const timeRange =
-                                      startTime && endTime
-                                        ? `${startTime} \u2192 ${endTime}`
-                                        : startTime ?? "--:--";
-                                    return (
-                                      <div
-                                        key={stepKey}
-                                        className="rounded-lg border border-black/5 bg-white p-2"
-                                      >
-                                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
-                                          <span
-                                            className={
-                                              step.status === "FAILED"
-                                                ? "text-red-600"
-                                                : step.status === "COMPLETED"
-                                                ? "text-green-600"
-                                                : "text-amber-600"
-                                            }
-                                          >
-                                            {statusIcon(step.status)}
-                                          </span>
-                                          <span className="font-semibold text-ink">
-                                            {step.step_name}
-                                          </span>
-                                          <span>intento {step.attempt}</span>
-                                          <span>{timeRange}</span>
-                                          {duration && <span>{duration}</span>}
-                                        </div>
-                                        {step.status === "FAILED" && (
-                                          <p className="mt-1 text-xs text-red-600">
-                                            {explainFailure(
-                                              step.raw_events.find(
-                                                (event) => event.step_status === "FAILED"
-                                              )?.error_code
-                                            )}
-                                          </p>
-                                        )}
-                                        {shouldShowDetails(step) && (
-                                          <div className="mt-1">
-                                            <button
-                                              type="button"
-                                              className="text-xs font-semibold text-muted"
-                                              onClick={() => toggleStepDetails(stepKey)}
-                                            >
-                                              {expandedSteps[stepKey]
-                                                ? "Ocultar detalles"
-                                                : "Ver detalles"}
-                                            </button>
-                                          </div>
-                                        )}
-                                        {shouldShowDetails(step) && expandedSteps[stepKey] && (
-                                          <div className="mt-2 space-y-1 rounded-lg border border-black/5 bg-white/80 p-2">
-                                            {step.raw_events.map((event, eventIndex) => (
-                                              <div
-                                                key={`${stepKey}-event-${eventIndex}`}
-                                                className="text-xs text-muted"
-                                              >
-                                                <span className="font-semibold text-ink">
-                                                  {event.step_status}
-                                                </span>
-                                                <span>
-                                                  {event.started_at
-                                                    ? ` · Inicio: ${formatTime(event.started_at) ?? "--:--"}`
-                                                    : ""}
-                                                </span>
-                                                <span>
-                                                  {event.ended_at
-                                                    ? ` · Fin: ${formatTime(event.ended_at) ?? "--:--"}`
-                                                    : ""}
-                                                </span>
-                                                {event.error_code && (
-                                                  <span className="text-red-600">
-                                                    {` · ${explainFailure(event.error_code)}`}
-                                                  </span>
-                                                )}
-                                              </div>
-                                            ))}
-                                          </div>
-                                        )}
-                                      </div>
-                                    );
-                                  })}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
                   </div>
                 )}
               </div>
+            )}
+            <div className="mt-6 h-[65vh]">
+              <PdfViewer fileUrl={fileUrl} filename={filename} />
             </div>
           </section>
         </div>
       </main>
-      {showRetryModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-6">
-          <div className="w-full max-w-sm rounded-2xl border border-black/10 bg-white p-4 shadow-xl">
-            <p className="text-sm font-semibold text-ink">Reintentar procesamiento</p>
-            <p className="mt-2 text-xs text-muted">
-              Esto volvera a ejecutar extraccion e interpretacion y puede cambiar los resultados.
-            </p>
-            <div className="mt-4 flex items-center justify-end gap-2">
-              <Button type="button" variant="ghost" onClick={() => setShowRetryModal(false)}>
-                Cancelar
-              </Button>
-              <Button type="button" onClick={handleConfirmRetry}>
-                Reintentar
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
