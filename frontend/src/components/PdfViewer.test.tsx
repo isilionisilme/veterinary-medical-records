@@ -142,7 +142,7 @@ describe("PdfViewer", () => {
           target: pages[2],
           intersectionRatio: 0.8,
           isIntersecting: true,
-        } as IntersectionObserverEntry,
+        } as unknown as IntersectionObserverEntry,
       ]);
     });
 
@@ -161,7 +161,7 @@ describe("PdfViewer", () => {
           target: pages[2],
           intersectionRatio: 0.9,
           isIntersecting: true,
-        } as IntersectionObserverEntry,
+        } as unknown as IntersectionObserverEntry,
       ]);
     });
 
@@ -171,5 +171,15 @@ describe("PdfViewer", () => {
 
     const [nextButton] = screen.getAllByRole("button", { name: /Siguiente/i });
     expect(nextButton).toBeDisabled();
+  });
+
+  it("keeps navigation disabled when no document is selected", () => {
+    render(<PdfViewer fileUrl={null} filename={null} />);
+
+    const [nextButton] = screen.getAllByRole("button", { name: /Siguiente/i });
+    const [prevButton] = screen.getAllByRole("button", { name: /Anterior/i });
+
+    expect(nextButton).toBeDisabled();
+    expect(prevButton).toBeDisabled();
   });
 });

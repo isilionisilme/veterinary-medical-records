@@ -1,5 +1,5 @@
-﻿import { useEffect, useMemo, useState } from "react";
-import { Download } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Download, Upload } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { PdfViewer } from "./components/PdfViewer";
@@ -78,6 +78,64 @@ type ProcessingHistoryResponse = {
   runs: ProcessingHistoryRun[];
 };
 
+type DocumentUploadResponse = {
+  document_id: string;
+  status: string;
+  created_at: string;
+};
+
+type UploadFeedback = {
+  kind: "success" | "error";
+  message: string;
+  documentId?: string;
+  technicalDetails?: string;
+};
+
+class UiError extends Error {
+  readonly userMessage: string;
+  readonly technicalDetails?: string;
+
+  constructor(userMessage: string, technicalDetails?: string) {
+    super(userMessage);
+    this.name = "UiError";
+    this.userMessage = userMessage;
+    this.technicalDetails = technicalDetails;
+  }
+}
+
+function isNetworkFetchError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+  const message = error.message.toLowerCase();
+  return (
+    error.name === "TypeError" &&
+    (message.includes("failed to fetch") ||
+      message.includes("networkerror") ||
+      message.includes("load failed"))
+  );
+}
+
+function getUserErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof UiError) {
+    return error.userMessage;
+  }
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return fallback;
+}
+
+function getTechnicalDetails(error: unknown): string | undefined {
+  if (error instanceof UiError) {
+    return error.technicalDetails;
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return undefined;
+}
+
 function parseFilename(contentDisposition: string | null): string | null {
   if (!contentDisposition) {
     return null;
@@ -104,16 +162,32 @@ async function fetchOriginalPdf(documentId: string): Promise<LoadResult> {
 }
 
 async function fetchDocuments(): Promise<DocumentListResponse> {
-  const response = await fetch(`${API_BASE_URL}/documents?limit=50&offset=0`);
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/documents?limit=50&offset=0`);
+  } catch (error) {
+    if (isNetworkFetchError(error)) {
+      throw new UiError(
+        "No se pudieron cargar los documentos.",
+        `Network error calling ${API_BASE_URL}/documents`
+      );
+    }
+    throw error;
+  }
   if (!response.ok) {
-    let errorMessage = "No pudimos cargar la lista de documentos.";
+    let errorMessage = "No se pudieron cargar los documentos.";
     try {
       const payload = await response.json();
-      errorMessage = payload.message ?? errorMessage;
+      if (typeof payload?.message === "string" && payload.message.trim().length > 0) {
+        errorMessage = payload.message;
+      }
     } catch {
       // Ignore JSON parse errors for non-JSON responses.
     }
-    throw new Error(errorMessage);
+    throw new UiError(
+      errorMessage,
+      `HTTP ${response.status} calling ${API_BASE_URL}/documents`
+    );
   }
   return response.json();
 }
@@ -165,6 +239,49 @@ async function triggerReprocess(documentId: string): Promise<LatestRun> {
   return response.json();
 }
 
+async function uploadDocument(file: File): Promise<DocumentUploadResponse> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/documents/upload`, {
+      method: "POST",
+      body: formData,
+    });
+  } catch (error) {
+    if (isNetworkFetchError(error)) {
+      throw new UiError(
+        "No se pudo subir el documento.",
+        `Network error calling ${API_BASE_URL}/documents/upload`
+      );
+    }
+    throw error;
+  }
+  if (!response.ok) {
+    let errorMessage = "No pudimos subir el documento.";
+    try {
+      const payload = await response.json();
+      if (payload?.error_code === "UNSUPPORTED_MEDIA_TYPE") {
+        errorMessage = "Solo se admiten archivos PDF en esta etapa.";
+      } else if (payload?.error_code === "FILE_TOO_LARGE") {
+        errorMessage = "El PDF supera el tamano maximo permitido de 20 MB.";
+      } else if (payload?.error_code === "INVALID_REQUEST") {
+        errorMessage = "El archivo no es valido. Selecciona un PDF e intentalo otra vez.";
+      } else if (payload?.message) {
+        errorMessage = payload.message as string;
+      }
+    } catch {
+      // Ignore JSON parse errors for non-JSON responses.
+    }
+    throw new UiError(
+      errorMessage,
+      `HTTP ${response.status} calling ${API_BASE_URL}/documents/upload`
+    );
+  }
+  return response.json();
+}
+
 function formatTimestamp(value: string): string {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) {
@@ -174,6 +291,32 @@ function formatTimestamp(value: string): string {
     dateStyle: "medium",
     timeStyle: "short",
   });
+}
+
+function isDocumentProcessing(status: string): boolean {
+  return status === "PROCESSING" || status === "UPLOADED";
+}
+
+function mapDocumentStatus(item: DocumentListItem): { label: string; tone: "ok" | "warn" | "error" } {
+  // Source of truth: derived processing status from GET /documents -> `item.status`.
+  if (item.status === "FAILED" || item.status === "TIMED_OUT" || item.failure_type) {
+    return { label: "Error", tone: "error" };
+  }
+  if (item.status === "COMPLETED") {
+    return { label: "Listo para revision", tone: "ok" };
+  }
+  return { label: "Procesando", tone: "warn" };
+}
+
+function isProcessingTooLong(createdAt: string, status: string): boolean {
+  if (!isDocumentProcessing(status)) {
+    return false;
+  }
+  const createdAtMs = Date.parse(createdAt);
+  if (Number.isNaN(createdAtMs)) {
+    return false;
+  }
+  return Date.now() - createdAtMs > 2 * 60 * 1000;
 }
 
 const RUN_STATE_LABELS: Record<string, string> = {
@@ -230,6 +373,9 @@ export function App() {
   const [retryNotice, setRetryNotice] = useState<string | null>(null);
   const [rawSearch, setRawSearch] = useState("");
   const [rawSearchNotice, setRawSearchNotice] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadFeedback, setUploadFeedback] = useState<UploadFeedback | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const queryClient = useQueryClient();
 
   const downloadUrl = useMemo(() => {
@@ -266,6 +412,63 @@ export function App() {
       setFilename(null);
     },
   });
+
+  const uploadMutation = useMutation({
+    mutationFn: async (file: File) => uploadDocument(file),
+    onSuccess: (result, file) => {
+      const createdAt = result.created_at || new Date().toISOString();
+      queryClient.setQueryData<DocumentListResponse | undefined>(["documents", "list"], (current) => {
+        if (!current) {
+          return current;
+        }
+        const exists = current.items.some((item) => item.document_id === result.document_id);
+        const items = exists
+          ? current.items
+          : [
+              {
+                document_id: result.document_id,
+                original_filename: file.name,
+                created_at: createdAt,
+                status: result.status,
+                status_label: result.status,
+                failure_type: null,
+              },
+              ...current.items,
+            ];
+        return { ...current, items, total: exists ? current.total : current.total + 1 };
+      });
+
+      setActiveViewerTab("document");
+      setSelectedFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      setUploadFeedback({
+        kind: "success",
+        message: "Documento subido correctamente.",
+        documentId: result.document_id,
+      });
+      loadPdf.mutate(result.document_id);
+      queryClient.invalidateQueries({ queryKey: ["documents", "list"] });
+      queryClient.refetchQueries({ queryKey: ["documents", "list"], type: "active" });
+      queryClient.invalidateQueries({ queryKey: ["documents", "detail", result.document_id] });
+      queryClient.invalidateQueries({ queryKey: ["documents", "history", result.document_id] });
+    },
+    onError: (error) => {
+      setUploadFeedback({
+        kind: "error",
+        message: getUserErrorMessage(error, "No se pudo subir el documento."),
+        technicalDetails: getTechnicalDetails(error),
+      });
+    },
+  });
+
+  const handleUpload = () => {
+    if (!selectedFile) {
+      return;
+    }
+    uploadMutation.mutate(selectedFile);
+  };
 
   const handleSelectDocument = (docId: string) => {
     loadPdf.mutate(docId);
@@ -314,6 +517,29 @@ export function App() {
     processingHistory,
   ]);
 
+  useEffect(() => {
+    const items = documentList.data?.items ?? [];
+    const processingItems = items.filter((item) => isDocumentProcessing(item.status));
+    if (processingItems.length === 0) {
+      return;
+    }
+
+    const oldestMs = processingItems
+      .map((item) => Date.parse(item.created_at))
+      .filter((value) => !Number.isNaN(value))
+      .sort((a, b) => a - b)[0];
+
+    const maxPollingWindowMs = 3 * 60 * 1000;
+    if (oldestMs && Date.now() - oldestMs > maxPollingWindowMs) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      documentList.refetch();
+    }, 3000);
+    return () => window.clearInterval(intervalId);
+  }, [documentList, documentList.data?.items]);
+
   const reprocessMutation = useMutation({
     mutationFn: async (docId: string) => triggerReprocess(docId),
     onSuccess: (_, docId) => {
@@ -328,10 +554,10 @@ export function App() {
   });
 
   const handleRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: ["documents", "list"] });
+    documentList.refetch();
     if (activeId) {
-      queryClient.invalidateQueries({ queryKey: ["documents", "detail", activeId] });
-      queryClient.invalidateQueries({ queryKey: ["documents", "history", activeId] });
+      documentDetails.refetch();
+      processingHistory.refetch();
     }
   };
 
@@ -353,6 +579,14 @@ export function App() {
     return () => window.clearTimeout(timer);
   }, [retryNotice]);
 
+  useEffect(() => {
+    if (!uploadFeedback) {
+      return;
+    }
+    const timer = window.setTimeout(() => setUploadFeedback(null), 3500);
+    return () => window.clearTimeout(timer);
+  }, [uploadFeedback]);
+
   const handleConfirmRetry = () => {
     if (!activeId) {
       setShowRetryModal(false);
@@ -362,7 +596,7 @@ export function App() {
     reprocessMutation.mutate(activeId);
   };
 
-  const rawTextContent: string | null = null;
+  const [rawTextContent] = useState<string | null>(null);
 
   const handleRawSearch = () => {
     if (!rawTextContent || !rawSearch.trim()) {
@@ -406,16 +640,15 @@ export function App() {
     <div className="min-h-screen px-6 py-10">
       <header className="mx-auto flex w-full max-w-6xl flex-col gap-3">
         <p className="text-sm uppercase tracking-[0.3em] text-muted">
-          Vista rapida de documentos
+          Carga asistiva de documentos
         </p>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="font-display text-4xl font-semibold text-ink">
-              Revision del documento original
+              Subida de documentos medicos
             </h1>
             <p className="mt-2 max-w-2xl text-sm text-muted">
-              Accede al PDF cargado sin depender del procesamiento. La vista previa
-              es inmediata y se mantiene disponible incluso si el analisis esta en curso.
+              Sube un PDF y revisa el documento en cuanto quede disponible.
             </p>
           </div>
           {downloadUrl && (
@@ -484,7 +717,18 @@ export function App() {
 
                 {documentList.isError && (
                   <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                    {(documentList.error as Error).message}
+                    <p>{getUserErrorMessage(documentList.error, "No se pudieron cargar los documentos.")}</p>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <Button variant="ghost" type="button" onClick={() => documentList.refetch()}>
+                        Reintentar
+                      </Button>
+                      {getTechnicalDetails(documentList.error) && (
+                        <details className="text-xs text-muted">
+                          <summary className="cursor-pointer">Ver detalles tecnicos</summary>
+                          <p className="mt-1">{getTechnicalDetails(documentList.error)}</p>
+                        </details>
+                      )}
+                    </div>
                   </div>
                 )}
 
@@ -492,11 +736,20 @@ export function App() {
                   <div className="mt-4 space-y-3">
                     {documentList.data.items.length === 0 ? (
                       <div className="rounded-2xl border border-dashed border-black/10 bg-white/70 p-4 text-sm text-muted">
-                        Aun no hay documentos cargados.
+                        <p>Aun no hay documentos cargados.</p>
+                        <Button
+                          variant="ghost"
+                          type="button"
+                          className="mt-3"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          Subir documento
+                        </Button>
                       </div>
                     ) : (
                       documentList.data.items.map((item) => {
                         const isActive = activeId === item.document_id;
+                        const status = mapDocumentStatus(item);
                         return (
                           <button
                             key={item.document_id}
@@ -516,9 +769,17 @@ export function App() {
                                 </p>
                               </div>
                               <span className="rounded-full bg-black/5 px-3 py-1 text-xs font-semibold text-ink">
-                                {item.status_label}
+                                {status.tone === "warn" && (
+                                  <span className="mr-1 inline-block h-2 w-2 animate-spin rounded-full border border-current border-r-transparent align-middle" />
+                                )}
+                                {status.label}
                               </span>
                             </div>
+                            {isProcessingTooLong(item.created_at, item.status) && (
+                              <p className="mt-2 text-xs text-muted">
+                                Tardando mas de lo esperado
+                              </p>
+                            )}
                             {item.failure_type && (
                               <p className="mt-2 text-xs text-red-600">
                                 Error: {item.failure_type}
@@ -535,19 +796,44 @@ export function App() {
           </aside>
 
           <section className="flex-1 rounded-3xl border border-black/10 bg-white/70 p-6 shadow-xl">
-            {!activeId && (
-              <div className="rounded-2xl border border-black/10 bg-white/80 px-4 py-4 text-sm text-ink">
-                <p className="text-sm font-semibold">Documento no encontrado o falta ID.</p>
-                <p className="mt-2 text-xs text-muted">
-                  Selecciona un documento desde la lista para continuar.
-                </p>
-                <div className="mt-3">
-                  <Button type="button" onClick={() => setIsSidebarOpen(true)}>
-                    Volver a la lista
-                  </Button>
-                </div>
+            <div className="rounded-2xl border border-black/10 bg-white/80 p-4">
+              <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">
+                Subir documento
+              </h2>
+              <p className="mt-2 text-sm text-ink">
+                Formatos admitidos: PDF (.pdf, application/pdf), hasta 20 MB.
+              </p>
+
+              <label
+                htmlFor="upload-document-input"
+                className="mt-4 block text-sm font-semibold text-ink"
+              >
+                Selecciona un PDF
+              </label>
+              <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <input
+                  id="upload-document-input"
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,application/pdf"
+                  className="w-full rounded-2xl border border-black/10 bg-white/80 px-4 py-3 text-sm text-ink outline-none focus:border-accent"
+                  onChange={(event) => {
+                    setSelectedFile(event.target.files?.[0] ?? null);
+                    setUploadFeedback(null);
+                  }}
+                />
+                <Button
+                  onClick={handleUpload}
+                  disabled={uploadMutation.isPending || !selectedFile}
+                  type="button"
+                  className="sm:shrink-0"
+                >
+                  <Upload size={16} />
+                  {uploadMutation.isPending ? "Subiendo..." : "Subir documento"}
+                </Button>
               </div>
-            )}
+
+            </div>
             {loadPdf.isError && (
               <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 {(loadPdf.error as Error).message}
@@ -566,10 +852,13 @@ export function App() {
               </div>
             )}
             <div className="mt-6">
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {viewerTabButton("document", "Documento")}
                 {viewerTabButton("raw_text", "Texto extraido")}
                 {viewerTabButton("technical", "Detalles tecnicos")}
+                <Button variant="ghost" type="button" onClick={() => setIsSidebarOpen(true)}>
+                  Documentos cargados
+                </Button>
               </div>
               <div className="mt-4 h-[65vh]">
                 {activeViewerTab === "document" && (
@@ -814,6 +1103,68 @@ export function App() {
           </div>
         </div>
       )}
+            {uploadFeedback && (
+              <div className="fixed right-6 top-6 z-[60] max-w-sm">
+                <div
+            className={`rounded-2xl border px-4 py-3 text-sm shadow-xl ${
+              uploadFeedback.kind === "success"
+                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                : "border-red-200 bg-red-50 text-red-700"
+            }`}
+            role="status"
+          >
+                  <div className="flex items-center justify-between gap-3">
+                    <span>{uploadFeedback.message}</span>
+              <button
+                type="button"
+                className="text-xs font-semibold text-ink"
+                onClick={() => setUploadFeedback(null)}
+              >
+                Cerrar
+              </button>
+            </div>
+                  {uploadFeedback.kind === "success" && uploadFeedback.documentId && (
+              <button
+                type="button"
+                className="mt-2 text-xs font-semibold text-ink underline"
+                onClick={() => {
+                  setActiveViewerTab("document");
+                  loadPdf.mutate(uploadFeedback.documentId!);
+                  setUploadFeedback(null);
+                }}
+              >
+                Ver documento
+              </button>
+                  )}
+                  {uploadFeedback.kind === "error" && (
+                    <div className="mt-2 flex items-center gap-3">
+                      <button
+                        type="button"
+                        className="text-xs font-semibold text-ink underline"
+                        onClick={() => handleUpload()}
+                        disabled={uploadMutation.isPending || !selectedFile}
+                      >
+                        Reintentar
+                      </button>
+                      {uploadFeedback.technicalDetails && (
+                        <details className="text-xs text-muted">
+                          <summary className="cursor-pointer">Ver detalles tecnicos</summary>
+                          <p className="mt-1">{uploadFeedback.technicalDetails}</p>
+                        </details>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
     </div>
   );
 }
+
+
+
+
+
+
+
+
