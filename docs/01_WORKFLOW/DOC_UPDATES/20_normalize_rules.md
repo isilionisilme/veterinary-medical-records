@@ -10,9 +10,11 @@ Apply this pass to each changed documentation file.
    - R = rule change (affects behavior or process)
    - C = clarification (no behavior change)
    - N = navigation, structure, or links
+   - Rule change / Clarification / Navigation naming remains valid in summaries.
    - Mixed classification is allowed within one file.
 3) For each R:
    - determine the single owner module (atomic module) where the rule must live,
+   - update/create owner module before summary output,
    - update or create that module (source of truth) before emitting the summary,
    - update `docs/agent_router/00_RULES_INDEX.md` only if a new rule id is introduced or the owner module changes.
 4) Update `docs/agent_router/00_AUTHORITY.md` only if routing/intent changes.
@@ -23,6 +25,7 @@ Apply this pass to each changed documentation file.
 7) Emit required summary (`00_entry.md`):
    - include docs table and propagation gaps.
    - If an R change was detected but no owner module was updated and no blocker reason exists, treat it as failure.
+   - if Rule change exists with no propagation and no blocker reason, treat as failure.
 
 ## Ambiguity handling
 - If multiple owner candidates are plausible, do not auto-pick silently.

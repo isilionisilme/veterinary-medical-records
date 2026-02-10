@@ -14,7 +14,7 @@ Treat paraphrases and other languages as the same intent.
 
 ## What to do now
 0) File discovery + diff inspection (deterministic):
-   - If user did not specify files: discover changed docs via `git status --porcelain` and/or `git diff --name-only`, list them, then process each file.
+   - If user did not specify files: discover changed docs via `git status --porcelain` and `git diff --name-status` (and/or `git diff --name-only`), list them, then process each file.
    - If user specified files: validate each path exists, then inspect `git diff -- <path>` (or a provided snippet) before classifying R/C/N.
 1) If the target is a legacy/reference doc, follow `10_reference_first.md`.
 2) Run the Normalization Pass for each changed doc: `20_normalize_rules.md`.
