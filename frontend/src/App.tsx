@@ -88,6 +88,7 @@ type UploadFeedback = {
   kind: "success" | "error";
   message: string;
   documentId?: string;
+  showOpenAction?: boolean;
   technicalDetails?: string;
 };
 
@@ -293,6 +294,27 @@ function formatTimestamp(value: string): string {
   });
 }
 
+function formatRelativeUploadAge(value: string): string | null {
+  const timestamp = Date.parse(value);
+  if (Number.isNaN(timestamp)) {
+    return null;
+  }
+  const elapsedMs = Date.now() - timestamp;
+  if (elapsedMs < 0) {
+    return null;
+  }
+  const elapsedSeconds = Math.floor(elapsedMs / 1000);
+  if (elapsedSeconds < 60) {
+    return `Subido hace ${elapsedSeconds}s`;
+  }
+  const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+  if (elapsedMinutes < 60) {
+    return `Subido hace ${elapsedMinutes} min`;
+  }
+  const elapsedHours = Math.floor(elapsedMinutes / 60);
+  return `Subido hace ${elapsedHours} h`;
+}
+
 function isDocumentProcessing(status: string): boolean {
   return status === "PROCESSING" || status === "UPLOADED";
 }
@@ -376,6 +398,9 @@ export function App() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadFeedback, setUploadFeedback] = useState<UploadFeedback | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const pendingAutoOpenDocumentIdRef = useRef<string | null>(null);
+  const autoOpenRetryCountRef = useRef<Record<string, number>>({});
+  const autoOpenRetryTimerRef = useRef<number | null>(null);
   const queryClient = useQueryClient();
 
   const downloadUrl = useMemo(() => {
@@ -387,6 +412,9 @@ export function App() {
 
   useEffect(() => {
     return () => {
+      if (autoOpenRetryTimerRef.current) {
+        window.clearTimeout(autoOpenRetryTimerRef.current);
+      }
       if (fileUrl) {
         URL.revokeObjectURL(fileUrl);
       }
@@ -396,6 +424,20 @@ export function App() {
   const loadPdf = useMutation({
     mutationFn: async (docId: string) => fetchOriginalPdf(docId),
     onSuccess: (result, docId) => {
+      if (pendingAutoOpenDocumentIdRef.current === docId) {
+        pendingAutoOpenDocumentIdRef.current = null;
+        delete autoOpenRetryCountRef.current[docId];
+        if (autoOpenRetryTimerRef.current) {
+          window.clearTimeout(autoOpenRetryTimerRef.current);
+          autoOpenRetryTimerRef.current = null;
+        }
+        setUploadFeedback((current) => {
+          if (current?.kind !== "success" || current.documentId !== docId) {
+            return current;
+          }
+          return { ...current, showOpenAction: false };
+        });
+      }
       if (fileUrl) {
         URL.revokeObjectURL(fileUrl);
       }
@@ -403,19 +445,31 @@ export function App() {
       setFileUrl(result.url);
       setFilename(result.filename);
     },
-    onError: () => {
-      if (fileUrl) {
-        URL.revokeObjectURL(fileUrl);
+    onError: (_, docId) => {
+      if (pendingAutoOpenDocumentIdRef.current === docId) {
+        const retries = autoOpenRetryCountRef.current[docId] ?? 0;
+        if (retries < 1) {
+          autoOpenRetryCountRef.current[docId] = retries + 1;
+          autoOpenRetryTimerRef.current = window.setTimeout(() => {
+            loadPdf.mutate(docId);
+          }, 1000);
+          return;
+        }
+        pendingAutoOpenDocumentIdRef.current = null;
+        delete autoOpenRetryCountRef.current[docId];
+        setUploadFeedback({
+          kind: "success",
+          message: "Documento subido correctamente.",
+          documentId: docId,
+          showOpenAction: true,
+        });
       }
-      setActiveId(null);
-      setFileUrl(null);
-      setFilename(null);
     },
   });
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => uploadDocument(file),
-    onSuccess: (result, file) => {
+    onSuccess: async (result, file) => {
       const createdAt = result.created_at || new Date().toISOString();
       queryClient.setQueryData<DocumentListResponse | undefined>(["documents", "list"], (current) => {
         if (!current) {
@@ -443,14 +497,25 @@ export function App() {
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
+      pendingAutoOpenDocumentIdRef.current = result.document_id;
+      autoOpenRetryCountRef.current[result.document_id] = 0;
+      setActiveId(result.document_id);
       setUploadFeedback({
         kind: "success",
         message: "Documento subido correctamente.",
         documentId: result.document_id,
+        showOpenAction: false,
       });
       loadPdf.mutate(result.document_id);
       queryClient.invalidateQueries({ queryKey: ["documents", "list"] });
-      queryClient.refetchQueries({ queryKey: ["documents", "list"], type: "active" });
+      try {
+        await queryClient.fetchQuery({
+          queryKey: ["documents", "list"],
+          queryFn: fetchDocuments,
+        });
+      } catch {
+        // Keep optimistic list item and fallback open action when refetch fails.
+      }
       queryClient.invalidateQueries({ queryKey: ["documents", "detail", result.document_id] });
       queryClient.invalidateQueries({ queryKey: ["documents", "history", result.document_id] });
     },
@@ -471,6 +536,7 @@ export function App() {
   };
 
   const handleSelectDocument = (docId: string) => {
+    setActiveId(docId);
     loadPdf.mutate(docId);
     setIsSidebarOpen(false);
   };
@@ -747,14 +813,16 @@ export function App() {
                         </Button>
                       </div>
                     ) : (
-                      documentList.data.items.map((item) => {
+                      documentList.data.items.map((item, index) => {
                         const isActive = activeId === item.document_id;
                         const status = mapDocumentStatus(item);
+                        const relativeUploadAge = index === 0 ? formatRelativeUploadAge(item.created_at) : null;
                         return (
                           <button
                             key={item.document_id}
                             type="button"
                             onClick={() => handleSelectDocument(item.document_id)}
+                            aria-pressed={isActive}
                             className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
                               isActive
                                 ? "border-accent bg-accentSoft font-semibold text-ink"
@@ -767,6 +835,9 @@ export function App() {
                                 <p className="mt-1 text-xs text-muted">
                                   Subido: {formatTimestamp(item.created_at)}
                                 </p>
+                                {relativeUploadAge && (
+                                  <p className="mt-1 text-xs text-muted">{relativeUploadAge}</p>
+                                )}
                               </div>
                               <span className="rounded-full bg-black/5 px-3 py-1 text-xs font-semibold text-ink">
                                 {status.tone === "warn" && (
@@ -1123,7 +1194,9 @@ export function App() {
                 Cerrar
               </button>
             </div>
-                  {uploadFeedback.kind === "success" && uploadFeedback.documentId && (
+                  {uploadFeedback.kind === "success" &&
+                    uploadFeedback.documentId &&
+                    uploadFeedback.showOpenAction && (
               <button
                 type="button"
                 className="mt-2 text-xs font-semibold text-ink underline"

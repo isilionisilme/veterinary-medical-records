@@ -220,13 +220,103 @@ describe("App upload and list flow", () => {
     fireEvent.click(screen.getByRole("button", { name: /Subir documento/i }));
 
     expect(await screen.findByText(/Documento subido correctamente/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Ver documento/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Ver documento/i })).toBeNull();
 
     await waitFor(() => {
       const calls = (globalThis.fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls;
       expect(calls.some(([url]) => String(url).includes("/documents/upload"))).toBe(true);
       expect(calls.some(([url]) => String(url).includes("/documents/doc-new/download"))).toBe(true);
     });
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /nuevo\.pdf/i })).toHaveAttribute(
+        "aria-pressed",
+        "true"
+      );
+    });
+  });
+
+  it("shows fallback open action only when auto-open fails", async () => {
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = input.toString();
+      const method = (init?.method ?? "GET").toUpperCase();
+
+      if (url.includes("/documents?") && method === "GET") {
+        return new Response(
+          JSON.stringify({
+            items: [
+              {
+                document_id: "doc-new",
+                original_filename: "nuevo.pdf",
+                created_at: "2026-02-10T10:00:00Z",
+                status: "COMPLETED",
+                status_label: "Completed",
+                failure_type: null,
+              },
+            ],
+            limit: 50,
+            offset: 0,
+            total: 1,
+          }),
+          { status: 200 }
+        );
+      }
+
+      if (url.endsWith("/documents/upload") && method === "POST") {
+        return new Response(
+          JSON.stringify({
+            document_id: "doc-new",
+            status: "COMPLETED",
+            created_at: "2026-02-10T10:00:00Z",
+          }),
+          { status: 201 }
+        );
+      }
+
+      if (url.includes("/documents/doc-new/download") && method === "GET") {
+        return new Response(JSON.stringify({ message: "Not ready" }), { status: 404 });
+      }
+
+      if (url.match(/\/documents\/[^/]+$/) && method === "GET") {
+        return new Response(
+          JSON.stringify({
+            document_id: "doc-new",
+            original_filename: "nuevo.pdf",
+            content_type: "application/pdf",
+            file_size: 10,
+            created_at: "2026-02-10T10:00:00Z",
+            updated_at: "2026-02-10T10:00:00Z",
+            status: "COMPLETED",
+            status_message: "Completed",
+            failure_type: null,
+            latest_run: { run_id: "run-doc-new", state: "COMPLETED", failure_type: null },
+          }),
+          { status: 200 }
+        );
+      }
+
+      if (url.includes("/processing-history") && method === "GET") {
+        return new Response(JSON.stringify({ document_id: "doc-new", runs: [] }), { status: 200 });
+      }
+
+      return new Response(JSON.stringify({ error_code: "NOT_FOUND" }), { status: 404 });
+    }) as typeof fetch;
+
+    renderApp();
+
+    const input = screen.getByLabelText(/Selecciona un PDF/i);
+    const file = new File(["pdf"], "nuevo.pdf", { type: "application/pdf" });
+    fireEvent.change(input, { target: { files: [file] } });
+    fireEvent.click(screen.getByRole("button", { name: /Subir documento/i }));
+
+    expect(await screen.findByText(/Documento subido correctamente/i)).toBeInTheDocument();
+
+    await waitFor(
+      () => {
+        expect(screen.getByRole("button", { name: /Ver documento/i })).toBeInTheDocument();
+      },
+      { timeout: 3000 }
+    );
   });
 
   it("auto-dismisses upload toast", async () => {
