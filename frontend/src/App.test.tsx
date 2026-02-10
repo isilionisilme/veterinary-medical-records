@@ -142,9 +142,9 @@ describe("App upload and list flow", () => {
     expect(screen.queryByRole("button", { name: /Volver a la lista/i })).toBeNull();
     expect(screen.queryByRole("button", { name: /Documentos cargados/i })).toBeNull();
     expect(
-      screen.getByText(/Selecciona un documento o carga uno para iniciar la vista previa\./i)
+      screen.getByText(/Selecciona un documento en la barra lateral o carga uno nuevo\./i)
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Cargar documento/i })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /Cargar documento/i }).length).toBeGreaterThan(0);
     expect(screen.queryByText(/Formatos permitidos: PDF\./i)).toBeNull();
     expect(screen.queryByText(/\(\.pdf \/ application\/pdf\)/i)).toBeNull();
     expect(screen.queryByText(/Tamaño maximo: 20 MB\./i)).toBeNull();
@@ -234,7 +234,6 @@ describe("App upload and list flow", () => {
     const input = screen.getByLabelText(/Archivo PDF/i);
     const file = new File(["pdf"], "nuevo.pdf", { type: "application/pdf" });
     fireEvent.change(input, { target: { files: [file] } });
-    fireEvent.click(screen.getByRole("button", { name: /Subir documento/i }));
 
     expect(await screen.findByText(/Documento subido correctamente/i)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Ver documento/i })).toBeNull();
@@ -324,7 +323,6 @@ describe("App upload and list flow", () => {
     const input = screen.getByLabelText(/Archivo PDF/i);
     const file = new File(["pdf"], "nuevo.pdf", { type: "application/pdf" });
     fireEvent.change(input, { target: { files: [file] } });
-    fireEvent.click(screen.getByRole("button", { name: /Subir documento/i }));
 
     expect(await screen.findByText(/Documento subido correctamente/i)).toBeInTheDocument();
 
@@ -342,7 +340,6 @@ describe("App upload and list flow", () => {
     const input = screen.getByLabelText(/Archivo PDF/i);
     const file = new File(["pdf"], "nuevo.pdf", { type: "application/pdf" });
     fireEvent.change(input, { target: { files: [file] } });
-    fireEvent.click(screen.getByRole("button", { name: /Subir documento/i }));
 
     expect(await screen.findByText(/Documento subido correctamente/i)).toBeInTheDocument();
 
@@ -372,7 +369,7 @@ describe("App upload and list flow", () => {
     });
   }, 12000);
 
-  it("keeps sidebar open by default when there are no documents and focuses upload on CTA", async () => {
+  it("keeps sidebar open by default when there are no documents and opens upload from CTA", async () => {
     globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = input.toString();
       const method = (init?.method ?? "GET").toUpperCase();
@@ -389,19 +386,20 @@ describe("App upload and list flow", () => {
     renderApp();
 
     expect(await screen.findByText(/Aun no hay documentos cargados\./i)).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /Subir documento/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Cargar documento/i })).toBeInTheDocument();
     expect(
-      screen.getByText(/Selecciona un documento o carga uno para iniciar la vista previa\./i)
+      screen.getByText(/Selecciona un documento en la barra lateral o carga uno nuevo\./i)
     ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /Cerrar lista de documentos/i }));
     expect(screen.getByText(/Mostrar lista/i)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: /Cargar documento/i }));
+    const emptyViewer = screen.getByTestId("viewer-empty-state");
+    const viewerCta = within(emptyViewer).getByRole("button", { name: /Cargar documento/i });
+    fireEvent.click(viewerCta);
 
     await waitFor(() => {
       expect(screen.getByText(/Ocultar lista/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/Archivo PDF/i)).toHaveFocus();
     });
   });
 
@@ -422,9 +420,22 @@ describe("App upload and list flow", () => {
     expect(await screen.findByRole("button", { name: /Reintentar/i })).toBeInTheDocument();
     expect(screen.getByText(/Revisa la lista lateral para reintentar la carga de documentos\./i)).toBeInTheDocument();
     expect(
-      screen.queryByText(/Selecciona un documento o carga uno para iniciar la vista previa\./i)
+      screen.queryByText(/Selecciona un documento en la barra lateral o carga uno nuevo\./i)
     ).toBeNull();
     expect(screen.queryByText(/Failed to fetch/i)).toBeNull();
+  });
+
+  it("keeps sidebar open after selecting a document", async () => {
+    renderApp();
+
+    await screen.findByRole("button", { name: /ready\.pdf/i });
+    expect(screen.getByText(/Ocultar lista/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /ready\.pdf/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Ocultar lista/i)).toBeInTheDocument();
+      expect(screen.getByTestId("pdf-viewer")).toBeInTheDocument();
+    });
   });
 
   it("supports drag and drop upload from the viewer empty state", async () => {
@@ -446,6 +457,17 @@ describe("App upload and list flow", () => {
       expect(calls.some(([url]) => String(url).includes("/documents/upload"))).toBe(true);
       expect(calls.some(([url]) => String(url).includes("/documents/doc-new/download"))).toBe(true);
     });
+  });
+
+  it("opens the file picker when clicking anywhere in empty viewer", async () => {
+    renderApp();
+
+    const input = screen.getByLabelText(/Archivo PDF/i) as HTMLInputElement;
+    const clickSpy = vi.spyOn(input, "click");
+
+    fireEvent.click(screen.getByTestId("viewer-empty-state"));
+
+    expect(clickSpy).toHaveBeenCalledTimes(1);
   });
 
   it("supports drag and drop upload when a document is already open", async () => {

@@ -1,6 +1,6 @@
 import { type DragEvent, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Download, Upload } from "lucide-react";
+import { Download, RefreshCw, Upload } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { PdfViewer } from "./components/PdfViewer";
@@ -418,7 +418,6 @@ export function App() {
   const [retryNotice, setRetryNotice] = useState<string | null>(null);
   const [rawSearch, setRawSearch] = useState("");
   const [rawSearchNotice, setRawSearchNotice] = useState<string | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadFeedback, setUploadFeedback] = useState<UploadFeedback | null>(null);
   const [hasShownListErrorToast, setHasShownListErrorToast] = useState(false);
   const [isDragOverViewer, setIsDragOverViewer] = useState(false);
@@ -609,7 +608,6 @@ export function App() {
       });
 
       setActiveViewerTab("document");
-      setSelectedFile(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -657,6 +655,9 @@ export function App() {
   };
 
   const queueUpload = (file: File) => {
+    if (uploadMutation.isPending) {
+      return false;
+    }
     const validationError = validateUploadFile(file);
     if (validationError) {
       setUploadFeedback({
@@ -665,25 +666,9 @@ export function App() {
       });
       return false;
     }
-    setSelectedFile(file);
     setUploadFeedback(null);
     uploadMutation.mutate(file);
     return true;
-  };
-
-  const handleUpload = () => {
-    if (!selectedFile) {
-      return;
-    }
-    const validationError = validateUploadFile(selectedFile);
-    if (validationError) {
-      setUploadFeedback({
-        kind: "error",
-        message: validationError,
-      });
-      return;
-    }
-    uploadMutation.mutate(selectedFile);
   };
 
   const handleViewerDragEnter = (event: DragEvent<HTMLDivElement>) => {
@@ -728,26 +713,25 @@ export function App() {
     queueUpload(file);
   };
 
-  const focusUploadControl = () => {
-    uploadPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    fileInputRef.current?.focus();
-  };
-
-  const handleOpenUploadArea = () => {
-    if (!isSidebarOpen) {
-      setIsSidebarOpen(true);
-      window.setTimeout(() => {
-        focusUploadControl();
-      }, 320);
+  const openUploadFilePicker = () => {
+    if (uploadMutation.isPending) {
       return;
     }
-    focusUploadControl();
+    fileInputRef.current?.click();
+  };
+
+  const handleOpenUploadArea = (event?: { preventDefault?: () => void; stopPropagation?: () => void }) => {
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+    if (!isSidebarOpen) {
+      setIsSidebarOpen(true);
+    }
+    openUploadFilePicker();
   };
 
   const handleSelectDocument = (docId: string) => {
     setActiveId(docId);
     loadPdf.mutate(docId);
-    setIsSidebarOpen(false);
   };
 
   const documentList = useQuery({
@@ -1041,15 +1025,17 @@ export function App() {
               <section className="p-6">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <h2 className="font-display text-xl font-semibold">Documentos cargados</h2>
+                    <h2 className="font-display text-xl font-semibold">Documentos</h2>
                   </div>
                   <Button
                     variant="ghost"
                     onClick={handleRefresh}
                     type="button"
-                    className="rounded-full border border-black/15 bg-white px-3 py-1.5 text-xs font-semibold text-ink shadow-sm hover:bg-accentSoft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                    title="Actualizar"
+                    aria-label="Actualizar"
+                    className="rounded-full border border-black/15 bg-white p-2 text-ink shadow-sm hover:bg-accentSoft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                   >
-                    Actualizar
+                    <RefreshCw size={16} />
                   </Button>
                 </div>
 
@@ -1058,7 +1044,7 @@ export function App() {
                   className="mt-4 rounded-2xl border border-black/10 bg-white/70 p-4"
                 >
                   <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold text-ink">Subir documento</h3>
+                    <h3 className="text-sm font-semibold text-ink">Cargar documento</h3>
                     <button
                       ref={uploadInfoTriggerRef}
                       type="button"
@@ -1088,86 +1074,86 @@ export function App() {
                       ⓘ
                     </button>
                   </div>
-                  <div className="mt-2 flex flex-col gap-2">
+                  <div className="mt-2 flex items-center gap-2">
                     <input
                       id="upload-document-input"
                       ref={fileInputRef}
                       type="file"
                       aria-label="Archivo PDF"
                       accept=".pdf,application/pdf"
-                      className="w-full rounded-2xl border border-black/10 bg-white/80 px-3 py-2 text-sm text-ink outline-none focus:border-accent"
+                      className="sr-only"
+                      disabled={uploadMutation.isPending}
                       onChange={(event) => {
                         const file = event.target.files?.[0] ?? null;
                         if (!file) {
-                          setSelectedFile(null);
                           setUploadFeedback(null);
                           return;
                         }
-                        const validationError = validateUploadFile(file);
-                        if (validationError) {
-                          setSelectedFile(null);
+                        const queued = queueUpload(file);
+                        if (!queued) {
                           event.currentTarget.value = "";
-                          setUploadFeedback({
-                            kind: "error",
-                            message: validationError,
-                          });
-                          return;
                         }
-                        setSelectedFile(file);
-                        setUploadFeedback(null);
                       }}
                     />
                     <Button
-                      onClick={handleUpload}
-                      disabled={uploadMutation.isPending || !selectedFile}
                       type="button"
-                      className="w-full"
+                      variant="ghost"
+                      title="Cargar documento"
+                      aria-label="Cargar documento"
+                      onClick={(event) => handleOpenUploadArea(event)}
+                      disabled={uploadMutation.isPending}
+                      className="rounded-full border border-black/15 bg-white p-2 text-ink shadow-sm hover:bg-accentSoft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                     >
-                      <Upload size={16} />
-                      {uploadMutation.isPending ? "Subiendo..." : "Subir documento"}
+                      {uploadMutation.isPending ? (
+                        <RefreshCw size={16} className="animate-spin" />
+                      ) : (
+                        <Upload size={16} />
+                      )}
                     </Button>
+                    {uploadMutation.isPending && <span className="text-xs text-muted">Subiendo...</span>}
                   </div>
                 </div>
 
-                {documentList.isLoading && (
-                  <div className="mt-4 rounded-2xl border border-black/10 bg-white/70 p-4 text-sm text-muted">
-                    Cargando documentos...
-                  </div>
-                )}
-
-                {documentList.isError && (
-                  <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                    <p>{getUserErrorMessage(documentList.error, "No se pudieron cargar los documentos.")}</p>
-                    <div className="mt-3 flex flex-wrap items-center gap-2">
-                      <Button variant="ghost" type="button" onClick={() => documentList.refetch()}>
-                        Reintentar
-                      </Button>
-                      {getTechnicalDetails(documentList.error) && (
-                        <details className="text-xs text-muted">
-                          <summary className="cursor-pointer">Ver detalles tecnicos</summary>
-                          <p className="mt-1">{getTechnicalDetails(documentList.error)}</p>
-                        </details>
-                      )}
+                <div className="mt-4 max-h-[calc(clamp(32rem,74vh,56rem)-12rem)] overflow-y-auto pr-1">
+                  {documentList.isLoading && (
+                    <div className="rounded-2xl border border-black/10 bg-white/70 p-4 text-sm text-muted">
+                      Cargando documentos...
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {documentList.data && (
-                  <div className="mt-4 space-y-2">
-                    {sortedDocuments.length === 0 ? (
-                      <div className="rounded-2xl border border-dashed border-black/10 bg-white/70 p-4 text-sm text-muted">
-                        <p>Aun no hay documentos cargados.</p>
-                        <Button
-                          variant="ghost"
-                          type="button"
-                          className="mt-3"
-                          onClick={() => fileInputRef.current?.click()}
-                        >
-                          Subir documento
+                  {documentList.isError && (
+                    <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                      <p>{getUserErrorMessage(documentList.error, "No se pudieron cargar los documentos.")}</p>
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <Button variant="ghost" type="button" onClick={() => documentList.refetch()}>
+                          Reintentar
                         </Button>
+                        {getTechnicalDetails(documentList.error) && (
+                          <details className="text-xs text-muted">
+                            <summary className="cursor-pointer">Ver detalles tecnicos</summary>
+                            <p className="mt-1">{getTechnicalDetails(documentList.error)}</p>
+                          </details>
+                        )}
                       </div>
-                    ) : (
-                      sortedDocuments.map((item) => {
+                    </div>
+                  )}
+
+                  {documentList.data && (
+                    <div className="space-y-2">
+                      {sortedDocuments.length === 0 ? (
+                        <div className="rounded-2xl border border-dashed border-black/10 bg-white/70 p-4 text-sm text-muted">
+                          <p>Aun no hay documentos cargados.</p>
+                          <Button
+                            variant="ghost"
+                            type="button"
+                            className="mt-3"
+                            onClick={(event) => handleOpenUploadArea(event)}
+                          >
+                            Cargar documento
+                          </Button>
+                        </div>
+                      ) : (
+                        sortedDocuments.map((item) => {
                         const isActive = activeId === item.document_id;
                         const status = mapDocumentStatus(item);
                         return (
@@ -1216,10 +1202,11 @@ export function App() {
                             )}
                           </button>
                         );
-                      })
-                    )}
-                  </div>
-                )}
+                        })
+                      )}
+                    </div>
+                  )}
+                </div>
               </section>
             </div>
           </aside>
@@ -1243,7 +1230,7 @@ export function App() {
                 {viewerTabButton("raw_text", "Texto extraido")}
                 {viewerTabButton("technical", "Detalles tecnicos")}
               </div>
-              <div className="mt-4 h-[65vh]">
+              <div className="mt-4 h-[clamp(32rem,74vh,56rem)]">
                 {activeViewerTab === "document" && (
                   <div
                     data-testid="viewer-dropzone"
@@ -1271,12 +1258,28 @@ export function App() {
                       <div
                         data-testid="viewer-empty-state"
                         className="relative flex h-full flex-col rounded-2xl border border-black/10 bg-white/80 p-6"
+                        role="button"
+                        tabIndex={0}
+                        onClick={handleOpenUploadArea}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            handleOpenUploadArea();
+                          }
+                        }}
                       >
                         <div className="flex flex-1 flex-col items-center justify-center text-center">
                           <p className="text-sm text-muted">
-                            Selecciona un documento o carga uno para iniciar la vista previa.
+                            Selecciona un documento en la barra lateral o carga uno nuevo.
                           </p>
-                          <Button type="button" className="mt-4" onClick={handleOpenUploadArea}>
+                          <Button
+                            type="button"
+                            className="mt-4"
+                            onClick={(event) => {
+                              handleOpenUploadArea(event);
+                            }}
+                          >
+                            <Upload size={16} />
                             Cargar documento
                           </Button>
                           <p className="mt-3 text-xs text-muted">

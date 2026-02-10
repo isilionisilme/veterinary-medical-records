@@ -300,11 +300,6 @@ export function PdfViewer({ fileUrl, filename }: PdfViewerProps) {
           )}
         </div>
       </div>
-      {showPageNavigation && (
-        <div className="mt-3 text-sm text-muted">
-          Pagina {pageNumber} de {totalPages}
-        </div>
-      )}
     </div>
   );
 }
