@@ -24,6 +24,7 @@ When an AI coding assistant or automation tool is used to create or update a Pul
 
 3) Check CI status (if configured):
    - Report whether CI is pending, passing, or failing.
+   - Include end-user validation steps in the PR description when applicable; if not applicable, state why and provide alternative verification steps.
 
 4) Classify the PR by file types (use changed file paths; do not require reading full diff content):
    - **Docs-only PR**: the diff contains **only**:

@@ -447,6 +447,7 @@ When an AI coding assistant or automation tool is used to create or update a Pul
 
 3) Check CI status (if configured):
    - Report whether CI is pending, passing, or failing.
+   - Include end-user validation steps in the PR description when applicable; if not applicable, state why and provide alternative verification steps.
 
 4) Classify the PR by file types (use changed file paths; do not require reading full diff content):
    - **Docs-only PR**: the diff contains **only**:
@@ -616,6 +617,8 @@ For technical non user-facing changes (refactors, chores, CI, docs, fixes):
 For all changes:
 - The resulting code remains easy to understand, extend, and evolve without refactoring core logic.
 - Automated tests pass, and test coverage is updated where applicable.
+- When a change is testable from an end-user perspective, the completion report must include clear step-by-step validation instructions from the end-user point of view.
+- When end-user testing is not possible, the completion report must explicitly state that and provide the best alternative verification method (for example: API checks, logs, automated tests, or controlled manual simulation).
 - The change is merged into main via Pull Request.
 - Continuous Integration (CI) has run and passed successfully.
 - `main` remains in a green (passing) state after the merge.
