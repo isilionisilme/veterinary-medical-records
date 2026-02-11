@@ -5,6 +5,7 @@ Documentation is a code quality requirement. All AI coding assistants must treat
 ## Purpose
 
 Documentation must make the system understandable, maintainable, and reviewable by other engineers.
+All user-facing written communication must be in English (documentation, pull request titles/descriptions, review comments, ADRs, and release notes).
 
 Document:
 - Intent and responsibility

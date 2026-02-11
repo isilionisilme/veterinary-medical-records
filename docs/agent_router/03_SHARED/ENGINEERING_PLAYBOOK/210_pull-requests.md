@@ -15,6 +15,7 @@ When an AI coding assistant or automation tool is used to create or update a Pul
    - Working tree status (report if not clean)
 
 2) Create or update the Pull Request to `main` using the standard branching and naming conventions already defined in this document.
+   - PR title, body, and review comments must be written in English.
    - When setting the PR description/body from CLI, use real multiline content (heredoc or file input), not escaped `\n` sequences.
    - Do not submit PR bodies that contain literal `\n`.
    - Preferred patterns:
