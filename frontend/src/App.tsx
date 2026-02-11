@@ -404,6 +404,44 @@ async function uploadDocument(file: File): Promise<DocumentUploadResponse> {
   return response.json();
 }
 
+async function copyTextToClipboard(text: string): Promise<void> {
+  if (!text) {
+    throw new UiError("No hay texto disponible para copiar.");
+  }
+
+  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+
+  if (typeof document !== "undefined") {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    textarea.style.pointerEvents = "none";
+    textarea.style.left = "-9999px";
+    textarea.style.top = "0";
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    textarea.setSelectionRange(0, textarea.value.length);
+
+    try {
+      const copied = document.execCommand("copy");
+      if (!copied) {
+        throw new UiError("No se pudo copiar el texto al portapapeles.");
+      }
+      return;
+    } finally {
+      document.body.removeChild(textarea);
+    }
+  }
+
+  throw new UiError("No se pudo copiar el texto al portapapeles.");
+}
+
 function formatTimestamp(value: string): string {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) {
@@ -501,6 +539,8 @@ export function App() {
   const [isDragOverSidebarUpload, setIsDragOverSidebarUpload] = useState(false);
   const [showUploadInfo, setShowUploadInfo] = useState(false);
   const [showRefreshFeedback, setShowRefreshFeedback] = useState(false);
+  const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
+  const [isCopyingRawText, setIsCopyingRawText] = useState(false);
   const [isHoverDevice, setIsHoverDevice] = useState(true);
   const [uploadInfoPosition, setUploadInfoPosition] = useState({ top: 0, left: 0 });
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -514,6 +554,7 @@ export function App() {
   const autoOpenRetryCountRef = useRef<Record<string, number>>({});
   const autoOpenRetryTimerRef = useRef<number | null>(null);
   const refreshFeedbackTimerRef = useRef<number | null>(null);
+  const copyFeedbackTimerRef = useRef<number | null>(null);
   const latestLoadRequestIdRef = useRef<string | null>(null);
   const queryClient = useQueryClient();
 
@@ -553,6 +594,9 @@ export function App() {
       }
       if (refreshFeedbackTimerRef.current) {
         window.clearTimeout(refreshFeedbackTimerRef.current);
+      }
+      if (copyFeedbackTimerRef.current) {
+        window.clearTimeout(copyFeedbackTimerRef.current);
       }
       if (fileUrl) {
         URL.revokeObjectURL(fileUrl);
@@ -1073,6 +1117,8 @@ export function App() {
   };
 
   const rawTextContent = rawTextQuery.data?.text ?? null;
+  const hasRawText = Boolean(rawTextContent && rawTextContent.length > 0);
+  const canCopyRawText = hasRawText && !rawTextQuery.isLoading && !rawTextQuery.isError;
 
   const handleRawSearch = () => {
     if (!rawTextContent || !rawSearch.trim()) {
@@ -1096,6 +1142,35 @@ export function App() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  };
+
+  const setCopyFeedbackWithTimeout = (message: string) => {
+    setCopyFeedback(message);
+    if (copyFeedbackTimerRef.current) {
+      window.clearTimeout(copyFeedbackTimerRef.current);
+    }
+    copyFeedbackTimerRef.current = window.setTimeout(() => {
+      setCopyFeedback(null);
+      copyFeedbackTimerRef.current = null;
+    }, 2500);
+  };
+
+  const handleCopyRawText = async () => {
+    if (!rawTextContent) {
+      setCopyFeedbackWithTimeout("No hay texto extraido para copiar.");
+      return;
+    }
+    setIsCopyingRawText(true);
+    try {
+      await copyTextToClipboard(rawTextContent);
+      setCopyFeedbackWithTimeout("Texto copiado.");
+    } catch (error) {
+      setCopyFeedbackWithTimeout(
+        getUserErrorMessage(error, "No se pudo copiar el texto.")
+      );
+    } finally {
+      setIsCopyingRawText(false);
+    }
   };
 
   const openUploadInfo = () => {
@@ -1506,13 +1581,28 @@ export function App() {
                       <Button type="button" onClick={handleRawSearch}>
                         Buscar
                       </Button>
-                      <Button type="button" disabled={!rawTextContent}>
-                        Copiar todo
+                      <Button
+                        type="button"
+                        disabled={!canCopyRawText || isCopyingRawText}
+                        onClick={() => {
+                          void handleCopyRawText();
+                        }}
+                      >
+                        {isCopyingRawText
+                          ? "Copiando..."
+                          : copyFeedback === "Texto copiado."
+                          ? "Copiado"
+                          : "Copiar todo"}
                       </Button>
                       <Button type="button" disabled={!rawTextContent} onClick={handleDownloadRawText}>
                         Descargar texto (.txt)
                       </Button>
                     </div>
+                    {copyFeedback && (
+                      <p className="mt-2 text-xs text-muted" role="status" aria-live="polite">
+                        {copyFeedback}
+                      </p>
+                    )}
                     {rawSearchNotice && (
                       <p className="mt-2 text-xs text-muted">{rawSearchNotice}</p>
                     )}
@@ -1528,6 +1618,9 @@ export function App() {
                             }
                             if (rawTextQuery.error.reason === "RAW_TEXT_NOT_AVAILABLE") {
                               return "El texto extraido no esta disponible para este run.";
+                            }
+                            if (rawTextQuery.error.reason === "RAW_TEXT_NOT_USABLE") {
+                              return "El texto extraido no es legible para este run.";
                             }
                             if (rawTextQuery.error.errorCode === "ARTIFACT_MISSING") {
                               return "El artefacto de texto no esta disponible.";

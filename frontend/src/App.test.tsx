@@ -459,6 +459,96 @@ describe("App upload and list flow", () => {
     });
   });
 
+  it("copies the full extracted text with Copy all", async () => {
+    const rawText = "Linea uno\nLinea dos\nLinea tres";
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = input.toString();
+      const method = (init?.method ?? "GET").toUpperCase();
+
+      if (url.includes("/documents?") && method === "GET") {
+        return new Response(
+          JSON.stringify({
+            items: [
+              {
+                document_id: "doc-ready",
+                original_filename: "ready.pdf",
+                created_at: "2026-02-09T10:00:00Z",
+                status: "COMPLETED",
+                status_label: "Completed",
+                failure_type: null,
+              },
+            ],
+            limit: 50,
+            offset: 0,
+            total: 1,
+          }),
+          { status: 200 }
+        );
+      }
+
+      if (url.includes("/documents/doc-ready/download") && method === "GET") {
+        return new Response(new Blob(["pdf"], { type: "application/pdf" }), { status: 200 });
+      }
+
+      if (url.match(/\/documents\/doc-ready$/) && method === "GET") {
+        return new Response(
+          JSON.stringify({
+            document_id: "doc-ready",
+            original_filename: "ready.pdf",
+            content_type: "application/pdf",
+            file_size: 10,
+            created_at: "2026-02-09T10:00:00Z",
+            updated_at: "2026-02-10T10:00:00Z",
+            status: "COMPLETED",
+            status_message: "Completed",
+            failure_type: null,
+            latest_run: { run_id: "run-doc-ready", state: "COMPLETED", failure_type: null },
+          }),
+          { status: 200 }
+        );
+      }
+
+      if (url.includes("/processing-history") && method === "GET") {
+        return new Response(JSON.stringify({ document_id: "doc-ready", runs: [] }), {
+          status: 200,
+        });
+      }
+
+      if (url.includes("/runs/run-doc-ready/artifacts/raw-text") && method === "GET") {
+        return new Response(
+          JSON.stringify({
+            run_id: "run-doc-ready",
+            artifact_type: "RAW_TEXT",
+            content_type: "text/plain",
+            text: rawText,
+          }),
+          { status: 200 }
+        );
+      }
+
+      return new Response(JSON.stringify({ error_code: "NOT_FOUND" }), { status: 404 });
+    }) as typeof fetch;
+
+    const writeText = vi.fn(async () => undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText },
+      configurable: true,
+    });
+
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Texto extraido/i }));
+
+    await screen.findByText(/Linea uno/i);
+    fireEvent.click(screen.getByRole("button", { name: /Copiar todo/i }));
+
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(rawText);
+    });
+    expect(screen.getByText(/Texto copiado\./i)).toBeInTheDocument();
+  });
+
   it("opens the file picker when clicking anywhere in empty viewer", async () => {
     renderApp();
 
