@@ -4,12 +4,19 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 ROOT_AGENTS = REPO_ROOT / "AGENTS.md"
-DOC_UPDATES_ENTRY = REPO_ROOT / "docs" / "01_WORKFLOW" / "DOC_UPDATES" / "00_entry.md"
+DOC_UPDATES_ENTRY = (
+    REPO_ROOT / "docs" / "agent_router" / "01_WORKFLOW" / "DOC_UPDATES" / "00_entry.md"
+)
 DOC_UPDATES_NORMALIZE = (
-    REPO_ROOT / "docs" / "01_WORKFLOW" / "DOC_UPDATES" / "20_normalize_rules.md"
+    REPO_ROOT
+    / "docs"
+    / "agent_router"
+    / "01_WORKFLOW"
+    / "DOC_UPDATES"
+    / "20_normalize_rules.md"
 )
 DOC_UPDATES_CHECKLIST = (
-    REPO_ROOT / "docs" / "01_WORKFLOW" / "DOC_UPDATES" / "30_checklist.md"
+    REPO_ROOT / "docs" / "agent_router" / "01_WORKFLOW" / "DOC_UPDATES" / "30_checklist.md"
 )
 RULES_INDEX = REPO_ROOT / "docs" / "agent_router" / "00_RULES_INDEX.md"
 SCENARIOS = REPO_ROOT / "metrics" / "llm_benchmarks" / "SCENARIOS.md"
@@ -88,7 +95,7 @@ def test_ambiguity_handling_and_known_mappings_are_present() -> None:
 def test_agents_trigger_and_post_change_hook_remain_short_and_routed() -> None:
     text = _read_text(ROOT_AGENTS)
     lower = text.lower()
-    assert "docs/01_WORKFLOW/DOC_UPDATES/00_entry.md" in text
+    assert "docs/agent_router/01_WORKFLOW/DOC_UPDATES/00_entry.md" in text
     assert "any language or paraphrase" in lower
     assert "run the doc_updates normalization pass once" in lower
     assert len(text) < 4000
