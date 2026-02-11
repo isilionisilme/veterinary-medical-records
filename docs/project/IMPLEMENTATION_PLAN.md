@@ -226,6 +226,16 @@ Sequence DOCX and image format expansion as explicit, optional stories that are 
 
 ---
 
+## Release 9 — Nice to have (post-MVP enhancements)
+
+### Goal
+Introduce optional capabilities that improve coverage for difficult inputs without expanding core MVP obligations.
+
+### User Stories (in order)
+- US-22 — Optional OCR support for scanned medical records (PDF/Image)
+
+---
+
 # User Story Details
 
 Each story below contains only:
@@ -878,6 +888,48 @@ As a user, I want to upload, access, and process image documents so that scans a
 **Test Expectations**
 - Image inputs behave like PDFs for upload/download/status visibility.
 - OCR extraction produces a raw-text artifact for image runs, enabling the same review/edit endpoints once processing completes.
+
+**Definition of Done (DoD)**
+- Acceptance criteria satisfied.
+- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
+
+---
+
+## US-22 — Optional OCR support for scanned medical records (PDF/Image)
+
+**User Story**
+As a user, I want optional OCR support for scanned records so that documents without a usable text layer can still be reviewed when quality is sufficient.
+
+**Acceptance Criteria**
+- Given a scanned PDF/image without usable text layer, the system can run OCR and produce readable extracted text for review when OCR quality is sufficient.
+- OCR is only applied when no usable text layer exists or text extraction fails the quality gate.
+- If OCR is disabled, unavailable, or times out, processing fails explicitly (`EXTRACTION_FAILED` or `EXTRACTION_LOW_QUALITY`) and the document is not marked Ready for review.
+- Logs indicate extraction path and OCR usage (including per-page behavior when available).
+
+**Scope Clarification**
+- This is a post-MVP, low-priority enhancement and is sequenced after the core roadmap.
+- Language default is Spanish (`es`) with future extension for language auto-detection.
+- OCR should be applied at page level where possible (only failing pages), not necessarily entire-document OCR.
+- This story depends on:
+  - US-05 (processing pipeline),
+  - US-06 (extracted text visibility),
+  - US-20 (image support, when applicable).
+
+**Authoritative References**
+- Tech: Processing model and run invariants: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Sections 3–4 + Appendix A2
+- Tech: Endpoint surface and failure semantics: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3/B3.2
+- Tech: Step model and failure mapping: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix C
+- Tech: Extraction/OCR library decisions: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix E
+
+**Story-specific technical requirements**
+- OCR output is treated as Unicode text and must not pass through PDF font-decoding logic.
+- OCR execution must be bounded by configurable timeout/fail-fast rules.
+- Final readiness still requires passing the extracted-text quality gate.
+
+**Test Expectations**
+- Fixture-based tests validate OCR path activation and quality-gate behavior on scanned inputs.
+- Tests verify explicit failure behavior when OCR is unavailable/disabled or low-quality.
+- Tests verify logs include extractor path and OCR usage signals.
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
