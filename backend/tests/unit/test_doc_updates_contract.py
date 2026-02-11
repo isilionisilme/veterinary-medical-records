@@ -6,12 +6,19 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 ROOT_AGENTS = REPO_ROOT / "AGENTS.md"
 CI_WORKFLOW = REPO_ROOT / ".github" / "workflows" / "ci.yml"
 RULES_INDEX = REPO_ROOT / "docs" / "agent_router" / "00_RULES_INDEX.md"
-DOC_UPDATES_ENTRY = REPO_ROOT / "docs" / "01_WORKFLOW" / "DOC_UPDATES" / "00_entry.md"
+DOC_UPDATES_ENTRY = (
+    REPO_ROOT / "docs" / "agent_router" / "01_WORKFLOW" / "DOC_UPDATES" / "00_entry.md"
+)
 DOC_UPDATES_NORMALIZE = (
-    REPO_ROOT / "docs" / "01_WORKFLOW" / "DOC_UPDATES" / "20_normalize_rules.md"
+    REPO_ROOT
+    / "docs"
+    / "agent_router"
+    / "01_WORKFLOW"
+    / "DOC_UPDATES"
+    / "20_normalize_rules.md"
 )
 DOC_UPDATES_CHECKLIST = (
-    REPO_ROOT / "docs" / "01_WORKFLOW" / "DOC_UPDATES" / "30_checklist.md"
+    REPO_ROOT / "docs" / "agent_router" / "01_WORKFLOW" / "DOC_UPDATES" / "30_checklist.md"
 )
 
 
@@ -30,7 +37,7 @@ def test_doc_updates_core_files_exist() -> None:
 def test_agents_routes_docs_updated_intent_to_doc_updates() -> None:
     text = _read_text(ROOT_AGENTS)
     lower = text.lower()
-    assert "docs/01_WORKFLOW/DOC_UPDATES/00_entry.md" in text
+    assert "docs/agent_router/01_WORKFLOW/DOC_UPDATES/00_entry.md" in text
     assert "documentation was updated" in lower
     assert "run the doc_updates normalization pass once" in lower
 
