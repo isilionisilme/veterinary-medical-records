@@ -12,7 +12,7 @@ This file is the AI assistant entry point. Keep reads small and follow the route
 - Pull requests: follow `docs/agent_router/01_WORKFLOW/PULL_REQUESTS/00_entry.md` (classify PR).
 - Code PRs: load `docs/agent_router/01_WORKFLOW/CODE_REVIEW/00_entry.md`.
 - User-visible changes: load `docs/agent_router/02_PRODUCT/USER_VISIBLE/00_entry.md` then UX/Brand.
-- User indicates documentation was updated (any language or paraphrase): load `docs/01_WORKFLOW/DOC_UPDATES/00_entry.md`.
+- User indicates documentation was updated (any language or paraphrase): load `docs/agent_router/01_WORKFLOW/DOC_UPDATES/00_entry.md`.
   Examples: “He actualizado documentación”, “He actualizado el documento X”, “I have updated the docs”, “I updated README.md”, “Docs changed; please sync/normalize”, “I made documentation changes”.
   Treat paraphrases and other languages as the same intent. If files are not specified, follow DOC_UPDATES discovery (git diff/status) then normalize.
 - Benchmarks: only if user asks (see router).
