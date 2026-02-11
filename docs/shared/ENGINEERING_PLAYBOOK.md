@@ -119,6 +119,7 @@ Documentation is a code quality requirement. All AI coding assistants must treat
 ### Purpose
 
 Documentation must make the system understandable, maintainable, and reviewable by other engineers.
+All user-facing written communication must be in English (documentation, pull request titles/descriptions, review comments, ADRs, and release notes).
 
 Document:
 - Intent and responsibility
@@ -437,6 +438,7 @@ When an AI coding assistant or automation tool is used to create or update a Pul
    - Working tree status (report if not clean)
 
 2) Create or update the Pull Request to `main` using the standard branching and naming conventions already defined in this document.
+   - PR title, body, and review comments must be written in English.
    - When setting the PR description/body from CLI, use real multiline content (heredoc or file input), not escaped `\n` sequences.
    - Do not submit PR bodies that contain literal `\n`.
    - Preferred patterns:
@@ -445,6 +447,7 @@ When an AI coding assistant or automation tool is used to create or update a Pul
 
 3) Check CI status (if configured):
    - Report whether CI is pending, passing, or failing.
+   - Include end-user validation steps in the PR description when applicable; if not applicable, state why and provide alternative verification steps.
 
 4) Classify the PR by file types (use changed file paths; do not require reading full diff content):
    - **Docs-only PR**: the diff contains **only**:
@@ -459,23 +462,27 @@ When an AI coding assistant or automation tool is used to create or update a Pul
      - `*.sql`
    - **Non-code, non-doc PR**: the diff contains files that are neither docs nor code (examples: `*.json`, `*.yaml`, `*.yml`, `*.toml`, `*.ini`, `*.env`).
 
-5) Decide whether to run a code review:
-   - If **docs-only**:
-     - Skip the code review and do not post a review comment.
-     - State explicitly that the PR is docs-only and review was skipped by policy.
-   - If **code PR**:
-     - A code review must run automatically (no user confirmation).
-   - If **non-code, non-doc**:
-     - STOP and ask the user explicitly whether they want a code review before running it.
+5) For PRs that change `frontend/**` or user-visible behavior/copy:
+   - Load `docs/agent_router/02_PRODUCT/USER_VISIBLE/00_entry.md` before implementation/review.
+   - Add a `UX/Brand compliance` section to the PR description with concrete evidence.
 
-6) Automatically perform a maintainability-focused code review of the PR diff (when required/approved):
+6) Ask the user whether they want a code review:
+   - Ask explicitly for every PR classification (docs-only, code, non-code/non-doc).
+   - For docs-only PRs, recommend skipping the review by policy unless the user explicitly asks for one.
+   - Run the review only after explicit user confirmation.
+
+7) Perform a maintainability-focused code review of the PR diff (when user-approved):
    - Use `git diff main...HEAD` as the review input.
    - Apply all rules from:
      "Code Review Guidelines (Maintainability-Focused, Take-Home Pragmatic)"
 
 ### Pull Request review visibility
 
-After producing the automatic PR code review, the AI assistant must publish the review output as a comment in the Pull Request (or update an existing “AI Code Review” comment), using the mandatory review output format.
+After producing a PR code review, the AI assistant must publish the review output as a comment in the Pull Request (or update an existing “AI Code Review” comment), using the mandatory review output format.
+
+For `frontend/**` or user-visible changes, that PR review comment must include a dedicated `UX/Brand Compliance` section.
+
+If one or more review findings are addressed in subsequent commits, the AI assistant must add a brief follow-up comment summarizing which findings were addressed.
 
 If the PR changes after review (new commits that materially affect the diff), the AI assistant must add a follow-up comment summarizing what changed and whether the previous findings are still applicable.
 
@@ -575,6 +582,10 @@ Produce the review using this mandatory output format:
    - Nice-to-have (optional improvements)
    - Questions / assumptions
 
+For PRs that include `frontend/**` or user-visible behavior/copy changes, include:
+   - UX/Brand Compliance (mandatory section)
+   - Any UX/Brand non-compliance must be reported under Must-fix.
+
 Each finding must include:
 - File reference(s)
 - Short rationale
@@ -582,7 +593,7 @@ Each finding must include:
 
 ### Code Review Safety rule
 
-After producing the automatic PR code review, STOP and wait for explicit user instruction before making any code changes.
+After producing a PR code review, STOP and wait for explicit user instruction before making any code changes.
 
 Do not modify code as part of the review step unless explicitly asked to do so.
 
@@ -606,6 +617,8 @@ A change is considered done when it satisfies the criteria that apply to its typ
 For user stories:
 - It delivers a complete vertical slice of user-facing value.
 - It is documented (README and/or ADR if a design decision was made).
+- If user-visible behavior is affected, UX guidance is applied from `docs/shared/UX_GUIDELINES.md` and `docs/project/UX_DESIGN.md`.
+- If visual identity or user-facing copy is affected, brand guidance is applied from `docs/shared/BRAND_GUIDELINES.md`.
 
 For technical non user-facing changes (refactors, chores, CI, docs, fixes):
 - The change intent and scope are explicitly documented in the Pull Request.
@@ -614,6 +627,8 @@ For technical non user-facing changes (refactors, chores, CI, docs, fixes):
 For all changes:
 - The resulting code remains easy to understand, extend, and evolve without refactoring core logic.
 - Automated tests pass, and test coverage is updated where applicable.
+- When a change is testable from an end-user perspective, the completion report must include clear step-by-step validation instructions from the end-user point of view.
+- When end-user testing is not possible, the completion report must explicitly state that and provide the best alternative verification method (for example: API checks, logs, automated tests, or controlled manual simulation).
 - The change is merged into main via Pull Request.
 - Continuous Integration (CI) has run and passed successfully.
 - `main` remains in a green (passing) state after the merge.

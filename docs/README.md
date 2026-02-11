@@ -20,6 +20,7 @@ This folder is split into three areas:
 - [`docs/shared/AGENTS.md`](shared/AGENTS.md) — AI Coding Assistant rules for this repo (STOP rules, safety, behavior).
 - [`docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/00_entry.md`](agent_router/03_SHARED/ENGINEERING_PLAYBOOK/00_entry.md) — engineering standards (split into small modules).
 - [`docs/agent_router/03_SHARED/UX_GUIDELINES/00_entry.md`](agent_router/03_SHARED/UX_GUIDELINES/00_entry.md) — global UX principles (split into small modules).
+- [`docs/agent_router/03_SHARED/BRAND_GUIDELINES/00_entry.md`](agent_router/03_SHARED/BRAND_GUIDELINES/00_entry.md) — global brand rules (split into small modules).
 
 ### Tooling (optional)
 - [`metrics/llm_benchmarks/README.md`](../metrics/llm_benchmarks/README.md) — assistant usage benchmarks (opt-in; used only when requested, e.g. `#metrics`).
@@ -30,7 +31,6 @@ This folder is split into three areas:
 ### Documentation specific to the project
 - [`docs/agent_router/04_PROJECT/PRODUCT_DESIGN/00_entry.md`](agent_router/04_PROJECT/PRODUCT_DESIGN/00_entry.md) — product summary (split into small modules)
 - [`docs/agent_router/04_PROJECT/UX_DESIGN/00_entry.md`](agent_router/04_PROJECT/UX_DESIGN/00_entry.md) — UX interaction contract (split into small modules)
-- [`docs/agent_router/04_PROJECT/BRAND_GUIDELINES/00_entry.md`](agent_router/04_PROJECT/BRAND_GUIDELINES/00_entry.md) — brand rules (split into small modules)
 - [`docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/00_entry.md`](agent_router/04_PROJECT/TECHNICAL_DESIGN/00_entry.md) — architecture + contracts (split into small modules)
 - [`docs/agent_router/04_PROJECT/BACKEND_IMPLEMENTATION/00_entry.md`](agent_router/04_PROJECT/BACKEND_IMPLEMENTATION/00_entry.md) — backend implementation notes (split into small modules)
 - [`docs/agent_router/04_PROJECT/FRONTEND_IMPLEMENTATION/00_entry.md`](agent_router/04_PROJECT/FRONTEND_IMPLEMENTATION/00_entry.md) — frontend implementation notes (split into small modules)

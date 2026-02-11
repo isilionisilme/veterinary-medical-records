@@ -8,6 +8,22 @@ on:
     branches: [main]
 
 jobs:
+  brand_guard:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+      - name: Run brand compliance guard (frontend added lines)
+        run: |
+          python scripts/check_brand_compliance.py --base-ref "${{ github.event.pull_request.base.sha }}"
+
   quality:
     runs-on: ubuntu-latest
     steps:

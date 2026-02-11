@@ -1,6 +1,7 @@
 # BRAND_GUIDELINES — Modules
 
 This content was split into smaller modules for token-optimized assistant reads.
+Canonical source: `docs/agent_router/03_SHARED/BRAND_GUIDELINES/00_entry.md` (this project path is legacy compatibility).
 
 Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for intent routing.
 

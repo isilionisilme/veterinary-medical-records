@@ -7,3 +7,4 @@
 ## Required sections
 - Summary
 - Testing
+- UX/Brand compliance (required when `frontend/**` or user-visible behavior/copy changes)

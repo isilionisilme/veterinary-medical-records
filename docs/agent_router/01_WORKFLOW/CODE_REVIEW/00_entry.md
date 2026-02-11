@@ -3,9 +3,9 @@
 This module is the operational procedure for code reviews in this repo.
 
 ## When a review is required
-- Docs-only PR: no review.
-- Code PR: review is required.
-- Non-code, non-doc PR: STOP and ask whether to review.
+- PR workflow: always ask the user whether they want a code review.
+- If the user confirms: run the review.
+- If the user declines: skip review.
 
 ## Review input
 - `git diff main...HEAD`
@@ -16,6 +16,7 @@ This module is the operational procedure for code reviews in this repo.
 3) Testability (core logic testable without frameworks; integration tests for wiring)
 4) Simplicity over purity (flag overengineering; prefer removing complexity)
 5) CI/tooling sanity (reproducible lint/tests)
+6) UX/Brand compliance for `frontend/**` or user-visible changes (against UX and Brand docs)
 
 ## Output format (mandatory)
 Produce findings under these headings:
@@ -23,6 +24,9 @@ Produce findings under these headings:
 - Should-fix
 - Nice-to-have
 - Questions / assumptions
+
+And include:
+- UX/Brand Compliance (mandatory for `frontend/**` or user-visible changes; if non-compliant, list under Must-fix)
 
 Each finding includes:
 - File reference(s)

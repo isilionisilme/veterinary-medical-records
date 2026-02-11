@@ -58,6 +58,10 @@ Produce the review using this mandatory output format:
    - Nice-to-have (optional improvements)
    - Questions / assumptions
 
+For PRs that include `frontend/**` or user-visible behavior/copy changes, include:
+   - UX/Brand Compliance (mandatory section)
+   - Any UX/Brand non-compliance must be reported under Must-fix.
+
 Each finding must include:
 - File reference(s)
 - Short rationale
@@ -65,6 +69,6 @@ Each finding must include:
 
 ## Code Review Safety rule
 
-After producing the automatic PR code review, STOP and wait for explicit user instruction before making any code changes.
+After producing a PR code review, STOP and wait for explicit user instruction before making any code changes.
 
 Do not modify code as part of the review step unless explicitly asked to do so.
