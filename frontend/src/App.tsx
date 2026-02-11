@@ -1,9 +1,10 @@
 import { type DragEvent, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Download, RefreshCw, Upload } from "lucide-react";
+import { Download, RefreshCw } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { PdfViewer } from "./components/PdfViewer";
+import { UploadDropzone } from "./components/UploadDropzone";
 import { Button } from "./components/ui/button";
 import { groupProcessingSteps } from "./lib/processingHistory";
 import {
@@ -925,7 +926,7 @@ export function App() {
   const isListRefreshing =
     (documentList.isFetching || showRefreshFeedback) && !documentList.isLoading;
   const panelHeightClass =
-    "h-[clamp(900px,86vh,1100px)]";
+    "h-[clamp(1180px,94vh,1480px)]";
 
   const toggleStepDetails = (key: string) => {
     setExpandedSteps((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -1150,30 +1151,15 @@ export function App() {
                       ⓘ
                     </button>
                   </div>
-                  <div
-                    className={`mt-3 flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-5 text-center transition ${
-                      isDragOverSidebarUpload
-                        ? "border-accent bg-accentSoft/35 ring-2 ring-accent/40"
-                        : "border-black/35 bg-white/85 hover:border-black/50 hover:bg-white"
-                    }`}
-                    role="button"
-                    tabIndex={0}
-                    onClick={handleOpenUploadArea}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        handleOpenUploadArea();
-                      }
-                    }}
+                  <UploadDropzone
+                    className="mt-3"
+                    isDragOver={isDragOverSidebarUpload}
+                    onActivate={handleOpenUploadArea}
                     onDragEnter={handleSidebarUploadDragEnter}
                     onDragOver={handleSidebarUploadDragOver}
                     onDragLeave={handleSidebarUploadDragLeave}
                     onDrop={handleSidebarUploadDrop}
-                  >
-                    <Upload size={18} className="text-ink" />
-                    <p className="mt-2 text-sm font-semibold text-ink">Arrastra un PDF aqui</p>
-                    <p className="text-xs text-muted">o haz clic para cargar</p>
-                  </div>
+                  />
                   <div className="mt-2 flex items-center gap-2">
                     <input
                       id="upload-document-input"
@@ -1365,22 +1351,16 @@ export function App() {
                           <p className="text-sm text-muted">
                             Selecciona un documento en la barra lateral o carga uno nuevo.
                           </p>
-                          <div
-                            className={`relative mt-4 flex w-full max-w-sm cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-5 text-center transition ${
-                              isDragOverViewer
-                                ? "border-accent bg-accentSoft/35 ring-2 ring-accent/40"
-                                : "border-black/35 bg-white/85 hover:border-black/50 hover:bg-white"
-                            }`}
-                          >
-                            {isDragOverViewer && (
-                              <div className="pointer-events-none absolute inset-2 z-10 flex items-center justify-center rounded-lg border-2 border-dashed border-accent bg-white/75 ring-2 ring-accent/40">
-                                <p className="text-sm font-semibold text-ink">Suelta el PDF para subirlo</p>
-                              </div>
-                            )}
-                            <Upload size={18} className="text-ink" />
-                            <p className="mt-2 text-sm font-semibold text-ink">Arrastra un PDF aqui</p>
-                            <p className="text-xs text-muted">o haz clic para cargar</p>
-                          </div>
+                          <UploadDropzone
+                            className="mt-4 w-full max-w-sm"
+                            isDragOver={isDragOverViewer}
+                            onActivate={handleOpenUploadArea}
+                            onDragEnter={handleViewerDragEnter}
+                            onDragOver={handleViewerDragOver}
+                            onDragLeave={handleViewerDragLeave}
+                            onDrop={handleViewerDrop}
+                            showDropOverlay
+                          />
                         </div>
                       </div>
                     )

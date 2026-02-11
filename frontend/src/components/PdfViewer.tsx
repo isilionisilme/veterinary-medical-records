@@ -18,16 +18,18 @@ export function PdfViewer({ fileUrl, filename, isDragOver = false }: PdfViewerPr
   const pageRefs = useRef<Array<HTMLDivElement | null>>([]);
   const canvasRefs = useRef<Array<HTMLCanvasElement | null>>([]);
   const renderedPages = useRef<Set<number>>(new Set());
+  const renderingPages = useRef<Set<number>>(new Set());
   const [totalPages, setTotalPages] = useState(0);
   const [pageNumber, setPageNumber] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
-  const [canvasesReady, setCanvasesReady] = useState(false);
+  const [renderPass, setRenderPass] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
+    let loadingTask: pdfjsLib.PDFDocumentLoadingTask | null = null;
 
     async function loadPdf() {
       if (!fileUrl) {
@@ -35,21 +37,24 @@ export function PdfViewer({ fileUrl, filename, isDragOver = false }: PdfViewerPr
         setTotalPages(0);
         setPageNumber(1);
         setError(null);
-        setCanvasesReady(false);
         return;
       }
 
       pageRefs.current = [];
       canvasRefs.current = [];
       renderedPages.current = new Set();
-      setCanvasesReady(false);
+      renderingPages.current = new Set();
+      setPdfDoc(null);
+      setTotalPages(0);
+      setRenderPass(0);
 
       setLoading(true);
       setError(null);
       try {
-        const task = pdfjsLib.getDocument(fileUrl);
-        const doc = await task.promise;
+        loadingTask = pdfjsLib.getDocument(fileUrl);
+        const doc = await loadingTask.promise;
         if (cancelled) {
+          void doc.destroy();
           return;
         }
         setPdfDoc(doc);
@@ -70,8 +75,23 @@ export function PdfViewer({ fileUrl, filename, isDragOver = false }: PdfViewerPr
 
     return () => {
       cancelled = true;
+      if (loadingTask && typeof (loadingTask as { destroy?: unknown }).destroy === "function") {
+        void (loadingTask as { destroy: () => Promise<void> | void }).destroy();
+      }
     };
   }, [fileUrl]);
+
+  useEffect(() => {
+    if (!pdfDoc) {
+      return undefined;
+    }
+
+    return () => {
+      if (typeof (pdfDoc as { destroy?: unknown }).destroy === "function") {
+        void (pdfDoc as { destroy: () => Promise<void> | void }).destroy();
+      }
+    };
+  }, [pdfDoc]);
 
   useEffect(() => {
     if (!contentRef.current) {
@@ -95,34 +115,46 @@ export function PdfViewer({ fileUrl, filename, isDragOver = false }: PdfViewerPr
     let cancelled = false;
 
     async function renderAllPages() {
-      if (!pdfDoc || containerWidth <= 0 || !canvasesReady) {
+      if (!pdfDoc || containerWidth <= 0 || totalPages <= 0) {
         return;
       }
 
       for (let pageIndex = 1; pageIndex <= pdfDoc.numPages; pageIndex += 1) {
+        if (cancelled) {
+          continue;
+        }
+
         const canvas = canvasRefs.current[pageIndex - 1];
         if (!canvas) {
           continue;
         }
-
-        const page = await pdfDoc.getPage(pageIndex);
-        if (cancelled) {
-          return;
-        }
-
-        const viewport = page.getViewport({ scale: 1 });
-        const scale = containerWidth / viewport.width;
-        const scaledViewport = page.getViewport({ scale });
-        const context = canvas.getContext("2d");
-        if (!context) {
+        if (renderedPages.current.has(pageIndex) || renderingPages.current.has(pageIndex)) {
           continue;
         }
 
-        canvas.width = scaledViewport.width;
-        canvas.height = scaledViewport.height;
+        renderingPages.current.add(pageIndex);
+        try {
+          const page = await pdfDoc.getPage(pageIndex);
+          if (cancelled) {
+            return;
+          }
 
-        await page.render({ canvasContext: context, viewport: scaledViewport }).promise;
-        renderedPages.current.add(pageIndex);
+          const viewport = page.getViewport({ scale: 1 });
+          const scale = containerWidth / viewport.width;
+          const scaledViewport = page.getViewport({ scale });
+          const context = canvas.getContext("2d");
+          if (!context) {
+            continue;
+          }
+
+          canvas.width = scaledViewport.width;
+          canvas.height = scaledViewport.height;
+
+          await page.render({ canvasContext: context, viewport: scaledViewport }).promise;
+          renderedPages.current.add(pageIndex);
+        } finally {
+          renderingPages.current.delete(pageIndex);
+        }
       }
     }
 
@@ -131,11 +163,11 @@ export function PdfViewer({ fileUrl, filename, isDragOver = false }: PdfViewerPr
     return () => {
       cancelled = true;
     };
-  }, [pdfDoc, containerWidth, canvasesReady]);
+  }, [pdfDoc, containerWidth, totalPages, renderPass]);
 
   useEffect(() => {
     const root = scrollRef.current;
-    if (!root || totalPages === 0 || !canvasesReady) {
+    if (!root || totalPages === 0) {
       return undefined;
     }
 
@@ -177,7 +209,7 @@ export function PdfViewer({ fileUrl, filename, isDragOver = false }: PdfViewerPr
     return () => {
       observer.disconnect();
     };
-  }, [totalPages, canvasesReady]);
+  }, [totalPages]);
 
   const pages = useMemo(
     () => Array.from({ length: totalPages }, (_, index) => index + 1),
@@ -273,22 +305,18 @@ export function PdfViewer({ fileUrl, filename, isDragOver = false }: PdfViewerPr
                 data-testid="pdf-page"
                 className="mb-6 last:mb-0"
               >
-                <motion.canvas
-                  ref={(node) => {
-                    canvasRefs.current[page - 1] = node;
-                    if (
-                      !canvasesReady &&
-                      totalPages > 0 &&
-                      canvasRefs.current.slice(0, totalPages).every(Boolean)
-                    ) {
-                      // Ensures we don't start rendering until all canvases exist.
-                      setCanvasesReady(true);
-                    }
-                  }}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="mx-auto rounded-xl bg-white shadow"
-                />
+                  <motion.canvas
+                    ref={(node) => {
+                      canvasRefs.current[page - 1] = node;
+                      if (node) {
+                        // Trigger a render pass when canvases are actually mounted.
+                        setRenderPass((current) => current + 1);
+                      }
+                    }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="mx-auto rounded-xl bg-white shadow"
+                  />
               </div>
             ))}
           {!fileUrl && !loading && (

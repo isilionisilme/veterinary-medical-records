@@ -182,7 +182,6 @@ try {
     Stop-DevProcessesByCommandLine
     Stop-PortProcess -Port 8000
     Stop-PortProcess -Port 5173
-
     $backendProcess = Start-DevConsole -WorkingDirectory $repoRoot -CommandToRun $backendCommand -WindowTitle $backendWindowTitle
     $frontendProcess = Start-DevConsole -WorkingDirectory $frontendDir -CommandToRun "npm run dev" -WindowTitle $frontendWindowTitle
 
