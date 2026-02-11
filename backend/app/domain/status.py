@@ -18,6 +18,7 @@ class DocumentStatusView:
 
 _FAILURE_TYPE_MAP = {
     "EXTRACTION_FAILED": "EXTRACTION_FAILED",
+    "EXTRACTION_LOW_QUALITY": "EXTRACTION_LOW_QUALITY",
     "INTERPRETATION_FAILED": "INTERPRETATION_FAILED",
 }
 
@@ -82,6 +83,8 @@ def derive_document_status(latest_run: ProcessingRunSummary | None) -> DocumentS
 def _failed_message(failure_type: str) -> str:
     if failure_type == "EXTRACTION_FAILED":
         return "Processing failed during extraction."
+    if failure_type == "EXTRACTION_LOW_QUALITY":
+        return "Processing failed because extracted text quality was too low."
     if failure_type == "INTERPRETATION_FAILED":
         return "Processing failed during interpretation."
     return "Processing failed due to an unknown error."

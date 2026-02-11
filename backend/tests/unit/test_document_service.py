@@ -4,9 +4,16 @@ from pathlib import Path
 
 from backend.app.application.document_service import (
     get_document_original_location,
+    get_document_status_details,
     register_document_upload,
 )
-from backend.app.domain.models import Document, ProcessingRunSummary, ProcessingStatus, ReviewStatus
+from backend.app.domain.models import (
+    Document,
+    ProcessingRunState,
+    ProcessingRunSummary,
+    ProcessingStatus,
+    ReviewStatus,
+)
 from backend.app.ports.file_storage import StoredFile
 
 
@@ -36,6 +43,20 @@ class FakeFileStorage:
 
     def exists(self, *, storage_path: str) -> bool:
         return True
+
+    def save_raw_text(
+        self, *, document_id: str, run_id: str, text: str
+    ) -> StoredFile:
+        return StoredFile(
+            storage_path=f"{document_id}/runs/{run_id}/raw-text.txt",
+            file_size=len(text),
+        )
+
+    def resolve_raw_text(self, *, document_id: str, run_id: str) -> Path:
+        return Path("/tmp") / document_id / "runs" / run_id / "raw-text.txt"
+
+    def exists_raw_text(self, *, document_id: str, run_id: str) -> bool:
+        return False
 
 
 def test_register_document_upload_persists_document_and_returns_response_fields() -> None:
@@ -131,4 +152,98 @@ def test_get_document_original_location_resolves_path_and_existence() -> None:
     assert result.document.document_id == "doc-123"
     assert result.file_path == Path("/tmp/doc-123/original.pdf")
     assert result.exists is False
+
+
+def test_get_document_status_details_marks_failed_when_raw_text_is_unusable(tmp_path) -> None:
+    document = Document(
+        document_id="doc-raw-text",
+        original_filename="record.pdf",
+        content_type="application/pdf",
+        file_size=10,
+        storage_path="doc-raw-text/original.pdf",
+        created_at="2026-02-02T09:00:00+00:00",
+        updated_at="2026-02-02T09:00:00+00:00",
+        review_status=ReviewStatus.IN_REVIEW,
+    )
+    latest_run = ProcessingRunSummary(
+        run_id="run-123",
+        state=ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+
+    class StubRepository(FakeDocumentRepository):
+        def get(self, document_id: str) -> Document | None:
+            return document
+
+        def get_latest_run(self, document_id: str) -> ProcessingRunSummary | None:
+            return latest_run
+
+    class StubStorage(FakeFileStorage):
+        def exists_raw_text(self, *, document_id: str, run_id: str) -> bool:
+            return True
+
+        def resolve_raw_text(self, *, document_id: str, run_id: str) -> Path:
+            raw_path = tmp_path / "raw-text-gibberish.txt"
+            raw_path.write_text(
+                "D%G! $G!II%D /T?UL Da$-N;.8Q- /T/UL /T@UL ?'BCADEF?",
+                encoding="utf-8",
+            )
+            return raw_path
+
+    result = get_document_status_details(
+        document_id="doc-raw-text",
+        repository=StubRepository(),
+        storage=StubStorage(),
+    )
+
+    assert result is not None
+    assert result.status_view.status == ProcessingStatus.FAILED
+    assert result.status_view.failure_type == "EXTRACTION_LOW_QUALITY"
+
+
+def test_get_document_status_details_keeps_completed_when_raw_text_is_usable(tmp_path) -> None:
+    document = Document(
+        document_id="doc-usable-text",
+        original_filename="record.pdf",
+        content_type="application/pdf",
+        file_size=10,
+        storage_path="doc-usable-text/original.pdf",
+        created_at="2026-02-02T09:00:00+00:00",
+        updated_at="2026-02-02T09:00:00+00:00",
+        review_status=ReviewStatus.IN_REVIEW,
+    )
+    latest_run = ProcessingRunSummary(
+        run_id="run-usable",
+        state=ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+
+    class StubRepository(FakeDocumentRepository):
+        def get(self, document_id: str) -> Document | None:
+            return document
+
+        def get_latest_run(self, document_id: str) -> ProcessingRunSummary | None:
+            return latest_run
+
+    class StubStorage(FakeFileStorage):
+        def exists_raw_text(self, *, document_id: str, run_id: str) -> bool:
+            return True
+
+        def resolve_raw_text(self, *, document_id: str, run_id: str) -> Path:
+            raw_path = tmp_path / "raw-text-usable.txt"
+            raw_path.write_text(
+                "Historia clinica: perro con fiebre y vomitos. Tratamiento sintomatico.",
+                encoding="utf-8",
+            )
+            return raw_path
+
+    result = get_document_status_details(
+        document_id="doc-usable-text",
+        repository=StubRepository(),
+        storage=StubStorage(),
+    )
+
+    assert result is not None
+    assert result.status_view.status == ProcessingStatus.COMPLETED
+    assert result.status_view.failure_type is None
 
