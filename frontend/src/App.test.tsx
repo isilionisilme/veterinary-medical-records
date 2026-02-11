@@ -665,15 +665,28 @@ describe("App upload and list flow", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
     fireEvent.click(screen.getByRole("button", { name: /Texto extraido/i }));
+    expect(
+      screen.getByText(/¿El texto no es correcto\? Puedes reprocesarlo para regenerar la extraccion\./i)
+    ).toBeInTheDocument();
 
     await screen.findByText(oldText);
 
-    fireEvent.click(screen.getByRole("button", { name: /Reintentar procesamiento/i }));
-    fireEvent.click(await screen.findByRole("button", { name: /^Reintentar$/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Reprocesar$/i }));
+    fireEvent.click((await screen.findAllByRole("button", { name: /^Reprocesar$/i }))[1]);
+
+    expect(await screen.findByText(/Reprocesamiento iniciado\./i)).toBeInTheDocument();
+    expect(screen.queryByText(/Procesamiento reiniciado/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Reprocesando\.\.\./i })).toBeDisabled();
+    expect(
+      within(screen.getByRole("button", { name: /ready\.pdf/i })).getByText("Procesando")
+    ).toBeInTheDocument();
 
     await waitFor(
       () => {
         expect(screen.getByText(newText)).toBeInTheDocument();
+        expect(
+          within(screen.getByRole("button", { name: /ready\.pdf/i })).getByText("Listo para revision")
+        ).toBeInTheDocument();
       },
       { timeout: 10000 }
     );

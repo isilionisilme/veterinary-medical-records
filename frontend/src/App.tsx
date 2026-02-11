@@ -530,7 +530,9 @@ export function App() {
   >("document");
   const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>({});
   const [showRetryModal, setShowRetryModal] = useState(false);
-  const [retryNotice, setRetryNotice] = useState<string | null>(null);
+  const [reprocessingDocumentId, setReprocessingDocumentId] = useState<string | null>(null);
+  const [hasObservedProcessingAfterReprocess, setHasObservedProcessingAfterReprocess] =
+    useState(false);
   const [rawSearch, setRawSearch] = useState("");
   const [rawSearchNotice, setRawSearchNotice] = useState<string | null>(null);
   const [uploadFeedback, setUploadFeedback] = useState<UploadFeedback | null>(null);
@@ -557,6 +559,7 @@ export function App() {
   const copyFeedbackTimerRef = useRef<number | null>(null);
   const latestLoadRequestIdRef = useRef<string | null>(null);
   const latestRawTextRefreshRef = useRef<string | null>(null);
+  const listPollingStartedAtRef = useRef<number | null>(null);
   const queryClient = useQueryClient();
 
   const downloadUrl = useMemo(() => {
@@ -993,22 +996,25 @@ export function App() {
     const items = documentList.data?.items ?? [];
     const processingItems = items.filter((item) => isDocumentProcessing(item.status));
     if (processingItems.length === 0) {
+      listPollingStartedAtRef.current = null;
       return;
     }
 
-    const oldestMs = processingItems
-      .map((item) => Date.parse(item.created_at))
-      .filter((value) => !Number.isNaN(value))
-      .sort((a, b) => a - b)[0];
+    const now = Date.now();
+    if (listPollingStartedAtRef.current === null) {
+      listPollingStartedAtRef.current = now;
+    }
 
-    const maxPollingWindowMs = 3 * 60 * 1000;
-    if (oldestMs && Date.now() - oldestMs > maxPollingWindowMs) {
+    const elapsedMs = now - listPollingStartedAtRef.current;
+    const maxPollingWindowMs = 10 * 60 * 1000;
+    if (elapsedMs > maxPollingWindowMs) {
       return;
     }
 
+    const intervalMs = elapsedMs < 2 * 60 * 1000 ? 1500 : 5000;
     const intervalId = window.setInterval(() => {
       documentList.refetch();
-    }, 3000);
+    }, intervalMs);
     return () => window.clearInterval(intervalId);
   }, [documentList, documentList.data?.items]);
 
@@ -1033,16 +1039,76 @@ export function App() {
 
   const reprocessMutation = useMutation({
     mutationFn: async (docId: string) => triggerReprocess(docId),
-    onSuccess: (_, docId) => {
+    onMutate: async (docId) => {
+      setReprocessingDocumentId(docId);
+      setHasObservedProcessingAfterReprocess(false);
+      await queryClient.cancelQueries({ queryKey: ["documents", "list"] });
+      queryClient.setQueryData<DocumentListResponse | undefined>(["documents", "list"], (current) => {
+        if (!current) {
+          return current;
+        }
+        return {
+          ...current,
+          items: current.items.map((item) =>
+            item.document_id === docId ? { ...item, status: "PROCESSING" } : item
+          ),
+        };
+      });
+      queryClient.setQueryData<DocumentDetailResponse | undefined>(
+        ["documents", "detail", docId],
+        (current) => {
+          if (!current) {
+            return current;
+          }
+          return {
+            ...current,
+            status: "PROCESSING",
+            latest_run: current.latest_run
+              ? { ...current.latest_run, state: "QUEUED" }
+              : current.latest_run,
+          };
+        }
+      );
+    },
+    onSuccess: (latestRun, docId) => {
+      queryClient.setQueryData<DocumentDetailResponse | undefined>(
+        ["documents", "detail", docId],
+        (current) => {
+          if (!current) {
+            return current;
+          }
+          return {
+            ...current,
+            status: "PROCESSING",
+            latest_run: {
+              run_id: latestRun.run_id,
+              state: latestRun.state,
+              failure_type: latestRun.failure_type,
+            },
+          };
+        }
+      );
+      setUploadFeedback({
+        kind: "success",
+        message: "Reprocesamiento iniciado.",
+      });
       queryClient.invalidateQueries({ queryKey: ["documents", "list"] });
       queryClient.invalidateQueries({ queryKey: ["documents", "detail", docId] });
       queryClient.invalidateQueries({ queryKey: ["documents", "history", docId] });
       queryClient.invalidateQueries({ queryKey: ["runs", "raw-text"] });
+      queryClient.refetchQueries({ queryKey: ["documents", "list"], type: "active" });
+      queryClient.refetchQueries({ queryKey: ["documents", "detail", docId], type: "active" });
+      queryClient.refetchQueries({ queryKey: ["documents", "history", docId], type: "active" });
       latestRawTextRefreshRef.current = null;
-      setRetryNotice("Procesamiento reiniciado");
     },
-    onError: () => {
-      setRetryNotice("No pudimos reiniciar el procesamiento.");
+    onError: (error) => {
+      setUploadFeedback({
+        kind: "error",
+        message: getUserErrorMessage(error, "No pudimos iniciar el reprocesamiento."),
+        technicalDetails: getTechnicalDetails(error),
+      });
+      setReprocessingDocumentId(null);
+      setHasObservedProcessingAfterReprocess(false);
     },
   });
 
@@ -1072,10 +1138,18 @@ export function App() {
 
   const latestState = documentDetails.data?.latest_run?.state;
   const latestRunId = documentDetails.data?.latest_run?.run_id;
+  const activeListDocument = useMemo(
+    () => (activeId ? (documentList.data?.items ?? []).find((item) => item.document_id === activeId) : null),
+    [activeId, documentList.data?.items]
+  );
+  const isActiveListProcessing = Boolean(
+    activeListDocument && isDocumentProcessing(activeListDocument.status)
+  );
   const isProcessing =
     documentDetails.data?.status === "PROCESSING" ||
     latestState === "QUEUED" ||
     latestState === "RUNNING";
+  const isActiveDocumentProcessing = isProcessing || isActiveListProcessing;
 
   useEffect(() => {
     if (!latestRunId || !latestState) {
@@ -1098,12 +1172,23 @@ export function App() {
   }, [latestRunId, latestState, queryClient]);
 
   useEffect(() => {
-    if (!retryNotice) {
+    if (!reprocessingDocumentId || activeId !== reprocessingDocumentId) {
       return;
     }
-    const timer = window.setTimeout(() => setRetryNotice(null), 3000);
-    return () => window.clearTimeout(timer);
-  }, [retryNotice]);
+    if (isActiveDocumentProcessing && !hasObservedProcessingAfterReprocess) {
+      setHasObservedProcessingAfterReprocess(true);
+      return;
+    }
+    if (hasObservedProcessingAfterReprocess && !isActiveDocumentProcessing) {
+      setReprocessingDocumentId(null);
+      setHasObservedProcessingAfterReprocess(false);
+    }
+  }, [
+    activeId,
+    hasObservedProcessingAfterReprocess,
+    isActiveDocumentProcessing,
+    reprocessingDocumentId,
+  ]);
 
   useEffect(() => {
     if (!uploadFeedback) {
@@ -1593,25 +1678,24 @@ export function App() {
                   <div className="flex h-full flex-col rounded-2xl border border-black/10 bg-white/80 p-4">
                     <div className="rounded-2xl border border-black/10 bg-white/90 p-3">
                       <div className="flex flex-col gap-2 text-xs text-ink">
-                        <span className="font-semibold">¿El texto parece incorrecto?</span>
                         <span className="text-muted">
-                          Puedes reintentar el procesamiento para regenerar la extraccion.
+                          ¿El texto no es correcto? Puedes reprocesarlo para regenerar la extraccion.
                         </span>
                         <div className="flex flex-wrap items-center gap-2">
                           <Button
                             type="button"
-                            disabled={!activeId || isProcessing || reprocessMutation.isPending}
+                            disabled={!activeId || isActiveDocumentProcessing || reprocessMutation.isPending}
                             onClick={() => setShowRetryModal(true)}
                           >
-                            {isProcessing
-                              ? "Procesando..."
-                              : reprocessMutation.isPending
+                            {reprocessMutation.isPending ||
+                            (Boolean(activeId) &&
+                              reprocessingDocumentId === activeId &&
+                              (!hasObservedProcessingAfterReprocess || isActiveDocumentProcessing))
                               ? "Reprocesando..."
-                              : "Reintentar procesamiento"}
+                              : isActiveDocumentProcessing
+                              ? "Procesando..."
+                              : "Reprocesar"}
                           </Button>
-                          {retryNotice && (
-                            <span className="text-xs text-muted">{retryNotice}</span>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -1681,10 +1765,10 @@ export function App() {
                       </p>
                       <Button
                         type="button"
-                        disabled={!activeId || isProcessing || reprocessMutation.isPending}
+                        disabled={!activeId || isActiveDocumentProcessing || reprocessMutation.isPending}
                         onClick={() => setShowRetryModal(true)}
                       >
-                        {isProcessing
+                        {isActiveDocumentProcessing
                           ? "Procesando..."
                           : reprocessMutation.isPending
                           ? "Reprocesando..."
@@ -1863,7 +1947,7 @@ export function App() {
       {showRetryModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-6">
           <div className="w-full max-w-sm rounded-2xl border border-black/10 bg-white p-4 shadow-xl">
-            <p className="text-sm font-semibold text-ink">Reintentar procesamiento</p>
+            <p className="text-sm font-semibold text-ink">Reprocesar documento</p>
             <p className="mt-2 text-xs text-muted">
               Esto volvera a ejecutar extraccion e interpretacion y puede cambiar los resultados.
             </p>
@@ -1872,7 +1956,7 @@ export function App() {
                 Cancelar
               </Button>
               <Button type="button" onClick={handleConfirmRetry}>
-                Reintentar
+                Reprocesar
               </Button>
             </div>
           </div>
