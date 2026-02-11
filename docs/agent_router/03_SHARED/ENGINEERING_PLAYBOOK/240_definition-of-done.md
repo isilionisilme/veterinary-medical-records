@@ -5,7 +5,7 @@ For user stories:
 - It delivers a complete vertical slice of user-facing value.
 - It is documented (README and/or ADR if a design decision was made).
 - If user-visible behavior is affected, UX guidance is applied from `docs/agent_router/03_SHARED/UX_GUIDELINES/00_entry.md` and `docs/agent_router/04_PROJECT/UX_DESIGN/00_entry.md`.
-- If visual identity or user-facing copy is affected, brand guidance is applied from `docs/agent_router/04_PROJECT/BRAND_GUIDELINES/00_entry.md`.
+- If visual identity or user-facing copy is affected, brand guidance is applied from `docs/agent_router/03_SHARED/BRAND_GUIDELINES/00_entry.md`.
 
 For technical non user-facing changes (refactors, chores, CI, docs, fixes):
 - The change intent and scope are explicitly documented in the Pull Request.

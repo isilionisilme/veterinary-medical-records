@@ -25,7 +25,7 @@ As a user, I want to upload a medical document so that the system can start proc
 - Tech: Processing model and run invariants: [`docs/project/TECHNICAL_DESIGN.md`](../TECHNICAL_DESIGN/00_entry.md) Sections 3–4 + Appendix A2
 - UX: Global upload experience and feedback heuristics: [`docs/shared/UX_GUIDELINES.md`](../../03_SHARED/UX_GUIDELINES/00_entry.md)
 - UX: Project interaction contract: [`docs/project/UX_DESIGN.md`](../UX_DESIGN/00_entry.md) Sections 1–4
-- UX: User-facing copy tone: [`docs/project/BRAND_GUIDELINES.md`](../BRAND_GUIDELINES/00_entry.md)
+- UX: User-facing copy tone: [`docs/shared/BRAND_GUIDELINES.md`](../../03_SHARED/BRAND_GUIDELINES/00_entry.md)
 
 **Story-specific technical requirements**
 - Reuse the existing upload contract and backend validation rules as defined in [`docs/project/TECHNICAL_DESIGN.md`](../TECHNICAL_DESIGN/00_entry.md) Appendix B3/B3.2.

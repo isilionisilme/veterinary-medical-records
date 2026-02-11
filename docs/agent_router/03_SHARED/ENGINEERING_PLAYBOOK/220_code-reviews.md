@@ -58,6 +58,10 @@ Produce the review using this mandatory output format:
    - Nice-to-have (optional improvements)
    - Questions / assumptions
 
+For PRs that include `frontend/**` or user-visible behavior/copy changes, include:
+   - UX/Brand Compliance (mandatory section)
+   - Any UX/Brand non-compliance must be reported under Must-fix.
+
 Each finding must include:
 - File reference(s)
 - Short rationale
