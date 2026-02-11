@@ -102,6 +102,12 @@ type UploadFeedback = {
   technicalDetails?: string;
 };
 
+type ActionFeedback = {
+  kind: "success" | "error";
+  message: string;
+  technicalDetails?: string;
+};
+
 class UiError extends Error {
   readonly userMessage: string;
   readonly technicalDetails?: string;
@@ -536,6 +542,7 @@ export function App() {
   const [rawSearch, setRawSearch] = useState("");
   const [rawSearchNotice, setRawSearchNotice] = useState<string | null>(null);
   const [uploadFeedback, setUploadFeedback] = useState<UploadFeedback | null>(null);
+  const [actionFeedback, setActionFeedback] = useState<ActionFeedback | null>(null);
   const [hasShownListErrorToast, setHasShownListErrorToast] = useState(false);
   const [isDragOverViewer, setIsDragOverViewer] = useState(false);
   const [isDragOverSidebarUpload, setIsDragOverSidebarUpload] = useState(false);
@@ -992,8 +999,10 @@ export function App() {
     processingHistory,
   ]);
 
+  const documentListItems = documentList.data?.items ?? [];
+
   useEffect(() => {
-    const items = documentList.data?.items ?? [];
+    const items = documentListItems;
     const processingItems = items.filter((item) => isDocumentProcessing(item.status));
     if (processingItems.length === 0) {
       listPollingStartedAtRef.current = null;
@@ -1016,7 +1025,7 @@ export function App() {
       documentList.refetch();
     }, intervalMs);
     return () => window.clearInterval(intervalId);
-  }, [documentList, documentList.data?.items]);
+  }, [documentList.refetch, documentListItems]);
 
   useEffect(() => {
     if (documentList.status !== "success") {
@@ -1040,6 +1049,15 @@ export function App() {
   const reprocessMutation = useMutation({
     mutationFn: async (docId: string) => triggerReprocess(docId),
     onMutate: async (docId) => {
+      const previousDocumentList = queryClient.getQueryData<DocumentListResponse>([
+        "documents",
+        "list",
+      ]);
+      const previousDocumentDetail = queryClient.getQueryData<DocumentDetailResponse>([
+        "documents",
+        "detail",
+        docId,
+      ]);
       setReprocessingDocumentId(docId);
       setHasObservedProcessingAfterReprocess(false);
       await queryClient.cancelQueries({ queryKey: ["documents", "list"] });
@@ -1069,6 +1087,7 @@ export function App() {
           };
         }
       );
+      return { previousDocumentList, previousDocumentDetail, docId };
     },
     onSuccess: (latestRun, docId) => {
       queryClient.setQueryData<DocumentDetailResponse | undefined>(
@@ -1088,7 +1107,7 @@ export function App() {
           };
         }
       );
-      setUploadFeedback({
+      setActionFeedback({
         kind: "success",
         message: "Reprocesamiento iniciado.",
       });
@@ -1101,8 +1120,18 @@ export function App() {
       queryClient.refetchQueries({ queryKey: ["documents", "history", docId], type: "active" });
       latestRawTextRefreshRef.current = null;
     },
-    onError: (error) => {
-      setUploadFeedback({
+    onError: (error, docId, context) => {
+      if (context?.previousDocumentList) {
+        queryClient.setQueryData(["documents", "list"], context.previousDocumentList);
+      }
+      if (context?.previousDocumentDetail) {
+        queryClient.setQueryData(["documents", "detail", docId], context.previousDocumentDetail);
+      }
+      queryClient.invalidateQueries({ queryKey: ["documents", "list"] });
+      queryClient.invalidateQueries({ queryKey: ["documents", "detail", docId] });
+      queryClient.refetchQueries({ queryKey: ["documents", "list"], type: "active" });
+      queryClient.refetchQueries({ queryKey: ["documents", "detail", docId], type: "active" });
+      setActionFeedback({
         kind: "error",
         message: getUserErrorMessage(error, "No pudimos iniciar el reprocesamiento."),
         technicalDetails: getTechnicalDetails(error),
@@ -1198,6 +1227,15 @@ export function App() {
     const timer = window.setTimeout(() => setUploadFeedback(null), timeoutMs);
     return () => window.clearTimeout(timer);
   }, [uploadFeedback]);
+
+  useEffect(() => {
+    if (!actionFeedback) {
+      return;
+    }
+    const timeoutMs = actionFeedback.kind === "success" ? 3500 : 5000;
+    const timer = window.setTimeout(() => setActionFeedback(null), timeoutMs);
+    return () => window.clearTimeout(timer);
+  }, [actionFeedback]);
 
   useEffect(() => {
     if (documentList.isError) {
@@ -2006,6 +2044,38 @@ export function App() {
                           <p className="mt-1">{uploadFeedback.technicalDetails}</p>
                         </details>
                       )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            {actionFeedback && (
+              <div className="fixed left-1/2 top-28 z-[60] w-full max-w-lg -translate-x-1/2 px-4 sm:w-[32rem]">
+                <div
+                  className={`rounded-2xl border px-5 py-4 text-base shadow-xl ${
+                    actionFeedback.kind === "success"
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border-red-200 bg-red-50 text-red-700"
+                  }`}
+                  role="status"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span>{actionFeedback.message}</span>
+                    <button
+                      type="button"
+                      aria-label="Cerrar notificacion de accion"
+                      className="text-lg font-semibold leading-none text-ink"
+                      onClick={() => setActionFeedback(null)}
+                    >
+                      &times;
+                    </button>
+                  </div>
+                  {actionFeedback.kind === "error" && actionFeedback.technicalDetails && (
+                    <div className="mt-2 flex items-center gap-3">
+                      <details className="text-xs text-muted">
+                        <summary className="cursor-pointer">Ver detalles tecnicos</summary>
+                        <p className="mt-1">{actionFeedback.technicalDetails}</p>
+                      </details>
                     </div>
                   )}
                 </div>
