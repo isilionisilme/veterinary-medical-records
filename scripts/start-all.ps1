@@ -27,7 +27,9 @@ $backendCommand = if (Test-Path $venvPython) {
 $fixedWindowWidth = 50
 $fixedWindowHeight = 40
 $powershellExe = Join-Path $env:WINDIR "System32\WindowsPowerShell\v1.0\powershell.exe"
-$conhostExe = Join-Path $env:WINDIR "System32\conhost.exe"
+$backendWindowTitle = "US21 Backend Dev"
+$frontendWindowTitle = "US21 Frontend Dev"
+$scriptMutexName = "Global\US21StartAllMutex"
 
 $resizeWindowCommand = @'
 try {
@@ -49,6 +51,45 @@ $rawUi.WindowSize = New-Object System.Management.Automation.Host.Size($targetWid
 $resizeWindowCommand = $resizeWindowCommand.Replace("__FIXED_WIDTH__", $fixedWindowWidth)
 $resizeWindowCommand = $resizeWindowCommand.Replace("__FIXED_HEIGHT__", $fixedWindowHeight)
 
+function Get-DescendantProcessIds {
+    param(
+        [Parameter(Mandatory = $true)][int]$RootPid
+    )
+
+    $visited = New-Object 'System.Collections.Generic.HashSet[int]'
+    $queue = New-Object System.Collections.Queue
+    $queue.Enqueue([int]$RootPid)
+
+    while ($queue.Count -gt 0) {
+        $currentPid = [int]$queue.Dequeue()
+        if (-not $visited.Add($currentPid)) {
+            continue
+        }
+
+        Get-CimInstance Win32_Process -Filter "ParentProcessId = $currentPid" -ErrorAction SilentlyContinue |
+            ForEach-Object { $queue.Enqueue([int]$_.ProcessId) }
+    }
+
+    return @($visited)
+}
+
+function Stop-ProcessSubtree {
+    param(
+        [Parameter(Mandatory = $true)][int]$RootPid
+    )
+
+    $all = Get-DescendantProcessIds -RootPid $RootPid
+    if (-not $all -or $all.Count -eq 0) {
+        return
+    }
+
+    # Stop children first, then the root process to close windows cleanly.
+    $ordered = $all | Sort-Object -Descending
+    foreach ($pidToStop in $ordered) {
+        Stop-Process -Id $pidToStop -Force -ErrorAction SilentlyContinue
+    }
+}
+
 function Stop-PortProcess {
     param(
         [Parameter(Mandatory = $true)][int]$Port
@@ -62,9 +103,34 @@ function Stop-PortProcess {
         }
         $pid = 0
         if ([int]::TryParse($parts[-1], [ref]$pid) -and $pid -gt 0) {
-            Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
+            Stop-ProcessSubtree -RootPid $pid
         }
     }
+}
+
+function Stop-ExistingDevWindows {
+    $targetTitles = @($backendWindowTitle, $frontendWindowTitle)
+    Get-Process -ErrorAction SilentlyContinue |
+        Where-Object { $targetTitles -contains $_.MainWindowTitle } |
+        ForEach-Object { Stop-ProcessSubtree -RootPid $_.Id }
+}
+
+function Stop-DevProcessesByCommandLine {
+    $patterns = @(
+        "npm run dev",
+        "backend.app.main:create_app"
+    )
+
+    Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
+        Where-Object {
+            $cmd = $_.CommandLine
+            if (-not $cmd) { return $false }
+            foreach ($pattern in $patterns) {
+                if ($cmd -like "*$pattern*") { return $true }
+            }
+            return $false
+        } |
+        ForEach-Object { Stop-ProcessSubtree -RootPid ([int]$_.ProcessId) }
 }
 
 function Stop-TrackedProcesses {
@@ -76,7 +142,7 @@ function Stop-TrackedProcesses {
         $state = Get-Content $processStateFile -Raw | ConvertFrom-Json
         foreach ($pid in @($state.pids)) {
             if ($pid -is [int] -and $pid -gt 0) {
-                Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
+                Stop-ProcessSubtree -RootPid $pid
             }
         }
     } catch {
@@ -89,19 +155,11 @@ function Stop-TrackedProcesses {
 function Start-DevConsole {
     param(
         [Parameter(Mandatory = $true)][string]$WorkingDirectory,
-        [Parameter(Mandatory = $true)][string]$CommandToRun
+        [Parameter(Mandatory = $true)][string]$CommandToRun,
+        [Parameter(Mandatory = $true)][string]$WindowTitle
     )
 
-    $composedCommand = "& { $resizeWindowCommand; Set-Location '$WorkingDirectory'; $CommandToRun }"
-
-    if (Test-Path $conhostExe) {
-        return Start-Process $conhostExe -PassThru -ArgumentList @(
-            $powershellExe,
-            "-NoExit",
-            "-Command",
-            $composedCommand
-        )
-    }
+    $composedCommand = "& { `$Host.UI.RawUI.WindowTitle = '$WindowTitle'; $resizeWindowCommand; Set-Location '$WorkingDirectory'; $CommandToRun }"
 
     return Start-Process $powershellExe -PassThru -ArgumentList @(
         "-NoExit",
@@ -110,16 +168,34 @@ function Start-DevConsole {
     )
 }
 
-Stop-TrackedProcesses
-Stop-PortProcess -Port 8000
-Stop-PortProcess -Port 5173
+$mutex = New-Object System.Threading.Mutex($false, $scriptMutexName)
+$hasLock = $false
+try {
+    $hasLock = $mutex.WaitOne(0)
+    if (-not $hasLock) {
+        Write-Host "Ya hay una ejecucion de start-all en curso. Espera un momento y vuelve a intentarlo."
+        exit 1
+    }
 
-$backendProcess = Start-DevConsole -WorkingDirectory $repoRoot -CommandToRun $backendCommand
-$frontendProcess = Start-DevConsole -WorkingDirectory $frontendDir -CommandToRun "npm run dev"
+    Stop-TrackedProcesses
+    Stop-ExistingDevWindows
+    Stop-DevProcessesByCommandLine
+    Stop-PortProcess -Port 8000
+    Stop-PortProcess -Port 5173
 
-@{
-    pids = @($backendProcess.Id, $frontendProcess.Id)
-    started_at = (Get-Date).ToString("o")
-} | ConvertTo-Json | Set-Content -Path $processStateFile -Encoding UTF8
+    $backendProcess = Start-DevConsole -WorkingDirectory $repoRoot -CommandToRun $backendCommand -WindowTitle $backendWindowTitle
+    $frontendProcess = Start-DevConsole -WorkingDirectory $frontendDir -CommandToRun "npm run dev" -WindowTitle $frontendWindowTitle
 
-Write-Host "Entorno iniciado: backend + frontend."
+    @{
+        pids = @($backendProcess.Id, $frontendProcess.Id)
+        started_at = (Get-Date).ToString("o")
+    } | ConvertTo-Json | Set-Content -Path $processStateFile -Encoding UTF8
+
+    Write-Host "Entorno iniciado: backend + frontend."
+}
+finally {
+    if ($hasLock) {
+        $mutex.ReleaseMutex() | Out-Null
+    }
+    $mutex.Dispose()
+}
