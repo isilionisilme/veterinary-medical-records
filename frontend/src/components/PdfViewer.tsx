@@ -4,16 +4,15 @@ import { motion } from "framer-motion";
 import * as pdfjsLib from "pdfjs-dist";
 import workerSrc from "pdfjs-dist/build/pdf.worker.min?url";
 
-import { Button } from "./ui/button";
-
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 type PdfViewerProps = {
   fileUrl: string | null;
   filename?: string | null;
+  isDragOver?: boolean;
 };
 
-export function PdfViewer({ fileUrl, filename }: PdfViewerProps) {
+export function PdfViewer({ fileUrl, filename, isDragOver = false }: PdfViewerProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const pageRefs = useRef<Array<HTMLDivElement | null>>([]);
@@ -150,7 +149,7 @@ export function PdfViewer({ fileUrl, filename }: PdfViewerProps) {
           ratios.set(pageIndex, entry.intersectionRatio);
         });
 
-        let nextPage = pageNumber;
+        let nextPage = 0;
         let maxRatio = 0;
         ratios.forEach((ratio, index) => {
           if (ratio > maxRatio) {
@@ -159,8 +158,8 @@ export function PdfViewer({ fileUrl, filename }: PdfViewerProps) {
           }
         });
 
-        if (nextPage && nextPage !== pageNumber) {
-          setPageNumber(nextPage);
+        if (nextPage > 0) {
+          setPageNumber((current) => (current === nextPage ? current : nextPage));
         }
       },
       {
@@ -178,7 +177,7 @@ export function PdfViewer({ fileUrl, filename }: PdfViewerProps) {
     return () => {
       observer.disconnect();
     };
-  }, [pageNumber, totalPages, canvasesReady]);
+  }, [totalPages, canvasesReady]);
 
   const pages = useMemo(
     () => Array.from({ length: totalPages }, (_, index) => index + 1),
@@ -210,43 +209,42 @@ export function PdfViewer({ fileUrl, filename }: PdfViewerProps) {
 
   const canGoBack = pageNumber > 1;
   const canGoForward = pageNumber < totalPages;
-  const navDisabled = loading || !pdfDoc || !canvasesReady;
-  const showPageNavigation = Boolean(fileUrl) && !loading && !error && totalPages > 0 && canvasesReady;
+  const navDisabled = loading || !pdfDoc;
+  const showPageNavigation = Boolean(fileUrl) && !loading && !error && totalPages > 0;
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       {showPageNavigation && (
-        <div className="flex items-center justify-between border-b border-black/10 pb-3">
-          <p className="text-sm text-muted">
-            Pagina {pageNumber} / {totalPages}
+        <div className="relative z-20 flex items-center justify-center gap-2 border-b border-black/10 pb-3">
+          <button
+            type="button"
+            aria-label="Página anterior"
+            onClick={(event) => scrollToPage(Math.max(1, pageNumber - 1), event)}
+            disabled={navDisabled || !canGoBack}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/15 bg-white/90 p-0 leading-none text-ink shadow-sm transition hover:bg-accentSoft disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ChevronLeft size={18} className="h-[18px] w-[18px] shrink-0 text-ink" />
+          </button>
+          <p className="min-w-12 text-center text-sm font-semibold text-muted">
+            {pageNumber}/{totalPages}
           </p>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              type="button"
-              onClick={(event) => scrollToPage(Math.max(1, pageNumber - 1), event)}
-              disabled={navDisabled || !canGoBack}
-            >
-              <ChevronLeft size={16} />
-              Pagina anterior
-            </Button>
-            <Button
-              variant="ghost"
-              type="button"
-              onClick={(event) => scrollToPage(Math.min(totalPages, pageNumber + 1), event)}
-              disabled={navDisabled || !canGoForward}
-            >
-              Pagina siguiente
-              <ChevronRight size={16} />
-            </Button>
-          </div>
+          <button
+            type="button"
+            aria-label="Página siguiente"
+            onClick={(event) => scrollToPage(Math.min(totalPages, pageNumber + 1), event)}
+            disabled={navDisabled || !canGoForward}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/15 bg-white/90 p-0 leading-none text-ink shadow-sm transition hover:bg-accentSoft disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ChevronRight size={18} className="h-[18px] w-[18px] shrink-0 text-ink" />
+          </button>
         </div>
       )}
-      <div
-        ref={scrollRef}
-        data-testid="pdf-scroll-container"
-        className="mt-4 flex-1 overflow-auto rounded-2xl border border-black/10 bg-white/60 p-4 shadow-sm"
-      >
+      <div className="relative mt-4 min-h-0 flex-1">
+        <div
+          ref={scrollRef}
+          data-testid="pdf-scroll-container"
+          className="h-full min-h-0 overflow-y-auto rounded-2xl border border-black/10 bg-white/60 p-4 shadow-sm"
+        >
         <div ref={contentRef} className="mx-auto w-full max-w-3xl">
           {loading && (
             <motion.div
@@ -299,6 +297,12 @@ export function PdfViewer({ fileUrl, filename }: PdfViewerProps) {
             </div>
           )}
         </div>
+        </div>
+        {isDragOver && (
+          <div className="pointer-events-none absolute inset-3 z-10 flex items-center justify-center rounded-xl border-2 border-dashed border-accent bg-white/75 ring-2 ring-accent/40">
+            <p className="text-sm font-semibold text-ink">Suelta el PDF para subirlo</p>
+          </div>
+        )}
       </div>
     </div>
   );

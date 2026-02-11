@@ -192,6 +192,15 @@ async function fetchDocuments(): Promise<DocumentListResponse> {
     throw error;
   }
   if (!response.ok) {
+    if (response.status === 404) {
+      // Empty-state compatibility: some environments return 404 when there are no docs yet.
+      return {
+        items: [],
+        limit: 50,
+        offset: 0,
+        total: 0,
+      };
+    }
     let errorMessage = "No se pudieron cargar los documentos.";
     try {
       const payload = await response.json();
@@ -308,7 +317,7 @@ async function uploadDocument(file: File): Promise<DocumentUploadResponse> {
     try {
       const payload = await response.json();
       if (payload?.error_code === "UNSUPPORTED_MEDIA_TYPE") {
-        errorMessage = "Solo se admiten archivos PDF en esta etapa.";
+        errorMessage = "Solo se admiten archivos PDF.";
       } else if (payload?.error_code === "FILE_TOO_LARGE") {
         errorMessage = "El PDF supera el tamano maximo permitido de 20 MB.";
       } else if (payload?.error_code === "INVALID_REQUEST") {
@@ -421,7 +430,9 @@ export function App() {
   const [uploadFeedback, setUploadFeedback] = useState<UploadFeedback | null>(null);
   const [hasShownListErrorToast, setHasShownListErrorToast] = useState(false);
   const [isDragOverViewer, setIsDragOverViewer] = useState(false);
+  const [isDragOverSidebarUpload, setIsDragOverSidebarUpload] = useState(false);
   const [showUploadInfo, setShowUploadInfo] = useState(false);
+  const [showRefreshFeedback, setShowRefreshFeedback] = useState(false);
   const [isHoverDevice, setIsHoverDevice] = useState(true);
   const [uploadInfoPosition, setUploadInfoPosition] = useState({ top: 0, left: 0 });
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -430,9 +441,11 @@ export function App() {
   const uploadInfoCloseTimerRef = useRef<number | null>(null);
   const uploadPanelRef = useRef<HTMLDivElement | null>(null);
   const viewerDragDepthRef = useRef(0);
+  const sidebarUploadDragDepthRef = useRef(0);
   const pendingAutoOpenDocumentIdRef = useRef<string | null>(null);
   const autoOpenRetryCountRef = useRef<Record<string, number>>({});
   const autoOpenRetryTimerRef = useRef<number | null>(null);
+  const refreshFeedbackTimerRef = useRef<number | null>(null);
   const queryClient = useQueryClient();
 
   const downloadUrl = useMemo(() => {
@@ -468,6 +481,9 @@ export function App() {
       }
       if (autoOpenRetryTimerRef.current) {
         window.clearTimeout(autoOpenRetryTimerRef.current);
+      }
+      if (refreshFeedbackTimerRef.current) {
+        window.clearTimeout(refreshFeedbackTimerRef.current);
       }
       if (fileUrl) {
         URL.revokeObjectURL(fileUrl);
@@ -646,7 +662,7 @@ export function App() {
     const hasPdfMime = file.type === "application/pdf";
     const hasPdfExtension = file.name.toLowerCase().endsWith(".pdf");
     if (!hasPdfMime && !hasPdfExtension) {
-      return "Solo se admiten archivos PDF en esta etapa.";
+      return "Solo se admiten archivos PDF.";
     }
     if (file.size > MAX_UPLOAD_SIZE_BYTES) {
       return "El archivo supera el tamaño máximo (20 MB).";
@@ -713,6 +729,48 @@ export function App() {
     queueUpload(file);
   };
 
+  const handleSidebarUploadDragEnter = (event: DragEvent<HTMLDivElement>) => {
+    if (!event.dataTransfer.types.includes("Files")) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    sidebarUploadDragDepthRef.current += 1;
+    setIsDragOverSidebarUpload(true);
+  };
+
+  const handleSidebarUploadDragOver = (event: DragEvent<HTMLDivElement>) => {
+    if (!event.dataTransfer.types.includes("Files")) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    if (!isDragOverSidebarUpload) {
+      setIsDragOverSidebarUpload(true);
+    }
+  };
+
+  const handleSidebarUploadDragLeave = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    sidebarUploadDragDepthRef.current = Math.max(0, sidebarUploadDragDepthRef.current - 1);
+    if (sidebarUploadDragDepthRef.current === 0) {
+      setIsDragOverSidebarUpload(false);
+    }
+  };
+
+  const handleSidebarUploadDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    sidebarUploadDragDepthRef.current = 0;
+    setIsDragOverSidebarUpload(false);
+    const file = event.dataTransfer.files?.[0];
+    if (!file) {
+      return;
+    }
+    queueUpload(file);
+  };
+
   const openUploadFilePicker = () => {
     if (uploadMutation.isPending) {
       return;
@@ -721,12 +779,12 @@ export function App() {
   };
 
   const handleOpenUploadArea = (event?: { preventDefault?: () => void; stopPropagation?: () => void }) => {
-    event?.preventDefault?.();
     event?.stopPropagation?.();
+    // Keep the native file picker call synchronous with the user gesture.
+    openUploadFilePicker();
     if (!isSidebarOpen) {
       setIsSidebarOpen(true);
     }
-    openUploadFilePicker();
   };
 
   const handleSelectDocument = (docId: string) => {
@@ -826,6 +884,16 @@ export function App() {
     }
   }, [documentList.status, sortedDocuments.length]);
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsSidebarOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   const reprocessMutation = useMutation({
     mutationFn: async (docId: string) => triggerReprocess(docId),
     onSuccess: (_, docId) => {
@@ -840,12 +908,24 @@ export function App() {
   });
 
   const handleRefresh = () => {
+    setShowRefreshFeedback(true);
+    if (refreshFeedbackTimerRef.current) {
+      window.clearTimeout(refreshFeedbackTimerRef.current);
+    }
+    refreshFeedbackTimerRef.current = window.setTimeout(() => {
+      setShowRefreshFeedback(false);
+      refreshFeedbackTimerRef.current = null;
+    }, 350);
     documentList.refetch();
     if (activeId) {
       documentDetails.refetch();
       processingHistory.refetch();
     }
   };
+  const isListRefreshing =
+    (documentList.isFetching || showRefreshFeedback) && !documentList.isLoading;
+  const panelHeightClass =
+    "h-[clamp(900px,86vh,1100px)]";
 
   const toggleStepDetails = (key: string) => {
     setExpandedSteps((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -1003,14 +1083,6 @@ export function App() {
           </span>
         </div>
 
-        {isSidebarOpen && (
-          <div
-            className="fixed inset-0 z-10 bg-transparent"
-            onClick={() => setIsSidebarOpen(false)}
-            aria-hidden="true"
-          />
-        )}
-
         <div className="relative z-20 flex gap-6">
           <aside
             className={`flex-shrink-0 transition-all duration-300 ${
@@ -1022,7 +1094,7 @@ export function App() {
                 isSidebarOpen ? "opacity-100" : "opacity-0"
               }`}
             >
-              <section className="p-6">
+          <section className={`flex flex-col p-6 ${panelHeightClass}`}>
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <h2 className="font-display text-xl font-semibold">Documentos</h2>
@@ -1033,9 +1105,13 @@ export function App() {
                     type="button"
                     title="Actualizar"
                     aria-label="Actualizar"
+                    disabled={documentList.isFetching || showRefreshFeedback}
                     className="rounded-full border border-black/15 bg-white p-2 text-ink shadow-sm hover:bg-accentSoft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                   >
-                    <RefreshCw size={16} />
+                    <RefreshCw
+                      size={16}
+                      className={documentList.isFetching || showRefreshFeedback ? "animate-spin" : ""}
+                    />
                   </Button>
                 </div>
 
@@ -1074,6 +1150,30 @@ export function App() {
                       ⓘ
                     </button>
                   </div>
+                  <div
+                    className={`mt-3 flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-5 text-center transition ${
+                      isDragOverSidebarUpload
+                        ? "border-accent bg-accentSoft/35 ring-2 ring-accent/40"
+                        : "border-black/35 bg-white/85 hover:border-black/50 hover:bg-white"
+                    }`}
+                    role="button"
+                    tabIndex={0}
+                    onClick={handleOpenUploadArea}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        handleOpenUploadArea();
+                      }
+                    }}
+                    onDragEnter={handleSidebarUploadDragEnter}
+                    onDragOver={handleSidebarUploadDragOver}
+                    onDragLeave={handleSidebarUploadDragLeave}
+                    onDrop={handleSidebarUploadDrop}
+                  >
+                    <Upload size={18} className="text-ink" />
+                    <p className="mt-2 text-sm font-semibold text-ink">Arrastra un PDF aqui</p>
+                    <p className="text-xs text-muted">o haz clic para cargar</p>
+                  </div>
                   <div className="mt-2 flex items-center gap-2">
                     <input
                       id="upload-document-input"
@@ -1095,29 +1195,24 @@ export function App() {
                         }
                       }}
                     />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      title="Cargar documento"
-                      aria-label="Cargar documento"
-                      onClick={(event) => handleOpenUploadArea(event)}
-                      disabled={uploadMutation.isPending}
-                      className="rounded-full border border-black/15 bg-white p-2 text-ink shadow-sm hover:bg-accentSoft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-                    >
-                      {uploadMutation.isPending ? (
-                        <RefreshCw size={16} className="animate-spin" />
-                      ) : (
-                        <Upload size={16} />
-                      )}
-                    </Button>
-                    {uploadMutation.isPending && <span className="text-xs text-muted">Subiendo...</span>}
+                    {uploadMutation.isPending && (
+                      <div className="flex items-center gap-2 text-xs text-muted">
+                        <RefreshCw size={14} className="animate-spin" />
+                        <span>Subiendo...</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                <div className="mt-4 max-h-[calc(clamp(32rem,74vh,56rem)-12rem)] overflow-y-auto pr-1">
+                <div className="relative mt-4 min-h-0 flex-1 overflow-y-auto pr-1">
                   {documentList.isLoading && (
-                    <div className="rounded-2xl border border-black/10 bg-white/70 p-4 text-sm text-muted">
-                      Cargando documentos...
+                    <div className="space-y-2 rounded-2xl border border-black/10 bg-white/70 p-4">
+                      {Array.from({ length: 4 }).map((_, index) => (
+                        <div key={`skeleton-initial-${index}`} className="animate-pulse rounded-xl border border-black/10 bg-white/80 p-3">
+                          <div className="h-3 w-2/3 rounded bg-black/10" />
+                          <div className="mt-2 h-2.5 w-1/2 rounded bg-black/10" />
+                        </div>
+                      ))}
                     </div>
                   )}
 
@@ -1138,80 +1233,83 @@ export function App() {
                     </div>
                   )}
 
-                  {documentList.data && (
-                    <div className="space-y-2">
-                      {sortedDocuments.length === 0 ? (
-                        <div className="rounded-2xl border border-dashed border-black/10 bg-white/70 p-4 text-sm text-muted">
-                          <p>Aun no hay documentos cargados.</p>
-                          <Button
-                            variant="ghost"
-                            type="button"
-                            className="mt-3"
-                            onClick={(event) => handleOpenUploadArea(event)}
+                  {documentList.data &&
+                    (isListRefreshing ? (
+                      <div className="space-y-2 rounded-2xl border border-black/10 bg-white/70 p-4">
+                        {Array.from({ length: 6 }).map((_, index) => (
+                          <div
+                            key={`skeleton-refresh-${index}`}
+                            className="animate-pulse rounded-xl border border-black/10 bg-white/80 p-3"
                           >
-                            Cargar documento
-                          </Button>
-                        </div>
-                      ) : (
-                        sortedDocuments.map((item) => {
-                        const isActive = activeId === item.document_id;
-                        const status = mapDocumentStatus(item);
-                        return (
-                          <button
-                            key={item.document_id}
-                            type="button"
-                            onClick={() => handleSelectDocument(item.document_id)}
-                            aria-pressed={isActive}
-                            className={`w-full rounded-xl border px-3 py-2 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
-                              isActive
-                                ? "border-accent bg-accentSoft/80 text-ink shadow-sm ring-1 ring-accent"
-                                : "border-black/10 bg-white/80 text-ink hover:bg-white"
-                            }`}
-                          >
-                            <div className="flex items-center justify-between gap-3">
-                              <div className="min-w-0">
-                                <p className="truncate text-sm font-medium">{item.original_filename}</p>
-                                <p className="mt-0.5 text-xs text-muted">
-                                  Subido: {formatTimestamp(item.created_at)}
-                                </p>
-                              </div>
-                              <span
-                                className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${
-                                  status.tone === "ok"
-                                    ? "bg-emerald-100 text-emerald-700"
-                                    : status.tone === "error"
-                                    ? "bg-red-100 text-red-700"
-                                    : "bg-amber-100 text-amber-700"
+                            <div className="h-3 w-2/3 rounded bg-black/10" />
+                            <div className="mt-2 h-2.5 w-1/2 rounded bg-black/10" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {sortedDocuments.length === 0 ? (
+                          <p className="px-1 py-2 text-sm text-muted">Aun no hay documentos cargados.</p>
+                        ) : (
+                          sortedDocuments.map((item) => {
+                            const isActive = activeId === item.document_id;
+                            const status = mapDocumentStatus(item);
+                            return (
+                              <button
+                                key={item.document_id}
+                                type="button"
+                                onClick={() => handleSelectDocument(item.document_id)}
+                                aria-pressed={isActive}
+                                className={`w-full rounded-xl border px-3 py-2 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+                                  isActive
+                                    ? "border-ink/30 bg-black/[0.04] text-ink shadow-sm ring-1 ring-ink/25"
+                                    : "border-black/10 bg-white/80 text-ink hover:bg-white"
                                 }`}
                               >
-                                {status.tone === "warn" && (
-                                  <span className="mr-1 inline-block h-2 w-2 animate-spin rounded-full border border-current border-r-transparent align-middle" />
+                                <div className="flex items-center justify-between gap-3">
+                                  <div className="min-w-0">
+                                    <p className="truncate text-sm font-medium">{item.original_filename}</p>
+                                    <p className="mt-0.5 text-xs text-muted">
+                                      Subido: {formatTimestamp(item.created_at)}
+                                    </p>
+                                  </div>
+                                  <span
+                                    className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                      status.tone === "ok"
+                                        ? "bg-emerald-100 text-emerald-700"
+                                        : status.tone === "error"
+                                        ? "bg-red-100 text-red-700"
+                                        : "bg-amber-100 text-amber-700"
+                                    }`}
+                                  >
+                                    {status.tone === "warn" && (
+                                      <span className="mr-1 inline-block h-2 w-2 animate-spin rounded-full border border-current border-r-transparent align-middle" />
+                                    )}
+                                    {status.label}
+                                  </span>
+                                </div>
+                                {isProcessingTooLong(item.created_at, item.status) && (
+                                  <p className="mt-2 text-xs text-muted">
+                                    Tardando mas de lo esperado
+                                  </p>
                                 )}
-                                {status.label}
-                              </span>
-                            </div>
-                            {isProcessingTooLong(item.created_at, item.status) && (
-                              <p className="mt-2 text-xs text-muted">
-                                Tardando mas de lo esperado
-                              </p>
-                            )}
-                            {item.failure_type && (
-                              <p className="mt-2 text-xs text-red-600">
-                                Error: {item.failure_type}
-                              </p>
-                            )}
-                          </button>
-                        );
-                        })
-                      )}
-                    </div>
-                  )}
+                                {item.failure_type && (
+                                  <p className="mt-2 text-xs text-red-600">
+                                    Error: {item.failure_type}
+                                  </p>
+                                )}
+                              </button>
+                            );
+                          })
+                        )}
+                      </div>
+                    ))}
                 </div>
               </section>
             </div>
           </aside>
 
-          <section className="flex-1 rounded-3xl border border-black/10 bg-white/70 p-6 shadow-xl">
+          <section className={`flex flex-1 flex-col rounded-3xl border border-black/10 bg-white/70 p-6 shadow-xl ${panelHeightClass}`}>
             {loadPdf.isError && (
               <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 {getUserErrorMessage(loadPdf.error, "No se pudo cargar la vista previa del documento.")}
@@ -1224,27 +1322,22 @@ export function App() {
                 )}
               </div>
             )}
-            <div className="mt-4">
+            <div className="mt-4 flex min-h-0 flex-1 flex-col">
               <div className="flex flex-wrap items-center gap-2">
                 {viewerTabButton("document", "Documento")}
                 {viewerTabButton("raw_text", "Texto extraido")}
                 {viewerTabButton("technical", "Detalles tecnicos")}
               </div>
-              <div className="mt-4 h-[clamp(32rem,74vh,56rem)]">
+              <div className="mt-4 min-h-0 flex-1">
                 {activeViewerTab === "document" && (
                   <div
                     data-testid="viewer-dropzone"
-                    className="relative h-full"
+                    className="relative h-full min-h-0"
                     onDragEnter={handleViewerDragEnter}
                     onDragOver={handleViewerDragOver}
                     onDragLeave={handleViewerDragLeave}
                     onDrop={handleViewerDrop}
                   >
-                    {isDragOverViewer && (
-                      <div className="pointer-events-none absolute inset-3 z-10 flex items-center justify-center rounded-xl border-2 border-dashed border-accent bg-white/70">
-                        <p className="text-sm font-semibold text-ink">Suelta el PDF para subirlo</p>
-                      </div>
-                    )}
                     {!activeId ? (
                     documentList.isError ? (
                       <div className="flex h-full flex-col rounded-2xl border border-black/10 bg-white/80 p-6">
@@ -1272,24 +1365,32 @@ export function App() {
                           <p className="text-sm text-muted">
                             Selecciona un documento en la barra lateral o carga uno nuevo.
                           </p>
-                          <Button
-                            type="button"
-                            className="mt-4"
-                            onClick={(event) => {
-                              handleOpenUploadArea(event);
-                            }}
+                          <div
+                            className={`relative mt-4 flex w-full max-w-sm cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-5 text-center transition ${
+                              isDragOverViewer
+                                ? "border-accent bg-accentSoft/35 ring-2 ring-accent/40"
+                                : "border-black/35 bg-white/85 hover:border-black/50 hover:bg-white"
+                            }`}
                           >
-                            <Upload size={16} />
-                            Cargar documento
-                          </Button>
-                          <p className="mt-3 text-xs text-muted">
-                            Tambien puedes arrastrar un PDF aqui.
-                          </p>
+                            {isDragOverViewer && (
+                              <div className="pointer-events-none absolute inset-2 z-10 flex items-center justify-center rounded-lg border-2 border-dashed border-accent bg-white/75 ring-2 ring-accent/40">
+                                <p className="text-sm font-semibold text-ink">Suelta el PDF para subirlo</p>
+                              </div>
+                            )}
+                            <Upload size={18} className="text-ink" />
+                            <p className="mt-2 text-sm font-semibold text-ink">Arrastra un PDF aqui</p>
+                            <p className="text-xs text-muted">o haz clic para cargar</p>
+                          </div>
                         </div>
                       </div>
                     )
                     ) : (
-                      <PdfViewer fileUrl={fileUrl} filename={filename} />
+                      <PdfViewer
+                        key={activeId ?? "viewer-empty"}
+                        fileUrl={fileUrl}
+                        filename={filename}
+                        isDragOver={isDragOverViewer}
+                      />
                     )}
                   </div>
                 )}
@@ -1559,7 +1660,7 @@ export function App() {
         </div>
       )}
             {uploadFeedback && (
-              <div className="fixed left-1/2 top-44 z-[60] w-full max-w-lg -translate-x-1/2 px-4">
+              <div className="fixed left-1/2 top-10 z-[60] w-full max-w-lg -translate-x-1/2 px-4 sm:w-[32rem]">
                 <div
             className={`rounded-2xl border px-5 py-4 text-base shadow-xl ${
               uploadFeedback.kind === "success"

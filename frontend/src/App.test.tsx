@@ -144,7 +144,8 @@ describe("App upload and list flow", () => {
     expect(
       screen.getByText(/Selecciona un documento en la barra lateral o carga uno nuevo\./i)
     ).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: /Cargar documento/i }).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Arrastra un PDF aqui/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/o haz clic para cargar/i).length).toBeGreaterThan(0);
     expect(screen.queryByText(/Formatos permitidos: PDF\./i)).toBeNull();
     expect(screen.queryByText(/\(\.pdf \/ application\/pdf\)/i)).toBeNull();
     expect(screen.queryByText(/Tamaño maximo: 20 MB\./i)).toBeNull();
@@ -395,8 +396,7 @@ describe("App upload and list flow", () => {
     expect(screen.getByText(/Mostrar lista/i)).toBeInTheDocument();
 
     const emptyViewer = screen.getByTestId("viewer-empty-state");
-    const viewerCta = within(emptyViewer).getByRole("button", { name: /Cargar documento/i });
-    fireEvent.click(viewerCta);
+    fireEvent.click(emptyViewer);
 
     await waitFor(() => {
       expect(screen.getByText(/Ocultar lista/i)).toBeInTheDocument();
@@ -483,8 +483,6 @@ describe("App upload and list flow", () => {
     const dataTransfer = createDataTransfer(file);
 
     fireEvent.dragEnter(dropzone, { dataTransfer });
-    expect(screen.getByText(/Suelta el PDF para subirlo/i)).toBeInTheDocument();
-
     fireEvent.drop(dropzone, { dataTransfer });
     expect(await screen.findByText(/Documento subido correctamente/i)).toBeInTheDocument();
 
@@ -504,7 +502,7 @@ describe("App upload and list flow", () => {
 
     fireEvent.drop(emptyState, { dataTransfer });
 
-    expect(await screen.findByText(/Solo se admiten archivos PDF en esta etapa\./i)).toBeInTheDocument();
+    expect(await screen.findByText(/Solo se admiten archivos PDF\./i)).toBeInTheDocument();
 
     const calls = (globalThis.fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls;
     expect(calls.some(([url]) => String(url).includes("/documents/upload"))).toBe(false);
