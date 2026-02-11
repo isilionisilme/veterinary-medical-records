@@ -244,6 +244,43 @@ AI assistants must update the corresponding documentation in the same change set
 
 A change is not complete if implementation and documentation diverge.
 
+### How to add a new User Story
+
+When asked to add a new User Story, update [`docs/project/IMPLEMENTATION_PLAN.md`](../project/IMPLEMENTATION_PLAN.md) in two places:
+
+1) Add the story in the relevant **User Stories (in order)** list for its release.
+2) Add or update the full **User Story Details** section for that story.
+
+If the requested story is not yet scheduled in any release, schedule it in the Release Plan:
+
+- Add it to an existing release, or
+- create a new release section when needed.
+
+Minimal required fields for each story detail entry:
+
+- ID (e.g., `US-22`)
+- Title
+- Goal (via `User Story` statement)
+- Acceptance Criteria
+- Tech Requirements (in `Authoritative References`)
+- Dependencies (in `Scope Clarification` and/or ordering references)
+
+Deterministic release assignment rules:
+
+- If the requester names a release explicitly, use that release.
+- Otherwise assign to the earliest viable release based on dependencies and existing story order.
+- If no existing release is viable, create a new release after the last dependent release.
+
+Completion checklist before finishing:
+
+- Story appears in release-level **User Stories (in order)**.
+- Story appears in **User Story Details** with required fields.
+- Formatting and section structure remain consistent with existing stories.
+- No unrelated documentation edits are bundled.
+
+Workflow reference:
+- Follow `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/65_add-user-story-workflow.md`.
+
 ---
 
 ## Naming conventions
