@@ -462,23 +462,21 @@ When an AI coding assistant or automation tool is used to create or update a Pul
      - `*.sql`
    - **Non-code, non-doc PR**: the diff contains files that are neither docs nor code (examples: `*.json`, `*.yaml`, `*.yml`, `*.toml`, `*.ini`, `*.env`).
 
-5) Decide whether to run a code review:
-   - If **docs-only**:
-     - Skip the code review and do not post a review comment.
-     - State explicitly that the PR is docs-only and review was skipped by policy.
-   - If **code PR**:
-     - A code review must run automatically (no user confirmation).
-   - If **non-code, non-doc**:
-     - STOP and ask the user explicitly whether they want a code review before running it.
+5) Ask the user whether they want a code review:
+   - Ask explicitly for every PR classification (docs-only, code, non-code/non-doc).
+   - For docs-only PRs, recommend skipping the review by policy unless the user explicitly asks for one.
+   - Run the review only after explicit user confirmation.
 
-6) Automatically perform a maintainability-focused code review of the PR diff (when required/approved):
+6) Perform a maintainability-focused code review of the PR diff (when user-approved):
    - Use `git diff main...HEAD` as the review input.
    - Apply all rules from:
      "Code Review Guidelines (Maintainability-Focused, Take-Home Pragmatic)"
 
 ### Pull Request review visibility
 
-After producing the automatic PR code review, the AI assistant must publish the review output as a comment in the Pull Request (or update an existing “AI Code Review” comment), using the mandatory review output format.
+After producing a PR code review, the AI assistant must publish the review output as a comment in the Pull Request (or update an existing “AI Code Review” comment), using the mandatory review output format.
+
+If one or more review findings are addressed in subsequent commits, the AI assistant must add a brief follow-up comment summarizing which findings were addressed.
 
 If the PR changes after review (new commits that materially affect the diff), the AI assistant must add a follow-up comment summarizing what changed and whether the previous findings are still applicable.
 
@@ -585,7 +583,7 @@ Each finding must include:
 
 ### Code Review Safety rule
 
-After producing the automatic PR code review, STOP and wait for explicit user instruction before making any code changes.
+After producing a PR code review, STOP and wait for explicit user instruction before making any code changes.
 
 Do not modify code as part of the review step unless explicitly asked to do so.
 

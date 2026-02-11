@@ -3,9 +3,9 @@
 This module is the operational procedure for code reviews in this repo.
 
 ## When a review is required
-- Docs-only PR: no review.
-- Code PR: review is required.
-- Non-code, non-doc PR: STOP and ask whether to review.
+- PR workflow: always ask the user whether they want a code review.
+- If the user confirms: run the review.
+- If the user declines: skip review.
 
 ## Review input
 - `git diff main...HEAD`

@@ -65,6 +65,6 @@ Each finding must include:
 
 ## Code Review Safety rule
 
-After producing the automatic PR code review, STOP and wait for explicit user instruction before making any code changes.
+After producing a PR code review, STOP and wait for explicit user instruction before making any code changes.
 
 Do not modify code as part of the review step unless explicitly asked to do so.
