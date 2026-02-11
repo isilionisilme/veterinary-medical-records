@@ -54,6 +54,17 @@ def test_derive_status_for_failed_run_maps_failure_type() -> None:
     assert status_view.failure_type == "EXTRACTION_FAILED"
 
 
+def test_derive_status_for_failed_run_maps_low_quality_failure_type() -> None:
+    latest_run = ProcessingRunSummary(
+        run_id="run-1",
+        state=ProcessingRunState.FAILED,
+        failure_type="EXTRACTION_LOW_QUALITY",
+    )
+    status_view = derive_document_status(latest_run)
+    assert status_view.status.value == "FAILED"
+    assert status_view.failure_type == "EXTRACTION_LOW_QUALITY"
+
+
 def test_derive_status_for_failed_run_defaults_unknown_failure() -> None:
     latest_run = ProcessingRunSummary(
         run_id="run-1",

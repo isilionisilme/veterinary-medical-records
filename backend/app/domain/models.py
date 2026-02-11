@@ -95,6 +95,19 @@ class ProcessingRunDetail:
 
 
 @dataclass(frozen=True, slots=True)
+class ProcessingRunDetails:
+    """Detailed processing run data including document ownership."""
+
+    run_id: str
+    document_id: str
+    state: ProcessingRunState
+    created_at: str
+    started_at: str | None
+    completed_at: str | None
+    failure_type: str | None
+
+
+@dataclass(frozen=True, slots=True)
 class StepArtifact:
     """Persisted run-scoped STEP_STATUS artifact payload."""
 

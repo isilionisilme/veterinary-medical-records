@@ -459,6 +459,309 @@ describe("App upload and list flow", () => {
     });
   });
 
+  it("copies the full extracted text with Copy all", async () => {
+    const rawText = "Linea uno\nLinea dos\nLinea tres";
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = input.toString();
+      const method = (init?.method ?? "GET").toUpperCase();
+
+      if (url.includes("/documents?") && method === "GET") {
+        return new Response(
+          JSON.stringify({
+            items: [
+              {
+                document_id: "doc-ready",
+                original_filename: "ready.pdf",
+                created_at: "2026-02-09T10:00:00Z",
+                status: "COMPLETED",
+                status_label: "Completed",
+                failure_type: null,
+              },
+            ],
+            limit: 50,
+            offset: 0,
+            total: 1,
+          }),
+          { status: 200 }
+        );
+      }
+
+      if (url.includes("/documents/doc-ready/download") && method === "GET") {
+        return new Response(new Blob(["pdf"], { type: "application/pdf" }), { status: 200 });
+      }
+
+      if (url.match(/\/documents\/doc-ready$/) && method === "GET") {
+        return new Response(
+          JSON.stringify({
+            document_id: "doc-ready",
+            original_filename: "ready.pdf",
+            content_type: "application/pdf",
+            file_size: 10,
+            created_at: "2026-02-09T10:00:00Z",
+            updated_at: "2026-02-10T10:00:00Z",
+            status: "COMPLETED",
+            status_message: "Completed",
+            failure_type: null,
+            latest_run: { run_id: "run-doc-ready", state: "COMPLETED", failure_type: null },
+          }),
+          { status: 200 }
+        );
+      }
+
+      if (url.includes("/processing-history") && method === "GET") {
+        return new Response(JSON.stringify({ document_id: "doc-ready", runs: [] }), {
+          status: 200,
+        });
+      }
+
+      if (url.includes("/runs/run-doc-ready/artifacts/raw-text") && method === "GET") {
+        return new Response(
+          JSON.stringify({
+            run_id: "run-doc-ready",
+            artifact_type: "RAW_TEXT",
+            content_type: "text/plain",
+            text: rawText,
+          }),
+          { status: 200 }
+        );
+      }
+
+      return new Response(JSON.stringify({ error_code: "NOT_FOUND" }), { status: 404 });
+    }) as typeof fetch;
+
+    const writeText = vi.fn(async () => undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText },
+      configurable: true,
+    });
+
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Texto extraido/i }));
+
+    await screen.findByText(/Linea uno/i);
+    fireEvent.click(screen.getByRole("button", { name: /Copiar todo/i }));
+
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(rawText);
+    });
+    expect(screen.getByText(/Texto copiado\./i)).toBeInTheDocument();
+  });
+
+  it("refreshes extracted text after reprocess without switching tabs", async () => {
+    vi.useFakeTimers();
+
+    let phase: "initial" | "processing" | "completed" = "initial";
+    let processingPollCount = 0;
+    const oldText = "Texto antiguo";
+    const newText = "Texto actualizado";
+
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = input.toString();
+      const method = (init?.method ?? "GET").toUpperCase();
+
+      if (url.includes("/documents?") && method === "GET") {
+        return new Response(
+          JSON.stringify({
+            items: [
+              {
+                document_id: "doc-ready",
+                original_filename: "ready.pdf",
+                created_at: "2026-02-09T10:00:00Z",
+                status: phase === "processing" ? "PROCESSING" : "COMPLETED",
+                status_label: "Completed",
+                failure_type: null,
+              },
+            ],
+            limit: 50,
+            offset: 0,
+            total: 1,
+          }),
+          { status: 200 }
+        );
+      }
+
+      if (url.includes("/documents/doc-ready/download") && method === "GET") {
+        return new Response(new Blob(["pdf"], { type: "application/pdf" }), {
+          status: 200,
+          headers: { "content-disposition": 'inline; filename="ready.pdf"' },
+        });
+      }
+
+      if (url.endsWith("/documents/doc-ready") && method === "GET") {
+        let latestState = "COMPLETED";
+        let status = "COMPLETED";
+        if (phase === "processing") {
+          processingPollCount += 1;
+          latestState = "RUNNING";
+          status = "PROCESSING";
+          if (processingPollCount >= 2) {
+            phase = "completed";
+            latestState = "COMPLETED";
+            status = "COMPLETED";
+          }
+        }
+        return new Response(
+          JSON.stringify({
+            document_id: "doc-ready",
+            original_filename: "ready.pdf",
+            content_type: "application/pdf",
+            file_size: 10,
+            created_at: "2026-02-09T10:00:00Z",
+            updated_at: "2026-02-10T10:00:00Z",
+            status,
+            status_message: "state",
+            failure_type: null,
+            latest_run: { run_id: "run-doc-ready", state: latestState, failure_type: null },
+          }),
+          { status: 200 }
+        );
+      }
+
+      if (url.includes("/processing-history") && method === "GET") {
+        return new Response(JSON.stringify({ document_id: "doc-ready", runs: [] }), {
+          status: 200,
+        });
+      }
+
+      if (url.includes("/documents/doc-ready/reprocess") && method === "POST") {
+        phase = "processing";
+        processingPollCount = 0;
+        return new Response(
+          JSON.stringify({
+            run_id: "run-doc-ready",
+            state: "QUEUED",
+            created_at: "2026-02-10T10:00:00Z",
+          }),
+          { status: 201 }
+        );
+      }
+
+      if (url.includes("/runs/run-doc-ready/artifacts/raw-text") && method === "GET") {
+        if (phase === "processing") {
+          return new Response(
+            JSON.stringify({
+              error_code: "ARTIFACT_NOT_READY",
+              message: "Not ready",
+              details: { reason: "RAW_TEXT_NOT_READY" },
+            }),
+            { status: 409 }
+          );
+        }
+        return new Response(
+          JSON.stringify({
+            run_id: "run-doc-ready",
+            artifact_type: "RAW_TEXT",
+            content_type: "text/plain",
+            text: phase === "initial" ? oldText : newText,
+          }),
+          { status: 200 }
+        );
+      }
+
+      return new Response(JSON.stringify({ error_code: "NOT_FOUND" }), { status: 404 });
+    }) as typeof fetch;
+
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Texto extraido/i }));
+
+    await screen.findByText(oldText);
+
+    fireEvent.click(screen.getByRole("button", { name: /Reintentar procesamiento/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /^Reintentar$/i }));
+
+    await vi.advanceTimersByTimeAsync(3500);
+
+    await waitFor(() => {
+      expect(screen.getByText(newText)).toBeInTheDocument();
+    });
+
+    vi.useRealTimers();
+  });
+
+  it("does not show stale empty-search warning when there is no text", async () => {
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = input.toString();
+      const method = (init?.method ?? "GET").toUpperCase();
+
+      if (url.includes("/documents?") && method === "GET") {
+        return new Response(
+          JSON.stringify({
+            items: [
+              {
+                document_id: "doc-empty",
+                original_filename: "empty.pdf",
+                created_at: "2026-02-09T10:00:00Z",
+                status: "COMPLETED",
+                status_label: "Completed",
+                failure_type: null,
+              },
+            ],
+            limit: 50,
+            offset: 0,
+            total: 1,
+          }),
+          { status: 200 }
+        );
+      }
+
+      if (url.endsWith("/documents/doc-empty") && method === "GET") {
+        return new Response(
+          JSON.stringify({
+            document_id: "doc-empty",
+            original_filename: "empty.pdf",
+            content_type: "application/pdf",
+            file_size: 10,
+            created_at: "2026-02-09T10:00:00Z",
+            updated_at: "2026-02-10T10:00:00Z",
+            status: "COMPLETED",
+            status_message: "Completed",
+            failure_type: null,
+            latest_run: { run_id: "run-empty", state: "COMPLETED", failure_type: null },
+          }),
+          { status: 200 }
+        );
+      }
+
+      if (url.includes("/documents/doc-empty/download") && method === "GET") {
+        return new Response(new Blob(["pdf"], { type: "application/pdf" }), {
+          status: 200,
+          headers: { "content-disposition": 'inline; filename="empty.pdf"' },
+        });
+      }
+
+      if (url.includes("/processing-history") && method === "GET") {
+        return new Response(JSON.stringify({ document_id: "doc-empty", runs: [] }), {
+          status: 200,
+        });
+      }
+
+      if (url.includes("/runs/run-empty/artifacts/raw-text") && method === "GET") {
+        return new Response(
+          JSON.stringify({
+            error_code: "ARTIFACT_NOT_AVAILABLE",
+            message: "Not available",
+            details: { reason: "RAW_TEXT_NOT_AVAILABLE" },
+          }),
+          { status: 404 }
+        );
+      }
+
+      return new Response(JSON.stringify({ error_code: "NOT_FOUND" }), { status: 404 });
+    }) as typeof fetch;
+
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /empty\.pdf/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Texto extraido/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Buscar$/i }));
+
+    expect(screen.queryByText(/No hay texto disponible para buscar/i)).not.toBeInTheDocument();
+  });
+
   it("opens the file picker when clicking anywhere in empty viewer", async () => {
     renderApp();
 

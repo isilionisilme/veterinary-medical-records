@@ -272,7 +272,10 @@ class DocumentListResult:
 
 
 def list_documents(
-    *, repository: DocumentRepository, limit: int, offset: int
+    *,
+    repository: DocumentRepository,
+    limit: int,
+    offset: int,
 ) -> DocumentListResult:
     """List documents with derived status for list views.
 
@@ -287,11 +290,11 @@ def list_documents(
 
     rows = repository.list_documents(limit=limit, offset=offset)
     total = repository.count_documents()
-    items = [_to_list_item(row) for row in rows]
+    items = [_to_list_item(row=row) for row in rows]
     return DocumentListResult(items=items, limit=limit, offset=offset, total=total)
 
 
-def _to_list_item(row: DocumentWithLatestRun) -> DocumentListItem:
+def _to_list_item(*, row: DocumentWithLatestRun) -> DocumentListItem:
     status_view = derive_document_status(row.latest_run)
     return DocumentListItem(
         document_id=row.document.document_id,

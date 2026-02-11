@@ -81,6 +81,13 @@ type ProcessingHistoryResponse = {
   runs: ProcessingHistoryRun[];
 };
 
+type RawTextArtifactResponse = {
+  run_id: string;
+  artifact_type: string;
+  content_type: string;
+  text: string;
+};
+
 type DocumentUploadResponse = {
   document_id: string;
   status: string;
@@ -104,6 +111,23 @@ class UiError extends Error {
     this.name = "UiError";
     this.userMessage = userMessage;
     this.technicalDetails = technicalDetails;
+  }
+}
+
+class ApiResponseError extends UiError {
+  readonly errorCode?: string;
+  readonly reason?: string;
+
+  constructor(
+    userMessage: string,
+    technicalDetails?: string,
+    errorCode?: string,
+    reason?: string
+  ) {
+    super(userMessage, technicalDetails);
+    this.name = "ApiResponseError";
+    this.errorCode = errorCode;
+    this.reason = reason;
   }
 }
 
@@ -294,6 +318,49 @@ async function triggerReprocess(documentId: string): Promise<LatestRun> {
   return response.json();
 }
 
+async function fetchRawText(runId: string): Promise<RawTextArtifactResponse> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/runs/${runId}/artifacts/raw-text`);
+  } catch (error) {
+    if (isNetworkFetchError(error)) {
+      throw new UiError(
+        "No se pudo conectar con el servidor.",
+        `Network error calling ${API_BASE_URL}/runs/${runId}/artifacts/raw-text`
+      );
+    }
+    throw error;
+  }
+
+  if (!response.ok) {
+    let errorMessage = "No se pudo cargar el texto extraido.";
+    let errorCode: string | undefined;
+    let reason: string | undefined;
+    try {
+      const payload = await response.json();
+      if (typeof payload?.message === "string" && payload.message.trim()) {
+        errorMessage = payload.message;
+      }
+      if (typeof payload?.error_code === "string") {
+        errorCode = payload.error_code;
+      }
+      if (typeof payload?.details?.reason === "string") {
+        reason = payload.details.reason;
+      }
+    } catch {
+      // Ignore JSON parse errors for non-JSON responses.
+    }
+    throw new ApiResponseError(
+      errorMessage,
+      `HTTP ${response.status} calling ${API_BASE_URL}/runs/${runId}/artifacts/raw-text`,
+      errorCode,
+      reason
+    );
+  }
+
+  return response.json();
+}
+
 async function uploadDocument(file: File): Promise<DocumentUploadResponse> {
   const formData = new FormData();
   formData.append("file", file);
@@ -335,6 +402,44 @@ async function uploadDocument(file: File): Promise<DocumentUploadResponse> {
     );
   }
   return response.json();
+}
+
+async function copyTextToClipboard(text: string): Promise<void> {
+  if (!text) {
+    throw new UiError("No hay texto disponible para copiar.");
+  }
+
+  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+
+  if (typeof document !== "undefined") {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    textarea.style.pointerEvents = "none";
+    textarea.style.left = "-9999px";
+    textarea.style.top = "0";
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    textarea.setSelectionRange(0, textarea.value.length);
+
+    try {
+      const copied = document.execCommand("copy");
+      if (!copied) {
+        throw new UiError("No se pudo copiar el texto al portapapeles.");
+      }
+      return;
+    } finally {
+      document.body.removeChild(textarea);
+    }
+  }
+
+  throw new UiError("No se pudo copiar el texto al portapapeles.");
 }
 
 function formatTimestamp(value: string): string {
@@ -434,6 +539,8 @@ export function App() {
   const [isDragOverSidebarUpload, setIsDragOverSidebarUpload] = useState(false);
   const [showUploadInfo, setShowUploadInfo] = useState(false);
   const [showRefreshFeedback, setShowRefreshFeedback] = useState(false);
+  const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
+  const [isCopyingRawText, setIsCopyingRawText] = useState(false);
   const [isHoverDevice, setIsHoverDevice] = useState(true);
   const [uploadInfoPosition, setUploadInfoPosition] = useState({ top: 0, left: 0 });
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -447,6 +554,9 @@ export function App() {
   const autoOpenRetryCountRef = useRef<Record<string, number>>({});
   const autoOpenRetryTimerRef = useRef<number | null>(null);
   const refreshFeedbackTimerRef = useRef<number | null>(null);
+  const copyFeedbackTimerRef = useRef<number | null>(null);
+  const latestLoadRequestIdRef = useRef<string | null>(null);
+  const latestRawTextRefreshRef = useRef<string | null>(null);
   const queryClient = useQueryClient();
 
   const downloadUrl = useMemo(() => {
@@ -485,6 +595,9 @@ export function App() {
       }
       if (refreshFeedbackTimerRef.current) {
         window.clearTimeout(refreshFeedbackTimerRef.current);
+      }
+      if (copyFeedbackTimerRef.current) {
+        window.clearTimeout(copyFeedbackTimerRef.current);
       }
       if (fileUrl) {
         URL.revokeObjectURL(fileUrl);
@@ -556,6 +669,10 @@ export function App() {
   const loadPdf = useMutation({
     mutationFn: async (docId: string) => fetchOriginalPdf(docId),
     onSuccess: (result, docId) => {
+      if (latestLoadRequestIdRef.current !== docId) {
+        URL.revokeObjectURL(result.url);
+        return;
+      }
       if (pendingAutoOpenDocumentIdRef.current === docId) {
         pendingAutoOpenDocumentIdRef.current = null;
         delete autoOpenRetryCountRef.current[docId];
@@ -570,20 +687,26 @@ export function App() {
           return { ...current, showOpenAction: false };
         });
       }
-      if (fileUrl) {
-        URL.revokeObjectURL(fileUrl);
-      }
       setActiveId(docId);
-      setFileUrl(result.url);
+      setFileUrl((currentUrl) => {
+        if (currentUrl) {
+          URL.revokeObjectURL(currentUrl);
+        }
+        return result.url;
+      });
       setFilename(result.filename);
     },
     onError: (_, docId) => {
+      if (latestLoadRequestIdRef.current !== docId) {
+        return;
+      }
       if (pendingAutoOpenDocumentIdRef.current === docId) {
         const retries = autoOpenRetryCountRef.current[docId] ?? 0;
         if (retries < 1) {
           autoOpenRetryCountRef.current[docId] = retries + 1;
           autoOpenRetryTimerRef.current = window.setTimeout(() => {
-            loadPdf.mutate(docId);
+            latestLoadRequestIdRef.current = docId;
+            requestPdfLoad(docId);
           }, 1000);
           return;
         }
@@ -598,6 +721,11 @@ export function App() {
       }
     },
   });
+
+  const requestPdfLoad = (docId: string) => {
+    latestLoadRequestIdRef.current = docId;
+    loadPdf.mutate(docId);
+  };
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => uploadDocument(file),
@@ -637,7 +765,7 @@ export function App() {
         documentId: result.document_id,
         showOpenAction: false,
       });
-      loadPdf.mutate(result.document_id);
+      requestPdfLoad(result.document_id);
       queryClient.invalidateQueries({ queryKey: ["documents", "list"] });
       try {
         await queryClient.fetchQuery({
@@ -790,7 +918,7 @@ export function App() {
 
   const handleSelectDocument = (docId: string) => {
     setActiveId(docId);
-    loadPdf.mutate(docId);
+    requestPdfLoad(docId);
   };
 
   const documentList = useQuery({
@@ -808,6 +936,14 @@ export function App() {
     queryKey: ["documents", "history", activeId],
     queryFn: () => fetchProcessingHistory(activeId ?? ""),
     enabled: Boolean(activeId),
+  });
+
+  const rawTextRunId = documentDetails.data?.latest_run?.run_id ?? null;
+  const rawTextQuery = useQuery({
+    queryKey: ["runs", "raw-text", rawTextRunId],
+    queryFn: () => fetchRawText(rawTextRunId ?? ""),
+    enabled: activeViewerTab === "raw_text" && Boolean(rawTextRunId),
+    retry: false,
   });
 
   const sortedDocuments = useMemo(() => {
@@ -901,6 +1037,8 @@ export function App() {
       queryClient.invalidateQueries({ queryKey: ["documents", "list"] });
       queryClient.invalidateQueries({ queryKey: ["documents", "detail", docId] });
       queryClient.invalidateQueries({ queryKey: ["documents", "history", docId] });
+      queryClient.invalidateQueries({ queryKey: ["runs", "raw-text"] });
+      latestRawTextRefreshRef.current = null;
       setRetryNotice("Procesamiento reiniciado");
     },
     onError: () => {
@@ -933,10 +1071,31 @@ export function App() {
   };
 
   const latestState = documentDetails.data?.latest_run?.state;
+  const latestRunId = documentDetails.data?.latest_run?.run_id;
   const isProcessing =
     documentDetails.data?.status === "PROCESSING" ||
     latestState === "QUEUED" ||
     latestState === "RUNNING";
+
+  useEffect(() => {
+    if (!latestRunId || !latestState) {
+      return;
+    }
+
+    const shouldRefreshRawText =
+      latestState === "COMPLETED" || latestState === "FAILED" || latestState === "TIMED_OUT";
+    if (!shouldRefreshRawText) {
+      return;
+    }
+
+    const refreshKey = `${latestRunId}:${latestState}`;
+    if (latestRawTextRefreshRef.current === refreshKey) {
+      return;
+    }
+
+    latestRawTextRefreshRef.current = refreshKey;
+    queryClient.invalidateQueries({ queryKey: ["runs", "raw-text", latestRunId] });
+  }, [latestRunId, latestState, queryClient]);
 
   useEffect(() => {
     if (!retryNotice) {
@@ -981,16 +1140,40 @@ export function App() {
     reprocessMutation.mutate(activeId);
   };
 
-  const [rawTextContent] = useState<string | null>(null);
+  const rawTextContent = rawTextQuery.data?.text ?? null;
+  const hasRawText = Boolean(rawTextContent && rawTextContent.length > 0);
+  const canCopyRawText = hasRawText && !rawTextQuery.isLoading && !rawTextQuery.isError;
 
   const handleRawSearch = () => {
     if (!rawTextContent || !rawSearch.trim()) {
-      setRawSearchNotice("No hay texto disponible para buscar.");
+      setRawSearchNotice(null);
       return;
     }
     const match = rawTextContent.toLowerCase().includes(rawSearch.trim().toLowerCase());
     setRawSearchNotice(match ? "Coincidencia encontrada." : "No se encontraron coincidencias.");
   };
+
+  const rawTextErrorMessage = (() => {
+    if (!rawTextQuery.isError) {
+      return null;
+    }
+    if (rawTextQuery.error instanceof ApiResponseError) {
+      if (rawTextQuery.error.reason === "RAW_TEXT_NOT_READY") {
+        return null;
+      }
+      if (rawTextQuery.error.reason === "RAW_TEXT_NOT_AVAILABLE") {
+        return "El texto extraido no esta disponible para este run.";
+      }
+      if (rawTextQuery.error.reason === "RAW_TEXT_NOT_USABLE") {
+        return "El texto extraido no es legible para este run.";
+      }
+      if (rawTextQuery.error.errorCode === "ARTIFACT_MISSING") {
+        return "El artefacto de texto no esta disponible.";
+      }
+      return rawTextQuery.error.userMessage;
+    }
+    return getUserErrorMessage(rawTextQuery.error, "No se pudo cargar el texto extraido.");
+  })();
 
   const handleDownloadRawText = () => {
     if (!rawTextContent) {
@@ -1005,6 +1188,35 @@ export function App() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  };
+
+  const setCopyFeedbackWithTimeout = (message: string) => {
+    setCopyFeedback(message);
+    if (copyFeedbackTimerRef.current) {
+      window.clearTimeout(copyFeedbackTimerRef.current);
+    }
+    copyFeedbackTimerRef.current = window.setTimeout(() => {
+      setCopyFeedback(null);
+      copyFeedbackTimerRef.current = null;
+    }, 2500);
+  };
+
+  const handleCopyRawText = async () => {
+    if (!rawTextContent) {
+      setCopyFeedbackWithTimeout("No hay texto extraido para copiar.");
+      return;
+    }
+    setIsCopyingRawText(true);
+    try {
+      await copyTextToClipboard(rawTextContent);
+      setCopyFeedbackWithTimeout("Texto copiado.");
+    } catch (error) {
+      setCopyFeedbackWithTimeout(
+        getUserErrorMessage(error, "No se pudo copiar el texto.")
+      );
+    } finally {
+      setIsCopyingRawText(false);
+    }
   };
 
   const openUploadInfo = () => {
@@ -1415,21 +1627,48 @@ export function App() {
                       <Button type="button" onClick={handleRawSearch}>
                         Buscar
                       </Button>
-                      <Button type="button" disabled={!rawTextContent}>
-                        Copiar todo
+                      <Button
+                        type="button"
+                        disabled={!canCopyRawText || isCopyingRawText}
+                        onClick={() => {
+                          void handleCopyRawText();
+                        }}
+                      >
+                        {isCopyingRawText
+                          ? "Copiando..."
+                          : copyFeedback === "Texto copiado."
+                          ? "Copiado"
+                          : "Copiar todo"}
                       </Button>
                       <Button type="button" disabled={!rawTextContent} onClick={handleDownloadRawText}>
                         Descargar texto (.txt)
                       </Button>
                     </div>
+                    {copyFeedback && (
+                      <p className="mt-2 text-xs text-muted" role="status" aria-live="polite">
+                        {copyFeedback}
+                      </p>
+                    )}
                     {rawSearchNotice && (
                       <p className="mt-2 text-xs text-muted">{rawSearchNotice}</p>
+                    )}
+                    {rawTextQuery.isLoading && (
+                      <p className="mt-2 text-xs text-muted">Cargando texto extraido...</p>
+                    )}
+                    {rawTextErrorMessage && (
+                      <p className="mt-2 text-xs text-red-600">
+                        {rawTextErrorMessage}
+                      </p>
                     )}
                     <div className="mt-3 flex-1 overflow-y-auto rounded-xl border border-dashed border-black/10 bg-white/70 p-3 font-mono text-xs text-muted">
                       {rawTextContent ? (
                         <pre>{rawTextContent}</pre>
+                      ) : latestState === "QUEUED" || latestState === "RUNNING" ? (
+                        "Texto extraido aun no listo."
+                      ) : latestState === "FAILED" || latestState === "TIMED_OUT" ? (
+                        "Texto extraido no disponible para este run."
                       ) : (
-                        "Texto extraido no disponible en esta version."
+                        "Texto extraido no disponible."
                       )}
                     </div>
                   </div>
@@ -1668,7 +1907,7 @@ export function App() {
                 className="mt-2 text-xs font-semibold text-ink underline"
                 onClick={() => {
                   setActiveViewerTab("document");
-                  loadPdf.mutate(uploadFeedback.documentId!);
+                  requestPdfLoad(uploadFeedback.documentId!);
                   setUploadFeedback(null);
                 }}
               >
