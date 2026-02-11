@@ -1144,6 +1144,9 @@ export function App() {
   const hasRawText = Boolean(rawTextContent && rawTextContent.length > 0);
   const canCopyRawText = hasRawText && !rawTextQuery.isLoading && !rawTextQuery.isError;
 
+  const isRawTextLoading = rawTextQuery.isLoading || rawTextQuery.isFetching;
+  const canSearchRawText = hasRawText && !isRawTextLoading && !rawTextQuery.isError;
+
   const handleRawSearch = () => {
     if (!rawTextContent || !rawSearch.trim()) {
       setRawSearchNotice(null);
@@ -1162,13 +1165,13 @@ export function App() {
         return null;
       }
       if (rawTextQuery.error.reason === "RAW_TEXT_NOT_AVAILABLE") {
-        return "El texto extraido no esta disponible para este run.";
+        return null;
       }
       if (rawTextQuery.error.reason === "RAW_TEXT_NOT_USABLE") {
-        return "El texto extraido no es legible para este run.";
+        return null;
       }
       if (rawTextQuery.error.errorCode === "ARTIFACT_MISSING") {
-        return "El artefacto de texto no esta disponible.";
+        return null;
       }
       return rawTextQuery.error.userMessage;
     }
@@ -1617,6 +1620,7 @@ export function App() {
                         className="w-full rounded-full border border-black/10 bg-white px-3 py-2 text-xs text-muted outline-none sm:w-64"
                         placeholder="Buscar en el texto"
                         value={rawSearch}
+                        disabled={!canSearchRawText}
                         onChange={(event) => setRawSearch(event.target.value)}
                         onKeyDown={(event) => {
                           if (event.key === "Enter") {
@@ -1624,7 +1628,7 @@ export function App() {
                           }
                         }}
                       />
-                      <Button type="button" onClick={handleRawSearch}>
+                      <Button type="button" disabled={!canSearchRawText} onClick={handleRawSearch}>
                         Buscar
                       </Button>
                       <Button
@@ -1649,10 +1653,10 @@ export function App() {
                         {copyFeedback}
                       </p>
                     )}
-                    {rawSearchNotice && (
+                    {hasRawText && rawSearchNotice && (
                       <p className="mt-2 text-xs text-muted">{rawSearchNotice}</p>
                     )}
-                    {rawTextQuery.isLoading && (
+                    {isRawTextLoading && (
                       <p className="mt-2 text-xs text-muted">Cargando texto extraido...</p>
                     )}
                     {rawTextErrorMessage && (
@@ -1663,12 +1667,8 @@ export function App() {
                     <div className="mt-3 flex-1 overflow-y-auto rounded-xl border border-dashed border-black/10 bg-white/70 p-3 font-mono text-xs text-muted">
                       {rawTextContent ? (
                         <pre>{rawTextContent}</pre>
-                      ) : latestState === "QUEUED" || latestState === "RUNNING" ? (
-                        "Texto extraido aun no listo."
-                      ) : latestState === "FAILED" || latestState === "TIMED_OUT" ? (
-                        "Texto extraido no disponible para este run."
                       ) : (
-                        "Texto extraido no disponible."
+                        "Sin texto extraido."
                       )}
                     </div>
                   </div>

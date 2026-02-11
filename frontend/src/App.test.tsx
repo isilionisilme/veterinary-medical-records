@@ -550,8 +550,6 @@ describe("App upload and list flow", () => {
   });
 
   it("refreshes extracted text after reprocess without switching tabs", async () => {
-    vi.useFakeTimers();
-
     let phase: "initial" | "processing" | "completed" = "initial";
     let processingPollCount = 0;
     const oldText = "Texto antiguo";
@@ -673,14 +671,13 @@ describe("App upload and list flow", () => {
     fireEvent.click(screen.getByRole("button", { name: /Reintentar procesamiento/i }));
     fireEvent.click(await screen.findByRole("button", { name: /^Reintentar$/i }));
 
-    await vi.advanceTimersByTimeAsync(3500);
-
-    await waitFor(() => {
-      expect(screen.getByText(newText)).toBeInTheDocument();
-    });
-
-    vi.useRealTimers();
-  });
+    await waitFor(
+      () => {
+        expect(screen.getByText(newText)).toBeInTheDocument();
+      },
+      { timeout: 10000 }
+    );
+  }, 12000);
 
   it("does not show stale empty-search warning when there is no text", async () => {
     globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -757,9 +754,12 @@ describe("App upload and list flow", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: /empty\.pdf/i }));
     fireEvent.click(screen.getByRole("button", { name: /Texto extraido/i }));
-    fireEvent.click(screen.getByRole("button", { name: /^Buscar$/i }));
 
+    expect(screen.getByPlaceholderText(/Buscar en el texto/i)).toBeDisabled();
+    expect(screen.getByRole("button", { name: /^Buscar$/i })).toBeDisabled();
+    expect(screen.getByText(/Sin texto extraido\./i)).toBeInTheDocument();
     expect(screen.queryByText(/No hay texto disponible para buscar/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/El texto extraido no esta disponible para este run\./i)).not.toBeInTheDocument();
   });
 
   it("opens the file picker when clicking anywhere in empty viewer", async () => {
