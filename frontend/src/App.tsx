@@ -556,6 +556,7 @@ export function App() {
   const refreshFeedbackTimerRef = useRef<number | null>(null);
   const copyFeedbackTimerRef = useRef<number | null>(null);
   const latestLoadRequestIdRef = useRef<string | null>(null);
+  const latestRawTextRefreshRef = useRef<string | null>(null);
   const queryClient = useQueryClient();
 
   const downloadUrl = useMemo(() => {
@@ -1036,6 +1037,8 @@ export function App() {
       queryClient.invalidateQueries({ queryKey: ["documents", "list"] });
       queryClient.invalidateQueries({ queryKey: ["documents", "detail", docId] });
       queryClient.invalidateQueries({ queryKey: ["documents", "history", docId] });
+      queryClient.invalidateQueries({ queryKey: ["runs", "raw-text"] });
+      latestRawTextRefreshRef.current = null;
       setRetryNotice("Procesamiento reiniciado");
     },
     onError: () => {
@@ -1068,10 +1071,31 @@ export function App() {
   };
 
   const latestState = documentDetails.data?.latest_run?.state;
+  const latestRunId = documentDetails.data?.latest_run?.run_id;
   const isProcessing =
     documentDetails.data?.status === "PROCESSING" ||
     latestState === "QUEUED" ||
     latestState === "RUNNING";
+
+  useEffect(() => {
+    if (!latestRunId || !latestState) {
+      return;
+    }
+
+    const shouldRefreshRawText =
+      latestState === "COMPLETED" || latestState === "FAILED" || latestState === "TIMED_OUT";
+    if (!shouldRefreshRawText) {
+      return;
+    }
+
+    const refreshKey = `${latestRunId}:${latestState}`;
+    if (latestRawTextRefreshRef.current === refreshKey) {
+      return;
+    }
+
+    latestRawTextRefreshRef.current = refreshKey;
+    queryClient.invalidateQueries({ queryKey: ["runs", "raw-text", latestRunId] });
+  }, [latestRunId, latestState, queryClient]);
 
   useEffect(() => {
     if (!retryNotice) {
@@ -1122,12 +1146,34 @@ export function App() {
 
   const handleRawSearch = () => {
     if (!rawTextContent || !rawSearch.trim()) {
-      setRawSearchNotice("No hay texto disponible para buscar.");
+      setRawSearchNotice(null);
       return;
     }
     const match = rawTextContent.toLowerCase().includes(rawSearch.trim().toLowerCase());
     setRawSearchNotice(match ? "Coincidencia encontrada." : "No se encontraron coincidencias.");
   };
+
+  const rawTextErrorMessage = (() => {
+    if (!rawTextQuery.isError) {
+      return null;
+    }
+    if (rawTextQuery.error instanceof ApiResponseError) {
+      if (rawTextQuery.error.reason === "RAW_TEXT_NOT_READY") {
+        return null;
+      }
+      if (rawTextQuery.error.reason === "RAW_TEXT_NOT_AVAILABLE") {
+        return "El texto extraido no esta disponible para este run.";
+      }
+      if (rawTextQuery.error.reason === "RAW_TEXT_NOT_USABLE") {
+        return "El texto extraido no es legible para este run.";
+      }
+      if (rawTextQuery.error.errorCode === "ARTIFACT_MISSING") {
+        return "El artefacto de texto no esta disponible.";
+      }
+      return rawTextQuery.error.userMessage;
+    }
+    return getUserErrorMessage(rawTextQuery.error, "No se pudo cargar el texto extraido.");
+  })();
 
   const handleDownloadRawText = () => {
     if (!rawTextContent) {
@@ -1609,29 +1655,9 @@ export function App() {
                     {rawTextQuery.isLoading && (
                       <p className="mt-2 text-xs text-muted">Cargando texto extraido...</p>
                     )}
-                    {rawTextQuery.isError && (
+                    {rawTextErrorMessage && (
                       <p className="mt-2 text-xs text-red-600">
-                        {(() => {
-                          if (rawTextQuery.error instanceof ApiResponseError) {
-                            if (rawTextQuery.error.reason === "RAW_TEXT_NOT_READY") {
-                              return "El texto extraido aun no esta listo.";
-                            }
-                            if (rawTextQuery.error.reason === "RAW_TEXT_NOT_AVAILABLE") {
-                              return "El texto extraido no esta disponible para este run.";
-                            }
-                            if (rawTextQuery.error.reason === "RAW_TEXT_NOT_USABLE") {
-                              return "El texto extraido no es legible para este run.";
-                            }
-                            if (rawTextQuery.error.errorCode === "ARTIFACT_MISSING") {
-                              return "El artefacto de texto no esta disponible.";
-                            }
-                            return rawTextQuery.error.userMessage;
-                          }
-                          return getUserErrorMessage(
-                            rawTextQuery.error,
-                            "No se pudo cargar el texto extraido."
-                          );
-                        })()}
+                        {rawTextErrorMessage}
                       </p>
                     )}
                     <div className="mt-3 flex-1 overflow-y-auto rounded-xl border border-dashed border-black/10 bg-white/70 p-3 font-mono text-xs text-muted">
