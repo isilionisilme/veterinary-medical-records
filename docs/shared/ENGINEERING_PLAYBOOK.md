@@ -400,6 +400,11 @@ When an AI coding assistant or automation tool is used to create or update a Pul
    - Working tree status (report if not clean)
 
 2) Create or update the Pull Request to `main` using the standard branching and naming conventions already defined in this document.
+   - When setting the PR description/body from CLI, use real multiline content (heredoc or file input), not escaped `\n` sequences.
+   - Do not submit PR bodies that contain literal `\n`.
+   - Preferred patterns:
+     - `gh pr create --body-file <path-to-markdown-file>`
+     - PowerShell here-string (`@' ... '@`) assigned to a variable and passed to `--body`
 
 3) Check CI status (if configured):
    - Report whether CI is pending, passing, or failing.
