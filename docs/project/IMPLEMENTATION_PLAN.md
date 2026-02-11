@@ -276,7 +276,9 @@ As a user, I want to upload a document so that it is stored and available for pr
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests added/updated per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
+- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
 
 ---
 
@@ -305,7 +307,9 @@ As a user, I want to see the current status of a document so that I understand i
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
+- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
 
 ---
 
@@ -333,7 +337,9 @@ As a user, I want to download and preview the original uploaded document so that
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
+- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
 
 ---
 
@@ -360,7 +366,9 @@ As a user, I want to list uploaded documents and see their status so that I can 
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
+- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
 
 ---
 
@@ -394,7 +402,9 @@ As a veterinarian, I want uploaded PDF documents to be processed automatically s
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
+- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
 
 ---
 
@@ -440,7 +450,9 @@ As a user, I want to upload a medical document so that the system can start proc
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
+- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
 
 ---
 
@@ -467,7 +479,9 @@ As a veterinarian, I want to see the processing history of a document so that I 
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
+- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
 
 ---
 
@@ -494,7 +508,9 @@ As a veterinarian, I want to view the raw text extracted from a document so that
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
+- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
 
 ---
 
@@ -528,7 +544,9 @@ As a veterinarian, I want to review the system’s interpretation while viewing 
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
+- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
 
 ---
 
@@ -563,7 +581,9 @@ As a veterinarian, I want to edit structured information extracted from a docume
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
+- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
 
 ---
 
@@ -591,7 +611,9 @@ As a veterinarian, I want the system to record my normal corrections as append-o
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
+- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
 
 ---
 
@@ -621,7 +643,9 @@ As a veterinarian, I want to change the detected language of a document so that 
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
+- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
 
 ---
 
@@ -648,7 +672,9 @@ As a veterinarian, I want to mark a document as reviewed so that I can explicitl
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
+- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
 
 ---
 
@@ -676,7 +702,9 @@ As a reviewer, I want to review aggregated pending structural changes so that I 
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
+- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
 
 ---
 
@@ -703,7 +731,9 @@ As a reviewer, I want to filter and prioritize pending structural changes so I c
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
+- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
 
 ---
 
@@ -733,7 +763,9 @@ As a reviewer, I want to approve structural changes so that future interpretatio
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
+- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
 
 ---
 
@@ -761,7 +793,9 @@ As a reviewer, I want to reject or defer structural changes so that unsafe or lo
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
+- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
 
 ---
 
@@ -789,7 +823,9 @@ As a reviewer, I want stricter handling for critical structural changes so that 
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
+- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
 
 ---
 
@@ -816,7 +852,9 @@ As a reviewer, I want to see an audit trail of schema governance decisions so th
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
+- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
 
 ---
 
@@ -853,7 +891,9 @@ As a user, I want to upload, access, and process DOCX documents so that the same
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
+- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
 
 ---
 
@@ -891,7 +931,9 @@ As a user, I want to upload, access, and process image documents so that scans a
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
+- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
 
 ---
 
@@ -933,4 +975,6 @@ As a user, I want optional OCR support for scanned records so that documents wit
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B7.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
+- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.

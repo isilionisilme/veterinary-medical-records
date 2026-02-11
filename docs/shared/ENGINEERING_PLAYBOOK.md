@@ -607,6 +607,8 @@ A change is considered done when it satisfies the criteria that apply to its typ
 For user stories:
 - It delivers a complete vertical slice of user-facing value.
 - It is documented (README and/or ADR if a design decision was made).
+- If user-visible behavior is affected, UX guidance is applied from `docs/shared/UX_GUIDELINES.md` and `docs/project/UX_DESIGN.md`.
+- If visual identity or user-facing copy is affected, brand guidance is applied from `docs/shared/BRAND_GUIDELINES.md`.
 
 For technical non user-facing changes (refactors, chores, CI, docs, fixes):
 - The change intent and scope are explicitly documented in the Pull Request.
