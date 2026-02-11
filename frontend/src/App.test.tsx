@@ -550,8 +550,6 @@ describe("App upload and list flow", () => {
   });
 
   it("refreshes extracted text after reprocess without switching tabs", async () => {
-    vi.useFakeTimers();
-
     let phase: "initial" | "processing" | "completed" = "initial";
     let processingPollCount = 0;
     const oldText = "Texto antiguo";
@@ -667,19 +665,107 @@ describe("App upload and list flow", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
     fireEvent.click(screen.getByRole("button", { name: /Texto extraido/i }));
+    expect(
+      screen.getByText(/¿El texto no es correcto\? Puedes reprocesarlo para regenerar la extraccion\./i)
+    ).toBeInTheDocument();
 
     await screen.findByText(oldText);
 
-    fireEvent.click(screen.getByRole("button", { name: /Reintentar procesamiento/i }));
-    fireEvent.click(await screen.findByRole("button", { name: /^Reintentar$/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Reprocesar$/i }));
+    fireEvent.click((await screen.findAllByRole("button", { name: /^Reprocesar$/i }))[1]);
 
-    await vi.advanceTimersByTimeAsync(3500);
+    expect(await screen.findByText(/Reprocesamiento iniciado\./i)).toBeInTheDocument();
+    expect(screen.queryByText(/Procesamiento reiniciado/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Reprocesando\.\.\./i })).toBeDisabled();
+    expect(
+      within(screen.getByRole("button", { name: /ready\.pdf/i })).getByText("Procesando")
+    ).toBeInTheDocument();
 
+    await waitFor(
+      () => {
+        expect(screen.getByText(newText)).toBeInTheDocument();
+        expect(
+          within(screen.getByRole("button", { name: /ready\.pdf/i })).getByText("Listo para revision")
+        ).toBeInTheDocument();
+      },
+      { timeout: 10000 }
+    );
+  }, 12000);
+
+  it("rolls back optimistic processing state when reprocess fails", async () => {
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = input.toString();
+      const method = (init?.method ?? "GET").toUpperCase();
+
+      if (url.includes("/documents?") && method === "GET") {
+        return new Response(
+          JSON.stringify({
+            items: [
+              {
+                document_id: "doc-ready",
+                original_filename: "ready.pdf",
+                created_at: "2026-02-09T10:00:00Z",
+                status: "COMPLETED",
+                status_label: "Completed",
+                failure_type: null,
+              },
+            ],
+            limit: 50,
+            offset: 0,
+            total: 1,
+          }),
+          { status: 200 }
+        );
+      }
+
+      if (url.includes("/documents/doc-ready/download") && method === "GET") {
+        return new Response(new Blob(["pdf"], { type: "application/pdf" }), { status: 200 });
+      }
+
+      if (url.endsWith("/documents/doc-ready") && method === "GET") {
+        return new Response(
+          JSON.stringify({
+            document_id: "doc-ready",
+            original_filename: "ready.pdf",
+            content_type: "application/pdf",
+            file_size: 10,
+            created_at: "2026-02-09T10:00:00Z",
+            updated_at: "2026-02-10T10:00:00Z",
+            status: "COMPLETED",
+            status_message: "Completed",
+            failure_type: null,
+            latest_run: { run_id: "run-doc-ready", state: "COMPLETED", failure_type: null },
+          }),
+          { status: 200 }
+        );
+      }
+
+      if (url.includes("/processing-history") && method === "GET") {
+        return new Response(JSON.stringify({ document_id: "doc-ready", runs: [] }), {
+          status: 200,
+        });
+      }
+
+      if (url.includes("/documents/doc-ready/reprocess") && method === "POST") {
+        return new Response(JSON.stringify({ message: "reprocess failed" }), { status: 500 });
+      }
+
+      return new Response(JSON.stringify({ error_code: "NOT_FOUND" }), { status: 404 });
+    }) as typeof fetch;
+
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Texto extraido/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Reprocesar$/i }));
+    fireEvent.click((await screen.findAllByRole("button", { name: /^Reprocesar$/i }))[1]);
+
+    expect((await screen.findAllByText(/reprocess failed/i)).length).toBeGreaterThan(0);
     await waitFor(() => {
-      expect(screen.getByText(newText)).toBeInTheDocument();
+      expect(
+        within(screen.getByRole("button", { name: /ready\.pdf/i })).getByText("Listo para revision")
+      ).toBeInTheDocument();
     });
-
-    vi.useRealTimers();
   });
 
   it("does not show stale empty-search warning when there is no text", async () => {
@@ -757,9 +843,12 @@ describe("App upload and list flow", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: /empty\.pdf/i }));
     fireEvent.click(screen.getByRole("button", { name: /Texto extraido/i }));
-    fireEvent.click(screen.getByRole("button", { name: /^Buscar$/i }));
 
+    expect(screen.getByPlaceholderText(/Buscar en el texto/i)).toBeDisabled();
+    expect(screen.getByRole("button", { name: /^Buscar$/i })).toBeDisabled();
+    expect(screen.getByText(/Sin texto extraido\./i)).toBeInTheDocument();
     expect(screen.queryByText(/No hay texto disponible para buscar/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/El texto extraido no esta disponible para este run\./i)).not.toBeInTheDocument();
   });
 
   it("opens the file picker when clicking anywhere in empty viewer", async () => {

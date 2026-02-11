@@ -102,6 +102,12 @@ type UploadFeedback = {
   technicalDetails?: string;
 };
 
+type ActionFeedback = {
+  kind: "success" | "error";
+  message: string;
+  technicalDetails?: string;
+};
+
 class UiError extends Error {
   readonly userMessage: string;
   readonly technicalDetails?: string;
@@ -530,10 +536,13 @@ export function App() {
   >("document");
   const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>({});
   const [showRetryModal, setShowRetryModal] = useState(false);
-  const [retryNotice, setRetryNotice] = useState<string | null>(null);
+  const [reprocessingDocumentId, setReprocessingDocumentId] = useState<string | null>(null);
+  const [hasObservedProcessingAfterReprocess, setHasObservedProcessingAfterReprocess] =
+    useState(false);
   const [rawSearch, setRawSearch] = useState("");
   const [rawSearchNotice, setRawSearchNotice] = useState<string | null>(null);
   const [uploadFeedback, setUploadFeedback] = useState<UploadFeedback | null>(null);
+  const [actionFeedback, setActionFeedback] = useState<ActionFeedback | null>(null);
   const [hasShownListErrorToast, setHasShownListErrorToast] = useState(false);
   const [isDragOverViewer, setIsDragOverViewer] = useState(false);
   const [isDragOverSidebarUpload, setIsDragOverSidebarUpload] = useState(false);
@@ -557,6 +566,7 @@ export function App() {
   const copyFeedbackTimerRef = useRef<number | null>(null);
   const latestLoadRequestIdRef = useRef<string | null>(null);
   const latestRawTextRefreshRef = useRef<string | null>(null);
+  const listPollingStartedAtRef = useRef<number | null>(null);
   const queryClient = useQueryClient();
 
   const downloadUrl = useMemo(() => {
@@ -989,28 +999,33 @@ export function App() {
     processingHistory,
   ]);
 
+  const documentListItems = documentList.data?.items ?? [];
+
   useEffect(() => {
-    const items = documentList.data?.items ?? [];
+    const items = documentListItems;
     const processingItems = items.filter((item) => isDocumentProcessing(item.status));
     if (processingItems.length === 0) {
+      listPollingStartedAtRef.current = null;
       return;
     }
 
-    const oldestMs = processingItems
-      .map((item) => Date.parse(item.created_at))
-      .filter((value) => !Number.isNaN(value))
-      .sort((a, b) => a - b)[0];
+    const now = Date.now();
+    if (listPollingStartedAtRef.current === null) {
+      listPollingStartedAtRef.current = now;
+    }
 
-    const maxPollingWindowMs = 3 * 60 * 1000;
-    if (oldestMs && Date.now() - oldestMs > maxPollingWindowMs) {
+    const elapsedMs = now - listPollingStartedAtRef.current;
+    const maxPollingWindowMs = 10 * 60 * 1000;
+    if (elapsedMs > maxPollingWindowMs) {
       return;
     }
 
+    const intervalMs = elapsedMs < 2 * 60 * 1000 ? 1500 : 5000;
     const intervalId = window.setInterval(() => {
       documentList.refetch();
-    }, 3000);
+    }, intervalMs);
     return () => window.clearInterval(intervalId);
-  }, [documentList, documentList.data?.items]);
+  }, [documentList.refetch, documentListItems]);
 
   useEffect(() => {
     if (documentList.status !== "success") {
@@ -1033,16 +1048,96 @@ export function App() {
 
   const reprocessMutation = useMutation({
     mutationFn: async (docId: string) => triggerReprocess(docId),
-    onSuccess: (_, docId) => {
+    onMutate: async (docId) => {
+      const previousDocumentList = queryClient.getQueryData<DocumentListResponse>([
+        "documents",
+        "list",
+      ]);
+      const previousDocumentDetail = queryClient.getQueryData<DocumentDetailResponse>([
+        "documents",
+        "detail",
+        docId,
+      ]);
+      setReprocessingDocumentId(docId);
+      setHasObservedProcessingAfterReprocess(false);
+      await queryClient.cancelQueries({ queryKey: ["documents", "list"] });
+      queryClient.setQueryData<DocumentListResponse | undefined>(["documents", "list"], (current) => {
+        if (!current) {
+          return current;
+        }
+        return {
+          ...current,
+          items: current.items.map((item) =>
+            item.document_id === docId ? { ...item, status: "PROCESSING" } : item
+          ),
+        };
+      });
+      queryClient.setQueryData<DocumentDetailResponse | undefined>(
+        ["documents", "detail", docId],
+        (current) => {
+          if (!current) {
+            return current;
+          }
+          return {
+            ...current,
+            status: "PROCESSING",
+            latest_run: current.latest_run
+              ? { ...current.latest_run, state: "QUEUED" }
+              : current.latest_run,
+          };
+        }
+      );
+      return { previousDocumentList, previousDocumentDetail, docId };
+    },
+    onSuccess: (latestRun, docId) => {
+      queryClient.setQueryData<DocumentDetailResponse | undefined>(
+        ["documents", "detail", docId],
+        (current) => {
+          if (!current) {
+            return current;
+          }
+          return {
+            ...current,
+            status: "PROCESSING",
+            latest_run: {
+              run_id: latestRun.run_id,
+              state: latestRun.state,
+              failure_type: latestRun.failure_type,
+            },
+          };
+        }
+      );
+      setActionFeedback({
+        kind: "success",
+        message: "Reprocesamiento iniciado.",
+      });
       queryClient.invalidateQueries({ queryKey: ["documents", "list"] });
       queryClient.invalidateQueries({ queryKey: ["documents", "detail", docId] });
       queryClient.invalidateQueries({ queryKey: ["documents", "history", docId] });
       queryClient.invalidateQueries({ queryKey: ["runs", "raw-text"] });
+      queryClient.refetchQueries({ queryKey: ["documents", "list"], type: "active" });
+      queryClient.refetchQueries({ queryKey: ["documents", "detail", docId], type: "active" });
+      queryClient.refetchQueries({ queryKey: ["documents", "history", docId], type: "active" });
       latestRawTextRefreshRef.current = null;
-      setRetryNotice("Procesamiento reiniciado");
     },
-    onError: () => {
-      setRetryNotice("No pudimos reiniciar el procesamiento.");
+    onError: (error, docId, context) => {
+      if (context?.previousDocumentList) {
+        queryClient.setQueryData(["documents", "list"], context.previousDocumentList);
+      }
+      if (context?.previousDocumentDetail) {
+        queryClient.setQueryData(["documents", "detail", docId], context.previousDocumentDetail);
+      }
+      queryClient.invalidateQueries({ queryKey: ["documents", "list"] });
+      queryClient.invalidateQueries({ queryKey: ["documents", "detail", docId] });
+      queryClient.refetchQueries({ queryKey: ["documents", "list"], type: "active" });
+      queryClient.refetchQueries({ queryKey: ["documents", "detail", docId], type: "active" });
+      setActionFeedback({
+        kind: "error",
+        message: getUserErrorMessage(error, "No pudimos iniciar el reprocesamiento."),
+        technicalDetails: getTechnicalDetails(error),
+      });
+      setReprocessingDocumentId(null);
+      setHasObservedProcessingAfterReprocess(false);
     },
   });
 
@@ -1072,10 +1167,18 @@ export function App() {
 
   const latestState = documentDetails.data?.latest_run?.state;
   const latestRunId = documentDetails.data?.latest_run?.run_id;
+  const activeListDocument = useMemo(
+    () => (activeId ? (documentList.data?.items ?? []).find((item) => item.document_id === activeId) : null),
+    [activeId, documentList.data?.items]
+  );
+  const isActiveListProcessing = Boolean(
+    activeListDocument && isDocumentProcessing(activeListDocument.status)
+  );
   const isProcessing =
     documentDetails.data?.status === "PROCESSING" ||
     latestState === "QUEUED" ||
     latestState === "RUNNING";
+  const isActiveDocumentProcessing = isProcessing || isActiveListProcessing;
 
   useEffect(() => {
     if (!latestRunId || !latestState) {
@@ -1098,12 +1201,23 @@ export function App() {
   }, [latestRunId, latestState, queryClient]);
 
   useEffect(() => {
-    if (!retryNotice) {
+    if (!reprocessingDocumentId || activeId !== reprocessingDocumentId) {
       return;
     }
-    const timer = window.setTimeout(() => setRetryNotice(null), 3000);
-    return () => window.clearTimeout(timer);
-  }, [retryNotice]);
+    if (isActiveDocumentProcessing && !hasObservedProcessingAfterReprocess) {
+      setHasObservedProcessingAfterReprocess(true);
+      return;
+    }
+    if (hasObservedProcessingAfterReprocess && !isActiveDocumentProcessing) {
+      setReprocessingDocumentId(null);
+      setHasObservedProcessingAfterReprocess(false);
+    }
+  }, [
+    activeId,
+    hasObservedProcessingAfterReprocess,
+    isActiveDocumentProcessing,
+    reprocessingDocumentId,
+  ]);
 
   useEffect(() => {
     if (!uploadFeedback) {
@@ -1113,6 +1227,15 @@ export function App() {
     const timer = window.setTimeout(() => setUploadFeedback(null), timeoutMs);
     return () => window.clearTimeout(timer);
   }, [uploadFeedback]);
+
+  useEffect(() => {
+    if (!actionFeedback) {
+      return;
+    }
+    const timeoutMs = actionFeedback.kind === "success" ? 3500 : 5000;
+    const timer = window.setTimeout(() => setActionFeedback(null), timeoutMs);
+    return () => window.clearTimeout(timer);
+  }, [actionFeedback]);
 
   useEffect(() => {
     if (documentList.isError) {
@@ -1144,6 +1267,9 @@ export function App() {
   const hasRawText = Boolean(rawTextContent && rawTextContent.length > 0);
   const canCopyRawText = hasRawText && !rawTextQuery.isLoading && !rawTextQuery.isError;
 
+  const isRawTextLoading = rawTextQuery.isLoading || rawTextQuery.isFetching;
+  const canSearchRawText = hasRawText && !isRawTextLoading && !rawTextQuery.isError;
+
   const handleRawSearch = () => {
     if (!rawTextContent || !rawSearch.trim()) {
       setRawSearchNotice(null);
@@ -1162,13 +1288,13 @@ export function App() {
         return null;
       }
       if (rawTextQuery.error.reason === "RAW_TEXT_NOT_AVAILABLE") {
-        return "El texto extraido no esta disponible para este run.";
+        return null;
       }
       if (rawTextQuery.error.reason === "RAW_TEXT_NOT_USABLE") {
-        return "El texto extraido no es legible para este run.";
+        return null;
       }
       if (rawTextQuery.error.errorCode === "ARTIFACT_MISSING") {
-        return "El artefacto de texto no esta disponible.";
+        return null;
       }
       return rawTextQuery.error.userMessage;
     }
@@ -1590,25 +1716,24 @@ export function App() {
                   <div className="flex h-full flex-col rounded-2xl border border-black/10 bg-white/80 p-4">
                     <div className="rounded-2xl border border-black/10 bg-white/90 p-3">
                       <div className="flex flex-col gap-2 text-xs text-ink">
-                        <span className="font-semibold">¿El texto parece incorrecto?</span>
                         <span className="text-muted">
-                          Puedes reintentar el procesamiento para regenerar la extraccion.
+                          ¿El texto no es correcto? Puedes reprocesarlo para regenerar la extraccion.
                         </span>
                         <div className="flex flex-wrap items-center gap-2">
                           <Button
                             type="button"
-                            disabled={!activeId || isProcessing || reprocessMutation.isPending}
+                            disabled={!activeId || isActiveDocumentProcessing || reprocessMutation.isPending}
                             onClick={() => setShowRetryModal(true)}
                           >
-                            {isProcessing
-                              ? "Procesando..."
-                              : reprocessMutation.isPending
+                            {reprocessMutation.isPending ||
+                            (Boolean(activeId) &&
+                              reprocessingDocumentId === activeId &&
+                              (!hasObservedProcessingAfterReprocess || isActiveDocumentProcessing))
                               ? "Reprocesando..."
-                              : "Reintentar procesamiento"}
+                              : isActiveDocumentProcessing
+                              ? "Procesando..."
+                              : "Reprocesar"}
                           </Button>
-                          {retryNotice && (
-                            <span className="text-xs text-muted">{retryNotice}</span>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -1617,6 +1742,7 @@ export function App() {
                         className="w-full rounded-full border border-black/10 bg-white px-3 py-2 text-xs text-muted outline-none sm:w-64"
                         placeholder="Buscar en el texto"
                         value={rawSearch}
+                        disabled={!canSearchRawText}
                         onChange={(event) => setRawSearch(event.target.value)}
                         onKeyDown={(event) => {
                           if (event.key === "Enter") {
@@ -1624,7 +1750,7 @@ export function App() {
                           }
                         }}
                       />
-                      <Button type="button" onClick={handleRawSearch}>
+                      <Button type="button" disabled={!canSearchRawText} onClick={handleRawSearch}>
                         Buscar
                       </Button>
                       <Button
@@ -1649,10 +1775,10 @@ export function App() {
                         {copyFeedback}
                       </p>
                     )}
-                    {rawSearchNotice && (
+                    {hasRawText && rawSearchNotice && (
                       <p className="mt-2 text-xs text-muted">{rawSearchNotice}</p>
                     )}
-                    {rawTextQuery.isLoading && (
+                    {isRawTextLoading && (
                       <p className="mt-2 text-xs text-muted">Cargando texto extraido...</p>
                     )}
                     {rawTextErrorMessage && (
@@ -1663,12 +1789,8 @@ export function App() {
                     <div className="mt-3 flex-1 overflow-y-auto rounded-xl border border-dashed border-black/10 bg-white/70 p-3 font-mono text-xs text-muted">
                       {rawTextContent ? (
                         <pre>{rawTextContent}</pre>
-                      ) : latestState === "QUEUED" || latestState === "RUNNING" ? (
-                        "Texto extraido aun no listo."
-                      ) : latestState === "FAILED" || latestState === "TIMED_OUT" ? (
-                        "Texto extraido no disponible para este run."
                       ) : (
-                        "Texto extraido no disponible."
+                        "Sin texto extraido."
                       )}
                     </div>
                   </div>
@@ -1681,10 +1803,10 @@ export function App() {
                       </p>
                       <Button
                         type="button"
-                        disabled={!activeId || isProcessing || reprocessMutation.isPending}
+                        disabled={!activeId || isActiveDocumentProcessing || reprocessMutation.isPending}
                         onClick={() => setShowRetryModal(true)}
                       >
-                        {isProcessing
+                        {isActiveDocumentProcessing
                           ? "Procesando..."
                           : reprocessMutation.isPending
                           ? "Reprocesando..."
@@ -1863,7 +1985,7 @@ export function App() {
       {showRetryModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-6">
           <div className="w-full max-w-sm rounded-2xl border border-black/10 bg-white p-4 shadow-xl">
-            <p className="text-sm font-semibold text-ink">Reintentar procesamiento</p>
+            <p className="text-sm font-semibold text-ink">Reprocesar documento</p>
             <p className="mt-2 text-xs text-muted">
               Esto volvera a ejecutar extraccion e interpretacion y puede cambiar los resultados.
             </p>
@@ -1872,7 +1994,7 @@ export function App() {
                 Cancelar
               </Button>
               <Button type="button" onClick={handleConfirmRetry}>
-                Reintentar
+                Reprocesar
               </Button>
             </div>
           </div>
@@ -1922,6 +2044,38 @@ export function App() {
                           <p className="mt-1">{uploadFeedback.technicalDetails}</p>
                         </details>
                       )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            {actionFeedback && (
+              <div className="fixed left-1/2 top-28 z-[60] w-full max-w-lg -translate-x-1/2 px-4 sm:w-[32rem]">
+                <div
+                  className={`rounded-2xl border px-5 py-4 text-base shadow-xl ${
+                    actionFeedback.kind === "success"
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border-red-200 bg-red-50 text-red-700"
+                  }`}
+                  role="status"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span>{actionFeedback.message}</span>
+                    <button
+                      type="button"
+                      aria-label="Cerrar notificacion de accion"
+                      className="text-lg font-semibold leading-none text-ink"
+                      onClick={() => setActionFeedback(null)}
+                    >
+                      &times;
+                    </button>
+                  </div>
+                  {actionFeedback.kind === "error" && actionFeedback.technicalDetails && (
+                    <div className="mt-2 flex items-center gap-3">
+                      <details className="text-xs text-muted">
+                        <summary className="cursor-pointer">Ver detalles tecnicos</summary>
+                        <p className="mt-1">{actionFeedback.technicalDetails}</p>
+                      </details>
                     </div>
                   )}
                 </div>
