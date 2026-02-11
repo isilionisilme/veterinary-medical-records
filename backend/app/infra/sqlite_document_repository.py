@@ -10,6 +10,7 @@ from backend.app.domain.models import (
     DocumentWithLatestRun,
     ProcessingRun,
     ProcessingRunDetail,
+    ProcessingRunDetails,
     ProcessingRunState,
     ProcessingRunSummary,
     ProcessingStatus,
@@ -140,6 +141,39 @@ class SqliteDocumentRepository:
         return ProcessingRunSummary(
             run_id=row["run_id"],
             state=ProcessingRunState(row["state"]),
+            failure_type=row["failure_type"],
+        )
+
+    def get_run(self, run_id: str) -> ProcessingRunDetails | None:
+        """Fetch a processing run by its identifier."""
+
+        with database.get_connection() as conn:
+            row = conn.execute(
+                """
+                SELECT
+                    run_id,
+                    document_id,
+                    state,
+                    created_at,
+                    started_at,
+                    completed_at,
+                    failure_type
+                FROM processing_runs
+                WHERE run_id = ?
+                """,
+                (run_id,),
+            ).fetchone()
+
+        if row is None:
+            return None
+
+        return ProcessingRunDetails(
+            run_id=row["run_id"],
+            document_id=row["document_id"],
+            state=ProcessingRunState(row["state"]),
+            created_at=row["created_at"],
+            started_at=row["started_at"],
+            completed_at=row["completed_at"],
             failure_type=row["failure_type"],
         )
 

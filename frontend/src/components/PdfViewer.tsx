@@ -25,7 +25,6 @@ export function PdfViewer({ fileUrl, filename, isDragOver = false }: PdfViewerPr
   const [error, setError] = useState<string | null>(null);
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
-  const [renderPass, setRenderPass] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -46,7 +45,6 @@ export function PdfViewer({ fileUrl, filename, isDragOver = false }: PdfViewerPr
       renderingPages.current = new Set();
       setPdfDoc(null);
       setTotalPages(0);
-      setRenderPass(0);
 
       setLoading(true);
       setError(null);
@@ -82,6 +80,18 @@ export function PdfViewer({ fileUrl, filename, isDragOver = false }: PdfViewerPr
   }, [fileUrl]);
 
   useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) {
+      return;
+    }
+    if (typeof container.scrollTo === "function") {
+      container.scrollTo({ top: 0, behavior: "auto" });
+      return;
+    }
+    container.scrollTop = 0;
+  }, [fileUrl]);
+
+  useEffect(() => {
     if (!pdfDoc) {
       return undefined;
     }
@@ -113,19 +123,24 @@ export function PdfViewer({ fileUrl, filename, isDragOver = false }: PdfViewerPr
 
   useEffect(() => {
     let cancelled = false;
+    let retryCount = 0;
+    let retryTimer: number | null = null;
+    const MAX_CANVAS_RETRIES = 30;
 
     async function renderAllPages() {
       if (!pdfDoc || containerWidth <= 0 || totalPages <= 0) {
         return;
       }
 
+      let missingCanvas = false;
       for (let pageIndex = 1; pageIndex <= pdfDoc.numPages; pageIndex += 1) {
         if (cancelled) {
-          continue;
+          return;
         }
 
         const canvas = canvasRefs.current[pageIndex - 1];
         if (!canvas) {
+          missingCanvas = true;
           continue;
         }
         if (renderedPages.current.has(pageIndex) || renderingPages.current.has(pageIndex)) {
@@ -147,14 +162,25 @@ export function PdfViewer({ fileUrl, filename, isDragOver = false }: PdfViewerPr
             continue;
           }
 
-          canvas.width = scaledViewport.width;
-          canvas.height = scaledViewport.height;
+          canvas.width = Math.max(1, Math.floor(scaledViewport.width));
+          canvas.height = Math.max(1, Math.floor(scaledViewport.height));
 
           await page.render({ canvasContext: context, viewport: scaledViewport }).promise;
           renderedPages.current.add(pageIndex);
+        } catch {
+          // Keep rendering other pages even if one page fails.
+          continue;
         } finally {
           renderingPages.current.delete(pageIndex);
         }
+      }
+
+      const allPagesRendered = renderedPages.current.size >= pdfDoc.numPages;
+      if (!allPagesRendered && missingCanvas && retryCount < MAX_CANVAS_RETRIES && !cancelled) {
+        retryCount += 1;
+        retryTimer = window.setTimeout(() => {
+          void renderAllPages();
+        }, 50);
       }
     }
 
@@ -162,8 +188,11 @@ export function PdfViewer({ fileUrl, filename, isDragOver = false }: PdfViewerPr
 
     return () => {
       cancelled = true;
+      if (retryTimer) {
+        window.clearTimeout(retryTimer);
+      }
     };
-  }, [pdfDoc, containerWidth, totalPages, renderPass]);
+  }, [pdfDoc, containerWidth, totalPages]);
 
   useEffect(() => {
     const root = scrollRef.current;
@@ -308,10 +337,6 @@ export function PdfViewer({ fileUrl, filename, isDragOver = false }: PdfViewerPr
                   <motion.canvas
                     ref={(node) => {
                       canvasRefs.current[page - 1] = node;
-                      if (node) {
-                        // Trigger a render pass when canvases are actually mounted.
-                        setRenderPass((current) => current + 1);
-                      }
                     }}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}

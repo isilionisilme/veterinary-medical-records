@@ -81,6 +81,13 @@ type ProcessingHistoryResponse = {
   runs: ProcessingHistoryRun[];
 };
 
+type RawTextArtifactResponse = {
+  run_id: string;
+  artifact_type: string;
+  content_type: string;
+  text: string;
+};
+
 type DocumentUploadResponse = {
   document_id: string;
   status: string;
@@ -104,6 +111,23 @@ class UiError extends Error {
     this.name = "UiError";
     this.userMessage = userMessage;
     this.technicalDetails = technicalDetails;
+  }
+}
+
+class ApiResponseError extends UiError {
+  readonly errorCode?: string;
+  readonly reason?: string;
+
+  constructor(
+    userMessage: string,
+    technicalDetails?: string,
+    errorCode?: string,
+    reason?: string
+  ) {
+    super(userMessage, technicalDetails);
+    this.name = "ApiResponseError";
+    this.errorCode = errorCode;
+    this.reason = reason;
   }
 }
 
@@ -294,6 +318,49 @@ async function triggerReprocess(documentId: string): Promise<LatestRun> {
   return response.json();
 }
 
+async function fetchRawText(runId: string): Promise<RawTextArtifactResponse> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/runs/${runId}/artifacts/raw-text`);
+  } catch (error) {
+    if (isNetworkFetchError(error)) {
+      throw new UiError(
+        "No se pudo conectar con el servidor.",
+        `Network error calling ${API_BASE_URL}/runs/${runId}/artifacts/raw-text`
+      );
+    }
+    throw error;
+  }
+
+  if (!response.ok) {
+    let errorMessage = "No se pudo cargar el texto extraido.";
+    let errorCode: string | undefined;
+    let reason: string | undefined;
+    try {
+      const payload = await response.json();
+      if (typeof payload?.message === "string" && payload.message.trim()) {
+        errorMessage = payload.message;
+      }
+      if (typeof payload?.error_code === "string") {
+        errorCode = payload.error_code;
+      }
+      if (typeof payload?.details?.reason === "string") {
+        reason = payload.details.reason;
+      }
+    } catch {
+      // Ignore JSON parse errors for non-JSON responses.
+    }
+    throw new ApiResponseError(
+      errorMessage,
+      `HTTP ${response.status} calling ${API_BASE_URL}/runs/${runId}/artifacts/raw-text`,
+      errorCode,
+      reason
+    );
+  }
+
+  return response.json();
+}
+
 async function uploadDocument(file: File): Promise<DocumentUploadResponse> {
   const formData = new FormData();
   formData.append("file", file);
@@ -447,6 +514,7 @@ export function App() {
   const autoOpenRetryCountRef = useRef<Record<string, number>>({});
   const autoOpenRetryTimerRef = useRef<number | null>(null);
   const refreshFeedbackTimerRef = useRef<number | null>(null);
+  const latestLoadRequestIdRef = useRef<string | null>(null);
   const queryClient = useQueryClient();
 
   const downloadUrl = useMemo(() => {
@@ -556,6 +624,10 @@ export function App() {
   const loadPdf = useMutation({
     mutationFn: async (docId: string) => fetchOriginalPdf(docId),
     onSuccess: (result, docId) => {
+      if (latestLoadRequestIdRef.current !== docId) {
+        URL.revokeObjectURL(result.url);
+        return;
+      }
       if (pendingAutoOpenDocumentIdRef.current === docId) {
         pendingAutoOpenDocumentIdRef.current = null;
         delete autoOpenRetryCountRef.current[docId];
@@ -570,20 +642,26 @@ export function App() {
           return { ...current, showOpenAction: false };
         });
       }
-      if (fileUrl) {
-        URL.revokeObjectURL(fileUrl);
-      }
       setActiveId(docId);
-      setFileUrl(result.url);
+      setFileUrl((currentUrl) => {
+        if (currentUrl) {
+          URL.revokeObjectURL(currentUrl);
+        }
+        return result.url;
+      });
       setFilename(result.filename);
     },
     onError: (_, docId) => {
+      if (latestLoadRequestIdRef.current !== docId) {
+        return;
+      }
       if (pendingAutoOpenDocumentIdRef.current === docId) {
         const retries = autoOpenRetryCountRef.current[docId] ?? 0;
         if (retries < 1) {
           autoOpenRetryCountRef.current[docId] = retries + 1;
           autoOpenRetryTimerRef.current = window.setTimeout(() => {
-            loadPdf.mutate(docId);
+            latestLoadRequestIdRef.current = docId;
+            requestPdfLoad(docId);
           }, 1000);
           return;
         }
@@ -598,6 +676,11 @@ export function App() {
       }
     },
   });
+
+  const requestPdfLoad = (docId: string) => {
+    latestLoadRequestIdRef.current = docId;
+    loadPdf.mutate(docId);
+  };
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => uploadDocument(file),
@@ -637,7 +720,7 @@ export function App() {
         documentId: result.document_id,
         showOpenAction: false,
       });
-      loadPdf.mutate(result.document_id);
+      requestPdfLoad(result.document_id);
       queryClient.invalidateQueries({ queryKey: ["documents", "list"] });
       try {
         await queryClient.fetchQuery({
@@ -790,7 +873,7 @@ export function App() {
 
   const handleSelectDocument = (docId: string) => {
     setActiveId(docId);
-    loadPdf.mutate(docId);
+    requestPdfLoad(docId);
   };
 
   const documentList = useQuery({
@@ -808,6 +891,14 @@ export function App() {
     queryKey: ["documents", "history", activeId],
     queryFn: () => fetchProcessingHistory(activeId ?? ""),
     enabled: Boolean(activeId),
+  });
+
+  const rawTextRunId = documentDetails.data?.latest_run?.run_id ?? null;
+  const rawTextQuery = useQuery({
+    queryKey: ["runs", "raw-text", rawTextRunId],
+    queryFn: () => fetchRawText(rawTextRunId ?? ""),
+    enabled: activeViewerTab === "raw_text" && Boolean(rawTextRunId),
+    retry: false,
   });
 
   const sortedDocuments = useMemo(() => {
@@ -981,7 +1072,7 @@ export function App() {
     reprocessMutation.mutate(activeId);
   };
 
-  const [rawTextContent] = useState<string | null>(null);
+  const rawTextContent = rawTextQuery.data?.text ?? null;
 
   const handleRawSearch = () => {
     if (!rawTextContent || !rawSearch.trim()) {
@@ -1425,11 +1516,40 @@ export function App() {
                     {rawSearchNotice && (
                       <p className="mt-2 text-xs text-muted">{rawSearchNotice}</p>
                     )}
+                    {rawTextQuery.isLoading && (
+                      <p className="mt-2 text-xs text-muted">Cargando texto extraido...</p>
+                    )}
+                    {rawTextQuery.isError && (
+                      <p className="mt-2 text-xs text-red-600">
+                        {(() => {
+                          if (rawTextQuery.error instanceof ApiResponseError) {
+                            if (rawTextQuery.error.reason === "RAW_TEXT_NOT_READY") {
+                              return "El texto extraido aun no esta listo.";
+                            }
+                            if (rawTextQuery.error.reason === "RAW_TEXT_NOT_AVAILABLE") {
+                              return "El texto extraido no esta disponible para este run.";
+                            }
+                            if (rawTextQuery.error.errorCode === "ARTIFACT_MISSING") {
+                              return "El artefacto de texto no esta disponible.";
+                            }
+                            return rawTextQuery.error.userMessage;
+                          }
+                          return getUserErrorMessage(
+                            rawTextQuery.error,
+                            "No se pudo cargar el texto extraido."
+                          );
+                        })()}
+                      </p>
+                    )}
                     <div className="mt-3 flex-1 overflow-y-auto rounded-xl border border-dashed border-black/10 bg-white/70 p-3 font-mono text-xs text-muted">
                       {rawTextContent ? (
                         <pre>{rawTextContent}</pre>
+                      ) : latestState === "QUEUED" || latestState === "RUNNING" ? (
+                        "Texto extraido aun no listo."
+                      ) : latestState === "FAILED" || latestState === "TIMED_OUT" ? (
+                        "Texto extraido no disponible para este run."
                       ) : (
-                        "Texto extraido no disponible en esta version."
+                        "Texto extraido no disponible."
                       )}
                     </div>
                   </div>
@@ -1668,7 +1788,7 @@ export function App() {
                 className="mt-2 text-xs font-semibold text-ink underline"
                 onClick={() => {
                   setActiveViewerTab("document");
-                  loadPdf.mutate(uploadFeedback.documentId!);
+                  requestPdfLoad(uploadFeedback.documentId!);
                   setUploadFeedback(null);
                 }}
               >

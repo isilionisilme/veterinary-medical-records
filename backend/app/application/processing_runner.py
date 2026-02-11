@@ -6,6 +6,7 @@ import asyncio
 import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from pathlib import Path
 from uuid import uuid4
 
 from backend.app.domain.models import (
@@ -206,6 +207,35 @@ async def _process_document(
         )
         raise ProcessingError("EXTRACTION_FAILED")
 
+    raw_text = await asyncio.to_thread(_extract_pdf_text, file_path)
+    if not raw_text.strip():
+        _append_step_status(
+            repository=repository,
+            run_id=run_id,
+            step_name=StepName.EXTRACTION,
+            step_status=StepStatus.FAILED,
+            attempt=1,
+            started_at=extraction_started_at,
+            ended_at=_default_now_iso(),
+            error_code="EXTRACTION_FAILED",
+        )
+        raise ProcessingError("EXTRACTION_FAILED")
+
+    try:
+        storage.save_raw_text(document_id=document_id, run_id=run_id, text=raw_text)
+    except Exception as exc:
+        _append_step_status(
+            repository=repository,
+            run_id=run_id,
+            step_name=StepName.EXTRACTION,
+            step_status=StepStatus.FAILED,
+            attempt=1,
+            started_at=extraction_started_at,
+            ended_at=_default_now_iso(),
+            error_code="EXTRACTION_FAILED",
+        )
+        raise ProcessingError("EXTRACTION_FAILED") from exc
+
     _append_step_status(
         repository=repository,
         run_id=run_id,
@@ -268,3 +298,18 @@ def _append_step_status(
         },
         created_at=_default_now_iso(),
     )
+
+
+def _extract_pdf_text(file_path: Path) -> str:
+    try:
+        import fitz  # PyMuPDF
+    except ImportError as exc:  # pragma: no cover - environment setup
+        raise ProcessingError("EXTRACTION_FAILED") from exc
+
+    try:
+        with fitz.open(file_path) as document:
+            parts = [page.get_text("text") for page in document]
+    except Exception as exc:  # pragma: no cover - defensive
+        raise ProcessingError("EXTRACTION_FAILED") from exc
+
+    return "\n".join(parts)

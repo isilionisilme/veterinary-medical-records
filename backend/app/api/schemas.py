@@ -95,3 +95,10 @@ class ProcessingHistoryResponse(BaseModel):
     runs: list[ProcessingHistoryRunResponse] = Field(
         ..., description="Chronological processing runs and their steps."
     )
+
+
+class RawTextArtifactResponse(BaseModel):
+    run_id: str = Field(..., description="Unique identifier of the processing run.")
+    artifact_type: str = Field(..., description="Artifact type identifier.")
+    content_type: str = Field(..., description="Content type for the raw text artifact.")
+    text: str = Field(..., description="Extracted raw text content.")

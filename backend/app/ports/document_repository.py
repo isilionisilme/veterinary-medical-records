@@ -12,6 +12,7 @@ from backend.app.domain.models import (
     DocumentWithLatestRun,
     ProcessingRun,
     ProcessingRunDetail,
+    ProcessingRunDetails,
     ProcessingRunState,
     ProcessingRunSummary,
     ProcessingStatus,
@@ -37,6 +38,9 @@ class DocumentRepository(Protocol):
 
     def get_latest_run(self, document_id: str) -> ProcessingRunSummary | None:
         """Return the latest processing run summary for a document, if any."""
+
+    def get_run(self, run_id: str) -> ProcessingRunDetails | None:
+        """Return processing run details by run id, if it exists."""
 
     def create_processing_run(
         self,
