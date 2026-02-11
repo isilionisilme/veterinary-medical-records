@@ -4,31 +4,32 @@ import { motion } from "framer-motion";
 import * as pdfjsLib from "pdfjs-dist";
 import workerSrc from "pdfjs-dist/build/pdf.worker.min?url";
 
-import { Button } from "./ui/button";
-
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 type PdfViewerProps = {
   fileUrl: string | null;
   filename?: string | null;
+  isDragOver?: boolean;
 };
 
-export function PdfViewer({ fileUrl, filename }: PdfViewerProps) {
+export function PdfViewer({ fileUrl, filename, isDragOver = false }: PdfViewerProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const pageRefs = useRef<Array<HTMLDivElement | null>>([]);
   const canvasRefs = useRef<Array<HTMLCanvasElement | null>>([]);
   const renderedPages = useRef<Set<number>>(new Set());
+  const renderingPages = useRef<Set<number>>(new Set());
   const [totalPages, setTotalPages] = useState(0);
   const [pageNumber, setPageNumber] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
-  const [canvasesReady, setCanvasesReady] = useState(false);
+  const [renderPass, setRenderPass] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
+    let loadingTask: pdfjsLib.PDFDocumentLoadingTask | null = null;
 
     async function loadPdf() {
       if (!fileUrl) {
@@ -36,21 +37,24 @@ export function PdfViewer({ fileUrl, filename }: PdfViewerProps) {
         setTotalPages(0);
         setPageNumber(1);
         setError(null);
-        setCanvasesReady(false);
         return;
       }
 
       pageRefs.current = [];
       canvasRefs.current = [];
       renderedPages.current = new Set();
-      setCanvasesReady(false);
+      renderingPages.current = new Set();
+      setPdfDoc(null);
+      setTotalPages(0);
+      setRenderPass(0);
 
       setLoading(true);
       setError(null);
       try {
-        const task = pdfjsLib.getDocument(fileUrl);
-        const doc = await task.promise;
+        loadingTask = pdfjsLib.getDocument(fileUrl);
+        const doc = await loadingTask.promise;
         if (cancelled) {
+          void doc.destroy();
           return;
         }
         setPdfDoc(doc);
@@ -71,8 +75,23 @@ export function PdfViewer({ fileUrl, filename }: PdfViewerProps) {
 
     return () => {
       cancelled = true;
+      if (loadingTask && typeof (loadingTask as { destroy?: unknown }).destroy === "function") {
+        void (loadingTask as { destroy: () => Promise<void> | void }).destroy();
+      }
     };
   }, [fileUrl]);
+
+  useEffect(() => {
+    if (!pdfDoc) {
+      return undefined;
+    }
+
+    return () => {
+      if (typeof (pdfDoc as { destroy?: unknown }).destroy === "function") {
+        void (pdfDoc as { destroy: () => Promise<void> | void }).destroy();
+      }
+    };
+  }, [pdfDoc]);
 
   useEffect(() => {
     if (!contentRef.current) {
@@ -96,34 +115,46 @@ export function PdfViewer({ fileUrl, filename }: PdfViewerProps) {
     let cancelled = false;
 
     async function renderAllPages() {
-      if (!pdfDoc || containerWidth <= 0 || !canvasesReady) {
+      if (!pdfDoc || containerWidth <= 0 || totalPages <= 0) {
         return;
       }
 
       for (let pageIndex = 1; pageIndex <= pdfDoc.numPages; pageIndex += 1) {
+        if (cancelled) {
+          continue;
+        }
+
         const canvas = canvasRefs.current[pageIndex - 1];
         if (!canvas) {
           continue;
         }
-
-        const page = await pdfDoc.getPage(pageIndex);
-        if (cancelled) {
-          return;
-        }
-
-        const viewport = page.getViewport({ scale: 1 });
-        const scale = containerWidth / viewport.width;
-        const scaledViewport = page.getViewport({ scale });
-        const context = canvas.getContext("2d");
-        if (!context) {
+        if (renderedPages.current.has(pageIndex) || renderingPages.current.has(pageIndex)) {
           continue;
         }
 
-        canvas.width = scaledViewport.width;
-        canvas.height = scaledViewport.height;
+        renderingPages.current.add(pageIndex);
+        try {
+          const page = await pdfDoc.getPage(pageIndex);
+          if (cancelled) {
+            return;
+          }
 
-        await page.render({ canvasContext: context, viewport: scaledViewport }).promise;
-        renderedPages.current.add(pageIndex);
+          const viewport = page.getViewport({ scale: 1 });
+          const scale = containerWidth / viewport.width;
+          const scaledViewport = page.getViewport({ scale });
+          const context = canvas.getContext("2d");
+          if (!context) {
+            continue;
+          }
+
+          canvas.width = scaledViewport.width;
+          canvas.height = scaledViewport.height;
+
+          await page.render({ canvasContext: context, viewport: scaledViewport }).promise;
+          renderedPages.current.add(pageIndex);
+        } finally {
+          renderingPages.current.delete(pageIndex);
+        }
       }
     }
 
@@ -132,11 +163,11 @@ export function PdfViewer({ fileUrl, filename }: PdfViewerProps) {
     return () => {
       cancelled = true;
     };
-  }, [pdfDoc, containerWidth, canvasesReady]);
+  }, [pdfDoc, containerWidth, totalPages, renderPass]);
 
   useEffect(() => {
     const root = scrollRef.current;
-    if (!root || totalPages === 0 || !canvasesReady) {
+    if (!root || totalPages === 0) {
       return undefined;
     }
 
@@ -150,7 +181,7 @@ export function PdfViewer({ fileUrl, filename }: PdfViewerProps) {
           ratios.set(pageIndex, entry.intersectionRatio);
         });
 
-        let nextPage = pageNumber;
+        let nextPage = 0;
         let maxRatio = 0;
         ratios.forEach((ratio, index) => {
           if (ratio > maxRatio) {
@@ -159,8 +190,8 @@ export function PdfViewer({ fileUrl, filename }: PdfViewerProps) {
           }
         });
 
-        if (nextPage && nextPage !== pageNumber) {
-          setPageNumber(nextPage);
+        if (nextPage > 0) {
+          setPageNumber((current) => (current === nextPage ? current : nextPage));
         }
       },
       {
@@ -178,7 +209,7 @@ export function PdfViewer({ fileUrl, filename }: PdfViewerProps) {
     return () => {
       observer.disconnect();
     };
-  }, [pageNumber, totalPages, canvasesReady]);
+  }, [totalPages]);
 
   const pages = useMemo(
     () => Array.from({ length: totalPages }, (_, index) => index + 1),
@@ -210,37 +241,42 @@ export function PdfViewer({ fileUrl, filename }: PdfViewerProps) {
 
   const canGoBack = pageNumber > 1;
   const canGoForward = pageNumber < totalPages;
-  const navDisabled = loading || !pdfDoc || !canvasesReady;
+  const navDisabled = loading || !pdfDoc;
+  const showPageNavigation = Boolean(fileUrl) && !loading && !error && totalPages > 0;
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center justify-end border-b border-black/10 pb-3">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
+    <div className="flex h-full min-h-0 flex-col">
+      {showPageNavigation && (
+        <div className="relative z-20 flex items-center justify-center gap-2 border-b border-black/10 pb-3">
+          <button
             type="button"
+            aria-label="Página anterior"
             onClick={(event) => scrollToPage(Math.max(1, pageNumber - 1), event)}
             disabled={navDisabled || !canGoBack}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/15 bg-white/90 p-0 leading-none text-ink shadow-sm transition hover:bg-accentSoft disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <ChevronLeft size={16} />
-            Anterior
-          </Button>
-          <Button
-            variant="ghost"
+            <ChevronLeft size={18} className="h-[18px] w-[18px] shrink-0 text-ink" />
+          </button>
+          <p className="min-w-12 text-center text-sm font-semibold text-muted">
+            {pageNumber}/{totalPages}
+          </p>
+          <button
             type="button"
+            aria-label="Página siguiente"
             onClick={(event) => scrollToPage(Math.min(totalPages, pageNumber + 1), event)}
             disabled={navDisabled || !canGoForward}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/15 bg-white/90 p-0 leading-none text-ink shadow-sm transition hover:bg-accentSoft disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Siguiente
-            <ChevronRight size={16} />
-          </Button>
+            <ChevronRight size={18} className="h-[18px] w-[18px] shrink-0 text-ink" />
+          </button>
         </div>
-      </div>
-      <div
-        ref={scrollRef}
-        data-testid="pdf-scroll-container"
-        className="mt-4 flex-1 overflow-auto rounded-2xl border border-black/10 bg-white/60 p-4 shadow-sm"
-      >
+      )}
+      <div className="relative mt-4 min-h-0 flex-1">
+        <div
+          ref={scrollRef}
+          data-testid="pdf-scroll-container"
+          className="h-full min-h-0 overflow-y-auto rounded-2xl border border-black/10 bg-white/60 p-4 shadow-sm"
+        >
         <div ref={contentRef} className="mx-auto w-full max-w-3xl">
           {loading && (
             <motion.div
@@ -269,22 +305,18 @@ export function PdfViewer({ fileUrl, filename }: PdfViewerProps) {
                 data-testid="pdf-page"
                 className="mb-6 last:mb-0"
               >
-                <motion.canvas
-                  ref={(node) => {
-                    canvasRefs.current[page - 1] = node;
-                    if (
-                      !canvasesReady &&
-                      totalPages > 0 &&
-                      canvasRefs.current.slice(0, totalPages).every(Boolean)
-                    ) {
-                      // Ensures we don't start rendering until all canvases exist.
-                      setCanvasesReady(true);
-                    }
-                  }}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="mx-auto rounded-xl bg-white shadow"
-                />
+                  <motion.canvas
+                    ref={(node) => {
+                      canvasRefs.current[page - 1] = node;
+                      if (node) {
+                        // Trigger a render pass when canvases are actually mounted.
+                        setRenderPass((current) => current + 1);
+                      }
+                    }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="mx-auto rounded-xl bg-white shadow"
+                  />
               </div>
             ))}
           {!fileUrl && !loading && (
@@ -293,12 +325,13 @@ export function PdfViewer({ fileUrl, filename }: PdfViewerProps) {
             </div>
           )}
         </div>
-      </div>
-      {totalPages > 0 && (
-        <div className="mt-3 text-sm text-muted">
-          Pagina {pageNumber} de {totalPages}
         </div>
-      )}
+        {isDragOver && (
+          <div className="pointer-events-none absolute inset-3 z-10 flex items-center justify-center rounded-xl border-2 border-dashed border-accent bg-white/75 ring-2 ring-accent/40">
+            <p className="text-sm font-semibold text-ink">Suelta el PDF para subirlo</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

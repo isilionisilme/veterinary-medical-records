@@ -1,8 +1,10 @@
-﻿import { useEffect, useMemo, useState } from "react";
-import { Download } from "lucide-react";
+import { type DragEvent, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { Download, RefreshCw } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { PdfViewer } from "./components/PdfViewer";
+import { UploadDropzone } from "./components/UploadDropzone";
 import { Button } from "./components/ui/button";
 import { groupProcessingSteps } from "./lib/processingHistory";
 import {
@@ -14,6 +16,7 @@ import {
 } from "./lib/processingHistoryView";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const MAX_UPLOAD_SIZE_BYTES = 20 * 1024 * 1024;
 
 type LoadResult = {
   url: string;
@@ -78,6 +81,65 @@ type ProcessingHistoryResponse = {
   runs: ProcessingHistoryRun[];
 };
 
+type DocumentUploadResponse = {
+  document_id: string;
+  status: string;
+  created_at: string;
+};
+
+type UploadFeedback = {
+  kind: "success" | "error";
+  message: string;
+  documentId?: string;
+  showOpenAction?: boolean;
+  technicalDetails?: string;
+};
+
+class UiError extends Error {
+  readonly userMessage: string;
+  readonly technicalDetails?: string;
+
+  constructor(userMessage: string, technicalDetails?: string) {
+    super(userMessage);
+    this.name = "UiError";
+    this.userMessage = userMessage;
+    this.technicalDetails = technicalDetails;
+  }
+}
+
+function isNetworkFetchError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+  const message = error.message.toLowerCase();
+  return (
+    error.name === "TypeError" &&
+    (message.includes("failed to fetch") ||
+      message.includes("networkerror") ||
+      message.includes("load failed"))
+  );
+}
+
+function getUserErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof UiError) {
+    return error.userMessage;
+  }
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return fallback;
+}
+
+function getTechnicalDetails(error: unknown): string | undefined {
+  if (error instanceof UiError) {
+    return error.technicalDetails;
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return undefined;
+}
+
 function parseFilename(contentDisposition: string | null): string | null {
   if (!contentDisposition) {
     return null;
@@ -87,7 +149,18 @@ function parseFilename(contentDisposition: string | null): string | null {
 }
 
 async function fetchOriginalPdf(documentId: string): Promise<LoadResult> {
-  const response = await fetch(`${API_BASE_URL}/documents/${documentId}/download`);
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/documents/${documentId}/download`);
+  } catch (error) {
+    if (isNetworkFetchError(error)) {
+      throw new UiError(
+        "No se pudo conectar con el servidor.",
+        `Network error calling ${API_BASE_URL}/documents/${documentId}/download`
+      );
+    }
+    throw error;
+  }
   if (!response.ok) {
     let errorMessage = "No pudimos cargar el documento.";
     try {
@@ -96,7 +169,10 @@ async function fetchOriginalPdf(documentId: string): Promise<LoadResult> {
     } catch {
       // Ignore JSON parse errors for non-JSON responses.
     }
-    throw new Error(errorMessage);
+    throw new UiError(
+      errorMessage,
+      `HTTP ${response.status} calling ${API_BASE_URL}/documents/${documentId}/download`
+    );
   }
   const blob = await response.blob();
   const filename = parseFilename(response.headers.get("content-disposition"));
@@ -104,22 +180,58 @@ async function fetchOriginalPdf(documentId: string): Promise<LoadResult> {
 }
 
 async function fetchDocuments(): Promise<DocumentListResponse> {
-  const response = await fetch(`${API_BASE_URL}/documents?limit=50&offset=0`);
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/documents?limit=50&offset=0`);
+  } catch (error) {
+    if (isNetworkFetchError(error)) {
+      throw new UiError(
+        "No se pudieron cargar los documentos.",
+        `Network error calling ${API_BASE_URL}/documents`
+      );
+    }
+    throw error;
+  }
   if (!response.ok) {
-    let errorMessage = "No pudimos cargar la lista de documentos.";
+    if (response.status === 404) {
+      // Empty-state compatibility: some environments return 404 when there are no docs yet.
+      return {
+        items: [],
+        limit: 50,
+        offset: 0,
+        total: 0,
+      };
+    }
+    let errorMessage = "No se pudieron cargar los documentos.";
     try {
       const payload = await response.json();
-      errorMessage = payload.message ?? errorMessage;
+      if (typeof payload?.message === "string" && payload.message.trim().length > 0) {
+        errorMessage = payload.message;
+      }
     } catch {
       // Ignore JSON parse errors for non-JSON responses.
     }
-    throw new Error(errorMessage);
+    throw new UiError(
+      errorMessage,
+      `HTTP ${response.status} calling ${API_BASE_URL}/documents`
+    );
   }
   return response.json();
 }
 
 async function fetchDocumentDetails(documentId: string): Promise<DocumentDetailResponse> {
-  const response = await fetch(`${API_BASE_URL}/documents/${documentId}`);
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/documents/${documentId}`);
+  } catch (error) {
+    if (isNetworkFetchError(error)) {
+      throw new UiError(
+        "No se pudo conectar con el servidor.",
+        `Network error calling ${API_BASE_URL}/documents/${documentId}`
+      );
+    }
+    throw error;
+  }
   if (!response.ok) {
     let errorMessage = "No pudimos cargar el estado del documento.";
     try {
@@ -128,13 +240,27 @@ async function fetchDocumentDetails(documentId: string): Promise<DocumentDetailR
     } catch {
       // Ignore JSON parse errors for non-JSON responses.
     }
-    throw new Error(errorMessage);
+    throw new UiError(
+      errorMessage,
+      `HTTP ${response.status} calling ${API_BASE_URL}/documents/${documentId}`
+    );
   }
   return response.json();
 }
 
 async function fetchProcessingHistory(documentId: string): Promise<ProcessingHistoryResponse> {
-  const response = await fetch(`${API_BASE_URL}/documents/${documentId}/processing-history`);
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/documents/${documentId}/processing-history`);
+  } catch (error) {
+    if (isNetworkFetchError(error)) {
+      throw new UiError(
+        "No se pudo conectar con el servidor.",
+        `Network error calling ${API_BASE_URL}/documents/${documentId}/processing-history`
+      );
+    }
+    throw error;
+  }
   if (!response.ok) {
     let errorMessage = "No pudimos cargar el historial de procesamiento.";
     try {
@@ -143,7 +269,10 @@ async function fetchProcessingHistory(documentId: string): Promise<ProcessingHis
     } catch {
       // Ignore JSON parse errors for non-JSON responses.
     }
-    throw new Error(errorMessage);
+    throw new UiError(
+      errorMessage,
+      `HTTP ${response.status} calling ${API_BASE_URL}/documents/${documentId}/processing-history`
+    );
   }
   return response.json();
 }
@@ -165,6 +294,49 @@ async function triggerReprocess(documentId: string): Promise<LatestRun> {
   return response.json();
 }
 
+async function uploadDocument(file: File): Promise<DocumentUploadResponse> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/documents/upload`, {
+      method: "POST",
+      body: formData,
+    });
+  } catch (error) {
+    if (isNetworkFetchError(error)) {
+      throw new UiError(
+        "No se pudo subir el documento.",
+        `Network error calling ${API_BASE_URL}/documents/upload`
+      );
+    }
+    throw error;
+  }
+  if (!response.ok) {
+    let errorMessage = "No pudimos subir el documento.";
+    try {
+      const payload = await response.json();
+      if (payload?.error_code === "UNSUPPORTED_MEDIA_TYPE") {
+        errorMessage = "Solo se admiten archivos PDF.";
+      } else if (payload?.error_code === "FILE_TOO_LARGE") {
+        errorMessage = "El PDF supera el tamano maximo permitido de 20 MB.";
+      } else if (payload?.error_code === "INVALID_REQUEST") {
+        errorMessage = "El archivo no es valido. Selecciona un PDF e intentalo otra vez.";
+      } else if (payload?.message) {
+        errorMessage = payload.message as string;
+      }
+    } catch {
+      // Ignore JSON parse errors for non-JSON responses.
+    }
+    throw new UiError(
+      errorMessage,
+      `HTTP ${response.status} calling ${API_BASE_URL}/documents/upload`
+    );
+  }
+  return response.json();
+}
+
 function formatTimestamp(value: string): string {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) {
@@ -174,6 +346,32 @@ function formatTimestamp(value: string): string {
     dateStyle: "medium",
     timeStyle: "short",
   });
+}
+
+function isDocumentProcessing(status: string): boolean {
+  return status === "PROCESSING" || status === "UPLOADED";
+}
+
+function mapDocumentStatus(item: DocumentListItem): { label: string; tone: "ok" | "warn" | "error" } {
+  // Source of truth: derived processing status from GET /documents -> `item.status`.
+  if (item.status === "FAILED" || item.status === "TIMED_OUT" || item.failure_type) {
+    return { label: "Error", tone: "error" };
+  }
+  if (item.status === "COMPLETED") {
+    return { label: "Listo para revision", tone: "ok" };
+  }
+  return { label: "Procesando", tone: "warn" };
+}
+
+function isProcessingTooLong(createdAt: string, status: string): boolean {
+  if (!isDocumentProcessing(status)) {
+    return false;
+  }
+  const createdAtMs = Date.parse(createdAt);
+  if (Number.isNaN(createdAtMs)) {
+    return false;
+  }
+  return Date.now() - createdAtMs > 2 * 60 * 1000;
 }
 
 const RUN_STATE_LABELS: Record<string, string> = {
@@ -230,6 +428,25 @@ export function App() {
   const [retryNotice, setRetryNotice] = useState<string | null>(null);
   const [rawSearch, setRawSearch] = useState("");
   const [rawSearchNotice, setRawSearchNotice] = useState<string | null>(null);
+  const [uploadFeedback, setUploadFeedback] = useState<UploadFeedback | null>(null);
+  const [hasShownListErrorToast, setHasShownListErrorToast] = useState(false);
+  const [isDragOverViewer, setIsDragOverViewer] = useState(false);
+  const [isDragOverSidebarUpload, setIsDragOverSidebarUpload] = useState(false);
+  const [showUploadInfo, setShowUploadInfo] = useState(false);
+  const [showRefreshFeedback, setShowRefreshFeedback] = useState(false);
+  const [isHoverDevice, setIsHoverDevice] = useState(true);
+  const [uploadInfoPosition, setUploadInfoPosition] = useState({ top: 0, left: 0 });
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const uploadInfoTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const uploadInfoContentRef = useRef<HTMLDivElement | null>(null);
+  const uploadInfoCloseTimerRef = useRef<number | null>(null);
+  const uploadPanelRef = useRef<HTMLDivElement | null>(null);
+  const viewerDragDepthRef = useRef(0);
+  const sidebarUploadDragDepthRef = useRef(0);
+  const pendingAutoOpenDocumentIdRef = useRef<string | null>(null);
+  const autoOpenRetryCountRef = useRef<Record<string, number>>({});
+  const autoOpenRetryTimerRef = useRef<number | null>(null);
+  const refreshFeedbackTimerRef = useRef<number | null>(null);
   const queryClient = useQueryClient();
 
   const downloadUrl = useMemo(() => {
@@ -240,16 +457,119 @@ export function App() {
   }, [activeId]);
 
   useEffect(() => {
+    if (typeof window.matchMedia !== "function") {
+      setIsHoverDevice(true);
+      return;
+    }
+
+    const mediaQuery = window.matchMedia("(hover: hover)");
+    const syncInputMode = () => setIsHoverDevice(mediaQuery.matches);
+    syncInputMode();
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", syncInputMode);
+      return () => mediaQuery.removeEventListener("change", syncInputMode);
+    }
+
+    mediaQuery.addListener(syncInputMode);
+    return () => mediaQuery.removeListener(syncInputMode);
+  }, []);
+
+  useEffect(() => {
     return () => {
+      if (uploadInfoCloseTimerRef.current) {
+        window.clearTimeout(uploadInfoCloseTimerRef.current);
+      }
+      if (autoOpenRetryTimerRef.current) {
+        window.clearTimeout(autoOpenRetryTimerRef.current);
+      }
+      if (refreshFeedbackTimerRef.current) {
+        window.clearTimeout(refreshFeedbackTimerRef.current);
+      }
       if (fileUrl) {
         URL.revokeObjectURL(fileUrl);
       }
     };
   }, [fileUrl]);
 
+  useEffect(() => {
+    if (!showUploadInfo) {
+      return;
+    }
+
+    const updatePosition = () => {
+      if (!uploadInfoTriggerRef.current || !uploadInfoContentRef.current) {
+        return;
+      }
+
+      const triggerRect = uploadInfoTriggerRef.current.getBoundingClientRect();
+      const tooltipRect = uploadInfoContentRef.current.getBoundingClientRect();
+      const offset = 10;
+      const viewportPadding = 8;
+
+      let top = triggerRect.top - tooltipRect.height - offset;
+      if (top < viewportPadding) {
+        top = triggerRect.bottom + offset;
+      }
+
+      let left = triggerRect.left;
+      const maxLeft = window.innerWidth - tooltipRect.width - viewportPadding;
+      if (left > maxLeft) {
+        left = maxLeft;
+      }
+      if (left < viewportPadding) {
+        left = viewportPadding;
+      }
+
+      setUploadInfoPosition({ top, left });
+    };
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [showUploadInfo]);
+
+  useEffect(() => {
+    if (!showUploadInfo || isHoverDevice) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (
+        uploadInfoTriggerRef.current?.contains(target) ||
+        uploadInfoContentRef.current?.contains(target)
+      ) {
+        return;
+      }
+      setShowUploadInfo(false);
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [showUploadInfo, isHoverDevice]);
+
   const loadPdf = useMutation({
     mutationFn: async (docId: string) => fetchOriginalPdf(docId),
     onSuccess: (result, docId) => {
+      if (pendingAutoOpenDocumentIdRef.current === docId) {
+        pendingAutoOpenDocumentIdRef.current = null;
+        delete autoOpenRetryCountRef.current[docId];
+        if (autoOpenRetryTimerRef.current) {
+          window.clearTimeout(autoOpenRetryTimerRef.current);
+          autoOpenRetryTimerRef.current = null;
+        }
+        setUploadFeedback((current) => {
+          if (current?.kind !== "success" || current.documentId !== docId) {
+            return current;
+          }
+          return { ...current, showOpenAction: false };
+        });
+      }
       if (fileUrl) {
         URL.revokeObjectURL(fileUrl);
       }
@@ -257,19 +577,220 @@ export function App() {
       setFileUrl(result.url);
       setFilename(result.filename);
     },
-    onError: () => {
-      if (fileUrl) {
-        URL.revokeObjectURL(fileUrl);
+    onError: (_, docId) => {
+      if (pendingAutoOpenDocumentIdRef.current === docId) {
+        const retries = autoOpenRetryCountRef.current[docId] ?? 0;
+        if (retries < 1) {
+          autoOpenRetryCountRef.current[docId] = retries + 1;
+          autoOpenRetryTimerRef.current = window.setTimeout(() => {
+            loadPdf.mutate(docId);
+          }, 1000);
+          return;
+        }
+        pendingAutoOpenDocumentIdRef.current = null;
+        delete autoOpenRetryCountRef.current[docId];
+        setUploadFeedback({
+          kind: "success",
+          message: "Documento subido correctamente.",
+          documentId: docId,
+          showOpenAction: true,
+        });
       }
-      setActiveId(null);
-      setFileUrl(null);
-      setFilename(null);
     },
   });
 
+  const uploadMutation = useMutation({
+    mutationFn: async (file: File) => uploadDocument(file),
+    onSuccess: async (result, file) => {
+      const createdAt = result.created_at || new Date().toISOString();
+      queryClient.setQueryData<DocumentListResponse | undefined>(["documents", "list"], (current) => {
+        if (!current) {
+          return current;
+        }
+        const exists = current.items.some((item) => item.document_id === result.document_id);
+        const items = exists
+          ? current.items
+          : [
+              {
+                document_id: result.document_id,
+                original_filename: file.name,
+                created_at: createdAt,
+                status: result.status,
+                status_label: result.status,
+                failure_type: null,
+              },
+              ...current.items,
+            ];
+        return { ...current, items, total: exists ? current.total : current.total + 1 };
+      });
+
+      setActiveViewerTab("document");
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      pendingAutoOpenDocumentIdRef.current = result.document_id;
+      autoOpenRetryCountRef.current[result.document_id] = 0;
+      setActiveId(result.document_id);
+      setUploadFeedback({
+        kind: "success",
+        message: "Documento subido correctamente.",
+        documentId: result.document_id,
+        showOpenAction: false,
+      });
+      loadPdf.mutate(result.document_id);
+      queryClient.invalidateQueries({ queryKey: ["documents", "list"] });
+      try {
+        await queryClient.fetchQuery({
+          queryKey: ["documents", "list"],
+          queryFn: fetchDocuments,
+        });
+      } catch {
+        // Keep optimistic list item and fallback open action when refetch fails.
+      }
+      queryClient.invalidateQueries({ queryKey: ["documents", "detail", result.document_id] });
+      queryClient.invalidateQueries({ queryKey: ["documents", "history", result.document_id] });
+    },
+    onError: (error) => {
+      setUploadFeedback({
+        kind: "error",
+        message: getUserErrorMessage(error, "No se pudo subir el documento."),
+        technicalDetails: getTechnicalDetails(error),
+      });
+    },
+  });
+
+  const validateUploadFile = (file: File): string | null => {
+    const hasPdfMime = file.type === "application/pdf";
+    const hasPdfExtension = file.name.toLowerCase().endsWith(".pdf");
+    if (!hasPdfMime && !hasPdfExtension) {
+      return "Solo se admiten archivos PDF.";
+    }
+    if (file.size > MAX_UPLOAD_SIZE_BYTES) {
+      return "El archivo supera el tamaño máximo (20 MB).";
+    }
+    return null;
+  };
+
+  const queueUpload = (file: File) => {
+    if (uploadMutation.isPending) {
+      return false;
+    }
+    const validationError = validateUploadFile(file);
+    if (validationError) {
+      setUploadFeedback({
+        kind: "error",
+        message: validationError,
+      });
+      return false;
+    }
+    setUploadFeedback(null);
+    uploadMutation.mutate(file);
+    return true;
+  };
+
+  const handleViewerDragEnter = (event: DragEvent<HTMLDivElement>) => {
+    if (!event.dataTransfer.types.includes("Files")) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    viewerDragDepthRef.current += 1;
+    setIsDragOverViewer(true);
+  };
+
+  const handleViewerDragOver = (event: DragEvent<HTMLDivElement>) => {
+    if (!event.dataTransfer.types.includes("Files")) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    if (!isDragOverViewer) {
+      setIsDragOverViewer(true);
+    }
+  };
+
+  const handleViewerDragLeave = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    viewerDragDepthRef.current = Math.max(0, viewerDragDepthRef.current - 1);
+    if (viewerDragDepthRef.current === 0) {
+      setIsDragOverViewer(false);
+    }
+  };
+
+  const handleViewerDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    viewerDragDepthRef.current = 0;
+    setIsDragOverViewer(false);
+    const file = event.dataTransfer.files?.[0];
+    if (!file) {
+      return;
+    }
+    queueUpload(file);
+  };
+
+  const handleSidebarUploadDragEnter = (event: DragEvent<HTMLDivElement>) => {
+    if (!event.dataTransfer.types.includes("Files")) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    sidebarUploadDragDepthRef.current += 1;
+    setIsDragOverSidebarUpload(true);
+  };
+
+  const handleSidebarUploadDragOver = (event: DragEvent<HTMLDivElement>) => {
+    if (!event.dataTransfer.types.includes("Files")) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    if (!isDragOverSidebarUpload) {
+      setIsDragOverSidebarUpload(true);
+    }
+  };
+
+  const handleSidebarUploadDragLeave = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    sidebarUploadDragDepthRef.current = Math.max(0, sidebarUploadDragDepthRef.current - 1);
+    if (sidebarUploadDragDepthRef.current === 0) {
+      setIsDragOverSidebarUpload(false);
+    }
+  };
+
+  const handleSidebarUploadDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    sidebarUploadDragDepthRef.current = 0;
+    setIsDragOverSidebarUpload(false);
+    const file = event.dataTransfer.files?.[0];
+    if (!file) {
+      return;
+    }
+    queueUpload(file);
+  };
+
+  const openUploadFilePicker = () => {
+    if (uploadMutation.isPending) {
+      return;
+    }
+    fileInputRef.current?.click();
+  };
+
+  const handleOpenUploadArea = (event?: { preventDefault?: () => void; stopPropagation?: () => void }) => {
+    event?.stopPropagation?.();
+    // Keep the native file picker call synchronous with the user gesture.
+    openUploadFilePicker();
+    if (!isSidebarOpen) {
+      setIsSidebarOpen(true);
+    }
+  };
+
   const handleSelectDocument = (docId: string) => {
+    setActiveId(docId);
     loadPdf.mutate(docId);
-    setIsSidebarOpen(false);
   };
 
   const documentList = useQuery({
@@ -288,6 +809,24 @@ export function App() {
     queryFn: () => fetchProcessingHistory(activeId ?? ""),
     enabled: Boolean(activeId),
   });
+
+  const sortedDocuments = useMemo(() => {
+    const items = documentList.data?.items ?? [];
+    return [...items].sort((a, b) => {
+      const aTime = Date.parse(a.created_at);
+      const bTime = Date.parse(b.created_at);
+      if (Number.isNaN(aTime) && Number.isNaN(bTime)) {
+        return a.document_id.localeCompare(b.document_id);
+      }
+      if (Number.isNaN(aTime)) {
+        return 1;
+      }
+      if (Number.isNaN(bTime)) {
+        return -1;
+      }
+      return bTime - aTime;
+    });
+  }, [documentList.data?.items]);
 
   useEffect(() => {
     if (!activeId || !documentDetails.data) {
@@ -314,6 +853,48 @@ export function App() {
     processingHistory,
   ]);
 
+  useEffect(() => {
+    const items = documentList.data?.items ?? [];
+    const processingItems = items.filter((item) => isDocumentProcessing(item.status));
+    if (processingItems.length === 0) {
+      return;
+    }
+
+    const oldestMs = processingItems
+      .map((item) => Date.parse(item.created_at))
+      .filter((value) => !Number.isNaN(value))
+      .sort((a, b) => a - b)[0];
+
+    const maxPollingWindowMs = 3 * 60 * 1000;
+    if (oldestMs && Date.now() - oldestMs > maxPollingWindowMs) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      documentList.refetch();
+    }, 3000);
+    return () => window.clearInterval(intervalId);
+  }, [documentList, documentList.data?.items]);
+
+  useEffect(() => {
+    if (documentList.status !== "success") {
+      return;
+    }
+    if (sortedDocuments.length === 0) {
+      setIsSidebarOpen(true);
+    }
+  }, [documentList.status, sortedDocuments.length]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsSidebarOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   const reprocessMutation = useMutation({
     mutationFn: async (docId: string) => triggerReprocess(docId),
     onSuccess: (_, docId) => {
@@ -328,12 +909,24 @@ export function App() {
   });
 
   const handleRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: ["documents", "list"] });
+    setShowRefreshFeedback(true);
+    if (refreshFeedbackTimerRef.current) {
+      window.clearTimeout(refreshFeedbackTimerRef.current);
+    }
+    refreshFeedbackTimerRef.current = window.setTimeout(() => {
+      setShowRefreshFeedback(false);
+      refreshFeedbackTimerRef.current = null;
+    }, 350);
+    documentList.refetch();
     if (activeId) {
-      queryClient.invalidateQueries({ queryKey: ["documents", "detail", activeId] });
-      queryClient.invalidateQueries({ queryKey: ["documents", "history", activeId] });
+      documentDetails.refetch();
+      processingHistory.refetch();
     }
   };
+  const isListRefreshing =
+    (documentList.isFetching || showRefreshFeedback) && !documentList.isLoading;
+  const panelHeightClass =
+    "h-[clamp(1180px,94vh,1480px)]";
 
   const toggleStepDetails = (key: string) => {
     setExpandedSteps((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -353,6 +946,32 @@ export function App() {
     return () => window.clearTimeout(timer);
   }, [retryNotice]);
 
+  useEffect(() => {
+    if (!uploadFeedback) {
+      return;
+    }
+    const timeoutMs = uploadFeedback.kind === "success" ? 3500 : 5000;
+    const timer = window.setTimeout(() => setUploadFeedback(null), timeoutMs);
+    return () => window.clearTimeout(timer);
+  }, [uploadFeedback]);
+
+  useEffect(() => {
+    if (documentList.isError) {
+      if (!hasShownListErrorToast) {
+        setUploadFeedback({
+          kind: "error",
+          message: getUserErrorMessage(documentList.error, "No se pudieron cargar los documentos."),
+          technicalDetails: getTechnicalDetails(documentList.error),
+        });
+        setHasShownListErrorToast(true);
+      }
+      return;
+    }
+    if (documentList.isSuccess && hasShownListErrorToast) {
+      setHasShownListErrorToast(false);
+    }
+  }, [documentList.isError, documentList.isSuccess, documentList.error, hasShownListErrorToast]);
+
   const handleConfirmRetry = () => {
     if (!activeId) {
       setShowRetryModal(false);
@@ -362,7 +981,7 @@ export function App() {
     reprocessMutation.mutate(activeId);
   };
 
-  const rawTextContent: string | null = null;
+  const [rawTextContent] = useState<string | null>(null);
 
   const handleRawSearch = () => {
     if (!rawTextContent || !rawSearch.trim()) {
@@ -388,6 +1007,28 @@ export function App() {
     URL.revokeObjectURL(url);
   };
 
+  const openUploadInfo = () => {
+    if (uploadInfoCloseTimerRef.current) {
+      window.clearTimeout(uploadInfoCloseTimerRef.current);
+      uploadInfoCloseTimerRef.current = null;
+    }
+    setShowUploadInfo(true);
+  };
+
+  const closeUploadInfo = (withDelay: boolean) => {
+    if (uploadInfoCloseTimerRef.current) {
+      window.clearTimeout(uploadInfoCloseTimerRef.current);
+      uploadInfoCloseTimerRef.current = null;
+    }
+    if (withDelay) {
+      uploadInfoCloseTimerRef.current = window.setTimeout(() => {
+        setShowUploadInfo(false);
+      }, 150);
+      return;
+    }
+    setShowUploadInfo(false);
+  };
+
   const viewerTabButton = (key: "document" | "raw_text" | "technical", label: string) => (
     <button
       type="button"
@@ -406,16 +1047,15 @@ export function App() {
     <div className="min-h-screen px-6 py-10">
       <header className="mx-auto flex w-full max-w-6xl flex-col gap-3">
         <p className="text-sm uppercase tracking-[0.3em] text-muted">
-          Vista rapida de documentos
+          Carga asistiva de documentos
         </p>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="font-display text-4xl font-semibold text-ink">
-              Revision del documento original
+              Subida de documentos medicos
             </h1>
             <p className="mt-2 max-w-2xl text-sm text-muted">
-              Accede al PDF cargado sin depender del procesamiento. La vista previa
-              es inmediata y se mantiene disponible incluso si el analisis esta en curso.
+              Sube un PDF y revisa el documento en cuanto quede disponible.
             </p>
           </div>
           {downloadUrl && (
@@ -444,14 +1084,6 @@ export function App() {
           </span>
         </div>
 
-        {isSidebarOpen && (
-          <div
-            className="fixed inset-0 z-10 bg-transparent"
-            onClick={() => setIsSidebarOpen(false)}
-            aria-hidden="true"
-          />
-        )}
-
         <div className="relative z-20 flex gap-6">
           <aside
             className={`flex-shrink-0 transition-all duration-300 ${
@@ -463,117 +1095,284 @@ export function App() {
                 isSidebarOpen ? "opacity-100" : "opacity-0"
               }`}
             >
-              <section className="p-6">
+          <section className={`flex flex-col p-6 ${panelHeightClass}`}>
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <h2 className="font-display text-xl font-semibold">Documentos cargados</h2>
-                    <p className="mt-2 text-xs text-muted">
-                      Lista informativa con el progreso de procesamiento.
-                    </p>
+                    <h2 className="font-display text-xl font-semibold">Documentos</h2>
                   </div>
-                  <Button variant="ghost" onClick={handleRefresh} type="button">
-                    Actualizar
+                  <Button
+                    variant="ghost"
+                    onClick={handleRefresh}
+                    type="button"
+                    title="Actualizar"
+                    aria-label="Actualizar"
+                    disabled={documentList.isFetching || showRefreshFeedback}
+                    className="rounded-full border border-black/15 bg-white p-2 text-ink shadow-sm hover:bg-accentSoft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                  >
+                    <RefreshCw
+                      size={16}
+                      className={documentList.isFetching || showRefreshFeedback ? "animate-spin" : ""}
+                    />
                   </Button>
                 </div>
 
-                {documentList.isLoading && (
-                  <div className="mt-4 rounded-2xl border border-black/10 bg-white/70 p-4 text-sm text-muted">
-                    Cargando documentos...
+                <div
+                  ref={uploadPanelRef}
+                  className="mt-4 rounded-2xl border border-black/10 bg-white/70 p-4"
+                >
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-ink">Cargar documento</h3>
+                    <button
+                      ref={uploadInfoTriggerRef}
+                      type="button"
+                      aria-label="Informacion de formatos y tamano"
+                      aria-expanded={showUploadInfo}
+                      onFocus={openUploadInfo}
+                      onBlur={() => closeUploadInfo(false)}
+                      onMouseEnter={() => {
+                        if (isHoverDevice) {
+                          openUploadInfo();
+                        }
+                      }}
+                      onMouseLeave={() => {
+                        if (isHoverDevice) {
+                          closeUploadInfo(true);
+                        }
+                      }}
+                      onClick={(event) => {
+                        if (isHoverDevice) {
+                          return;
+                        }
+                        event.stopPropagation();
+                        setShowUploadInfo((current) => !current);
+                      }}
+                      className="text-sm text-muted"
+                    >
+                      ⓘ
+                    </button>
                   </div>
-                )}
-
-                {documentList.isError && (
-                  <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                    {(documentList.error as Error).message}
-                  </div>
-                )}
-
-                {documentList.data && (
-                  <div className="mt-4 space-y-3">
-                    {documentList.data.items.length === 0 ? (
-                      <div className="rounded-2xl border border-dashed border-black/10 bg-white/70 p-4 text-sm text-muted">
-                        Aun no hay documentos cargados.
+                  <UploadDropzone
+                    className="mt-3"
+                    isDragOver={isDragOverSidebarUpload}
+                    onActivate={handleOpenUploadArea}
+                    onDragEnter={handleSidebarUploadDragEnter}
+                    onDragOver={handleSidebarUploadDragOver}
+                    onDragLeave={handleSidebarUploadDragLeave}
+                    onDrop={handleSidebarUploadDrop}
+                  />
+                  <div className="mt-2 flex items-center gap-2">
+                    <input
+                      id="upload-document-input"
+                      ref={fileInputRef}
+                      type="file"
+                      aria-label="Archivo PDF"
+                      accept=".pdf,application/pdf"
+                      className="sr-only"
+                      disabled={uploadMutation.isPending}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0] ?? null;
+                        if (!file) {
+                          setUploadFeedback(null);
+                          return;
+                        }
+                        const queued = queueUpload(file);
+                        if (!queued) {
+                          event.currentTarget.value = "";
+                        }
+                      }}
+                    />
+                    {uploadMutation.isPending && (
+                      <div className="flex items-center gap-2 text-xs text-muted">
+                        <RefreshCw size={14} className="animate-spin" />
+                        <span>Subiendo...</span>
                       </div>
-                    ) : (
-                      documentList.data.items.map((item) => {
-                        const isActive = activeId === item.document_id;
-                        return (
-                          <button
-                            key={item.document_id}
-                            type="button"
-                            onClick={() => handleSelectDocument(item.document_id)}
-                            className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
-                              isActive
-                                ? "border-accent bg-accentSoft font-semibold text-ink"
-                                : "border-black/10 bg-white/80 text-ink hover:bg-white"
-                            }`}
-                          >
-                            <div className="flex items-start justify-between gap-4">
-                              <div>
-                                <p className="text-sm">{item.original_filename}</p>
-                                <p className="mt-1 text-xs text-muted">
-                                  Subido: {formatTimestamp(item.created_at)}
-                                </p>
-                              </div>
-                              <span className="rounded-full bg-black/5 px-3 py-1 text-xs font-semibold text-ink">
-                                {item.status_label}
-                              </span>
-                            </div>
-                            {item.failure_type && (
-                              <p className="mt-2 text-xs text-red-600">
-                                Error: {item.failure_type}
-                              </p>
-                            )}
-                          </button>
-                        );
-                      })
                     )}
                   </div>
-                )}
+                </div>
+
+                <div className="relative mt-4 min-h-0 flex-1 overflow-y-auto pr-1">
+                  {documentList.isLoading && (
+                    <div className="space-y-2 rounded-2xl border border-black/10 bg-white/70 p-4">
+                      {Array.from({ length: 4 }).map((_, index) => (
+                        <div key={`skeleton-initial-${index}`} className="animate-pulse rounded-xl border border-black/10 bg-white/80 p-3">
+                          <div className="h-3 w-2/3 rounded bg-black/10" />
+                          <div className="mt-2 h-2.5 w-1/2 rounded bg-black/10" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {documentList.isError && (
+                    <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                      <p>{getUserErrorMessage(documentList.error, "No se pudieron cargar los documentos.")}</p>
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <Button variant="ghost" type="button" onClick={() => documentList.refetch()}>
+                          Reintentar
+                        </Button>
+                        {getTechnicalDetails(documentList.error) && (
+                          <details className="text-xs text-muted">
+                            <summary className="cursor-pointer">Ver detalles tecnicos</summary>
+                            <p className="mt-1">{getTechnicalDetails(documentList.error)}</p>
+                          </details>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {documentList.data &&
+                    (isListRefreshing ? (
+                      <div className="space-y-2 rounded-2xl border border-black/10 bg-white/70 p-4">
+                        {Array.from({ length: 6 }).map((_, index) => (
+                          <div
+                            key={`skeleton-refresh-${index}`}
+                            className="animate-pulse rounded-xl border border-black/10 bg-white/80 p-3"
+                          >
+                            <div className="h-3 w-2/3 rounded bg-black/10" />
+                            <div className="mt-2 h-2.5 w-1/2 rounded bg-black/10" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {sortedDocuments.length === 0 ? (
+                          <p className="px-1 py-2 text-sm text-muted">Aun no hay documentos cargados.</p>
+                        ) : (
+                          sortedDocuments.map((item) => {
+                            const isActive = activeId === item.document_id;
+                            const status = mapDocumentStatus(item);
+                            return (
+                              <button
+                                key={item.document_id}
+                                type="button"
+                                onClick={() => handleSelectDocument(item.document_id)}
+                                aria-pressed={isActive}
+                                className={`w-full rounded-xl border px-3 py-2 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+                                  isActive
+                                    ? "border-ink/30 bg-black/[0.04] text-ink shadow-sm ring-1 ring-ink/25"
+                                    : "border-black/10 bg-white/80 text-ink hover:bg-white"
+                                }`}
+                              >
+                                <div className="flex items-center justify-between gap-3">
+                                  <div className="min-w-0">
+                                    <p className="truncate text-sm font-medium">{item.original_filename}</p>
+                                    <p className="mt-0.5 text-xs text-muted">
+                                      Subido: {formatTimestamp(item.created_at)}
+                                    </p>
+                                  </div>
+                                  <span
+                                    className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                      status.tone === "ok"
+                                        ? "bg-emerald-100 text-emerald-700"
+                                        : status.tone === "error"
+                                        ? "bg-red-100 text-red-700"
+                                        : "bg-amber-100 text-amber-700"
+                                    }`}
+                                  >
+                                    {status.tone === "warn" && (
+                                      <span className="mr-1 inline-block h-2 w-2 animate-spin rounded-full border border-current border-r-transparent align-middle" />
+                                    )}
+                                    {status.label}
+                                  </span>
+                                </div>
+                                {isProcessingTooLong(item.created_at, item.status) && (
+                                  <p className="mt-2 text-xs text-muted">
+                                    Tardando mas de lo esperado
+                                  </p>
+                                )}
+                                {item.failure_type && (
+                                  <p className="mt-2 text-xs text-red-600">
+                                    Error: {item.failure_type}
+                                  </p>
+                                )}
+                              </button>
+                            );
+                          })
+                        )}
+                      </div>
+                    ))}
+                </div>
               </section>
             </div>
           </aside>
 
-          <section className="flex-1 rounded-3xl border border-black/10 bg-white/70 p-6 shadow-xl">
-            {!activeId && (
-              <div className="rounded-2xl border border-black/10 bg-white/80 px-4 py-4 text-sm text-ink">
-                <p className="text-sm font-semibold">Documento no encontrado o falta ID.</p>
-                <p className="mt-2 text-xs text-muted">
-                  Selecciona un documento desde la lista para continuar.
-                </p>
-                <div className="mt-3">
-                  <Button type="button" onClick={() => setIsSidebarOpen(true)}>
-                    Volver a la lista
-                  </Button>
-                </div>
-              </div>
-            )}
+          <section className={`flex flex-1 flex-col rounded-3xl border border-black/10 bg-white/70 p-6 shadow-xl ${panelHeightClass}`}>
             {loadPdf.isError && (
-              <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {(loadPdf.error as Error).message}
+              <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {getUserErrorMessage(loadPdf.error, "No se pudo cargar la vista previa del documento.")}
               </div>
             )}
             {activeId && (
-              <div className="mt-4">
+              <div className={loadPdf.isError ? "mt-4" : ""}>
                 {documentDetails.isLoading && (
                   <p className="text-xs text-muted">Cargando estado del documento...</p>
                 )}
-                {documentDetails.isError && (
-                  <p className="text-xs text-red-600">
-                    {(documentDetails.error as Error).message}
-                  </p>
-                )}
               </div>
             )}
-            <div className="mt-6">
-              <div className="flex flex-wrap gap-2">
+            <div className="mt-4 flex min-h-0 flex-1 flex-col">
+              <div className="flex flex-wrap items-center gap-2">
                 {viewerTabButton("document", "Documento")}
                 {viewerTabButton("raw_text", "Texto extraido")}
                 {viewerTabButton("technical", "Detalles tecnicos")}
               </div>
-              <div className="mt-4 h-[65vh]">
+              <div className="mt-4 min-h-0 flex-1">
                 {activeViewerTab === "document" && (
-                  <PdfViewer fileUrl={fileUrl} filename={filename} />
+                  <div
+                    data-testid="viewer-dropzone"
+                    className="relative h-full min-h-0"
+                    onDragEnter={handleViewerDragEnter}
+                    onDragOver={handleViewerDragOver}
+                    onDragLeave={handleViewerDragLeave}
+                    onDrop={handleViewerDrop}
+                  >
+                    {!activeId ? (
+                    documentList.isError ? (
+                      <div className="flex h-full flex-col rounded-2xl border border-black/10 bg-white/80 p-6">
+                        <div className="flex flex-1 items-center justify-center text-center">
+                          <p className="text-sm text-muted">
+                            Revisa la lista lateral para reintentar la carga de documentos.
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        data-testid="viewer-empty-state"
+                        className="relative flex h-full flex-col rounded-2xl border border-black/10 bg-white/80 p-6"
+                        role="button"
+                        tabIndex={0}
+                        onClick={handleOpenUploadArea}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            handleOpenUploadArea();
+                          }
+                        }}
+                      >
+                        <div className="flex flex-1 flex-col items-center justify-center text-center">
+                          <p className="text-sm text-muted">
+                            Selecciona un documento en la barra lateral o carga uno nuevo.
+                          </p>
+                          <UploadDropzone
+                            className="mt-4 w-full max-w-sm"
+                            isDragOver={isDragOverViewer}
+                            onActivate={handleOpenUploadArea}
+                            onDragEnter={handleViewerDragEnter}
+                            onDragOver={handleViewerDragOver}
+                            onDragLeave={handleViewerDragLeave}
+                            onDrop={handleViewerDrop}
+                            showDropOverlay
+                          />
+                        </div>
+                      </div>
+                    )
+                    ) : (
+                      <PdfViewer
+                        key={activeId ?? "viewer-empty"}
+                        fileUrl={fileUrl}
+                        filename={filename}
+                        isDragOver={isDragOverViewer}
+                      />
+                    )}
+                  </div>
                 )}
                 {activeViewerTab === "raw_text" && (
                   <div className="flex h-full flex-col rounded-2xl border border-black/10 bg-white/80 p-4">
@@ -663,7 +1462,10 @@ export function App() {
                     )}
                     {activeId && processingHistory.isError && (
                       <p className="mt-2 text-xs text-red-600">
-                        {(processingHistory.error as Error).message}
+                        {getUserErrorMessage(
+                          processingHistory.error,
+                          "No se pudo cargar el historial de procesamiento."
+                        )}
                       </p>
                     )}
                     {activeId &&
@@ -796,6 +1598,29 @@ export function App() {
           </section>
         </div>
       </main>
+      {showUploadInfo &&
+        createPortal(
+          <div
+            ref={uploadInfoContentRef}
+            role="tooltip"
+            style={{ top: `${uploadInfoPosition.top}px`, left: `${uploadInfoPosition.left}px` }}
+            className="fixed z-[70] w-64 rounded-xl border border-black/10 bg-white p-3 text-xs text-ink shadow-lg"
+            onMouseEnter={() => {
+              if (isHoverDevice) {
+                openUploadInfo();
+              }
+            }}
+            onMouseLeave={() => {
+              if (isHoverDevice) {
+                closeUploadInfo(true);
+              }
+            }}
+          >
+            <p>Formatos permitidos: PDF.</p>
+            <p className="mt-1">Tamaño maximo: 20 MB.</p>
+          </div>,
+          document.body
+        )}
       {showRetryModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-6">
           <div className="w-full max-w-sm rounded-2xl border border-black/10 bg-white p-4 shadow-xl">
@@ -814,6 +1639,63 @@ export function App() {
           </div>
         </div>
       )}
+            {uploadFeedback && (
+              <div className="fixed left-1/2 top-10 z-[60] w-full max-w-lg -translate-x-1/2 px-4 sm:w-[32rem]">
+                <div
+            className={`rounded-2xl border px-5 py-4 text-base shadow-xl ${
+              uploadFeedback.kind === "success"
+                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                : "border-red-200 bg-red-50 text-red-700"
+            }`}
+            role="status"
+          >
+                  <div className="flex items-center justify-between gap-3">
+                    <span>{uploadFeedback.message}</span>
+              <button
+                type="button"
+                aria-label="Cerrar notificacion"
+                className="text-lg font-semibold leading-none text-ink"
+                onClick={() => setUploadFeedback(null)}
+              >
+                &times;
+              </button>
+            </div>
+                  {uploadFeedback.kind === "success" &&
+                    uploadFeedback.documentId &&
+                    uploadFeedback.showOpenAction && (
+              <button
+                type="button"
+                className="mt-2 text-xs font-semibold text-ink underline"
+                onClick={() => {
+                  setActiveViewerTab("document");
+                  loadPdf.mutate(uploadFeedback.documentId!);
+                  setUploadFeedback(null);
+                }}
+              >
+                Ver documento
+              </button>
+                  )}
+                  {uploadFeedback.kind === "error" && (
+                    <div className="mt-2 flex items-center gap-3">
+                      {uploadFeedback.technicalDetails && (
+                        <details className="text-xs text-muted">
+                          <summary className="cursor-pointer">Ver detalles tecnicos</summary>
+                          <p className="mt-1">{uploadFeedback.technicalDetails}</p>
+                        </details>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
     </div>
   );
 }
+
+
+
+
+
+
+
+

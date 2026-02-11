@@ -110,7 +110,7 @@ describe("PdfViewer", () => {
       toJSON: () => "",
     });
 
-    const [nextButton] = screen.getAllByRole("button", { name: /Siguiente/i });
+    const [nextButton] = screen.getAllByRole("button", { name: /Página siguiente/i });
     await waitFor(() => {
       expect(nextButton).not.toBeDisabled();
     });
@@ -118,16 +118,16 @@ describe("PdfViewer", () => {
 
     expect(containerScrollTo).toHaveBeenCalledWith({ top: 410, behavior: "smooth" });
     expect(windowScrollSpy).not.toHaveBeenCalled();
-    expect(screen.getByText(/Pagina 2 de 3/)).toBeInTheDocument();
+    expect(screen.getByText("2/3")).toBeInTheDocument();
 
-    const [prevButton] = screen.getAllByRole("button", { name: /Anterior/i });
+    const [prevButton] = screen.getAllByRole("button", { name: /Página anterior/i });
     await waitFor(() => {
       expect(prevButton).not.toBeDisabled();
     });
     fireEvent.click(prevButton);
     expect(containerScrollTo).toHaveBeenCalledTimes(2);
     expect(windowScrollSpy).not.toHaveBeenCalled();
-    expect(screen.getByText(/Pagina 1 de 3/)).toBeInTheDocument();
+    expect(screen.getByText("1/3")).toBeInTheDocument();
   });
 
   it("updates the active page based on scroll position", async () => {
@@ -142,11 +142,11 @@ describe("PdfViewer", () => {
           target: pages[2],
           intersectionRatio: 0.8,
           isIntersecting: true,
-        } as IntersectionObserverEntry,
+        } as unknown as IntersectionObserverEntry,
       ]);
     });
 
-    expect(screen.getByText(/Pagina 3 de 3/)).toBeInTheDocument();
+    expect(screen.getByText("3/3")).toBeInTheDocument();
   });
 
   it("disables Next on the last page (bounds)", async () => {
@@ -161,15 +161,24 @@ describe("PdfViewer", () => {
           target: pages[2],
           intersectionRatio: 0.9,
           isIntersecting: true,
-        } as IntersectionObserverEntry,
+        } as unknown as IntersectionObserverEntry,
       ]);
     });
 
     await waitFor(() => {
-      expect(screen.getByText(/Pagina 3 de 3/)).toBeInTheDocument();
+      expect(screen.getByText("3/3")).toBeInTheDocument();
     });
 
-    const [nextButton] = screen.getAllByRole("button", { name: /Siguiente/i });
+    const [nextButton] = screen.getAllByRole("button", { name: /Página siguiente/i });
     expect(nextButton).toBeDisabled();
   });
+
+  it("hides page navigation when no document is selected", () => {
+    render(<PdfViewer fileUrl={null} filename={null} />);
+
+    expect(screen.queryByRole("button", { name: /Página siguiente/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Página anterior/i })).toBeNull();
+  });
 });
+
+

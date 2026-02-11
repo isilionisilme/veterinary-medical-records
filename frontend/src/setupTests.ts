@@ -33,6 +33,7 @@ if (!HTMLCanvasElement.prototype.getContext) {
   // no-op
 }
 
-HTMLCanvasElement.prototype.getContext = () => ({}) as CanvasRenderingContext2D;
+HTMLCanvasElement.prototype.getContext =
+  ((() => ({}) as CanvasRenderingContext2D) as unknown as HTMLCanvasElement["getContext"]);
 
 HTMLElement.prototype.scrollIntoView = () => {};
