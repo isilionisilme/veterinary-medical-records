@@ -11,6 +11,7 @@ Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for i
 - `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/40_contract-boundary-non-negotiable.md`
 - `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/50_scope.md`
 - `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/60_execution-rules.md`
+- `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/65_add-user-story-workflow.md`
 - `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/70_release-1-document-upload-access.md`
 - `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/80_release-2-automatic-processing-traceability.md`
 - `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/90_release-3-extraction-transparency-trust-debuggability.md`
