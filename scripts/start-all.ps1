@@ -8,6 +8,8 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 $backendDir = Join-Path $repoRoot "backend"
 $frontendDir = Join-Path $repoRoot "frontend"
 $venvPython = Join-Path $repoRoot ".venv\Scripts\python.exe"
+$venvDir = Join-Path $repoRoot ".venv"
+$bootstrapLog = Join-Path $repoRoot "tmp\bootstrap.log"
 $processStateFile = Join-Path $repoRoot ".start-all-processes.json"
 
 if (-not (Test-Path $backendDir)) {
@@ -16,12 +18,6 @@ if (-not (Test-Path $backendDir)) {
 
 if (-not (Test-Path $frontendDir)) {
     throw "No se encontro la carpeta frontend en: $frontendDir"
-}
-
-$backendCommand = if (Test-Path $venvPython) {
-    "& '$venvPython' -m uvicorn backend.app.main:create_app --factory --reload"
-} else {
-    "uvicorn backend.app.main:create_app --factory --reload"
 }
 
 $fixedWindowWidth = 50
@@ -50,6 +46,89 @@ $rawUi.WindowSize = New-Object System.Management.Automation.Host.Size($targetWid
 '@
 $resizeWindowCommand = $resizeWindowCommand.Replace("__FIXED_WIDTH__", $fixedWindowWidth)
 $resizeWindowCommand = $resizeWindowCommand.Replace("__FIXED_HEIGHT__", $fixedWindowHeight)
+
+function Invoke-ExternalCommand {
+    param(
+        [Parameter(Mandatory = $true)][string]$FilePath,
+        [Parameter(Mandatory = $true)][string[]]$ArgumentList,
+        [Parameter(Mandatory = $true)][string]$WorkingDirectory,
+        [Parameter(Mandatory = $true)][string]$StepName,
+        [int]$TimeoutSeconds = 600
+    )
+
+    if (-not (Test-Path (Split-Path -Parent $bootstrapLog))) {
+        New-Item -Path (Split-Path -Parent $bootstrapLog) -ItemType Directory -Force | Out-Null
+    }
+    Add-Content -Path $bootstrapLog -Value ("[{0}] {1}" -f (Get-Date -Format "s"), "$FilePath $($ArgumentList -join ' ')")
+
+    $safeName = ($StepName -replace "[^a-zA-Z0-9_-]", "_")
+    $stdoutFile = Join-Path $repoRoot ("tmp\bootstrap-{0}.out.log" -f $safeName)
+    $stderrFile = Join-Path $repoRoot ("tmp\bootstrap-{0}.err.log" -f $safeName)
+
+    $process = Start-Process -FilePath $FilePath -ArgumentList $ArgumentList -WorkingDirectory $WorkingDirectory -PassThru -RedirectStandardOutput $stdoutFile -RedirectStandardError $stderrFile
+    $completed = $true
+    try {
+        Wait-Process -Id $process.Id -Timeout $TimeoutSeconds -ErrorAction Stop
+    } catch {
+        $completed = $false
+        Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+    }
+
+    $stdout = if (Test-Path $stdoutFile) { Get-Content -Path $stdoutFile -Raw } else { "" }
+    $stderr = if (Test-Path $stderrFile) { Get-Content -Path $stderrFile -Raw } else { "" }
+    if ($stdout) { Add-Content -Path $bootstrapLog -Value $stdout }
+    if ($stderr) { Add-Content -Path $bootstrapLog -Value $stderr }
+    Remove-Item $stdoutFile, $stderrFile -ErrorAction SilentlyContinue
+
+    if (-not $completed) {
+        throw "Paso '$StepName' agotó el tiempo ($TimeoutSeconds s). Revisa: $bootstrapLog"
+    }
+
+    if ($process.ExitCode -ne 0) {
+        throw "Paso '$StepName' falló (exit code $($process.ExitCode)). Revisa: $bootstrapLog"
+    }
+}
+
+function Ensure-BackendPrerequisites {
+    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $bootstrapLog) | Out-Null
+    Set-Content -Path $bootstrapLog -Value ("Bootstrap iniciado {0}" -f (Get-Date -Format "s"))
+
+    if (-not (Test-Path $venvPython)) {
+        Write-Host "Preparando entorno Python (.venv)..."
+        if (Get-Command py -ErrorAction SilentlyContinue) {
+            Invoke-ExternalCommand -FilePath "py" -ArgumentList @("-3.11", "-m", "venv", $venvDir) -WorkingDirectory $repoRoot -StepName "create-venv" -TimeoutSeconds 180
+        } else {
+            Invoke-ExternalCommand -FilePath "python" -ArgumentList @("-m", "venv", $venvDir) -WorkingDirectory $repoRoot -StepName "create-venv" -TimeoutSeconds 180
+        }
+    }
+
+    $fitzAvailable = $false
+    try {
+        & $venvPython -c "import fitz" *> $null
+        $fitzAvailable = $true
+    } catch {
+        $fitzAvailable = $false
+    }
+
+    if (-not $fitzAvailable) {
+        Write-Host "Instalando dependencias backend (requirements-dev)..."
+        Invoke-ExternalCommand -FilePath $venvPython -ArgumentList @("-m", "pip", "install", "-r", "requirements-dev.txt") -WorkingDirectory $repoRoot -StepName "pip-install" -TimeoutSeconds 900
+    }
+
+    try {
+        & $venvPython -c "import fitz"
+    } catch {
+        throw "No se pudo habilitar PyMuPDF (fitz) en .venv. Revisa: $bootstrapLog"
+    }
+}
+
+function Ensure-FrontendPrerequisites {
+    $nodeModules = Join-Path $frontendDir "node_modules"
+    if (-not (Test-Path $nodeModules)) {
+        Write-Host "Instalando dependencias frontend (npm install)..."
+        Invoke-ExternalCommand -FilePath "npm" -ArgumentList @("install") -WorkingDirectory $frontendDir -StepName "npm-install" -TimeoutSeconds 900
+    }
+}
 
 function Get-DescendantProcessIds {
     param(
@@ -182,6 +261,9 @@ try {
     Stop-DevProcessesByCommandLine
     Stop-PortProcess -Port 8000
     Stop-PortProcess -Port 5173
+    Ensure-BackendPrerequisites
+    Ensure-FrontendPrerequisites
+    $backendCommand = "& '$venvPython' -m uvicorn backend.app.main:create_app --factory --reload"
     $backendProcess = Start-DevConsole -WorkingDirectory $repoRoot -CommandToRun $backendCommand -WindowTitle $backendWindowTitle
     $frontendProcess = Start-DevConsole -WorkingDirectory $frontendDir -CommandToRun "npm run dev" -WindowTitle $frontendWindowTitle
 
