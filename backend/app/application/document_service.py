@@ -8,7 +8,6 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
-from backend.app.application.processing_runner import _is_usable_extracted_text
 from backend.app.domain.models import (
     Document,
     DocumentWithLatestRun,
@@ -124,7 +123,7 @@ class DocumentOriginalLocation:
 
 
 def get_document_status_details(
-    *, document_id: str, repository: DocumentRepository, storage: FileStorage | None = None
+    *, document_id: str, repository: DocumentRepository
 ) -> DocumentStatusDetails | None:
     """Return document metadata with derived status details.
 
@@ -142,12 +141,6 @@ def get_document_status_details(
 
     latest_run = repository.get_latest_run(document_id)
     status_view = derive_document_status(latest_run)
-    status_view = _override_completed_status_when_raw_text_unusable(
-        document_id=document_id,
-        latest_run=latest_run,
-        status_view=status_view,
-        storage=storage,
-    )
     return DocumentStatusDetails(document=document, latest_run=latest_run, status_view=status_view)
 
 
@@ -283,7 +276,6 @@ def list_documents(
     repository: DocumentRepository,
     limit: int,
     offset: int,
-    storage: FileStorage | None = None,
 ) -> DocumentListResult:
     """List documents with derived status for list views.
 
@@ -298,20 +290,12 @@ def list_documents(
 
     rows = repository.list_documents(limit=limit, offset=offset)
     total = repository.count_documents()
-    items = [_to_list_item(row=row, storage=storage) for row in rows]
+    items = [_to_list_item(row=row) for row in rows]
     return DocumentListResult(items=items, limit=limit, offset=offset, total=total)
 
 
-def _to_list_item(
-    *, row: DocumentWithLatestRun, storage: FileStorage | None = None
-) -> DocumentListItem:
+def _to_list_item(*, row: DocumentWithLatestRun) -> DocumentListItem:
     status_view = derive_document_status(row.latest_run)
-    status_view = _override_completed_status_when_raw_text_unusable(
-        document_id=row.document.document_id,
-        latest_run=row.latest_run,
-        status_view=status_view,
-        storage=storage,
-    )
     return DocumentListItem(
         document_id=row.document.document_id,
         original_filename=row.document.original_filename,
@@ -319,46 +303,4 @@ def _to_list_item(
         status=status_view.status.value,
         status_label=map_status_label(status_view.status),
         failure_type=status_view.failure_type,
-    )
-
-
-def _override_completed_status_when_raw_text_unusable(
-    *,
-    document_id: str,
-    latest_run: ProcessingRunSummary | None,
-    status_view: DocumentStatusView,
-    storage: FileStorage | None,
-) -> DocumentStatusView:
-    if storage is None:
-        return status_view
-    if latest_run is None:
-        return status_view
-    if status_view.status != ProcessingStatus.COMPLETED:
-        return status_view
-
-    if not storage.exists_raw_text(document_id=document_id, run_id=latest_run.run_id):
-        return DocumentStatusView(
-            status=ProcessingStatus.FAILED,
-            status_message="Processing failed during extraction.",
-            failure_type="EXTRACTION_FAILED",
-        )
-
-    try:
-        raw_text = storage.resolve_raw_text(
-            document_id=document_id, run_id=latest_run.run_id
-        ).read_text(encoding="utf-8")
-    except Exception:
-        return DocumentStatusView(
-            status=ProcessingStatus.FAILED,
-            status_message="Processing failed during extraction.",
-            failure_type="EXTRACTION_FAILED",
-        )
-
-    if _is_usable_extracted_text(raw_text):
-        return status_view
-
-    return DocumentStatusView(
-        status=ProcessingStatus.FAILED,
-        status_message="Processing failed because extracted text quality was too low.",
-        failure_type="EXTRACTION_LOW_QUALITY",
     )

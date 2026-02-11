@@ -76,7 +76,11 @@ def test_get_raw_text_returns_payload_for_completed_run(test_client):
 
     raw_text_path = get_storage_root() / document_id / "runs" / run_id / "raw-text.txt"
     raw_text_path.parent.mkdir(parents=True, exist_ok=True)
-    raw_text_path.write_text("Contenido extraido", encoding="utf-8")
+    raw_text_path.write_text(
+        "Historia clinica: perro macho con fiebre y vomitos. "
+        "Se pauta tratamiento y control en 48 horas.",
+        encoding="utf-8",
+    )
 
     response = test_client.get(f"/runs/{run_id}/artifacts/raw-text")
     assert response.status_code == 200
@@ -84,7 +88,7 @@ def test_get_raw_text_returns_payload_for_completed_run(test_client):
     assert payload["run_id"] == run_id
     assert payload["artifact_type"] == "RAW_TEXT"
     assert payload["content_type"] == "text/plain"
-    assert payload["text"] == "Contenido extraido"
+    assert "Historia clinica" in payload["text"]
 
 
 def test_get_raw_text_returns_409_when_run_not_ready(test_client):

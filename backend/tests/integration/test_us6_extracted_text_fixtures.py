@@ -8,11 +8,8 @@ from pathlib import Path
 
 import pytest
 
-from backend.app.application.processing_runner import (
-    PDF_EXTRACTOR_FORCE_ENV,
-    _extract_pdf_text,
-    _is_usable_extracted_text,
-)
+from backend.app.application.extraction_quality import is_usable_extracted_text
+from backend.app.application.processing_runner import PDF_EXTRACTOR_FORCE_ENV, _extract_pdf_text
 
 FIXTURES_DIR = Path(__file__).resolve().parents[1] / "fixtures" / "pdfs"
 HAS_FITZ = importlib.util.find_spec("fitz") is not None
@@ -52,7 +49,7 @@ def test_clinical_history_1_fallback_is_rejected_as_low_quality() -> None:
         1, len(tokens)
     )
 
-    assert not _is_usable_extracted_text(text)
+    assert not is_usable_extracted_text(text)
     assert "dratamiento" in normalized or "draquea" in normalized or "diene" in normalized
     assert single_letter_ratio > 0.02
 
@@ -73,7 +70,7 @@ def test_clinical_history_1_fitz_quality_when_available() -> None:
         1, len(tokens)
     )
 
-    assert _is_usable_extracted_text(text)
+    assert is_usable_extracted_text(text)
     assert "beatriz" in normalized
     assert "copro seriado" in normalized
     assert "coprologico" in normalized
@@ -96,10 +93,10 @@ def test_clinical_history_1_extracts_usable_readable_text() -> None:
         os.environ.pop(PDF_EXTRACTOR_FORCE_ENV, None)
 
     if not HAS_FITZ:
-        assert not _is_usable_extracted_text(text)
+        assert not is_usable_extracted_text(text)
         return
 
-    assert _is_usable_extracted_text(text)
+    assert is_usable_extracted_text(text)
     assert "D%G!" not in text
     assert "Mascota" in text or "Datos" in text
 
@@ -116,7 +113,7 @@ def test_clinical_history_2_extracts_partial_but_usable_text() -> None:
     assert elapsed < 5.0
 
     if not HAS_FITZ:
-        assert not _is_usable_extracted_text(text)
+        assert not is_usable_extracted_text(text)
         return
 
     os.environ[PDF_EXTRACTOR_FORCE_ENV] = "fitz"
@@ -125,7 +122,7 @@ def test_clinical_history_2_extracts_partial_but_usable_text() -> None:
     finally:
         os.environ.pop(PDF_EXTRACTOR_FORCE_ENV, None)
 
-    assert _is_usable_extracted_text(text)
+    assert is_usable_extracted_text(text)
     alpha_tokens = [token for token in text.split() if sum(ch.isalpha() for ch in token) >= 3]
     assert len(alpha_tokens) >= 6
 
@@ -146,7 +143,7 @@ def test_clinical_history_4_scanned_is_usable_only_when_output_is_readable() -> 
 
     if HAS_FITZ:
         # With fitz available in this fixture set, extracted text is readable enough.
-        assert _is_usable_extracted_text(text)
+        assert is_usable_extracted_text(text)
     else:
         # Fallback-only mode must not mark degraded scanned output as usable.
-        assert not _is_usable_extracted_text(text)
+        assert not is_usable_extracted_text(text)

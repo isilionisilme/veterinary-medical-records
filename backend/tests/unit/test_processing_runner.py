@@ -2,13 +2,15 @@ from __future__ import annotations
 
 import zlib
 
+from backend.app.application.extraction_quality import (
+    evaluate_extracted_text_quality,
+    is_usable_extracted_text,
+    looks_human_readable_text,
+)
 from backend.app.application.processing_runner import (
     PDF_EXTRACTOR_FORCE_ENV,
-    _evaluate_extracted_text_quality,
     _extract_pdf_text_with_extractor,
     _extract_pdf_text_without_external_dependencies,
-    _is_usable_extracted_text,
-    _looks_human_readable_text,
     _parse_pdf_literal_string,
 )
 
@@ -33,12 +35,12 @@ def test_fallback_extractor_reads_text_from_compressed_stream(tmp_path) -> None:
 
 
 def test_readability_filter_rejects_gibberish() -> None:
-    assert not _looks_human_readable_text("©+/Vã§ga/ÚæÃAäj¦suâìù")
+    assert not looks_human_readable_text("©+/Vã§ga/ÚæÃAäj¦suâìù")
 
 
 def test_usable_extracted_text_rejects_mojibake_like_output() -> None:
     gibberish = "©+/Vã§ga/ÚæÃAäj¦suâìùJA¨·ö<]¦¶Ý"
-    assert not _is_usable_extracted_text(gibberish)
+    assert not is_usable_extracted_text(gibberish)
 
 
 def test_usable_extracted_text_rejects_symbol_heavy_garbage() -> None:
@@ -46,7 +48,7 @@ def test_usable_extracted_text_rejects_symbol_heavy_garbage() -> None:
         "D%G! $G!II%D /T?UL Da$-N;.8Q- /T/UL /T@UL ?'BCADEF? /T@/UL "
         ".EI?'JEAKDLLEM'JND@ cT/UL O7,L7$OKOOR .MM-N7$.$MK-9O7N$-Z;9.X7NT$"
     )
-    assert not _is_usable_extracted_text(gibberish)
+    assert not is_usable_extracted_text(gibberish)
 
 
 def test_usable_extracted_text_accepts_real_sentence() -> None:
@@ -54,12 +56,12 @@ def test_usable_extracted_text_accepts_real_sentence() -> None:
         "Historia clinica: perro macho de 7 anos con fiebre y vomitos. "
         "Se realiza analitica y tratamiento sintomatico."
     )
-    assert _is_usable_extracted_text(text)
+    assert is_usable_extracted_text(text)
 
 
 def test_quality_evaluator_rejects_known_substitution_pattern() -> None:
     text = "Se queda hospitalizado y se recomienda Dratamiento por Draquea. Diene control."
-    score, quality_pass, reasons = _evaluate_extracted_text_quality(text)
+    score, quality_pass, reasons = evaluate_extracted_text_quality(text)
 
     assert score <= 0.60
     assert not quality_pass

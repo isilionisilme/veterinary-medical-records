@@ -154,7 +154,7 @@ def test_get_document_original_location_resolves_path_and_existence() -> None:
     assert result.exists is False
 
 
-def test_get_document_status_details_marks_failed_when_raw_text_is_unusable(tmp_path) -> None:
+def test_get_document_status_details_does_not_re_evaluate_raw_text_quality() -> None:
     document = Document(
         document_id="doc-raw-text",
         original_filename="record.pdf",
@@ -178,30 +178,17 @@ def test_get_document_status_details_marks_failed_when_raw_text_is_unusable(tmp_
         def get_latest_run(self, document_id: str) -> ProcessingRunSummary | None:
             return latest_run
 
-    class StubStorage(FakeFileStorage):
-        def exists_raw_text(self, *, document_id: str, run_id: str) -> bool:
-            return True
-
-        def resolve_raw_text(self, *, document_id: str, run_id: str) -> Path:
-            raw_path = tmp_path / "raw-text-gibberish.txt"
-            raw_path.write_text(
-                "D%G! $G!II%D /T?UL Da$-N;.8Q- /T/UL /T@UL ?'BCADEF?",
-                encoding="utf-8",
-            )
-            return raw_path
-
     result = get_document_status_details(
         document_id="doc-raw-text",
         repository=StubRepository(),
-        storage=StubStorage(),
     )
 
     assert result is not None
-    assert result.status_view.status == ProcessingStatus.FAILED
-    assert result.status_view.failure_type == "EXTRACTION_LOW_QUALITY"
+    assert result.status_view.status == ProcessingStatus.COMPLETED
+    assert result.status_view.failure_type is None
 
 
-def test_get_document_status_details_keeps_completed_when_raw_text_is_usable(tmp_path) -> None:
+def test_get_document_status_details_keeps_completed_when_raw_text_is_usable() -> None:
     document = Document(
         document_id="doc-usable-text",
         original_filename="record.pdf",
@@ -225,22 +212,9 @@ def test_get_document_status_details_keeps_completed_when_raw_text_is_usable(tmp
         def get_latest_run(self, document_id: str) -> ProcessingRunSummary | None:
             return latest_run
 
-    class StubStorage(FakeFileStorage):
-        def exists_raw_text(self, *, document_id: str, run_id: str) -> bool:
-            return True
-
-        def resolve_raw_text(self, *, document_id: str, run_id: str) -> Path:
-            raw_path = tmp_path / "raw-text-usable.txt"
-            raw_path.write_text(
-                "Historia clinica: perro con fiebre y vomitos. Tratamiento sintomatico.",
-                encoding="utf-8",
-            )
-            return raw_path
-
     result = get_document_status_details(
         document_id="doc-usable-text",
         repository=StubRepository(),
-        storage=StubStorage(),
     )
 
     assert result is not None

@@ -94,7 +94,11 @@ def list_documents_route(
 
     repository = cast(DocumentRepository, request.app.state.document_repository)
     try:
-        result = list_documents(repository=repository, limit=limit, offset=offset)
+        result = list_documents(
+            repository=repository,
+            limit=limit,
+            offset=offset,
+        )
     except Exception as exc:  # pragma: no cover - defensive
         _log_event(
             event_type="DOCUMENT_LIST_VIEW_FAILED",
@@ -155,7 +159,10 @@ def get_document_status(request: Request, document_id: str) -> DocumentResponse 
     """
 
     repository = cast(DocumentRepository, request.app.state.document_repository)
-    details = get_document_status_details(document_id=document_id, repository=repository)
+    details = get_document_status_details(
+        document_id=document_id,
+        repository=repository,
+    )
     if details is None:
         return _error_response(
             status_code=status.HTTP_404_NOT_FOUND,
