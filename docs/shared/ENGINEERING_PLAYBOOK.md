@@ -280,7 +280,7 @@ Completion checklist before finishing:
 - No unrelated documentation edits are bundled.
 
 Workflow reference:
-- Follow `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/65_add-user-story-workflow.md`.
+- For this operation, consult only the relevant steps in `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/65_add-user-story-workflow.md`.
 
 ---
 
