@@ -1230,6 +1230,34 @@ describe("App upload and list flow", () => {
     expect(within(panel).getByText("Prioridad")).toBeInTheDocument();
   });
 
+  it("shows CRÍTICO badge for critical core fields only", async () => {
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+
+    await screen.findByText("Campos core");
+
+    const panel = screen.getByTestId("right-panel-scroll");
+    const criticalFields = GLOBAL_SCHEMA_V0.filter((field) => field.critical);
+    const nonCriticalFields = GLOBAL_SCHEMA_V0.filter((field) => !field.critical);
+
+    criticalFields.forEach((field) => {
+      const fieldCard = within(panel).getByText(field.label).closest("article");
+      expect(fieldCard).not.toBeNull();
+      const card = fieldCard as HTMLElement;
+      const hasConfidenceBadge = within(card).queryByText(/Confianza\s+\d+%/i) !== null;
+      if (hasConfidenceBadge) {
+        expect(within(card).queryAllByText("CRÍTICO").length).toBeGreaterThan(0);
+      }
+    });
+
+    nonCriticalFields.forEach((field) => {
+      const fieldCard = within(panel).getByText(field.label).closest("article");
+      expect(fieldCard).not.toBeNull();
+      expect(within(fieldCard as HTMLElement).queryByText("CRÍTICO")).toBeNull();
+    });
+  });
+
   it("shows an empty list state for repeatable fields", async () => {
     renderApp();
 
