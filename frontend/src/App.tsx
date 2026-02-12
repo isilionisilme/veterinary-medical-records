@@ -2174,13 +2174,6 @@ export function App() {
                 {getUserErrorMessage(loadPdf.error, "No se pudo cargar la vista previa del documento.")}
               </div>
             )}
-            {activeId && (
-              <div className={shouldShowLoadPdfErrorBanner ? "mt-4" : ""}>
-                {documentDetails.isLoading && (
-                  <p className="text-xs text-muted">Cargando estado del documento...</p>
-                )}
-              </div>
-            )}
             <div className="mt-4 flex min-h-0 flex-1 flex-col">
               <div className="flex flex-wrap items-center gap-2">
                 {viewerTabButton("document", "Documento")}
