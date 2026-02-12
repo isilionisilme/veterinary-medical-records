@@ -2,6 +2,13 @@
 
 This file is the AI assistant entry point. Keep reads small and follow the router.
 
+## Review fast path (`@codex review`)
+- If the request is an explicit review trigger (for example: `@codex review`, “Do a code review for PR #...”, “Review the diff for ...”, “Run a code review now”), do not start with the general doc routing flow.
+- Load only `docs/agent_router/01_WORKFLOW/CODE_REVIEW/00_entry.md` and follow it as the source of truth for review behavior and output format.
+- If that file cannot be read, use this fallback review format:
+  `Severity | File:Line | Finding | Suggested fix`
+- Review focus fallback (only when the file above is unavailable): bugs, regressions, security risks, data-loss risks, and missing tests.
+
 ## Required order
 1) Read `docs/agent_router/00_AUTHORITY.md` first.
 2) Load only the module(s) that match the current intent.
