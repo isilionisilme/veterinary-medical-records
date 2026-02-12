@@ -15,9 +15,11 @@ import sys
 from pathlib import Path
 
 ALLOWED_HEX = {
-    "#2fb3a3",  # Primary accent
-    "#ffffff",  # Primary background
-    "#f7f9fa",  # Secondary background
+    "#fc4e1b",  # Barkibu orange accent
+    "#2fb3a3",  # Legacy primary accent
+    "#ebf5ff",  # Page background
+    "#ffffff",  # Card/surface background
+    "#f7f9fa",  # Legacy secondary background
     "#1f2933",  # Primary text
     "#6b7280",  # Secondary text
     "#9ca3af",  # Muted text
