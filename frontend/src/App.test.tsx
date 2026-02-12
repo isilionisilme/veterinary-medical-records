@@ -486,12 +486,16 @@ describe("App upload and list flow", () => {
 
     renderApp();
 
-    expect(await screen.findByRole("button", { name: /Reintentar/i })).toBeInTheDocument();
+    await screen.findByText(/No se pudo conectar con el servidor\./i);
+    expect(screen.getByText(/No se pudo conectar con el servidor\./i)).toBeInTheDocument();
+    expect(screen.queryByText(/Sin conexión/i)).toBeNull();
+    expect(screen.queryByRole("button", { name: /Reintentar/i })).toBeNull();
     expect(screen.getByText(/Revisa la lista lateral para reintentar la carga de documentos\./i)).toBeInTheDocument();
     expect(
       screen.queryByText(/Selecciona un documento en la barra lateral o carga uno nuevo\./i)
     ).toBeNull();
     expect(screen.queryByText(/Failed to fetch/i)).toBeNull();
+    expect(screen.queryByText(/No se pudieron cargar los documentos\./i)).toBeNull();
   });
 
   it("keeps sidebar open after selecting a document", async () => {
@@ -505,6 +509,114 @@ describe("App upload and list flow", () => {
       expect(screen.getByText(/Ocultar lista/i)).toBeInTheDocument();
       expect(screen.getByTestId("center-panel-scroll")).toBeInTheDocument();
     });
+  });
+
+  it("uses polished structured header actions and opens source from Documento original", async () => {
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+    await screen.findByText("Campos core");
+
+    expect(screen.getByRole("heading", { name: /Datos estructurados/i })).toBeInTheDocument();
+    expect(screen.queryByText(/La confianza guia la atencion, no bloquea decisiones\./i)).toBeNull();
+    expect(screen.queryByRole("button", { name: /Abrir texto/i })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: /Documento original/i }));
+    expect(screen.getByTestId("source-drawer")).toBeInTheDocument();
+  });
+
+  it("shows only connectivity toast when preview download fails (no global red banner)", async () => {
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = input.toString();
+      const method = (init?.method ?? "GET").toUpperCase();
+
+      if (url.includes("/documents?") && method === "GET") {
+        return new Response(
+          JSON.stringify({
+            items: [
+              {
+                document_id: "doc-ready",
+                original_filename: "ready.pdf",
+                created_at: "2026-02-09T10:00:00Z",
+                status: "COMPLETED",
+                status_label: "Completed",
+                failure_type: null,
+              },
+            ],
+            limit: 50,
+            offset: 0,
+            total: 1,
+          }),
+          { status: 200 }
+        );
+      }
+
+      if (url.includes("/documents/doc-ready/download") && method === "GET") {
+        throw new TypeError("Failed to fetch");
+      }
+
+      if (url.endsWith("/documents/doc-ready") && method === "GET") {
+        return new Response(
+          JSON.stringify({
+            document_id: "doc-ready",
+            original_filename: "ready.pdf",
+            content_type: "application/pdf",
+            file_size: 10,
+            created_at: "2026-02-09T10:00:00Z",
+            updated_at: "2026-02-10T10:00:00Z",
+            status: "COMPLETED",
+            status_message: "Completed.",
+            failure_type: null,
+            latest_run: { run_id: "run-doc-ready", state: "COMPLETED", failure_type: null },
+          }),
+          { status: 200 }
+        );
+      }
+
+      if (url.includes("/documents/doc-ready/review") && method === "GET") {
+        return new Response(
+          JSON.stringify({
+            document_id: "doc-ready",
+            latest_completed_run: {
+              run_id: "run-doc-ready",
+              state: "COMPLETED",
+              completed_at: "2026-02-10T10:00:00Z",
+              failure_type: null,
+            },
+            active_interpretation: {
+              interpretation_id: "interp-doc-ready",
+              version_number: 1,
+              data: {
+                schema_version: "v0",
+                document_id: "doc-ready",
+                processing_run_id: "run-doc-ready",
+                created_at: "2026-02-10T10:00:00Z",
+                fields: [],
+              },
+            },
+            raw_text_artifact: {
+              run_id: "run-doc-ready",
+              available: false,
+            },
+          }),
+          { status: 200 }
+        );
+      }
+
+      if (url.includes("/processing-history") && method === "GET") {
+        return new Response(JSON.stringify({ document_id: "doc-ready", runs: [] }), { status: 200 });
+      }
+
+      return new Response(JSON.stringify({ error_code: "NOT_FOUND" }), { status: 404 });
+    }) as typeof fetch;
+
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+
+    expect(await screen.findByText(/No se pudo conectar con el servidor\./i)).toBeInTheDocument();
+    expect(screen.queryByText(/Sin conexión/i)).toBeNull();
+    expect(screen.queryByText(/No se pudo cargar la vista previa del documento\./i)).toBeNull();
   });
 
   it("supports drag and drop upload from the viewer empty state", async () => {
@@ -1004,7 +1116,7 @@ describe("App upload and list flow", () => {
 
   it("keeps right panel mounted and shows skeleton while loading interpretation", async () => {
     const baseFetch = globalThis.fetch as typeof fetch;
-    let releaseReviewRequest: (() => void) | null = null;
+    let releaseReviewRequest!: () => void;
 
     globalThis.fetch = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
       const url = input.toString();
@@ -1025,14 +1137,158 @@ describe("App upload and list flow", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
 
-    expect(await screen.findByText("Loading structured interpretation...")).toBeInTheDocument();
+    expect(await screen.findByText("Cargando interpretacion estructurada...")).toBeInTheDocument();
     expect(screen.getByTestId("right-panel-scroll")).toBeInTheDocument();
     expect(screen.getByTestId("review-core-skeleton")).toBeInTheDocument();
 
-    expect(releaseReviewRequest).not.toBeNull();
-    releaseReviewRequest?.();
+    expect(typeof releaseReviewRequest).toBe("function");
+    releaseReviewRequest();
 
     expect(await screen.findByText("Campos core")).toBeInTheDocument();
+  });
+
+  it("shows centered interpretation empty state, retries with loading button, and recovers on success", async () => {
+    let reviewAttempts = 0;
+    let resolveRetryReview!: () => void;
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = input.toString();
+      const method = (init?.method ?? "GET").toUpperCase();
+
+      if (url.includes("/documents?") && method === "GET") {
+        return new Response(
+          JSON.stringify({
+            items: [
+              {
+                document_id: "doc-ready",
+                original_filename: "ready.pdf",
+                created_at: "2026-02-09T10:00:00Z",
+                status: "COMPLETED",
+                status_label: "Completed",
+                failure_type: null,
+              },
+            ],
+            limit: 50,
+            offset: 0,
+            total: 1,
+          }),
+          { status: 200 }
+        );
+      }
+
+      if (url.includes("/documents/doc-ready/download") && method === "GET") {
+        return new Response(new Blob(["pdf"], { type: "application/pdf" }), { status: 200 });
+      }
+
+      if (url.endsWith("/documents/doc-ready") && method === "GET") {
+        return new Response(
+          JSON.stringify({
+            document_id: "doc-ready",
+            original_filename: "ready.pdf",
+            content_type: "application/pdf",
+            file_size: 10,
+            created_at: "2026-02-09T10:00:00Z",
+            updated_at: "2026-02-10T10:00:00Z",
+            status: "COMPLETED",
+            status_message: "Completed.",
+            failure_type: null,
+            latest_run: { run_id: "run-doc-ready", state: "COMPLETED", failure_type: null },
+          }),
+          { status: 200 }
+        );
+      }
+
+      if (url.includes("/documents/doc-ready/review") && method === "GET") {
+        reviewAttempts += 1;
+        if (reviewAttempts === 1) {
+          throw new TypeError("Failed to fetch");
+        }
+        return new Promise<Response>((resolve) => {
+          resolveRetryReview = () =>
+            resolve(
+              new Response(
+                JSON.stringify({
+                  document_id: "doc-ready",
+                  latest_completed_run: {
+                    run_id: "run-doc-ready",
+                    state: "COMPLETED",
+                    completed_at: "2026-02-10T10:00:00Z",
+                    failure_type: null,
+                  },
+                  active_interpretation: {
+                    interpretation_id: "interp-doc-ready",
+                    version_number: 1,
+                    data: {
+                      schema_version: "v0",
+                      document_id: "doc-ready",
+                      processing_run_id: "run-doc-ready",
+                      created_at: "2026-02-10T10:00:00Z",
+                      fields: [
+                        {
+                          field_id: "field-pet-name-doc-ready",
+                          key: "pet_name",
+                          value: "Luna",
+                          value_type: "string",
+                          confidence: 0.82,
+                          is_critical: false,
+                          origin: "machine",
+                          evidence: { page: 1, snippet: "Paciente: Luna" },
+                        },
+                      ],
+                    },
+                  },
+                  raw_text_artifact: {
+                    run_id: "run-doc-ready",
+                    available: true,
+                  },
+                }),
+                { status: 200 }
+              )
+            );
+        });
+      }
+
+      if (url.includes("/processing-history") && method === "GET") {
+        return new Response(JSON.stringify({ document_id: "doc-ready", runs: [] }), { status: 200 });
+      }
+
+      return new Response(JSON.stringify({ error_code: "NOT_FOUND" }), { status: 404 });
+    }) as typeof fetch;
+
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+
+    const unavailableTitle = await screen.findByText("Interpretación no disponible");
+    const unavailableCard = unavailableTitle.closest("section");
+    expect(unavailableCard).not.toBeNull();
+    expect(
+      within(unavailableCard as HTMLElement).getByText(
+        /No se pudo cargar la interpretación\. Comprueba tu conexión y vuelve a intentarlo\./i
+      )
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Error loading interpretation/i)).toBeNull();
+    expect(screen.queryByText(/No completed run found/i)).toBeNull();
+
+    const panelRetryButton = within(unavailableCard as HTMLElement).getByRole("button", {
+      name: /Reintentar/i,
+    });
+    const attemptsBeforeRetry = reviewAttempts;
+    fireEvent.click(panelRetryButton);
+    await waitFor(() => {
+      expect(reviewAttempts).toBeGreaterThan(attemptsBeforeRetry);
+    });
+    await waitFor(() => {
+      expect(
+        within(unavailableCard as HTMLElement).getByRole("button", { name: /Reintentando\.\.\./i })
+      ).toBeDisabled();
+    });
+    expect(screen.queryByRole("button", { name: /Ver detalles técnicos/i })).toBeNull();
+
+    expect(typeof resolveRetryReview).toBe("function");
+    resolveRetryReview();
+    expect(await screen.findByText("Campos core")).toBeInTheDocument();
+    expect(screen.getByText(/No se pudo conectar con el servidor\./i)).toBeInTheDocument();
+    expect(screen.queryByText(/Sin conexión/i)).toBeNull();
   });
 
   it("keeps independent scroll containers and preserves right panel scroll on evidence clicks", async () => {

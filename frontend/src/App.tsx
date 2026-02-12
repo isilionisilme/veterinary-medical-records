@@ -1,6 +1,6 @@
 import { type DragEvent, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Download, RefreshCw } from "lucide-react";
+import { Download, FileText, RefreshCw } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { PdfViewer } from "./components/PdfViewer";
@@ -194,6 +194,8 @@ type ActionFeedback = {
   technicalDetails?: string;
 };
 
+type ConnectivityToast = Record<string, never>;
+
 class UiError extends Error {
   readonly userMessage: string;
   readonly technicalDetails?: string;
@@ -254,6 +256,19 @@ function getTechnicalDetails(error: unknown): string | undefined {
     return error.message;
   }
   return undefined;
+}
+
+function isConnectivityOrServerError(error: unknown): boolean {
+  if (error instanceof UiError) {
+    const details = error.technicalDetails?.toLowerCase() ?? "";
+    if (details.includes("network error calling")) {
+      return true;
+    }
+    if (/http 5\d\d calling/.test(details)) {
+      return true;
+    }
+  }
+  return isNetworkFetchError(error);
 }
 
 function parseFilename(contentDisposition: string | null): string | null {
@@ -720,6 +735,7 @@ export function App() {
   const [rawSearchNotice, setRawSearchNotice] = useState<string | null>(null);
   const [uploadFeedback, setUploadFeedback] = useState<UploadFeedback | null>(null);
   const [actionFeedback, setActionFeedback] = useState<ActionFeedback | null>(null);
+  const [connectivityToast, setConnectivityToast] = useState<ConnectivityToast | null>(null);
   const [hasShownListErrorToast, setHasShownListErrorToast] = useState(false);
   const [isDragOverViewer, setIsDragOverViewer] = useState(false);
   const [isDragOverSidebarUpload, setIsDragOverSidebarUpload] = useState(false);
@@ -734,6 +750,7 @@ export function App() {
   const [expandedFieldValues, setExpandedFieldValues] = useState<Record<string, boolean>>({});
   const [reviewLoadingDocId, setReviewLoadingDocId] = useState<string | null>(null);
   const [reviewLoadingSinceMs, setReviewLoadingSinceMs] = useState<number | null>(null);
+  const [isRetryingInterpretation, setIsRetryingInterpretation] = useState(false);
   const [isHoverDevice, setIsHoverDevice] = useState(true);
   const [uploadInfoPosition, setUploadInfoPosition] = useState({ top: 0, left: 0 });
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -754,6 +771,8 @@ export function App() {
   const [isDesktopForPin, setIsDesktopForPin] = useState(false);
   const latestRawTextRefreshRef = useRef<string | null>(null);
   const listPollingStartedAtRef = useRef<number | null>(null);
+  const interpretationRetryMinTimerRef = useRef<number | null>(null);
+  const lastConnectivityToastKeyRef = useRef<string | null>(null);
   const queryClient = useQueryClient();
   const sourcePanel = useSourcePanelState({
     isDesktopForPin,
@@ -818,6 +837,9 @@ export function App() {
       }
       if (copyFeedbackTimerRef.current) {
         window.clearTimeout(copyFeedbackTimerRef.current);
+      }
+      if (interpretationRetryMinTimerRef.current) {
+        window.clearTimeout(interpretationRetryMinTimerRef.current);
       }
       if (fileUrl) {
         URL.revokeObjectURL(fileUrl);
@@ -1170,6 +1192,11 @@ export function App() {
     if (!activeId) {
       setReviewLoadingDocId(null);
       setReviewLoadingSinceMs(null);
+      setIsRetryingInterpretation(false);
+      if (interpretationRetryMinTimerRef.current) {
+        window.clearTimeout(interpretationRetryMinTimerRef.current);
+        interpretationRetryMinTimerRef.current = null;
+      }
       return;
     }
     setReviewLoadingDocId(activeId);
@@ -1424,7 +1451,7 @@ export function App() {
   const isListRefreshing =
     (documentList.isFetching || showRefreshFeedback) && !documentList.isLoading;
   const panelHeightClass =
-    "h-[clamp(1180px,94vh,1480px)]";
+    "h-[clamp(720px,88vh,980px)]";
 
   const toggleStepDetails = (key: string) => {
     setExpandedSteps((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -1503,7 +1530,27 @@ export function App() {
   }, [actionFeedback]);
 
   useEffect(() => {
+    if (!connectivityToast) {
+      return;
+    }
+    const timer = window.setTimeout(() => setConnectivityToast(null), 5000);
+    return () => window.clearTimeout(timer);
+  }, [connectivityToast]);
+
+  const showConnectivityToast = (toastKey: string) => {
+    if (lastConnectivityToastKeyRef.current === toastKey) {
+      return;
+    }
+    lastConnectivityToastKeyRef.current = toastKey;
+    setConnectivityToast({});
+  };
+
+  useEffect(() => {
     if (documentList.isError) {
+      if (isConnectivityOrServerError(documentList.error)) {
+        showConnectivityToast(`list-${documentList.errorUpdatedAt}`);
+        return;
+      }
       if (!hasShownListErrorToast) {
         setUploadFeedback({
           kind: "error",
@@ -1518,6 +1565,28 @@ export function App() {
       setHasShownListErrorToast(false);
     }
   }, [documentList.isError, documentList.isSuccess, documentList.error, hasShownListErrorToast]);
+
+  useEffect(() => {
+    if (!activeId || !documentReview.isError || !isConnectivityOrServerError(documentReview.error)) {
+      return;
+    }
+    showConnectivityToast(`review-${activeId}-${documentReview.errorUpdatedAt}`);
+  }, [
+    activeId,
+    documentReview.isError,
+    documentReview.error,
+    documentReview.errorUpdatedAt,
+    documentReview.refetch,
+  ]);
+
+  useEffect(() => {
+    if (!loadPdf.isError || !isConnectivityOrServerError(loadPdf.error)) {
+      return;
+    }
+    showConnectivityToast(
+      `pdf-${latestLoadRequestIdRef.current ?? "unknown"}-${loadPdf.failureCount}`
+    );
+  }, [loadPdf.error, loadPdf.failureCount, loadPdf.isError]);
 
   const handleConfirmRetry = () => {
     if (!activeId) {
@@ -1680,7 +1749,7 @@ export function App() {
     if (reviewLoadingDocId === activeId) {
       return "loading";
     }
-    if (documentReview.isFetching && !documentReview.isError) {
+    if (!isRetryingInterpretation && documentReview.isFetching && !documentReview.isError) {
       return "loading";
     }
     if (documentReview.isError) {
@@ -1703,16 +1772,24 @@ export function App() {
       return "Selecciona un documento para empezar la revision.";
     }
     if (reviewPanelState === "loading") {
-      return "Loading structured interpretation...";
+      return "Cargando interpretacion estructurada...";
     }
     if (reviewPanelState === "no_completed_run") {
-      return "No completed run found";
+      return "Interpretacion no disponible";
     }
     if (reviewPanelState === "error") {
-      return "Error loading interpretation";
+      return "Interpretacion no disponible";
     }
     return null;
   })();
+
+  const shouldShowReviewEmptyState =
+    reviewPanelState !== "loading" && reviewPanelState !== "ready" && Boolean(reviewPanelMessage);
+  const shouldShowLoadPdfErrorBanner =
+    loadPdf.isError && !isConnectivityOrServerError(loadPdf.error);
+
+  const isDocumentListConnectivityError =
+    documentList.isError && isConnectivityOrServerError(documentList.error);
 
   const handleSelectReviewField = (field: ReviewDisplayField) => {
     setSelectedFieldId(field.id);
@@ -2010,20 +2087,9 @@ export function App() {
                     </div>
                   )}
 
-                  {documentList.isError && (
-                    <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                  {documentList.isError && !isDocumentListConnectivityError && (
+                    <div className="rounded-2xl border border-black/10 bg-white/80 p-4 text-sm text-ink">
                       <p>{getUserErrorMessage(documentList.error, "No se pudieron cargar los documentos.")}</p>
-                      <div className="mt-3 flex flex-wrap items-center gap-2">
-                        <Button variant="ghost" type="button" onClick={() => documentList.refetch()}>
-                          Reintentar
-                        </Button>
-                        {getTechnicalDetails(documentList.error) && (
-                          <details className="text-xs text-muted">
-                            <summary className="cursor-pointer">Ver detalles tecnicos</summary>
-                            <p className="mt-1">{getTechnicalDetails(documentList.error)}</p>
-                          </details>
-                        )}
-                      </div>
                     </div>
                   )}
 
@@ -2104,13 +2170,13 @@ export function App() {
           </aside>
 
           <section className={`flex flex-1 flex-col rounded-3xl border border-black/10 bg-white/70 p-6 shadow-xl ${panelHeightClass}`}>
-            {loadPdf.isError && (
+            {shouldShowLoadPdfErrorBanner && (
               <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 {getUserErrorMessage(loadPdf.error, "No se pudo cargar la vista previa del documento.")}
               </div>
             )}
             {activeId && (
-              <div className={loadPdf.isError ? "mt-4" : ""}>
+              <div className={shouldShowLoadPdfErrorBanner ? "mt-4" : ""}>
                 {documentDetails.isLoading && (
                   <p className="text-xs text-muted">Cargando estado del documento...</p>
                 )}
@@ -2187,23 +2253,15 @@ export function App() {
                           className="flex h-full w-full min-h-0 flex-col rounded-2xl border border-black/10 bg-white/80 p-4"
                         >
                           <div className="flex flex-wrap items-center justify-between gap-2">
-                            <div>
-                              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
-                                Datos estructurados
-                              </p>
-                              <p className="mt-1 text-xs text-muted">
-                                La confianza guia la atencion, no bloquea decisiones.
-                              </p>
-                            </div>
+                            <h3 className="text-lg font-semibold text-ink">Datos estructurados</h3>
                             <Button
                               type="button"
-                              onClick={() => setActiveViewerTab("raw_text")}
-                              disabled={!documentReview.data?.raw_text_artifact.available}
+                              variant="ghost"
+                              onClick={sourcePanel.openSource}
+                              className="border border-black/10 bg-white/90 hover:bg-accentSoft"
                             >
-                              Abrir texto
-                            </Button>
-                            <Button type="button" variant="ghost" onClick={sourcePanel.openSource}>
-                              Fuente
+                              <FileText size={14} />
+                              Documento original
                             </Button>
                           </div>
 
@@ -2228,12 +2286,13 @@ export function App() {
                             </div>
                           )}
 
-                          <div
-                            data-testid="right-panel-scroll"
-                            className="mt-3 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1"
-                          >
+                          <div className="mt-3 flex-1 min-h-0">
                             {reviewPanelState === "loading" && (
-                              <section aria-live="polite" className="space-y-2">
+                              <div
+                                data-testid="right-panel-scroll"
+                                aria-live="polite"
+                                className="h-full min-h-0 overflow-y-auto pr-1 space-y-2"
+                              >
                                 <p className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700">
                                   {reviewPanelMessage}
                                 </p>
@@ -2249,110 +2308,151 @@ export function App() {
                                     </div>
                                   ))}
                                 </div>
-                              </section>
+                              </div>
                             )}
 
-                            {reviewPanelState !== "loading" &&
-                              reviewPanelState !== "ready" &&
-                              reviewPanelMessage && (
-                                <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
-                                  {reviewPanelMessage}
-                                </p>
-                              )}
+                            {shouldShowReviewEmptyState && (
+                              <div
+                                data-testid="right-panel-scroll"
+                                className="h-full min-h-0 flex items-center justify-center"
+                              >
+                                <div className="mx-auto w-full max-w-md px-4">
+                                  <div className="mx-auto max-w-sm text-center">
+                                    <p className="text-base font-semibold text-ink">
+                                      Interpretación no disponible
+                                    </p>
+                                    <p className="mt-2 text-xs text-muted">
+                                      No se pudo cargar la interpretación. Comprueba tu conexión y vuelve
+                                      a intentarlo.
+                                    </p>
+                                    <div className="mt-4 flex justify-center">
+                                      <Button
+                                        type="button"
+                                        disabled={!activeId || isRetryingInterpretation}
+                                        onClick={async () => {
+                                          const retryStartedAt = Date.now();
+                                          setIsRetryingInterpretation(true);
+                                          await documentReview.refetch();
+                                          const minVisibleMs = 250;
+                                          const elapsedMs = Date.now() - retryStartedAt;
+                                          const remainingMs = Math.max(0, minVisibleMs - elapsedMs);
+                                          if (remainingMs === 0) {
+                                            setIsRetryingInterpretation(false);
+                                            return;
+                                          }
+                                          if (interpretationRetryMinTimerRef.current) {
+                                            window.clearTimeout(interpretationRetryMinTimerRef.current);
+                                          }
+                                          interpretationRetryMinTimerRef.current = window.setTimeout(() => {
+                                            interpretationRetryMinTimerRef.current = null;
+                                            setIsRetryingInterpretation(false);
+                                          }, remainingMs);
+                                        }}
+                                      >
+                                        {isRetryingInterpretation ? "Reintentando..." : "Reintentar"}
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
 
                             {reviewPanelState === "ready" && (
-                              <>
+                              <div
+                                data-testid="right-panel-scroll"
+                                className="h-full min-h-0 overflow-y-auto pr-1 space-y-3"
+                              >
                                 <section>
-                                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
-                                  Campos core
-                                </p>
-                                <div className="mt-2 space-y-2">
-                                  {groupedCoreFields.length === 0 && (
-                                    <p className="rounded-xl border border-black/10 bg-white/90 px-3 py-2 text-xs text-muted">
-                                      Ningún campo core coincide con los filtros.
-                                    </p>
-                                  )}
-                                  {groupedCoreFields.map((group) => (
-                                    <div key={group.section} className="space-y-2">
-                                      <p className="text-[11px] font-semibold text-muted">{group.section}</p>
-                                      {group.fields.map((field) => {
-                                        const confidenceTone = getConfidenceLabel(field.confidence);
-                                        const isSelected = selectedFieldId === field.id;
-                                        const isExpanded = Boolean(expandedFieldValues[field.id]);
-                                        const valueText = isExpanded
-                                          ? field.displayValue
-                                          : truncateText(field.displayValue, 140);
-                                        const canExpand = field.displayValue.length > 140;
-                                        return (
-                                          <article
-                                            key={field.id}
-                                            className={`rounded-xl border bg-white p-3 ${
-                                              isSelected ? "border-accent ring-1 ring-accent/40" : "border-black/10"
-                                            }`}
-                                          >
-                                        <button
-                                          type="button"
-                                          className="w-full text-left"
-                                          onClick={() => handleSelectReviewField(field)}
-                                        >
-                                          <div className="flex items-start justify-between gap-2">
-                                            <p className="text-xs font-semibold text-ink">{field.label}</p>
-                                            <span
-                                              className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                                                confidenceTone === "high"
-                                                  ? "bg-emerald-100 text-emerald-700"
-                                                  : confidenceTone === "medium"
-                                                  ? "bg-amber-100 text-amber-700"
-                                                  : "bg-red-100 text-red-700"
+                                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
+                                    Campos core
+                                  </p>
+                                  <div className="mt-2 space-y-2">
+                                    {groupedCoreFields.length === 0 && (
+                                      <p className="rounded-xl border border-black/10 bg-white/90 px-3 py-2 text-xs text-muted">
+                                        Ningún campo core coincide con los filtros.
+                                      </p>
+                                    )}
+                                    {groupedCoreFields.map((group) => (
+                                      <div key={group.section} className="space-y-2">
+                                        <p className="text-[11px] font-semibold text-muted">{group.section}</p>
+                                        {group.fields.map((field) => {
+                                          const confidenceTone = getConfidenceLabel(field.confidence);
+                                          const isSelected = selectedFieldId === field.id;
+                                          const isExpanded = Boolean(expandedFieldValues[field.id]);
+                                          const valueText = isExpanded
+                                            ? field.displayValue
+                                            : truncateText(field.displayValue, 140);
+                                          const canExpand = field.displayValue.length > 140;
+                                          return (
+                                            <article
+                                              key={field.id}
+                                              className={`rounded-xl border bg-white p-3 ${
+                                                isSelected ? "border-accent ring-1 ring-accent/40" : "border-black/10"
                                               }`}
                                             >
-                                              Confianza {(field.confidence * 100).toFixed(0)}%
-                                            </span>
-                                          </div>
-                                          <p
-                                            className={`mt-2 text-sm ${
-                                              field.isMissing ? "italic text-muted" : "text-ink"
-                                            }`}
-                                          >
-                                            {valueText}
-                                          </p>
-                                        </button>
-                                        {canExpand && (
-                                          <button
-                                            type="button"
-                                            className="mt-1 text-xs font-semibold text-muted underline underline-offset-2"
-                                            onClick={() =>
-                                              setExpandedFieldValues((current) => ({
-                                                ...current,
-                                                [field.id]: !current[field.id],
-                                              }))
-                                            }
-                                          >
-                                            {isExpanded ? "Ver menos" : "Ver más"}
-                                          </button>
-                                        )}
-                                        <button
-                                          type="button"
-                                          aria-disabled={!field.evidence?.page}
-                                          className={`mt-2 inline-flex items-center gap-1 text-[11px] ${
-                                            field.evidence?.page
-                                              ? "text-ink underline underline-offset-2"
-                                              : "cursor-not-allowed text-muted/70"
-                                          }`}
-                                          onClick={() => handleSelectReviewField(field)}
-                                        >
-                                          <span className="text-muted">Fuente:</span>
-                                          <span className="font-semibold">
-                                            {field.evidence?.page ? `Página ${field.evidence.page}` : "—"}
-                                          </span>
-                                        </button>
-                                        </article>
-                                      );
-                                    })}
-                                    </div>
-                                  ))}
-                                </div>
-                              </section>
+                                              <button
+                                                type="button"
+                                                className="w-full text-left"
+                                                onClick={() => handleSelectReviewField(field)}
+                                              >
+                                                <div className="flex items-start justify-between gap-2">
+                                                  <p className="text-xs font-semibold text-ink">{field.label}</p>
+                                                  <span
+                                                    className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                                                      confidenceTone === "high"
+                                                        ? "bg-emerald-100 text-emerald-700"
+                                                        : confidenceTone === "medium"
+                                                        ? "bg-amber-100 text-amber-700"
+                                                        : "bg-red-100 text-red-700"
+                                                    }`}
+                                                  >
+                                                    Confianza {(field.confidence * 100).toFixed(0)}%
+                                                  </span>
+                                                </div>
+                                                <p
+                                                  className={`mt-2 text-sm ${
+                                                    field.isMissing ? "italic text-muted" : "text-ink"
+                                                  }`}
+                                                >
+                                                  {valueText}
+                                                </p>
+                                              </button>
+                                              {canExpand && (
+                                                <button
+                                                  type="button"
+                                                  className="mt-1 text-xs font-semibold text-muted underline underline-offset-2"
+                                                  onClick={() =>
+                                                    setExpandedFieldValues((current) => ({
+                                                      ...current,
+                                                      [field.id]: !current[field.id],
+                                                    }))
+                                                  }
+                                                >
+                                                  {isExpanded ? "Ver menos" : "Ver más"}
+                                                </button>
+                                              )}
+                                              <button
+                                                type="button"
+                                                aria-disabled={!field.evidence?.page}
+                                                className={`mt-2 inline-flex items-center gap-1 text-[11px] ${
+                                                  field.evidence?.page
+                                                    ? "text-ink underline underline-offset-2"
+                                                    : "cursor-not-allowed text-muted/70"
+                                                }`}
+                                                onClick={() => handleSelectReviewField(field)}
+                                              >
+                                                <span className="text-muted">Fuente:</span>
+                                                <span className="font-semibold">
+                                                  {field.evidence?.page ? `Página ${field.evidence.page}` : "—"}
+                                                </span>
+                                              </button>
+                                            </article>
+                                          );
+                                        })}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </section>
 
                                 <section>
                                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
@@ -2415,7 +2515,7 @@ export function App() {
                                   })}
                                 </div>
                                 </section>
-                              </>
+                              </div>
                             )}
                           </div>
 
@@ -2745,8 +2845,32 @@ export function App() {
           </div>
         </div>
       )}
+      {connectivityToast && (
+        <div className="fixed left-1/2 top-10 z-[65] w-full max-w-lg -translate-x-1/2 px-4 sm:w-[32rem]">
+          <div
+            className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-red-700 shadow-xl"
+            role="status"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-sm">No se pudo conectar con el servidor.</p>
+              <button
+                type="button"
+                aria-label="Cerrar aviso de conexión"
+                className="text-lg font-semibold leading-none"
+                onClick={() => setConnectivityToast(null)}
+              >
+                &times;
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
             {uploadFeedback && (
-              <div className="fixed left-1/2 top-10 z-[60] w-full max-w-lg -translate-x-1/2 px-4 sm:w-[32rem]">
+              <div
+                className={`fixed left-1/2 z-[60] w-full max-w-lg -translate-x-1/2 px-4 sm:w-[32rem] ${
+                  connectivityToast ? "top-28" : "top-10"
+                }`}
+              >
                 <div
             className={`rounded-2xl border px-5 py-4 text-base shadow-xl ${
               uploadFeedback.kind === "success"
@@ -2795,7 +2919,11 @@ export function App() {
               </div>
             )}
             {actionFeedback && (
-              <div className="fixed left-1/2 top-28 z-[60] w-full max-w-lg -translate-x-1/2 px-4 sm:w-[32rem]">
+              <div
+                className={`fixed left-1/2 z-[60] w-full max-w-lg -translate-x-1/2 px-4 sm:w-[32rem] ${
+                  connectivityToast ? "top-44" : "top-28"
+                }`}
+              >
                 <div
                   className={`rounded-2xl border px-5 py-4 text-base shadow-xl ${
                     actionFeedback.kind === "success"
