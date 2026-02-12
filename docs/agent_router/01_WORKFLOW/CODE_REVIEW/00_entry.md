@@ -21,19 +21,48 @@ This module is the operational procedure for code reviews in this repo.
 6) UX/Brand compliance for `frontend/**` or user-visible changes (against UX and Brand docs)
 
 ## Output format (mandatory)
-Produce findings under these headings:
-- Must-fix
-- Should-fix
-- Nice-to-have
-- Questions / assumptions
+The PR review comment must follow this exact structure and heading names:
 
-And include:
-- UX/Brand Compliance (mandatory for `frontend/**` or user-visible changes; if non-compliant, list under Must-fix)
+```md
+## AI Code Review
 
-Each finding includes:
-- File reference(s)
-- Short rationale
-- Minimal suggested change
+### Must-fix
+1. **<short finding title>**
+   - **File:** `<path>:<line>` (or `N/A` if it is not file-specific)
+   - **Why:** <short rationale>
+   - **Minimal change:** <smallest concrete fix>
+
+### Should-fix
+1. **<short finding title>**
+   - **File:** `<path>:<line>` (or `N/A`)
+   - **Why:** <short rationale>
+   - **Minimal change:** <smallest concrete fix>
+
+### Nice-to-have
+1. **<short finding title>**
+   - **File:** `<path>:<line>` (or `N/A`)
+   - **Why:** <short rationale>
+   - **Minimal change:** <smallest concrete fix>
+
+### Questions / assumptions
+1. <question>
+
+### UX/Brand Compliance
+- **Compliant:**
+  - <item>
+- **Non-compliant / risk:**
+  - <item>
+```
+
+Rules:
+- Keep section order exactly as above.
+- Number findings/questions (`1.`, `2.`, ...), do not use bullets for those lists.
+- For `Must-fix` / `Should-fix` / `Nice-to-have`, every item must include all three fields: `File`, `Why`, `Minimal change`.
+- `UX/Brand Compliance` is mandatory for `frontend/**` or any user-visible change. If not applicable, include:
+  - `- **Compliant:**`
+  - `  - N/A (non-user-visible change).`
+  - `- **Non-compliant / risk:**`
+  - `  - None.`
 
 ## Safety rule
 After producing the review, STOP and wait for explicit user instruction before making code changes.
