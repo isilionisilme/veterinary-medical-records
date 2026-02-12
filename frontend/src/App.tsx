@@ -10,6 +10,10 @@ import { Button } from "./components/ui/button";
 import { useSourcePanelState } from "./hooks/useSourcePanelState";
 import { groupProcessingSteps } from "./lib/processingHistory";
 import {
+  GLOBAL_SCHEMA_SECTION_ORDER,
+  GLOBAL_SCHEMA_V0,
+} from "./lib/globalSchemaV0";
+import {
   formatDuration,
   formatShortDate,
   formatTime,
@@ -19,6 +23,8 @@ import {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 const MAX_UPLOAD_SIZE_BYTES = 20 * 1024 * 1024;
+const MISSING_VALUE_PLACEHOLDER = "—";
+const EMPTY_LIST_PLACEHOLDER = "Sin elementos";
 
 type LoadResult = {
   url: string;
@@ -114,16 +120,7 @@ type StructuredInterpretationData = {
   fields: ReviewField[];
 };
 
-type CoreFieldDefinition = {
-  key: string;
-  label: string;
-  section: string;
-  order: number;
-  value_type: "string" | "number" | "boolean" | "date" | "unknown";
-  core: true;
-};
-
-type ReviewDisplayField = {
+type ReviewSelectableField = {
   id: string;
   key: string;
   label: string;
@@ -136,6 +133,20 @@ type ReviewDisplayField = {
   source: "core" | "extracted";
   evidence?: ReviewEvidence;
   rawField?: ReviewField;
+  repeatable: boolean;
+};
+
+type ReviewDisplayField = {
+  id: string;
+  key: string;
+  label: string;
+  section: string;
+  order: number;
+  valueType: string;
+  repeatable: boolean;
+  items: ReviewSelectableField[];
+  isEmptyList: boolean;
+  source: "core" | "extracted";
 };
 
 type ReviewPanelState = "idle" | "loading" | "ready" | "no_completed_run" | "error";
@@ -160,20 +171,6 @@ type DocumentReviewResponse = {
   };
 };
 
-const CORE_FIELD_CATALOG: CoreFieldDefinition[] = [
-  { key: "pet_name", label: "Nombre del paciente", section: "Paciente", order: 1, value_type: "string", core: true },
-  { key: "species", label: "Especie", section: "Paciente", order: 2, value_type: "string", core: true },
-  { key: "sex", label: "Sexo", section: "Paciente", order: 3, value_type: "string", core: true },
-  { key: "weight", label: "Peso", section: "Paciente", order: 4, value_type: "number", core: true },
-  { key: "visit_date", label: "Fecha de visita", section: "Consulta", order: 5, value_type: "date", core: true },
-  { key: "chief_complaint", label: "Motivo de consulta", section: "Consulta", order: 6, value_type: "string", core: true },
-  { key: "findings", label: "Hallazgos", section: "Evaluacion", order: 7, value_type: "string", core: true },
-  { key: "diagnosis", label: "Diagnostico", section: "Evaluacion", order: 8, value_type: "string", core: true },
-  { key: "tests_results", label: "Pruebas y resultados", section: "Plan", order: 9, value_type: "string", core: true },
-  { key: "treatment_plan", label: "Plan de tratamiento", section: "Plan", order: 10, value_type: "string", core: true },
-  { key: "medications", label: "Medicación", section: "Plan", order: 11, value_type: "string", core: true },
-  { key: "follow_up", label: "Seguimiento", section: "Plan", order: 12, value_type: "string", core: true },
-];
 
 type DocumentUploadResponse = {
   document_id: string;
@@ -696,9 +693,13 @@ function getConfidenceLabel(confidence: number): "high" | "medium" | "low" {
   return "low";
 }
 
+function isFieldValueEmpty(value: unknown): boolean {
+  return value === null || value === undefined || value === "";
+}
+
 function formatFieldValue(value: string | number | boolean | null, valueType: string): string {
-  if (value === null || value === undefined || value === "") {
-    return "No encontrado";
+  if (isFieldValueEmpty(value)) {
+    return MISSING_VALUE_PLACEHOLDER;
   }
   if (valueType === "boolean") {
     return value ? "Sí" : "No";
@@ -746,8 +747,6 @@ export function App() {
   const [isCopyingRawText, setIsCopyingRawText] = useState(false);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [evidenceNotice, setEvidenceNotice] = useState<string | null>(null);
-  const [showMissingCoreFields, setShowMissingCoreFields] = useState(true);
-  const [onlyLowConfidence, setOnlyLowConfidence] = useState(false);
   const [expandedFieldValues, setExpandedFieldValues] = useState<Record<string, boolean>>({});
   const [reviewLoadingDocId, setReviewLoadingDocId] = useState<string | null>(null);
   const [reviewLoadingSinceMs, setReviewLoadingSinceMs] = useState<number | null>(null);
@@ -1634,20 +1633,42 @@ export function App() {
     [documentReview.data?.active_interpretation.data.fields]
   );
 
-  const coreDisplayFields = useMemo(() => {
-    const matchesByKey = new Map<string, ReviewField[]>();
+  const matchesByKey = useMemo(() => {
+    const matches = new Map<string, ReviewField[]>();
     extractedReviewFields.forEach((field) => {
-      const group = matchesByKey.get(field.key) ?? [];
+      const group = matches.get(field.key) ?? [];
       group.push(field);
-      matchesByKey.set(field.key, group);
+      matches.set(field.key, group);
     });
+    return matches;
+  }, [extractedReviewFields]);
 
-    return CORE_FIELD_CATALOG.map((definition): ReviewDisplayField => {
-      const candidates = matchesByKey.get(definition.key) ?? [];
-      const bestCandidate = candidates.sort(
-        (a, b) => clampConfidence(b.confidence) - clampConfidence(a.confidence)
-      )[0];
-      if (!bestCandidate) {
+  const coreDisplayFields = useMemo(() => {
+    return GLOBAL_SCHEMA_V0.map((definition): ReviewDisplayField => {
+      let candidates = matchesByKey.get(definition.key) ?? [];
+      if (definition.key === "document_date" && candidates.length === 0) {
+        candidates = matchesByKey.get("visit_date") ?? [];
+      }
+
+      if (definition.repeatable) {
+        const items = candidates
+          .filter((candidate) => !isFieldValueEmpty(candidate.value))
+          .map((candidate, index): ReviewSelectableField => ({
+            id: `core:${definition.key}:${candidate.field_id}:${index}`,
+            key: definition.key,
+            label: definition.label,
+            section: definition.section,
+            order: definition.order,
+            valueType: candidate.value_type,
+            displayValue: formatFieldValue(candidate.value, candidate.value_type),
+            isMissing: false,
+            confidence: clampConfidence(candidate.confidence),
+            source: "core",
+            evidence: candidate.evidence,
+            rawField: candidate,
+            repeatable: true,
+          }));
+
         return {
           id: `core:${definition.key}`,
           key: definition.key,
@@ -1655,96 +1676,162 @@ export function App() {
           section: definition.section,
           order: definition.order,
           valueType: definition.value_type,
-          displayValue: "No encontrado",
-          isMissing: true,
-          confidence: 0,
+          repeatable: true,
+          items,
+          isEmptyList: items.length === 0,
           source: "core",
         };
       }
+
+      const bestCandidate = candidates
+        .filter((candidate) => !isFieldValueEmpty(candidate.value))
+        .sort((a, b) => clampConfidence(b.confidence) - clampConfidence(a.confidence))[0];
+      const displayValue = bestCandidate
+        ? formatFieldValue(bestCandidate.value, bestCandidate.value_type)
+        : MISSING_VALUE_PLACEHOLDER;
+      const item: ReviewSelectableField = {
+        id: `core:${definition.key}`,
+        key: definition.key,
+        label: definition.label,
+        section: definition.section,
+        order: definition.order,
+        valueType: bestCandidate?.value_type ?? definition.value_type,
+        displayValue,
+        isMissing: !bestCandidate,
+        confidence: bestCandidate ? clampConfidence(bestCandidate.confidence) : 0,
+        source: "core",
+        evidence: bestCandidate?.evidence,
+        rawField: bestCandidate,
+        repeatable: false,
+      };
       return {
         id: `core:${definition.key}`,
         key: definition.key,
         label: definition.label,
         section: definition.section,
         order: definition.order,
-        valueType: bestCandidate.value_type,
-        displayValue: formatFieldValue(bestCandidate.value, bestCandidate.value_type),
-        isMissing: false,
-        confidence: clampConfidence(bestCandidate.confidence),
+        valueType: definition.value_type,
+        repeatable: false,
+        items: [item],
+        isEmptyList: false,
         source: "core",
-        evidence: bestCandidate.evidence,
-        rawField: bestCandidate,
       };
     }).sort((a, b) => a.order - b.order);
-  }, [extractedReviewFields]);
+  }, [matchesByKey]);
 
   const otherDisplayFields = useMemo(() => {
-    const coreKeys = new Set(CORE_FIELD_CATALOG.map((field) => field.key));
-    return extractedReviewFields
-      .filter((field) => !coreKeys.has(field.key))
-      .map((field, index): ReviewDisplayField => ({
-        id: `extra:${field.field_id}:${index}`,
-        key: field.key,
-        label: formatReviewKeyLabel(field.key),
+    const coreKeys = new Set(GLOBAL_SCHEMA_V0.map((field) => field.key));
+    const grouped = new Map<string, ReviewField[]>();
+    const orderedKeys: string[] = [];
+
+    extractedReviewFields.forEach((field) => {
+      if (coreKeys.has(field.key)) {
+        return;
+      }
+      if (!grouped.has(field.key)) {
+        grouped.set(field.key, []);
+        orderedKeys.push(field.key);
+      }
+      grouped.get(field.key)?.push(field);
+    });
+
+    return orderedKeys.map((key, index): ReviewDisplayField => {
+      const fields = grouped.get(key) ?? [];
+      const label = formatReviewKeyLabel(key);
+      if (fields.length > 1) {
+        const items = fields
+          .filter((field) => !isFieldValueEmpty(field.value))
+          .map((field, itemIndex): ReviewSelectableField => ({
+            id: `extra:${field.field_id}:${itemIndex}`,
+            key,
+            label,
+            section: "Otros campos extraídos",
+            order: index + 1,
+            valueType: field.value_type,
+            displayValue: formatFieldValue(field.value, field.value_type),
+            isMissing: false,
+            confidence: clampConfidence(field.confidence),
+            source: "extracted",
+            evidence: field.evidence,
+            rawField: field,
+            repeatable: true,
+          }));
+        return {
+          id: `extra:${key}`,
+          key,
+          label,
+          section: "Otros campos extraídos",
+          order: index + 1,
+          valueType: fields[0]?.value_type ?? "string",
+          repeatable: true,
+          items,
+          isEmptyList: items.length === 0,
+          source: "extracted",
+        };
+      }
+
+      const field = fields[0];
+      const hasValue = Boolean(field && !isFieldValueEmpty(field.value));
+      const displayValue = hasValue
+        ? formatFieldValue(field.value, field.value_type)
+        : MISSING_VALUE_PLACEHOLDER;
+      const item: ReviewSelectableField = {
+        id: field ? `extra:${field.field_id}:0` : `extra:${key}:missing`,
+        key,
+        label,
         section: "Otros campos extraídos",
         order: index + 1,
-        valueType: field.value_type,
-        displayValue: formatFieldValue(field.value, field.value_type),
-        isMissing: false,
-        confidence: clampConfidence(field.confidence),
+        valueType: field?.value_type ?? "string",
+        displayValue,
+        isMissing: !hasValue,
+        confidence: field ? clampConfidence(field.confidence) : 0,
         source: "extracted",
-        evidence: field.evidence,
+        evidence: field?.evidence,
         rawField: field,
-      }))
-      .sort((a, b) => a.order - b.order);
+        repeatable: false,
+      };
+      return {
+        id: `extra:${key}`,
+        key,
+        label,
+        section: "Otros campos extraídos",
+        order: index + 1,
+        valueType: field?.value_type ?? "string",
+        repeatable: false,
+        items: [item],
+        isEmptyList: false,
+        source: "extracted",
+      };
+    });
   }, [extractedReviewFields]);
 
-  const filteredCoreFields = useMemo(() => {
-    return coreDisplayFields.filter((field) => {
-      if (!showMissingCoreFields && field.isMissing) {
-        return false;
-      }
-      if (onlyLowConfidence && field.confidence >= 0.55) {
-        return false;
-      }
-      return true;
-    });
-  }, [coreDisplayFields, onlyLowConfidence, showMissingCoreFields]);
-
   const groupedCoreFields = useMemo(() => {
-    const sectionOrder = ["Paciente", "Consulta", "Evaluacion", "Plan"];
     const groups = new Map<string, ReviewDisplayField[]>();
-    filteredCoreFields.forEach((field) => {
+    coreDisplayFields.forEach((field) => {
       const current = groups.get(field.section) ?? [];
       current.push(field);
       groups.set(field.section, current);
     });
-    return sectionOrder
-      .filter((section) => groups.has(section))
-      .map((section) => ({
-        section,
-        fields: (groups.get(section) ?? []).sort((a, b) => a.order - b.order),
-      }));
-  }, [filteredCoreFields]);
+    return GLOBAL_SCHEMA_SECTION_ORDER.map((section) => ({
+      section,
+      fields: (groups.get(section) ?? []).sort((a, b) => a.order - b.order),
+    }));
+  }, [coreDisplayFields]);
 
-  const filteredOtherFields = useMemo(() => {
-    return otherDisplayFields.filter((field) => {
-      if (onlyLowConfidence && field.confidence >= 0.55) {
-        return false;
-      }
-      return true;
-    });
-  }, [onlyLowConfidence, otherDisplayFields]);
+  const selectableReviewItems = useMemo(
+    () => [...coreDisplayFields, ...otherDisplayFields].flatMap((field) => field.items),
+    [coreDisplayFields, otherDisplayFields]
+  );
 
   const selectedReviewField = useMemo(() => {
     if (!selectedFieldId) {
       return null;
     }
     return (
-      [...coreDisplayFields, ...otherDisplayFields].find((field) => field.id === selectedFieldId) ??
+      selectableReviewItems.find((field) => field.id === selectedFieldId) ??
       null
     );
-  }, [coreDisplayFields, otherDisplayFields, selectedFieldId]);
+  }, [selectableReviewItems, selectedFieldId]);
 
   const reviewPanelState: ReviewPanelState = (() => {
     if (!activeId) {
@@ -1809,12 +1896,12 @@ export function App() {
   const isDocumentListConnectivityError =
     documentList.isError && isConnectivityOrServerError(documentList.error);
 
-  const handleSelectReviewField = (field: ReviewDisplayField) => {
+  const handleSelectReviewItem = (field: ReviewSelectableField) => {
     setSelectedFieldId(field.id);
     setFieldNavigationRequestId((current) => current + 1);
   };
 
-  const handleOpenSourceFromEvidence = (field: ReviewDisplayField) => {
+  const handleOpenSourceFromEvidence = (field: ReviewSelectableField) => {
     setSelectedFieldId(field.id);
     setFieldNavigationRequestId((current) => current + 1);
     sourcePanel.openFromEvidence(field.evidence);
@@ -1830,14 +1917,11 @@ export function App() {
     if (!selectedFieldId) {
       return;
     }
-    const currentIds = new Set([
-      ...coreDisplayFields.map((field) => field.id),
-      ...otherDisplayFields.map((field) => field.id),
-    ]);
+    const currentIds = new Set(selectableReviewItems.map((field) => field.id));
     if (!currentIds.has(selectedFieldId)) {
       setSelectedFieldId(null);
     }
-  }, [coreDisplayFields, otherDisplayFields, selectedFieldId]);
+  }, [selectableReviewItems, selectedFieldId]);
 
   useEffect(() => {
     if (!evidenceNotice) {
@@ -2340,27 +2424,6 @@ export function App() {
                             </Button>
                           </div>
 
-                          {reviewPanelState === "ready" && (
-                            <div className="mt-3 flex flex-wrap gap-3 text-xs text-muted">
-                              <label className="inline-flex items-center gap-2">
-                                <input
-                                  type="checkbox"
-                                  checked={showMissingCoreFields}
-                                  onChange={(event) => setShowMissingCoreFields(event.target.checked)}
-                                />
-                                Mostrar faltantes
-                              </label>
-                              <label className="inline-flex items-center gap-2">
-                                <input
-                                  type="checkbox"
-                                  checked={onlyLowConfidence}
-                                  onChange={(event) => setOnlyLowConfidence(event.target.checked)}
-                                />
-                                Baja confianza
-                              </label>
-                            </div>
-                          )}
-
                           <div className="mt-3 flex-1 min-h-0">
                             {reviewPanelState === "loading" && (
                               <div
@@ -2451,13 +2514,99 @@ export function App() {
                                       <div key={group.section} className="space-y-2">
                                         <p className="text-[11px] font-semibold text-muted">{group.section}</p>
                                         {group.fields.map((field) => {
-                                          const confidenceTone = getConfidenceLabel(field.confidence);
-                                          const isSelected = selectedFieldId === field.id;
-                                          const isExpanded = Boolean(expandedFieldValues[field.id]);
+                                          if (field.repeatable) {
+                                            const countLabel =
+                                              field.items.length === 1
+                                                ? "1 elemento"
+                                                : `${field.items.length} elementos`;
+                                            return (
+                                              <article
+                                                key={field.id}
+                                                className="rounded-xl border border-black/10 bg-white p-3"
+                                              >
+                                                <div className="flex items-start justify-between gap-2">
+                                                  <p className="text-xs font-semibold text-ink">{field.label}</p>
+                                                  {field.items.length > 0 && (
+                                                    <span className="rounded-full border border-black/10 px-2 py-0.5 text-[10px] font-semibold text-muted">
+                                                      {countLabel}
+                                                    </span>
+                                                  )}
+                                                </div>
+                                                <div className="mt-2 space-y-2">
+                                                  {field.isEmptyList && (
+                                                    <p className="text-sm italic text-muted">
+                                                      {EMPTY_LIST_PLACEHOLDER}
+                                                    </p>
+                                                  )}
+                                                  {field.items.map((item) => {
+                                                    const confidenceTone = getConfidenceLabel(item.confidence);
+                                                    const isSelected = selectedFieldId === item.id;
+                                                    return (
+                                                      <div
+                                                        key={item.id}
+                                                        className={`rounded-lg border bg-white/90 p-2 ${
+                                                          isSelected
+                                                            ? "border-accent ring-1 ring-accent/40"
+                                                            : "border-black/10"
+                                                        }`}
+                                                      >
+                                                        <button
+                                                          type="button"
+                                                          className="w-full text-left"
+                                                          onClick={() => handleSelectReviewItem(item)}
+                                                        >
+                                                          <div className="flex items-start justify-between gap-2">
+                                                            <p className="text-sm text-ink">{item.displayValue}</p>
+                                                            <span
+                                                              className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                                                                confidenceTone === "high"
+                                                                  ? "bg-emerald-100 text-emerald-700"
+                                                                  : confidenceTone === "medium"
+                                                                  ? "bg-amber-100 text-amber-700"
+                                                                  : "bg-red-100 text-red-700"
+                                                              }`}
+                                                            >
+                                                              Confianza {(item.confidence * 100).toFixed(0)}%
+                                                            </span>
+                                                          </div>
+                                                        </button>
+                                                        <button
+                                                          type="button"
+                                                          aria-disabled={!item.evidence?.page}
+                                                          className={`mt-2 inline-flex items-center gap-1 text-[11px] ${
+                                                            item.evidence?.page
+                                                              ? "text-ink underline underline-offset-2"
+                                                              : "cursor-not-allowed text-muted/70"
+                                                          }`}
+                                                          onClick={(event) => {
+                                                            event.stopPropagation();
+                                                            handleOpenSourceFromEvidence(item);
+                                                          }}
+                                                        >
+                                                          <span className="text-muted">Fuente:</span>
+                                                          <span className="font-semibold">
+                                                            {item.evidence?.page ? `Página ${item.evidence.page}` : "—"}
+                                                          </span>
+                                                        </button>
+                                                      </div>
+                                                    );
+                                                  })}
+                                                </div>
+                                              </article>
+                                            );
+                                          }
+
+                                          const item = field.items[0];
+                                          if (!item) {
+                                            return null;
+                                          }
+                                          const confidenceTone = getConfidenceLabel(item.confidence);
+                                          const isSelected = selectedFieldId === item.id;
+                                          const isExpanded = Boolean(expandedFieldValues[item.id]);
                                           const valueText = isExpanded
-                                            ? field.displayValue
-                                            : truncateText(field.displayValue, 140);
-                                          const canExpand = field.displayValue.length > 140;
+                                            ? item.displayValue
+                                            : truncateText(item.displayValue, 140);
+                                          const canExpand = item.displayValue.length > 140;
                                           return (
                                             <article
                                               key={field.id}
@@ -2468,7 +2617,7 @@ export function App() {
                                               <button
                                                 type="button"
                                                 className="w-full text-left"
-                                                onClick={() => handleSelectReviewField(field)}
+                                                onClick={() => handleSelectReviewItem(item)}
                                               >
                                                 <div className="flex items-start justify-between gap-2">
                                                   <p className="text-xs font-semibold text-ink">{field.label}</p>
@@ -2481,12 +2630,12 @@ export function App() {
                                                         : "bg-red-100 text-red-700"
                                                     }`}
                                                   >
-                                                    Confianza {(field.confidence * 100).toFixed(0)}%
+                                                    Confianza {(item.confidence * 100).toFixed(0)}%
                                                   </span>
                                                 </div>
                                                 <p
                                                   className={`mt-2 text-sm ${
-                                                    field.isMissing ? "italic text-muted" : "text-ink"
+                                                    item.isMissing ? "italic text-muted" : "text-ink"
                                                   }`}
                                                 >
                                                   {valueText}
@@ -2499,7 +2648,7 @@ export function App() {
                                                   onClick={() =>
                                                     setExpandedFieldValues((current) => ({
                                                       ...current,
-                                                      [field.id]: !current[field.id],
+                                                      [item.id]: !current[item.id],
                                                     }))
                                                   }
                                                 >
@@ -2508,20 +2657,20 @@ export function App() {
                                               )}
                                               <button
                                                 type="button"
-                                                aria-disabled={!field.evidence?.page}
+                                                aria-disabled={!item.evidence?.page}
                                                 className={`mt-2 inline-flex items-center gap-1 text-[11px] ${
-                                                  field.evidence?.page
+                                                  item.evidence?.page
                                                     ? "text-ink underline underline-offset-2"
                                                     : "cursor-not-allowed text-muted/70"
                                                 }`}
                                                 onClick={(event) => {
                                                   event.stopPropagation();
-                                                  handleOpenSourceFromEvidence(field);
+                                                  handleOpenSourceFromEvidence(item);
                                                 }}
                                               >
                                                 <span className="text-muted">Fuente:</span>
                                                 <span className="font-semibold">
-                                                  {field.evidence?.page ? `Página ${field.evidence.page}` : "—"}
+                                                  {item.evidence?.page ? `Página ${item.evidence.page}` : "—"}
                                                 </span>
                                               </button>
                                             </article>
@@ -2537,14 +2686,102 @@ export function App() {
                                   Otros campos extraídos
                                 </p>
                                 <div className="mt-2 space-y-2">
-                                  {filteredOtherFields.length === 0 && (
+                                  {otherDisplayFields.length === 0 && (
                                     <p className="rounded-xl border border-black/10 bg-white/90 px-3 py-2 text-xs text-muted">
                                       No hay otros campos extraídos.
                                     </p>
                                   )}
-                                  {filteredOtherFields.map((field) => {
-                                    const confidenceTone = getConfidenceLabel(field.confidence);
-                                    const isSelected = selectedFieldId === field.id;
+                                  {otherDisplayFields.map((field) => {
+                                    if (field.repeatable) {
+                                      const countLabel =
+                                        field.items.length === 1
+                                          ? "1 elemento"
+                                          : `${field.items.length} elementos`;
+                                      return (
+                                        <article
+                                          key={field.id}
+                                          className="rounded-xl border border-black/10 bg-white p-3"
+                                        >
+                                          <div className="flex items-start justify-between gap-2">
+                                            <p className="text-xs font-semibold text-ink">{field.label}</p>
+                                            {field.items.length > 0 && (
+                                              <span className="rounded-full border border-black/10 px-2 py-0.5 text-[10px] font-semibold text-muted">
+                                                {countLabel}
+                                              </span>
+                                            )}
+                                          </div>
+                                          <div className="mt-2 space-y-2">
+                                            {field.isEmptyList && (
+                                              <p className="text-sm italic text-muted">
+                                                {EMPTY_LIST_PLACEHOLDER}
+                                              </p>
+                                            )}
+                                            {field.items.map((item) => {
+                                              const confidenceTone = getConfidenceLabel(item.confidence);
+                                              const isSelected = selectedFieldId === item.id;
+                                              return (
+                                                <div
+                                                  key={item.id}
+                                                  className={`rounded-lg border bg-white/90 p-2 ${
+                                                    isSelected
+                                                      ? "border-accent ring-1 ring-accent/40"
+                                                      : "border-black/10"
+                                                  }`}
+                                                >
+                                                  <button
+                                                    type="button"
+                                                    className="w-full text-left"
+                                                    onClick={() => handleSelectReviewItem(item)}
+                                                  >
+                                                    <div className="flex items-start justify-between gap-2">
+                                                      <p className="text-sm text-ink">{item.displayValue}</p>
+                                                      <span
+                                                        className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                                                          confidenceTone === "high"
+                                                            ? "bg-emerald-100 text-emerald-700"
+                                                            : confidenceTone === "medium"
+                                                            ? "bg-amber-100 text-amber-700"
+                                                            : "bg-red-100 text-red-700"
+                                                        }`}
+                                                      >
+                                                        Confianza {(item.confidence * 100).toFixed(0)}%
+                                                      </span>
+                                                    </div>
+                                                  </button>
+                                                  <button
+                                                    type="button"
+                                                    aria-disabled={!item.evidence?.page}
+                                                    className={`mt-2 inline-flex items-center gap-1 text-[11px] ${
+                                                      item.evidence?.page
+                                                        ? "text-ink underline underline-offset-2"
+                                                        : "cursor-not-allowed text-muted/70"
+                                                    }`}
+                                                    onClick={(event) => {
+                                                      event.stopPropagation();
+                                                      handleOpenSourceFromEvidence(item);
+                                                    }}
+                                                  >
+                                                    <span className="text-muted">Fuente:</span>
+                                                    <span className="font-semibold">
+                                                      {item.evidence?.page
+                                                        ? `Página ${item.evidence.page}`
+                                                        : "—"}
+                                                    </span>
+                                                  </button>
+                                                </div>
+                                              );
+                                            })}
+                                          </div>
+                                        </article>
+                                      );
+                                    }
+
+                                    const item = field.items[0];
+                                    if (!item) {
+                                      return null;
+                                    }
+                                    const confidenceTone = getConfidenceLabel(item.confidence);
+                                    const isSelected = selectedFieldId === item.id;
                                     return (
                                       <article
                                         key={field.id}
@@ -2555,7 +2792,7 @@ export function App() {
                                         <button
                                           type="button"
                                           className="w-full text-left"
-                                          onClick={() => handleSelectReviewField(field)}
+                                          onClick={() => handleSelectReviewItem(item)}
                                         >
                                           <div className="flex items-start justify-between gap-2">
                                             <p className="text-xs font-semibold text-ink">{field.label}</p>
@@ -2568,27 +2805,33 @@ export function App() {
                                                   : "bg-red-100 text-red-700"
                                               }`}
                                             >
-                                              Confianza {(field.confidence * 100).toFixed(0)}%
+                                              Confianza {(item.confidence * 100).toFixed(0)}%
                                             </span>
                                           </div>
-                                          <p className="mt-2 text-sm text-ink">{field.displayValue}</p>
+                                          <p
+                                            className={`mt-2 text-sm ${
+                                              item.isMissing ? "italic text-muted" : "text-ink"
+                                            }`}
+                                          >
+                                            {item.displayValue}
+                                          </p>
                                         </button>
                                         <button
                                           type="button"
-                                          aria-disabled={!field.evidence?.page}
+                                          aria-disabled={!item.evidence?.page}
                                           className={`mt-2 inline-flex items-center gap-1 text-[11px] ${
-                                            field.evidence?.page
+                                            item.evidence?.page
                                               ? "text-ink underline underline-offset-2"
                                               : "cursor-not-allowed text-muted/70"
                                           }`}
                                           onClick={(event) => {
                                             event.stopPropagation();
-                                            handleOpenSourceFromEvidence(field);
+                                            handleOpenSourceFromEvidence(item);
                                           }}
                                         >
                                           <span className="text-muted">Fuente:</span>
                                           <span className="font-semibold">
-                                            {field.evidence?.page ? `Página ${field.evidence.page}` : "—"}
+                                            {item.evidence?.page ? `Página ${item.evidence.page}` : "—"}
                                           </span>
                                         </button>
                                       </article>
