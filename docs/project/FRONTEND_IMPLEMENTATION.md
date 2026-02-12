@@ -163,6 +163,7 @@ If matching fails:
 ## Confidence Rendering
 
 Confidence values are rendered as **visual attention signals**, not as control mechanisms.
+Confidence semantics are owned by [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md), and interaction behavior is owned by [`docs/project/UX_DESIGN.md`](UX_DESIGN.md).
 
 Frontend representation:
 - qualitative signal first (e.g. color or emphasis),

@@ -191,6 +191,7 @@ Authority: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix C3
 
 ## Structured interpretation schema 
 Authority: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix D (Structured Interpretation Schema v0).
+Product semantics for confidence are defined in [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md); UX behavior remains in [`docs/project/UX_DESIGN.md`](UX_DESIGN.md).
 
 ### Storage contract
 Authority:

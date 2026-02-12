@@ -65,6 +65,17 @@ well understood, explainable, and reversible.
 
 ---
 
+## 2.1 Confidence Principles (Product-Level)
+
+Confidence is a **signal about interpretation stability**, not a decision or a truth claim.
+
+Product guarantees:
+- Confidence guides attention and prioritization; it never blocks decisions or actions.
+- Confidence reflects consistency over time/context for similar interpretations.
+- Confidence may decrease faster than it increases when new contradictory evidence appears.
+
+---
+
 ## 3. Structural Signals & Pending Review
 
 Some human actions carry **system-level meaning** beyond a single document.
@@ -159,6 +170,23 @@ Critical concepts introduce a stricter governance threshold:
 - Decisions affect **future interpretations only**.
 
 Criticality is a governance concern, not a workflow constraint.
+
+---
+
+### 4.4 Critical / Non-Reversible Changes Policy
+
+Some system-level changes are treated as **critical/non-reversible** because they can
+reshape future interpretation semantics and are costly to safely undo.
+
+Critical/non-reversible changes include (non-exhaustive):
+- schema-level key add/remove/rename decisions,
+- key remapping that changes canonical meaning,
+- changes affecting the definition/classification of critical concepts.
+
+Product guarantees:
+- Veterinarian workflow remains local to single-document resolution and never carries governance burden.
+- Reviewer governance handles cross-document/system-level policy decisions explicitly and prospectively.
+- Stricter handling applies only to governance decisions, never as added friction for veterinarians.
 
 ---
 
