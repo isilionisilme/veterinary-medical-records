@@ -1956,19 +1956,16 @@ export function App() {
   );
 
   return (
-    <div className="min-h-screen px-6 py-10">
-      <header className="sticky top-0 z-40 mx-auto flex w-full max-w-6xl flex-col gap-3 bg-white/90 pb-3 backdrop-blur">
-        <p className="text-sm uppercase tracking-[0.3em] text-muted">
-          Carga asistiva de documentos
-        </p>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="min-h-screen bg-[var(--page-bg)] px-6 py-2">
+      <header className="sticky top-0 z-40 mx-auto flex w-full max-w-6xl flex-col gap-1 py-1">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="font-display text-4xl font-semibold text-ink">
-              Subida de documentos medicos
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm text-muted">
-              Sube un PDF y revisa el documento en cuanto quede disponible.
+            <p className="text-sm font-semibold uppercase tracking-wide text-[var(--title-accent)]">
+              BARKIBU
             </p>
+            <h1 className="font-display text-2xl font-semibold leading-tight text-[var(--title-accent)]">
+              Revisión de reembolsos
+            </h1>
           </div>
           {downloadUrl && (
             <a href={downloadUrl} className="self-start" target="_blank" rel="noreferrer">
@@ -1981,7 +1978,7 @@ export function App() {
         </div>
       </header>
 
-      <main className="relative mx-auto mt-10 w-full max-w-6xl">
+      <main className="relative mx-auto mt-2 w-full max-w-6xl">
         <div className="mb-4 flex flex-wrap items-center gap-3">
           {activeId && (
             <div
@@ -2017,11 +2014,6 @@ export function App() {
                 Modo revisión
               </button>
             </div>
-          )}
-          {!activeId && (
-            <span className="text-sm text-muted">
-              Selecciona un documento para activar el modo revisión.
-            </span>
           )}
           {activeId && (
             <span className="text-sm text-muted">

@@ -10,11 +10,13 @@
   --muted: #8a7f74;
   --accent: #d05b2d;
   --accent-soft: #f1d1c3;
+  --page-bg: #ebf5ff;
+  --title-accent: #fc4e1b;
 }
 
 body {
   font-family: "Inter", sans-serif;
-  background: radial-gradient(circle at top, #f9ede3 0%, #f7f2ea 40%, #efe5d8 100%);
+  background: var(--page-bg);
   min-height: 100vh;
 }
 
