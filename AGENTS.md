@@ -10,6 +10,8 @@ This file is the AI assistant entry point. Keep reads small and follow the route
 ## Mandatory triggers
 - Starting new work: follow `docs/agent_router/01_WORKFLOW/START_WORK/00_entry.md` (branch-first).
 - Pull requests: follow `docs/agent_router/01_WORKFLOW/PULL_REQUESTS/00_entry.md` (classify PR).
+- User asks to merge a PR (for example: "merge this PR", "merge PR #123", or equivalent): execute the merge protocol in `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/210_pull-requests.md` end-to-end.
+  Treat this request as explicit authorization to delete the PR head branch when required by that protocol (remote and local for that PR only).
 - Code PRs: load `docs/agent_router/01_WORKFLOW/CODE_REVIEW/00_entry.md`.
 - User-visible changes: load `docs/agent_router/02_PRODUCT/USER_VISIBLE/00_entry.md` then UX/Brand.
 - User indicates documentation was updated (any language or paraphrase): load `docs/agent_router/01_WORKFLOW/DOC_UPDATES/00_entry.md`.
