@@ -1,16 +1,12 @@
-# 1) Brand Character (Invariant)
+# Brand character
 
-The product must look and read as:
-- Calm
-- Trustworthy
-- Healthcare-adjacent
-- Modern and restrained
+The UI must feel:
+- Calm, trustworthy, healthcare-adjacent
+- Modern, restrained, productivity-oriented
 
-Avoid anything that feels:
-- Flashy or playful
-- Experimental or “tech demo”
-- Corporate-heavy or legalistic
-
-**Default rule:** visual calm and clarity over expressiveness.
+Avoid:
+- Marketing "hero" aesthetics inside the tool
+- Flashy gradients, heavy shadows, playful/experimental UI
+- Overly corporate or legalistic copy
 
 ---

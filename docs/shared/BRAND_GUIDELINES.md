@@ -1,109 +1,142 @@
-# Barkibu — Brand Guidelines  
-**Visual Identity & Tone of Voice (Inferred)**
+# Barkibu — Brand Guidelines (Project Canonical)
 
-**Note:** This is the canonical location for brand guidelines in this repository.
+## Purpose
+Single source of truth for **visual identity** (colors/typography/layout primitives) and **UI copy tone** used by Codex and contributors.
 
-**Audience:** AI Coding Assistant (Codex) and contributors  
-**Purpose:** Ensure that all UI code and user-facing copy generated during development is visually and tonally consistent with Barkibu’s corporate identity.
-
----
-
-## 0) Scope & Precedence
-
-This document defines **ONLY**:
-- Visual identity (colors, typography, layout primitives)
-- Tone and wording of user-facing text
-
-This document does **NOT** define:
-- UX flows or interactions
-- Functional behavior
-- Business logic
-
-If any conflict exists:
-- UX and functional documents take precedence.
-- These guidelines apply strictly to **visual styling and wording**.
+## Scope & precedence
+- Applies to: **UI styling** and **user-facing text** only.
+- Does not define: product behavior, UX flows, business rules.
+- If there is conflict: **UX/requirements docs > this file**.
 
 ---
 
-## 1) Brand Character (Invariant)
+## Brand character
+The UI must feel:
+- Calm, trustworthy, healthcare-adjacent
+- Modern, restrained, productivity-oriented
 
-The product must look and read as:
-- Calm
-- Trustworthy
-- Healthcare-adjacent
-- Modern and restrained
-
-Avoid anything that feels:
-- Flashy or playful
-- Experimental or “tech demo”
-- Corporate-heavy or legalistic
-
-**Default rule:** visual calm and clarity over expressiveness.
+Avoid:
+- Marketing "hero" aesthetics inside the tool
+- Flashy gradients, heavy shadows, playful/experimental UI
+- Overly corporate or legalistic copy
 
 ---
 
-## 2) Color System (Exact Values — Mandatory)
+## Color system (exact values)
+Use **only** these values unless explicitly instructed otherwise.
 
-Codex must use **only** the colors defined here unless explicitly instructed otherwise.
+### Primary accent
+- **Barkibu Orange:** `#FC4E1B`
 
-### 2.1 Primary Brand Accent
-- **Soft Teal / Green:** `#2FB3A3`
+Use for:
+- Primary CTA buttons
+- Key highlights
+- Main page title (H1)
 
-Usage:
-- Primary accents
-- Highlights
-- Key emphasis elements
+Do not use orange as semantic status (error/warn/success).
 
-Do not overuse.
+### Backgrounds & surfaces
+- **Page background:** `#EBF5FF`
+- **Card/surface background:** `#FFFFFF`
 
----
+Rule: default = **light-blue page background + white cards**.
 
-### 2.2 Background Colors
-- Primary background: `#FFFFFF`
-- Secondary / subtle sections: `#F7F9FA`
-
----
-
-### 2.3 Text Colors
+### Text
 - Primary text: `#1F2933`
 - Secondary text: `#6B7280`
-- Muted / metadata text: `#9CA3AF`
+- Muted/metadata: `#9CA3AF`
 
 Avoid pure black (`#000000`).
 
----
-
-### 2.4 Borders & Dividers
-- Default border / divider: `#E5E7EB`
+### Borders/dividers
+- Default border/divider: `#E5E7EB`
 - Subtle separators: `#EEF1F4`
 
-Borders must always be light and unobtrusive.
-
----
-
-### 2.5 Semantic Support Colors (Muted)
-These colors support meaning but must never dominate the UI.
-
+### Semantic support colors (muted)
+Use only for meaning (status, confidence). Keep them subtle.
 - Success: `#4CAF93`
-- Warning / uncertainty: `#E6B566`
+- Warning/uncertainty: `#E6B566`
 - Error: `#D16D6A`
 
-Avoid bright or saturated reds, greens, or yellows.
-
 ---
 
-## 3) Typography (Exact Fonts — Mandatory)
+## Typography
+- Primary font: **Inter**
+- Fallback stack:
 
-### 3.1 Primary Font
-**Inter**
-
-Use Inter for all UI text.
-
-Fallback stack:
 ```css
 font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 ```
 
-Recommended usage:
-- Body text: 400–500
+Recommended weights:
+- Body: 400-500
 - Headings: 600
+
+---
+
+## Layout & density rules (productivity UI)
+### Header
+- Keep it **compact** (app header), not a marketing hero.
+- Avoid large white blocks behind the title.
+- Prefer minimal vertical space to maximize the working area.
+
+### Surfaces
+- Prefer white cards with gentle borders.
+- Padding inside cards: comfortable but not wasteful (aim for clarity).
+
+### Accent usage
+- Orange is an **accent**, not the primary UI color.
+- Most structure should be neutral (grays/white).
+
+---
+
+## Components
+### Buttons
+- Primary: background `#FC4E1B`, text `#FFFFFF`
+- Secondary: neutral outline or light fill; neutral text
+
+### Links
+- Evidence/source links can use orange when they are meaningful actions.
+- Utility links can remain neutral.
+
+### Cards
+- White background, subtle border.
+- Shadows (if used) must be soft; avoid heavy elevation.
+
+### Confidence/status pills
+- Use semantic colors (success/warn/error).
+- Never use orange as a "warning/low confidence" color.
+
+---
+
+## Tokenization (implementation requirement)
+Avoid scattering hex codes across components.
+
+Preferred (Tailwind): extend theme with:
+- `brand.accent = #FC4E1B`
+- `brand.bg = #EBF5FF`
+
+Alternative: CSS variables:
+- `--brand-accent: #FC4E1B;`
+- `--brand-bg: #EBF5FF;`
+
+---
+
+## Tone of voice (UI copy)
+### General
+- Clear, calm, professional
+- Short, task-oriented
+- Prefer concrete verbs; avoid marketing slogans
+
+### Preferred product naming (internal tool)
+Use language aligned with claims/reimbursements:
+- **"Revisión de reembolsos veterinarios"** (recommended H1)
+- "Revisión de reclamaciones"
+- "Documentos"
+- "Datos estructurados"
+- "Fuente"
+
+Avoid:
+- "Carga asistiva de documentos"
+- "Revisión asistida editorial veterinario"
+- Over-explaining obvious actions with long helper sentences

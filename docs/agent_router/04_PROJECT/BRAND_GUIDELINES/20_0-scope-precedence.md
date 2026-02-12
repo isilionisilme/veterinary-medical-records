@@ -1,16 +1,5 @@
-# 0) Scope & Precedence
+# Legacy compatibility pointer
 
-This document defines **ONLY**:
-- Visual identity (colors, typography, layout primitives)
-- Tone and wording of user-facing text
-
-This document does **NOT** define:
-- UX flows or interactions
-- Functional behavior
-- Business logic
-
-If any conflict exists:
-- UX and functional documents take precedence.
-- These guidelines apply strictly to **visual styling and wording**.
+Canonical source: `docs/agent_router/03_SHARED/BRAND_GUIDELINES/20_0-scope-precedence.md`.
 
 ---

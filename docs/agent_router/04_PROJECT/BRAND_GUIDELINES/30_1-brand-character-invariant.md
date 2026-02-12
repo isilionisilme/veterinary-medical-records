@@ -1,16 +1,5 @@
-# 1) Brand Character (Invariant)
+# Legacy compatibility pointer
 
-The product must look and read as:
-- Calm
-- Trustworthy
-- Healthcare-adjacent
-- Modern and restrained
-
-Avoid anything that feels:
-- Flashy or playful
-- Experimental or “tech demo”
-- Corporate-heavy or legalistic
-
-**Default rule:** visual calm and clarity over expressiveness.
+Canonical source: `docs/agent_router/03_SHARED/BRAND_GUIDELINES/30_1-brand-character-invariant.md`.
 
 ---

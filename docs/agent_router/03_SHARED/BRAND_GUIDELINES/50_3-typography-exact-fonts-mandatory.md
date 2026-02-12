@@ -1,15 +1,12 @@
-# 3) Typography (Exact Fonts — Mandatory)
+# Typography
 
-## 3.1 Primary Font
-**Inter**
+- Primary font: **Inter**
+- Fallback stack:
 
-Use Inter for all UI text.
-
-Fallback stack:
 ```css
 font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 ```
 
-Recommended usage:
-- Body text: 400–500
+Recommended weights:
+- Body: 400-500
 - Headings: 600
