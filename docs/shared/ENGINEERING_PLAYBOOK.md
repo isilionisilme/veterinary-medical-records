@@ -292,6 +292,9 @@ Workflow reference:
   - User stories:
     - `feature/<ID>-<short-representative-slug>`
     - The slug must be concise and describe the purpose of the user story.
+  - Improvements:
+    - `improvement/<short-slug>`
+    - User-facing changes that improve a previous implementation. 
   - Technical non-user-facing work (refactors, chores, CI, docs, fixes):
     - `refactor/<short-slug>`
     - `chore/<short-slug>`
