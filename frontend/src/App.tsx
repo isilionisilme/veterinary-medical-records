@@ -142,6 +142,7 @@ type ReviewDisplayField = {
   label: string;
   section: string;
   order: number;
+  isCritical: boolean;
   valueType: string;
   repeatable: boolean;
   items: ReviewSelectableField[];
@@ -1681,6 +1682,7 @@ export function App() {
           label: definition.label,
           section: definition.section,
           order: definition.order,
+          isCritical: definition.critical,
           valueType: definition.value_type,
           repeatable: true,
           items,
@@ -1716,6 +1718,7 @@ export function App() {
         label: definition.label,
         section: definition.section,
         order: definition.order,
+        isCritical: definition.critical,
         valueType: definition.value_type,
         repeatable: false,
         items: [item],
@@ -1768,6 +1771,7 @@ export function App() {
           label,
           section: "Otros campos extraídos",
           order: index + 1,
+          isCritical: false,
           valueType: fields[0]?.value_type ?? "string",
           repeatable: true,
           items,
@@ -1802,6 +1806,7 @@ export function App() {
         label,
         section: "Otros campos extraídos",
         order: index + 1,
+        isCritical: false,
         valueType: field?.value_type ?? "string",
         repeatable: false,
         items: [item],
@@ -2561,19 +2566,34 @@ export function App() {
                                                           className="w-full text-left"
                                                           onClick={() => handleSelectReviewItem(item)}
                                                         >
-                                                          <div className="flex items-start justify-between gap-2">
-                                                            <p className="text-sm text-ink">{item.displayValue}</p>
-                                                            <span
-                                                              className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                                                                confidenceTone === "high"
-                                                                  ? "bg-emerald-100 text-emerald-700"
-                                                                  : confidenceTone === "medium"
-                                                                  ? "bg-amber-100 text-amber-700"
-                                                                  : "bg-red-100 text-red-700"
-                                                              }`}
+                                                          <div className="flex items-start justify-between gap-3">
+                                                            <div className="min-w-0">
+                                                              <p className="truncate text-sm text-ink">{item.displayValue}</p>
+                                                            </div>
+                                                            <div
+                                                              data-testid={`badge-group-${item.id}`}
+                                                              className="flex shrink-0 flex-wrap items-center justify-end gap-2 text-right"
                                                             >
-                                                              Confianza {(item.confidence * 100).toFixed(0)}%
-                                                            </span>
+                                                              {field.isCritical && (
+                                                                <span
+                                                                  data-testid={`critical-badge-${field.key}`}
+                                                                  className="rounded-full border border-black/10 px-2 py-0.5 text-[10px] font-semibold text-muted"
+                                                                >
+                                                                  CRÍTICO
+                                                                </span>
+                                                              )}
+                                                              <span
+                                                                className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                                                                  confidenceTone === "high"
+                                                                    ? "bg-emerald-100 text-emerald-700"
+                                                                    : confidenceTone === "medium"
+                                                                    ? "bg-amber-100 text-amber-700"
+                                                                    : "bg-red-100 text-red-700"
+                                                                }`}
+                                                              >
+                                                                Confianza {(item.confidence * 100).toFixed(0)}%
+                                                              </span>
+                                                            </div>
                                                           </div>
                                                         </button>
                                                         <button
@@ -2625,19 +2645,34 @@ export function App() {
                                                 className="w-full text-left"
                                                 onClick={() => handleSelectReviewItem(item)}
                                               >
-                                                <div className="flex items-start justify-between gap-2">
-                                                  <p className="text-xs font-semibold text-ink">{field.label}</p>
-                                                  <span
-                                                    className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                                                      confidenceTone === "high"
-                                                        ? "bg-emerald-100 text-emerald-700"
-                                                        : confidenceTone === "medium"
-                                                        ? "bg-amber-100 text-amber-700"
-                                                        : "bg-red-100 text-red-700"
-                                                    }`}
+                                                <div className="flex items-start justify-between gap-3">
+                                                  <div className="min-w-0">
+                                                    <p className="truncate text-xs font-semibold text-ink">{field.label}</p>
+                                                  </div>
+                                                  <div
+                                                    data-testid={`badge-group-${item.id}`}
+                                                    className="flex shrink-0 flex-wrap items-center justify-end gap-2 text-right"
                                                   >
-                                                    Confianza {(item.confidence * 100).toFixed(0)}%
-                                                  </span>
+                                                    {field.isCritical && (
+                                                      <span
+                                                        data-testid={`critical-badge-${field.key}`}
+                                                        className="rounded-full border border-black/10 px-2 py-0.5 text-[10px] font-semibold text-muted"
+                                                      >
+                                                        CRÍTICO
+                                                      </span>
+                                                    )}
+                                                    <span
+                                                      className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                                                        confidenceTone === "high"
+                                                          ? "bg-emerald-100 text-emerald-700"
+                                                          : confidenceTone === "medium"
+                                                          ? "bg-amber-100 text-amber-700"
+                                                          : "bg-red-100 text-red-700"
+                                                      }`}
+                                                    >
+                                                      Confianza {(item.confidence * 100).toFixed(0)}%
+                                                    </span>
+                                                  </div>
                                                 </div>
                                                 <p
                                                   className={`mt-2 text-sm ${
@@ -2739,19 +2774,26 @@ export function App() {
                                                     className="w-full text-left"
                                                     onClick={() => handleSelectReviewItem(item)}
                                                   >
-                                                    <div className="flex items-start justify-between gap-2">
-                                                      <p className="text-sm text-ink">{item.displayValue}</p>
-                                                      <span
-                                                        className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                                                          confidenceTone === "high"
-                                                            ? "bg-emerald-100 text-emerald-700"
-                                                            : confidenceTone === "medium"
-                                                            ? "bg-amber-100 text-amber-700"
-                                                            : "bg-red-100 text-red-700"
-                                                        }`}
+                                                    <div className="flex items-start justify-between gap-3">
+                                                      <div className="min-w-0">
+                                                        <p className="truncate text-sm text-ink">{item.displayValue}</p>
+                                                      </div>
+                                                      <div
+                                                        data-testid={`badge-group-${item.id}`}
+                                                        className="flex shrink-0 flex-wrap items-center justify-end gap-2 text-right"
                                                       >
-                                                        Confianza {(item.confidence * 100).toFixed(0)}%
-                                                      </span>
+                                                        <span
+                                                          className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                                                            confidenceTone === "high"
+                                                              ? "bg-emerald-100 text-emerald-700"
+                                                              : confidenceTone === "medium"
+                                                              ? "bg-amber-100 text-amber-700"
+                                                              : "bg-red-100 text-red-700"
+                                                          }`}
+                                                        >
+                                                          Confianza {(item.confidence * 100).toFixed(0)}%
+                                                        </span>
+                                                      </div>
                                                     </div>
                                                   </button>
                                                   <button
@@ -2800,19 +2842,26 @@ export function App() {
                                           className="w-full text-left"
                                           onClick={() => handleSelectReviewItem(item)}
                                         >
-                                          <div className="flex items-start justify-between gap-2">
-                                            <p className="text-xs font-semibold text-ink">{field.label}</p>
-                                            <span
-                                              className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                                                confidenceTone === "high"
-                                                  ? "bg-emerald-100 text-emerald-700"
-                                                  : confidenceTone === "medium"
-                                                  ? "bg-amber-100 text-amber-700"
-                                                  : "bg-red-100 text-red-700"
-                                              }`}
+                                          <div className="flex items-start justify-between gap-3">
+                                            <div className="min-w-0">
+                                              <p className="truncate text-xs font-semibold text-ink">{field.label}</p>
+                                            </div>
+                                            <div
+                                              data-testid={`badge-group-${item.id}`}
+                                              className="flex shrink-0 flex-wrap items-center justify-end gap-2 text-right"
                                             >
-                                              Confianza {(item.confidence * 100).toFixed(0)}%
-                                            </span>
+                                              <span
+                                                className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                                                  confidenceTone === "high"
+                                                    ? "bg-emerald-100 text-emerald-700"
+                                                    : confidenceTone === "medium"
+                                                    ? "bg-amber-100 text-amber-700"
+                                                    : "bg-red-100 text-red-700"
+                                                }`}
+                                              >
+                                                Confianza {(item.confidence * 100).toFixed(0)}%
+                                              </span>
+                                            </div>
                                           </div>
                                           <p
                                             className={`mt-2 text-sm ${
