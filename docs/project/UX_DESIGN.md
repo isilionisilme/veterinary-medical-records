@@ -129,6 +129,19 @@ From the veterinarian’s perspective:
 
 ---
 
+## 4.1 Review-in-Context Contract
+
+The review experience must remain usable and explainable even when evidence rendering is imperfect.
+
+Normative behavior:
+- Selecting a field must navigate the document viewer to the field evidence context (at minimum, page jump).
+- `View evidence` must always present useful context (page + snippet), including when precise highlighting is unavailable.
+- Highlighting should be treated as progressive enhancement (best effort only), and failure to highlight must not block review flow.
+- Low confidence should guide attention and inspection priority.
+- Low confidence must not block editing, marking reviewed, or any other veterinarian action.
+
+---
+
 ## 5. Structural Effects — UX Consequences Only
 
 Some user actions may have **system-level consequences**.
