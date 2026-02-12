@@ -76,11 +76,37 @@ If the AI assistant cannot post a comment to the Pull Request (for example due t
 
 For docs-only PRs, no review comment is required (review is skipped by policy).
 
-## Post-merge Cleanup (AI Assistants)
+## Merge Execution + Post-merge Cleanup (AI Assistants)
 
-After the user confirms that a Pull Request has been **merged into `main`**, the AI assistant must run the following **post-merge cleanup** procedure automatically.
+This section supports two entry points:
+- User already merged the PR manually and asks for cleanup.
+- User asks the assistant to merge the PR (for example: "merge this PR").
+
+If the user asks the assistant to merge the PR, execute merge and cleanup end-to-end in one flow.
 
 Only STOP and ask for confirmation if the repository state is unsafe or ambiguous (examples: uncommitted changes, rebase/merge in progress, conflicts, or unclear stash purpose/ownership).
+
+### When user asks "merge this PR"
+
+1) Preconditions (must pass before merge):
+   - Ensure working tree is clean (`git status`).
+   - Sync refs and prune (`git fetch --prune`).
+   - Verify PR is mergeable without bypassing protections:
+     - required checks/CI are green,
+     - required approvals are present,
+     - no merge conflicts.
+
+2) Merge strategy:
+   - Default to squash merge unless user requests another strategy.
+   - Use GitHub CLI merge command for the target PR.
+   - If merge queue or pending-check flow requires auto-merge, use auto-merge mode.
+
+3) Branch deletion authorization:
+   - A direct user request to merge a PR is implicit authorization to delete that PR head branch as part of the merge flow.
+   - Delete the PR head branch on remote and local after merge (for that PR only).
+   - Do not delete any branch that is not the PR head branch.
+
+4) Continue with the post-merge cleanup checklist below.
 
 ### Post-merge cleanup checklist
 
@@ -97,12 +123,12 @@ Only STOP and ask for confirmation if the repository state is unsafe or ambiguou
 
 4) Pull the latest changes from `origin/main` into local `main`.
 
-5) Delete the **local** branch that was used for the merged PR:
+5) Delete the branch used for the merged PR:
    - If the branch is currently checked out, switch to `main` first.
-   - Try safe deletion first: `git branch -d <branch>`.
-   - If deletion fails due to “not fully merged” (common with squash merges):
+   - If this flow started from "merge this PR", delete remote and local PR head branch.
+   - If this flow started after user-reported manual merge, default to deleting local branch only.
+   - For local deletion, try safe deletion first: `git branch -d <branch>`.
+   - If deletion fails due to "not fully merged" (common with squash merges):
      - Verify the branch has **no unique commits** relative to `main` (for example: `git log <branch> --not main`).
      - If there are no unique commits, it is safe to force delete: `git branch -D <branch>`.
      - If unique commits exist, STOP and ask what to do.
-
-By default, this procedure deletes only local state (local branches and stashes). Do not delete remote branches unless explicitly requested.
