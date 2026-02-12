@@ -201,6 +201,51 @@ class ProcessingHistory:
     runs: list[ProcessingRunHistory]
 
 
+@dataclass(frozen=True, slots=True)
+class LatestCompletedRunReview:
+    """Latest completed run summary for review context."""
+
+    run_id: str
+    state: str
+    completed_at: str | None
+    failure_type: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class ActiveInterpretationReview:
+    """Active structured interpretation payload for review."""
+
+    interpretation_id: str
+    version_number: int
+    data: dict[str, object]
+
+
+@dataclass(frozen=True, slots=True)
+class RawTextArtifactAvailability:
+    """Raw text artifact availability for review context."""
+
+    run_id: str
+    available: bool
+
+
+@dataclass(frozen=True, slots=True)
+class DocumentReview:
+    """Review payload for latest completed run context."""
+
+    document_id: str
+    latest_completed_run: LatestCompletedRunReview
+    active_interpretation: ActiveInterpretationReview
+    raw_text_artifact: RawTextArtifactAvailability
+
+
+@dataclass(frozen=True, slots=True)
+class DocumentReviewLookupResult:
+    """Outcome for resolving review context for a document."""
+
+    review: DocumentReview | None
+    unavailable_reason: str | None
+
+
 def get_processing_history(
     *, document_id: str, repository: DocumentRepository
 ) -> ProcessingHistory | None:
@@ -220,6 +265,74 @@ def get_processing_history(
     run_rows = repository.list_processing_runs(document_id=document_id)
     runs = [_to_processing_run_history(run, repository) for run in run_rows]
     return ProcessingHistory(document_id=document_id, runs=runs)
+
+
+def get_document_review(
+    *,
+    document_id: str,
+    repository: DocumentRepository,
+    storage: FileStorage,
+) -> DocumentReviewLookupResult | None:
+    """Return review context for the latest completed run.
+
+    Returns:
+        - None when the document does not exist.
+        - DocumentReview when a completed run with interpretation is available.
+    """
+
+    document = repository.get(document_id)
+    if document is None:
+        return None
+
+    latest_completed_run = repository.get_latest_completed_run(document_id)
+    if latest_completed_run is None:
+        return DocumentReviewLookupResult(
+            review=None,
+            unavailable_reason="NO_COMPLETED_RUN",
+        )
+
+    interpretation_payload = repository.get_latest_artifact_payload(
+        run_id=latest_completed_run.run_id,
+        artifact_type="STRUCTURED_INTERPRETATION",
+    )
+    if interpretation_payload is None:
+        return DocumentReviewLookupResult(
+            review=None,
+            unavailable_reason="INTERPRETATION_MISSING",
+        )
+
+    interpretation_id = str(interpretation_payload.get("interpretation_id", ""))
+    version_number_raw = interpretation_payload.get("version_number", 1)
+    version_number = version_number_raw if isinstance(version_number_raw, int) else 1
+
+    structured_data = interpretation_payload.get("data")
+    if not isinstance(structured_data, dict):
+        structured_data = {}
+
+    return DocumentReviewLookupResult(
+        review=DocumentReview(
+            document_id=document_id,
+            latest_completed_run=LatestCompletedRunReview(
+                run_id=latest_completed_run.run_id,
+                state=latest_completed_run.state.value,
+                completed_at=latest_completed_run.completed_at,
+                failure_type=latest_completed_run.failure_type,
+            ),
+            active_interpretation=ActiveInterpretationReview(
+                interpretation_id=interpretation_id,
+                version_number=version_number,
+                data=structured_data,
+            ),
+            raw_text_artifact=RawTextArtifactAvailability(
+                run_id=latest_completed_run.run_id,
+                available=storage.exists_raw_text(
+                    document_id=latest_completed_run.document_id,
+                    run_id=latest_completed_run.run_id,
+                ),
+            ),
+        ),
+        unavailable_reason=None,
+    )
 
 
 def _to_processing_run_history(

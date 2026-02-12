@@ -42,6 +42,9 @@ class DocumentRepository(Protocol):
     def get_run(self, run_id: str) -> ProcessingRunDetails | None:
         """Return processing run details by run id, if it exists."""
 
+    def get_latest_completed_run(self, document_id: str) -> ProcessingRunDetails | None:
+        """Return the latest completed run for a document, if any."""
+
     def create_processing_run(
         self,
         *,
@@ -98,4 +101,9 @@ class DocumentRepository(Protocol):
         created_at: str,
     ) -> None:
         """Persist a run-scoped artifact record."""
+
+    def get_latest_artifact_payload(
+        self, *, run_id: str, artifact_type: str
+    ) -> dict[str, object] | None:
+        """Return latest artifact payload for a run and artifact type."""
 
