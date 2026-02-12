@@ -4,8 +4,10 @@ import { Download, RefreshCw } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { PdfViewer } from "./components/PdfViewer";
+import { SourcePanel } from "./components/SourcePanel";
 import { UploadDropzone } from "./components/UploadDropzone";
 import { Button } from "./components/ui/button";
+import { useSourcePanelState } from "./hooks/useSourcePanelState";
 import { groupProcessingSteps } from "./lib/processingHistory";
 import {
   formatDuration,
@@ -730,11 +732,6 @@ export function App() {
   const [showMissingCoreFields, setShowMissingCoreFields] = useState(true);
   const [onlyLowConfidence, setOnlyLowConfidence] = useState(false);
   const [expandedFieldValues, setExpandedFieldValues] = useState<Record<string, boolean>>({});
-  const [evidenceFocusRequestId, setEvidenceFocusRequestId] = useState(0);
-  const [isSourceOpen, setIsSourceOpen] = useState(false);
-  const [isSourcePinned, setIsSourcePinned] = useState(false);
-  const [sourcePage, setSourcePage] = useState<number | null>(null);
-  const [sourceSnippet, setSourceSnippet] = useState<string | null>(null);
   const [reviewLoadingDocId, setReviewLoadingDocId] = useState<string | null>(null);
   const [reviewLoadingSinceMs, setReviewLoadingSinceMs] = useState<number | null>(null);
   const [isHoverDevice, setIsHoverDevice] = useState(true);
@@ -758,6 +755,10 @@ export function App() {
   const latestRawTextRefreshRef = useRef<string | null>(null);
   const listPollingStartedAtRef = useRef<number | null>(null);
   const queryClient = useQueryClient();
+  const sourcePanel = useSourcePanelState({
+    isDesktopForPin,
+    onNotice: setEvidenceNotice,
+  });
 
   const downloadUrl = useMemo(() => {
     if (!activeId) {
@@ -1228,10 +1229,7 @@ export function App() {
     setSelectedFieldId(null);
     setEvidenceNotice(null);
     setExpandedFieldValues({});
-    setSourcePage(null);
-    setSourceSnippet(null);
-    setIsSourceOpen(false);
-    setIsSourcePinned(false);
+    sourcePanel.reset();
   }, [activeId]);
 
   useEffect(() => {
@@ -1716,44 +1714,9 @@ export function App() {
     return null;
   })();
 
-  const openSourceViewer = (field?: ReviewDisplayField) => {
-    const page = field?.evidence?.page ?? null;
-    const snippetValue = field?.evidence?.snippet?.trim();
-    const normalizedSnippet =
-      snippetValue && snippetValue.length > 0 ? snippetValue : null;
-
-    setSourcePage(page);
-    setSourceSnippet(normalizedSnippet);
-    setEvidenceFocusRequestId((current) => current + 1);
-    setIsSourceOpen(true);
-
-    if (!page) {
-      setEvidenceNotice("Sin evidencia disponible para este campo.");
-      return;
-    }
-
-    setEvidenceNotice(`Mostrando fuente en la página ${page}.`);
-  };
-
   const handleSelectReviewField = (field: ReviewDisplayField) => {
     setSelectedFieldId(field.id);
-    openSourceViewer(field);
-  };
-
-  const handleToggleSourcePin = () => {
-    if (!isDesktopForPin) {
-      setEvidenceNotice("Fijar solo está disponible en escritorio.");
-      return;
-    }
-    setIsSourcePinned((current) => !current);
-    setIsSourceOpen(true);
-  };
-
-  const closeOverlaySource = () => {
-    if (isSourcePinned) {
-      return;
-    }
-    setIsSourceOpen(false);
+    sourcePanel.openFromEvidence(field.evidence);
   };
 
   useEffect(() => {
@@ -1776,30 +1739,6 @@ export function App() {
     const timer = window.setTimeout(() => setEvidenceNotice(null), 3000);
     return () => window.clearTimeout(timer);
   }, [evidenceNotice]);
-
-  useEffect(() => {
-    if (isDesktopForPin) {
-      return;
-    }
-    if (isSourcePinned) {
-      setIsSourcePinned(false);
-    }
-  }, [isDesktopForPin, isSourcePinned]);
-
-  useEffect(() => {
-    if (!isSourceOpen || isSourcePinned) {
-      return;
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setIsSourceOpen(false);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isSourceOpen, isSourcePinned]);
 
   const handleDownloadRawText = () => {
     if (!rawTextContent) {
@@ -1882,45 +1821,31 @@ export function App() {
   );
 
   const sourcePanelContent = (
-    <div className="flex h-full min-h-0 flex-col rounded-2xl border border-black/10 bg-white p-4 shadow-xl">
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">Fuente</p>
-          <p className="mt-1 text-xs text-muted">
-            {sourcePage ? `Página ${sourcePage}` : "Sin página seleccionada"}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button type="button" variant="ghost" onClick={handleToggleSourcePin} disabled={!isDesktopForPin}>
-            {isSourcePinned ? "Desfijar" : "📌 Fijar"}
-          </Button>
-          <Button type="button" variant="ghost" onClick={() => setIsSourceOpen(false)}>
-            ✕
-          </Button>
-        </div>
-      </div>
-      <div data-testid="source-panel-scroll" className="mt-3 min-h-0 flex-1 overflow-y-auto">
-        {fileUrl ? (
+    <SourcePanel
+      sourcePage={sourcePanel.sourcePage}
+      sourceSnippet={sourcePanel.sourceSnippet}
+      isSourcePinned={sourcePanel.isSourcePinned}
+      isDesktopForPin={isDesktopForPin}
+      onTogglePin={sourcePanel.togglePin}
+      onClose={() => sourcePanel.closeOverlay()}
+      content={
+        fileUrl ? (
           <PdfViewer
             key={`source-${activeId ?? "empty"}`}
             fileUrl={fileUrl}
             filename={filename}
             isDragOver={false}
-            focusPage={sourcePage}
-            highlightSnippet={sourceSnippet}
-            focusRequestId={evidenceFocusRequestId}
+            focusPage={sourcePanel.sourcePage}
+            highlightSnippet={sourcePanel.sourceSnippet}
+            focusRequestId={sourcePanel.focusRequestId}
           />
         ) : (
           <div className="flex h-40 items-center justify-center text-sm text-muted">
             No hay PDF disponible para este documento.
           </div>
-        )}
-      </div>
-      <div className="mt-3 rounded-xl border border-black/10 bg-white/90 px-3 py-2 text-xs text-muted">
-        <p className="font-semibold text-ink">Evidencia</p>
-        <p className="mt-1">{sourceSnippet ?? "Sin evidencia disponible"}</p>
-      </div>
-    </div>
+        )
+      }
+    />
   );
 
   return (
@@ -2250,7 +2175,9 @@ export function App() {
                     ) : (
                       <div
                         className={`h-full min-h-0 ${
-                          isSourceOpen && isSourcePinned && isDesktopForPin
+                          sourcePanel.isSourceOpen &&
+                          sourcePanel.isSourcePinned &&
+                          isDesktopForPin
                             ? "grid grid-cols-[minmax(0,1fr)_minmax(360px,420px)] gap-4"
                             : ""
                         }`}
@@ -2275,7 +2202,7 @@ export function App() {
                             >
                               Abrir texto
                             </Button>
-                            <Button type="button" variant="ghost" onClick={() => setIsSourceOpen(true)}>
+                            <Button type="button" variant="ghost" onClick={sourcePanel.openSource}>
                               Fuente
                             </Button>
                           </div>
@@ -2499,7 +2426,7 @@ export function App() {
                           )}
                         </aside>
 
-                        {isSourceOpen && isSourcePinned && isDesktopForPin && (
+                        {sourcePanel.isSourceOpen && sourcePanel.isSourcePinned && isDesktopForPin && (
                           <aside data-testid="source-pinned-panel" className="min-h-0">
                             {sourcePanelContent}
                           </aside>
@@ -2508,14 +2435,16 @@ export function App() {
                     )}
                   </div>
                 )}
-                {activeViewerTab === "document" && isSourceOpen && (!isSourcePinned || !isDesktopForPin) && (
+                {activeViewerTab === "document" &&
+                  sourcePanel.isSourceOpen &&
+                  (!sourcePanel.isSourcePinned || !isDesktopForPin) && (
                   <>
                     <button
                       type="button"
                       data-testid="source-drawer-backdrop"
                       className="fixed inset-0 z-40 bg-black/30"
                       aria-label="Cerrar fuente"
-                      onClick={closeOverlaySource}
+                      onClick={sourcePanel.closeOverlay}
                     />
                     <div
                       data-testid="source-drawer"

@@ -286,35 +286,49 @@ def get_document_review_context(
         storage=storage,
     )
     if review is None:
+        # Defensive fallback; get_document_review currently returns a typed unavailability reason.
         return _error_response(
             status_code=status.HTTP_409_CONFLICT,
             error_code="CONFLICT",
-            message="Review is not available until a completed run exists.",
+            message="Review context is not available.",
             details={"reason": "NO_COMPLETED_RUN"},
+        )
+    if review.review is None:
+        reason = review.unavailable_reason or "NO_COMPLETED_RUN"
+        message = (
+            "Review is not available until a completed run exists."
+            if reason == "NO_COMPLETED_RUN"
+            else "Review interpretation is not available for the latest completed run."
+        )
+        return _error_response(
+            status_code=status.HTTP_409_CONFLICT,
+            error_code="CONFLICT",
+            message=message,
+            details={"reason": reason},
         )
 
     _log_event(
         event_type="DOCUMENT_REVIEW_VIEWED",
         document_id=document_id,
-        run_id=review.latest_completed_run.run_id,
+        run_id=review.review.latest_completed_run.run_id,
     )
 
     return DocumentReviewResponse(
-        document_id=review.document_id,
+        document_id=review.review.document_id,
         latest_completed_run=LatestCompletedRunReviewResponse(
-            run_id=review.latest_completed_run.run_id,
-            state=review.latest_completed_run.state,
-            completed_at=review.latest_completed_run.completed_at,
-            failure_type=review.latest_completed_run.failure_type,
+            run_id=review.review.latest_completed_run.run_id,
+            state=review.review.latest_completed_run.state,
+            completed_at=review.review.latest_completed_run.completed_at,
+            failure_type=review.review.latest_completed_run.failure_type,
         ),
         active_interpretation=ActiveInterpretationReviewResponse(
-            interpretation_id=review.active_interpretation.interpretation_id,
-            version_number=review.active_interpretation.version_number,
-            data=review.active_interpretation.data,
+            interpretation_id=review.review.active_interpretation.interpretation_id,
+            version_number=review.review.active_interpretation.version_number,
+            data=review.review.active_interpretation.data,
         ),
         raw_text_artifact=RawTextArtifactAvailabilityResponse(
-            run_id=review.raw_text_artifact.run_id,
-            available=review.raw_text_artifact.available,
+            run_id=review.review.raw_text_artifact.run_id,
+            available=review.review.raw_text_artifact.available,
         ),
     )
 

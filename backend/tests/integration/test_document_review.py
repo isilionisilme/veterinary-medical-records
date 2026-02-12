@@ -148,3 +148,18 @@ def test_document_review_returns_conflict_when_no_completed_run(test_client):
     assert payload["error_code"] == "CONFLICT"
     assert payload["details"]["reason"] == "NO_COMPLETED_RUN"
 
+
+def test_document_review_returns_conflict_when_interpretation_is_missing(test_client):
+    document_id = _upload_sample_document(test_client)
+    _insert_run(
+        document_id=document_id,
+        run_id="run-review-completed",
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+
+    response = test_client.get(f"/documents/{document_id}/review")
+    assert response.status_code == 409
+    payload = response.json()
+    assert payload["error_code"] == "CONFLICT"
+    assert payload["details"]["reason"] == "INTERPRETATION_MISSING"

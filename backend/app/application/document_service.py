@@ -238,6 +238,14 @@ class DocumentReview:
     raw_text_artifact: RawTextArtifactAvailability
 
 
+@dataclass(frozen=True, slots=True)
+class DocumentReviewLookupResult:
+    """Outcome for resolving review context for a document."""
+
+    review: DocumentReview | None
+    unavailable_reason: str | None
+
+
 def get_processing_history(
     *, document_id: str, repository: DocumentRepository
 ) -> ProcessingHistory | None:
@@ -264,7 +272,7 @@ def get_document_review(
     document_id: str,
     repository: DocumentRepository,
     storage: FileStorage,
-) -> DocumentReview | None:
+) -> DocumentReviewLookupResult | None:
     """Return review context for the latest completed run.
 
     Returns:
@@ -278,14 +286,20 @@ def get_document_review(
 
     latest_completed_run = repository.get_latest_completed_run(document_id)
     if latest_completed_run is None:
-        return None
+        return DocumentReviewLookupResult(
+            review=None,
+            unavailable_reason="NO_COMPLETED_RUN",
+        )
 
     interpretation_payload = repository.get_latest_artifact_payload(
         run_id=latest_completed_run.run_id,
         artifact_type="STRUCTURED_INTERPRETATION",
     )
     if interpretation_payload is None:
-        return None
+        return DocumentReviewLookupResult(
+            review=None,
+            unavailable_reason="INTERPRETATION_MISSING",
+        )
 
     interpretation_id = str(interpretation_payload.get("interpretation_id", ""))
     version_number_raw = interpretation_payload.get("version_number", 1)
@@ -295,26 +309,29 @@ def get_document_review(
     if not isinstance(structured_data, dict):
         structured_data = {}
 
-    return DocumentReview(
-        document_id=document_id,
-        latest_completed_run=LatestCompletedRunReview(
-            run_id=latest_completed_run.run_id,
-            state=latest_completed_run.state.value,
-            completed_at=latest_completed_run.completed_at,
-            failure_type=latest_completed_run.failure_type,
-        ),
-        active_interpretation=ActiveInterpretationReview(
-            interpretation_id=interpretation_id,
-            version_number=version_number,
-            data=structured_data,
-        ),
-        raw_text_artifact=RawTextArtifactAvailability(
-            run_id=latest_completed_run.run_id,
-            available=storage.exists_raw_text(
-                document_id=latest_completed_run.document_id,
+    return DocumentReviewLookupResult(
+        review=DocumentReview(
+            document_id=document_id,
+            latest_completed_run=LatestCompletedRunReview(
                 run_id=latest_completed_run.run_id,
+                state=latest_completed_run.state.value,
+                completed_at=latest_completed_run.completed_at,
+                failure_type=latest_completed_run.failure_type,
+            ),
+            active_interpretation=ActiveInterpretationReview(
+                interpretation_id=interpretation_id,
+                version_number=version_number,
+                data=structured_data,
+            ),
+            raw_text_artifact=RawTextArtifactAvailability(
+                run_id=latest_completed_run.run_id,
+                available=storage.exists_raw_text(
+                    document_id=latest_completed_run.document_id,
+                    run_id=latest_completed_run.run_id,
+                ),
             ),
         ),
+        unavailable_reason=None,
     )
 
 
