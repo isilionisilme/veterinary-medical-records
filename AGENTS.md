@@ -4,6 +4,7 @@ This file is the AI assistant entry point. Keep reads small and follow the route
 
 ## Review fast path (`@codex review`)
 - If the request is an explicit review trigger (for example: `@codex review`, “Do a code review for PR #...”, “Review the diff for ...”, “Run a code review now”), do not start with the general doc routing flow.
+- This fast path takes precedence over the normal `Required order` router sequence below.
 - Load only `docs/agent_router/01_WORKFLOW/CODE_REVIEW/00_entry.md` and follow it as the source of truth for review behavior and output format.
 - If that file cannot be read, use this fallback review format:
   `Severity | File:Line | Finding | Suggested fix`
@@ -40,4 +41,3 @@ This file is the AI assistant entry point. Keep reads small and follow the route
 
 ## Fallback
 If no intent matches, read `docs/agent_router/00_FALLBACK.md` and ask for clarification.
-
