@@ -150,6 +150,24 @@ describe("App upload and list flow", () => {
                 created_at: "2026-02-10T10:00:00Z",
                 fields: [
                   {
+                    field_id: `field-document-date-${docId}`,
+                    key: "document_date",
+                    value: null,
+                    value_type: "date",
+                    confidence: 0.32,
+                    is_critical: false,
+                    origin: "machine",
+                  },
+                  {
+                    field_id: `field-visit-date-${docId}`,
+                    key: "visit_date",
+                    value: "2026-02-11T00:00:00Z",
+                    value_type: "date",
+                    confidence: 0.74,
+                    is_critical: true,
+                    origin: "machine",
+                  },
+                  {
                     field_id: `field-pet-name-${docId}`,
                     key: "pet_name",
                     value: "Luna",
@@ -1223,6 +1241,20 @@ describe("App upload and list flow", () => {
     const medicationCard = within(panel).getByText("Medicacion").closest("article");
     expect(medicationCard).not.toBeNull();
     expect(within(medicationCard as HTMLElement).getByText("Sin elementos")).toBeInTheDocument();
+  });
+
+  it("falls back to visit date when document date is missing", async () => {
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+
+    await screen.findByText("Campos core");
+
+    const panel = screen.getByTestId("right-panel-scroll");
+    const documentDateCard = within(panel).getByText("Fecha del documento").closest("article");
+    const expectedDate = new Date("2026-02-11T00:00:00Z").toLocaleDateString("es-ES");
+    expect(documentDateCard).not.toBeNull();
+    expect(within(documentDateCard as HTMLElement).getByText(expectedDate)).toBeInTheDocument();
   });
 
   it("keeps right panel mounted and shows skeleton while loading interpretation", async () => {
