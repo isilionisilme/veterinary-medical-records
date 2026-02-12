@@ -772,7 +772,7 @@ export function App() {
   const latestRawTextRefreshRef = useRef<string | null>(null);
   const listPollingStartedAtRef = useRef<number | null>(null);
   const interpretationRetryMinTimerRef = useRef<number | null>(null);
-  const lastConnectivityToastKeyRef = useRef<string | null>(null);
+  const lastConnectivityToastAtRef = useRef(0);
   const queryClient = useQueryClient();
   const sourcePanel = useSourcePanelState({
     isDesktopForPin,
@@ -1537,18 +1537,19 @@ export function App() {
     return () => window.clearTimeout(timer);
   }, [connectivityToast]);
 
-  const showConnectivityToast = (toastKey: string) => {
-    if (lastConnectivityToastKeyRef.current === toastKey) {
+  const showConnectivityToast = () => {
+    const now = Date.now();
+    if (now - lastConnectivityToastAtRef.current < 5000) {
       return;
     }
-    lastConnectivityToastKeyRef.current = toastKey;
+    lastConnectivityToastAtRef.current = now;
     setConnectivityToast({});
   };
 
   useEffect(() => {
     if (documentList.isError) {
       if (isConnectivityOrServerError(documentList.error)) {
-        showConnectivityToast(`list-${documentList.errorUpdatedAt}`);
+        showConnectivityToast();
         return;
       }
       if (!hasShownListErrorToast) {
@@ -1570,7 +1571,7 @@ export function App() {
     if (!activeId || !documentReview.isError || !isConnectivityOrServerError(documentReview.error)) {
       return;
     }
-    showConnectivityToast(`review-${activeId}-${documentReview.errorUpdatedAt}`);
+    showConnectivityToast();
   }, [
     activeId,
     documentReview.isError,
@@ -1583,9 +1584,7 @@ export function App() {
     if (!loadPdf.isError || !isConnectivityOrServerError(loadPdf.error)) {
       return;
     }
-    showConnectivityToast(
-      `pdf-${latestLoadRequestIdRef.current ?? "unknown"}-${loadPdf.failureCount}`
-    );
+    showConnectivityToast();
   }, [loadPdf.error, loadPdf.failureCount, loadPdf.isError]);
 
   const handleConfirmRetry = () => {

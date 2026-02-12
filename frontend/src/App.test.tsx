@@ -619,6 +619,74 @@ describe("App upload and list flow", () => {
     expect(screen.queryByText(/No se pudo cargar la vista previa del documento\./i)).toBeNull();
   });
 
+  it("deduplicates connectivity toasts when preview and review fail in the same attempt", async () => {
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = input.toString();
+      const method = (init?.method ?? "GET").toUpperCase();
+
+      if (url.includes("/documents?") && method === "GET") {
+        return new Response(
+          JSON.stringify({
+            items: [
+              {
+                document_id: "doc-ready",
+                original_filename: "ready.pdf",
+                created_at: "2026-02-09T10:00:00Z",
+                status: "COMPLETED",
+                status_label: "Completed",
+                failure_type: null,
+              },
+            ],
+            limit: 50,
+            offset: 0,
+            total: 1,
+          }),
+          { status: 200 }
+        );
+      }
+
+      if (url.endsWith("/documents/doc-ready") && method === "GET") {
+        return new Response(
+          JSON.stringify({
+            document_id: "doc-ready",
+            original_filename: "ready.pdf",
+            content_type: "application/pdf",
+            file_size: 10,
+            created_at: "2026-02-09T10:00:00Z",
+            updated_at: "2026-02-10T10:00:00Z",
+            status: "COMPLETED",
+            status_message: "Completed.",
+            failure_type: null,
+            latest_run: { run_id: "run-doc-ready", state: "COMPLETED", failure_type: null },
+          }),
+          { status: 200 }
+        );
+      }
+
+      if (url.includes("/documents/doc-ready/download") && method === "GET") {
+        throw new TypeError("Failed to fetch");
+      }
+
+      if (url.includes("/documents/doc-ready/review") && method === "GET") {
+        throw new TypeError("Failed to fetch");
+      }
+
+      if (url.includes("/processing-history") && method === "GET") {
+        return new Response(JSON.stringify({ document_id: "doc-ready", runs: [] }), { status: 200 });
+      }
+
+      return new Response(JSON.stringify({ error_code: "NOT_FOUND" }), { status: 404 });
+    }) as typeof fetch;
+
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/No se pudo conectar con el servidor\./i)).toHaveLength(1);
+    });
+  });
+
   it("supports drag and drop upload from the viewer empty state", async () => {
     renderApp();
 
