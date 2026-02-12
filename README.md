@@ -59,7 +59,7 @@ Product intent + semantics summary (with canonical Google Doc link).
 📄 **[`docs/project/UX_DESIGN.md`](docs/project/UX_DESIGN.md)**  
 UX interaction contract (roles, workflow guarantees, confidence UX rules).
 
-📄 **[`docs/project/BRAND_GUIDELINES.md`](docs/project/BRAND_GUIDELINES.md)**  
+📄 **[`docs/shared/BRAND_GUIDELINES.md`](docs/shared/BRAND_GUIDELINES.md)**  
 Visual identity and tone of user-facing copy.
 
 📄 **[`docs/project/TECHNICAL_DESIGN.md`](docs/project/TECHNICAL_DESIGN.md)**  
@@ -80,8 +80,8 @@ Frontend implementation details (“how”).
 
 ### Shared engineering rules
 
-📄 **[`docs/shared/AGENTS.md`](docs/shared/AGENTS.md)**  
-AI Coding Assistant behavior rules for this repo.
+📄 **[`AGENTS.md`](AGENTS.md)**  
+Canonical AI assistant entrypoint for this repo.
 
 📄 **[`docs/shared/ENGINEERING_PLAYBOOK.md`](docs/shared/ENGINEERING_PLAYBOOK.md)**  
 Engineering standards for implementation and changes.
