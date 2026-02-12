@@ -19,6 +19,8 @@ This file is the AI assistant entry point. Keep reads small and follow the route
 
 ## Global rule
 - After you modify any documentation file, run the DOC_UPDATES Normalization Pass once before finishing. Do not re-run it for changes made by the pass itself.
+- After implementing any change that can be validated from the user perspective (feature, fix, technical improvement, or small in-flight adjustment), include a final `How to test` section with step-by-step expected outcomes.
+- If user-perspective testing does not apply, explicitly state that and provide the best alternative verification method.
 
 ## Fallback
 If no intent matches, read `docs/agent_router/00_FALLBACK.md` and ask for clarification.
