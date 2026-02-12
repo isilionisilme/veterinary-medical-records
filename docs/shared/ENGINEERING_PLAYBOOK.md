@@ -627,7 +627,7 @@ For technical non user-facing changes (refactors, chores, CI, docs, fixes):
 For all changes:
 - The resulting code remains easy to understand, extend, and evolve without refactoring core logic.
 - Automated tests pass, and test coverage is updated where applicable.
-- When a change is testable from an end-user perspective, the completion report must include clear step-by-step validation instructions from the end-user point of view.
+- For any implemented change that is testable from an end-user perspective (feature, fix, technical improvement, or small in-flight adjustment), the assistant final response must include clear step-by-step validation instructions from the end-user point of view.
 - When end-user testing is not possible, the completion report must explicitly state that and provide the best alternative verification method (for example: API checks, logs, automated tests, or controlled manual simulation).
 - The change is merged into main via Pull Request.
 - Continuous Integration (CI) has run and passed successfully.
