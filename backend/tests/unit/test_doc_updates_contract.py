@@ -108,6 +108,7 @@ def test_checklist_enforces_discovery_and_anti_loop() -> None:
 
 def test_doc_test_sync_map_has_minimum_rules() -> None:
     text = _read_text(DOC_UPDATES_TEST_IMPACT_MAP)
+    assert "\"doc_glob\": \"docs/agent_router/*.md\"" in text
     assert "\"doc_glob\": \"docs/agent_router/**/*.md\"" in text
     assert "\"doc_glob\": \"docs/shared/BRAND_GUIDELINES.md\"" in text
     assert "test_doc_updates_contract.py" in text

@@ -121,6 +121,7 @@ def test_checklist_requires_outputs_and_anti_loop() -> None:
 
 def test_doc_updates_test_impact_map_covers_router_and_brand_docs() -> None:
     text = _read_text(DOC_UPDATES_TEST_IMPACT_MAP)
+    assert "docs/agent_router/*.md" in text
     assert "docs/agent_router/**/*.md" in text
     assert "docs/shared/BRAND_GUIDELINES.md" in text
 

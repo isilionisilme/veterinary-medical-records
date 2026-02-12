@@ -59,3 +59,18 @@ def test_evaluate_sync_passes_when_mapped_doc_and_related_file_change() -> None:
         ],
     )
     assert findings == []
+
+
+def test_evaluate_sync_covers_root_router_docs() -> None:
+    module = _load_guard_module()
+    findings = module.evaluate_sync(
+        changed_files=["docs/agent_router/00_AUTHORITY.md"],
+        rules=[
+            {
+                "doc_glob": "docs/agent_router/*.md",
+                "required_any": ["backend/tests/unit/test_doc_router_contract.py"],
+            }
+        ],
+    )
+    assert len(findings) == 1
+    assert "test_doc_router_contract.py" in findings[0]
