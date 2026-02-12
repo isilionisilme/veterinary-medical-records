@@ -1256,6 +1256,30 @@ describe("App upload and list flow", () => {
       expect(fieldCard).not.toBeNull();
       expect(within(fieldCard as HTMLElement).queryByText("CRÍTICO")).toBeNull();
     });
+
+    const petNameCard = within(panel).getByText("Nombre del paciente").closest("article");
+    expect(petNameCard).not.toBeNull();
+    const petNameBadgeGroup = within(petNameCard as HTMLElement).getByTestId(
+      "badge-group-core:pet_name"
+    );
+    expect(within(petNameBadgeGroup).getByText("CRÍTICO")).toBeInTheDocument();
+    expect(within(petNameBadgeGroup).getByText(/Confianza\s+\d+%/i)).toBeInTheDocument();
+
+    const claimIdCard = within(panel).getByText("ID de reclamacion").closest("article");
+    expect(claimIdCard).not.toBeNull();
+    const claimIdBadgeGroup = within(claimIdCard as HTMLElement).getByTestId(
+      "badge-group-core:claim_id"
+    );
+    expect(within(claimIdBadgeGroup).queryByText("CRÍTICO")).toBeNull();
+    expect(within(claimIdBadgeGroup).getByText(/Confianza\s+\d+%/i)).toBeInTheDocument();
+
+    const diagnosisCard = within(panel).getByText("Diagnostico").closest("article");
+    expect(diagnosisCard).not.toBeNull();
+    const diagnosisHeader = within(diagnosisCard as HTMLElement)
+      .getByText("Diagnostico")
+      .closest("div");
+    expect(diagnosisHeader).not.toBeNull();
+    expect(within(diagnosisHeader as HTMLElement).queryByText("CRÍTICO")).toBeNull();
   });
 
   it("shows an empty list state for repeatable fields", async () => {

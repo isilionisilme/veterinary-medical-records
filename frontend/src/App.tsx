@@ -2536,17 +2536,7 @@ export function App() {
                                                 className="rounded-xl border border-black/10 bg-white p-3"
                                               >
                                                 <div className="flex items-start justify-between gap-2">
-                                                  <div className="flex items-center gap-2">
-                                                    <p className="text-xs font-semibold text-ink">{field.label}</p>
-                                                    {field.isCritical && (
-                                                      <span
-                                                        data-testid={`critical-badge-${field.key}`}
-                                                        className="rounded-full border border-black/10 px-2 py-0.5 text-[10px] font-semibold text-muted"
-                                                      >
-                                                        CRÍTICO
-                                                      </span>
-                                                    )}
-                                                  </div>
+                                                  <p className="text-xs font-semibold text-ink">{field.label}</p>
                                                   {field.items.length > 0 && (
                                                     <span className="rounded-full border border-black/10 px-2 py-0.5 text-[10px] font-semibold text-muted">
                                                       {countLabel}
@@ -2580,7 +2570,10 @@ export function App() {
                                                             <div className="min-w-0">
                                                               <p className="truncate text-sm text-ink">{item.displayValue}</p>
                                                             </div>
-                                                            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 text-right">
+                                                            <div
+                                                              data-testid={`badge-group-${item.id}`}
+                                                              className="flex shrink-0 flex-wrap items-center justify-end gap-2 text-right"
+                                                            >
                                                               {field.isCritical && (
                                                                 <span
                                                                   data-testid={`critical-badge-${field.key}`}
@@ -2656,7 +2649,10 @@ export function App() {
                                                   <div className="min-w-0">
                                                     <p className="truncate text-xs font-semibold text-ink">{field.label}</p>
                                                   </div>
-                                                  <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 text-right">
+                                                  <div
+                                                    data-testid={`badge-group-${item.id}`}
+                                                    className="flex shrink-0 flex-wrap items-center justify-end gap-2 text-right"
+                                                  >
                                                     {field.isCritical && (
                                                       <span
                                                         data-testid={`critical-badge-${field.key}`}
@@ -2782,7 +2778,10 @@ export function App() {
                                                       <div className="min-w-0">
                                                         <p className="truncate text-sm text-ink">{item.displayValue}</p>
                                                       </div>
-                                                      <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 text-right">
+                                                      <div
+                                                        data-testid={`badge-group-${item.id}`}
+                                                        className="flex shrink-0 flex-wrap items-center justify-end gap-2 text-right"
+                                                      >
                                                         <span
                                                           className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                                                             confidenceTone === "high"
@@ -2847,7 +2846,10 @@ export function App() {
                                             <div className="min-w-0">
                                               <p className="truncate text-xs font-semibold text-ink">{field.label}</p>
                                             </div>
-                                            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 text-right">
+                                            <div
+                                              data-testid={`badge-group-${item.id}`}
+                                              className="flex shrink-0 flex-wrap items-center justify-end gap-2 text-right"
+                                            >
                                               <span
                                                 className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                                                   confidenceTone === "high"
