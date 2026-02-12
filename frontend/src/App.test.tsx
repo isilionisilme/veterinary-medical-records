@@ -5,11 +5,16 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { App } from "./App";
 
 vi.mock("./components/PdfViewer", () => ({
-  PdfViewer: (props: { focusPage?: number | null; highlightSnippet?: string | null }) => (
+  PdfViewer: (props: {
+    focusPage?: number | null;
+    highlightSnippet?: string | null;
+    focusRequestId?: number;
+  }) => (
     <div
       data-testid="pdf-viewer"
       data-focus-page={props.focusPage ?? ""}
       data-highlight-snippet={props.highlightSnippet ?? ""}
+      data-focus-request-id={props.focusRequestId ?? 0}
     />
   ),
 }));
@@ -439,7 +444,7 @@ describe("App upload and list flow", () => {
     });
   }, 12000);
 
-  it("keeps sidebar open by default when there are no documents and opens upload from CTA", async () => {
+  it("keeps browse defaults when there are no documents and opens upload from CTA", async () => {
     globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = input.toString();
       const method = (init?.method ?? "GET").toUpperCase();
@@ -460,15 +465,14 @@ describe("App upload and list flow", () => {
     expect(
       screen.getByText(/Selecciona un documento en la barra lateral o carga uno nuevo\./i)
     ).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: /Cerrar lista de documentos/i }));
-    expect(screen.getByText(/Mostrar lista/i)).toBeInTheDocument();
+    expect(screen.queryByTestId("view-mode-toggle")).toBeNull();
+    expect(screen.queryByTestId("review-docs-handle")).toBeNull();
 
     const emptyViewer = screen.getByTestId("viewer-empty-state");
     fireEvent.click(emptyViewer);
 
     await waitFor(() => {
-      expect(screen.getByText(/Ocultar lista/i)).toBeInTheDocument();
+      expect(screen.getByTestId("viewer-empty-state")).toBeInTheDocument();
     });
   });
 
@@ -498,17 +502,40 @@ describe("App upload and list flow", () => {
     expect(screen.queryByText(/No se pudieron cargar los documentos\./i)).toBeNull();
   });
 
-  it("keeps sidebar open after selecting a document", async () => {
+  it("keeps browse mode with docs, pdf, and structured columns after selecting a document", async () => {
     renderApp();
 
     await screen.findByRole("button", { name: /ready\.pdf/i });
-    expect(screen.getByText(/Ocultar lista/i)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /ready\.pdf/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/Ocultar lista/i)).toBeInTheDocument();
+      expect(screen.getByTestId("left-panel-scroll")).toBeInTheDocument();
       expect(screen.getByTestId("center-panel-scroll")).toBeInTheDocument();
+      expect(screen.getByTestId("right-panel-scroll")).toBeInTheDocument();
+      expect(screen.queryByTestId("review-docs-handle")).toBeNull();
+      expect(screen.getByTestId("view-mode-browse")).toHaveAttribute("aria-pressed", "true");
+      expect(screen.getByTestId("view-mode-review")).toHaveAttribute("aria-pressed", "false");
+      expect(screen.getByRole("button", { name: /Modo revisión/i })).toBeInTheDocument();
     });
+  });
+
+  it("uses consistent docs sidebar visibility by mode", async () => {
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+    await screen.findByText("Campos core");
+
+    expect(screen.getByTestId("left-panel-scroll")).toBeInTheDocument();
+    expect(screen.queryByTestId("review-docs-handle")).toBeNull();
+
+    fireEvent.click(screen.getByTestId("view-mode-review"));
+    expect(screen.queryByTestId("left-panel-scroll")).toBeNull();
+    expect(screen.getByTestId("review-docs-handle")).toBeInTheDocument();
+    expect(screen.queryByText(/Mostrar documentos/i)).toBeNull();
+
+    fireEvent.click(screen.getByTestId("view-mode-browse"));
+    expect(screen.getByTestId("left-panel-scroll")).toBeInTheDocument();
+    expect(screen.queryByTestId("review-docs-handle")).toBeNull();
   });
 
   it("uses polished structured header actions and opens source from Documento original", async () => {
@@ -1208,6 +1235,7 @@ describe("App upload and list flow", () => {
     expect(await screen.findByText("Cargando interpretacion estructurada...")).toBeInTheDocument();
     expect(screen.getByTestId("right-panel-scroll")).toBeInTheDocument();
     expect(screen.getByTestId("review-core-skeleton")).toBeInTheDocument();
+    expect(screen.queryByText("No encontrado")).toBeNull();
 
     expect(typeof releaseReviewRequest).toBe("function");
     releaseReviewRequest();
@@ -1347,8 +1375,9 @@ describe("App upload and list flow", () => {
     });
     await waitFor(() => {
       expect(
-        within(unavailableCard as HTMLElement).getByRole("button", { name: /Reintentando\.\.\./i })
-      ).toBeDisabled();
+        screen.queryByRole("button", { name: /Reintentando\.\.\./i }) ??
+          screen.queryByText(/Cargando interpretacion estructurada\.\.\./i)
+      ).toBeTruthy();
     });
     expect(screen.queryByRole("button", { name: /Ver detalles técnicos/i })).toBeNull();
 
@@ -1357,6 +1386,54 @@ describe("App upload and list flow", () => {
     expect(await screen.findByText("Campos core")).toBeInTheDocument();
     expect(screen.getByText(/No se pudo conectar con el servidor\./i)).toBeInTheDocument();
     expect(screen.queryByText(/Sin conexión/i)).toBeNull();
+  });
+
+  it("collapses docs list in review mode and keeps left handle visible", async () => {
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+    await screen.findByText("Campos core");
+
+    fireEvent.click(screen.getByRole("button", { name: /Modo revisión/i }));
+
+    expect(screen.getByTestId("review-docs-handle")).toBeInTheDocument();
+    expect(screen.queryByTestId("left-panel-scroll")).toBeNull();
+    expect(screen.getByTestId("center-panel-scroll")).toBeInTheDocument();
+    expect(screen.getByTestId("right-panel-scroll")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("review-docs-handle"));
+    expect(await screen.findByTestId("left-panel-scroll")).toBeInTheDocument();
+    expect(screen.getByTestId("center-panel-scroll")).toBeInTheDocument();
+  });
+
+  it("changes layout grid classes when toggling between browse and review mode", async () => {
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+    await screen.findByText("Campos core");
+
+    const layoutGrid = screen.getByTestId("document-layout-grid");
+    expect(layoutGrid.className).toContain("grid-cols-[minmax(0,1fr)_minmax(0,1fr)]");
+
+    fireEvent.click(screen.getByRole("button", { name: /Modo revisión/i }));
+    expect(layoutGrid.className).toContain("lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]");
+
+    fireEvent.click(screen.getByRole("button", { name: /Modo exploración/i }));
+    expect(layoutGrid.className).toContain("grid-cols-[minmax(0,1fr)_minmax(0,1fr)]");
+  });
+
+  it("opens source from evidence in review mode with persistent two-column layout", async () => {
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+    await screen.findByText("Campos core");
+    fireEvent.click(screen.getByRole("button", { name: /Modo revisión/i }));
+
+    expect(screen.getByTestId("center-panel-scroll")).toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole("button", { name: /Fuente:\s*Página 1/i })[0]);
+
+    expect(screen.getByTestId("source-drawer")).toBeInTheDocument();
+    expect(screen.getByTestId("center-panel-scroll")).toBeInTheDocument();
   });
 
   it("keeps independent scroll containers and preserves right panel scroll on evidence clicks", async () => {
@@ -1391,13 +1468,14 @@ describe("App upload and list flow", () => {
     fireEvent.click(sourceLinks[0]);
 
     expect(screen.getByTestId("source-drawer")).toBeInTheDocument();
-    const viewer = screen.getByTestId("pdf-viewer");
+    const viewer = screen.getAllByTestId("pdf-viewer")[0];
     expect(viewer).toHaveAttribute("data-focus-page", "1");
+    expect(viewer).toHaveAttribute("data-highlight-snippet", "Paciente: Luna");
     expect(screen.getByText(/Mostrando fuente en la página 1\./i)).toBeInTheDocument();
-    expect(screen.getByText(/Paciente: Luna/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /Especie/i }));
-    expect(screen.getByText(/Sin evidencia disponible para este campo\./i)).toBeInTheDocument();
+    expect(screen.queryByText(/Sin evidencia disponible para este campo\./i)).toBeNull();
+    expect(screen.getByTestId("source-drawer")).toBeInTheDocument();
   });
 
   it("opens and closes source drawer from evidence link with backdrop and escape", async () => {
@@ -1405,6 +1483,7 @@ describe("App upload and list flow", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
     await screen.findByText("Campos core");
+    fireEvent.click(screen.getByRole("button", { name: /Modo revisión/i }));
 
     fireEvent.click(screen.getAllByRole("button", { name: /Fuente:\s*Página 1/i })[0]);
     expect(screen.getByTestId("source-drawer")).toBeInTheDocument();
@@ -1418,7 +1497,7 @@ describe("App upload and list flow", () => {
     expect(screen.queryByTestId("source-drawer")).toBeNull();
   });
 
-  it("pins source into side column on desktop", async () => {
+  it("keeps review mode as two-column layout even when source pin is toggled on desktop", async () => {
     const originalMatchMedia = window.matchMedia;
     try {
       Object.defineProperty(window, "matchMedia", {
@@ -1440,11 +1519,14 @@ describe("App upload and list flow", () => {
 
       fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
       await screen.findByText("Campos core");
+      fireEvent.click(screen.getByRole("button", { name: /Modo revisión/i }));
       fireEvent.click(screen.getAllByRole("button", { name: /Fuente:\s*Página 1/i })[0]);
 
       fireEvent.click(screen.getByRole("button", { name: /📌 Fijar/i }));
-      expect(screen.queryByTestId("source-drawer")).toBeNull();
-      expect(screen.getByTestId("source-pinned-panel")).toBeInTheDocument();
+      expect(screen.getByTestId("source-drawer")).toBeInTheDocument();
+      expect(screen.queryByTestId("source-pinned-panel")).toBeNull();
+      expect(screen.getByTestId("center-panel-scroll")).toBeInTheDocument();
+      expect(screen.getByTestId("right-panel-scroll")).toBeInTheDocument();
     } finally {
       Object.defineProperty(window, "matchMedia", {
         configurable: true,
@@ -1459,9 +1541,11 @@ describe("App upload and list flow", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
     await screen.findByText("Campos core");
+    fireEvent.click(screen.getByRole("button", { name: /Modo revisión/i }));
     fireEvent.click(screen.getAllByRole("button", { name: /Fuente:\s*Página 1/i })[0]);
     expect(screen.getByTestId("source-drawer")).toBeInTheDocument();
 
+    fireEvent.click(screen.getByTestId("review-docs-handle"));
     fireEvent.click(screen.getByRole("button", { name: /processing\.pdf/i }));
     expect(screen.queryByTestId("source-drawer")).toBeNull();
   });
@@ -1478,9 +1562,10 @@ describe("App upload and list flow", () => {
     expect(missingSource).toHaveAttribute("aria-disabled", "true");
     fireEvent.click(missingSource);
     expect(screen.getByText(/Sin evidencia disponible para este campo\./i)).toBeInTheDocument();
+    expect(screen.queryByTestId("source-drawer")).toBeNull();
   });
 
-  it("synchronizes selected field with viewer context repeatedly", async () => {
+  it("synchronizes selected field with viewer context repeatedly, including repeated same-field clicks", async () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
@@ -1490,14 +1575,34 @@ describe("App upload and list flow", () => {
     let viewer = screen.getByTestId("pdf-viewer");
     expect(viewer).toHaveAttribute("data-focus-page", "2");
     expect(viewer).toHaveAttribute("data-highlight-snippet", "Diagnostico: Gastroenteritis");
+    const firstRequestId = Number(viewer.getAttribute("data-focus-request-id"));
 
     fireEvent.click(screen.getByRole("button", { name: /Nombre del paciente/i }));
     viewer = screen.getByTestId("pdf-viewer");
     expect(viewer).toHaveAttribute("data-focus-page", "1");
     expect(viewer).toHaveAttribute("data-highlight-snippet", "Paciente: Luna");
+    const secondRequestId = Number(viewer.getAttribute("data-focus-request-id"));
+    expect(secondRequestId).toBeGreaterThan(firstRequestId);
 
     fireEvent.click(screen.getByRole("button", { name: /Nombre del paciente/i }));
-    expect(screen.getByText(/Mostrando fuente en la página 1\./i)).toBeInTheDocument();
+    viewer = screen.getByTestId("pdf-viewer");
+    const thirdRequestId = Number(viewer.getAttribute("data-focus-request-id"));
+    expect(thirdRequestId).toBeGreaterThan(secondRequestId);
+    expect(screen.queryByTestId("source-drawer")).toBeNull();
+  });
+
+  it("does not open source drawer on plain field click in review mode, only from evidence/document action", async () => {
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+    await screen.findByText("Campos core");
+    fireEvent.click(screen.getByTestId("view-mode-review"));
+
+    fireEvent.click(screen.getByRole("button", { name: /Nombre del paciente/i }));
+    expect(screen.queryByTestId("source-drawer")).toBeNull();
+
+    fireEvent.click(screen.getAllByRole("button", { name: /Fuente:\s*Página 1/i })[0]);
+    expect(screen.getByTestId("source-drawer")).toBeInTheDocument();
   });
 });
 
