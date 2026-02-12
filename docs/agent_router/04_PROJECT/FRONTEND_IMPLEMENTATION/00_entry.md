@@ -11,6 +11,7 @@ Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for i
 - `docs/agent_router/04_PROJECT/FRONTEND_IMPLEMENTATION/40_project-structure.md`
 - `docs/agent_router/04_PROJECT/FRONTEND_IMPLEMENTATION/50_frontend-architecture.md`
 - `docs/agent_router/04_PROJECT/FRONTEND_IMPLEMENTATION/60_pdf-review-and-evidence-rendering.md`
+- `docs/agent_router/04_PROJECT/FRONTEND_IMPLEMENTATION/65_review-rendering-backbone-global-schema-v0.md`
 - `docs/agent_router/04_PROJECT/FRONTEND_IMPLEMENTATION/70_continuous-scroll-preview.md`
 - `docs/agent_router/04_PROJECT/FRONTEND_IMPLEMENTATION/80_file-type-support.md`
 - `docs/agent_router/04_PROJECT/FRONTEND_IMPLEMENTATION/90_additional-file-types.md`

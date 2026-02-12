@@ -73,6 +73,8 @@ Product guarantees:
 - Confidence guides attention and prioritization; it never blocks decisions or actions.
 - Confidence reflects consistency over time/context for similar interpretations.
 - Confidence may decrease faster than it increases when new contradictory evidence appears.
+- Detailed semantics for confidence in mapping context are defined in
+  **Confidence Semantics (Stability, not Truth)** below.
 
 ---
 
@@ -190,22 +192,99 @@ Product guarantees:
 
 ---
 
+## Conceptual Model: Local Schema, Global Schema, and Mapping
+
+This conceptual model defines how interpretation data is understood at product level.
+It does not prescribe storage tables or transport contracts.
+
+- **Local Schema (per document/run):**
+  the structured interpretation for one case/run, with evidence + confidence, editable without friction.
+- **Global Schema (canonical):**
+  the standardized field set the system recognizes and presents consistently across documents;
+  it evolves safely and prospectively.
+- **Field:**
+  semantic unit that can exist locally and/or globally.
+- **Mapping:**
+  "this local field/value maps to this global key in this context";
+  context can include document type, language, clinic, and similar operational conditions.
+
+### Confidence Semantics (Stability, not Truth)
+
+- Confidence is assigned to a mapping in context; it is a proxy for operational stability, not medical truth.
+- Confidence guides attention and defaults over time, but must never block veterinary workflow.
+- Safety asymmetry applies: confidence decreases fast on contradiction, increases slowly on repeated consistency, and remains reversible.
+
+### Governance and Safeguards (pending_review, critical, non-reversible)
+
+- `pending_review` means "captured as a structural signal", not blocked workflow.
+- Global schema changes are prospective only and never silently rewrite history.
+- Any change that can affect money, coverage, or medical/legal interpretation must not auto-promote.
+- `CRITICAL_KEYS_V0` remains authoritative and closed.
+
+## Global Schema v0 (Canonical Field List)
+
+Purpose: provide a stable, scannable review template where fields appear even when missing.
+
+A) Identificación del caso
+- claim_id (string)
+- clinic_name (string)
+- clinic_address (string)
+- vet_name (string)
+- document_date (date) — if missing, fall back to visit_date
+
+B) Paciente (CRITICAL subset per CRITICAL_KEYS_V0)
+- pet_name (string) [critical]
+- species (string) [critical]
+- breed (string) [critical]
+- sex (string) [critical]
+- age (string) [critical]
+- dob (date) (optional)
+- microchip_id (string) (optional)
+- weight (string) [critical]
+
+C) Propietario
+- owner_name (string)
+- owner_id (string) (optional)
+
+D) Visita / episodio
+- visit_date (date) [critical]
+- admission_date (date) (optional)
+- discharge_date (date) (optional)
+- reason_for_visit (string)
+
+E) Clínico
+- diagnosis (string, repeatable) [critical]
+- symptoms (string, repeatable)
+- procedure (string, repeatable) [critical]
+- medication (string, repeatable) [critical]
+- treatment_plan (string)
+- allergies (string)
+- vaccinations (string, repeatable)
+- lab_result (string, repeatable)
+- imaging (string, repeatable)
+
+F) Costes / facturación
+- invoice_total (string)
+- covered_amount (string) (optional)
+- non_covered_amount (string) (optional)
+- line_item (string, repeatable)
+
+G) Metadatos / revisión
+- notes (string)
+- language (string) (optional)
+
+Rules:
+- `value_type` allowed set: `string|date|number|boolean|unknown`.
+- v0 recommendation: use `string` for ambiguous or unit-heavy values (for example weight, money, lab values).
+- Presence stability: show all keys; reduce visual load with collapsible sections, not by removing keys.
+- Repeatable fields (explicit): `medication`, `diagnosis`, `procedure`, `lab_result`, `line_item`, `symptoms`, `vaccinations`, `imaging`.
+- `CRITICAL_KEYS_V0` must remain exact:
+  `pet_name`, `species`, `breed`, `sex`, `age`, `weight`, `visit_date`, `diagnosis`, `medication`, `procedure`.
+
 ### CRITICAL_KEYS_V0 (Authoritative, closed set)
 
-This list is the source of truth for Appendix D7.4.
-
-CRITICAL_KEYS_V0 = [
-  "pet_name",
-  "species",
-  "breed",
-  "sex",
-  "age",
-  "weight",
-  "visit_date",
-  "diagnosis",
-  "medication",
-  "procedure"
-]
+Source of truth for Appendix D7.4: the exact set listed in
+**Global Schema v0 (Canonical Field List)** above.
 
 
 ## 5. Separation of Responsibilities (Product-Level)

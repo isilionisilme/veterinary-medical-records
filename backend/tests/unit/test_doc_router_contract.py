@@ -97,3 +97,37 @@ def test_operational_modules_do_not_directly_load_human_docs() -> None:
         "Operational modules should route through docs/agent_router/*, "
         "not direct human docs:\n" + "\n".join(violations)
     )
+
+
+def test_project_split_entries_include_new_product_and_ux_modules() -> None:
+    product_entry = _read_text(
+        ROUTER_ROOT / "04_PROJECT" / "PRODUCT_DESIGN" / "00_entry.md"
+    )
+    ux_entry = _read_text(ROUTER_ROOT / "04_PROJECT" / "UX_DESIGN" / "00_entry.md")
+
+    assert (
+        "docs/agent_router/04_PROJECT/PRODUCT_DESIGN/75_4-4-critical-non-reversible-changes-policy.md"
+        in product_entry
+    )
+    assert (
+        "docs/agent_router/04_PROJECT/PRODUCT_DESIGN/76_conceptual-model-local-schema-global-schema-and-mapping.md"
+        in product_entry
+    )
+    assert (
+        "docs/agent_router/04_PROJECT/PRODUCT_DESIGN/77_global-schema-v0-canonical-field-list.md"
+        in product_entry
+    )
+    assert (
+        "docs/agent_router/04_PROJECT/UX_DESIGN/55_review-ui-rendering-rules-global-schema-v0-template.md"
+        in ux_entry
+    )
+
+
+def test_project_split_entry_includes_frontend_global_schema_rendering_module() -> None:
+    frontend_entry = _read_text(
+        ROUTER_ROOT / "04_PROJECT" / "FRONTEND_IMPLEMENTATION" / "00_entry.md"
+    )
+    assert (
+        "docs/agent_router/04_PROJECT/FRONTEND_IMPLEMENTATION/65_review-rendering-backbone-global-schema-v0.md"
+        in frontend_entry
+    )

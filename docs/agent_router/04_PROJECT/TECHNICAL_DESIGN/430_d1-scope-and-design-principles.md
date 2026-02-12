@@ -7,3 +7,8 @@ This is a deliberately small contract, **not a full medical ontology**.
 - **Run-scoped & append-only**: nothing is overwritten; every interpretation belongs to a processing run.
 - **Approximate evidence**: page + snippet; no PDF coordinates in v0.
 - **Flat structure (v0)**: optimize for flexibility and speed, not completeness.
+
+Note (materialization boundary):
+- Machine interpretation payloads may be partial with respect to Global Schema v0.
+- Backend contracts here define valid structured payload shape; they do not require backend-side full-schema backfilling.
+- UI rendering materializes and displays the full Global Schema v0, including empty values for missing keys.
