@@ -772,7 +772,7 @@ export function App() {
   const latestRawTextRefreshRef = useRef<string | null>(null);
   const listPollingStartedAtRef = useRef<number | null>(null);
   const interpretationRetryMinTimerRef = useRef<number | null>(null);
-  const lastConnectivityToastKeyRef = useRef<string | null>(null);
+  const lastConnectivityToastAtRef = useRef(0);
   const queryClient = useQueryClient();
   const sourcePanel = useSourcePanelState({
     isDesktopForPin,
@@ -1537,18 +1537,19 @@ export function App() {
     return () => window.clearTimeout(timer);
   }, [connectivityToast]);
 
-  const showConnectivityToast = (toastKey: string) => {
-    if (lastConnectivityToastKeyRef.current === toastKey) {
+  const showConnectivityToast = () => {
+    const now = Date.now();
+    if (now - lastConnectivityToastAtRef.current < 5000) {
       return;
     }
-    lastConnectivityToastKeyRef.current = toastKey;
+    lastConnectivityToastAtRef.current = now;
     setConnectivityToast({});
   };
 
   useEffect(() => {
     if (documentList.isError) {
       if (isConnectivityOrServerError(documentList.error)) {
-        showConnectivityToast(`list-${documentList.errorUpdatedAt}`);
+        showConnectivityToast();
         return;
       }
       if (!hasShownListErrorToast) {
@@ -1570,7 +1571,7 @@ export function App() {
     if (!activeId || !documentReview.isError || !isConnectivityOrServerError(documentReview.error)) {
       return;
     }
-    showConnectivityToast(`review-${activeId}-${documentReview.errorUpdatedAt}`);
+    showConnectivityToast();
   }, [
     activeId,
     documentReview.isError,
@@ -1583,9 +1584,7 @@ export function App() {
     if (!loadPdf.isError || !isConnectivityOrServerError(loadPdf.error)) {
       return;
     }
-    showConnectivityToast(
-      `pdf-${latestLoadRequestIdRef.current ?? "unknown"}-${loadPdf.failureCount}`
-    );
+    showConnectivityToast();
   }, [loadPdf.error, loadPdf.failureCount, loadPdf.isError]);
 
   const handleConfirmRetry = () => {
@@ -2173,13 +2172,6 @@ export function App() {
             {shouldShowLoadPdfErrorBanner && (
               <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 {getUserErrorMessage(loadPdf.error, "No se pudo cargar la vista previa del documento.")}
-              </div>
-            )}
-            {activeId && (
-              <div className={shouldShowLoadPdfErrorBanner ? "mt-4" : ""}>
-                {documentDetails.isLoading && (
-                  <p className="text-xs text-muted">Cargando estado del documento...</p>
-                )}
               </div>
             )}
             <div className="mt-4 flex min-h-0 flex-1 flex-col">
