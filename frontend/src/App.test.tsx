@@ -503,7 +503,7 @@ describe("App upload and list flow", () => {
 
     await waitFor(() => {
       expect(screen.getByText(/Ocultar lista/i)).toBeInTheDocument();
-      expect(screen.getByTestId("pdf-viewer")).toBeInTheDocument();
+      expect(screen.getByTestId("center-panel-scroll")).toBeInTheDocument();
     });
   });
 
@@ -936,7 +936,7 @@ describe("App upload and list flow", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
     await waitFor(() => {
-      expect(screen.getByTestId("pdf-viewer")).toBeInTheDocument();
+      expect(screen.getByTestId("center-panel-scroll")).toBeInTheDocument();
     });
 
     const dropzone = screen.getByTestId("viewer-dropzone");
@@ -1066,13 +1066,80 @@ describe("App upload and list flow", () => {
     const sourceLinks = screen.getAllByRole("button", { name: /Página /i });
     fireEvent.click(sourceLinks[0]);
 
+    expect(screen.getByTestId("source-drawer")).toBeInTheDocument();
     const viewer = screen.getByTestId("pdf-viewer");
     expect(viewer).toHaveAttribute("data-focus-page", "1");
     expect(screen.getByText(/Mostrando fuente en la página 1\./i)).toBeInTheDocument();
-    expect(screen.getByText("Evidencia seleccionada")).toBeInTheDocument();
+    expect(screen.getByText(/Paciente: Luna/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /Especie/i }));
     expect(screen.getByText(/Sin evidencia disponible para este campo\./i)).toBeInTheDocument();
+  });
+
+  it("opens and closes source drawer from evidence link with backdrop and escape", async () => {
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+    await screen.findByText("Campos core");
+
+    fireEvent.click(screen.getAllByRole("button", { name: /Fuente:\s*Página 1/i })[0]);
+    expect(screen.getByTestId("source-drawer")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("source-drawer-backdrop"));
+    expect(screen.queryByTestId("source-drawer")).toBeNull();
+
+    fireEvent.click(screen.getAllByRole("button", { name: /Fuente:\s*Página 1/i })[0]);
+    expect(screen.getByTestId("source-drawer")).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByTestId("source-drawer")).toBeNull();
+  });
+
+  it("pins source into side column on desktop", async () => {
+    const originalMatchMedia = window.matchMedia;
+    try {
+      Object.defineProperty(window, "matchMedia", {
+        configurable: true,
+        writable: true,
+        value: vi.fn((query: string) => ({
+          matches: query.includes("min-width"),
+          media: query,
+          onchange: null,
+          addListener: vi.fn(),
+          removeListener: vi.fn(),
+          addEventListener: vi.fn(),
+          removeEventListener: vi.fn(),
+          dispatchEvent: vi.fn(),
+        })),
+      });
+
+      renderApp();
+
+      fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+      await screen.findByText("Campos core");
+      fireEvent.click(screen.getAllByRole("button", { name: /Fuente:\s*Página 1/i })[0]);
+
+      fireEvent.click(screen.getByRole("button", { name: /📌 Fijar/i }));
+      expect(screen.queryByTestId("source-drawer")).toBeNull();
+      expect(screen.getByTestId("source-pinned-panel")).toBeInTheDocument();
+    } finally {
+      Object.defineProperty(window, "matchMedia", {
+        configurable: true,
+        writable: true,
+        value: originalMatchMedia,
+      });
+    }
+  });
+
+  it("resets source state when switching documents", async () => {
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+    await screen.findByText("Campos core");
+    fireEvent.click(screen.getAllByRole("button", { name: /Fuente:\s*Página 1/i })[0]);
+    expect(screen.getByTestId("source-drawer")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /processing\.pdf/i }));
+    expect(screen.queryByTestId("source-drawer")).toBeNull();
   });
 
   it("renders evidence links for available source and disabled state for missing source", async () => {

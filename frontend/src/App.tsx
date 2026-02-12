@@ -726,12 +726,15 @@ export function App() {
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
   const [isCopyingRawText, setIsCopyingRawText] = useState(false);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
-  const [selectedEvidence, setSelectedEvidence] = useState<ReviewEvidence | null>(null);
   const [evidenceNotice, setEvidenceNotice] = useState<string | null>(null);
   const [showMissingCoreFields, setShowMissingCoreFields] = useState(true);
   const [onlyLowConfidence, setOnlyLowConfidence] = useState(false);
   const [expandedFieldValues, setExpandedFieldValues] = useState<Record<string, boolean>>({});
   const [evidenceFocusRequestId, setEvidenceFocusRequestId] = useState(0);
+  const [isSourceOpen, setIsSourceOpen] = useState(false);
+  const [isSourcePinned, setIsSourcePinned] = useState(false);
+  const [sourcePage, setSourcePage] = useState<number | null>(null);
+  const [sourceSnippet, setSourceSnippet] = useState<string | null>(null);
   const [reviewLoadingDocId, setReviewLoadingDocId] = useState<string | null>(null);
   const [reviewLoadingSinceMs, setReviewLoadingSinceMs] = useState<number | null>(null);
   const [isHoverDevice, setIsHoverDevice] = useState(true);
@@ -749,6 +752,9 @@ export function App() {
   const refreshFeedbackTimerRef = useRef<number | null>(null);
   const copyFeedbackTimerRef = useRef<number | null>(null);
   const latestLoadRequestIdRef = useRef<string | null>(null);
+  // Pin mode is desktop-only to avoid overcrowding tablet/mobile layouts.
+  const sourcePinMediaQuery = "(min-width: 1280px)";
+  const [isDesktopForPin, setIsDesktopForPin] = useState(false);
   const latestRawTextRefreshRef = useRef<string | null>(null);
   const listPollingStartedAtRef = useRef<number | null>(null);
   const queryClient = useQueryClient();
@@ -778,6 +784,25 @@ export function App() {
     mediaQuery.addListener(syncInputMode);
     return () => mediaQuery.removeListener(syncInputMode);
   }, []);
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") {
+      setIsDesktopForPin(true);
+      return;
+    }
+
+    const mediaQuery = window.matchMedia(sourcePinMediaQuery);
+    const syncPinCapability = () => setIsDesktopForPin(mediaQuery.matches);
+    syncPinCapability();
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", syncPinCapability);
+      return () => mediaQuery.removeEventListener("change", syncPinCapability);
+    }
+
+    mediaQuery.addListener(syncPinCapability);
+    return () => mediaQuery.removeListener(syncPinCapability);
+  }, [sourcePinMediaQuery]);
 
   useEffect(() => {
     return () => {
@@ -1201,9 +1226,12 @@ export function App() {
 
   useEffect(() => {
     setSelectedFieldId(null);
-    setSelectedEvidence(null);
     setEvidenceNotice(null);
     setExpandedFieldValues({});
+    setSourcePage(null);
+    setSourceSnippet(null);
+    setIsSourceOpen(false);
+    setIsSourcePinned(false);
   }, [activeId]);
 
   useEffect(() => {
@@ -1688,29 +1716,45 @@ export function App() {
     return null;
   })();
 
-  const handleSelectReviewField = (field: ReviewDisplayField) => {
-    setSelectedFieldId(field.id);
-    if (!field.evidence || !field.evidence.page) {
-      setSelectedEvidence(null);
+  const openSourceViewer = (field?: ReviewDisplayField) => {
+    const page = field?.evidence?.page ?? null;
+    const snippetValue = field?.evidence?.snippet?.trim();
+    const normalizedSnippet =
+      snippetValue && snippetValue.length > 0 ? snippetValue : null;
+
+    setSourcePage(page);
+    setSourceSnippet(normalizedSnippet);
+    setEvidenceFocusRequestId((current) => current + 1);
+    setIsSourceOpen(true);
+
+    if (!page) {
       setEvidenceNotice("Sin evidencia disponible para este campo.");
       return;
     }
 
-    const snippet = field.evidence.snippet?.trim();
-    const normalizedEvidence: ReviewEvidence = {
-      page: field.evidence.page,
-      snippet: snippet && snippet.length > 0 ? snippet : "Sin evidencia textual disponible.",
-    };
-    setSelectedEvidence(normalizedEvidence);
-    setEvidenceFocusRequestId((current) => current + 1);
-    setEvidenceNotice(`Mostrando fuente en la página ${normalizedEvidence.page}.`);
+    setEvidenceNotice(`Mostrando fuente en la página ${page}.`);
   };
 
-  useEffect(() => {
-    setSelectedFieldId(null);
-    setSelectedEvidence(null);
-    setEvidenceNotice(null);
-  }, [activeId]);
+  const handleSelectReviewField = (field: ReviewDisplayField) => {
+    setSelectedFieldId(field.id);
+    openSourceViewer(field);
+  };
+
+  const handleToggleSourcePin = () => {
+    if (!isDesktopForPin) {
+      setEvidenceNotice("Fijar solo está disponible en escritorio.");
+      return;
+    }
+    setIsSourcePinned((current) => !current);
+    setIsSourceOpen(true);
+  };
+
+  const closeOverlaySource = () => {
+    if (isSourcePinned) {
+      return;
+    }
+    setIsSourceOpen(false);
+  };
 
   useEffect(() => {
     if (!selectedFieldId) {
@@ -1722,7 +1766,6 @@ export function App() {
     ]);
     if (!currentIds.has(selectedFieldId)) {
       setSelectedFieldId(null);
-      setSelectedEvidence(null);
     }
   }, [coreDisplayFields, otherDisplayFields, selectedFieldId]);
 
@@ -1733,6 +1776,30 @@ export function App() {
     const timer = window.setTimeout(() => setEvidenceNotice(null), 3000);
     return () => window.clearTimeout(timer);
   }, [evidenceNotice]);
+
+  useEffect(() => {
+    if (isDesktopForPin) {
+      return;
+    }
+    if (isSourcePinned) {
+      setIsSourcePinned(false);
+    }
+  }, [isDesktopForPin, isSourcePinned]);
+
+  useEffect(() => {
+    if (!isSourceOpen || isSourcePinned) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsSourceOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isSourceOpen, isSourcePinned]);
 
   const handleDownloadRawText = () => {
     if (!rawTextContent) {
@@ -1812,6 +1879,48 @@ export function App() {
     >
       {label}
     </button>
+  );
+
+  const sourcePanelContent = (
+    <div className="flex h-full min-h-0 flex-col rounded-2xl border border-black/10 bg-white p-4 shadow-xl">
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">Fuente</p>
+          <p className="mt-1 text-xs text-muted">
+            {sourcePage ? `Página ${sourcePage}` : "Sin página seleccionada"}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button type="button" variant="ghost" onClick={handleToggleSourcePin} disabled={!isDesktopForPin}>
+            {isSourcePinned ? "Desfijar" : "📌 Fijar"}
+          </Button>
+          <Button type="button" variant="ghost" onClick={() => setIsSourceOpen(false)}>
+            ✕
+          </Button>
+        </div>
+      </div>
+      <div data-testid="source-panel-scroll" className="mt-3 min-h-0 flex-1 overflow-y-auto">
+        {fileUrl ? (
+          <PdfViewer
+            key={`source-${activeId ?? "empty"}`}
+            fileUrl={fileUrl}
+            filename={filename}
+            isDragOver={false}
+            focusPage={sourcePage}
+            highlightSnippet={sourceSnippet}
+            focusRequestId={evidenceFocusRequestId}
+          />
+        ) : (
+          <div className="flex h-40 items-center justify-center text-sm text-muted">
+            No hay PDF disponible para este documento.
+          </div>
+        )}
+      </div>
+      <div className="mt-3 rounded-xl border border-black/10 bg-white/90 px-3 py-2 text-xs text-muted">
+        <p className="font-semibold text-ink">Evidencia</p>
+        <p className="mt-1">{sourceSnippet ?? "Sin evidencia disponible"}</p>
+      </div>
+    </div>
   );
 
   return (
@@ -2139,26 +2248,17 @@ export function App() {
                         </div>
                       )
                     ) : (
-                      <div className="flex h-full min-h-0 gap-4">
-                        <div
+                      <div
+                        className={`h-full min-h-0 ${
+                          isSourceOpen && isSourcePinned && isDesktopForPin
+                            ? "grid grid-cols-[minmax(0,1fr)_minmax(360px,420px)] gap-4"
+                            : ""
+                        }`}
+                      >
+                        <aside
                           data-testid="center-panel-scroll"
-                          className="relative min-h-0 flex-1 overflow-y-auto"
-                          onDragEnter={handleViewerDragEnter}
-                          onDragOver={handleViewerDragOver}
-                          onDragLeave={handleViewerDragLeave}
-                          onDrop={handleViewerDrop}
+                          className="flex h-full w-full min-h-0 flex-col rounded-2xl border border-black/10 bg-white/80 p-4"
                         >
-                          <PdfViewer
-                            key={activeId ?? "viewer-empty"}
-                            fileUrl={fileUrl}
-                            filename={filename}
-                            isDragOver={isDragOverViewer}
-                            focusPage={selectedEvidence?.page ?? null}
-                            highlightSnippet={selectedEvidence?.snippet ?? null}
-                            focusRequestId={evidenceFocusRequestId}
-                          />
-                        </div>
-                        <aside className="flex h-full w-full min-h-0 max-w-[360px] flex-col rounded-2xl border border-black/10 bg-white/80 p-4">
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <div>
                               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
@@ -2174,6 +2274,9 @@ export function App() {
                               disabled={!documentReview.data?.raw_text_artifact.available}
                             >
                               Abrir texto
+                            </Button>
+                            <Button type="button" variant="ghost" onClick={() => setIsSourceOpen(true)}>
+                              Fuente
                             </Button>
                           </div>
 
@@ -2394,18 +2497,36 @@ export function App() {
                               {evidenceNotice}
                             </p>
                           )}
-
-                          {selectedEvidence && (
-                            <div className="mt-3 rounded-xl border border-accent/40 bg-accentSoft/60 p-3 text-xs text-ink">
-                              <p className="font-semibold">Evidencia seleccionada</p>
-                              <p className="mt-1 text-muted">Pagina {selectedEvidence.page}</p>
-                              <p className="mt-1">{selectedEvidence.snippet}</p>
-                            </div>
-                          )}
                         </aside>
+
+                        {isSourceOpen && isSourcePinned && isDesktopForPin && (
+                          <aside data-testid="source-pinned-panel" className="min-h-0">
+                            {sourcePanelContent}
+                          </aside>
+                        )}
                       </div>
                     )}
                   </div>
+                )}
+                {activeViewerTab === "document" && isSourceOpen && (!isSourcePinned || !isDesktopForPin) && (
+                  <>
+                    <button
+                      type="button"
+                      data-testid="source-drawer-backdrop"
+                      className="fixed inset-0 z-40 bg-black/30"
+                      aria-label="Cerrar fuente"
+                      onClick={closeOverlaySource}
+                    />
+                    <div
+                      data-testid="source-drawer"
+                      className="fixed inset-y-0 right-0 z-50 w-full max-w-xl p-4"
+                      role="dialog"
+                      aria-modal="true"
+                      aria-label="Fuente"
+                    >
+                      {sourcePanelContent}
+                    </div>
+                  </>
                 )}
                 {activeViewerTab === "raw_text" && (
                   <div className="flex h-full flex-col rounded-2xl border border-black/10 bg-white/80 p-4">
