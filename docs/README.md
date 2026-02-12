@@ -17,7 +17,7 @@ This folder is split into three areas:
 
 ## Reading order (mandatory)
 ### Documentation shared across projects
-- [`docs/shared/AGENTS.md`](shared/AGENTS.md) — AI Coding Assistant rules for this repo (STOP rules, safety, behavior).
+- [`AGENTS.md`](../AGENTS.md) — canonical AI assistant entrypoint and routing triggers for this repo.
 - [`docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/00_entry.md`](agent_router/03_SHARED/ENGINEERING_PLAYBOOK/00_entry.md) — engineering standards (split into small modules).
 - [`docs/agent_router/03_SHARED/UX_GUIDELINES/00_entry.md`](agent_router/03_SHARED/UX_GUIDELINES/00_entry.md) — global UX principles (split into small modules).
 - [`docs/agent_router/03_SHARED/BRAND_GUIDELINES/00_entry.md`](agent_router/03_SHARED/BRAND_GUIDELINES/00_entry.md) — global brand rules (split into small modules).

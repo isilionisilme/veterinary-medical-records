@@ -80,8 +80,8 @@ Frontend implementation details (“how”).
 
 ### Shared engineering rules
 
-📄 **[`docs/shared/AGENTS.md`](docs/shared/AGENTS.md)**  
-AI Coding Assistant behavior rules for this repo.
+📄 **[`AGENTS.md`](AGENTS.md)**  
+Canonical AI assistant entrypoint for this repo.
 
 📄 **[`docs/shared/ENGINEERING_PLAYBOOK.md`](docs/shared/ENGINEERING_PLAYBOOK.md)**  
 Engineering standards for implementation and changes.
