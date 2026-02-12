@@ -1,7 +1,7 @@
 # Barkibu — Brand Guidelines  
 **Visual Identity & Tone of Voice (Inferred)**
 
-**Note:** This is the canonical location. The copy at [`docs/project/BRAND_GUIDELINES.md`](../project/BRAND_GUIDELINES.md) exists only to preserve older links.
+**Note:** This is the canonical location for brand guidelines in this repository.
 
 **Audience:** AI Coding Assistant (Codex) and contributors  
 **Purpose:** Ensure that all UI code and user-facing copy generated during development is visually and tonally consistent with Barkibu’s corporate identity.
