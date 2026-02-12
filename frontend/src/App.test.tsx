@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { App } from "./App";
+import { GLOBAL_SCHEMA_V0 } from "./lib/globalSchemaV0";
 
 vi.mock("./components/PdfViewer", () => ({
   PdfViewer: (props: {
@@ -170,13 +171,13 @@ describe("App upload and list flow", () => {
                   },
                   {
                     field_id: `field-extra-${docId}`,
-                    key: "owner_name",
-                    value: "Ana",
+                    key: "custom_tag",
+                    value: "Prioridad",
                     value_type: "string",
                     confidence: 0.88,
                     is_critical: false,
                     origin: "machine",
-                    evidence: { page: 1, snippet: "Tutor: Ana" },
+                    evidence: { page: 1, snippet: "Prioridad: Alta" },
                   },
                 ],
               },
@@ -1195,18 +1196,33 @@ describe("App upload and list flow", () => {
     expect(calls.some(([url]) => String(url).includes("/documents/upload"))).toBe(false);
   }, 12000);
 
-  it("renders stable core fields with explicit missing states", async () => {
+  it("renders the full Global Schema v0 template with explicit missing states", async () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
 
     expect(await screen.findByText("Campos core")).toBeInTheDocument();
-    expect(screen.getByText("Nombre del paciente")).toBeInTheDocument();
-    expect(screen.getByText("Diagnostico")).toBeInTheDocument();
-    expect(screen.getByText("Especie")).toBeInTheDocument();
-    expect(screen.getAllByText("No encontrado").length).toBeGreaterThan(0);
-    expect(screen.getByText("Otros campos extraídos")).toBeInTheDocument();
-    expect(screen.getByText("Owner name")).toBeInTheDocument();
+    const panel = screen.getByTestId("right-panel-scroll");
+    GLOBAL_SCHEMA_V0.forEach((field) => {
+      expect(within(panel).getByText(field.label)).toBeInTheDocument();
+    });
+    expect(within(panel).getAllByText("—").length).toBeGreaterThan(0);
+    expect(within(panel).getByText("Otros campos extraídos")).toBeInTheDocument();
+    expect(within(panel).getByText("Custom tag")).toBeInTheDocument();
+    expect(within(panel).getByText("Prioridad")).toBeInTheDocument();
+  });
+
+  it("shows an empty list state for repeatable fields", async () => {
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+
+    await screen.findByText("Campos core");
+
+    const panel = screen.getByTestId("right-panel-scroll");
+    const medicationCard = within(panel).getByText("Medicacion").closest("article");
+    expect(medicationCard).not.toBeNull();
+    expect(within(medicationCard as HTMLElement).getByText("Sin elementos")).toBeInTheDocument();
   });
 
   it("keeps right panel mounted and shows skeleton while loading interpretation", async () => {
@@ -1235,7 +1251,7 @@ describe("App upload and list flow", () => {
     expect(await screen.findByText("Cargando interpretacion estructurada...")).toBeInTheDocument();
     expect(screen.getByTestId("right-panel-scroll")).toBeInTheDocument();
     expect(screen.getByTestId("review-core-skeleton")).toBeInTheDocument();
-    expect(screen.queryByText("No encontrado")).toBeNull();
+    expect(within(screen.getByTestId("right-panel-scroll")).queryByText("—")).toBeNull();
 
     expect(typeof releaseReviewRequest).toBe("function");
     releaseReviewRequest();
@@ -1571,7 +1587,7 @@ describe("App upload and list flow", () => {
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
     await screen.findByText("Campos core");
 
-    fireEvent.click(screen.getByRole("button", { name: /Diagnostico/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Gastroenteritis/i }));
     let viewer = screen.getByTestId("pdf-viewer");
     expect(viewer).toHaveAttribute("data-focus-page", "2");
     expect(viewer).toHaveAttribute("data-highlight-snippet", "Diagnostico: Gastroenteritis");
