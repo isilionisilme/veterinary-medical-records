@@ -46,22 +46,3 @@ Critical concepts introduce a stricter governance threshold:
 - Decisions affect **future interpretations only**.
 
 Criticality is a governance concern, not a workflow constraint.
-
----
-
-## CRITICAL_KEYS_V0 (Authoritative, closed set)
-
-This list is the source of truth for Appendix D7.4.
-
-CRITICAL_KEYS_V0 = [
-  "pet_name",
-  "species",
-  "breed",
-  "sex",
-  "age",
-  "weight",
-  "visit_date",
-  "diagnosis",
-  "medication",
-  "procedure"
-]

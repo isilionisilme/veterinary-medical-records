@@ -1387,6 +1387,11 @@ This is a deliberately small contract, **not a full medical ontology**.
 - **Approximate evidence**: page + snippet; no PDF coordinates in v0.
 - **Flat structure (v0)**: optimize for flexibility and speed, not completeness.
 
+Note (materialization boundary):
+- Machine interpretation payloads may be partial with respect to Global Schema v0.
+- Backend contracts in this document define valid structured payload shape; they do not require backend-side full-schema backfilling.
+- UI rendering is expected to materialize and display the full Global Schema v0 (including empty values for missing keys), as defined by product authority.
+
 ## D2. Versioning
 
 - `schema_version` is a string. Current value: `"v0"`.
@@ -1485,6 +1490,7 @@ Rules (technical, authoritative):
 
 Source of truth for `CRITICAL_KEYS_V0`:
 - Defined in [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md) (product authority).
+- The complete Global Schema v0 key list, fixed ordering, section grouping, repeatability rules, and cross-key fallback rules (including `document_date` fallback to `visit_date`) are also governed by [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md).
 
 ---
 

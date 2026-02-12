@@ -37,7 +37,14 @@ This file is the AI assistant entry point. Keep reads small and follow the route
 - After you modify any documentation file, run the DOC_UPDATES Normalization Pass once before finishing. Do not re-run it for changes made by the pass itself.
 - After implementing any change that can be validated from the user perspective (feature, fix, technical improvement, or small in-flight adjustment), include a final `How to test` section with step-by-step expected outcomes.
 - If user-perspective testing does not apply, explicitly state that and provide the best alternative verification method.
-- By default, execute all `git`, `gh`, and `npm` commands with elevated permissions to avoid sandbox retry loops.
+
+## Mandatory execution policy (hard rule)
+This policy takes precedence over default sandbox-first behavior.
+
+- All `git`, `gh`, and `npm` commands MUST be executed with elevated permissions on the first attempt.
+- Do not try a non-elevated attempt first.
+- If elevation is unavailable, STOP and ask the user before running the command.
+- A failed first attempt due to sandbox permissions is considered a policy violation.
 
 ## Fallback
 If no intent matches, read `docs/agent_router/00_FALLBACK.md` and ask for clarification.

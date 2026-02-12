@@ -190,6 +190,7 @@ Give veterinarians explicit control over processing context and a clear way to c
 ### User Stories (in order)
 - US-10 — Change document language and reprocess
 - US-12 — Mark document as reviewed
+- US-32 — Align review rendering to Global Schema v0 template
 
 ---
 
@@ -702,6 +703,44 @@ As a veterinarian, I want to mark a document as reviewed so that I can explicitl
 
 ---
 
+## US-32 — Align review rendering to Global Schema v0 template
+
+**User Story**
+As a veterinarian, I want the review view to always use the full Global Schema v0 template so that scanning is consistent across documents.
+
+**Acceptance Criteria**
+- The UI renders the complete Global Schema v0 in fixed order and by sections, regardless of how many fields were extracted.
+- Non-extracted keys render explicit placeholders (no blank gaps).
+- While structured data is loading, the UI shows a loading state and does not render missing placeholders yet.
+- Repeatable fields render as lists and show an explicit empty-list state when no items are present.
+- Extracted keys outside Global Schema v0 are rendered in a separate section named `Other extracted fields`.
+- Veterinarian-facing copy does not expose governance terminology such as `pending_review`, `reviewer`, or `governance`.
+
+**Scope Clarification**
+- This story does not introduce new endpoints.
+- This story does not change persistence schema.
+- This story does not redefine error codes.
+- This story does not change run semantics; it defines review rendering behavior only.
+
+**Authoritative References**
+- Product: Global schema authority and field list: [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md) section **Global Schema v0 (Canonical Field List)**.
+- UX: Rendering and placeholder behavior: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) section **Review UI Rendering Rules (Global Schema v0 Template)**.
+- Tech: Structured interpretation schema and partial payload boundary: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix D.
+- Frontend implementation notes: [`docs/project/FRONTEND_IMPLEMENTATION.md`](FRONTEND_IMPLEMENTATION.md) section **Review Rendering Backbone (Global Schema v0)**.
+
+**Test Expectations**
+- Review screens always show the same section/key structure, independent of extraction completeness.
+- Missing scalar values, missing repeatable values, and loading states are visually distinguishable and deterministic.
+- Non-schema extracted keys are visible under `Other extracted fields`.
+
+**Definition of Done (DoD)**
+- Acceptance criteria satisfied.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
+
+---
+
 ## US-13 — Review aggregated pending structural changes
 
 **User Story**
@@ -902,7 +941,7 @@ As a user, I want to upload, access, and process DOCX documents so that the same
 - Tech: Endpoint surface and error semantics: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3/B3.2
 - Tech: Processing model and run invariants: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Sections 3–4 + Appendix A2
 - Tech: Step model + failure mapping: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix C
-- UX: Review flow guarantees: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) Sections 2–4
+- UX: Review flow guarantees and rendering contract: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) sections **Confidence — UX Definition**, **Veterinarian Review Flow**, **Review-in-Context Contract**, and **Review UI Rendering Rules (Global Schema v0 Template)**.
 
 **Story-specific technical requirements**
 - Add server-side type detection for DOCX based on server-side inspection.
@@ -942,7 +981,7 @@ As a user, I want to upload, access, and process image documents so that scans a
 - Tech: Processing model and run invariants: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Sections 3–4 + Appendix A2
 - Tech: Step model + failure mapping: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix C
 - Tech: Extraction library decisions (appendix): [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix E
-- UX: Review flow guarantees: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) Sections 2–4
+- UX: Review flow guarantees and rendering contract: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) sections **Confidence — UX Definition**, **Veterinarian Review Flow**, **Review-in-Context Contract**, and **Review UI Rendering Rules (Global Schema v0 Template)**.
 
 **Story-specific technical requirements**
 - Add server-side type detection for images based on server-side inspection.
