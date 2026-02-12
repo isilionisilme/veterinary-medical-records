@@ -131,3 +131,21 @@ def test_project_split_entry_includes_frontend_global_schema_rendering_module() 
         "docs/agent_router/04_PROJECT/FRONTEND_IMPLEMENTATION/65_review-rendering-backbone-global-schema-v0.md"
         in frontend_entry
     )
+
+
+def test_project_split_entry_includes_implementation_plan_us32_module() -> None:
+    plan_entry = _read_text(
+        ROUTER_ROOT / "04_PROJECT" / "IMPLEMENTATION_PLAN" / "00_entry.md"
+    )
+    release6 = _read_text(
+        ROUTER_ROOT
+        / "04_PROJECT"
+        / "IMPLEMENTATION_PLAN"
+        / "120_release-6-explicit-overrides-workflow-closure.md"
+    )
+
+    assert (
+        "docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/275_us-32-align-review-rendering-to-global-schema-v0-template.md"
+        in plan_entry
+    )
+    assert "US-32 — Align review rendering to Global Schema v0 template" in release6

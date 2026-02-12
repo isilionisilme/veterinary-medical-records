@@ -33,6 +33,7 @@ Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for i
 - `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/250_us-09-capture-correction-signals.md`
 - `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/260_us-10-change-document-language-and-reprocess.md`
 - `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/270_us-12-mark-document-as-reviewed.md`
+- `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/275_us-32-align-review-rendering-to-global-schema-v0-template.md`
 - `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/280_us-13-review-aggregated-pending-structural-changes.md`
 - `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/290_us-14-filter-and-prioritize-pending-structural-changes.md`
 - `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/300_us-15-approve-structural-changes-into-the-global-schema.md`

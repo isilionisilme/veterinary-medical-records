@@ -18,7 +18,7 @@ As a user, I want to upload, access, and process DOCX documents so that the same
 - Tech: Endpoint surface and error semantics: [`docs/project/TECHNICAL_DESIGN.md`](../TECHNICAL_DESIGN/00_entry.md) Appendix B3/B3.2
 - Tech: Processing model and run invariants: [`docs/project/TECHNICAL_DESIGN.md`](../TECHNICAL_DESIGN/00_entry.md) Sections 3–4 + Appendix A2
 - Tech: Step model + failure mapping: [`docs/project/TECHNICAL_DESIGN.md`](../TECHNICAL_DESIGN/00_entry.md) Appendix C
-- UX: Review flow guarantees: [`docs/project/UX_DESIGN.md`](../UX_DESIGN/00_entry.md) Sections 2–4
+- UX: Review flow guarantees and rendering contract: [`docs/project/UX_DESIGN.md`](../UX_DESIGN/00_entry.md) sections **Confidence — UX Definition**, **Veterinarian Review Flow**, **Review-in-Context Contract**, and **Review UI Rendering Rules (Global Schema v0 Template)**.
 
 **Story-specific technical requirements**
 - Add server-side type detection for DOCX based on server-side inspection.
