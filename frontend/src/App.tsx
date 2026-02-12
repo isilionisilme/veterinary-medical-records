@@ -136,6 +136,8 @@ type ReviewDisplayField = {
   rawField?: ReviewField;
 };
 
+type ReviewPanelState = "idle" | "loading" | "ready" | "no_completed_run" | "error";
+
 type DocumentReviewResponse = {
   document_id: string;
   latest_completed_run: {
@@ -730,6 +732,8 @@ export function App() {
   const [onlyLowConfidence, setOnlyLowConfidence] = useState(false);
   const [expandedFieldValues, setExpandedFieldValues] = useState<Record<string, boolean>>({});
   const [evidenceFocusRequestId, setEvidenceFocusRequestId] = useState(0);
+  const [reviewLoadingDocId, setReviewLoadingDocId] = useState<string | null>(null);
+  const [reviewLoadingSinceMs, setReviewLoadingSinceMs] = useState<number | null>(null);
   const [isHoverDevice, setIsHoverDevice] = useState(true);
   const [uploadInfoPosition, setUploadInfoPosition] = useState({ top: 0, left: 0 });
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -1135,6 +1139,39 @@ export function App() {
     enabled: Boolean(activeId),
     retry: false,
   });
+
+  useEffect(() => {
+    if (!activeId) {
+      setReviewLoadingDocId(null);
+      setReviewLoadingSinceMs(null);
+      return;
+    }
+    setReviewLoadingDocId(activeId);
+    setReviewLoadingSinceMs(Date.now());
+  }, [activeId]);
+
+  useEffect(() => {
+    if (!activeId || reviewLoadingDocId !== activeId) {
+      return;
+    }
+    if (documentReview.isFetching) {
+      return;
+    }
+
+    const minimumVisibleMs = 300;
+    const elapsed = reviewLoadingSinceMs ? Date.now() - reviewLoadingSinceMs : minimumVisibleMs;
+    if (elapsed >= minimumVisibleMs) {
+      setReviewLoadingDocId(null);
+      setReviewLoadingSinceMs(null);
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setReviewLoadingDocId(null);
+      setReviewLoadingSinceMs(null);
+    }, minimumVisibleMs - elapsed);
+    return () => window.clearTimeout(timer);
+  }, [activeId, documentReview.isFetching, reviewLoadingDocId, reviewLoadingSinceMs]);
 
   const rawTextRunId = documentDetails.data?.latest_run?.run_id ?? null;
   const rawTextQuery = useQuery({
@@ -1610,23 +1647,45 @@ export function App() {
     });
   }, [onlyLowConfidence, otherDisplayFields]);
 
-  const reviewErrorMessage = (() => {
+  const reviewPanelState: ReviewPanelState = (() => {
     if (!activeId) {
+      return "idle";
+    }
+    if (reviewLoadingDocId === activeId) {
+      return "loading";
+    }
+    if (documentReview.isFetching && !documentReview.isError) {
+      return "loading";
+    }
+    if (documentReview.isError) {
+      if (
+        documentReview.error instanceof ApiResponseError &&
+        documentReview.error.reason === "NO_COMPLETED_RUN"
+      ) {
+        return "no_completed_run";
+      }
+      return "error";
+    }
+    if (!documentReview.data) {
+      return "error";
+    }
+    return "ready";
+  })();
+
+  const reviewPanelMessage = (() => {
+    if (reviewPanelState === "idle") {
       return "Selecciona un documento para empezar la revision.";
     }
-    if (documentReview.isLoading || documentReview.isFetching) {
-      return "Preparando revision en contexto...";
+    if (reviewPanelState === "loading") {
+      return "Loading structured interpretation...";
     }
-    if (!documentReview.isError) {
-      return null;
+    if (reviewPanelState === "no_completed_run") {
+      return "No completed run found";
     }
-    if (documentReview.error instanceof ApiResponseError) {
-      if (documentReview.error.reason === "NO_COMPLETED_RUN") {
-        return "La revision estara disponible cuando termine el procesamiento.";
-      }
-      return documentReview.error.userMessage;
+    if (reviewPanelState === "error") {
+      return "Error loading interpretation";
     }
-    return getUserErrorMessage(documentReview.error, "No se pudo cargar la revision del documento.");
+    return null;
   })();
 
   const handleSelectReviewField = (field: ReviewDisplayField) => {
@@ -1646,6 +1705,12 @@ export function App() {
     setEvidenceFocusRequestId((current) => current + 1);
     setEvidenceNotice(`Mostrando fuente en la página ${normalizedEvidence.page}.`);
   };
+
+  useEffect(() => {
+    setSelectedFieldId(null);
+    setSelectedEvidence(null);
+    setEvidenceNotice(null);
+  }, [activeId]);
 
   useEffect(() => {
     if (!selectedFieldId) {
@@ -1751,7 +1816,7 @@ export function App() {
 
   return (
     <div className="min-h-screen px-6 py-10">
-      <header className="mx-auto flex w-full max-w-6xl flex-col gap-3">
+      <header className="sticky top-0 z-40 mx-auto flex w-full max-w-6xl flex-col gap-3 bg-white/90 pb-3 backdrop-blur">
         <p className="text-sm uppercase tracking-[0.3em] text-muted">
           Carga asistiva de documentos
         </p>
@@ -1896,7 +1961,10 @@ export function App() {
                   </div>
                 </div>
 
-                <div className="relative mt-4 min-h-0 flex-1 overflow-y-auto pr-1">
+                <div
+                  data-testid="left-panel-scroll"
+                  className="relative mt-4 min-h-0 flex-1 overflow-y-auto pr-1"
+                >
                   {documentList.isLoading && (
                     <div className="space-y-2 rounded-2xl border border-black/10 bg-white/70 p-4">
                       {Array.from({ length: 4 }).map((_, index) => (
@@ -2073,7 +2141,8 @@ export function App() {
                     ) : (
                       <div className="flex h-full min-h-0 gap-4">
                         <div
-                          className="relative min-h-0 flex-1"
+                          data-testid="center-panel-scroll"
+                          className="relative min-h-0 flex-1 overflow-y-auto"
                           onDragEnter={handleViewerDragEnter}
                           onDragOver={handleViewerDragOver}
                           onDragLeave={handleViewerDragLeave}
@@ -2108,13 +2177,7 @@ export function App() {
                             </Button>
                           </div>
 
-                          {reviewErrorMessage && (
-                            <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
-                              {reviewErrorMessage}
-                            </p>
-                          )}
-
-                          {!reviewErrorMessage && (
+                          {reviewPanelState === "ready" && (
                             <div className="mt-3 flex flex-wrap gap-3 text-xs text-muted">
                               <label className="inline-flex items-center gap-2">
                                 <input
@@ -2135,9 +2198,41 @@ export function App() {
                             </div>
                           )}
 
-                          {!reviewErrorMessage && (
-                            <div className="mt-3 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
-                              <section>
+                          <div
+                            data-testid="right-panel-scroll"
+                            className="mt-3 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1"
+                          >
+                            {reviewPanelState === "loading" && (
+                              <section aria-live="polite" className="space-y-2">
+                                <p className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700">
+                                  {reviewPanelMessage}
+                                </p>
+                                <div data-testid="review-core-skeleton" className="space-y-2">
+                                  {Array.from({ length: 6 }).map((_, index) => (
+                                    <div
+                                      key={`review-skeleton-${index}`}
+                                      className="animate-pulse rounded-xl border border-black/10 bg-white/90 p-3"
+                                    >
+                                      <div className="h-3 w-1/2 rounded bg-black/10" />
+                                      <div className="mt-2 h-2.5 w-5/6 rounded bg-black/10" />
+                                      <div className="mt-3 h-2 w-1/3 rounded bg-black/10" />
+                                    </div>
+                                  ))}
+                                </div>
+                              </section>
+                            )}
+
+                            {reviewPanelState !== "loading" &&
+                              reviewPanelState !== "ready" &&
+                              reviewPanelMessage && (
+                                <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                                  {reviewPanelMessage}
+                                </p>
+                              )}
+
+                            {reviewPanelState === "ready" && (
+                              <>
+                                <section>
                                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
                                   Campos core
                                 </p>
@@ -2206,22 +2301,21 @@ export function App() {
                                             {isExpanded ? "Ver menos" : "Ver más"}
                                           </button>
                                         )}
-                                        <div className="mt-2 flex items-center gap-2 text-[11px] text-muted">
-                                          {field.evidence?.page ? (
-                                            <>
-                                              <span>Fuente:</span>
-                                              <button
-                                                type="button"
-                                                className="font-semibold text-ink underline underline-offset-2"
-                                                onClick={() => handleSelectReviewField(field)}
-                                              >
-                                                Página {field.evidence.page}
-                                              </button>
-                                            </>
-                                          ) : (
-                                            <span>Sin evidencia disponible</span>
-                                          )}
-                                        </div>
+                                        <button
+                                          type="button"
+                                          aria-disabled={!field.evidence?.page}
+                                          className={`mt-2 inline-flex items-center gap-1 text-[11px] ${
+                                            field.evidence?.page
+                                              ? "text-ink underline underline-offset-2"
+                                              : "cursor-not-allowed text-muted/70"
+                                          }`}
+                                          onClick={() => handleSelectReviewField(field)}
+                                        >
+                                          <span className="text-muted">Fuente:</span>
+                                          <span className="font-semibold">
+                                            {field.evidence?.page ? `Página ${field.evidence.page}` : "—"}
+                                          </span>
+                                        </button>
                                         </article>
                                       );
                                     })}
@@ -2230,7 +2324,7 @@ export function App() {
                                 </div>
                               </section>
 
-                              <section>
+                                <section>
                                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
                                   Otros campos extraídos
                                 </p>
@@ -2271,29 +2365,29 @@ export function App() {
                                           </div>
                                           <p className="mt-2 text-sm text-ink">{field.displayValue}</p>
                                         </button>
-                                        <div className="mt-2 flex items-center gap-2 text-[11px] text-muted">
-                                          {field.evidence?.page ? (
-                                            <>
-                                              <span>Fuente:</span>
-                                              <button
-                                                type="button"
-                                                className="font-semibold text-ink underline underline-offset-2"
-                                                onClick={() => handleSelectReviewField(field)}
-                                              >
-                                                Página {field.evidence.page}
-                                              </button>
-                                            </>
-                                          ) : (
-                                            <span>Sin evidencia disponible</span>
-                                          )}
-                                        </div>
+                                        <button
+                                          type="button"
+                                          aria-disabled={!field.evidence?.page}
+                                          className={`mt-2 inline-flex items-center gap-1 text-[11px] ${
+                                            field.evidence?.page
+                                              ? "text-ink underline underline-offset-2"
+                                              : "cursor-not-allowed text-muted/70"
+                                          }`}
+                                          onClick={() => handleSelectReviewField(field)}
+                                        >
+                                          <span className="text-muted">Fuente:</span>
+                                          <span className="font-semibold">
+                                            {field.evidence?.page ? `Página ${field.evidence.page}` : "—"}
+                                          </span>
+                                        </button>
                                       </article>
                                     );
                                   })}
                                 </div>
-                              </section>
-                            </div>
-                          )}
+                                </section>
+                              </>
+                            )}
+                          </div>
 
                           {evidenceNotice && (
                             <p className="mt-3 rounded-xl border border-black/10 bg-white/90 px-3 py-2 text-xs text-muted">

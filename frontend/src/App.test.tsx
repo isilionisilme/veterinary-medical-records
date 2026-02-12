@@ -1002,6 +1002,61 @@ describe("App upload and list flow", () => {
     expect(screen.getByText("Owner name")).toBeInTheDocument();
   });
 
+  it("keeps right panel mounted and shows skeleton while loading interpretation", async () => {
+    const baseFetch = globalThis.fetch as typeof fetch;
+    let releaseReviewRequest: (() => void) | null = null;
+
+    globalThis.fetch = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = input.toString();
+      const method = (init?.method ?? "GET").toUpperCase();
+
+      if (url.includes("/documents/doc-ready/review") && method === "GET") {
+        return new Promise<Response>((resolve) => {
+          releaseReviewRequest = () => {
+            void baseFetch(input, init).then(resolve);
+          };
+        });
+      }
+
+      return baseFetch(input, init);
+    }) as typeof fetch;
+
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+
+    expect(await screen.findByText("Loading structured interpretation...")).toBeInTheDocument();
+    expect(screen.getByTestId("right-panel-scroll")).toBeInTheDocument();
+    expect(screen.getByTestId("review-core-skeleton")).toBeInTheDocument();
+
+    expect(releaseReviewRequest).not.toBeNull();
+    releaseReviewRequest?.();
+
+    expect(await screen.findByText("Campos core")).toBeInTheDocument();
+  });
+
+  it("keeps independent scroll containers and preserves right panel scroll on evidence clicks", async () => {
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+    await screen.findByText("Campos core");
+
+    const leftPanelScroll = screen.getByTestId("left-panel-scroll");
+    const centerPanelScroll = screen.getByTestId("center-panel-scroll");
+    const rightPanelScroll = screen.getByTestId("right-panel-scroll");
+    expect(leftPanelScroll).toBeInTheDocument();
+    expect(centerPanelScroll).toBeInTheDocument();
+    expect(rightPanelScroll).toBeInTheDocument();
+
+    rightPanelScroll.scrollTop = 140;
+    fireEvent.scroll(rightPanelScroll);
+
+    fireEvent.click(screen.getAllByRole("button", { name: /Fuente:\s*Página /i })[0]);
+
+    expect(screen.getByTestId("right-panel-scroll")).toBe(rightPanelScroll);
+    expect(rightPanelScroll.scrollTop).toBe(140);
+  });
+
   it("keeps evidence behavior deterministic with source links and fallback", async () => {
     renderApp();
 
@@ -1017,6 +1072,20 @@ describe("App upload and list flow", () => {
     expect(screen.getByText("Evidencia seleccionada")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /Especie/i }));
+    expect(screen.getByText(/Sin evidencia disponible para este campo\./i)).toBeInTheDocument();
+  });
+
+  it("renders evidence links for available source and disabled state for missing source", async () => {
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+    await screen.findByText("Campos core");
+
+    expect(screen.getAllByRole("button", { name: /Fuente:\s*Página /i }).length).toBeGreaterThan(0);
+
+    const missingSource = screen.getAllByRole("button", { name: /Fuente:\s*—/i })[0];
+    expect(missingSource).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(missingSource);
     expect(screen.getByText(/Sin evidencia disponible para este campo\./i)).toBeInTheDocument();
   });
 
