@@ -20,6 +20,15 @@ DOC_UPDATES_NORMALIZE = (
 DOC_UPDATES_CHECKLIST = (
     REPO_ROOT / "docs" / "agent_router" / "01_WORKFLOW" / "DOC_UPDATES" / "30_checklist.md"
 )
+DOC_UPDATES_TEST_IMPACT_MAP = (
+    REPO_ROOT
+    / "docs"
+    / "agent_router"
+    / "01_WORKFLOW"
+    / "DOC_UPDATES"
+    / "test_impact_map.json"
+)
+DOC_TEST_SYNC_GUARD = REPO_ROOT / "scripts" / "check_doc_test_sync.py"
 
 
 def _read_text(path: Path) -> str:
@@ -31,6 +40,8 @@ def test_doc_updates_core_files_exist() -> None:
     assert DOC_UPDATES_ENTRY.exists(), "Missing DOC_UPDATES entry module."
     assert DOC_UPDATES_NORMALIZE.exists(), "Missing DOC_UPDATES normalization module."
     assert DOC_UPDATES_CHECKLIST.exists(), "Missing DOC_UPDATES checklist module."
+    assert DOC_UPDATES_TEST_IMPACT_MAP.exists(), "Missing DOC_UPDATES test impact map."
+    assert DOC_TEST_SYNC_GUARD.exists(), "Missing doc/test sync guard script."
     assert RULES_INDEX.exists(), "Missing rules index."
 
 
@@ -53,6 +64,8 @@ def test_doc_updates_entry_covers_triggers_and_summary_schema() -> None:
     assert "git status --porcelain" in text
     assert "git diff --name-status" in text
     assert "git diff -- <path>" in text
+    assert "test_impact_map.json" in text
+    assert "Related tests/guards updated" in text
     assert "DOC_UPDATES Summary" in text
     assert "Propagation gaps" in text
     assert "show me the unpropagated changes" in lower
@@ -90,6 +103,16 @@ def test_checklist_enforces_discovery_and_anti_loop() -> None:
     assert "Normaliz" in text and "no loop" in text.lower()
     assert "DOC_UPDATES Summary" in text
     assert "Propagation gaps" in text
+    assert "related test/guard file was updated" in text
+
+
+def test_doc_test_sync_map_has_minimum_rules() -> None:
+    text = _read_text(DOC_UPDATES_TEST_IMPACT_MAP)
+    assert "\"doc_glob\": \"docs/agent_router/*.md\"" in text
+    assert "\"doc_glob\": \"docs/agent_router/**/*.md\"" in text
+    assert "\"doc_glob\": \"docs/shared/BRAND_GUIDELINES.md\"" in text
+    assert "test_doc_updates_contract.py" in text
+    assert "check_brand_compliance.py" in text
 
 
 def test_rules_index_contains_known_mapping_hints() -> None:
@@ -103,3 +126,4 @@ def test_rules_index_contains_known_mapping_hints() -> None:
 def test_ci_does_not_ignore_markdown_only_changes() -> None:
     text = _read_text(CI_WORKFLOW)
     assert "paths-ignore" not in text
+    assert "check_doc_test_sync.py" in text

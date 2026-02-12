@@ -1,0 +1,36 @@
+{
+  "rules": [
+    {
+      "doc_glob": "docs/agent_router/*.md",
+      "description": "Root router docs must keep router/doc-updates contract tests aligned.",
+      "required_any": [
+        "backend/tests/unit/test_doc_router_contract.py",
+        "backend/tests/unit/test_doc_updates_contract.py",
+        "backend/tests/unit/test_doc_updates_e2e_contract.py"
+      ]
+    },
+    {
+      "doc_glob": "docs/agent_router/**/*.md",
+      "description": "Router workflow changes must keep router/doc-updates contract tests aligned.",
+      "required_any": [
+        "backend/tests/unit/test_doc_router_contract.py",
+        "backend/tests/unit/test_doc_updates_contract.py",
+        "backend/tests/unit/test_doc_updates_e2e_contract.py"
+      ]
+    },
+    {
+      "doc_glob": "docs/shared/BRAND_GUIDELINES.md",
+      "description": "Brand guideline changes must keep brand guard checks aligned.",
+      "required_any": [
+        "scripts/check_brand_compliance.py"
+      ]
+    },
+    {
+      "doc_glob": "docs/project/BRAND_GUIDELINES.md",
+      "description": "Project-level brand updates must keep brand guard checks aligned.",
+      "required_any": [
+        "scripts/check_brand_compliance.py"
+      ]
+    }
+  ]
+}
