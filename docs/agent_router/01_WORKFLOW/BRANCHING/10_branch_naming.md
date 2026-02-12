@@ -2,6 +2,7 @@
 
 ## User stories
 - `feature/<ID>-<short-representative-slug>`
+- `improvement/<short-slug>` (user-facing improvements to previous implementations)
 
 ## Technical non-user-facing work
 - `refactor/<short-slug>`
