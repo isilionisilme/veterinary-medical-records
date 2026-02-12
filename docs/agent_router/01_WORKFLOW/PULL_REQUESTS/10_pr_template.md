@@ -8,3 +8,4 @@
 - Summary
 - Testing
 - UX/Brand compliance (required when `frontend/**` or user-visible behavior/copy changes)
+- Doc/Test sync compliance (required when changing mapped docs in `test_impact_map.json`)

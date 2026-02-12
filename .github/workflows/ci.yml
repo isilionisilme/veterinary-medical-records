@@ -8,6 +8,22 @@ on:
     branches: [main]
 
 jobs:
+  doc_test_sync_guard:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+      - name: Run doc/test sync guard
+        run: |
+          python scripts/check_doc_test_sync.py --base-ref "${{ github.event.pull_request.base.sha }}"
+
   brand_guard:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
