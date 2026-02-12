@@ -2,10 +2,12 @@
 
 This module is the operational procedure for code reviews in this repo.
 
-## When a review is required
-- PR workflow: always ask the user whether they want a code review.
-- If the user confirms: run the review.
-- If the user declines: skip review.
+## Manual trigger only: hard gate
+- Do not start a code review unless the user explicitly asks to run one.
+- Explicit trigger examples: "Do a code review for PR #...", "Review the diff for ...", "Run a code review now".
+- Starting a review includes: fetching PR context for review, reading diffs for review, generating formal review output/comment, suggesting review commits, or any multi-step review run.
+- If review seems needed/helpful, you may propose it, but STOP and wait for explicit instruction.
+- This gate takes precedence over any workflow hint that would otherwise auto-start review-related actions.
 
 ## Review input
 - `git diff main...HEAD`

@@ -7,6 +7,15 @@
 
 When an AI coding assistant or automation tool is used to create or update a Pull Request in this repository, it must follow this procedure automatically. This operational rule complements the existing Pull Request and Code Review policies and does not replace them.
 
+## Manual trigger only: Code reviews (precedence gate)
+
+Code review execution is manual trigger only.
+- Do not initiate code review steps from PR events/context unless the user explicitly asks.
+- Explicit trigger examples: "Do a code review for PR #...", "Review the diff for ...", "Run a code review now".
+- Starting a code review includes fetching PR review context, reading diffs for review, generating formal review output/comments, suggesting review commits, or running any multi-step review flow.
+- If a review may be useful, you may propose it, but stop and wait for explicit user instruction.
+- This gate overrides any automatic-review interpretation in this document.
+
 ## Pull Request Procedure
 
 1) Confirm repository state before creating the PR:
@@ -43,10 +52,10 @@ When an AI coding assistant or automation tool is used to create or update a Pul
    - Load `docs/agent_router/02_PRODUCT/USER_VISIBLE/00_entry.md` before implementation/review.
    - Add a `UX/Brand compliance` section to the PR description with concrete evidence.
 
-6) Ask the user whether they want a code review:
-   - Ask explicitly for every PR classification (docs-only, code, non-code/non-doc).
-   - For docs-only PRs, recommend skipping the review by policy unless the user explicitly asks for one.
-   - Run the review only after explicit user confirmation.
+6) Code review gate:
+   - Do not ask by default on every PR.
+   - Run a review only when explicitly requested by the user.
+   - For docs-only PRs, review remains skipped by policy unless the user explicitly requests one.
 
 7) Perform a maintainability-focused code review of the PR diff (when user-approved):
    - Use `git diff main...HEAD` as the review input.
