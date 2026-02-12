@@ -12,20 +12,25 @@ from fastapi import APIRouter, File, Query, Request, UploadFile, status
 from fastapi.responses import FileResponse, JSONResponse, Response
 
 from backend.app.api.schemas import (
+    ActiveInterpretationReviewResponse,
     DocumentListItemResponse,
     DocumentListResponse,
     DocumentResponse,
+    DocumentReviewResponse,
     DocumentUploadResponse,
+    LatestCompletedRunReviewResponse,
     LatestRunResponse,
     ProcessingHistoryResponse,
     ProcessingHistoryRunResponse,
     ProcessingRunResponse,
     ProcessingStepResponse,
+    RawTextArtifactAvailabilityResponse,
     RawTextArtifactResponse,
 )
 from backend.app.application.document_service import (
     get_document,
     get_document_original_location,
+    get_document_review,
     get_document_status_details,
     get_processing_history,
     list_documents,
@@ -247,6 +252,70 @@ def get_document_processing_history(
             )
             for run in result.runs
         ],
+    )
+
+
+@router.get(
+    "/documents/{document_id}/review",
+    response_model=DocumentReviewResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get review context for a document",
+    description="Return latest completed run and its active interpretation.",
+    responses={
+        404: {"description": "Document not found (NOT_FOUND)."},
+        409: {"description": "No completed run available for review (CONFLICT)."},
+    },
+)
+def get_document_review_context(
+    request: Request, document_id: str
+) -> DocumentReviewResponse | JSONResponse:
+    """Return review context based on the latest completed run."""
+
+    repository = cast(DocumentRepository, request.app.state.document_repository)
+    storage = cast(FileStorage, request.app.state.file_storage)
+    if get_document(document_id=document_id, repository=repository) is None:
+        return _error_response(
+            status_code=status.HTTP_404_NOT_FOUND,
+            error_code="NOT_FOUND",
+            message="Document not found.",
+        )
+
+    review = get_document_review(
+        document_id=document_id,
+        repository=repository,
+        storage=storage,
+    )
+    if review is None:
+        return _error_response(
+            status_code=status.HTTP_409_CONFLICT,
+            error_code="CONFLICT",
+            message="Review is not available until a completed run exists.",
+            details={"reason": "NO_COMPLETED_RUN"},
+        )
+
+    _log_event(
+        event_type="DOCUMENT_REVIEW_VIEWED",
+        document_id=document_id,
+        run_id=review.latest_completed_run.run_id,
+    )
+
+    return DocumentReviewResponse(
+        document_id=review.document_id,
+        latest_completed_run=LatestCompletedRunReviewResponse(
+            run_id=review.latest_completed_run.run_id,
+            state=review.latest_completed_run.state,
+            completed_at=review.latest_completed_run.completed_at,
+            failure_type=review.latest_completed_run.failure_type,
+        ),
+        active_interpretation=ActiveInterpretationReviewResponse(
+            interpretation_id=review.active_interpretation.interpretation_id,
+            version_number=review.active_interpretation.version_number,
+            data=review.active_interpretation.data,
+        ),
+        raw_text_artifact=RawTextArtifactAvailabilityResponse(
+            run_id=review.raw_text_artifact.run_id,
+            available=review.raw_text_artifact.available,
+        ),
     )
 
 

@@ -88,6 +88,88 @@ type RawTextArtifactResponse = {
   text: string;
 };
 
+type ReviewEvidence = {
+  page: number;
+  snippet: string;
+};
+
+type ReviewField = {
+  field_id: string;
+  key: string;
+  value: string | number | boolean | null;
+  value_type: string;
+  confidence: number;
+  is_critical: boolean;
+  origin: "machine" | "human";
+  evidence?: ReviewEvidence;
+};
+
+type StructuredInterpretationData = {
+  schema_version: string;
+  document_id: string;
+  processing_run_id: string;
+  created_at: string;
+  fields: ReviewField[];
+};
+
+type CoreFieldDefinition = {
+  key: string;
+  label: string;
+  section: string;
+  order: number;
+  value_type: "string" | "number" | "boolean" | "date" | "unknown";
+  core: true;
+};
+
+type ReviewDisplayField = {
+  id: string;
+  key: string;
+  label: string;
+  section: string;
+  order: number;
+  valueType: string;
+  displayValue: string;
+  isMissing: boolean;
+  confidence: number;
+  source: "core" | "extracted";
+  evidence?: ReviewEvidence;
+  rawField?: ReviewField;
+};
+
+type DocumentReviewResponse = {
+  document_id: string;
+  latest_completed_run: {
+    run_id: string;
+    state: string;
+    completed_at: string | null;
+    failure_type: string | null;
+  };
+  active_interpretation: {
+    interpretation_id: string;
+    version_number: number;
+    data: StructuredInterpretationData;
+  };
+  raw_text_artifact: {
+    run_id: string;
+    available: boolean;
+  };
+};
+
+const CORE_FIELD_CATALOG: CoreFieldDefinition[] = [
+  { key: "pet_name", label: "Nombre del paciente", section: "Paciente", order: 1, value_type: "string", core: true },
+  { key: "species", label: "Especie", section: "Paciente", order: 2, value_type: "string", core: true },
+  { key: "sex", label: "Sexo", section: "Paciente", order: 3, value_type: "string", core: true },
+  { key: "weight", label: "Peso", section: "Paciente", order: 4, value_type: "number", core: true },
+  { key: "visit_date", label: "Fecha de visita", section: "Consulta", order: 5, value_type: "date", core: true },
+  { key: "chief_complaint", label: "Motivo de consulta", section: "Consulta", order: 6, value_type: "string", core: true },
+  { key: "findings", label: "Hallazgos", section: "Evaluacion", order: 7, value_type: "string", core: true },
+  { key: "diagnosis", label: "Diagnostico", section: "Evaluacion", order: 8, value_type: "string", core: true },
+  { key: "tests_results", label: "Pruebas y resultados", section: "Plan", order: 9, value_type: "string", core: true },
+  { key: "treatment_plan", label: "Plan de tratamiento", section: "Plan", order: 10, value_type: "string", core: true },
+  { key: "medications", label: "Medicación", section: "Plan", order: 11, value_type: "string", core: true },
+  { key: "follow_up", label: "Seguimiento", section: "Plan", order: 12, value_type: "string", core: true },
+];
+
 type DocumentUploadResponse = {
   document_id: string;
   status: string;
@@ -275,6 +357,49 @@ async function fetchDocumentDetails(documentId: string): Promise<DocumentDetailR
       `HTTP ${response.status} calling ${API_BASE_URL}/documents/${documentId}`
     );
   }
+  return response.json();
+}
+
+async function fetchDocumentReview(documentId: string): Promise<DocumentReviewResponse> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/documents/${documentId}/review`);
+  } catch (error) {
+    if (isNetworkFetchError(error)) {
+      throw new UiError(
+        "No se pudo conectar con el servidor.",
+        `Network error calling ${API_BASE_URL}/documents/${documentId}/review`
+      );
+    }
+    throw error;
+  }
+
+  if (!response.ok) {
+    let errorMessage = "No se pudo cargar la revision del documento.";
+    let errorCode: string | undefined;
+    let reason: string | undefined;
+    try {
+      const payload = await response.json();
+      if (typeof payload?.message === "string" && payload.message.trim()) {
+        errorMessage = payload.message;
+      }
+      if (typeof payload?.error_code === "string") {
+        errorCode = payload.error_code;
+      }
+      if (typeof payload?.details?.reason === "string") {
+        reason = payload.details.reason;
+      }
+    } catch {
+      // Ignore JSON parse errors for non-JSON responses.
+    }
+    throw new ApiResponseError(
+      errorMessage,
+      `HTTP ${response.status} calling ${API_BASE_URL}/documents/${documentId}/review`,
+      errorCode,
+      reason
+    );
+  }
+
   return response.json();
 }
 
@@ -526,6 +651,54 @@ function formatRunHeader(run: ProcessingHistoryRun): string {
   }`;
 }
 
+function formatReviewKeyLabel(key: string): string {
+  return key
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^./, (char) => char.toUpperCase());
+}
+
+function clampConfidence(value: number): number {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+  return Math.max(0, Math.min(1, value));
+}
+
+function getConfidenceLabel(confidence: number): "high" | "medium" | "low" {
+  if (confidence >= 0.8) {
+    return "high";
+  }
+  if (confidence >= 0.55) {
+    return "medium";
+  }
+  return "low";
+}
+
+function formatFieldValue(value: string | number | boolean | null, valueType: string): string {
+  if (value === null || value === undefined || value === "") {
+    return "No encontrado";
+  }
+  if (valueType === "boolean") {
+    return value ? "Sí" : "No";
+  }
+  if (valueType === "date") {
+    const parsed = new Date(String(value));
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toLocaleDateString("es-ES");
+    }
+  }
+  return String(value);
+}
+
+function truncateText(text: string, limit: number): string {
+  if (text.length <= limit) {
+    return text;
+  }
+  return `${text.slice(0, limit - 1).trimEnd()}…`;
+}
+
 export function App() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
@@ -550,6 +723,13 @@ export function App() {
   const [showRefreshFeedback, setShowRefreshFeedback] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
   const [isCopyingRawText, setIsCopyingRawText] = useState(false);
+  const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
+  const [selectedEvidence, setSelectedEvidence] = useState<ReviewEvidence | null>(null);
+  const [evidenceNotice, setEvidenceNotice] = useState<string | null>(null);
+  const [showMissingCoreFields, setShowMissingCoreFields] = useState(true);
+  const [onlyLowConfidence, setOnlyLowConfidence] = useState(false);
+  const [expandedFieldValues, setExpandedFieldValues] = useState<Record<string, boolean>>({});
+  const [evidenceFocusRequestId, setEvidenceFocusRequestId] = useState(0);
   const [isHoverDevice, setIsHoverDevice] = useState(true);
   const [uploadInfoPosition, setUploadInfoPosition] = useState({ top: 0, left: 0 });
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -787,6 +967,7 @@ export function App() {
       }
       queryClient.invalidateQueries({ queryKey: ["documents", "detail", result.document_id] });
       queryClient.invalidateQueries({ queryKey: ["documents", "history", result.document_id] });
+      queryClient.invalidateQueries({ queryKey: ["documents", "review", result.document_id] });
     },
     onError: (error) => {
       setUploadFeedback({
@@ -948,6 +1129,13 @@ export function App() {
     enabled: Boolean(activeId),
   });
 
+  const documentReview = useQuery({
+    queryKey: ["documents", "review", activeId],
+    queryFn: () => fetchDocumentReview(activeId ?? ""),
+    enabled: Boolean(activeId),
+    retry: false,
+  });
+
   const rawTextRunId = documentDetails.data?.latest_run?.run_id ?? null;
   const rawTextQuery = useQuery({
     queryKey: ["runs", "raw-text", rawTextRunId],
@@ -975,6 +1163,13 @@ export function App() {
   }, [documentList.data?.items]);
 
   useEffect(() => {
+    setSelectedFieldId(null);
+    setSelectedEvidence(null);
+    setEvidenceNotice(null);
+    setExpandedFieldValues({});
+  }, [activeId]);
+
+  useEffect(() => {
     if (!activeId || !documentDetails.data) {
       return;
     }
@@ -989,6 +1184,7 @@ export function App() {
     const intervalId = window.setInterval(() => {
       documentDetails.refetch();
       processingHistory.refetch();
+      documentReview.refetch();
     }, 1500);
     return () => window.clearInterval(intervalId);
   }, [
@@ -997,6 +1193,7 @@ export function App() {
     documentDetails.data?.status,
     documentDetails.data?.latest_run?.state,
     processingHistory,
+    documentReview,
   ]);
 
   const documentListItems = documentList.data?.items ?? [];
@@ -1114,10 +1311,12 @@ export function App() {
       queryClient.invalidateQueries({ queryKey: ["documents", "list"] });
       queryClient.invalidateQueries({ queryKey: ["documents", "detail", docId] });
       queryClient.invalidateQueries({ queryKey: ["documents", "history", docId] });
+      queryClient.invalidateQueries({ queryKey: ["documents", "review", docId] });
       queryClient.invalidateQueries({ queryKey: ["runs", "raw-text"] });
       queryClient.refetchQueries({ queryKey: ["documents", "list"], type: "active" });
       queryClient.refetchQueries({ queryKey: ["documents", "detail", docId], type: "active" });
       queryClient.refetchQueries({ queryKey: ["documents", "history", docId], type: "active" });
+      queryClient.refetchQueries({ queryKey: ["documents", "review", docId], type: "active" });
       latestRawTextRefreshRef.current = null;
     },
     onError: (error, docId, context) => {
@@ -1129,8 +1328,10 @@ export function App() {
       }
       queryClient.invalidateQueries({ queryKey: ["documents", "list"] });
       queryClient.invalidateQueries({ queryKey: ["documents", "detail", docId] });
+      queryClient.invalidateQueries({ queryKey: ["documents", "review", docId] });
       queryClient.refetchQueries({ queryKey: ["documents", "list"], type: "active" });
       queryClient.refetchQueries({ queryKey: ["documents", "detail", docId], type: "active" });
+      queryClient.refetchQueries({ queryKey: ["documents", "review", docId], type: "active" });
       setActionFeedback({
         kind: "error",
         message: getUserErrorMessage(error, "No pudimos iniciar el reprocesamiento."),
@@ -1154,6 +1355,7 @@ export function App() {
     if (activeId) {
       documentDetails.refetch();
       processingHistory.refetch();
+      documentReview.refetch();
     }
   };
   const isListRefreshing =
@@ -1300,6 +1502,172 @@ export function App() {
     }
     return getUserErrorMessage(rawTextQuery.error, "No se pudo cargar el texto extraido.");
   })();
+
+  const extractedReviewFields = useMemo(
+    () => documentReview.data?.active_interpretation.data.fields ?? [],
+    [documentReview.data?.active_interpretation.data.fields]
+  );
+
+  const coreDisplayFields = useMemo(() => {
+    const matchesByKey = new Map<string, ReviewField[]>();
+    extractedReviewFields.forEach((field) => {
+      const group = matchesByKey.get(field.key) ?? [];
+      group.push(field);
+      matchesByKey.set(field.key, group);
+    });
+
+    return CORE_FIELD_CATALOG.map((definition): ReviewDisplayField => {
+      const candidates = matchesByKey.get(definition.key) ?? [];
+      const bestCandidate = candidates.sort(
+        (a, b) => clampConfidence(b.confidence) - clampConfidence(a.confidence)
+      )[0];
+      if (!bestCandidate) {
+        return {
+          id: `core:${definition.key}`,
+          key: definition.key,
+          label: definition.label,
+          section: definition.section,
+          order: definition.order,
+          valueType: definition.value_type,
+          displayValue: "No encontrado",
+          isMissing: true,
+          confidence: 0,
+          source: "core",
+        };
+      }
+      return {
+        id: `core:${definition.key}`,
+        key: definition.key,
+        label: definition.label,
+        section: definition.section,
+        order: definition.order,
+        valueType: bestCandidate.value_type,
+        displayValue: formatFieldValue(bestCandidate.value, bestCandidate.value_type),
+        isMissing: false,
+        confidence: clampConfidence(bestCandidate.confidence),
+        source: "core",
+        evidence: bestCandidate.evidence,
+        rawField: bestCandidate,
+      };
+    }).sort((a, b) => a.order - b.order);
+  }, [extractedReviewFields]);
+
+  const otherDisplayFields = useMemo(() => {
+    const coreKeys = new Set(CORE_FIELD_CATALOG.map((field) => field.key));
+    return extractedReviewFields
+      .filter((field) => !coreKeys.has(field.key))
+      .map((field, index): ReviewDisplayField => ({
+        id: `extra:${field.field_id}:${index}`,
+        key: field.key,
+        label: formatReviewKeyLabel(field.key),
+        section: "Otros campos extraídos",
+        order: index + 1,
+        valueType: field.value_type,
+        displayValue: formatFieldValue(field.value, field.value_type),
+        isMissing: false,
+        confidence: clampConfidence(field.confidence),
+        source: "extracted",
+        evidence: field.evidence,
+        rawField: field,
+      }))
+      .sort((a, b) => a.order - b.order);
+  }, [extractedReviewFields]);
+
+  const filteredCoreFields = useMemo(() => {
+    return coreDisplayFields.filter((field) => {
+      if (!showMissingCoreFields && field.isMissing) {
+        return false;
+      }
+      if (onlyLowConfidence && field.confidence >= 0.55) {
+        return false;
+      }
+      return true;
+    });
+  }, [coreDisplayFields, onlyLowConfidence, showMissingCoreFields]);
+
+  const groupedCoreFields = useMemo(() => {
+    const sectionOrder = ["Paciente", "Consulta", "Evaluacion", "Plan"];
+    const groups = new Map<string, ReviewDisplayField[]>();
+    filteredCoreFields.forEach((field) => {
+      const current = groups.get(field.section) ?? [];
+      current.push(field);
+      groups.set(field.section, current);
+    });
+    return sectionOrder
+      .filter((section) => groups.has(section))
+      .map((section) => ({
+        section,
+        fields: (groups.get(section) ?? []).sort((a, b) => a.order - b.order),
+      }));
+  }, [filteredCoreFields]);
+
+  const filteredOtherFields = useMemo(() => {
+    return otherDisplayFields.filter((field) => {
+      if (onlyLowConfidence && field.confidence >= 0.55) {
+        return false;
+      }
+      return true;
+    });
+  }, [onlyLowConfidence, otherDisplayFields]);
+
+  const reviewErrorMessage = (() => {
+    if (!activeId) {
+      return "Selecciona un documento para empezar la revision.";
+    }
+    if (documentReview.isLoading || documentReview.isFetching) {
+      return "Preparando revision en contexto...";
+    }
+    if (!documentReview.isError) {
+      return null;
+    }
+    if (documentReview.error instanceof ApiResponseError) {
+      if (documentReview.error.reason === "NO_COMPLETED_RUN") {
+        return "La revision estara disponible cuando termine el procesamiento.";
+      }
+      return documentReview.error.userMessage;
+    }
+    return getUserErrorMessage(documentReview.error, "No se pudo cargar la revision del documento.");
+  })();
+
+  const handleSelectReviewField = (field: ReviewDisplayField) => {
+    setSelectedFieldId(field.id);
+    if (!field.evidence || !field.evidence.page) {
+      setSelectedEvidence(null);
+      setEvidenceNotice("Sin evidencia disponible para este campo.");
+      return;
+    }
+
+    const snippet = field.evidence.snippet?.trim();
+    const normalizedEvidence: ReviewEvidence = {
+      page: field.evidence.page,
+      snippet: snippet && snippet.length > 0 ? snippet : "Sin evidencia textual disponible.",
+    };
+    setSelectedEvidence(normalizedEvidence);
+    setEvidenceFocusRequestId((current) => current + 1);
+    setEvidenceNotice(`Mostrando fuente en la página ${normalizedEvidence.page}.`);
+  };
+
+  useEffect(() => {
+    if (!selectedFieldId) {
+      return;
+    }
+    const currentIds = new Set([
+      ...coreDisplayFields.map((field) => field.id),
+      ...otherDisplayFields.map((field) => field.id),
+    ]);
+    if (!currentIds.has(selectedFieldId)) {
+      setSelectedFieldId(null);
+      setSelectedEvidence(null);
+    }
+  }, [coreDisplayFields, otherDisplayFields, selectedFieldId]);
+
+  useEffect(() => {
+    if (!evidenceNotice) {
+      return;
+    }
+    const timer = window.setTimeout(() => setEvidenceNotice(null), 3000);
+    return () => window.clearTimeout(timer);
+  }, [evidenceNotice]);
 
   const handleDownloadRawText = () => {
     if (!rawTextContent) {
@@ -1656,59 +2024,292 @@ export function App() {
                 {activeViewerTab === "document" && (
                   <div
                     data-testid="viewer-dropzone"
-                    className="relative h-full min-h-0"
+                    className="h-full min-h-0"
                     onDragEnter={handleViewerDragEnter}
                     onDragOver={handleViewerDragOver}
                     onDragLeave={handleViewerDragLeave}
                     onDrop={handleViewerDrop}
                   >
                     {!activeId ? (
-                    documentList.isError ? (
-                      <div className="flex h-full flex-col rounded-2xl border border-black/10 bg-white/80 p-6">
-                        <div className="flex flex-1 items-center justify-center text-center">
-                          <p className="text-sm text-muted">
-                            Revisa la lista lateral para reintentar la carga de documentos.
-                          </p>
+                      documentList.isError ? (
+                        <div className="flex h-full flex-col rounded-2xl border border-black/10 bg-white/80 p-6">
+                          <div className="flex flex-1 items-center justify-center text-center">
+                            <p className="text-sm text-muted">
+                              Revisa la lista lateral para reintentar la carga de documentos.
+                            </p>
+                          </div>
                         </div>
-                      </div>
+                      ) : (
+                        <div
+                          data-testid="viewer-empty-state"
+                          className="relative flex h-full flex-col rounded-2xl border border-black/10 bg-white/80 p-6"
+                          role="button"
+                          tabIndex={0}
+                          onClick={handleOpenUploadArea}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              handleOpenUploadArea();
+                            }
+                          }}
+                        >
+                          <div className="flex flex-1 flex-col items-center justify-center text-center">
+                            <p className="text-sm text-muted">
+                              Selecciona un documento en la barra lateral o carga uno nuevo.
+                            </p>
+                            <UploadDropzone
+                              className="mt-4 w-full max-w-sm"
+                              isDragOver={isDragOverViewer}
+                              onActivate={handleOpenUploadArea}
+                              onDragEnter={handleViewerDragEnter}
+                              onDragOver={handleViewerDragOver}
+                              onDragLeave={handleViewerDragLeave}
+                              onDrop={handleViewerDrop}
+                              showDropOverlay
+                            />
+                          </div>
+                        </div>
+                      )
                     ) : (
-                      <div
-                        data-testid="viewer-empty-state"
-                        className="relative flex h-full flex-col rounded-2xl border border-black/10 bg-white/80 p-6"
-                        role="button"
-                        tabIndex={0}
-                        onClick={handleOpenUploadArea}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter" || event.key === " ") {
-                            event.preventDefault();
-                            handleOpenUploadArea();
-                          }
-                        }}
-                      >
-                        <div className="flex flex-1 flex-col items-center justify-center text-center">
-                          <p className="text-sm text-muted">
-                            Selecciona un documento en la barra lateral o carga uno nuevo.
-                          </p>
-                          <UploadDropzone
-                            className="mt-4 w-full max-w-sm"
+                      <div className="flex h-full min-h-0 gap-4">
+                        <div
+                          className="relative min-h-0 flex-1"
+                          onDragEnter={handleViewerDragEnter}
+                          onDragOver={handleViewerDragOver}
+                          onDragLeave={handleViewerDragLeave}
+                          onDrop={handleViewerDrop}
+                        >
+                          <PdfViewer
+                            key={activeId ?? "viewer-empty"}
+                            fileUrl={fileUrl}
+                            filename={filename}
                             isDragOver={isDragOverViewer}
-                            onActivate={handleOpenUploadArea}
-                            onDragEnter={handleViewerDragEnter}
-                            onDragOver={handleViewerDragOver}
-                            onDragLeave={handleViewerDragLeave}
-                            onDrop={handleViewerDrop}
-                            showDropOverlay
+                            focusPage={selectedEvidence?.page ?? null}
+                            highlightSnippet={selectedEvidence?.snippet ?? null}
+                            focusRequestId={evidenceFocusRequestId}
                           />
                         </div>
+                        <aside className="flex h-full w-full min-h-0 max-w-[360px] flex-col rounded-2xl border border-black/10 bg-white/80 p-4">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div>
+                              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
+                                Datos estructurados
+                              </p>
+                              <p className="mt-1 text-xs text-muted">
+                                La confianza guia la atencion, no bloquea decisiones.
+                              </p>
+                            </div>
+                            <Button
+                              type="button"
+                              onClick={() => setActiveViewerTab("raw_text")}
+                              disabled={!documentReview.data?.raw_text_artifact.available}
+                            >
+                              Abrir texto
+                            </Button>
+                          </div>
+
+                          {reviewErrorMessage && (
+                            <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                              {reviewErrorMessage}
+                            </p>
+                          )}
+
+                          {!reviewErrorMessage && (
+                            <div className="mt-3 flex flex-wrap gap-3 text-xs text-muted">
+                              <label className="inline-flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  checked={showMissingCoreFields}
+                                  onChange={(event) => setShowMissingCoreFields(event.target.checked)}
+                                />
+                                Mostrar faltantes
+                              </label>
+                              <label className="inline-flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  checked={onlyLowConfidence}
+                                  onChange={(event) => setOnlyLowConfidence(event.target.checked)}
+                                />
+                                Baja confianza
+                              </label>
+                            </div>
+                          )}
+
+                          {!reviewErrorMessage && (
+                            <div className="mt-3 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+                              <section>
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
+                                  Campos core
+                                </p>
+                                <div className="mt-2 space-y-2">
+                                  {groupedCoreFields.length === 0 && (
+                                    <p className="rounded-xl border border-black/10 bg-white/90 px-3 py-2 text-xs text-muted">
+                                      Ningún campo core coincide con los filtros.
+                                    </p>
+                                  )}
+                                  {groupedCoreFields.map((group) => (
+                                    <div key={group.section} className="space-y-2">
+                                      <p className="text-[11px] font-semibold text-muted">{group.section}</p>
+                                      {group.fields.map((field) => {
+                                        const confidenceTone = getConfidenceLabel(field.confidence);
+                                        const isSelected = selectedFieldId === field.id;
+                                        const isExpanded = Boolean(expandedFieldValues[field.id]);
+                                        const valueText = isExpanded
+                                          ? field.displayValue
+                                          : truncateText(field.displayValue, 140);
+                                        const canExpand = field.displayValue.length > 140;
+                                        return (
+                                          <article
+                                            key={field.id}
+                                            className={`rounded-xl border bg-white p-3 ${
+                                              isSelected ? "border-accent ring-1 ring-accent/40" : "border-black/10"
+                                            }`}
+                                          >
+                                        <button
+                                          type="button"
+                                          className="w-full text-left"
+                                          onClick={() => handleSelectReviewField(field)}
+                                        >
+                                          <div className="flex items-start justify-between gap-2">
+                                            <p className="text-xs font-semibold text-ink">{field.label}</p>
+                                            <span
+                                              className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                                                confidenceTone === "high"
+                                                  ? "bg-emerald-100 text-emerald-700"
+                                                  : confidenceTone === "medium"
+                                                  ? "bg-amber-100 text-amber-700"
+                                                  : "bg-red-100 text-red-700"
+                                              }`}
+                                            >
+                                              Confianza {(field.confidence * 100).toFixed(0)}%
+                                            </span>
+                                          </div>
+                                          <p
+                                            className={`mt-2 text-sm ${
+                                              field.isMissing ? "italic text-muted" : "text-ink"
+                                            }`}
+                                          >
+                                            {valueText}
+                                          </p>
+                                        </button>
+                                        {canExpand && (
+                                          <button
+                                            type="button"
+                                            className="mt-1 text-xs font-semibold text-muted underline underline-offset-2"
+                                            onClick={() =>
+                                              setExpandedFieldValues((current) => ({
+                                                ...current,
+                                                [field.id]: !current[field.id],
+                                              }))
+                                            }
+                                          >
+                                            {isExpanded ? "Ver menos" : "Ver más"}
+                                          </button>
+                                        )}
+                                        <div className="mt-2 flex items-center gap-2 text-[11px] text-muted">
+                                          {field.evidence?.page ? (
+                                            <>
+                                              <span>Fuente:</span>
+                                              <button
+                                                type="button"
+                                                className="font-semibold text-ink underline underline-offset-2"
+                                                onClick={() => handleSelectReviewField(field)}
+                                              >
+                                                Página {field.evidence.page}
+                                              </button>
+                                            </>
+                                          ) : (
+                                            <span>Sin evidencia disponible</span>
+                                          )}
+                                        </div>
+                                        </article>
+                                      );
+                                    })}
+                                    </div>
+                                  ))}
+                                </div>
+                              </section>
+
+                              <section>
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
+                                  Otros campos extraídos
+                                </p>
+                                <div className="mt-2 space-y-2">
+                                  {filteredOtherFields.length === 0 && (
+                                    <p className="rounded-xl border border-black/10 bg-white/90 px-3 py-2 text-xs text-muted">
+                                      No hay otros campos extraídos.
+                                    </p>
+                                  )}
+                                  {filteredOtherFields.map((field) => {
+                                    const confidenceTone = getConfidenceLabel(field.confidence);
+                                    const isSelected = selectedFieldId === field.id;
+                                    return (
+                                      <article
+                                        key={field.id}
+                                        className={`rounded-xl border bg-white p-3 ${
+                                          isSelected ? "border-accent ring-1 ring-accent/40" : "border-black/10"
+                                        }`}
+                                      >
+                                        <button
+                                          type="button"
+                                          className="w-full text-left"
+                                          onClick={() => handleSelectReviewField(field)}
+                                        >
+                                          <div className="flex items-start justify-between gap-2">
+                                            <p className="text-xs font-semibold text-ink">{field.label}</p>
+                                            <span
+                                              className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                                                confidenceTone === "high"
+                                                  ? "bg-emerald-100 text-emerald-700"
+                                                  : confidenceTone === "medium"
+                                                  ? "bg-amber-100 text-amber-700"
+                                                  : "bg-red-100 text-red-700"
+                                              }`}
+                                            >
+                                              Confianza {(field.confidence * 100).toFixed(0)}%
+                                            </span>
+                                          </div>
+                                          <p className="mt-2 text-sm text-ink">{field.displayValue}</p>
+                                        </button>
+                                        <div className="mt-2 flex items-center gap-2 text-[11px] text-muted">
+                                          {field.evidence?.page ? (
+                                            <>
+                                              <span>Fuente:</span>
+                                              <button
+                                                type="button"
+                                                className="font-semibold text-ink underline underline-offset-2"
+                                                onClick={() => handleSelectReviewField(field)}
+                                              >
+                                                Página {field.evidence.page}
+                                              </button>
+                                            </>
+                                          ) : (
+                                            <span>Sin evidencia disponible</span>
+                                          )}
+                                        </div>
+                                      </article>
+                                    );
+                                  })}
+                                </div>
+                              </section>
+                            </div>
+                          )}
+
+                          {evidenceNotice && (
+                            <p className="mt-3 rounded-xl border border-black/10 bg-white/90 px-3 py-2 text-xs text-muted">
+                              {evidenceNotice}
+                            </p>
+                          )}
+
+                          {selectedEvidence && (
+                            <div className="mt-3 rounded-xl border border-accent/40 bg-accentSoft/60 p-3 text-xs text-ink">
+                              <p className="font-semibold">Evidencia seleccionada</p>
+                              <p className="mt-1 text-muted">Pagina {selectedEvidence.page}</p>
+                              <p className="mt-1">{selectedEvidence.snippet}</p>
+                            </div>
+                          )}
+                        </aside>
                       </div>
-                    )
-                    ) : (
-                      <PdfViewer
-                        key={activeId ?? "viewer-empty"}
-                        fileUrl={fileUrl}
-                        filename={filename}
-                        isDragOver={isDragOverViewer}
-                      />
                     )}
                   </div>
                 )}

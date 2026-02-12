@@ -102,3 +102,36 @@ class RawTextArtifactResponse(BaseModel):
     artifact_type: str = Field(..., description="Artifact type identifier.")
     content_type: str = Field(..., description="Content type for the raw text artifact.")
     text: str = Field(..., description="Extracted raw text content.")
+
+
+class LatestCompletedRunReviewResponse(BaseModel):
+    run_id: str = Field(..., description="Unique identifier of the latest completed run.")
+    state: str = Field(..., description="Processing run state.")
+    completed_at: str | None = Field(
+        None, description="UTC ISO timestamp when the run completed."
+    )
+    failure_type: str | None = Field(None, description="Run-level failure category.")
+
+
+class ActiveInterpretationReviewResponse(BaseModel):
+    interpretation_id: str = Field(..., description="Active interpretation identifier.")
+    version_number: int = Field(..., description="Active interpretation version number.")
+    data: dict[str, object] = Field(..., description="Structured interpretation payload.")
+
+
+class RawTextArtifactAvailabilityResponse(BaseModel):
+    run_id: str = Field(..., description="Processing run identifier.")
+    available: bool = Field(..., description="Whether raw text is available for this run.")
+
+
+class DocumentReviewResponse(BaseModel):
+    document_id: str = Field(..., description="Unique identifier of the document.")
+    latest_completed_run: LatestCompletedRunReviewResponse = Field(
+        ..., description="Latest completed run used for review."
+    )
+    active_interpretation: ActiveInterpretationReviewResponse = Field(
+        ..., description="Active interpretation for the review run."
+    )
+    raw_text_artifact: RawTextArtifactAvailabilityResponse = Field(
+        ..., description="Raw text availability for the review run."
+    )

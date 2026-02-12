@@ -177,6 +177,41 @@ class SqliteDocumentRepository:
             failure_type=row["failure_type"],
         )
 
+    def get_latest_completed_run(self, document_id: str) -> ProcessingRunDetails | None:
+        """Fetch the latest completed processing run for a document."""
+
+        with database.get_connection() as conn:
+            row = conn.execute(
+                """
+                SELECT
+                    run_id,
+                    document_id,
+                    state,
+                    created_at,
+                    started_at,
+                    completed_at,
+                    failure_type
+                FROM processing_runs
+                WHERE document_id = ? AND state = ?
+                ORDER BY completed_at DESC, created_at DESC
+                LIMIT 1
+                """,
+                (document_id, ProcessingRunState.COMPLETED.value),
+            ).fetchone()
+
+        if row is None:
+            return None
+
+        return ProcessingRunDetails(
+            run_id=row["run_id"],
+            document_id=row["document_id"],
+            state=ProcessingRunState(row["state"]),
+            created_at=row["created_at"],
+            started_at=row["started_at"],
+            completed_at=row["completed_at"],
+            failure_type=row["failure_type"],
+        )
+
     def create_processing_run(
         self,
         *,
@@ -450,4 +485,29 @@ class SqliteDocumentRepository:
                 ),
             )
             conn.commit()
+
+    def get_latest_artifact_payload(
+        self, *, run_id: str, artifact_type: str
+    ) -> dict[str, object] | None:
+        """Fetch the latest artifact payload for a run and type."""
+
+        with database.get_connection() as conn:
+            row = conn.execute(
+                """
+                SELECT payload
+                FROM artifacts
+                WHERE run_id = ? AND artifact_type = ?
+                ORDER BY created_at DESC
+                LIMIT 1
+                """,
+                (run_id, artifact_type),
+            ).fetchone()
+
+        if row is None:
+            return None
+
+        payload = json.loads(row["payload"])
+        if not isinstance(payload, dict):
+            return None
+        return payload
 

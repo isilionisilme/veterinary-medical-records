@@ -5,7 +5,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { App } from "./App";
 
 vi.mock("./components/PdfViewer", () => ({
-  PdfViewer: () => <div data-testid="pdf-viewer" />,
+  PdfViewer: (props: { focusPage?: number | null; highlightSnippet?: string | null }) => (
+    <div
+      data-testid="pdf-viewer"
+      data-focus-page={props.focusPage ?? ""}
+      data-highlight-snippet={props.highlightSnippet ?? ""}
+    />
+  ),
 }));
 
 function renderApp() {
@@ -111,6 +117,69 @@ describe("App upload and list flow", () => {
             status_message: "Processing is in progress.",
             failure_type: found?.failure_type ?? null,
             latest_run: { run_id: `run-${docId}`, state: found?.status ?? "PROCESSING", failure_type: null },
+          }),
+          { status: 200 }
+        );
+      }
+
+      const reviewMatch = url.match(/\/documents\/([^/]+)\/review$/);
+      if (reviewMatch && method === "GET") {
+        const docId = reviewMatch[1];
+        return new Response(
+          JSON.stringify({
+            document_id: docId,
+            latest_completed_run: {
+              run_id: `run-${docId}`,
+              state: "COMPLETED",
+              completed_at: "2026-02-10T10:00:00Z",
+              failure_type: null,
+            },
+            active_interpretation: {
+              interpretation_id: `interp-${docId}`,
+              version_number: 1,
+              data: {
+                schema_version: "v0",
+                document_id: docId,
+                processing_run_id: `run-${docId}`,
+                created_at: "2026-02-10T10:00:00Z",
+                fields: [
+                  {
+                    field_id: `field-pet-name-${docId}`,
+                    key: "pet_name",
+                    value: "Luna",
+                    value_type: "string",
+                    confidence: 0.82,
+                    is_critical: false,
+                    origin: "machine",
+                    evidence: { page: 1, snippet: "Paciente: Luna" },
+                  },
+                  {
+                    field_id: `field-diagnosis-${docId}`,
+                    key: "diagnosis",
+                    value: "Gastroenteritis",
+                    value_type: "string",
+                    confidence: 0.62,
+                    is_critical: false,
+                    origin: "machine",
+                    evidence: { page: 2, snippet: "Diagnostico: Gastroenteritis" },
+                  },
+                  {
+                    field_id: `field-extra-${docId}`,
+                    key: "owner_name",
+                    value: "Ana",
+                    value_type: "string",
+                    confidence: 0.88,
+                    is_critical: false,
+                    origin: "machine",
+                    evidence: { page: 1, snippet: "Tutor: Ana" },
+                  },
+                ],
+              },
+            },
+            raw_text_artifact: {
+              run_id: `run-${docId}`,
+              available: true,
+            },
           }),
           { status: 200 }
         );
@@ -918,5 +987,57 @@ describe("App upload and list flow", () => {
     const calls = (globalThis.fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls;
     expect(calls.some(([url]) => String(url).includes("/documents/upload"))).toBe(false);
   }, 12000);
+
+  it("renders stable core fields with explicit missing states", async () => {
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+
+    expect(await screen.findByText("Campos core")).toBeInTheDocument();
+    expect(screen.getByText("Nombre del paciente")).toBeInTheDocument();
+    expect(screen.getByText("Diagnostico")).toBeInTheDocument();
+    expect(screen.getByText("Especie")).toBeInTheDocument();
+    expect(screen.getAllByText("No encontrado").length).toBeGreaterThan(0);
+    expect(screen.getByText("Otros campos extraídos")).toBeInTheDocument();
+    expect(screen.getByText("Owner name")).toBeInTheDocument();
+  });
+
+  it("keeps evidence behavior deterministic with source links and fallback", async () => {
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+    await screen.findByText("Campos core");
+
+    const sourceLinks = screen.getAllByRole("button", { name: /Página /i });
+    fireEvent.click(sourceLinks[0]);
+
+    const viewer = screen.getByTestId("pdf-viewer");
+    expect(viewer).toHaveAttribute("data-focus-page", "1");
+    expect(screen.getByText(/Mostrando fuente en la página 1\./i)).toBeInTheDocument();
+    expect(screen.getByText("Evidencia seleccionada")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Especie/i }));
+    expect(screen.getByText(/Sin evidencia disponible para este campo\./i)).toBeInTheDocument();
+  });
+
+  it("synchronizes selected field with viewer context repeatedly", async () => {
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+    await screen.findByText("Campos core");
+
+    fireEvent.click(screen.getByRole("button", { name: /Diagnostico/i }));
+    let viewer = screen.getByTestId("pdf-viewer");
+    expect(viewer).toHaveAttribute("data-focus-page", "2");
+    expect(viewer).toHaveAttribute("data-highlight-snippet", "Diagnostico: Gastroenteritis");
+
+    fireEvent.click(screen.getByRole("button", { name: /Nombre del paciente/i }));
+    viewer = screen.getByTestId("pdf-viewer");
+    expect(viewer).toHaveAttribute("data-focus-page", "1");
+    expect(viewer).toHaveAttribute("data-highlight-snippet", "Paciente: Luna");
+
+    fireEvent.click(screen.getByRole("button", { name: /Nombre del paciente/i }));
+    expect(screen.getByText(/Mostrando fuente en la página 1\./i)).toBeInTheDocument();
+  });
 });
 

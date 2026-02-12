@@ -10,9 +10,19 @@ type PdfViewerProps = {
   fileUrl: string | null;
   filename?: string | null;
   isDragOver?: boolean;
+  focusPage?: number | null;
+  highlightSnippet?: string | null;
+  focusRequestId?: number;
 };
 
-export function PdfViewer({ fileUrl, filename, isDragOver = false }: PdfViewerProps) {
+export function PdfViewer({
+  fileUrl,
+  filename,
+  isDragOver = false,
+  focusPage = null,
+  highlightSnippet = null,
+  focusRequestId = 0,
+}: PdfViewerProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const pageRefs = useRef<Array<HTMLDivElement | null>>([]);
@@ -25,6 +35,7 @@ export function PdfViewer({ fileUrl, filename, isDragOver = false }: PdfViewerPr
   const [error, setError] = useState<string | null>(null);
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
+  const [pageTextByIndex, setPageTextByIndex] = useState<Record<number, string>>({});
 
   useEffect(() => {
     let cancelled = false;
@@ -45,6 +56,7 @@ export function PdfViewer({ fileUrl, filename, isDragOver = false }: PdfViewerPr
       renderingPages.current = new Set();
       setPdfDoc(null);
       setTotalPages(0);
+      setPageTextByIndex({});
 
       setLoading(true);
       setError(null);
@@ -166,6 +178,19 @@ export function PdfViewer({ fileUrl, filename, isDragOver = false }: PdfViewerPr
           canvas.height = Math.max(1, Math.floor(scaledViewport.height));
 
           await page.render({ canvasContext: context, viewport: scaledViewport }).promise;
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items
+            .map((item) => {
+              if (typeof item !== "object" || !("str" in item)) {
+                return "";
+              }
+              const value = item.str;
+              return typeof value === "string" ? value : "";
+            })
+            .join(" ")
+            .replace(/\s+/g, " ")
+            .trim();
+          setPageTextByIndex((current) => ({ ...current, [pageIndex]: pageText }));
           renderedPages.current.add(pageIndex);
         } catch {
           // Keep rendering other pages even if one page fails.
@@ -193,6 +218,15 @@ export function PdfViewer({ fileUrl, filename, isDragOver = false }: PdfViewerPr
       }
     };
   }, [pdfDoc, containerWidth, totalPages]);
+
+  useEffect(() => {
+    if (!focusPage || !pdfDoc || focusPage < 1 || focusPage > pdfDoc.numPages) {
+      return;
+    }
+    scrollToPage(focusPage);
+    // We intentionally react only to incoming evidence targeting info.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusPage, pdfDoc, focusRequestId]);
 
   useEffect(() => {
     const root = scrollRef.current;
@@ -272,6 +306,14 @@ export function PdfViewer({ fileUrl, filename, isDragOver = false }: PdfViewerPr
   const canGoForward = pageNumber < totalPages;
   const navDisabled = loading || !pdfDoc;
   const showPageNavigation = Boolean(fileUrl) && !loading && !error && totalPages > 0;
+  const normalizedSnippet = (highlightSnippet ?? "").trim().toLowerCase();
+  const normalizedFocusedPageText = focusPage
+    ? (pageTextByIndex[focusPage] ?? "").toLowerCase()
+    : "";
+  const isSnippetLocated =
+    Boolean(normalizedSnippet) &&
+    Boolean(focusPage) &&
+    normalizedFocusedPageText.includes(normalizedSnippet);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -332,7 +374,11 @@ export function PdfViewer({ fileUrl, filename, isDragOver = false }: PdfViewerPr
                 }}
                 data-page-index={page}
                 data-testid="pdf-page"
-                className="mb-6 last:mb-0"
+                className={`mb-6 last:mb-0 ${
+                  focusPage === page && isSnippetLocated
+                    ? "rounded-xl border-2 border-accent p-1"
+                    : ""
+                }`}
               >
                   <motion.canvas
                     ref={(node) => {

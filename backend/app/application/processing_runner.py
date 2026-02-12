@@ -278,6 +278,31 @@ async def _process_document(
         ended_at=None,
         error_code=None,
     )
+    try:
+        interpretation_payload = _build_interpretation_artifact(
+            document_id=document_id,
+            run_id=run_id,
+            raw_text=raw_text,
+        )
+        repository.append_artifact(
+            run_id=run_id,
+            artifact_type="STRUCTURED_INTERPRETATION",
+            payload=interpretation_payload,
+            created_at=_default_now_iso(),
+        )
+    except Exception as exc:
+        _append_step_status(
+            repository=repository,
+            run_id=run_id,
+            step_name=StepName.INTERPRETATION,
+            step_status=StepStatus.FAILED,
+            attempt=1,
+            started_at=interpretation_started_at,
+            ended_at=_default_now_iso(),
+            error_code="INTERPRETATION_FAILED",
+        )
+        raise ProcessingError("INTERPRETATION_FAILED") from exc
+
     await asyncio.sleep(0.05)
     _append_step_status(
         repository=repository,
@@ -289,6 +314,107 @@ async def _process_document(
         ended_at=_default_now_iso(),
         error_code=None,
     )
+
+
+def _build_interpretation_artifact(
+    *, document_id: str, run_id: str, raw_text: str
+) -> dict[str, object]:
+    fields = _extract_structured_fields_from_raw_text(raw_text)
+    now_iso = _default_now_iso()
+    data = {
+        "schema_version": "v0",
+        "document_id": document_id,
+        "processing_run_id": run_id,
+        "created_at": now_iso,
+        "fields": fields,
+    }
+    return {
+        "interpretation_id": str(uuid4()),
+        "version_number": 1,
+        "data": data,
+    }
+
+
+def _extract_structured_fields_from_raw_text(raw_text: str) -> list[dict[str, object]]:
+    compact_text = _WHITESPACE_PATTERN.sub(" ", raw_text).strip()
+    if not compact_text:
+        return []
+
+    matches: list[dict[str, object]] = []
+
+    def add_match(key: str, pattern: str, confidence: float) -> None:
+        match = re.search(pattern, compact_text, flags=re.IGNORECASE)
+        if not match:
+            return
+        value = match.group(1).strip(" .,:;")
+        if not value:
+            return
+        snippet = match.group(0).strip()
+        matches.append(
+            _build_structured_field(
+                key=key,
+                value=value,
+                confidence=confidence,
+                snippet=snippet,
+            )
+        )
+
+    add_match("pet_name", r"(?:paciente|patient|nombre)\s*[:\-]\s*([A-Za-z0-9 '\-]+)", 0.86)
+    add_match("species", r"(?:especie|species)\s*[:\-]\s*([A-Za-z '\-]+)", 0.82)
+    add_match("sex", r"(?:sexo|sex)\s*[:\-]\s*([A-Za-z '\-]+)", 0.8)
+    add_match("age", r"(?:edad|age)\s*[:\-]\s*([A-Za-z0-9 '\-]+)", 0.78)
+    add_match(
+        "diagnosis",
+        r"(?:diagnostico|diagnosis|impresion)\s*[:\-]\s*([^.;]{3,200})",
+        0.72,
+    )
+    add_match(
+        "treatment_plan",
+        r"(?:tratamiento|treatment|plan)\s*[:\-]\s*([^.;]{3,200})",
+        0.7,
+    )
+
+    if matches:
+        return matches
+
+    sentence_parts = re.split(r"(?<=[.!?])\s+", compact_text)
+    fallback_fields: list[dict[str, object]] = []
+    for index, sentence in enumerate(sentence_parts, start=1):
+        normalized = sentence.strip()
+        if len(normalized) < 8:
+            continue
+        fallback_fields.append(
+            _build_structured_field(
+                key=f"observation_{index}",
+                value=normalized[:180],
+                confidence=max(0.5, 0.68 - (index - 1) * 0.06),
+                snippet=normalized[:180],
+            )
+        )
+        if len(fallback_fields) >= 6:
+            break
+    return fallback_fields
+
+
+def _build_structured_field(
+    *, key: str, value: str, confidence: float, snippet: str
+) -> dict[str, object]:
+    normalized_snippet = snippet.strip()
+    if len(normalized_snippet) > 180:
+        normalized_snippet = normalized_snippet[:177].rstrip() + "..."
+    return {
+        "field_id": str(uuid4()),
+        "key": key,
+        "value": value,
+        "value_type": "string",
+        "confidence": round(min(max(confidence, 0.0), 1.0), 2),
+        "is_critical": False,
+        "origin": "machine",
+        "evidence": {
+            "page": 1,
+            "snippet": normalized_snippet,
+        },
+    }
 
 
 def _append_step_status(

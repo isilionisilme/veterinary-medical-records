@@ -13,6 +13,7 @@ let mockDoc: {
   getPage: (pageNumber: number) => Promise<{
     getViewport: ({ scale }: { scale: number }) => { width: number; height: number };
     render: () => { promise: Promise<void> };
+    getTextContent: () => Promise<{ items: Array<{ str: string }> }>;
   }>;
 };
 
@@ -61,6 +62,7 @@ describe("PdfViewer", () => {
           renderCallsByPage.set(pageNumber, (renderCallsByPage.get(pageNumber) ?? 0) + 1);
           return { promise: Promise.resolve() };
         },
+        getTextContent: async () => ({ items: [{ str: `Pagina ${pageNumber}` }] }),
       })),
     };
     lastObserver = null;
