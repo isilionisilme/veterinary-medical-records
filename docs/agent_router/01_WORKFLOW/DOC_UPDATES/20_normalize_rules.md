@@ -22,7 +22,11 @@ Apply this pass to each changed documentation file.
    - no duplicated rules across modules,
    - reference docs may link to modules; modules should not depend on reference docs for execution.
 6) Run verification: `30_checklist.md`.
-7) Emit required summary (`00_entry.md`):
+7) Validate doc/test sync impact:
+   - Load `docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json`.
+   - For each changed doc matching a map rule, update at least one mapped test/guard file.
+   - If no mapped file should change, record it as an explicit propagation gap with rationale.
+8) Emit required summary (`00_entry.md`):
    - include docs table and propagation gaps.
    - If an R change was detected but no owner module was updated and no blocker reason exists, treat it as failure.
    - if Rule change exists with no propagation and no blocker reason, treat as failure.

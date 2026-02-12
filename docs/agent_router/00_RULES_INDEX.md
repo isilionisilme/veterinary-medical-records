@@ -20,7 +20,7 @@ If a rule changes, update **only** its owner module. Other docs may link to it.
 | R-SHARED-DOCS | docs/agent_router/03_SHARED/00_entry.md | Split versions of `docs/shared/*` |
 | R-PROJECT-DOCS | docs/agent_router/04_PROJECT/00_entry.md | Split versions of `docs/project/*` |
 | R-METRICS-OPTIN | metrics/llm_benchmarks/README.md | Benchmarks are opt-in |
-| R-GENERAL-BEHAVIOR | docs/shared/AGENTS.md | General assistant rules |
+| R-GENERAL-BEHAVIOR | AGENTS.md | General assistant rules |
 
 ## Known mapping hints
 - Typography ranges/weights -> `docs/agent_router/03_SHARED/BRAND_GUIDELINES/50_3-typography-exact-fonts-mandatory.md`

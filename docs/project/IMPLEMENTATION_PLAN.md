@@ -34,7 +34,7 @@ Features or behaviors not explicitly listed here are not part of this plan.
 ## How to use this document
 
 The AI Coding Assistant must:
-- read all prerequisite documents defined in [`docs/README.md`](../README.md),
+- read only the prerequisites required for the current task/story from [`docs/README.md`](../README.md), and consult only the relevant sections,
 - implement user stories **strictly in the order defined here**,
 - treat acceptance criteria as **exit conditions**, not suggestions.
 
@@ -236,6 +236,30 @@ Introduce optional capabilities that improve coverage for difficult inputs witho
 
 ---
 
+## Release 10 — Nice to have
+
+### Goal
+Capture optional user-experience and operability improvements that are implemented only if time remains after all prior releases.
+
+### Scope
+- UI polish for document navigation and feedback behavior
+- Upload ergonomics (global drag-and-drop + folder bulk upload)
+- Operator productivity (shortcuts + help surfaces)
+- Optional maintenance and configuration affordances
+
+### User Stories (in order)
+- US-23 — Improve document list filename visibility and tooltip details
+- US-24 — Support global drag-and-drop PDF upload across relevant screens
+- US-25 — Upload a folder of PDFs (bulk)
+- US-26 — Add keyboard shortcuts and help modal
+- US-27 — Add in-app help entry point
+- US-28 — Delete uploaded document from list (soft-delete/archive)
+- US-29 — Improve toast queue behavior
+- US-30 — Change application UI language (multilingual UI)
+- US-31 — Externalize configuration and expose settings in UI
+
+---
+
 # User Story Details
 
 Each story below contains only:
@@ -277,8 +301,8 @@ As a user, I want to upload a document so that it is stored and available for pr
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
 - Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
-- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
-- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
 
 ---
 
@@ -308,8 +332,8 @@ As a user, I want to see the current status of a document so that I understand i
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
 - Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
-- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
-- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
 
 ---
 
@@ -338,8 +362,8 @@ As a user, I want to download and preview the original uploaded document so that
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
 - Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
-- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
-- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
 
 ---
 
@@ -367,8 +391,8 @@ As a user, I want to list uploaded documents and see their status so that I can 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
 - Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
-- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
-- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
 
 ---
 
@@ -403,8 +427,8 @@ As a veterinarian, I want uploaded PDF documents to be processed automatically s
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
 - Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
-- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
-- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
 
 ---
 
@@ -441,7 +465,7 @@ As a user, I want to upload a medical document so that the system can start proc
 - Reuse the existing upload contract and backend validation rules as defined in [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3/B3.2.
 - Do not introduce new ingestion endpoints, domain logic, or workflow states; rely only on the API response for UI behavior.
 - Preserve existing observability contracts (events/metrics/log taxonomy) as defined in [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md).
-- Follow implementation conventions in [`docs/project/BACKEND_IMPLEMENTATION.md`](BACKEND_IMPLEMENTATION.md) and [`docs/project/FRONTEND_IMPLEMENTATION.md`](FRONTEND_IMPLEMENTATION.md).
+- Consult only the relevant sections of [`docs/project/BACKEND_IMPLEMENTATION.md`](BACKEND_IMPLEMENTATION.md) and/or [`docs/project/FRONTEND_IMPLEMENTATION.md`](FRONTEND_IMPLEMENTATION.md) for the layers changed in this story.
 
 **Test Expectations**
 - Upload succeeds for supported PDFs and provides the expected user-facing feedback states.
@@ -451,8 +475,8 @@ As a user, I want to upload a medical document so that the system can start proc
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
 - Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
-- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
-- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
 
 ---
 
@@ -480,8 +504,8 @@ As a veterinarian, I want to see the processing history of a document so that I 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
 - Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
-- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
-- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
 
 ---
 
@@ -509,8 +533,8 @@ As a veterinarian, I want to view the raw text extracted from a document so that
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
 - Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
-- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
-- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
 
 ---
 
@@ -545,8 +569,8 @@ As a veterinarian, I want to review the system’s interpretation while viewing 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
 - Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
-- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
-- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
 
 ---
 
@@ -582,8 +606,8 @@ As a veterinarian, I want to edit structured information extracted from a docume
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
 - Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
-- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
-- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
 
 ---
 
@@ -612,8 +636,8 @@ As a veterinarian, I want the system to record my normal corrections as append-o
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
 - Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
-- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
-- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
 
 ---
 
@@ -644,8 +668,8 @@ As a veterinarian, I want to change the detected language of a document so that 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
 - Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
-- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
-- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
 
 ---
 
@@ -673,8 +697,8 @@ As a veterinarian, I want to mark a document as reviewed so that I can explicitl
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
 - Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
-- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
-- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
 
 ---
 
@@ -703,8 +727,8 @@ As a reviewer, I want to review aggregated pending structural changes so that I 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
 - Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
-- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
-- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
 
 ---
 
@@ -732,8 +756,8 @@ As a reviewer, I want to filter and prioritize pending structural changes so I c
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
 - Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
-- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
-- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
 
 ---
 
@@ -764,8 +788,8 @@ As a reviewer, I want to approve structural changes so that future interpretatio
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
 - Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
-- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
-- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
 
 ---
 
@@ -794,8 +818,8 @@ As a reviewer, I want to reject or defer structural changes so that unsafe or lo
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
 - Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
-- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
-- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
 
 ---
 
@@ -824,8 +848,8 @@ As a reviewer, I want stricter handling for critical structural changes so that 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
 - Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
-- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
-- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
 
 ---
 
@@ -853,8 +877,8 @@ As a reviewer, I want to see an audit trail of schema governance decisions so th
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
 - Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
-- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
-- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
 
 ---
 
@@ -892,8 +916,8 @@ As a user, I want to upload, access, and process DOCX documents so that the same
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
 - Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
-- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
-- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
 
 ---
 
@@ -932,8 +956,8 @@ As a user, I want to upload, access, and process image documents so that scans a
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
 - Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
-- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
-- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
 
 ---
 
@@ -976,5 +1000,282 @@ As a user, I want optional OCR support for scanned records so that documents wit
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
 - Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
-- Follow UX guidance from [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md), if applicable.
-- Apply [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md), if applicable.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
+
+---
+
+## US-23 — Improve document list filename visibility and tooltip details
+
+**User Story**
+As a user, I want document names to be more readable in the list so that I can identify files quickly without opening each document.
+
+**Acceptance Criteria**
+- In the document list, long filenames use the available horizontal space before truncation.
+- When a filename is truncated, hover and keyboard focus reveal a tooltip with the full filename and key metadata shown in the row.
+- Tooltip behavior is accessible: focus-triggered, dismissible with keyboard, and available on desktop and touch alternatives (for example, tap/long-press fallback).
+- The list remains usable on mobile widths without overlapping status/actions.
+
+**Scope Clarification**
+- Already partially covered by US-04 (list visibility and metadata), but this story adds readability and accessibility refinements.
+- This story does not introduce search/filtering/sorting.
+
+**Authoritative References**
+- UX: Document list behavior and responsive interaction principles: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md)
+- UX: Accessibility and interaction consistency: [`docs/shared/UX_GUIDELINES.md`](../shared/UX_GUIDELINES.md)
+
+**Test Expectations**
+- Long filenames are easier to scan due to increased visible text before truncation.
+- Tooltip content matches source metadata and is accessible via keyboard focus.
+
+**Definition of Done (DoD)**
+- Acceptance criteria satisfied.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
+
+---
+
+## US-24 — Support global drag-and-drop PDF upload across relevant screens
+
+**User Story**
+As a user, I want to drag and drop a PDF from multiple relevant screens so that I can upload documents without navigating back to a specific dropzone.
+
+**Acceptance Criteria**
+- I can drop supported PDFs from any approved upload-capable surface (including list view, document review screen, and relevant empty states).
+- Drag-over/drop feedback is visually consistent across those surfaces.
+- Upload validation and error messaging are consistent with existing upload behavior.
+- Keyboard and non-drag alternatives remain available and equivalent.
+
+**Scope Clarification**
+- Already partially covered by US-21 (upload UX), but this story expands drag-and-drop coverage beyond existing dropzones.
+- This story does not add support for new file types.
+
+**Authoritative References**
+- Tech: Existing upload contract and validation behavior: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3/B3.2
+- UX: Upload interaction consistency and fallbacks: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md)
+
+**Test Expectations**
+- Drag-and-drop succeeds from each approved screen and follows the same success/failure feedback contract.
+- Non-drag upload path remains fully functional.
+
+**Definition of Done (DoD)**
+- Acceptance criteria satisfied.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
+
+---
+
+## US-25 — Upload a folder of PDFs (bulk)
+
+**User Story**
+As a user, I want to upload an entire folder of PDFs so that I can ingest many records quickly.
+
+**Acceptance Criteria**
+- The UI offers a folder selection flow for bulk upload where supported by the browser/platform.
+- Only supported PDFs inside the selected folder are queued; unsupported files are skipped with clear feedback.
+- When folder selection is unsupported, the UI presents a clear multi-file upload fallback.
+- Progress and completion feedback summarize total selected, uploaded, skipped, and failed items.
+
+**Scope Clarification**
+- Already partially covered by US-21 (single upload UX), but this story adds folder-based bulk ingestion.
+- Recursive subfolder behavior must be explicitly defined during implementation and reflected in UX copy.
+
+**Authoritative References**
+- Tech: Upload validation and failure behavior: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3/B3.2
+- UX: Bulk upload feedback and fallback behavior: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md)
+
+**Test Expectations**
+- Supported environments can upload a folder of PDFs end-to-end.
+- Unsupported environments fall back to multi-file selection without blocking upload.
+
+**Definition of Done (DoD)**
+- Acceptance criteria satisfied.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
+
+---
+
+## US-26 — Add keyboard shortcuts and help modal
+
+**User Story**
+As a user, I want keyboard shortcuts for frequent actions so that I can work faster, and I want a quick way to discover them.
+
+**Acceptance Criteria**
+- A defined shortcut set exists for frequent actions and excludes destructive actions by default unless confirmed.
+- Pressing `?` opens a shortcuts help modal listing available shortcuts by context.
+- Shortcuts do not trigger while typing in inputs/textareas or when they conflict with PDF viewer interactions.
+- The modal is keyboard accessible (open, focus trap, close with `Escape`, and return focus to trigger context).
+
+**Scope Clarification**
+- This story does not require user-customizable shortcut remapping.
+
+**Authoritative References**
+- UX: Keyboard accessibility and modal behavior: [`docs/shared/UX_GUIDELINES.md`](../shared/UX_GUIDELINES.md)
+- UX: Project interaction patterns: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md)
+
+**Test Expectations**
+- Frequent actions can be executed through shortcuts outside typing contexts.
+- Shortcut help modal is discoverable and keyboard-operable.
+
+**Definition of Done (DoD)**
+- Acceptance criteria satisfied.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
+
+---
+
+## US-27 — Add in-app help entry point
+
+**User Story**
+As a user, I want an in-app help entry point so that I can quickly understand key statuses, reprocess behavior, limits, and basic usage.
+
+**Acceptance Criteria**
+- A persistent Help entry point is available from main navigation or other globally discoverable UI.
+- Help content includes minimum guidance for statuses, reprocess, known limits, and how to use the workflow.
+- Help content is readable on desktop and mobile and is accessible by keyboard and screen readers.
+- Help content avoids implementation/internal jargon and aligns with brand voice.
+
+**Scope Clarification**
+- This story introduces lightweight guidance only; it does not require a full documentation portal.
+
+**Authoritative References**
+- Product/UX language and workflow semantics: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md)
+- Brand and copy tone: [`docs/shared/BRAND_GUIDELINES.md`](../shared/BRAND_GUIDELINES.md)
+
+**Test Expectations**
+- Users can open help from within the app and find the required minimum topics.
+- Help content remains accessible and responsive.
+
+**Definition of Done (DoD)**
+- Acceptance criteria satisfied.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
+
+---
+
+## US-28 — Delete uploaded document from list (soft-delete/archive)
+
+**User Story**
+As a user, I want to remove an uploaded document from my active list so that I can keep my workspace clean.
+
+**Acceptance Criteria**
+- Each eligible document includes a delete/remove action from the list/detail context.
+- The delete flow requires explicit user confirmation before completing.
+- Deleting a document removes it from the default active list without breaking historical auditability expectations.
+- If soft-delete/archive semantics are used, the behavior is explicit in UI copy and reversible behavior (if available) is clearly communicated.
+
+**Scope Clarification**
+- Recommended default is soft-delete/archive semantics; irreversible hard-delete behavior requires explicit policy confirmation before implementation.
+- This story does not redefine audit/governance contracts.
+
+**Authoritative References**
+- Tech: Existing document listing/status contracts: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3/B3.1
+- UX: Destructive action confirmation and recoverability patterns: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md)
+
+**Test Expectations**
+- Delete confirmation prevents accidental deletion.
+- Deleted/archived documents follow defined visibility semantics consistently.
+
+**Definition of Done (DoD)**
+- Acceptance criteria satisfied.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
+
+---
+
+## US-29 — Improve toast queue behavior
+
+**User Story**
+As a user, I want notification toasts to behave predictably when multiple events happen so that messages are readable and not lost.
+
+**Acceptance Criteria**
+- New toasts are enqueued without resetting timers of already visible toasts.
+- At most three toasts are visible simultaneously.
+- When a fourth toast arrives, the oldest visible toast is removed first.
+- Toasts remain accessible (announced for assistive technologies and dismissible via keyboard).
+
+**Scope Clarification**
+- Already partially covered by US-21 (upload feedback states), but this story defines global queue/timing behavior for all toast notifications.
+
+**Authoritative References**
+- UX: Notification feedback and accessibility patterns: [`docs/shared/UX_GUIDELINES.md`](../shared/UX_GUIDELINES.md)
+- UX: Project-wide interaction consistency: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md)
+
+**Test Expectations**
+- Rapid successive events preserve per-toast duration behavior and queue ordering.
+- Toast visibility limit and eviction order remain stable across screen sizes.
+
+**Definition of Done (DoD)**
+- Acceptance criteria satisfied.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
+
+---
+
+## US-30 — Change application UI language (multilingual UI)
+
+**User Story**
+As a user, I want to change the application display language so that I can use the interface in my preferred language.
+
+**Acceptance Criteria**
+- I can select the UI language from supported options in the application settings/navigation.
+- Changing UI language updates visible interface text without altering stored document content or processing behavior.
+- The selected UI language persists for subsequent sessions on the same account/device context.
+- Language selector and translated UI remain accessible and usable on mobile and desktop.
+
+**Scope Clarification**
+- Already partially covered by US-10 only for document processing language; this story is independent and strictly about UI internationalization.
+- This story does not add or change document interpretation language behavior.
+
+**Authoritative References**
+- UX: Product language and interaction patterns: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md)
+- Tech: Existing document-language processing boundaries: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix E + Appendix B3/B3.1
+
+**Test Expectations**
+- UI text changes according to selected language while processing behavior remains unchanged.
+- Language preference persists according to the selected persistence strategy.
+
+**Definition of Done (DoD)**
+- Acceptance criteria satisfied.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
+
+---
+
+## US-31 — Externalize configuration and expose settings in UI
+
+**User Story**
+As an operator, I want key runtime configuration externalized and visible in-app so that I can verify system settings without reading source code.
+
+**Acceptance Criteria**
+- Relevant runtime configuration is loaded from an external configuration source/file instead of hardcoded values.
+- The application exposes a read-only settings page showing selected effective configuration values in the web UI.
+- The settings page clearly indicates which values are informational only and not editable in this story.
+- If live edit/reload is not implemented, the UI explicitly states that changing values requires deployment or restart flow.
+
+**Scope Clarification**
+- Initial scope is read-only visibility in UI; inline editing and hot-reload are out of scope unless explicitly scheduled later.
+- This story may require follow-up hardening for secrets redaction and environment-specific visibility controls.
+
+**Authoritative References**
+- Tech: Runtime contracts and operational constraints: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md)
+- UX: Settings readability and information architecture: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md)
+
+**Test Expectations**
+- Effective externalized configuration values are rendered consistently in the read-only settings page.
+- Out-of-scope edit/reload behavior is explicitly communicated to users.
+
+**Definition of Done (DoD)**
+- Acceptance criteria satisfied.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
+
