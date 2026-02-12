@@ -139,6 +139,7 @@ type ReviewDisplayField = {
 };
 
 type ReviewPanelState = "idle" | "loading" | "ready" | "no_completed_run" | "error";
+type ViewMode = "browse" | "review";
 
 type DocumentReviewResponse = {
   document_id: string;
@@ -722,7 +723,7 @@ export function App() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [filename, setFilename] = useState<string | null>(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [viewMode, setViewMode] = useState<ViewMode>("browse");
   const [activeViewerTab, setActiveViewerTab] = useState<
     "document" | "raw_text" | "technical"
   >("document");
@@ -751,6 +752,7 @@ export function App() {
   const [reviewLoadingDocId, setReviewLoadingDocId] = useState<string | null>(null);
   const [reviewLoadingSinceMs, setReviewLoadingSinceMs] = useState<number | null>(null);
   const [isRetryingInterpretation, setIsRetryingInterpretation] = useState(false);
+  const [fieldNavigationRequestId, setFieldNavigationRequestId] = useState(0);
   const [isHoverDevice, setIsHoverDevice] = useState(true);
   const [uploadInfoPosition, setUploadInfoPosition] = useState({ top: 0, left: 0 });
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -778,6 +780,10 @@ export function App() {
     isDesktopForPin,
     onNotice: setEvidenceNotice,
   });
+  const effectiveViewMode: ViewMode = activeId ? viewMode : "browse";
+  const isReviewMode = effectiveViewMode === "review";
+  const isBrowseMode = effectiveViewMode === "browse";
+  const isDocsCollapsed = isReviewMode;
 
   const downloadUrl = useMemo(() => {
     if (!activeId) {
@@ -1154,9 +1160,7 @@ export function App() {
     event?.stopPropagation?.();
     // Keep the native file picker call synchronous with the user gesture.
     openUploadFilePicker();
-    if (!isSidebarOpen) {
-      setIsSidebarOpen(true);
-    }
+    setViewMode("browse");
   };
 
   const handleSelectDocument = (docId: string) => {
@@ -1254,6 +1258,7 @@ export function App() {
 
   useEffect(() => {
     setSelectedFieldId(null);
+    setFieldNavigationRequestId(0);
     setEvidenceNotice(null);
     setExpandedFieldValues({});
     sourcePanel.reset();
@@ -1319,19 +1324,9 @@ export function App() {
       return;
     }
     if (sortedDocuments.length === 0) {
-      setIsSidebarOpen(true);
+      setViewMode("browse");
     }
   }, [documentList.status, sortedDocuments.length]);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setIsSidebarOpen(false);
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
 
   const reprocessMutation = useMutation({
     mutationFn: async (docId: string) => triggerReprocess(docId),
@@ -1741,11 +1736,31 @@ export function App() {
     });
   }, [onlyLowConfidence, otherDisplayFields]);
 
+  const selectedReviewField = useMemo(() => {
+    if (!selectedFieldId) {
+      return null;
+    }
+    return (
+      [...coreDisplayFields, ...otherDisplayFields].find((field) => field.id === selectedFieldId) ??
+      null
+    );
+  }, [coreDisplayFields, otherDisplayFields, selectedFieldId]);
+
   const reviewPanelState: ReviewPanelState = (() => {
     if (!activeId) {
       return "idle";
     }
+    const hasStructuredPayload =
+      Boolean(documentReview.data?.active_interpretation?.data) &&
+      documentReview.data?.document_id === activeId;
+
     if (reviewLoadingDocId === activeId) {
+      return "loading";
+    }
+    if (isActiveDocumentProcessing && !hasStructuredPayload) {
+      return "loading";
+    }
+    if (!hasStructuredPayload && !documentReview.isError && documentReview.isFetching) {
       return "loading";
     }
     if (!isRetryingInterpretation && documentReview.isFetching && !documentReview.isError) {
@@ -1754,13 +1769,17 @@ export function App() {
     if (documentReview.isError) {
       if (
         documentReview.error instanceof ApiResponseError &&
-        documentReview.error.reason === "NO_COMPLETED_RUN"
+        (documentReview.error.reason === "NO_COMPLETED_RUN" ||
+          documentReview.error.reason === "INTERPRETATION_MISSING")
       ) {
+        if (isActiveDocumentProcessing) {
+          return "loading";
+        }
         return "no_completed_run";
       }
       return "error";
     }
-    if (!documentReview.data) {
+    if (!hasStructuredPayload) {
       return "error";
     }
     return "ready";
@@ -1792,7 +1811,19 @@ export function App() {
 
   const handleSelectReviewField = (field: ReviewDisplayField) => {
     setSelectedFieldId(field.id);
+    setFieldNavigationRequestId((current) => current + 1);
+  };
+
+  const handleOpenSourceFromEvidence = (field: ReviewDisplayField) => {
+    setSelectedFieldId(field.id);
+    setFieldNavigationRequestId((current) => current + 1);
     sourcePanel.openFromEvidence(field.evidence);
+    if (field.evidence?.page) {
+      return;
+    }
+    if (!isReviewMode) {
+      sourcePanel.closeOverlay();
+    }
   };
 
   useEffect(() => {
@@ -1951,32 +1982,71 @@ export function App() {
       </header>
 
       <main className="relative mx-auto mt-10 w-full max-w-6xl">
-        <div className="mb-4 flex items-center gap-3">
-          <Button
-            variant="ghost"
-            type="button"
-            onClick={() => setIsSidebarOpen((prev) => !prev)}
-            aria-label={isSidebarOpen ? "Cerrar lista de documentos" : "Abrir lista de documentos"}
-          >
-            <span className="text-lg font-semibold">{isSidebarOpen ? "←" : "≡"}</span>
-          </Button>
-          <span className="text-sm text-muted">
-            {isSidebarOpen ? "Ocultar lista" : "Mostrar lista"}
-          </span>
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          {activeId && (
+            <div
+              data-testid="view-mode-toggle"
+              role="group"
+              aria-label="Cambiar modo de visualización"
+              className="inline-flex rounded-full border border-black/15 bg-white p-1 shadow-sm"
+            >
+              <button
+                type="button"
+                data-testid="view-mode-browse"
+                aria-pressed={isBrowseMode}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                  isBrowseMode
+                    ? "bg-ink text-white"
+                    : "text-muted hover:bg-accentSoft hover:text-ink"
+                }`}
+                onClick={() => setViewMode("browse")}
+              >
+                Modo exploración
+              </button>
+              <button
+                type="button"
+                data-testid="view-mode-review"
+                aria-pressed={isReviewMode}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                  isReviewMode
+                    ? "bg-ink text-white"
+                    : "text-muted hover:bg-accentSoft hover:text-ink"
+                }`}
+                onClick={() => setViewMode("review")}
+              >
+                Modo revisión
+              </button>
+            </div>
+          )}
+          {!activeId && (
+            <span className="text-sm text-muted">
+              Selecciona un documento para activar el modo revisión.
+            </span>
+          )}
+          {activeId && (
+            <span className="text-sm text-muted">
+              {isReviewMode ? "Revisión enfocada en datos estructurados" : "Vista Docs · PDF · Datos"}
+            </span>
+          )}
         </div>
 
         <div className="relative z-20 flex gap-6">
-          <aside
-            className={`flex-shrink-0 transition-all duration-300 ${
-              isSidebarOpen ? "w-80" : "w-0"
-            }`}
-          >
-            <div
-              className={`overflow-hidden rounded-3xl border border-black/10 bg-white/80 shadow-xl transition-all ${
-                isSidebarOpen ? "opacity-100" : "opacity-0"
-              }`}
+          {isDocsCollapsed && (
+            <button
+              type="button"
+              data-testid="review-docs-handle"
+              aria-label="Mostrar documentos"
+              title="Mostrar documentos"
+              className="absolute -left-2 top-1/2 z-30 inline-flex h-16 w-5 -translate-y-1/2 items-center justify-center rounded-r-md border border-l-0 border-black/10 bg-white/95 text-ink shadow-sm hover:bg-white"
+              onClick={() => setViewMode("browse")}
             >
-          <section className={`flex flex-col p-6 ${panelHeightClass}`}>
+              <span aria-hidden="true" className="text-sm font-semibold">‹</span>
+            </button>
+          )}
+          {!isDocsCollapsed && (
+            <aside className="w-80 flex-shrink-0">
+              <div className="overflow-hidden rounded-3xl border border-black/10 bg-white/80 shadow-xl">
+                <section className={`flex flex-col p-6 ${panelHeightClass}`}>
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <h2 className="font-display text-xl font-semibold">Documentos</h2>
@@ -2164,9 +2234,10 @@ export function App() {
                       </div>
                     ))}
                 </div>
-              </section>
-            </div>
-          </aside>
+                </section>
+              </div>
+            </aside>
+          )}
 
           <section className={`flex flex-1 flex-col rounded-3xl border border-black/10 bg-white/70 p-6 shadow-xl ${panelHeightClass}`}>
             {shouldShowLoadPdfErrorBanner && (
@@ -2232,16 +2303,36 @@ export function App() {
                       )
                     ) : (
                       <div
+                        data-testid="document-layout-grid"
                         className={`h-full min-h-0 ${
-                          sourcePanel.isSourceOpen &&
-                          sourcePanel.isSourcePinned &&
-                          isDesktopForPin
-                            ? "grid grid-cols-[minmax(0,1fr)_minmax(360px,420px)] gap-4"
-                            : ""
+                          isBrowseMode
+                            ? sourcePanel.isSourceOpen && sourcePanel.isSourcePinned && isDesktopForPin
+                              ? "grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(360px,420px)] gap-4"
+                              : "grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-4"
+                            : "grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]"
                         }`}
                       >
                         <aside
                           data-testid="center-panel-scroll"
+                          className="flex h-full min-h-0 flex-col rounded-2xl border border-black/10 bg-white/80 p-2"
+                        >
+                          {fileUrl ? (
+                            <PdfViewer
+                              key={`${effectiveViewMode}-${activeId ?? "empty"}`}
+                              fileUrl={fileUrl}
+                              filename={filename}
+                              isDragOver={false}
+                              focusPage={selectedReviewField?.evidence?.page ?? null}
+                              highlightSnippet={selectedReviewField?.evidence?.snippet ?? null}
+                              focusRequestId={fieldNavigationRequestId}
+                            />
+                          ) : (
+                            <div className="flex h-full items-center justify-center text-sm text-muted">
+                              No hay PDF disponible para este documento.
+                            </div>
+                          )}
+                        </aside>
+                        <aside
                           className="flex h-full w-full min-h-0 flex-col rounded-2xl border border-black/10 bg-white/80 p-4"
                         >
                           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -2431,7 +2522,10 @@ export function App() {
                                                     ? "text-ink underline underline-offset-2"
                                                     : "cursor-not-allowed text-muted/70"
                                                 }`}
-                                                onClick={() => handleSelectReviewField(field)}
+                                                onClick={(event) => {
+                                                  event.stopPropagation();
+                                                  handleOpenSourceFromEvidence(field);
+                                                }}
                                               >
                                                 <span className="text-muted">Fuente:</span>
                                                 <span className="font-semibold">
@@ -2495,7 +2589,10 @@ export function App() {
                                               ? "text-ink underline underline-offset-2"
                                               : "cursor-not-allowed text-muted/70"
                                           }`}
-                                          onClick={() => handleSelectReviewField(field)}
+                                          onClick={(event) => {
+                                            event.stopPropagation();
+                                            handleOpenSourceFromEvidence(field);
+                                          }}
                                         >
                                           <span className="text-muted">Fuente:</span>
                                           <span className="font-semibold">
@@ -2518,7 +2615,10 @@ export function App() {
                           )}
                         </aside>
 
-                        {sourcePanel.isSourceOpen && sourcePanel.isSourcePinned && isDesktopForPin && (
+                        {isBrowseMode &&
+                          sourcePanel.isSourceOpen &&
+                          sourcePanel.isSourcePinned &&
+                          isDesktopForPin && (
                           <aside data-testid="source-pinned-panel" className="min-h-0">
                             {sourcePanelContent}
                           </aside>
@@ -2529,7 +2629,7 @@ export function App() {
                 )}
                 {activeViewerTab === "document" &&
                   sourcePanel.isSourceOpen &&
-                  (!sourcePanel.isSourcePinned || !isDesktopForPin) && (
+                  (isReviewMode || !sourcePanel.isSourcePinned || !isDesktopForPin) && (
                   <>
                     <button
                       type="button"

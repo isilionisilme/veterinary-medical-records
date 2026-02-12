@@ -26,15 +26,15 @@ export function useSourcePanelState({ isDesktopForPin, onNotice }: UseSourcePane
     const snippetValue = evidence?.snippet?.trim();
     const normalizedSnippet = snippetValue && snippetValue.length > 0 ? snippetValue : null;
 
-    setSourcePage(page);
-    setSourceSnippet(normalizedSnippet);
-    setFocusRequestId((current) => current + 1);
-    setIsSourceOpen(true);
-
     if (!page) {
       onNotice("Sin evidencia disponible para este campo.");
       return;
     }
+
+    setSourcePage(page);
+    setSourceSnippet(normalizedSnippet);
+    setFocusRequestId((current) => current + 1);
+    setIsSourceOpen(true);
     onNotice(`Mostrando fuente en la página ${page}.`);
   };
 
