@@ -1646,8 +1646,14 @@ export function App() {
   const coreDisplayFields = useMemo(() => {
     return GLOBAL_SCHEMA_V0.map((definition): ReviewDisplayField => {
       let candidates = matchesByKey.get(definition.key) ?? [];
-      if (definition.key === "document_date" && candidates.length === 0) {
-        candidates = matchesByKey.get("visit_date") ?? [];
+      if (definition.key === "document_date") {
+        const hasDocumentDate = candidates.some(
+          (candidate) => !isFieldValueEmpty(candidate.value)
+        );
+        if (!hasDocumentDate) {
+          // Document date falls back to visit date for scanability and deterministic dates.
+          candidates = matchesByKey.get("visit_date") ?? [];
+        }
       }
 
       if (definition.repeatable) {
