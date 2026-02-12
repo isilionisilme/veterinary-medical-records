@@ -17,6 +17,12 @@ This file is the AI assistant entry point. Keep reads small and follow the route
   Treat paraphrases and other languages as the same intent. If files are not specified, follow DOC_UPDATES discovery (git diff/status) then normalize.
 - Benchmarks: only if user asks (see router).
 
+## Manual trigger only: Code reviews
+- Hard gate (takes precedence over PR-related automation): do not start any code review flow unless the user explicitly asks to run a review.
+- Explicit trigger examples: “Do a code review for PR #...”, “Review the diff for ...”, “Run a code review now”.
+- Starting a code review includes: fetching PR review context, reading diffs for review, producing formal review output/comments, suggesting review commits, or any multi-step review run.
+- If review seems helpful, you may propose it, but STOP and wait for explicit user instruction.
+
 ## Global rule
 - After you modify any documentation file, run the DOC_UPDATES Normalization Pass once before finishing. Do not re-run it for changes made by the pass itself.
 - After implementing any change that can be validated from the user perspective (feature, fix, technical improvement, or small in-flight adjustment), include a final `How to test` section with step-by-step expected outcomes.
