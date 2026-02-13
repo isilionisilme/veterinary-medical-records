@@ -8,12 +8,23 @@ import os
 import re
 import time
 import zlib
+from collections import defaultdict
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
 from backend.app.application.extraction_quality import evaluate_extracted_text_quality
+from backend.app.application.field_normalizers import normalize_canonical_fields
+from backend.app.application.global_schema_v0 import (
+    CRITICAL_KEYS_V0,
+    GLOBAL_SCHEMA_V0_KEYS,
+    REPEATABLE_KEYS_V0,
+    VALUE_TYPE_BY_KEY_V0,
+    normalize_global_schema_v0,
+    validate_global_schema_v0_shape,
+)
 from backend.app.domain.models import (
     ProcessingRun,
     ProcessingRunState,
@@ -29,6 +40,40 @@ PROCESSING_TICK_SECONDS = 0.5
 PROCESSING_TIMEOUT_SECONDS = 120.0
 MAX_RUNS_PER_TICK = 10
 PDF_EXTRACTOR_FORCE_ENV = "PDF_EXTRACTOR_FORCE"
+INTERPRETATION_DEBUG_INCLUDE_CANDIDATES_ENV = (
+    "VET_RECORDS_INCLUDE_INTERPRETATION_CANDIDATES"
+)
+DATE_TARGET_KEYS = frozenset(
+    {"visit_date", "document_date", "admission_date", "discharge_date"}
+)
+_DATE_CANDIDATE_PATTERN = re.compile(
+    r"\b(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}|\d{4}[\/\-.]\d{1,2}[\/\-.]\d{1,2})\b"
+)
+_DATE_TARGET_ANCHORS: dict[str, tuple[str, ...]] = {
+    "visit_date": (
+        "visita",
+        "consulta",
+        "revision",
+        "revisión",
+        "control",
+        "urgencia",
+    ),
+    "document_date": (
+        "fecha documento",
+        "documento",
+        "informe",
+        "historial",
+        "fecha",
+    ),
+    "admission_date": ("admisión", "admision", "ingreso", "hospitaliza"),
+    "discharge_date": ("alta", "egreso"),
+}
+_DATE_TARGET_PRIORITY: dict[str, int] = {
+    "visit_date": 4,
+    "admission_date": 3,
+    "discharge_date": 3,
+    "document_date": 2,
+}
 
 
 def _default_now_iso() -> str:
@@ -54,6 +99,17 @@ class ProcessingError(Exception):
         self.failure_type = failure_type
 
 
+class InterpretationBuildError(Exception):
+    """Raised when interpretation cannot be built into the canonical v0 shape."""
+
+    def __init__(
+        self, *, error_code: str, details: dict[str, object] | None = None
+    ) -> None:
+        super().__init__(error_code)
+        self.error_code = error_code
+        self.details = details
+
+
 def enqueue_processing_run(
     *,
     document_id: str,
@@ -71,7 +127,9 @@ def enqueue_processing_run(
         state=ProcessingRunState.QUEUED,
         created_at=created_at,
     )
-    return EnqueuedRun(run_id=run_id, created_at=created_at, state=ProcessingRunState.QUEUED)
+    return EnqueuedRun(
+        run_id=run_id, created_at=created_at, state=ProcessingRunState.QUEUED
+    )
 
 
 async def processing_scheduler(
@@ -213,8 +271,12 @@ async def _process_document(
         )
         raise ProcessingError("EXTRACTION_FAILED")
 
-    raw_text, extractor_used = await asyncio.to_thread(_extract_pdf_text_with_extractor, file_path)
-    quality_score, quality_pass, quality_reasons = evaluate_extracted_text_quality(raw_text)
+    raw_text, extractor_used = await asyncio.to_thread(
+        _extract_pdf_text_with_extractor, file_path
+    )
+    quality_score, quality_pass, quality_reasons = evaluate_extracted_text_quality(
+        raw_text
+    )
     logger.info(
         (
             "PDF extraction finished run_id=%s document_id=%s extractor=%s chars=%d "
@@ -290,6 +352,19 @@ async def _process_document(
             payload=interpretation_payload,
             created_at=_default_now_iso(),
         )
+    except InterpretationBuildError as exc:
+        _append_step_status(
+            repository=repository,
+            run_id=run_id,
+            step_name=StepName.INTERPRETATION,
+            step_status=StepStatus.FAILED,
+            attempt=1,
+            started_at=interpretation_started_at,
+            ended_at=_default_now_iso(),
+            error_code=exc.error_code,
+            details=exc.details,
+        )
+        raise ProcessingError("INTERPRETATION_FAILED") from exc
     except Exception as exc:
         _append_step_status(
             repository=repository,
@@ -300,6 +375,7 @@ async def _process_document(
             started_at=interpretation_started_at,
             ended_at=_default_now_iso(),
             error_code="INTERPRETATION_FAILED",
+            details=None,
         )
         raise ProcessingError("INTERPRETATION_FAILED") from exc
 
@@ -319,7 +395,49 @@ async def _process_document(
 def _build_interpretation_artifact(
     *, document_id: str, run_id: str, raw_text: str
 ) -> dict[str, object]:
-    fields = _extract_structured_fields_from_raw_text(raw_text)
+    compact_text = _WHITESPACE_PATTERN.sub(" ", raw_text).strip()
+    warning_codes: list[str] = []
+    candidate_bundle: dict[str, list[dict[str, object]]] = {}
+    canonical_evidence: dict[str, list[dict[str, object]]] = {}
+
+    if compact_text:
+        candidate_bundle = _mine_interpretation_candidates(raw_text)
+        canonical_values, canonical_evidence = _map_candidates_to_global_schema(
+            candidate_bundle
+        )
+        canonical_values = normalize_canonical_fields(
+            canonical_values,
+            canonical_evidence,
+        )
+        normalized_values = normalize_global_schema_v0(canonical_values)
+        validation_errors = validate_global_schema_v0_shape(normalized_values)
+        if validation_errors:
+            raise InterpretationBuildError(
+                error_code="INTERPRETATION_VALIDATION_FAILED",
+                details={"errors": validation_errors},
+            )
+
+        fields = _build_structured_fields_from_global_schema(
+            normalized_values=normalized_values,
+            evidence_map=canonical_evidence,
+        )
+    else:
+        normalized_values = normalize_global_schema_v0(None)
+        fields = []
+        warning_codes.append("EMPTY_RAW_TEXT")
+
+    populated_keys = [
+        key
+        for key in GLOBAL_SCHEMA_V0_KEYS
+        if (
+            isinstance(normalized_values.get(key), list)
+            and len(normalized_values.get(key, [])) > 0
+        )
+        or (
+            isinstance(normalized_values.get(key), str)
+            and bool(normalized_values.get(key))
+        )
+    ]
     now_iso = _default_now_iso()
     data = {
         "schema_version": "v0",
@@ -327,7 +445,18 @@ def _build_interpretation_artifact(
         "processing_run_id": run_id,
         "created_at": now_iso,
         "fields": fields,
+        "global_schema_v0": normalized_values,
+        "summary": {
+            "total_keys": len(GLOBAL_SCHEMA_V0_KEYS),
+            "populated_keys": len(populated_keys),
+            "keys_present": populated_keys,
+            "warning_codes": warning_codes,
+            "date_selection": _build_date_selection_debug(canonical_evidence),
+        },
     }
+    if _should_include_interpretation_candidates():
+        data["candidate_bundle"] = candidate_bundle
+
     return {
         "interpretation_id": str(uuid4()),
         "version_number": 1,
@@ -335,69 +464,531 @@ def _build_interpretation_artifact(
     }
 
 
-def _extract_structured_fields_from_raw_text(raw_text: str) -> list[dict[str, object]]:
+def _should_include_interpretation_candidates() -> bool:
+    raw = os.getenv(INTERPRETATION_DEBUG_INCLUDE_CANDIDATES_ENV, "").strip().lower()
+    return raw in {"1", "true", "yes", "on"}
+
+
+def _mine_interpretation_candidates(
+    raw_text: str
+) -> dict[str, list[dict[str, object]]]:
     compact_text = _WHITESPACE_PATTERN.sub(" ", raw_text).strip()
-    if not compact_text:
-        return []
+    candidates: dict[str, list[dict[str, object]]] = defaultdict(list)
+    seen_values: dict[str, set[str]] = defaultdict(set)
 
-    matches: list[dict[str, object]] = []
+    def add_candidate(
+        *,
+        key: str,
+        value: str,
+        confidence: float,
+        snippet: str,
+        page: int | None = 1,
+        anchor: str | None = None,
+        anchor_priority: int = 0,
+        target_reason: str | None = None,
+    ) -> None:
+        cleaned_value = value.strip(" .,:;\t\r\n")
+        if not cleaned_value:
+            return
+        normalized_key = cleaned_value.casefold()
+        if normalized_key in seen_values[key]:
+            return
+        seen_values[key].add(normalized_key)
+        candidates[key].append(
+            {
+                "value": cleaned_value,
+                "confidence": round(min(max(confidence, 0.0), 1.0), 2),
+                "anchor": anchor,
+                "anchor_priority": anchor_priority,
+                "target_reason": target_reason,
+                "evidence": {
+                    "page": page,
+                    "snippet": snippet.strip()[:220],
+                },
+            }
+        )
 
-    def add_match(key: str, pattern: str, confidence: float) -> None:
-        match = re.search(pattern, compact_text, flags=re.IGNORECASE)
-        if not match:
-            return
-        value = match.group(1).strip(" .,:;")
-        if not value:
-            return
-        snippet = match.group(0).strip()
-        matches.append(
+    labeled_patterns: tuple[tuple[str, str, float], ...] = (
+        (
+            "pet_name",
+            r"(?:paciente|nombre(?:\s+del\s+paciente)?|patient)\s*[:\-]\s*([^\n;]{2,100})",
+            0.88,
+        ),
+        (
+            "species",
+            r"(?:especie\s*/\s*raza|raza\s*/\s*especie)\s*[:\-]\s*([^\n;]{2,120})",
+            0.84,
+        ),
+        (
+            "breed",
+            r"(?:especie\s*/\s*raza|raza\s*/\s*especie)\s*[:\-]\s*([^\n;]{2,120})",
+            0.84,
+        ),
+        ("species", r"(?:especie|species)\s*[:\-]\s*([^\n;]{2,80})", 0.84),
+        ("breed", r"(?:raza|breed)\s*[:\-]\s*([^\n;]{2,80})", 0.84),
+        ("sex", r"(?:sexo|sex)\s*[:\-]\s*([^\n;]{1,40})", 0.83),
+        ("age", r"(?:edad|age)\s*[:\-]\s*([^\n;]{1,60})", 0.82),
+        (
+            "weight",
+            r"(?:peso|weight)\s*[:\-]?\s*([0-9]+(?:[\.,][0-9]+)?\s*(?:kg|kgs|g)?)",
+            0.84,
+        ),
+        (
+            "microchip_id",
+            r"(?:microchip|chip)\s*(?:n[ºo]\.?|id)?\s*[:\-]?\s*([A-Za-z0-9][A-Za-z0-9./_\-]{1,30}(?:\s+[A-Za-z0-9][A-Za-z0-9./_\-]{0,20}){0,3})",
+            0.88,
+        ),
+        (
+            "visit_date",
+            r"(?:fecha\s+de\s+visita|visita|consulta|visit\s+date)\s*[:\-]\s*([0-9]{1,2}[\/\-.][0-9]{1,2}[\/\-.][0-9]{2,4})",
+            0.86,
+        ),
+        (
+            "document_date",
+            r"(?:fecha\s+documento|fecha|date)\s*[:\-]\s*([0-9]{1,2}[\/\-.][0-9]{1,2}[\/\-.][0-9]{2,4})",
+            0.75,
+        ),
+        (
+            "clinic_name",
+            r"(?:cl[ií]nica|centro\s+veterinario|hospital\s+veterinario)\s*[:\-]\s*([^\n;]{3,120})",
+            0.76,
+        ),
+        (
+            "vet_name",
+            r"(?:veterinari[oa]|dr\.?|dra\.?)\s*[:\-]\s*([^\n;]{3,120})",
+            0.74,
+        ),
+        ("owner_name", r"(?:propietari[oa]|tutor)\s*[:\-]\s*([^\n;]{3,120})", 0.78),
+        (
+            "reason_for_visit",
+            r"(?:motivo(?:\s+de\s+consulta)?|reason\s+for\s+visit)\s*[:\-]\s*([^\n]{3,200})",
+            0.75,
+        ),
+        (
+            "invoice_total",
+            r"(?:total|importe\s+total|total\s+factura)\s*[:\-]?\s*([0-9]+(?:[\.,][0-9]{2})?\s*(?:€|eur)?)",
+            0.8,
+        ),
+        (
+            "covered_amount",
+            r"(?:cubierto|covered)\s*[:\-]?\s*([0-9]+(?:[\.,][0-9]{2})?\s*(?:€|eur)?)",
+            0.78,
+        ),
+        (
+            "non_covered_amount",
+            r"(?:no\s+cubierto|non[-\s]?covered)\s*[:\-]?\s*([0-9]+(?:[\.,][0-9]{2})?\s*(?:€|eur)?)",
+            0.78,
+        ),
+    )
+
+    for key, pattern, confidence in labeled_patterns:
+        for match in re.finditer(pattern, raw_text, flags=re.IGNORECASE):
+            add_candidate(
+                key=key,
+                value=match.group(1),
+                confidence=confidence,
+                snippet=match.group(0),
+            )
+
+    for match in re.finditer(
+        r"\b([0-9]{1,2}[\/\-.][0-9]{1,2}[\/\-.][0-9]{2,4})\b", raw_text
+    ):
+        snippet = raw_text[
+            max(0, match.start() - 36) : min(len(raw_text), match.end() + 36)
+        ]
+        add_candidate(
+            key="document_date",
+            value=match.group(1),
+            confidence=0.62,
+            snippet=snippet,
+        )
+
+    for date_candidate in _extract_date_candidates_with_classification(raw_text):
+        add_candidate(
+            key=str(date_candidate["target_key"]),
+            value=str(date_candidate["value"]),
+            confidence=float(date_candidate["confidence"]),
+            snippet=str(date_candidate["snippet"]),
+            page=1,
+            anchor=(
+                str(date_candidate["anchor"]) if date_candidate.get("anchor") else None
+            ),
+            anchor_priority=int(date_candidate["anchor_priority"]),
+            target_reason=str(date_candidate["target_reason"]),
+        )
+
+    lines = [line.strip() for line in raw_text.splitlines() if line.strip()]
+    species_keywords = {
+        "canino": "canino",
+        "canina": "canino",
+        "perro": "canino",
+        "felino": "felino",
+        "felina": "felino",
+        "gato": "felino",
+    }
+    breed_keywords = (
+        "labrador",
+        "retriever",
+        "bulldog",
+        "pastor",
+        "yorkshire",
+        "mestiz",
+        "beagle",
+        "caniche",
+    )
+    stopwords_upper = {
+        "DATOS",
+        "CLIENTE",
+        "NOMBRE",
+        "ESPECIE",
+        "RAZA",
+        "SEXO",
+        "CHIP",
+        "HISTORIAL",
+        "VISITA",
+    }
+
+    for line in lines:
+        if ":" in line:
+            header, value = line.split(":", 1)
+        elif "-" in line:
+            header, value = line.split("-", 1)
+        else:
+            header, value = "", ""
+
+        lower_header = header.casefold()
+        if value:
+            if any(token in lower_header for token in ("diagn", "impresi")):
+                add_candidate(
+                    key="diagnosis", value=value, confidence=0.8, snippet=line
+                )
+            if any(
+                token in lower_header
+                for token in ("trat", "medic", "prescrip", "receta")
+            ):
+                add_candidate(
+                    key="medication", value=value, confidence=0.78, snippet=line
+                )
+                add_candidate(
+                    key="treatment_plan", value=value, confidence=0.7, snippet=line
+                )
+            if any(
+                token in lower_header for token in ("proced", "interv", "cirug", "quir")
+            ):
+                add_candidate(
+                    key="procedure", value=value, confidence=0.78, snippet=line
+                )
+            if any(token in lower_header for token in ("sintom", "symptom")):
+                add_candidate(
+                    key="symptoms", value=value, confidence=0.74, snippet=line
+                )
+            if any(token in lower_header for token in ("vacun", "vaccin")):
+                add_candidate(
+                    key="vaccinations", value=value, confidence=0.75, snippet=line
+                )
+            if any(token in lower_header for token in ("laboratorio", "analit", "lab")):
+                add_candidate(
+                    key="lab_result", value=value, confidence=0.72, snippet=line
+                )
+            if any(
+                token in lower_header
+                for token in ("radiograf", "ecograf", "imagen", "tac", "rm")
+            ):
+                add_candidate(key="imaging", value=value, confidence=0.72, snippet=line)
+            if any(token in lower_header for token in ("linea", "concepto", "item")):
+                add_candidate(
+                    key="line_item", value=value, confidence=0.75, snippet=line
+                )
+
+        lower_line = line.casefold()
+        if any(token in lower_line for token in ("macho", "hembra", "male", "female")):
+            if "macho" in lower_line or "male" in lower_line:
+                add_candidate(key="sex", value="macho", confidence=0.65, snippet=line)
+            if "hembra" in lower_line or "female" in lower_line:
+                add_candidate(key="sex", value="hembra", confidence=0.65, snippet=line)
+
+        if (
+            any(token in lower_line for token in ("diagn", "impresi"))
+            and ":" not in line
+        ):
+            add_candidate(key="diagnosis", value=line, confidence=0.64, snippet=line)
+        if any(
+            token in lower_line
+            for token in (
+                "amoxic",
+                "clavul",
+                "predni",
+                "omepra",
+                "antibiot",
+                "mg",
+                "cada",
+            )
+        ):
+            add_candidate(key="medication", value=line, confidence=0.62, snippet=line)
+        if any(
+            token in lower_line
+            for token in ("cirug", "proced", "sut", "cura", "ecograf", "radiograf")
+        ):
+            add_candidate(key="procedure", value=line, confidence=0.61, snippet=line)
+
+        timeline_match = re.match(r"^-\s*([0-9]{1,2}/[0-9]{1,2}/[0-9]{2,4})\s*-", line)
+        if timeline_match:
+            add_candidate(
+                key="document_date",
+                value=timeline_match.group(1),
+                confidence=0.74,
+                snippet=line,
+                target_reason="timeline_unanchored",
+            )
+
+    for index, line in enumerate(lines):
+        lower_line = line.casefold()
+        normalized_single = _WHITESPACE_PATTERN.sub(" ", lower_line).strip()
+
+        if normalized_single in species_keywords:
+            add_candidate(
+                key="species",
+                value=species_keywords[normalized_single],
+                confidence=0.73,
+                snippet=line,
+            )
+
+        if any(keyword in lower_line for keyword in breed_keywords) and len(line) <= 80:
+            add_candidate(key="breed", value=line, confidence=0.72, snippet=line)
+
+        if normalized_single in {"m", "macho", "male", "h", "hembra", "female"}:
+            window = " ".join(
+                lines[max(0, index - 1) : min(len(lines), index + 2)]
+            ).casefold()
+            if "sexo" in window:
+                sex_value = (
+                    "macho" if normalized_single in {"m", "macho", "male"} else "hembra"
+                )
+                add_candidate(
+                    key="sex",
+                    value=sex_value,
+                    confidence=0.77,
+                    snippet=" ".join(
+                        lines[max(0, index - 1) : min(len(lines), index + 2)]
+                    ),
+                )
+
+        if (
+            line.isupper()
+            and 2 < len(line) <= 30
+            and line not in stopwords_upper
+            and " " not in line
+        ):
+            nearby = " ".join(lines[index : min(len(lines), index + 4)]).casefold()
+            if any(
+                token in nearby
+                for token in ("canino", "felino", "raza", "chip", "especie")
+            ):
+                add_candidate(
+                    key="pet_name", value=line.title(), confidence=0.7, snippet=line
+                )
+
+    if (
+        compact_text
+        and "language" not in candidates
+        and any(
+            token in compact_text.casefold()
+            for token in ("paciente", "diagnost", "tratamiento")
+        )
+    ):
+        add_candidate(
+            key="language",
+            value="es",
+            confidence=0.55,
+            snippet="Heuristic language inference based on Spanish clinical tokens",
+            page=None,
+        )
+
+    return dict(candidates)
+
+
+def _extract_date_candidates_with_classification(
+    raw_text: str,
+) -> list[dict[str, object]]:
+    candidates: list[dict[str, object]] = []
+    lower_text = raw_text.casefold()
+
+    for match in _DATE_CANDIDATE_PATTERN.finditer(raw_text):
+        value = match.group(1)
+        start = max(0, match.start() - 70)
+        end = min(len(raw_text), match.end() + 70)
+        snippet = _WHITESPACE_PATTERN.sub(" ", raw_text[start:end]).strip()
+        context = lower_text[start:end]
+
+        chosen_key = "document_date"
+        chosen_anchor = "fallback"
+        chosen_priority = 1
+        chosen_reason = "fallback_document_date"
+
+        for key, anchors in _DATE_TARGET_ANCHORS.items():
+            matched_anchor = next((anchor for anchor in anchors if anchor in context), None)
+            if matched_anchor is None:
+                continue
+
+            priority = _DATE_TARGET_PRIORITY.get(key, 1)
+            if priority > chosen_priority:
+                chosen_key = key
+                chosen_anchor = matched_anchor
+                chosen_priority = priority
+                chosen_reason = f"anchor:{matched_anchor}"
+
+        confidence = 0.84 if chosen_priority > 1 else 0.68
+        candidates.append(
+            {
+                "target_key": chosen_key,
+                "value": value,
+                "confidence": confidence,
+                "snippet": snippet,
+                "anchor": chosen_anchor,
+                "anchor_priority": chosen_priority,
+                "target_reason": chosen_reason,
+            }
+        )
+
+    return candidates
+
+
+def _map_candidates_to_global_schema(
+    candidate_bundle: Mapping[str, list[dict[str, object]]]
+) -> tuple[dict[str, object], dict[str, list[dict[str, object]]]]:
+    mapped: dict[str, object] = {}
+    evidence_map: dict[str, list[dict[str, object]]] = {}
+
+    for key in GLOBAL_SCHEMA_V0_KEYS:
+        key_candidates = sorted(
+            candidate_bundle.get(key, []),
+            key=lambda item: _candidate_sort_key(item, key),
+            reverse=True,
+        )
+
+        if key in REPEATABLE_KEYS_V0:
+            selected = key_candidates[:5]
+            mapped[key] = [
+                str(item.get("value", "")).strip()
+                for item in selected
+                if str(item.get("value", "")).strip()
+            ]
+            evidence_map[key] = selected
+            continue
+
+        if key_candidates:
+            top = key_candidates[0]
+            mapped[key] = str(top.get("value", "")).strip() or None
+            evidence_map[key] = [top]
+        else:
+            mapped[key] = None
+            evidence_map[key] = []
+
+    return mapped, evidence_map
+
+
+def _candidate_sort_key(item: dict[str, object], key: str) -> tuple[float, float]:
+    confidence = float(item.get("confidence", 0.0))
+    if key in DATE_TARGET_KEYS:
+        return float(item.get("anchor_priority", 0)), confidence
+    return 0.0, confidence
+
+
+def _build_date_selection_debug(
+    evidence_map: Mapping[str, list[dict[str, object]]],
+) -> dict[str, dict[str, object] | None]:
+    payload: dict[str, dict[str, object] | None] = {}
+    for key in ("visit_date", "document_date", "admission_date", "discharge_date"):
+        candidates = evidence_map.get(key, [])
+        if not candidates:
+            payload[key] = None
+            continue
+        top = candidates[0]
+        payload[key] = {
+            "anchor": top.get("anchor"),
+            "anchor_priority": top.get("anchor_priority", 0),
+            "target_reason": top.get("target_reason"),
+        }
+    return payload
+
+
+def _build_structured_fields_from_global_schema(
+    *,
+    normalized_values: Mapping[str, object],
+    evidence_map: Mapping[str, list[dict[str, object]]],
+) -> list[dict[str, object]]:
+    fields: list[dict[str, object]] = []
+
+    for key in GLOBAL_SCHEMA_V0_KEYS:
+        value = normalized_values.get(key)
+        key_evidence = evidence_map.get(key, [])
+
+        if key in REPEATABLE_KEYS_V0:
+            if not isinstance(value, list):
+                continue
+            for index, item in enumerate(value):
+                if not isinstance(item, str) or not item:
+                    continue
+                candidate = key_evidence[index] if index < len(key_evidence) else None
+                evidence = (
+                    candidate.get("evidence") if isinstance(candidate, dict) else None
+                )
+                confidence = (
+                    float(candidate.get("confidence", 0.65))
+                    if isinstance(candidate, dict)
+                    else 0.65
+                )
+                fields.append(
+                    _build_structured_field(
+                        key=key,
+                        value=item,
+                        confidence=confidence,
+                        snippet=(
+                            evidence.get("snippet")
+                            if isinstance(evidence, dict)
+                            else item
+                        ),
+                        value_type=VALUE_TYPE_BY_KEY_V0.get(key, "string"),
+                        page=(
+                            evidence.get("page") if isinstance(evidence, dict) else None
+                        ),
+                    )
+                )
+            continue
+
+        if not isinstance(value, str) or not value:
+            continue
+        candidate = key_evidence[0] if key_evidence else None
+        evidence = candidate.get("evidence") if isinstance(candidate, dict) else None
+        confidence = (
+            float(candidate.get("confidence", 0.65))
+            if isinstance(candidate, dict)
+            else 0.65
+        )
+        fields.append(
             _build_structured_field(
                 key=key,
                 value=value,
                 confidence=confidence,
-                snippet=snippet,
+                snippet=(
+                    evidence.get("snippet") if isinstance(evidence, dict) else value
+                ),
+                value_type=VALUE_TYPE_BY_KEY_V0.get(key, "string"),
+                page=(evidence.get("page") if isinstance(evidence, dict) else None),
             )
         )
 
-    add_match("pet_name", r"(?:paciente|patient|nombre)\s*[:\-]\s*([A-Za-z0-9 '\-]+)", 0.86)
-    add_match("species", r"(?:especie|species)\s*[:\-]\s*([A-Za-z '\-]+)", 0.82)
-    add_match("sex", r"(?:sexo|sex)\s*[:\-]\s*([A-Za-z '\-]+)", 0.8)
-    add_match("age", r"(?:edad|age)\s*[:\-]\s*([A-Za-z0-9 '\-]+)", 0.78)
-    add_match(
-        "diagnosis",
-        r"(?:diagnostico|diagnosis|impresion)\s*[:\-]\s*([^.;]{3,200})",
-        0.72,
-    )
-    add_match(
-        "treatment_plan",
-        r"(?:tratamiento|treatment|plan)\s*[:\-]\s*([^.;]{3,200})",
-        0.7,
-    )
-
-    if matches:
-        return matches
-
-    sentence_parts = re.split(r"(?<=[.!?])\s+", compact_text)
-    fallback_fields: list[dict[str, object]] = []
-    for index, sentence in enumerate(sentence_parts, start=1):
-        normalized = sentence.strip()
-        if len(normalized) < 8:
-            continue
-        fallback_fields.append(
-            _build_structured_field(
-                key=f"observation_{index}",
-                value=normalized[:180],
-                confidence=max(0.5, 0.68 - (index - 1) * 0.06),
-                snippet=normalized[:180],
-            )
-        )
-        if len(fallback_fields) >= 6:
-            break
-    return fallback_fields
+    return fields
 
 
 def _build_structured_field(
-    *, key: str, value: str, confidence: float, snippet: str
+    *,
+    key: str,
+    value: str,
+    confidence: float,
+    snippet: str,
+    value_type: str,
+    page: int | None,
 ) -> dict[str, object]:
     normalized_snippet = snippet.strip()
     if len(normalized_snippet) > 180:
@@ -406,12 +997,12 @@ def _build_structured_field(
         "field_id": str(uuid4()),
         "key": key,
         "value": value,
-        "value_type": "string",
+        "value_type": value_type,
         "confidence": round(min(max(confidence, 0.0), 1.0), 2),
-        "is_critical": False,
+        "is_critical": key in CRITICAL_KEYS_V0,
         "origin": "machine",
         "evidence": {
-            "page": 1,
+            "page": page,
             "snippet": normalized_snippet,
         },
     }
@@ -427,6 +1018,7 @@ def _append_step_status(
     started_at: str | None,
     ended_at: str | None,
     error_code: str | None,
+    details: dict[str, object] | None = None,
 ) -> None:
     """Persist an append-only STEP_STATUS artifact for a run."""
 
@@ -440,7 +1032,7 @@ def _append_step_status(
             "started_at": started_at,
             "ended_at": ended_at,
             "error_code": error_code,
-            "details": None,
+            "details": details,
         },
         created_at=_default_now_iso(),
     )
@@ -541,7 +1133,9 @@ def _extract_pdf_text_without_external_dependencies(file_path: Path) -> str:
 
         objects = _parse_pdf_objects(pdf_bytes)
         cmap_by_object = _extract_cmaps_by_object(objects)
-        page_streams = _collect_page_content_streams(objects=objects, cmap_by_object=cmap_by_object)
+        page_streams = _collect_page_content_streams(
+            objects=objects, cmap_by_object=cmap_by_object
+        )
         text_chunks: list[str] = []
         total_bytes = 0
         for chunk, font_to_cmap in page_streams:
@@ -590,6 +1184,7 @@ def _extract_pdf_text_without_external_dependencies(file_path: Path) -> str:
         return _stitch_text_chunks(sanitized_chunks)
     finally:
         _ACTIVE_EXTRACTION_DEADLINE = None
+
 
 def _deadline_exceeded() -> bool:
     if _ACTIVE_EXTRACTION_DEADLINE is None:
@@ -746,7 +1341,9 @@ def _extract_font_to_cmap_for_page(
     objects: dict[int, bytes],
     cmap_by_object: dict[int, PdfCMap],
 ) -> dict[str, PdfCMap]:
-    resource_payload = _resolve_page_resources(page_payload=page_payload, objects=objects)
+    resource_payload = _resolve_page_resources(
+        page_payload=page_payload, objects=objects
+    )
     if resource_payload is None:
         return {}
     return _build_font_to_cmap_from_page_resources(
@@ -771,7 +1368,9 @@ def _resolve_page_resources(
     return objects.get(int(ref_match.group(1)))
 
 
-def _extract_object_stream(object_payload: bytes, max_bytes: int | None = None) -> bytes | None:
+def _extract_object_stream(
+    object_payload: bytes, max_bytes: int | None = None
+) -> bytes | None:
     match = re.search(rb"stream\r?\n(.*?)\r?\nendstream", object_payload, re.DOTALL)
     if match is None:
         return None
@@ -1256,20 +1855,13 @@ def _decoded_text_score(text: str) -> float:
     if letters == 0:
         return -100.0
     spaces = sum(char.isspace() for char in text)
-    punctuation = sum(
-        (not char.isalnum()) and (not char.isspace()) for char in text
-    )
+    punctuation = sum((not char.isalnum()) and (not char.isspace()) for char in text)
     vowels = sum(char.lower() in "aeiouáéíóúü" for char in text if char.isalpha())
     length = len(text)
     vowel_ratio = vowels / letters
     punctuation_ratio = punctuation / length
     space_ratio = spaces / length
-    return (
-        letters / length
-        + vowel_ratio
-        + space_ratio * 0.5
-        - punctuation_ratio * 1.5
-    )
+    return letters / length + vowel_ratio + space_ratio * 0.5 - punctuation_ratio * 1.5
 
 
 def _sanitize_text_chunks(chunks: list[str]) -> list[str]:
