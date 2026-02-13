@@ -149,3 +149,21 @@ def test_project_split_entry_includes_implementation_plan_us32_module() -> None:
         in plan_entry
     )
     assert "US-32 — Align review rendering to Global Schema v0 template" in release6
+
+
+def test_project_split_entry_includes_implementation_plan_us35_module() -> None:
+    plan_entry = _read_text(
+        ROUTER_ROOT / "04_PROJECT" / "IMPLEMENTATION_PLAN" / "00_entry.md"
+    )
+    release4 = _read_text(
+        ROUTER_ROOT
+        / "04_PROJECT"
+        / "IMPLEMENTATION_PLAN"
+        / "100_release-4-assisted-review-in-context-high-value-higher-risk.md"
+    )
+
+    assert (
+        "docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/276_us-35-resizable-splitter-between-pdf-viewer-and-structured-data-panel.md"
+        in plan_entry
+    )
+    assert "US-35 — Resizable splitter between PDF Viewer and Structured Data panel" in release4
