@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -10,13 +11,19 @@ vi.mock("./components/PdfViewer", () => ({
     focusPage?: number | null;
     highlightSnippet?: string | null;
     focusRequestId?: number;
+    toolbarLeftContent?: ReactNode;
+    toolbarRightExtra?: ReactNode;
   }) => (
-    <div
-      data-testid="pdf-viewer"
-      data-focus-page={props.focusPage ?? ""}
-      data-highlight-snippet={props.highlightSnippet ?? ""}
-      data-focus-request-id={props.focusRequestId ?? 0}
-    />
+    <>
+      <div data-testid="pdf-viewer-toolbar-left">{props.toolbarLeftContent ?? null}</div>
+      <div data-testid="pdf-viewer-toolbar-right">{props.toolbarRightExtra ?? null}</div>
+      <div
+        data-testid="pdf-viewer"
+        data-focus-page={props.focusPage ?? ""}
+        data-highlight-snippet={props.highlightSnippet ?? ""}
+        data-focus-request-id={props.focusRequestId ?? 0}
+      />
+    </>
   ),
 }));
 
@@ -580,7 +587,10 @@ describe("App upload and list flow", () => {
       await screen.findByText("Identificacion del caso");
 
       expect(sidebar).toHaveAttribute("data-expanded", "false");
+      expect(sidebar.className).toContain("w-16");
       expect(screen.queryByRole("button", { name: /Actualizar/i })).toBeNull();
+      const leftRailScroll = screen.getByTestId("left-panel-scroll");
+      expect(leftRailScroll.className).toContain("[scrollbar-width:none]");
 
       fireEvent.mouseEnter(sidebar);
       expect(sidebar).toHaveAttribute("data-expanded", "true");
@@ -594,6 +604,17 @@ describe("App upload and list flow", () => {
 
       fireEvent.mouseLeave(sidebar);
       expect(sidebar).toHaveAttribute("data-expanded", "false");
+
+      const collapsedReadyItem = screen.getByRole("button", {
+        name: /ready\.pdf\s*\(Listo para revision\)/i,
+      });
+      expect(collapsedReadyItem).toBeInTheDocument();
+      const statusDot = collapsedReadyItem.querySelector('span[aria-hidden="true"]');
+      expect(statusDot).toBeTruthy();
+      expect(statusDot?.className).toContain("ring-2");
+
+      fireEvent.click(collapsedReadyItem);
+      expect(screen.getByTestId("pdf-viewer")).toHaveAttribute("data-focus-page", "");
     } finally {
       Object.defineProperty(window, "matchMedia", {
         configurable: true,
@@ -698,7 +719,7 @@ describe("App upload and list flow", () => {
     }
   });
 
-  it("uses polished structured header actions and opens source from Documento original", async () => {
+  it("uses polished structured header actions without Documento original button", async () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
@@ -707,9 +728,26 @@ describe("App upload and list flow", () => {
     expect(screen.getByRole("heading", { name: /Datos estructurados/i })).toBeInTheDocument();
     expect(screen.queryByText(/La confianza guia la atencion, no bloquea decisiones\./i)).toBeNull();
     expect(screen.queryByRole("button", { name: /Abrir texto/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Documento original/i })).toBeNull();
+  });
 
-    fireEvent.click(screen.getByRole("button", { name: /Documento original/i }));
-    expect(screen.getByTestId("source-drawer")).toBeInTheDocument();
+  it("shows clear search control and keeps focus after clearing", async () => {
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+    await screen.findByText("Identificacion del caso");
+
+    const searchInput = screen.getByRole("textbox", { name: /Buscar en datos estructurados/i });
+    expect(screen.queryByRole("button", { name: /Limpiar búsqueda/i })).toBeNull();
+
+    fireEvent.change(searchInput, { target: { value: "Luna" } });
+    const clearButton = screen.getByRole("button", { name: /Limpiar búsqueda/i });
+    expect(clearButton).toBeInTheDocument();
+
+    fireEvent.click(clearButton);
+    expect(searchInput).toHaveValue("");
+    expect(searchInput).toHaveFocus();
+    expect(screen.queryByRole("button", { name: /Limpiar búsqueda/i })).toBeNull();
   });
 
   it("shows only connectivity toast when preview download fails (no global red banner)", async () => {
@@ -1386,13 +1424,13 @@ describe("App upload and list flow", () => {
       const fieldCard = within(panel).getByText(field.label).closest("article");
       expect(fieldCard).not.toBeNull();
       const card = fieldCard as HTMLElement;
-      expect(within(card).queryAllByTitle(/CRÍTICO/i).length).toBeGreaterThan(0);
+      expect(within(card).queryByTestId(`critical-indicator-${field.key}`)).toBeInTheDocument();
     });
 
     nonCriticalFields.forEach((field) => {
       const fieldCard = within(panel).getByText(field.label).closest("article");
       expect(fieldCard).not.toBeNull();
-      expect(within(fieldCard as HTMLElement).queryByTitle(/^CRÍTICO$/i)).toBeNull();
+      expect(within(fieldCard as HTMLElement).queryByTestId(`critical-indicator-${field.key}`)).toBeNull();
     });
 
     const petNameCard = within(panel).getByText("Nombre del paciente").closest("article");
@@ -1400,20 +1438,20 @@ describe("App upload and list flow", () => {
     const petNameCritical = within(petNameCard as HTMLElement).getByTestId(
       "critical-indicator-pet_name"
     );
-    expect(petNameCritical).toHaveAttribute("title", "CRÍTICO");
+    expect(petNameCritical).toBeInTheDocument();
     const petNameConfidence = within(petNameCard as HTMLElement).getByTestId(
       "confidence-indicator-core:pet_name"
     );
-    expect(petNameConfidence).toHaveAttribute("title", expect.stringMatching(/Confianza:\s*\d+%/i));
-    expect(petNameConfidence).toHaveAttribute("title", expect.stringMatching(/CRÍTICO/i));
+    expect(petNameConfidence).toHaveAttribute("aria-label", expect.stringMatching(/Confianza:\s*\d+%/i));
+    expect(petNameConfidence).toHaveAttribute("aria-label", expect.stringMatching(/CRÍTICO/i));
 
     const claimIdCard = within(panel).getByText("ID de reclamacion").closest("article");
     expect(claimIdCard).not.toBeNull();
     const claimIdConfidence = within(claimIdCard as HTMLElement).getByTestId(
       "confidence-indicator-core:claim_id"
     );
-    expect(claimIdConfidence).toHaveAttribute("title", expect.stringMatching(/Confianza:\s*\d+%/i));
-    expect(claimIdConfidence).toHaveAttribute("title", expect.not.stringMatching(/CRÍTICO/i));
+    expect(claimIdConfidence).toHaveAttribute("aria-label", expect.stringMatching(/Confianza:\s*\d+%/i));
+    expect(claimIdConfidence).toHaveAttribute("aria-label", expect.not.stringMatching(/CRÍTICO/i));
 
     const diagnosisCard = within(panel).getByText("Diagnostico").closest("article");
     expect(diagnosisCard).not.toBeNull();
@@ -1640,15 +1678,81 @@ describe("App upload and list flow", () => {
     expect(screen.getByTestId("center-panel-scroll")).toBeInTheDocument();
   });
 
-  it("uses a single browse grid layout", async () => {
+  it("renders review split grid with draggable handle", async () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
     await screen.findByText("Identificacion del caso");
 
     const layoutGrid = screen.getByTestId("document-layout-grid");
-    expect(layoutGrid.className).toContain("grid-cols-[minmax(0,1fr)_minmax(0,1fr)]");
-    expect(layoutGrid.className).not.toContain("grid-cols-1");
+    expect(layoutGrid).toBeInTheDocument();
+    expect(screen.getByTestId("review-split-grid")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Redimensionar paneles de revisión/i })
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Restablecer ancho de paneles/i })).toBeNull();
+  });
+
+  it("updates split ratio on drag and persists snapped value", async () => {
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+    await screen.findByText("Identificacion del caso");
+
+    const splitGrid = screen.getByTestId("review-split-grid") as HTMLDivElement;
+    vi.spyOn(splitGrid, "getBoundingClientRect").mockReturnValue({
+      width: 1200,
+      height: 800,
+      top: 0,
+      left: 0,
+      right: 1200,
+      bottom: 800,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect);
+
+    const handle = screen.getByTestId("review-split-handle");
+    fireEvent.mouseDown(handle, { clientX: 620 });
+    fireEvent.mouseMove(window, { clientX: 740 });
+    fireEvent.mouseUp(window);
+
+    await waitFor(() => {
+      const storedRatio = Number(window.localStorage.getItem("reviewSplitRatio"));
+      expect(storedRatio).toBeGreaterThan(0.64);
+      expect(storedRatio).toBeLessThan(0.65);
+      expect(splitGrid.style.gridTemplateColumns).toContain(`${storedRatio}fr`);
+    });
+  });
+
+  it("restores default split ratio on handle double-click", async () => {
+    window.localStorage.setItem("reviewSplitRatio", "0.5");
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+    await screen.findByText("Identificacion del caso");
+
+    const splitGrid = screen.getByTestId("review-split-grid") as HTMLDivElement;
+    vi.spyOn(splitGrid, "getBoundingClientRect").mockReturnValue({
+      width: 1200,
+      height: 800,
+      top: 0,
+      left: 0,
+      right: 1200,
+      bottom: 800,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect);
+
+    const handle = screen.getByTestId("review-split-handle");
+    expect(splitGrid.style.gridTemplateColumns).toContain("0.5fr");
+    fireEvent.doubleClick(handle);
+
+    await waitFor(() => {
+      expect(splitGrid.style.gridTemplateColumns).toContain("0.62fr");
+      expect(window.localStorage.getItem("reviewSplitRatio")).toBe("0.62");
+    });
   });
 
   it("navigates PDF from row click without opening source drawer", async () => {
@@ -1698,8 +1802,8 @@ describe("App upload and list flow", () => {
     await screen.findByText("Identificacion del caso");
 
     const confidenceIndicator = screen.getByTestId("confidence-indicator-core:pet_name");
-    expect(confidenceIndicator).toHaveAttribute("title", expect.stringMatching(/Página 1/i));
-    expect(confidenceIndicator).toHaveAttribute("title", expect.stringMatching(/Paciente: Luna/i));
+    expect(confidenceIndicator).toHaveAttribute("aria-label", expect.stringMatching(/Página 1/i));
+    expect(confidenceIndicator).toHaveAttribute("aria-label", expect.stringMatching(/Paciente: Luna/i));
 
     fireEvent.click(screen.getByRole("button", { name: /Nombre del paciente/i }));
     const viewer = screen.getAllByTestId("pdf-viewer")[0];
@@ -1712,78 +1816,6 @@ describe("App upload and list flow", () => {
     expect(screen.queryByTestId("source-drawer")).toBeNull();
   });
 
-  it("opens and closes source drawer from Documento original with backdrop and escape", async () => {
-    renderApp();
-
-    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Identificacion del caso");
-
-    fireEvent.click(screen.getByRole("button", { name: /Documento original/i }));
-    expect(screen.getByTestId("source-drawer")).toBeInTheDocument();
-
-    fireEvent.click(screen.getByTestId("source-drawer-backdrop"));
-    expect(screen.queryByTestId("source-drawer")).toBeNull();
-
-    fireEvent.click(screen.getByRole("button", { name: /Documento original/i }));
-    expect(screen.getByTestId("source-drawer")).toBeInTheDocument();
-    fireEvent.keyDown(window, { key: "Escape" });
-    expect(screen.queryByTestId("source-drawer")).toBeNull();
-  });
-
-  it("moves source to pinned panel on desktop when pin is toggled", async () => {
-    const originalMatchMedia = window.matchMedia;
-    try {
-      Object.defineProperty(window, "matchMedia", {
-        configurable: true,
-        writable: true,
-        value: vi.fn((query: string) => ({
-          matches: query.includes("min-width"),
-          media: query,
-          onchange: null,
-          addListener: vi.fn(),
-          removeListener: vi.fn(),
-          addEventListener: vi.fn(),
-          removeEventListener: vi.fn(),
-          dispatchEvent: vi.fn(),
-        })),
-      });
-
-      renderApp();
-
-      fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-      await screen.findByText("Identificacion del caso");
-      fireEvent.click(screen.getByRole("button", { name: /Documento original/i }));
-
-      fireEvent.click(screen.getByRole("button", { name: /📌 Fijar/i }));
-      await waitFor(() => {
-        expect(screen.queryByTestId("source-drawer")).toBeNull();
-        expect(screen.getByTestId("source-pinned-panel")).toBeInTheDocument();
-      });
-      expect(screen.getByTestId("right-panel-scroll")).toBeInTheDocument();
-
-      expect(screen.getByTestId("center-panel-scroll")).toBeInTheDocument();
-    } finally {
-      Object.defineProperty(window, "matchMedia", {
-        configurable: true,
-        writable: true,
-        value: originalMatchMedia,
-      });
-    }
-  });
-
-  it("resets source state when switching documents", async () => {
-    renderApp();
-
-    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Identificacion del caso");
-    fireEvent.click(screen.getByRole("button", { name: /Documento original/i }));
-    expect(screen.getByTestId("source-drawer")).toBeInTheDocument();
-
-    fireEvent.mouseEnter(screen.getByTestId("documents-sidebar"));
-    fireEvent.click(screen.getByRole("button", { name: /processing\.pdf/i }));
-    expect(screen.queryByTestId("source-drawer")).toBeNull();
-  });
-
   it("hides inline Fuente rows and keeps evidence details in confidence tooltip", async () => {
     renderApp();
 
@@ -1792,11 +1824,11 @@ describe("App upload and list flow", () => {
 
     expect(screen.queryByText(/^Fuente:/i)).toBeNull();
     const withEvidence = screen.getByTestId("confidence-indicator-core:pet_name");
-    expect(withEvidence).toHaveAttribute("title", expect.stringMatching(/Página 1/i));
-    expect(withEvidence).toHaveAttribute("title", expect.stringMatching(/Paciente: Luna/i));
+    expect(withEvidence).toHaveAttribute("aria-label", expect.stringMatching(/Página 1/i));
+    expect(withEvidence).toHaveAttribute("aria-label", expect.stringMatching(/Paciente: Luna/i));
 
     const withoutEvidence = screen.getByTestId("confidence-indicator-core:species");
-    expect(withoutEvidence).toHaveAttribute("title", expect.not.stringMatching(/Página/i));
+    expect(withoutEvidence).toHaveAttribute("aria-label", expect.not.stringMatching(/Página/i));
     expect(screen.queryByTestId("source-drawer")).toBeNull();
   });
 
@@ -1870,7 +1902,7 @@ describe("App upload and list flow", () => {
     expect(screen.queryByTestId("source-drawer")).toBeNull();
   });
 
-  it("does not open source drawer on plain field click, only from explicit document action", async () => {
+  it("keeps source drawer closed on plain field click", async () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
@@ -1878,9 +1910,6 @@ describe("App upload and list flow", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Nombre del paciente/i }));
     expect(screen.queryByTestId("source-drawer")).toBeNull();
-
-    fireEvent.click(screen.getByRole("button", { name: /Documento original/i }));
-    expect(screen.getByTestId("source-drawer")).toBeInTheDocument();
   });
 });
 

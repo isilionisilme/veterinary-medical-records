@@ -52,6 +52,7 @@ class MockIntersectionObserver {
 
 describe("PdfViewer", () => {
   beforeEach(() => {
+    window.localStorage.clear();
     const renderCallsByPage = new Map<number, number>();
 
     mockDoc = {
@@ -180,6 +181,89 @@ describe("PdfViewer", () => {
 
     expect(screen.queryByRole("button", { name: /Página siguiente/i })).toBeNull();
     expect(screen.queryByRole("button", { name: /Página anterior/i })).toBeNull();
+  });
+
+  it("shows zoom controls next to pagination and updates zoom indicator", async () => {
+    render(<PdfViewer fileUrl="blob://sample" filename="record.pdf" />);
+
+    await screen.findAllByTestId("pdf-page");
+
+    const zoomOut = screen.getByRole("button", { name: /Alejar/i });
+    const zoomIn = screen.getByRole("button", { name: /Acercar/i });
+    const fitWidth = screen.getByRole("button", { name: /Ajustar al ancho/i });
+    const indicator = screen.getByTestId("pdf-zoom-indicator");
+
+    expect(zoomOut).toBeInTheDocument();
+    expect(zoomIn).toBeInTheDocument();
+    expect(fitWidth).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Restablecer zoom/i })).toBeNull();
+    expect(indicator).toHaveTextContent("100%");
+
+    fireEvent.mouseEnter(zoomIn);
+    expect(screen.getByRole("tooltip")).toHaveTextContent("Acercar");
+    fireEvent.mouseLeave(zoomIn);
+
+    fireEvent.click(zoomIn);
+    expect(indicator).toHaveTextContent("110%");
+    expect(window.localStorage.getItem("pdfViewerZoomLevel")).toBe("1.1");
+
+    fireEvent.click(zoomOut);
+    expect(indicator).toHaveTextContent("100%");
+
+    fireEvent.click(zoomIn);
+    expect(indicator).toHaveTextContent("110%");
+    fireEvent.click(fitWidth);
+    expect(indicator).toHaveTextContent("100%");
+  });
+
+  it("applies Ctrl+wheel zoom only inside viewer", async () => {
+    render(<PdfViewer fileUrl="blob://sample" filename="record.pdf" />);
+
+    await screen.findAllByTestId("pdf-page");
+    const container = screen.getByTestId("pdf-scroll-container");
+    const indicator = screen.getByTestId("pdf-zoom-indicator");
+
+    const plainWheel = new WheelEvent("wheel", {
+      deltaY: -120,
+      ctrlKey: false,
+      cancelable: true,
+      bubbles: true,
+    });
+    container.dispatchEvent(plainWheel);
+    expect(plainWheel.defaultPrevented).toBe(false);
+    expect(indicator).toHaveTextContent("100%");
+
+    const ctrlWheelIn = new WheelEvent("wheel", {
+      deltaY: -120,
+      ctrlKey: true,
+      cancelable: true,
+      bubbles: true,
+    });
+    container.dispatchEvent(ctrlWheelIn);
+    expect(ctrlWheelIn.defaultPrevented).toBe(true);
+    await waitFor(() => {
+      expect(indicator).toHaveTextContent("110%");
+    });
+
+    const ctrlWheelOut = new WheelEvent("wheel", {
+      deltaY: 120,
+      ctrlKey: true,
+      cancelable: true,
+      bubbles: true,
+    });
+    container.dispatchEvent(ctrlWheelOut);
+    expect(ctrlWheelOut.defaultPrevented).toBe(true);
+    await waitFor(() => {
+      expect(indicator).toHaveTextContent("100%");
+    });
+  });
+
+  it("restores persisted zoom level", async () => {
+    window.localStorage.setItem("pdfViewerZoomLevel", "1.3");
+    render(<PdfViewer fileUrl="blob://sample" filename="record.pdf" />);
+
+    await screen.findAllByTestId("pdf-page");
+    expect(screen.getByTestId("pdf-zoom-indicator")).toHaveTextContent("130%");
   });
 });
 
