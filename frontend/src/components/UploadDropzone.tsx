@@ -31,14 +31,17 @@ export function UploadDropzone({
   ariaLabel,
 }: UploadDropzoneProps) {
   const resolvedAriaLabel = ariaLabel ?? (compact ? "Cargar documento" : `${title} ${subtitle}`.trim());
+  const isOverlayActive = showDropOverlay && isDragOver;
 
   return (
     <div
-      className={`relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed text-center transition ${
+      className={`relative flex cursor-pointer flex-col items-center justify-center rounded-card border-2 border-dashed text-center transition ${
         isDragOver
-          ? "border-accent bg-accentSoft/35 ring-2 ring-accent/40"
+          ? isOverlayActive
+            ? "border-border bg-surface"
+            : "border-statusSuccess bg-statusSuccess/10 ring-2 ring-statusSuccess/30"
           : "border-border bg-surface hover:border-textSecondary/50 hover:bg-surface"
-      } ${compact ? "h-12 w-12 rounded-xl px-1.5 py-1.5" : "px-4 py-5"} ${className}`}
+      } ${compact ? "h-12 w-12 rounded-control px-1.5 py-1.5" : "px-4 py-5"} ${className}`}
       role="button"
       aria-label={resolvedAriaLabel}
       tabIndex={0}
@@ -55,8 +58,8 @@ export function UploadDropzone({
       onDrop={onDrop}
     >
       {showDropOverlay && isDragOver && (
-        <div className="pointer-events-none absolute inset-2 z-10 flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-accent bg-surface/75 ring-2 ring-accent/40 backdrop-blur-[1px]">
-          <Upload size={18} className="text-accent" aria-hidden="true" />
+        <div className="pointer-events-none absolute inset-2 z-10 flex flex-col items-center justify-center gap-2 rounded-control border-2 border-dashed border-statusSuccess bg-surface/75 ring-2 ring-statusSuccess/30 backdrop-blur-[1px]">
+          <Upload size={18} className="text-statusSuccess" aria-hidden="true" />
           <p className="text-sm font-semibold text-ink">Suelta el PDF para subirlo</p>
         </div>
       )}

@@ -856,6 +856,7 @@ export function App() {
   const reviewSplitRatioRef = useRef(reviewSplitRatio);
   const viewerDragDepthRef = useRef(0);
   const sidebarUploadDragDepthRef = useRef(0);
+  const suppressDocsSidebarHoverUntilRef = useRef(0);
   const pendingAutoOpenDocumentIdRef = useRef<string | null>(null);
   const autoOpenRetryCountRef = useRef<Record<string, number>>({});
   const autoOpenRetryTimerRef = useRef<number | null>(null);
@@ -1302,6 +1303,7 @@ export function App() {
     event.stopPropagation();
     sidebarUploadDragDepthRef.current = 0;
     setIsDragOverSidebarUpload(false);
+    suppressDocsSidebarHoverUntilRef.current = Date.now() + 400;
     const file = event.dataTransfer.files?.[0];
     if (!file) {
       return;
@@ -1335,6 +1337,9 @@ export function App() {
 
   const handleDocsSidebarMouseEnter = (event: ReactMouseEvent<HTMLElement>) => {
     isPointerInsideDocsSidebarRef.current = true;
+    if (Date.now() < suppressDocsSidebarHoverUntilRef.current) {
+      return;
+    }
     if (sidebarUploadDragDepthRef.current > 0 || isDragOverSidebarUpload) {
       return;
     }
@@ -2675,8 +2680,9 @@ export function App() {
   );
 
   return (
-    <div className="min-h-screen bg-[var(--page-bg)] px-4 py-2 md:px-6 lg:px-8 xl:px-10">
-      <header className="sticky top-0 z-40 mx-auto flex w-full max-w-[1600px] flex-col gap-1 py-1">
+    <div className="min-h-screen bg-page px-4 py-3 md:px-6 lg:px-8 xl:px-10">
+      <div className="mx-auto w-full max-w-[1640px] rounded-frame border border-borderSubtle bg-frame px-4 py-3 shadow-soft md:px-5 lg:px-6">
+      <header className="sticky top-0 z-40 flex w-full flex-col gap-1 bg-frame/95 py-1 backdrop-blur-sm">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-wide text-[var(--title-accent)]">
@@ -2688,8 +2694,7 @@ export function App() {
           </div>
         </div>
       </header>
-
-      <main className="relative mx-auto mt-2 w-full max-w-[1600px]">
+      <main className="relative mt-2 w-full">
         <div className="relative z-20 flex gap-6">
           <DocumentsSidebar
             panelHeightClass={panelHeightClass}
@@ -2726,8 +2731,7 @@ export function App() {
             onSidebarFileInputChange={handleSidebarFileInputChange}
             onSelectDocument={handleSelectDocument}
           />
-
-          <section className={`flex flex-1 flex-col rounded-3xl border border-black/10 bg-white/70 p-6 shadow-xl ${panelHeightClass}`}>
+          <section className={`flex flex-1 flex-col rounded-card border border-borderSubtle bg-surface p-5 shadow-subtle ${panelHeightClass}`}>
             {shouldShowLoadPdfErrorBanner && (
               <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 {getUserErrorMessage(loadPdf.error, "No se pudo cargar la vista previa del documento.")}
@@ -2746,7 +2750,7 @@ export function App() {
                   >
                     {!activeId ? (
                       documentList.isError ? (
-                        <div className="flex h-full flex-col rounded-2xl border border-black/10 bg-white/80 p-6">
+                        <div className="flex h-full flex-col rounded-card border border-borderSubtle bg-surfaceMuted p-6">
                           <div className="flex flex-1 items-center justify-center text-center">
                             <p className="text-sm text-muted">
                               Revisa la lista lateral para reintentar la carga de documentos.
@@ -2756,7 +2760,7 @@ export function App() {
                       ) : (
                         <div
                           data-testid="viewer-empty-state"
-                          className="relative flex h-full flex-col rounded-2xl border border-black/10 bg-white/80 p-6"
+                          className="relative flex h-full flex-col rounded-card border border-borderSubtle bg-surfaceMuted p-6"
                           role="button"
                           tabIndex={0}
                           onClick={handleOpenUploadArea}
@@ -2802,8 +2806,11 @@ export function App() {
                         >
                           <aside
                             data-testid="center-panel-scroll"
-                            className="flex h-full min-h-0 min-w-[560px] flex-col rounded-2xl border border-black/10 bg-white/80 p-2"
+                            className="flex h-full min-h-0 min-w-[560px] flex-col rounded-card border border-borderSubtle bg-surface p-2"
                           >
+                            <div className="px-2 pb-2">
+                              <h3 className="text-lg font-semibold text-ink">Informe</h3>
+                            </div>
                             {fileUrl ? (
                               <PdfViewer
                                 key={`${effectiveViewMode}-${activeId ?? "empty"}`}
@@ -2819,7 +2826,7 @@ export function App() {
                               />
                             ) : (
                               <div className="flex h-full min-h-0 flex-col">
-                                <div className="relative z-20 flex items-center justify-between gap-4 border-b border-black/10 pb-3">
+                                <div className="relative z-20 flex items-center justify-between gap-4 border-b border-border pb-3">
                                   <div className="flex items-center gap-1">{viewerModeToolbarIcons}</div>
                                   <div className="flex items-center gap-1">{viewerDownloadIcon}</div>
                                 </div>
@@ -2849,13 +2856,13 @@ export function App() {
                           </div>
 
                           <aside
-                            className="flex h-full w-full min-h-0 min-w-[420px] flex-1 flex-col rounded-2xl border border-black/10 bg-white/80 p-4"
+                            className="flex h-full w-full min-h-0 min-w-[420px] flex-1 flex-col rounded-card border border-borderSubtle bg-surface p-4"
                           >
                             <div className="flex flex-wrap items-center justify-between gap-2">
-                              <h3 className="text-lg font-semibold text-ink">Datos estructurados</h3>
+                              <h3 className="text-lg font-semibold text-ink">Datos extraidos</h3>
                             </div>
 
-                            <div className="mt-2 rounded-xl border border-black/10 bg-white/90 px-3 py-2">
+                            <div className="mt-2 rounded-control border border-borderSubtle bg-surfaceMuted px-3 py-2">
                               <div className="flex flex-wrap items-center gap-2">
                                 <label className="relative min-w-[220px] flex-1">
                                   <Search
@@ -2866,12 +2873,12 @@ export function App() {
                                   <Input
                                     ref={structuredSearchInputRef}
                                     type="text"
-                                    aria-label="Buscar en datos estructurados"
+                                    aria-label="Buscar en datos extraidos"
                                     value={structuredSearchInput}
                                     disabled={reviewPanelState !== "ready"}
                                     onChange={(event) => setStructuredSearchInput(event.target.value)}
                                     placeholder="Buscar campo, clave o valor"
-                                    className="w-full rounded-full bg-surface py-1.5 pl-9 pr-9 text-xs"
+                                    className="w-full rounded-control bg-surface py-1.5 pl-9 pr-9 text-xs"
                                   />
                                   {structuredSearchInput.trim().length > 0 && (
                                     <div className="absolute right-2 top-1/2 -translate-y-1/2">
@@ -2957,7 +2964,7 @@ export function App() {
                                     {Array.from({ length: 6 }).map((_, index) => (
                                       <div
                                         key={`review-skeleton-${index}`}
-                                        className="animate-pulse rounded-xl border border-black/10 bg-white/90 p-3"
+                                        className="animate-pulse rounded-card border border-borderSubtle bg-surfaceMuted p-3"
                                       >
                                         <div className="h-3 w-1/2 rounded bg-black/10" />
                                         <div className="mt-2 h-2.5 w-5/6 rounded bg-black/10" />
@@ -3021,7 +3028,7 @@ export function App() {
                                 >
                                   <div className="space-y-3">
                                     {hasNoStructuredFilterResults && (
-                                      <p className="rounded-xl border border-black/10 bg-white/90 px-3 py-2 text-xs text-muted">
+                                      <p className="rounded-control border border-borderSubtle bg-surfaceMuted px-3 py-2 text-xs text-muted">
                                         No hay resultados con los filtros actuales.
                                       </p>
                                     )}
@@ -3036,7 +3043,7 @@ export function App() {
                             </div>
 
                             {evidenceNotice && (
-                              <p className="mt-3 rounded-xl border border-black/10 bg-white/90 px-3 py-2 text-xs text-muted">
+                              <p className="mt-3 rounded-control border border-borderSubtle bg-surfaceMuted px-3 py-2 text-xs text-muted">
                                 {evidenceNotice}
                               </p>
                             )}
@@ -3076,12 +3083,14 @@ export function App() {
                   </>
                 )}
                 {activeViewerTab === "raw_text" && (
-                  <div className="flex h-full flex-col rounded-2xl border border-black/10 bg-white/80 p-4">
-                    <div className="flex items-center justify-between gap-4 border-b border-black/10 pb-3">
+                  <div className="flex h-full flex-col rounded-card border border-borderSubtle bg-surface p-4">
+                    <div className="rounded-control border border-borderSubtle bg-surfaceMuted px-2 py-2">
+                      <div className="flex items-center justify-between gap-4">
                       <div className="flex items-center gap-1">{viewerModeToolbarIcons}</div>
                       <div className="flex items-center gap-1">{viewerDownloadIcon}</div>
                     </div>
-                    <div className="rounded-2xl border border-black/10 bg-white/90 p-3">
+                    </div>
+                    <div className="rounded-card border border-borderSubtle bg-surfaceMuted p-3">
                       <div className="flex flex-col gap-2 text-xs text-ink">
                         <span className="text-muted">
                           ¿El texto no es correcto? Puedes reprocesarlo para regenerar la extraccion.
@@ -3106,7 +3115,7 @@ export function App() {
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <input
-                        className="w-full rounded-full border border-black/10 bg-white px-3 py-2 text-xs text-muted outline-none sm:w-64"
+                        className="w-full rounded-control border border-borderSubtle bg-surface px-3 py-2 text-xs text-muted outline-none sm:w-64"
                         placeholder="Buscar en el texto"
                         value={rawSearch}
                         disabled={!canSearchRawText}
@@ -3153,7 +3162,7 @@ export function App() {
                         {rawTextErrorMessage}
                       </p>
                     )}
-                    <div className="mt-3 flex-1 overflow-y-auto rounded-xl border border-dashed border-black/10 bg-white/70 p-3 font-mono text-xs text-muted">
+                    <div className="mt-3 flex-1 overflow-y-auto rounded-card border border-dashed border-borderSubtle bg-surfaceMuted p-3 font-mono text-xs text-muted">
                       {rawTextContent ? (
                         <pre>{rawTextContent}</pre>
                       ) : (
@@ -3163,10 +3172,12 @@ export function App() {
                   </div>
                 )}
                 {activeViewerTab === "technical" && (
-                  <div className="h-full overflow-y-auto rounded-2xl border border-black/10 bg-white/70 p-3">
-                    <div className="flex items-center justify-between gap-4 border-b border-black/10 pb-3">
+                  <div className="h-full overflow-y-auto rounded-card border border-borderSubtle bg-surface p-3">
+                    <div className="rounded-control border border-borderSubtle bg-surfaceMuted px-2 py-2">
+                      <div className="flex items-center justify-between gap-4">
                       <div className="flex items-center gap-1">{viewerModeToolbarIcons}</div>
                       <div className="flex items-center gap-1">{viewerDownloadIcon}</div>
+                    </div>
                     </div>
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
@@ -3214,7 +3225,7 @@ export function App() {
                           {processingHistory.data.runs.map((run) => (
                             <div
                               key={run.run_id}
-                              className="rounded-xl border border-black/10 bg-white/90 p-2"
+                              className="rounded-card border border-borderSubtle bg-surfaceMuted p-2"
                             >
                               <div className="text-xs font-semibold text-ink">
                                 {formatRunHeader(run)}
@@ -3243,7 +3254,7 @@ export function App() {
                                     return (
                                       <div
                                         key={stepKey}
-                                        className="rounded-lg border border-black/5 bg-white p-2"
+                                        className="rounded-control border border-borderSubtle bg-surface p-2"
                                       >
                                         <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
                                           <span
@@ -3287,7 +3298,7 @@ export function App() {
                                           </div>
                                         )}
                                         {shouldShowDetails(step) && expandedSteps[stepKey] && (
-                                          <div className="mt-2 space-y-1 rounded-lg border border-black/5 bg-white/80 p-2">
+                                          <div className="mt-2 space-y-1 rounded-control border border-borderSubtle bg-surfaceMuted p-2">
                                             {step.raw_events.map((event, eventIndex) => (
                                               <div
                                                 key={`${stepKey}-event-${eventIndex}`}
@@ -3454,6 +3465,7 @@ export function App() {
                 </div>
               </div>
             )}
+      </div>
     </div>
   );
 }

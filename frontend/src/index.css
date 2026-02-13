@@ -5,17 +5,28 @@
 @tailwind utilities;
 
 :root {
-  --color-page-bg: #ebf5ff;
-  --color-surface: #ffffff;
-  --color-surface-muted: #eef1f4;
+  --app-bg: #edf3fb;
+  --app-frame: #f8fbff;
+  --surface: #f2f5fa;
+  --surface-muted: #e9eff6;
+  --border-subtle: #dbe4ef;
+  --shadow-soft: 0 10px 28px rgb(31 41 51 / 0.08);
+
+  --radius-frame: 18px;
+  --radius-card: 14px;
+  --radius-control: 10px;
+
+  --color-page-bg: var(--app-bg);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
   --color-text: #1f2933;
   --color-text-secondary: #6b7280;
   --color-text-muted: #9ca3af;
   --color-border: #e5e7eb;
-  --color-border-subtle: #eef1f4;
+  --color-border-subtle: var(--border-subtle);
   --color-accent: #fc4e1b;
   --color-accent-foreground: #ffffff;
-  --shadow-subtle: 0 1px 3px rgb(31 41 51 / 0.08);
+  --shadow-subtle: var(--shadow-soft);
 
   --status-success: #4caf93;
   --status-warn: #e6b566;

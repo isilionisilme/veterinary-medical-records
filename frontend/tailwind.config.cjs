@@ -3,7 +3,9 @@
   theme: {
     extend: {
       colors: {
-        page: "var(--color-page-bg)",
+        appBg: "var(--app-bg)",
+        frame: "var(--app-frame)",
+        page: "var(--app-bg)",
         surface: "var(--color-surface)",
         surfaceMuted: "var(--color-surface-muted)",
         text: "var(--color-text)",
@@ -39,11 +41,18 @@
       },
       borderRadius: {
         sm: "6px",
-        DEFAULT: "8px",
-        md: "12px",
-        lg: "16px",
+        DEFAULT: "var(--radius-control)",
+        md: "var(--radius-control)",
+        lg: "var(--radius-card)",
+        xl: "var(--radius-card)",
+        "2xl": "var(--radius-frame)",
+        "3xl": "var(--radius-frame)",
+        frame: "var(--radius-frame)",
+        card: "var(--radius-card)",
+        control: "var(--radius-control)",
       },
       boxShadow: {
+        soft: "var(--shadow-soft)",
         subtle: "var(--shadow-subtle)",
       },
     },

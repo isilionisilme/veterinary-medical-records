@@ -1,5 +1,5 @@
 import { type ChangeEvent, type DragEvent, type MouseEvent, type RefObject } from "react";
-import { FileText, Pin, PinOff, RefreshCw } from "lucide-react";
+import { CircleHelp, FileText, Pin, PinOff, RefreshCw } from "lucide-react";
 
 import { DocumentStatusCluster } from "./app/DocumentStatusCluster";
 import { IconButton } from "./app/IconButton";
@@ -84,14 +84,14 @@ export function DocumentsSidebar({
       data-expanded={isDocsSidebarExpanded ? "true" : "false"}
       className={`${
         shouldUseHoverDocsSidebar
-          ? `${isDocsSidebarExpanded ? "w-80" : "w-16"} transition-[width] duration-200 ease-in-out`
+          ? `${isDocsSidebarExpanded ? "w-80" : "w-14"} transition-[width] duration-200 ease-in-out`
           : "w-80"
       } flex-shrink-0`}
       onMouseEnter={onSidebarMouseEnter}
       onMouseLeave={onSidebarMouseLeave}
     >
-      <div className="overflow-hidden rounded-3xl border border-black/10 bg-white/80 shadow-xl">
-        <section className={`flex flex-col ${isDocsSidebarExpanded ? "p-6" : "px-2 py-4"} ${panelHeightClass}`}>
+      <div className="overflow-hidden rounded-card border border-borderSubtle bg-surface shadow-soft">
+        <section className={`flex flex-col ${isDocsSidebarExpanded ? "p-6" : "px-1.5 py-3.5"} ${panelHeightClass}`}>
           <div className="flex items-center justify-between gap-3">
             <div
               className={`min-w-0 transition-opacity duration-150 ${
@@ -131,10 +131,17 @@ export function DocumentsSidebar({
             {isDocsSidebarExpanded ? (
               <div
                 ref={uploadPanelRef}
-                className="w-full rounded-2xl border border-black/10 bg-white/70 p-4 transition-opacity duration-150 ease-in-out"
+                className="w-full rounded-card border border-borderSubtle bg-surfaceMuted p-4 transition-opacity duration-150 ease-in-out"
               >
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-semibold text-ink">Cargar documento</h3>
+                  <IconButton
+                    label="Informacion de formatos y tamano"
+                    tooltip="Formatos permitidos: PDF. Tamaño máximo: 20 MB."
+                    className="h-7 w-7"
+                  >
+                    <CircleHelp size={14} />
+                  </IconButton>
                 </div>
                 <UploadDropzone
                   className="mt-3"
@@ -145,7 +152,6 @@ export function DocumentsSidebar({
                   onDragLeave={onSidebarUploadDragLeave}
                   onDrop={onSidebarUploadDrop}
                 />
-                <p className="mt-2 text-xs text-muted">Formatos permitidos: PDF. Tamaño máximo: 20 MB.</p>
                 <div className="mt-2 flex items-center gap-2">
                   <input
                     id="upload-document-input"
@@ -187,16 +193,16 @@ export function DocumentsSidebar({
             data-testid="left-panel-scroll"
             className={`relative mt-4 min-h-0 flex-1 overflow-y-auto overflow-x-hidden ${
               isDocsSidebarExpanded
-                ? "pr-0"
+                ? "pr-1"
                 : "pr-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:w-0 [&::-webkit-scrollbar]:h-0"
             }`}
           >
             {isDocumentListLoading && (
-              <div className="space-y-2 rounded-2xl border border-black/10 bg-white/70 p-4">
+              <div className="space-y-2 rounded-card border border-borderSubtle bg-surfaceMuted p-4">
                 {Array.from({ length: 4 }).map((_, index) => (
                   <div
                     key={`skeleton-initial-${index}`}
-                    className="animate-pulse rounded-xl border border-black/10 bg-white/80 p-3"
+                    className="animate-pulse rounded-card border border-borderSubtle bg-surface p-3"
                   >
                     <div className="h-3 w-2/3 rounded bg-black/10" />
                     <div className="mt-2 h-2.5 w-1/2 rounded bg-black/10" />
@@ -206,18 +212,18 @@ export function DocumentsSidebar({
             )}
 
             {isDocumentListError && documentListErrorMessage && (
-              <div className="rounded-2xl border border-black/10 bg-white/80 p-4 text-sm text-ink">
+              <div className="rounded-card border border-borderSubtle bg-surface p-4 text-sm text-ink">
                 <p>{documentListErrorMessage}</p>
               </div>
             )}
 
             {!isDocumentListLoading && !isDocumentListError &&
               (isListRefreshing ? (
-                <div className="space-y-2 rounded-2xl border border-black/10 bg-white/70 p-4">
+                <div className="space-y-2 rounded-card border border-borderSubtle bg-surfaceMuted p-4">
                   {Array.from({ length: 6 }).map((_, index) => (
                     <div
                       key={`skeleton-refresh-${index}`}
-                      className="animate-pulse rounded-xl border border-black/10 bg-white/80 p-3"
+                      className="animate-pulse rounded-card border border-borderSubtle bg-surface p-3"
                     >
                       <div className="h-3 w-2/3 rounded bg-black/10" />
                       <div className="mt-2 h-2.5 w-1/2 rounded bg-black/10" />
@@ -225,7 +231,7 @@ export function DocumentsSidebar({
                   ))}
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className={`space-y-2 ${isDocsSidebarExpanded ? "pr-2" : ""}`}>
                   {documents.length === 0 ? (
                     isDocsSidebarExpanded ? (
                       <p className="px-1 py-2 text-sm text-muted">Aun no hay documentos cargados.</p>
@@ -244,10 +250,10 @@ export function DocumentsSidebar({
                           className={`w-full overflow-visible text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
                             isDocsSidebarExpanded
                               ? isActive
-                                ? "rounded-xl border border-ink/30 bg-black/[0.04] text-ink shadow-sm ring-1 ring-ink/25"
-                                : "rounded-xl border border-black/10 bg-white/80 text-ink hover:bg-white"
+                                ? "rounded-card border border-border bg-surfaceMuted text-ink shadow-subtle ring-1 ring-border"
+                                : "rounded-card border border-borderSubtle bg-surface text-ink hover:bg-surfaceMuted"
                               : "rounded-lg border border-transparent bg-transparent text-ink"
-                          } ${isDocsSidebarExpanded ? "px-3 py-2" : "px-0.5 py-1"}`}
+                          } ${isDocsSidebarExpanded ? "px-3 py-2" : "px-0 py-1"}`}
                         >
                           <div
                             className={`flex items-center ${
@@ -260,7 +266,7 @@ export function DocumentsSidebar({
                               className={
                                 isDocsSidebarExpanded
                                   ? "min-w-0"
-                                  : `relative flex h-9 w-9 items-center justify-center rounded-full transition ${
+                                  : `relative flex h-10 w-10 items-center justify-center rounded-full transition ${
                                       isActive
                                         ? "bg-black/[0.10]"
                                         : "bg-transparent hover:bg-black/[0.06]"
@@ -279,7 +285,7 @@ export function DocumentsSidebar({
                                 <DocumentStatusCluster
                                   status={status}
                                   compact
-                                  className="absolute right-0.5 top-0.5"
+                                  className="absolute right-1 top-1"
                                 />
                               )}
                             </div>

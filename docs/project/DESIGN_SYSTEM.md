@@ -26,17 +26,23 @@ All new user-visible UI must use tokens instead of scattered hard-coded values.
 
 | Token | Value | Usage |
 |---|---|---|
-| `--color-page-bg` | `#EBF5FF` | app/page background |
-| `--color-surface` | `#FFFFFF` | cards/panels |
-| `--color-surface-muted` | `#EEF1F4` | subtle inner surfaces |
+| `--app-bg` | `#EDF3FB` | outer page background |
+| `--app-frame` | `#F8FBFF` | main app frame/container |
+| `--surface` | `#F2F5FA` | cards/panels (inner surfaces) |
+| `--surface-muted` | `#E9EFF6` | subtle inner surfaces / toolbar blocks |
+| `--border-subtle` | `#DBE4EF` | subtle separators and panel borders |
+| `--shadow-soft` | `0 10px 28px rgb(31 41 51 / 0.08)` | soft elevation for frame/cards |
+| `--color-page-bg` | `var(--app-bg)` | app/page background alias |
+| `--color-surface` | `var(--surface)` | cards/panels alias |
+| `--color-surface-muted` | `var(--surface-muted)` | muted surface alias |
 | `--color-text` | `#1F2933` | primary text |
 | `--color-text-secondary` | `#6B7280` | secondary text |
 | `--color-text-muted` | `#9CA3AF` | metadata/helper text |
 | `--color-border` | `#E5E7EB` | default borders |
-| `--color-border-subtle` | `#EEF1F4` | subtle separators |
+| `--color-border-subtle` | `var(--border-subtle)` | subtle separators alias |
 | `--color-accent` | `#FC4E1B` | primary accent |
 | `--color-accent-foreground` | `#FFFFFF` | text on accent |
-| `--shadow-subtle` | `0 1px 3px rgb(31 41 51 / 0.08)` | gentle elevation |
+| `--shadow-subtle` | `var(--shadow-soft)` | gentle elevation alias |
 
 ### Semantic/status tokens
 
@@ -61,7 +67,12 @@ Brand constraint:
 
 ### Radius scale
 
-`6, 8, 12, 16` px
+`--radius-frame: 18px`, `--radius-card: 14px`, `--radius-control: 10px`
+
+Guideline:
+- Frame uses `radius-frame`.
+- Cards and major panels use `radius-card`.
+- Controls (buttons/inputs/toggles/chips) use `radius-control`.
 
 ---
 
@@ -94,7 +105,7 @@ Project wrappers standardize repeated review UI patterns:
 - `ConfidenceDot`: semantic confidence indicator with tooltip.
 - `CriticalBadge`: consistent critical marker.
 - `RepeatableList`: list container for repeatable values.
-- `DocumentStatusCluster`: compact, reusable status cluster for document list and active review header.
+- `DocumentStatusCluster`: compact, reusable status cluster for document list/sidebar (primary status signal).
 
 ---
 

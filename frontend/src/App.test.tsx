@@ -248,22 +248,22 @@ describe("App upload and list flow", () => {
     ).toBeInTheDocument();
     expect(screen.getAllByText(/Arrastra un PDF aqui/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/o haz clic para cargar/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Formatos permitidos: PDF\./i)).toBeInTheDocument();
+    expect(screen.queryByText(/Formatos permitidos: PDF\./i)).toBeNull();
     expect(screen.queryByText(/\(\.pdf \/ application\/pdf\)/i)).toBeNull();
-    expect(screen.getByText(/Tamaño máximo: 20 MB\./i)).toBeInTheDocument();
-    expect(screen.queryByLabelText(/Informacion de formatos y tamano/i)).toBeNull();
+    expect(screen.queryByText(/Tamaño máximo: 20 MB\./i)).toBeNull();
+    expect(screen.getByLabelText(/Informacion de formatos y tamano/i)).toBeInTheDocument();
     expect(screen.queryByText(/Selecciona un PDF/i)).toBeNull();
   });
 
   it("shows required list status labels", async () => {
     renderApp();
     expect(await screen.findByText("Procesando")).toBeInTheDocument();
-    expect(screen.getByText("Listo para revision")).toBeInTheDocument();
+    expect(screen.getByText("Listo")).toBeInTheDocument();
     expect(screen.getByText("Error")).toBeInTheDocument();
     expect(screen.getByText("Tardando mas de lo esperado")).toBeInTheDocument();
   });
 
-  it("updates PROCESSING to Listo para revision after refresh", async () => {
+  it("updates PROCESSING to Listo after refresh", async () => {
     const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
     const processingDoc = {
       document_id: "doc-transition",
@@ -325,7 +325,7 @@ describe("App upload and list flow", () => {
     await waitFor(() => {
       expect(
         within(screen.getByRole("button", { name: /transition\.pdf/i })).getByText(
-          "Listo para revision"
+          "Listo"
         )
       ).toBeInTheDocument();
     });
@@ -587,7 +587,7 @@ describe("App upload and list flow", () => {
       await screen.findByText("Identificacion del caso");
 
       expect(sidebar).toHaveAttribute("data-expanded", "false");
-      expect(sidebar.className).toContain("w-16");
+      expect(sidebar.className).toContain("w-14");
       expect(screen.queryByRole("button", { name: /Actualizar/i })).toBeNull();
       const leftRailScroll = screen.getByTestId("left-panel-scroll");
       expect(leftRailScroll.className).toContain("[scrollbar-width:none]");
@@ -606,7 +606,7 @@ describe("App upload and list flow", () => {
       expect(sidebar).toHaveAttribute("data-expanded", "false");
 
       const collapsedReadyItem = screen.getByRole("button", {
-        name: /ready\.pdf\s*\(Listo para revision\)/i,
+        name: /ready\.pdf\s*\(Listo\)/i,
       });
       expect(collapsedReadyItem).toBeInTheDocument();
       const statusDot = collapsedReadyItem.querySelector('span[aria-hidden="true"]');
@@ -725,7 +725,7 @@ describe("App upload and list flow", () => {
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
     await screen.findByText("Identificacion del caso");
 
-    expect(screen.getByRole("heading", { name: /Datos estructurados/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Datos extraidos/i })).toBeInTheDocument();
     expect(screen.queryByText(/La confianza guia la atencion, no bloquea decisiones\./i)).toBeNull();
     expect(screen.queryByRole("button", { name: /Abrir texto/i })).toBeNull();
     expect(screen.queryByRole("button", { name: /Documento original/i })).toBeNull();
@@ -737,7 +737,7 @@ describe("App upload and list flow", () => {
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
     await screen.findByText("Identificacion del caso");
 
-    const searchInput = screen.getByRole("textbox", { name: /Buscar en datos estructurados/i });
+    const searchInput = screen.getByRole("textbox", { name: /Buscar en datos extraidos/i });
     expect(screen.queryByRole("button", { name: /Limpiar búsqueda/i })).toBeNull();
 
     fireEvent.change(searchInput, { target: { value: "Luna" } });
@@ -1159,7 +1159,7 @@ describe("App upload and list flow", () => {
       () => {
         expect(screen.getByText(newText)).toBeInTheDocument();
         expect(
-          within(screen.getByRole("button", { name: /ready\.pdf/i })).getByText("Listo para revision")
+          within(screen.getByRole("button", { name: /ready\.pdf/i })).getByText("Listo")
         ).toBeInTheDocument();
       },
       { timeout: 10000 }
@@ -1237,7 +1237,7 @@ describe("App upload and list flow", () => {
     expect((await screen.findAllByText(/reprocess failed/i)).length).toBeGreaterThan(0);
     await waitFor(() => {
       expect(
-        within(screen.getByRole("button", { name: /ready\.pdf/i })).getByText("Listo para revision")
+        within(screen.getByRole("button", { name: /ready\.pdf/i })).getByText("Listo")
       ).toBeInTheDocument();
     });
   });
