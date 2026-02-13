@@ -10,14 +10,14 @@ from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 _uvicorn_logger = logging.getLogger("uvicorn.error")
 
 
 def _emit_info(message: str) -> None:
-    logger.info(message)
-    if _uvicorn_logger is not logger:
+    if _uvicorn_logger.handlers:
         _uvicorn_logger.info(message)
+        return
+    logger.info(message)
 
 _MAX_RUNS_PER_DOCUMENT = 20
 _PROJECT_ROOT = Path(__file__).resolve().parents[3]

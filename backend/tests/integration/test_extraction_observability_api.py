@@ -221,3 +221,17 @@ def test_debug_extraction_triage_endpoint_returns_expected_shape(
     assert "species_outside_allowed_set" in suspicious_by_field["species"]["flags"]
     assert "sex_outside_allowed_set" in suspicious_by_field["sex"]["flags"]
     assert "value_too_long" in suspicious_by_field["notes"]["flags"]
+
+
+def test_debug_extraction_triage_endpoint_returns_not_found_without_runs(
+    test_client: TestClient, monkeypatch
+) -> None:
+    monkeypatch.setenv("VET_RECORDS_EXTRACTION_OBS", "1")
+
+    triage_response = test_client.get("/debug/extraction-runs/doc-without-runs/triage")
+
+    assert triage_response.status_code == 404
+    assert triage_response.json() == {
+        "error_code": "NOT_FOUND",
+        "message": "No extraction snapshots found for this document.",
+    }
