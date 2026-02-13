@@ -25,6 +25,13 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000
 const MAX_UPLOAD_SIZE_BYTES = 20 * 1024 * 1024;
 const MISSING_VALUE_PLACEHOLDER = "—";
 const EMPTY_LIST_PLACEHOLDER = "Sin elementos";
+const REPORT_LAYOUT_STORAGE_KEY = "reportLayout";
+const REVIEW_GRID_SECTIONS = new Set([
+  "Identificacion del caso",
+  "Paciente",
+  "Propietario",
+  "Visita / episodio",
+]);
 
 type LoadResult = {
   url: string;
@@ -152,6 +159,7 @@ type ReviewDisplayField = {
 
 type ReviewPanelState = "idle" | "loading" | "ready" | "no_completed_run" | "error";
 type ViewMode = "browse" | "review";
+type ReportLayout = 1 | 2;
 
 type DocumentReviewResponse = {
   document_id: string;
@@ -684,14 +692,33 @@ function clampConfidence(value: number): number {
   return Math.max(0, Math.min(1, value));
 }
 
-function getConfidenceLabel(confidence: number): "high" | "medium" | "low" {
-  if (confidence >= 0.8) {
-    return "high";
+type ConfidenceTone = "low" | "medium_low" | "medium_high" | "high";
+
+function getConfidenceTone(confidence: number): ConfidenceTone {
+  const value = clampConfidence(confidence);
+  if (value < 0.25) {
+    return "low";
   }
-  if (confidence >= 0.55) {
-    return "medium";
+  if (value < 0.5) {
+    return "medium_low";
   }
-  return "low";
+  if (value < 0.75) {
+    return "medium_high";
+  }
+  return "high";
+}
+
+function getConfidenceIndicatorClass(tone: ConfidenceTone): string {
+  if (tone === "high") {
+    return "bg-emerald-500";
+  }
+  if (tone === "medium_high") {
+    return "bg-yellow-500";
+  }
+  if (tone === "medium_low") {
+    return "bg-orange-500";
+  }
+  return "bg-red-500";
 }
 
 function isFieldValueEmpty(value: unknown): boolean {
@@ -753,6 +780,20 @@ export function App() {
   const [reviewLoadingSinceMs, setReviewLoadingSinceMs] = useState<number | null>(null);
   const [isRetryingInterpretation, setIsRetryingInterpretation] = useState(false);
   const [fieldNavigationRequestId, setFieldNavigationRequestId] = useState(0);
+  const [reportLayout, setReportLayout] = useState<ReportLayout>(() => {
+    if (!import.meta.env.DEV || typeof window === "undefined") {
+      return 2;
+    }
+    const queryValue = new URLSearchParams(window.location.search).get("reportLayout");
+    if (queryValue === "1" || queryValue === "2") {
+      return Number(queryValue) as ReportLayout;
+    }
+    const stored = window.localStorage.getItem(REPORT_LAYOUT_STORAGE_KEY);
+    if (stored === "1" || stored === "2") {
+      return Number(stored) as ReportLayout;
+    }
+    return 2;
+  });
   const [isHoverDevice, setIsHoverDevice] = useState(true);
   const [uploadInfoPosition, setUploadInfoPosition] = useState({ top: 0, left: 0 });
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -791,6 +832,32 @@ export function App() {
     }
     return `${API_BASE_URL}/documents/${activeId}/download?download=true`;
   }, [activeId]);
+
+  useEffect(() => {
+    if (!import.meta.env.DEV || typeof window === "undefined") {
+      return;
+    }
+    window.localStorage.setItem(REPORT_LAYOUT_STORAGE_KEY, String(reportLayout));
+  }, [reportLayout]);
+
+  useEffect(() => {
+    if (!import.meta.env.DEV || typeof window === "undefined") {
+      return;
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!event.shiftKey || (event.key !== "L" && event.key !== "l")) {
+        return;
+      }
+      const target = event.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
+        return;
+      }
+      event.preventDefault();
+      setReportLayout((current) => (current === 1 ? 2 : 1));
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   useEffect(() => {
     if (typeof window.matchMedia !== "function") {
@@ -1829,6 +1896,22 @@ export function App() {
     }));
   }, [coreDisplayFields]);
 
+  const reportSections = useMemo(
+    () => [
+      ...groupedCoreFields.map((group) => ({
+        id: `core:${group.section}`,
+        title: group.section,
+        fields: group.fields,
+      })),
+      {
+        id: "extra:section",
+        title: "Otros campos extraídos",
+        fields: otherDisplayFields,
+      },
+    ],
+    [groupedCoreFields, otherDisplayFields]
+  );
+
   const selectableReviewItems = useMemo(
     () => [...coreDisplayFields, ...otherDisplayFields].flatMap((field) => field.items),
     [coreDisplayFields, otherDisplayFields]
@@ -2022,6 +2105,318 @@ export function App() {
     </button>
   );
 
+  const buildFieldTooltip = (item: ReviewSelectableField, isCritical: boolean): string => {
+    const confidence = item.confidence;
+    const percentage = Math.round(clampConfidence(confidence) * 100);
+    const base = isCritical
+      ? `Confianza: ${percentage}% · CRÍTICO`
+      : `Confianza: ${percentage}%`;
+    if (!item.evidence?.page) {
+      return base;
+    }
+    if (!item.evidence.snippet) {
+      return `${base} · Página ${item.evidence.page}`;
+    }
+    return `${base} · Página ${item.evidence.page} · ${truncateText(item.evidence.snippet, 72)}`;
+  };
+
+  const renderConfidenceIndicator = (field: ReviewDisplayField, item: ReviewSelectableField) => {
+    const tone = getConfidenceTone(item.confidence);
+    const tooltip = buildFieldTooltip(item, field.isCritical);
+    return (
+      <span data-testid={`badge-group-${item.id}`} className="inline-flex shrink-0 items-center">
+        <span
+          data-testid={`confidence-indicator-${item.id}`}
+          tabIndex={0}
+          title={tooltip}
+          aria-label={tooltip}
+          className={`inline-block h-2.5 w-2.5 rounded-full ${getConfidenceIndicatorClass(tone)}`}
+        />
+      </span>
+    );
+  };
+
+  const renderRepeatableReviewField = (field: ReviewDisplayField) => {
+    const countLabel = field.items.length === 1 ? "1 elemento" : `${field.items.length} elementos`;
+    return (
+      <article key={field.id} className="px-1 py-1">
+        <div className="flex items-center justify-between gap-2 pb-1">
+          <div className="flex items-center gap-1.5">
+            <p className="text-xs font-semibold text-ink">{field.label}</p>
+            {field.isCritical && (
+              <span
+                data-testid={`critical-indicator-${field.key}`}
+                title="CRÍTICO"
+                className="inline-flex h-4 min-w-4 items-center justify-center rounded-full border border-black/15 text-[10px] font-semibold leading-none text-muted"
+              >
+                !
+              </span>
+            )}
+          </div>
+          {field.items.length > 0 && (
+            <span className="rounded-full border border-black/10 px-2 py-0.5 text-[10px] font-semibold text-muted">
+              {countLabel}
+            </span>
+          )}
+        </div>
+        <div className="mt-1 space-y-1">
+          {field.isEmptyList && <p className="py-0.5 text-sm italic text-muted">{EMPTY_LIST_PLACEHOLDER}</p>}
+          {field.items.map((item) => {
+            const isSelected = selectedFieldId === item.id;
+            return (
+              <div
+                key={item.id}
+                className={`px-1 py-1 ${
+                  isSelected ? "rounded-md border-l-2 border-accent bg-accentSoft/50" : ""
+                }`}
+              >
+                <button
+                  type="button"
+                  className="w-full cursor-pointer rounded-md px-1 py-0.5 text-left transition hover:bg-black/[0.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                  onClick={() => handleSelectReviewItem(item)}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <p className={`min-w-0 text-sm ${item.isMissing ? "italic text-muted" : "text-ink"}`}>
+                      {item.displayValue}
+                    </p>
+                    <div className="pt-0.5">{renderConfidenceIndicator(field, item)}</div>
+                  </div>
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </article>
+    );
+  };
+
+  const renderScalarReviewField = (field: ReviewDisplayField) => {
+    const item = field.items[0];
+    if (!item) {
+      return null;
+    }
+    const isSelected = selectedFieldId === item.id;
+    const isExpanded = Boolean(expandedFieldValues[item.id]);
+    const valueText = isExpanded ? item.displayValue : truncateText(item.displayValue, 140);
+    const canExpand = item.displayValue.length > 140;
+
+    return (
+      <article
+        key={field.id}
+        className={`px-1 py-1.5 ${
+          isSelected ? "border-l-2 border-accent bg-accentSoft/50" : ""
+        }`}
+      >
+        <button
+          type="button"
+          className="w-full cursor-pointer rounded-md px-1 py-0.5 text-left transition hover:bg-black/[0.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          onClick={() => handleSelectReviewItem(item)}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-1.5 pr-3">
+              <p className="text-xs font-semibold text-ink">{field.label}</p>
+              {field.isCritical && (
+                <span
+                  data-testid={`critical-indicator-${field.key}`}
+                  title="CRÍTICO"
+                  className="inline-flex h-4 min-w-4 items-center justify-center rounded-full border border-black/15 text-[10px] font-semibold leading-none text-muted"
+                >
+                  !
+                </span>
+              )}
+              {renderConfidenceIndicator(field, item)}
+            </div>
+            <p
+              className={`min-w-0 max-w-[65%] text-right text-sm ${
+                item.isMissing ? "italic text-muted" : "text-ink"
+              }`}
+            >
+              {valueText}
+            </p>
+          </div>
+        </button>
+        {canExpand && (
+          <button
+            type="button"
+            className="mt-1 text-xs font-semibold text-muted underline underline-offset-2"
+            onClick={() =>
+              setExpandedFieldValues((current) => ({
+                ...current,
+                [item.id]: !current[item.id],
+              }))
+            }
+          >
+            {isExpanded ? "Ver menos" : "Ver más"}
+          </button>
+        )}
+      </article>
+    );
+  };
+
+  const renderRepeatableTileField = (field: ReviewDisplayField) => {
+    const countLabel = field.items.length === 1 ? "1 elemento" : `${field.items.length} elementos`;
+    return (
+      <article key={field.id} className="rounded-xl border border-black/15 bg-white p-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5">
+            <p className="text-xs font-semibold text-ink">{field.label}</p>
+            {field.isCritical && (
+              <span
+                data-testid={`critical-indicator-${field.key}`}
+                className="rounded-full border border-black/15 px-2 py-0.5 text-[10px] font-semibold text-muted"
+              >
+                CRÍTICO
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {field.items.length > 0 && (
+              <span className="rounded-full border border-black/10 px-2 py-0.5 text-[10px] font-semibold text-muted">
+                {countLabel}
+              </span>
+            )}
+            <button
+              type="button"
+              disabled
+              title="Disponible próximamente"
+              className="rounded-full border border-black/10 px-2 py-0.5 text-[10px] font-semibold text-muted/70"
+            >
+              + Añadir
+            </button>
+          </div>
+        </div>
+        <div className="mt-2 space-y-2">
+          {field.isEmptyList && <p className="text-sm italic text-muted">{EMPTY_LIST_PLACEHOLDER}</p>}
+          {field.items.map((item) => {
+            const isSelected = selectedFieldId === item.id;
+            return (
+              <article
+                key={item.id}
+                className={`rounded-lg border px-2 py-2 ${
+                  isSelected ? "border-accent bg-accentSoft/50" : "border-black/10 bg-white"
+                }`}
+              >
+                <button
+                  type="button"
+                  className="w-full cursor-pointer rounded-md text-left transition hover:bg-black/[0.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                  onClick={() => handleSelectReviewItem(item)}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <p className={`min-w-0 text-sm ${item.isMissing ? "italic text-muted" : "text-ink"}`}>
+                      {item.displayValue}
+                    </p>
+                    <div className="pt-0.5">{renderConfidenceIndicator(field, item)}</div>
+                  </div>
+                </button>
+              </article>
+            );
+          })}
+        </div>
+      </article>
+    );
+  };
+
+  const renderScalarTileField = (field: ReviewDisplayField) => {
+    const item = field.items[0];
+    if (!item) {
+      return null;
+    }
+    const isSelected = selectedFieldId === item.id;
+    const isExpanded = Boolean(expandedFieldValues[item.id]);
+    const valueText = isExpanded ? item.displayValue : truncateText(item.displayValue, 180);
+    const canExpand = item.displayValue.length > 180;
+
+    return (
+      <article
+        key={field.id}
+        className={`rounded-xl border p-3 ${
+          isSelected ? "border-accent bg-accentSoft/50" : "border-black/15 bg-white"
+        }`}
+      >
+        <button
+          type="button"
+          className="w-full cursor-pointer rounded-md text-left transition hover:bg-black/[0.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          onClick={() => handleSelectReviewItem(item)}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-ink">{field.label}</p>
+              <p className={`mt-2 text-sm ${item.isMissing ? "italic text-muted" : "text-ink"}`}>
+                {valueText}
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-1.5">
+              {field.isCritical && (
+                <span
+                  data-testid={`critical-indicator-${field.key}`}
+                  className="rounded-full border border-black/15 px-2 py-0.5 text-[10px] font-semibold text-muted"
+                >
+                  CRÍTICO
+                </span>
+              )}
+              {renderConfidenceIndicator(field, item)}
+            </div>
+          </div>
+        </button>
+        {canExpand && (
+          <button
+            type="button"
+            className="mt-1 text-xs font-semibold text-muted underline underline-offset-2"
+            onClick={() =>
+              setExpandedFieldValues((current) => ({
+                ...current,
+                [item.id]: !current[item.id],
+              }))
+            }
+          >
+            {isExpanded ? "Ver menos" : "Ver más"}
+          </button>
+        )}
+      </article>
+    );
+  };
+
+  const renderSectionLayout2 = (section: { id: string; title: string; fields: ReviewDisplayField[] }) => {
+    const isGridSection = REVIEW_GRID_SECTIONS.has(section.title);
+    const scalarFields = section.fields.filter((field) => !field.repeatable);
+    const repeatableFields = section.fields.filter((field) => field.repeatable);
+
+    return (
+      <section key={section.id} className="rounded-xl border-2 border-black/20 bg-white px-4 py-4">
+        <p className="border-b border-black/15 pb-2 text-base font-semibold text-ink">{section.title}</p>
+        <div className="mt-2">
+          {isGridSection ? (
+            <div className="grid gap-x-5 gap-y-1 lg:grid-cols-2">{scalarFields.map(renderScalarReviewField)}</div>
+          ) : (
+            <div className="grid gap-x-5 gap-y-1 lg:grid-cols-2">{scalarFields.map(renderScalarReviewField)}</div>
+          )}
+          {repeatableFields.length > 0 && (
+            <div className="mt-2 space-y-1.5">{repeatableFields.map(renderRepeatableReviewField)}</div>
+          )}
+        </div>
+      </section>
+    );
+  };
+
+  const renderSectionLayout1 = (section: { id: string; title: string; fields: ReviewDisplayField[] }) => {
+    const scalarFields = section.fields.filter((field) => !field.repeatable);
+    const repeatableFields = section.fields.filter((field) => field.repeatable);
+
+    return (
+      <section key={section.id} className="rounded-xl border border-black/20 bg-black/[0.01] px-4 py-4">
+        <p className="border-b border-black/15 pb-2 text-base font-semibold text-ink">{section.title}</p>
+        <div className="mt-3 space-y-3">
+          {scalarFields.length > 0 && (
+            <div className="grid gap-3 lg:grid-cols-2">{scalarFields.map(renderScalarTileField)}</div>
+          )}
+          {repeatableFields.length > 0 && (
+            <div className="space-y-3">{repeatableFields.map(renderRepeatableTileField)}</div>
+          )}
+        </div>
+      </section>
+    );
+  };
+
   const sourcePanelContent = (
     <SourcePanel
       sourcePage={sourcePanel.sourcePage}
@@ -2051,8 +2446,8 @@ export function App() {
   );
 
   return (
-    <div className="min-h-screen bg-[var(--page-bg)] px-6 py-2">
-      <header className="sticky top-0 z-40 mx-auto flex w-full max-w-6xl flex-col gap-1 py-1">
+    <div className="min-h-screen bg-[var(--page-bg)] px-4 py-2 md:px-6 lg:px-8 xl:px-10">
+      <header className="sticky top-0 z-40 mx-auto flex w-full max-w-[1600px] flex-col gap-1 py-1">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-wide text-[var(--title-accent)]">
@@ -2073,7 +2468,7 @@ export function App() {
         </div>
       </header>
 
-      <main className="relative mx-auto mt-2 w-full max-w-6xl">
+      <main className="relative mx-auto mt-2 w-full max-w-[1600px]">
         <div className="mb-4 flex flex-wrap items-center gap-3">
           {activeId && (
             <div
@@ -2396,7 +2791,7 @@ export function App() {
                             ? sourcePanel.isSourceOpen && sourcePanel.isSourcePinned && isDesktopForPin
                               ? "grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(360px,420px)] gap-4"
                               : "grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-4"
-                            : "grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]"
+                            : "grid grid-cols-1 gap-4 xl:grid-cols-[minmax(520px,1fr)_minmax(720px,1.45fr)] 2xl:grid-cols-[minmax(560px,1fr)_minmax(900px,1.8fr)]"
                         }`}
                       >
                         <aside
@@ -2511,389 +2906,16 @@ export function App() {
                                 data-testid="right-panel-scroll"
                                 className="h-full min-h-0 overflow-y-auto pr-1 space-y-3"
                               >
-                                <section>
-                                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
-                                    Campos core
+                                {reportSections.length === 0 && (
+                                  <p className="rounded-xl border border-black/10 bg-white/90 px-3 py-2 text-xs text-muted">
+                                    Ningún campo core coincide con los filtros.
                                   </p>
-                                  <div className="mt-2 space-y-2">
-                                    {groupedCoreFields.length === 0 && (
-                                      <p className="rounded-xl border border-black/10 bg-white/90 px-3 py-2 text-xs text-muted">
-                                        Ningún campo core coincide con los filtros.
-                                      </p>
-                                    )}
-                                    {groupedCoreFields.map((group) => (
-                                      <div key={group.section} className="space-y-2">
-                                        <p className="text-[11px] font-semibold text-muted">{group.section}</p>
-                                        {group.fields.map((field) => {
-                                          if (field.repeatable) {
-                                            const countLabel =
-                                              field.items.length === 1
-                                                ? "1 elemento"
-                                                : `${field.items.length} elementos`;
-                                            return (
-                                              <article
-                                                key={field.id}
-                                                className="rounded-xl border border-black/10 bg-white p-3"
-                                              >
-                                                <div className="flex items-start justify-between gap-2">
-                                                  <p className="text-xs font-semibold text-ink">{field.label}</p>
-                                                  {field.items.length > 0 && (
-                                                    <span className="rounded-full border border-black/10 px-2 py-0.5 text-[10px] font-semibold text-muted">
-                                                      {countLabel}
-                                                    </span>
-                                                  )}
-                                                </div>
-                                                <div className="mt-2 space-y-2">
-                                                  {field.isEmptyList && (
-                                                    <p className="text-sm italic text-muted">
-                                                      {EMPTY_LIST_PLACEHOLDER}
-                                                    </p>
-                                                  )}
-                                                  {field.items.map((item) => {
-                                                    const confidenceTone = getConfidenceLabel(item.confidence);
-                                                    const isSelected = selectedFieldId === item.id;
-                                                    return (
-                                                      <div
-                                                        key={item.id}
-                                                        className={`rounded-lg border bg-white/90 p-2 ${
-                                                          isSelected
-                                                            ? "border-accent ring-1 ring-accent/40"
-                                                            : "border-black/10"
-                                                        }`}
-                                                      >
-                                                        <button
-                                                          type="button"
-                                                          className="w-full text-left"
-                                                          onClick={() => handleSelectReviewItem(item)}
-                                                        >
-                                                          <div className="flex items-start justify-between gap-3">
-                                                            <div className="min-w-0">
-                                                              <p className="truncate text-sm text-ink">{item.displayValue}</p>
-                                                            </div>
-                                                            <div
-                                                              data-testid={`badge-group-${item.id}`}
-                                                              className="flex shrink-0 flex-wrap items-center justify-end gap-2 text-right"
-                                                            >
-                                                              {field.isCritical && (
-                                                                <span
-                                                                  data-testid={`critical-badge-${field.key}`}
-                                                                  className="rounded-full border border-black/10 px-2 py-0.5 text-[10px] font-semibold text-muted"
-                                                                >
-                                                                  CRÍTICO
-                                                                </span>
-                                                              )}
-                                                              <span
-                                                                className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                                                                  confidenceTone === "high"
-                                                                    ? "bg-emerald-100 text-emerald-700"
-                                                                    : confidenceTone === "medium"
-                                                                    ? "bg-amber-100 text-amber-700"
-                                                                    : "bg-red-100 text-red-700"
-                                                                }`}
-                                                              >
-                                                                Confianza {(item.confidence * 100).toFixed(0)}%
-                                                              </span>
-                                                            </div>
-                                                          </div>
-                                                        </button>
-                                                        <button
-                                                          type="button"
-                                                          aria-disabled={!item.evidence?.page}
-                                                          className={`mt-2 inline-flex items-center gap-1 text-[11px] ${
-                                                            item.evidence?.page
-                                                              ? "text-ink underline underline-offset-2"
-                                                              : "cursor-not-allowed text-muted/70"
-                                                          }`}
-                                                          onClick={(event) => {
-                                                            event.stopPropagation();
-                                                            handleOpenSourceFromEvidence(item);
-                                                          }}
-                                                        >
-                                                          <span className="text-muted">Fuente:</span>
-                                                          <span className="font-semibold">
-                                                            {item.evidence?.page ? `Página ${item.evidence.page}` : "—"}
-                                                          </span>
-                                                        </button>
-                                                      </div>
-                                                    );
-                                                  })}
-                                                </div>
-                                              </article>
-                                            );
-                                          }
-
-                                          const item = field.items[0];
-                                          if (!item) {
-                                            return null;
-                                          }
-                                          const confidenceTone = getConfidenceLabel(item.confidence);
-                                          const isSelected = selectedFieldId === item.id;
-                                          const isExpanded = Boolean(expandedFieldValues[item.id]);
-                                          const valueText = isExpanded
-                                            ? item.displayValue
-                                            : truncateText(item.displayValue, 140);
-                                          const canExpand = item.displayValue.length > 140;
-                                          return (
-                                            <article
-                                              key={field.id}
-                                              className={`rounded-xl border bg-white p-3 ${
-                                                isSelected ? "border-accent ring-1 ring-accent/40" : "border-black/10"
-                                              }`}
-                                            >
-                                              <button
-                                                type="button"
-                                                className="w-full text-left"
-                                                onClick={() => handleSelectReviewItem(item)}
-                                              >
-                                                <div className="flex items-start justify-between gap-3">
-                                                  <div className="min-w-0">
-                                                    <p className="truncate text-xs font-semibold text-ink">{field.label}</p>
-                                                  </div>
-                                                  <div
-                                                    data-testid={`badge-group-${item.id}`}
-                                                    className="flex shrink-0 flex-wrap items-center justify-end gap-2 text-right"
-                                                  >
-                                                    {field.isCritical && (
-                                                      <span
-                                                        data-testid={`critical-badge-${field.key}`}
-                                                        className="rounded-full border border-black/10 px-2 py-0.5 text-[10px] font-semibold text-muted"
-                                                      >
-                                                        CRÍTICO
-                                                      </span>
-                                                    )}
-                                                    <span
-                                                      className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                                                        confidenceTone === "high"
-                                                          ? "bg-emerald-100 text-emerald-700"
-                                                          : confidenceTone === "medium"
-                                                          ? "bg-amber-100 text-amber-700"
-                                                          : "bg-red-100 text-red-700"
-                                                      }`}
-                                                    >
-                                                      Confianza {(item.confidence * 100).toFixed(0)}%
-                                                    </span>
-                                                  </div>
-                                                </div>
-                                                <p
-                                                  className={`mt-2 text-sm ${
-                                                    item.isMissing ? "italic text-muted" : "text-ink"
-                                                  }`}
-                                                >
-                                                  {valueText}
-                                                </p>
-                                              </button>
-                                              {canExpand && (
-                                                <button
-                                                  type="button"
-                                                  className="mt-1 text-xs font-semibold text-muted underline underline-offset-2"
-                                                  onClick={() =>
-                                                    setExpandedFieldValues((current) => ({
-                                                      ...current,
-                                                      [item.id]: !current[item.id],
-                                                    }))
-                                                  }
-                                                >
-                                                  {isExpanded ? "Ver menos" : "Ver más"}
-                                                </button>
-                                              )}
-                                              <button
-                                                type="button"
-                                                aria-disabled={!item.evidence?.page}
-                                                className={`mt-2 inline-flex items-center gap-1 text-[11px] ${
-                                                  item.evidence?.page
-                                                    ? "text-ink underline underline-offset-2"
-                                                    : "cursor-not-allowed text-muted/70"
-                                                }`}
-                                                onClick={(event) => {
-                                                  event.stopPropagation();
-                                                  handleOpenSourceFromEvidence(item);
-                                                }}
-                                              >
-                                                <span className="text-muted">Fuente:</span>
-                                                <span className="font-semibold">
-                                                  {item.evidence?.page ? `Página ${item.evidence.page}` : "—"}
-                                                </span>
-                                              </button>
-                                            </article>
-                                          );
-                                        })}
-                                      </div>
-                                    ))}
-                                  </div>
-                                </section>
-
-                                <section>
-                                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
-                                  Otros campos extraídos
-                                </p>
-                                <div className="mt-2 space-y-2">
-                                  {otherDisplayFields.length === 0 && (
-                                    <p className="rounded-xl border border-black/10 bg-white/90 px-3 py-2 text-xs text-muted">
-                                      No hay otros campos extraídos.
-                                    </p>
-                                  )}
-                                  {otherDisplayFields.map((field) => {
-                                    if (field.repeatable) {
-                                      const countLabel =
-                                        field.items.length === 1
-                                          ? "1 elemento"
-                                          : `${field.items.length} elementos`;
-                                      return (
-                                        <article
-                                          key={field.id}
-                                          className="rounded-xl border border-black/10 bg-white p-3"
-                                        >
-                                          <div className="flex items-start justify-between gap-2">
-                                            <p className="text-xs font-semibold text-ink">{field.label}</p>
-                                            {field.items.length > 0 && (
-                                              <span className="rounded-full border border-black/10 px-2 py-0.5 text-[10px] font-semibold text-muted">
-                                                {countLabel}
-                                              </span>
-                                            )}
-                                          </div>
-                                          <div className="mt-2 space-y-2">
-                                            {field.isEmptyList && (
-                                              <p className="text-sm italic text-muted">
-                                                {EMPTY_LIST_PLACEHOLDER}
-                                              </p>
-                                            )}
-                                            {field.items.map((item) => {
-                                              const confidenceTone = getConfidenceLabel(item.confidence);
-                                              const isSelected = selectedFieldId === item.id;
-                                              return (
-                                                <div
-                                                  key={item.id}
-                                                  className={`rounded-lg border bg-white/90 p-2 ${
-                                                    isSelected
-                                                      ? "border-accent ring-1 ring-accent/40"
-                                                      : "border-black/10"
-                                                  }`}
-                                                >
-                                                  <button
-                                                    type="button"
-                                                    className="w-full text-left"
-                                                    onClick={() => handleSelectReviewItem(item)}
-                                                  >
-                                                    <div className="flex items-start justify-between gap-3">
-                                                      <div className="min-w-0">
-                                                        <p className="truncate text-sm text-ink">{item.displayValue}</p>
-                                                      </div>
-                                                      <div
-                                                        data-testid={`badge-group-${item.id}`}
-                                                        className="flex shrink-0 flex-wrap items-center justify-end gap-2 text-right"
-                                                      >
-                                                        <span
-                                                          className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                                                            confidenceTone === "high"
-                                                              ? "bg-emerald-100 text-emerald-700"
-                                                              : confidenceTone === "medium"
-                                                              ? "bg-amber-100 text-amber-700"
-                                                              : "bg-red-100 text-red-700"
-                                                          }`}
-                                                        >
-                                                          Confianza {(item.confidence * 100).toFixed(0)}%
-                                                        </span>
-                                                      </div>
-                                                    </div>
-                                                  </button>
-                                                  <button
-                                                    type="button"
-                                                    aria-disabled={!item.evidence?.page}
-                                                    className={`mt-2 inline-flex items-center gap-1 text-[11px] ${
-                                                      item.evidence?.page
-                                                        ? "text-ink underline underline-offset-2"
-                                                        : "cursor-not-allowed text-muted/70"
-                                                    }`}
-                                                    onClick={(event) => {
-                                                      event.stopPropagation();
-                                                      handleOpenSourceFromEvidence(item);
-                                                    }}
-                                                  >
-                                                    <span className="text-muted">Fuente:</span>
-                                                    <span className="font-semibold">
-                                                      {item.evidence?.page
-                                                        ? `Página ${item.evidence.page}`
-                                                        : "—"}
-                                                    </span>
-                                                  </button>
-                                                </div>
-                                              );
-                                            })}
-                                          </div>
-                                        </article>
-                                      );
-                                    }
-
-                                    const item = field.items[0];
-                                    if (!item) {
-                                      return null;
-                                    }
-                                    const confidenceTone = getConfidenceLabel(item.confidence);
-                                    const isSelected = selectedFieldId === item.id;
-                                    return (
-                                      <article
-                                        key={field.id}
-                                        className={`rounded-xl border bg-white p-3 ${
-                                          isSelected ? "border-accent ring-1 ring-accent/40" : "border-black/10"
-                                        }`}
-                                      >
-                                        <button
-                                          type="button"
-                                          className="w-full text-left"
-                                          onClick={() => handleSelectReviewItem(item)}
-                                        >
-                                          <div className="flex items-start justify-between gap-3">
-                                            <div className="min-w-0">
-                                              <p className="truncate text-xs font-semibold text-ink">{field.label}</p>
-                                            </div>
-                                            <div
-                                              data-testid={`badge-group-${item.id}`}
-                                              className="flex shrink-0 flex-wrap items-center justify-end gap-2 text-right"
-                                            >
-                                              <span
-                                                className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                                                  confidenceTone === "high"
-                                                    ? "bg-emerald-100 text-emerald-700"
-                                                    : confidenceTone === "medium"
-                                                    ? "bg-amber-100 text-amber-700"
-                                                    : "bg-red-100 text-red-700"
-                                                }`}
-                                              >
-                                                Confianza {(item.confidence * 100).toFixed(0)}%
-                                              </span>
-                                            </div>
-                                          </div>
-                                          <p
-                                            className={`mt-2 text-sm ${
-                                              item.isMissing ? "italic text-muted" : "text-ink"
-                                            }`}
-                                          >
-                                            {item.displayValue}
-                                          </p>
-                                        </button>
-                                        <button
-                                          type="button"
-                                          aria-disabled={!item.evidence?.page}
-                                          className={`mt-2 inline-flex items-center gap-1 text-[11px] ${
-                                            item.evidence?.page
-                                              ? "text-ink underline underline-offset-2"
-                                              : "cursor-not-allowed text-muted/70"
-                                          }`}
-                                          onClick={(event) => {
-                                            event.stopPropagation();
-                                            handleOpenSourceFromEvidence(item);
-                                          }}
-                                        >
-                                          <span className="text-muted">Fuente:</span>
-                                          <span className="font-semibold">
-                                            {item.evidence?.page ? `Página ${item.evidence.page}` : "—"}
-                                          </span>
-                                        </button>
-                                      </article>
-                                    );
-                                  })}
-                                </div>
-                                </section>
+                                )}
+                                {reportSections.map((section) =>
+                                  reportLayout === 1
+                                    ? renderSectionLayout1(section)
+                                    : renderSectionLayout2(section)
+                                )}
                               </div>
                             )}
                           </div>
