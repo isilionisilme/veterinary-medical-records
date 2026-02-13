@@ -702,7 +702,7 @@ Introduce a minimal, consistent UI foundation to prevent ad-hoc styling and enab
 
 **Acceptance Criteria**
 - All UI work touched in this story uses design tokens (no scattered hex values in implementation files).
-- Icon-only buttons are consistently implemented via `IconButton` and include accessible names.
+- Icon-only interactive controls are implemented via `IconButton` with required `label`; raw icon-only `<button>` / `<Button>` are forbidden unless documented as explicit allowlisted exceptions.
 - Tooltip behavior is standardized (top placement + portal rendering to avoid clipping).
 - At least one key review area adopts the primitives and wrappers (viewer toolbar icon actions + one structured-data section).
 - `docs/project/DESIGN_SYSTEM.md` exists and is linked from project docs navigation.

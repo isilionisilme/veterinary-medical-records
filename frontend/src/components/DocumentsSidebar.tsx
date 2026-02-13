@@ -1,8 +1,8 @@
 import { type ChangeEvent, type DragEvent, type MouseEvent, type RefObject } from "react";
 import { FileText, Pin, PinOff, RefreshCw } from "lucide-react";
 
+import { IconButton } from "./app/IconButton";
 import { UploadDropzone } from "./UploadDropzone";
-import { Button } from "./ui/button";
 import { Tooltip } from "./ui/tooltip";
 
 type DocumentsSidebarItem = {
@@ -112,12 +112,10 @@ export function DocumentsSidebar({
             </div>
             {isDocsSidebarExpanded && (
               <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
+                <IconButton
+                  label={isDocsSidebarPinned ? "Desfijar barra" : "Fijar barra"}
+                  tooltip={isDocsSidebarPinned ? "Desfijar barra" : "Fijar barra"}
                   onClick={onTogglePin}
-                  type="button"
-                  title={isDocsSidebarPinned ? "Desfijar barra" : "Fijar barra"}
-                  aria-label={isDocsSidebarPinned ? "Desfijar barra" : "Fijar barra"}
                   className={`rounded-full border p-2 shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
                     isDocsSidebarPinned
                       ? "border-ink/30 bg-black/[0.06] text-ink"
@@ -125,18 +123,16 @@ export function DocumentsSidebar({
                   }`}
                 >
                   {isDocsSidebarPinned ? <PinOff size={16} /> : <Pin size={16} />}
-                </Button>
-                <Button
-                  variant="ghost"
+                </IconButton>
+                <IconButton
+                  label="Actualizar"
+                  tooltip="Actualizar"
                   onClick={onRefresh}
-                  type="button"
-                  title="Actualizar"
-                  aria-label="Actualizar"
                   disabled={isRefreshingDocuments}
                   className="rounded-full border border-black/15 bg-white p-2 text-ink shadow-sm hover:bg-accentSoft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                 >
                   <RefreshCw size={16} className={isRefreshingDocuments ? "animate-spin" : ""} />
-                </Button>
+                </IconButton>
               </div>
             )}
           </div>
@@ -149,10 +145,10 @@ export function DocumentsSidebar({
               >
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-semibold text-ink">Cargar documento</h3>
-                  <button
+                  <IconButton
                     ref={uploadInfoTriggerRef}
-                    type="button"
-                    aria-label="Informacion de formatos y tamano"
+                    label="Informacion de formatos y tamano"
+                    tooltip="Informacion de formatos y tamano"
                     aria-expanded={showUploadInfo}
                     onFocus={onOpenUploadInfo}
                     onBlur={() => onCloseUploadInfo(false)}
@@ -176,7 +172,7 @@ export function DocumentsSidebar({
                     className="text-sm text-muted"
                   >
                     ⓘ
-                  </button>
+                  </IconButton>
                 </div>
                 <UploadDropzone
                   className="mt-3"

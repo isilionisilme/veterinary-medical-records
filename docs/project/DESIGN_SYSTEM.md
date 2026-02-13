@@ -85,9 +85,29 @@ Project wrappers standardize repeated review UI patterns:
 
 ## Accessibility rules
 
-- Icon-only actions must use `IconButton` and provide `ariaLabel`.
+- **MUST**: icon-only interactive controls must use `IconButton` with required `label`.
+- Raw icon-only `<button>` / `<Button>` are forbidden unless explicitly allow-listed as an approved exception.
 - Confidence and critical signals cannot rely on color alone (tooltips/labels remain available).
 - Tooltips must be keyboard-accessible and must not clip inside scroll containers.
+
+### Icon-only controls: do / don't
+
+Do:
+- `<IconButton label="Cerrar panel">✕</IconButton>`
+- `<IconButton label="Actualizar" tooltip="Actualizar"> <RefreshCw /> </IconButton>`
+
+Don't:
+- `<button aria-label="Cerrar">&times;</button>`
+- `<Button aria-label="Actualizar"><RefreshCw /></Button>`
+
+### Exception process (allowlist)
+
+Use exceptions only when `IconButton` cannot represent the interaction semantics (for example, a non-button resize handle).
+
+Required steps:
+1. Add a narrow token-based allowlist entry in `scripts/check_design_system.mjs` (`ICON_ONLY_ALLOWLIST`) scoped to file + unique marker.
+2. Add rationale to the PR description (why `IconButton` is not viable).
+3. Keep keyboard and screen-reader accessibility equivalent or better than the default `IconButton` contract.
 
 ---
 
@@ -96,7 +116,7 @@ Project wrappers standardize repeated review UI patterns:
 ### Example 1 — Viewer toolbar icon action
 
 - Use `IconButton` for page/zoom/view actions.
-- Provide `ariaLabel` and concise tooltip text.
+- Provide `label` and concise tooltip text.
 
 ### Example 2 — Structured field row
 
@@ -115,4 +135,5 @@ Use `npm run check:design-system` in `frontend/`.
 Current checks:
 - flags hard-coded hex colors outside token/config allowlist,
 - flags inline `style={{...}}` outside allowlist,
-- flags `IconButton` usage without `ariaLabel`.
+- flags `IconButton` usage without `label`,
+- flags raw icon-only `<button>` and `<Button>` usage outside explicit allowlist.

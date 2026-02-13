@@ -37,3 +37,14 @@ body {
 * {
   box-sizing: border-box;
 }
+
+.pdf-debug-no-transform-subtree,
+.pdf-debug-no-transform-subtree * {
+  transform: none !important;
+}
+
+body.pdf-debug-no-motion,
+body.pdf-debug-no-motion * {
+  transition: none !important;
+  animation: none !important;
+}

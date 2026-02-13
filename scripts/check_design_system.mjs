@@ -11,7 +11,9 @@ const srcRoot = path.join(frontendRoot, "src");
 
 const HEX_RE = /#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\b/g;
 const INLINE_STYLE_RE = /style\s*=\s*\{\{/g;
-const ICON_BUTTON_NO_LABEL_RE = /<IconButton(?![^>]*\bariaLabel\s*=)[^>]*>/g;
+const ICON_BUTTON_NO_LABEL_RE = /<IconButton(?![^>]*\blabel\s*=)[^>]*>/g;
+const RAW_HTML_BUTTON_RE = /<button\b([\s\S]*?)>([\s\S]*?)<\/button>/g;
+const RAW_DS_BUTTON_RE = /<Button\b([\s\S]*?)>([\s\S]*?)<\/Button>/g;
 
 const HEX_ALLOWLIST = new Set([
   path.join("frontend", "src", "index.css"),
@@ -20,6 +22,11 @@ const HEX_ALLOWLIST = new Set([
 
 const INLINE_STYLE_ALLOWLIST = new Map([
   [path.join("frontend", "src", "App.tsx"), ["style={reviewSplitLayoutStyle}", "style={{ top:"]],
+]);
+
+const ICON_ONLY_ALLOWLIST = new Map([
+  [path.join("frontend", "src", "App.tsx"), ["data-testid=\"review-split-handle\""]],
+  [path.join("frontend", "src", "components", "app", "IconButton.tsx"), ["<Button"]],
 ]);
 
 function walkFiles(dirPath) {
@@ -44,6 +51,56 @@ function relativeToRepo(filePath) {
 
 function lineNumberAt(content, index) {
   return content.slice(0, index).split("\n").length;
+}
+
+function isAllowlisted(relativePath, snippet) {
+  const allowTokens = ICON_ONLY_ALLOWLIST.get(relativePath) ?? [];
+  return allowTokens.some((token) => snippet.includes(token));
+}
+
+function stripTagsAndExpressions(value) {
+  return value
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\{[^}]*\}/g, " ")
+    .replace(/&[a-zA-Z]+;/g, " ")
+    .replace(/[×✕ⓘ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function looksIconOnly(innerContent) {
+  const textContent = stripTagsAndExpressions(innerContent);
+  const hasVisibleText = /[\p{L}\p{N}]/u.test(textContent);
+  const hasIconLikeMarkup =
+    /<svg\b/i.test(innerContent) ||
+    /<[A-Z][A-Za-z0-9]*\b/.test(innerContent) ||
+    /[×✕ⓘ]/u.test(innerContent);
+  return hasIconLikeMarkup && !hasVisibleText;
+}
+
+function collectRawIconOnlyButtonViolations(relativePath, content, findings) {
+  for (const match of content.matchAll(RAW_HTML_BUTTON_RE)) {
+    const snippet = match[0];
+    const innerContent = match[2] ?? "";
+    if (!looksIconOnly(innerContent) || isAllowlisted(relativePath, snippet)) {
+      continue;
+    }
+    findings.push(
+      `${relativePath}:${lineNumberAt(content, match.index)} raw <button> appears icon-only; use <IconButton label=...> or document an allowlisted exception`
+    );
+  }
+
+  for (const match of content.matchAll(RAW_DS_BUTTON_RE)) {
+    const snippet = match[0];
+    const attrs = match[1] ?? "";
+    const innerContent = match[2] ?? "";
+    if (/\basChild\b/.test(attrs) || !looksIconOnly(innerContent) || isAllowlisted(relativePath, snippet)) {
+      continue;
+    }
+    findings.push(
+      `${relativePath}:${lineNumberAt(content, match.index)} raw <Button> appears icon-only; use <IconButton label=...> or document an allowlisted exception`
+    );
+  }
 }
 
 const files = [
@@ -85,9 +142,11 @@ for (const filePath of files) {
   const iconButtonMatches = [...content.matchAll(ICON_BUTTON_NO_LABEL_RE)];
   for (const match of iconButtonMatches) {
     findings.push(
-      `${relativePath}:${lineNumberAt(content, match.index)} IconButton missing required ariaLabel`
+      `${relativePath}:${lineNumberAt(content, match.index)} IconButton missing required label`
     );
   }
+
+  collectRawIconOnlyButtonViolations(relativePath, content, findings);
 }
 
 if (findings.length > 0) {

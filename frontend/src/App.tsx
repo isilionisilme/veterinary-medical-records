@@ -2418,7 +2418,7 @@ export function App() {
   const viewerModeToolbarIcons = (
     <>
       <IconButton
-        ariaLabel="Documento"
+        label="Documento"
         tooltip="Documento"
         pressed={activeViewerTab === "document"}
         onClick={() => setActiveViewerTab("document")}
@@ -2426,7 +2426,7 @@ export function App() {
         <FileText size={16} aria-hidden="true" />
       </IconButton>
       <IconButton
-        ariaLabel="Texto extraido"
+        label="Texto extraido"
         tooltip="Texto extraído"
         pressed={activeViewerTab === "raw_text"}
         onClick={() => setActiveViewerTab("raw_text")}
@@ -2434,7 +2434,7 @@ export function App() {
         <AlignLeft size={16} aria-hidden="true" />
       </IconButton>
       <IconButton
-        ariaLabel="Detalles tecnicos"
+        label="Detalles tecnicos"
         tooltip="Detalles técnicos"
         pressed={activeViewerTab === "technical"}
         onClick={() => setActiveViewerTab("technical")}
@@ -2446,7 +2446,7 @@ export function App() {
 
   const viewerDownloadIcon = downloadUrl ? (
     <IconButton
-      ariaLabel="Descargar"
+      label="Descargar"
       tooltip="Descargar"
       onClick={() => window.open(downloadUrl, "_blank", "noopener,noreferrer")}
     >
@@ -2783,6 +2783,7 @@ export function App() {
         fileUrl ? (
           <PdfViewer
             key={`source-${activeId ?? "empty"}`}
+            documentId={activeId}
             fileUrl={fileUrl}
             filename={filename}
             isDragOver={false}
@@ -2937,6 +2938,7 @@ export function App() {
                             {fileUrl ? (
                               <PdfViewer
                                 key={`${effectiveViewMode}-${activeId ?? "empty"}`}
+                                documentId={activeId}
                                 fileUrl={fileUrl}
                                 filename={filename}
                                 isDragOver={false}
@@ -3005,7 +3007,7 @@ export function App() {
                                   {structuredSearchInput.trim().length > 0 && (
                                     <div className="absolute right-2 top-1/2 -translate-y-1/2">
                                       <IconButton
-                                        ariaLabel="Limpiar búsqueda"
+                                        label="Limpiar búsqueda"
                                         tooltip="Limpiar búsqueda"
                                         onClick={() => {
                                           setStructuredSearchInput("");
@@ -3497,14 +3499,13 @@ export function App() {
           >
             <div className="flex items-start justify-between gap-3">
               <p className="text-sm">No se pudo conectar con el servidor.</p>
-              <button
-                type="button"
-                aria-label="Cerrar aviso de conexión"
-                className="text-lg font-semibold leading-none"
+              <IconButton
+                label="Cerrar aviso de conexión"
                 onClick={() => setConnectivityToast(null)}
+                className="text-lg font-semibold leading-none"
               >
                 &times;
-              </button>
+              </IconButton>
             </div>
           </div>
         </div>
@@ -3525,14 +3526,13 @@ export function App() {
           >
                   <div className="flex items-center justify-between gap-3">
                     <span>{uploadFeedback.message}</span>
-              <button
-                type="button"
-                aria-label="Cerrar notificacion"
-                className="text-lg font-semibold leading-none text-ink"
+              <IconButton
+                label="Cerrar notificacion"
                 onClick={() => setUploadFeedback(null)}
+                className="text-lg font-semibold leading-none text-ink"
               >
                 &times;
-              </button>
+              </IconButton>
             </div>
                   {uploadFeedback.kind === "success" &&
                     uploadFeedback.documentId &&
@@ -3578,14 +3578,13 @@ export function App() {
                 >
                   <div className="flex items-center justify-between gap-3">
                     <span>{actionFeedback.message}</span>
-                    <button
-                      type="button"
-                      aria-label="Cerrar notificacion de accion"
-                      className="text-lg font-semibold leading-none text-ink"
+                    <IconButton
+                      label="Cerrar notificacion de accion"
                       onClick={() => setActionFeedback(null)}
+                      className="text-lg font-semibold leading-none text-ink"
                     >
                       &times;
-                    </button>
+                    </IconButton>
                   </div>
                   {actionFeedback.kind === "error" && actionFeedback.technicalDetails && (
                     <div className="mt-2 flex items-center gap-3">

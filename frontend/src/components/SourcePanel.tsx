@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 
+import { IconButton } from "./app/IconButton";
 import { Button } from "./ui/button";
 import { ScrollArea } from "./ui/scroll-area";
 
@@ -35,9 +36,9 @@ export function SourcePanel({
           <Button type="button" variant="ghost" onClick={onTogglePin} disabled={!isDesktopForPin}>
             {isSourcePinned ? "Desfijar" : "📌 Fijar"}
           </Button>
-          <Button type="button" variant="ghost" onClick={onClose}>
+          <IconButton label="Cerrar panel de fuente" onClick={onClose}>
             ✕
-          </Button>
+          </IconButton>
         </div>
       </div>
       <ScrollArea data-testid="source-panel-scroll" className="mt-3 min-h-0 flex-1">
