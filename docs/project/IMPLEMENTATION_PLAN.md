@@ -258,6 +258,7 @@ Capture optional user-experience and operability improvements that are implement
 - US-29 — Improve toast queue behavior
 - US-30 — Change application UI language (multilingual UI)
 - US-31 — Externalize configuration and expose settings in UI
+- US-33 — PDF Viewer Zoom (Nice to have)
 
 ---
 
@@ -1311,6 +1312,39 @@ As an operator, I want key runtime configuration externalized and visible in-app
 **Test Expectations**
 - Effective externalized configuration values are rendered consistently in the read-only settings page.
 - Out-of-scope edit/reload behavior is explicitly communicated to users.
+
+**Definition of Done (DoD)**
+- Acceptance criteria satisfied.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
+
+---
+
+## US-33 — PDF Viewer Zoom (Nice to have)
+
+**User Story**
+As a veterinarian reviewer, I want to zoom in/out the PDF viewer so I can read small text without losing context.
+
+**Acceptance Criteria**
+- Zoom controls (`+`, `-`, and `reset`) are visible in the PDF viewer toolbar.
+- Zoom level persists while navigating pages within the same document.
+- Zoom enforces reasonable limits (50%–200%).
+- Zoom does not affect extracted text tab behavior or structured data layout.
+
+**Scope Clarification**
+- This story is optional and scheduled as a post-MVP enhancement.
+- This story only covers in-viewer zoom controls and in-document persistence.
+- Out of scope: pan/hand tool, multi-page thumbnails, and fit-to-width vs fit-to-page refinements.
+
+**Authoritative References**
+- UX: Review workflow and side-by-side behavior: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md)
+- Tech: Existing review/document surface boundaries: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md)
+
+**Test Expectations**
+- Users can change zoom with toolbar controls and reset to default.
+- Zoom persists across page navigation for the active document and resets when changing document.
+- Extracted text tab and structured data rendering remain unaffected by zoom changes.
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.

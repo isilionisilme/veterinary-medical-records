@@ -348,7 +348,7 @@ export function PdfViewer({
           data-testid="pdf-scroll-container"
           className="h-full min-h-0 overflow-y-auto rounded-2xl border border-black/10 bg-white/60 p-4 shadow-sm"
         >
-        <div ref={contentRef} className="mx-auto w-full max-w-3xl">
+        <div ref={contentRef} className="mx-auto w-full max-w-4xl">
           {loading && (
             <motion.div
               className="flex h-72 items-center justify-center text-sm text-muted"
