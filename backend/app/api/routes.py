@@ -18,6 +18,9 @@ from backend.app.api.schemas import (
     DocumentResponse,
     DocumentReviewResponse,
     DocumentUploadResponse,
+    ExtractionRunPersistResponse,
+    ExtractionRunsListResponse,
+    ExtractionRunSnapshotRequest,
     LatestCompletedRunReviewResponse,
     LatestRunResponse,
     ProcessingHistoryResponse,
@@ -36,8 +39,12 @@ from backend.app.application.document_service import (
     list_documents,
     register_document_upload,
 )
+from backend.app.application.extraction_observability import (
+    get_extraction_runs,
+    persist_extraction_run_snapshot,
+)
 from backend.app.application.processing_runner import enqueue_processing_run
-from backend.app.config import processing_enabled
+from backend.app.config import extraction_observability_enabled, processing_enabled
 from backend.app.domain.models import ProcessingRunState, ProcessingStatus
 from backend.app.ports.document_repository import DocumentRepository
 from backend.app.ports.file_storage import FileStorage
@@ -661,6 +668,74 @@ def get_raw_text_artifact(
         content_type="text/plain",
         text=text,
     )
+
+
+@router.post(
+    "/debug/extraction-runs",
+    response_model=ExtractionRunPersistResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Persist extraction observability snapshot",
+    description="Persist extraction run snapshot locally and log diff versus previous run.",
+)
+def persist_debug_extraction_run(
+    payload: ExtractionRunSnapshotRequest,
+) -> ExtractionRunPersistResponse | JSONResponse:
+    if not extraction_observability_enabled():
+        return _error_response(
+            status_code=status.HTTP_404_NOT_FOUND,
+            error_code="NOT_FOUND",
+            message="Endpoint not found.",
+        )
+
+    try:
+        result = persist_extraction_run_snapshot(payload.model_dump())
+    except ValueError as exc:
+        return _error_response(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            error_code="INVALID_REQUEST",
+            message=str(exc),
+        )
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.exception("Failed to persist extraction observability snapshot")
+        return _error_response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            error_code="INTERNAL_ERROR",
+            message="Unexpected error while persisting extraction snapshot.",
+            details={"reason": str(exc)},
+        )
+
+    response_payload = ExtractionRunPersistResponse(
+        document_id=str(result["document_id"]),
+        run_id=str(result["run_id"]),
+        stored_runs=int(result["stored_runs"]),
+        changed_fields=int(result["changed_fields"]),
+    )
+    response_status = (
+        status.HTTP_201_CREATED if bool(result.get("was_created", True)) else status.HTTP_200_OK
+    )
+    return JSONResponse(
+        status_code=response_status,
+        content=response_payload.model_dump(),
+    )
+
+
+@router.get(
+    "/debug/extraction-runs/{document_id}",
+    response_model=ExtractionRunsListResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get persisted extraction observability snapshots",
+    description="Return persisted extraction snapshots for a document (latest first).",
+)
+def list_debug_extraction_runs(document_id: str) -> ExtractionRunsListResponse | JSONResponse:
+    if not extraction_observability_enabled():
+        return _error_response(
+            status_code=status.HTTP_404_NOT_FOUND,
+            error_code="NOT_FOUND",
+            message="Endpoint not found.",
+        )
+
+    runs = get_extraction_runs(document_id)
+    return ExtractionRunsListResponse(document_id=document_id, runs=runs)
 
 
 def _validate_upload(file: UploadFile) -> dict[str, Any] | None:

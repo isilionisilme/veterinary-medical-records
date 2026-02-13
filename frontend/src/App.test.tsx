@@ -1526,6 +1526,112 @@ describe("App upload and list flow", () => {
     expect(within(medicationCard as HTMLElement).getByText("Sin elementos")).toBeInTheDocument();
   });
 
+  it("uses empty indicator for missing fields and keeps low-confidence filter scoped to non-empty values", async () => {
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+
+    await screen.findByText("Identificacion del caso");
+
+    const panel = screen.getByTestId("right-panel-scroll");
+    const missingIndicator = within(panel).getByTestId("confidence-indicator-core:claim_id");
+    expect(missingIndicator).toHaveAttribute("aria-label", expect.stringMatching(/Sin dato/i));
+    expect(missingIndicator.className).toContain("bg-white");
+
+    fireEvent.click(screen.getByRole("button", { name: "Baja" }));
+    expect(within(screen.getByTestId("right-panel-scroll")).queryByText("ID de reclamacion")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Baja" }));
+    fireEvent.click(screen.getByRole("button", { name: "Mostrar solo campos vacíos" }));
+    expect(within(screen.getByTestId("right-panel-scroll")).getByText("ID de reclamacion")).toBeInTheDocument();
+  });
+
+  it("retries snapshot POST after refresh when runId is unchanged and first failure is retryable", async () => {
+    window.history.replaceState({}, "", "/?extractionDebug=1");
+    let nowMs = 1_700_000_000_000;
+    vi.spyOn(Date, "now").mockImplementation(() => nowMs);
+
+    const baseFetch = globalThis.fetch as typeof fetch;
+    let snapshotAttempts = 0;
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = input.toString();
+      const method = (init?.method ?? "GET").toUpperCase();
+
+      if (url.endsWith("/debug/extraction-runs") && method === "POST") {
+        snapshotAttempts += 1;
+        if (snapshotAttempts === 1) {
+          return new Response(JSON.stringify({ error_code: "INTERNAL_ERROR" }), { status: 500 });
+        }
+        return new Response(
+          JSON.stringify({
+            document_id: "doc-ready",
+            run_id: "run-doc-ready",
+            stored_runs: 1,
+            changed_fields: 0,
+          }),
+          { status: 201 }
+        );
+      }
+
+      return baseFetch(input, init);
+    }) as typeof fetch;
+
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+    await screen.findByText("Identificacion del caso");
+
+    await waitFor(() => {
+      expect(snapshotAttempts).toBe(1);
+    });
+
+    nowMs += 10_000;
+    fireEvent.click(screen.getByRole("button", { name: /Actualizar/i }));
+
+    await waitFor(() => {
+      expect(snapshotAttempts).toBe(2);
+    });
+  });
+
+  it("does not retry snapshot POST after hard 4xx failure", async () => {
+    window.history.replaceState({}, "", "/?extractionDebug=1");
+    let nowMs = 1_700_000_000_000;
+    vi.spyOn(Date, "now").mockImplementation(() => nowMs);
+
+    const baseFetch = globalThis.fetch as typeof fetch;
+    let snapshotAttempts = 0;
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = input.toString();
+      const method = (init?.method ?? "GET").toUpperCase();
+
+      if (url.endsWith("/debug/extraction-runs") && method === "POST") {
+        snapshotAttempts += 1;
+        if (snapshotAttempts === 1) {
+          return new Response(JSON.stringify({ error_code: "INVALID_REQUEST" }), { status: 400 });
+        }
+        return new Response(JSON.stringify({ ok: true }), { status: 201 });
+      }
+
+      return baseFetch(input, init);
+    }) as typeof fetch;
+
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+    await screen.findByText("Identificacion del caso");
+
+    await waitFor(() => {
+      expect(snapshotAttempts).toBe(1);
+    });
+
+    nowMs += 60_000;
+    fireEvent.click(screen.getByRole("button", { name: /Actualizar/i }));
+    await screen.findByText("Identificacion del caso");
+
+    await new Promise((resolve) => window.setTimeout(resolve, 50));
+    expect(snapshotAttempts).toBe(1);
+  });
+
   it("falls back to visit date when document date is missing", async () => {
     renderApp();
 

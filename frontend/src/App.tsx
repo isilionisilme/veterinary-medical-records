@@ -14,7 +14,7 @@ import { AlignLeft, Check, Download, FileText, Info, Search, X } from "lucide-re
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { ConfidenceDot } from "./components/app/ConfidenceDot";
-import { CriticalBadge } from "./components/app/CriticalBadge";
+import { CriticalBadge, CriticalIcon } from "./components/app/CriticalBadge";
 import { FieldBlock, FieldRow, RepeatableList } from "./components/app/Field";
 import { IconButton } from "./components/app/IconButton";
 import { Section, SectionHeader } from "./components/app/Section";
@@ -29,6 +29,12 @@ import { Separator } from "./components/ui/separator";
 import { ToggleGroup, ToggleGroupItem } from "./components/ui/toggle-group";
 import { Tooltip } from "./components/ui/tooltip";
 import { useSourcePanelState } from "./hooks/useSourcePanelState";
+import {
+  isExtractionDebugEnabled,
+  logExtractionDebugEvent,
+  type ExtractionDebugEvent,
+} from "./extraction/extractionDebug";
+import { validateFieldValue } from "./extraction/fieldValidators";
 import { groupProcessingSteps } from "./lib/processingHistory";
 import {
   GLOBAL_SCHEMA_SECTION_ORDER,
@@ -262,6 +268,118 @@ type ActionFeedback = {
 };
 
 type ConnectivityToast = Record<string, never>;
+
+type ExtractionFieldSnapshot = {
+  status: "missing" | "rejected" | "accepted";
+  confidence: "low" | "mid" | "high" | null;
+  valueNormalized?: string;
+  valueRaw?: string;
+  reason?: string;
+};
+
+type ExtractionRunSnapshotPayload = {
+  runId: string;
+  documentId: string;
+  createdAt: string;
+  schemaVersion: string;
+  fields: Record<string, ExtractionFieldSnapshot>;
+  counts: {
+    totalFields: number;
+    accepted: number;
+    rejected: number;
+    missing: number;
+    low: number;
+    mid: number;
+    high: number;
+  };
+};
+
+type SnapshotDeliveryStatus = "pending" | "delivered" | "failed";
+type SnapshotErrorKind = "network" | "timeout" | "http_408" | "http_429" | "http_5xx" | "http_4xx" | "unknown";
+
+type SnapshotDeliveryState = {
+  status: SnapshotDeliveryStatus;
+  attemptCount: number;
+  lastAttemptAt: number | null;
+  lastErrorKind: SnapshotErrorKind | null;
+  firstAttemptAt: number | null;
+  permanentFailure: boolean;
+  giveUpLogged: boolean;
+};
+
+const SNAPSHOT_RETRY_BACKOFF_MS = [1000, 5000, 15000, 60000] as const;
+const SNAPSHOT_RETRY_MAX_ATTEMPTS = 8;
+const SNAPSHOT_RETRY_MAX_AGE_MS = 10 * 60 * 1000;
+
+class SnapshotPostError extends Error {
+  readonly kind: SnapshotErrorKind;
+  readonly retryable: boolean;
+  readonly statusCode?: number;
+
+  constructor(kind: SnapshotErrorKind, retryable: boolean, message: string, statusCode?: number) {
+    super(message);
+    this.name = "SnapshotPostError";
+    this.kind = kind;
+    this.retryable = retryable;
+    this.statusCode = statusCode;
+  }
+}
+
+function classifySnapshotHttpError(statusCode: number): {
+  kind: SnapshotErrorKind;
+  retryable: boolean;
+} {
+  if (statusCode === 408) {
+    return { kind: "http_408", retryable: true };
+  }
+  if (statusCode === 429) {
+    return { kind: "http_429", retryable: true };
+  }
+  if (statusCode >= 500) {
+    return { kind: "http_5xx", retryable: true };
+  }
+  return { kind: "http_4xx", retryable: false };
+}
+
+function getSnapshotRetryBackoffMs(runKey: string, attemptCount: number): number {
+  const boundedAttempt = Math.max(1, attemptCount);
+  const base = SNAPSHOT_RETRY_BACKOFF_MS[
+    Math.min(boundedAttempt - 1, SNAPSHOT_RETRY_BACKOFF_MS.length - 1)
+  ];
+  let hash = 0;
+  const seed = `${runKey}|${boundedAttempt}`;
+  for (let index = 0; index < seed.length; index += 1) {
+    hash = (hash * 31 + seed.charCodeAt(index)) >>> 0;
+  }
+  const jitter = 0.8 + ((hash % 401) / 1000);
+  return Math.round(base * jitter);
+}
+
+function getSnapshotErrorMeta(error: unknown): {
+  kind: SnapshotErrorKind;
+  retryable: boolean;
+  detail: string;
+} {
+  if (error instanceof SnapshotPostError) {
+    return {
+      kind: error.kind,
+      retryable: error.retryable,
+      detail: error.message,
+    };
+  }
+  if (isNetworkFetchError(error)) {
+    return {
+      kind: "network",
+      retryable: true,
+      detail: getTechnicalDetails(error) ?? "network error",
+    };
+  }
+  return {
+    kind: "unknown",
+    retryable: true,
+    detail: getTechnicalDetails(error) ?? "unknown snapshot post failure",
+  };
+}
 
 class UiError extends Error {
   readonly userMessage: string;
@@ -621,6 +739,42 @@ async function uploadDocument(file: File): Promise<DocumentUploadResponse> {
   return response.json();
 }
 
+async function postExtractionRunSnapshot(payload: ExtractionRunSnapshotPayload): Promise<void> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/debug/extraction-runs`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch (error) {
+    if (isNetworkFetchError(error)) {
+      throw new SnapshotPostError(
+        "network",
+        true,
+        `Network error calling ${API_BASE_URL}/debug/extraction-runs`
+      );
+    }
+    throw new SnapshotPostError(
+      "unknown",
+      true,
+      getTechnicalDetails(error) ?? "Unknown error calling extraction observability endpoint"
+    );
+  }
+
+  if (!response.ok) {
+    const classified = classifySnapshotHttpError(response.status);
+    throw new SnapshotPostError(
+      classified.kind,
+      classified.retryable,
+      `HTTP ${response.status} calling ${API_BASE_URL}/debug/extraction-runs`,
+      response.status
+    );
+  }
+}
+
 async function copyTextToClipboard(text: string): Promise<void> {
   if (!text) {
     throw new UiError("No hay texto disponible para copiar.");
@@ -819,6 +973,7 @@ export function App() {
   const [selectedConfidenceBuckets, setSelectedConfidenceBuckets] = useState<ConfidenceBucket[]>([]);
   const [showOnlyCritical, setShowOnlyCritical] = useState(false);
   const [showOnlyWithValue, setShowOnlyWithValue] = useState(false);
+  const [showOnlyEmpty, setShowOnlyEmpty] = useState(false);
   const [reviewSplitRatio, setReviewSplitRatio] = useState(() => {
     if (typeof window === "undefined") {
       return DEFAULT_REVIEW_SPLIT_RATIO;
@@ -854,6 +1009,9 @@ export function App() {
     containerWidth: number;
   } | null>(null);
   const reviewSplitRatioRef = useRef(reviewSplitRatio);
+  const lastExtractionDebugDocIdRef = useRef<string | null>(null);
+  const loggedExtractionDebugEventKeysRef = useRef<Set<string>>(new Set());
+  const snapshotDeliveryStateRef = useRef<Record<string, SnapshotDeliveryState>>({});
   const viewerDragDepthRef = useRef(0);
   const sidebarUploadDragDepthRef = useRef(0);
   const suppressDocsSidebarHoverUntilRef = useRef(0);
@@ -1838,15 +1996,307 @@ export function App() {
     [documentReview.data?.active_interpretation.data.fields]
   );
 
+  const validationResult = useMemo(() => {
+    const fieldsByKey = new Map<string, number>();
+    const acceptedFields: ReviewField[] = [];
+    const debugEvents: ExtractionDebugEvent[] = [];
+    const documentId = documentReview.data?.active_interpretation.data.document_id;
+
+    extractedReviewFields.forEach((field) => {
+      fieldsByKey.set(field.key, (fieldsByKey.get(field.key) ?? 0) + 1);
+    });
+
+    extractedReviewFields.forEach((field) => {
+      const rawValue = field.value === null || field.value === undefined ? "" : String(field.value);
+      const validation = validateFieldValue(field.key, rawValue);
+
+      if (!validation.ok) {
+        debugEvents.push({
+          field: field.key,
+          status: "rejected",
+          raw: rawValue,
+          reason: validation.reason,
+          docId: documentId,
+          page: field.evidence?.page,
+        });
+        return;
+      }
+
+      const normalizedValue = validation.normalized ?? rawValue.trim();
+      acceptedFields.push({
+        ...field,
+        value: normalizedValue,
+      });
+
+      debugEvents.push({
+        field: field.key,
+        status: "accepted",
+        raw: rawValue,
+        normalized: normalizedValue,
+        docId: documentId,
+        page: field.evidence?.page,
+      });
+    });
+
+    GLOBAL_SCHEMA_V0.forEach((definition) => {
+      if ((fieldsByKey.get(definition.key) ?? 0) > 0) {
+        return;
+      }
+
+      debugEvents.push({
+        field: definition.key,
+        status: "missing",
+        docId: documentId,
+      });
+    });
+
+    return {
+      acceptedFields,
+      debugEvents,
+    };
+  }, [documentReview.data?.active_interpretation.data.document_id, extractedReviewFields]);
+
+  useEffect(() => {
+    const documentId = documentReview.data?.active_interpretation.data.document_id ?? null;
+    if (lastExtractionDebugDocIdRef.current !== documentId) {
+      loggedExtractionDebugEventKeysRef.current.clear();
+      lastExtractionDebugDocIdRef.current = documentId;
+    }
+
+    validationResult.debugEvents.forEach((event) => {
+      const eventKey = [
+        event.docId ?? "",
+        event.field,
+        event.status,
+        event.raw ?? "",
+        event.normalized ?? "",
+        event.reason ?? "",
+        event.page ?? "",
+      ].join("|");
+      if (loggedExtractionDebugEventKeysRef.current.has(eventKey)) {
+        return;
+      }
+      loggedExtractionDebugEventKeysRef.current.add(eventKey);
+      logExtractionDebugEvent(event);
+    });
+  }, [documentReview.data?.active_interpretation.data.document_id, validationResult.debugEvents]);
+
+  const validatedReviewFields = validationResult.acceptedFields;
+
+  useEffect(() => {
+    if (!isExtractionDebugEnabled()) {
+      return;
+    }
+
+    const documentId = documentReview.data?.active_interpretation.data.document_id;
+    const runId = documentReview.data?.latest_completed_run.run_id;
+    if (!documentId || !runId) {
+      return;
+    }
+
+    const runKey = `${documentId}|${runId}`;
+
+    const latestDebugByField = new Map<string, ExtractionDebugEvent>();
+    validationResult.debugEvents.forEach((event) => {
+      latestDebugByField.set(event.field, event);
+    });
+
+    const bestAcceptedByField = new Map<string, ReviewField>();
+    validatedReviewFields.forEach((field) => {
+      const current = bestAcceptedByField.get(field.key);
+      if (!current || clampConfidence(field.confidence) > clampConfidence(current.confidence)) {
+        bestAcceptedByField.set(field.key, field);
+      }
+    });
+
+    const fields: Record<string, ExtractionFieldSnapshot> = {};
+    GLOBAL_SCHEMA_V0.forEach((definition) => {
+      const event = latestDebugByField.get(definition.key);
+      const acceptedField = bestAcceptedByField.get(definition.key);
+
+      if (event?.status === "accepted") {
+        const tone = acceptedField ? getConfidenceTone(acceptedField.confidence) : "low";
+        fields[definition.key] = {
+          status: "accepted",
+          confidence: tone === "med" ? "mid" : tone,
+          valueNormalized:
+            event.normalized ?? (acceptedField?.value === null || acceptedField?.value === undefined
+              ? undefined
+              : String(acceptedField.value)),
+          valueRaw: event.raw,
+        };
+        return;
+      }
+
+      if (event?.status === "rejected") {
+        fields[definition.key] = {
+          status: "rejected",
+          confidence: null,
+          valueRaw: event.raw,
+          reason: event.reason,
+        };
+        return;
+      }
+
+      fields[definition.key] = {
+        status: "missing",
+        confidence: null,
+      };
+    });
+
+    const allFieldSnapshots = Object.values(fields);
+    const accepted = allFieldSnapshots.filter((field) => field.status === "accepted");
+    const rejected = allFieldSnapshots.filter((field) => field.status === "rejected");
+    const missing = allFieldSnapshots.filter((field) => field.status === "missing");
+
+    const payload: ExtractionRunSnapshotPayload = {
+      runId,
+      documentId,
+      createdAt: new Date().toISOString(),
+      schemaVersion: "v1",
+      fields,
+      counts: {
+        totalFields: GLOBAL_SCHEMA_V0.length,
+        accepted: accepted.length,
+        rejected: rejected.length,
+        missing: missing.length,
+        low: accepted.filter((field) => field.confidence === "low").length,
+        mid: accepted.filter((field) => field.confidence === "mid").length,
+        high: accepted.filter((field) => field.confidence === "high").length,
+      },
+    };
+
+    const state =
+      snapshotDeliveryStateRef.current[runKey] ??
+      ({
+        status: "pending",
+        attemptCount: 0,
+        lastAttemptAt: null,
+        lastErrorKind: null,
+        firstAttemptAt: null,
+        permanentFailure: false,
+        giveUpLogged: false,
+      } satisfies SnapshotDeliveryState);
+    snapshotDeliveryStateRef.current[runKey] = state;
+
+    if (state.status === "delivered") {
+      return;
+    }
+
+    const now = Date.now();
+    const ageMs = state.firstAttemptAt === null ? 0 : now - state.firstAttemptAt;
+    const capReached =
+      state.attemptCount >= SNAPSHOT_RETRY_MAX_ATTEMPTS ||
+      (state.firstAttemptAt !== null && ageMs >= SNAPSHOT_RETRY_MAX_AGE_MS);
+
+    if (state.permanentFailure || capReached) {
+      state.status = "failed";
+      if (!state.giveUpLogged) {
+        state.giveUpLogged = true;
+        console.warn("[extraction-observability] giving up snapshot delivery", {
+          documentId,
+          runId,
+          attemptCount: state.attemptCount,
+          lastErrorKind: state.lastErrorKind,
+          reason: state.permanentFailure ? "permanent_failure" : "cap_reached",
+        });
+      }
+      return;
+    }
+
+    if (state.lastAttemptAt !== null) {
+      const backoffMs = getSnapshotRetryBackoffMs(runKey, state.attemptCount);
+      if (now - state.lastAttemptAt < backoffMs) {
+        return;
+      }
+    }
+
+    const previousStatus = state.status;
+    state.status = "pending";
+    state.attemptCount += 1;
+    state.lastAttemptAt = now;
+    state.firstAttemptAt = state.firstAttemptAt ?? now;
+    console.debug("[extraction-observability] snapshot delivery attempt", {
+      documentId,
+      runId,
+      attempt: state.attemptCount,
+      transition: `${previousStatus}->pending`,
+    });
+
+    void postExtractionRunSnapshot(payload)
+      .then(() => {
+        state.status = "delivered";
+        state.lastErrorKind = null;
+        console.debug("[extraction-observability] snapshot delivery transition", {
+          documentId,
+          runId,
+          attempt: state.attemptCount,
+          transition: "pending->delivered",
+        });
+      })
+      .catch((error) => {
+        const meta = getSnapshotErrorMeta(error);
+        state.status = "failed";
+        state.lastErrorKind = meta.kind;
+
+        if (!meta.retryable) {
+          state.permanentFailure = true;
+          if (!state.giveUpLogged) {
+            state.giveUpLogged = true;
+            console.warn("[extraction-observability] non-retryable snapshot failure", {
+              documentId,
+              runId,
+              attempt: state.attemptCount,
+              reason: meta.kind,
+              detail: meta.detail,
+            });
+          }
+          return;
+        }
+
+        const currentAgeMs =
+          state.firstAttemptAt === null ? 0 : Date.now() - state.firstAttemptAt;
+        const exceededCap =
+          state.attemptCount >= SNAPSHOT_RETRY_MAX_ATTEMPTS ||
+          (state.firstAttemptAt !== null && currentAgeMs >= SNAPSHOT_RETRY_MAX_AGE_MS);
+
+        console.debug("[extraction-observability] snapshot delivery transition", {
+          documentId,
+          runId,
+          attempt: state.attemptCount,
+          transition: "pending->failed",
+          retryReason: meta.kind,
+        });
+
+        if (exceededCap && !state.giveUpLogged) {
+          state.giveUpLogged = true;
+          console.warn("[extraction-observability] giving up snapshot delivery", {
+            documentId,
+            runId,
+            attemptCount: state.attemptCount,
+            lastErrorKind: meta.kind,
+            detail: meta.detail,
+            reason: "cap_reached",
+          });
+        }
+      });
+  }, [
+    documentReview.data?.active_interpretation.data.document_id,
+    documentReview.data?.latest_completed_run.run_id,
+    documentReview.dataUpdatedAt,
+    validatedReviewFields,
+    validationResult.debugEvents,
+  ]);
+
   const matchesByKey = useMemo(() => {
     const matches = new Map<string, ReviewField[]>();
-    extractedReviewFields.forEach((field) => {
+    validatedReviewFields.forEach((field) => {
       const group = matches.get(field.key) ?? [];
       group.push(field);
       matches.set(field.key, group);
     });
     return matches;
-  }, [extractedReviewFields]);
+  }, [validatedReviewFields]);
 
   const coreDisplayFields = useMemo(() => {
     return GLOBAL_SCHEMA_V0.map((definition): ReviewDisplayField => {
@@ -1937,7 +2387,7 @@ export function App() {
     const grouped = new Map<string, ReviewField[]>();
     const orderedKeys: string[] = [];
 
-    extractedReviewFields.forEach((field) => {
+    validatedReviewFields.forEach((field) => {
       if (coreKeys.has(field.key)) {
         return;
       }
@@ -2018,7 +2468,7 @@ export function App() {
         source: "extracted",
       };
     });
-  }, [extractedReviewFields]);
+  }, [validatedReviewFields]);
 
   const groupedCoreFields = useMemo(() => {
     const groups = new Map<string, ReviewDisplayField[]>();
@@ -2039,15 +2489,24 @@ export function App() {
       selectedConfidence: selectedConfidenceBuckets,
       onlyCritical: showOnlyCritical,
       onlyWithValue: showOnlyWithValue,
+      onlyEmpty: showOnlyEmpty,
     }),
-    [selectedConfidenceBuckets, showOnlyCritical, showOnlyWithValue, structuredSearchTerm]
+    [
+      selectedConfidenceBuckets,
+      showOnlyCritical,
+      showOnlyWithValue,
+      showOnlyEmpty,
+      structuredSearchTerm,
+    ]
   );
+
+  const hasValueRestriction = showOnlyWithValue !== showOnlyEmpty;
 
   const hasActiveStructuredFilters =
     structuredSearchTerm.trim().length > 0 ||
     selectedConfidenceBuckets.length > 0 ||
     showOnlyCritical ||
-    showOnlyWithValue;
+    hasValueRestriction;
 
   const visibleCoreGroups = useMemo(() => {
     if (!hasActiveStructuredFilters) {
@@ -2162,6 +2621,44 @@ export function App() {
     reviewPanelState !== "loading" && reviewPanelState !== "ready" && Boolean(reviewPanelMessage);
   const hasNoStructuredFilterResults =
     reviewPanelState === "ready" && hasActiveStructuredFilters && visibleCoreGroups.length === 0;
+  const detectedFieldsSummary = useMemo(() => {
+    let detected = 0;
+    let low = 0;
+    let medium = 0;
+    let high = 0;
+
+    coreDisplayFields.forEach((field) => {
+      const presentItems = field.items.filter(
+        (item) => !item.isMissing && Number.isFinite(item.confidence)
+      );
+      if (presentItems.length === 0) {
+        return;
+      }
+
+      const topConfidence = Math.max(
+        ...presentItems.map((item) => clampConfidence(item.confidence))
+      );
+      detected += 1;
+      const tone = getConfidenceTone(topConfidence);
+      if (tone === "low") {
+        low += 1;
+        return;
+      }
+      if (tone === "med") {
+        medium += 1;
+        return;
+      }
+      high += 1;
+    });
+
+    return {
+      detected,
+      total: GLOBAL_SCHEMA_V0.length,
+      low,
+      medium,
+      high,
+    };
+  }, [coreDisplayFields]);
   const shouldShowLoadPdfErrorBanner =
     loadPdf.isError && !isConnectivityOrServerError(loadPdf.error);
   const isPinnedSourcePanelVisible =
@@ -2352,6 +2849,24 @@ export function App() {
   };
 
   const renderConfidenceIndicator = (field: ReviewDisplayField, item: ReviewSelectableField) => {
+    if (item.isMissing) {
+      const emptyTooltip = field.isCritical
+        ? "Confianza: 0% · CRÍTICO · Sin dato"
+        : "Confianza: 0% · Sin dato";
+      return (
+        <span data-testid={`badge-group-${item.id}`} className="inline-flex shrink-0 items-center">
+          <Tooltip content={emptyTooltip}>
+            <span
+              data-testid={`confidence-indicator-${item.id}`}
+              tabIndex={0}
+              aria-label={emptyTooltip}
+              className="inline-block h-2.5 w-2.5 rounded-full border border-black/40 bg-white"
+            />
+          </Tooltip>
+        </span>
+      );
+    }
+
     const tone = getConfidenceTone(item.confidence);
     const tooltip = buildFieldTooltip(item, field.isCritical);
     return (
@@ -2853,8 +3368,30 @@ export function App() {
                             data-testid="structured-column-stack"
                             className="flex h-full w-full min-h-0 min-w-[420px] flex-1 flex-col gap-[var(--canvas-gap)] rounded-card bg-surfaceMuted p-[var(--canvas-gap)]"
                           >
-                            <div>
+                            <div className="flex w-full items-center justify-between gap-2">
                               <h3 className="text-lg font-semibold text-textSecondary">Datos extraídos</h3>
+                              <div className="flex items-center justify-end gap-1 text-xs leading-tight text-textSecondary">
+                                <span className="text-muted">Campos detectados:</span>
+                                <span className="inline-flex items-center gap-1 whitespace-nowrap">
+                                  <span className="font-semibold text-text tabular-nums">
+                                    {detectedFieldsSummary.detected}/{detectedFieldsSummary.total}
+                                  </span>
+                                  <span>(</span>
+                                  <span className="inline-flex items-center gap-1">
+                                    <ConfidenceDot tone="low" tooltip="Low" />
+                                    <span className="tabular-nums">{detectedFieldsSummary.low}</span>
+                                  </span>
+                                  <span className="inline-flex items-center gap-1">
+                                    <ConfidenceDot tone="med" tooltip="Medium" />
+                                    <span className="tabular-nums">{detectedFieldsSummary.medium}</span>
+                                  </span>
+                                  <span className="inline-flex items-center gap-1">
+                                    <ConfidenceDot tone="high" tooltip="High" />
+                                    <span className="tabular-nums">{detectedFieldsSummary.high}</span>
+                                  </span>
+                                  <span>)</span>
+                                </span>
+                              </div>
                             </div>
 
                             <div className="rounded-control bg-surface px-3 py-2">
@@ -2911,9 +3448,9 @@ export function App() {
                                     <ToggleGroupItem
                                       value="low"
                                       aria-label="Baja"
-                                      className={`h-7 w-7 rounded-full p-0 ${
+                                      className={`h-7 w-7 rounded-full border-0 bg-transparent p-0 data-[state=on]:border-0 ${
                                         selectedConfidenceBuckets.includes("low")
-                                          ? "border-2 border-accent bg-accentSoft/35 ring-2 ring-accent/35"
+                                          ? "bg-accentSoft/35"
                                           : ""
                                       }`}
                                     >
@@ -2932,9 +3469,9 @@ export function App() {
                                     <ToggleGroupItem
                                       value="medium"
                                       aria-label="Media"
-                                      className={`h-7 w-7 rounded-full p-0 ${
+                                      className={`h-7 w-7 rounded-full border-0 bg-transparent p-0 data-[state=on]:border-0 ${
                                         selectedConfidenceBuckets.includes("medium")
-                                          ? "border-2 border-accent bg-accentSoft/35 ring-2 ring-accent/35"
+                                          ? "bg-accentSoft/35"
                                           : ""
                                       }`}
                                     >
@@ -2953,9 +3490,9 @@ export function App() {
                                     <ToggleGroupItem
                                       value="high"
                                       aria-label="Alta"
-                                      className={`h-7 w-7 rounded-full p-0 ${
+                                      className={`h-7 w-7 rounded-full border-0 bg-transparent p-0 data-[state=on]:border-0 ${
                                         selectedConfidenceBuckets.includes("high")
-                                          ? "border-2 border-accent bg-accentSoft/35 ring-2 ring-accent/35"
+                                          ? "bg-accentSoft/35"
                                           : ""
                                       }`}
                                     >
@@ -2972,16 +3509,20 @@ export function App() {
                                   </Tooltip>
                                 </ToggleGroup>
 
+                                <span aria-hidden="true" className="mx-1 h-6 w-px bg-black/20" />
+
                                 <ToggleGroup
                                   type="multiple"
                                   value={[
                                     ...(showOnlyCritical ? ["critical"] : []),
-                                    ...(showOnlyWithValue ? ["withValue"] : []),
+                                    ...(showOnlyWithValue ? ["nonEmpty"] : []),
+                                    ...(showOnlyEmpty ? ["empty"] : []),
                                   ]}
                                   disabled={reviewPanelState !== "ready"}
                                   onValueChange={(values) => {
                                     setShowOnlyCritical(values.includes("critical"));
-                                    setShowOnlyWithValue(values.includes("withValue"));
+                                    setShowOnlyWithValue(values.includes("nonEmpty"));
+                                    setShowOnlyEmpty(values.includes("empty"));
                                   }}
                                   aria-label="Filtros adicionales"
                                 >
@@ -2989,21 +3530,64 @@ export function App() {
                                     <ToggleGroupItem
                                       value="critical"
                                       aria-label="Mostrar solo campos críticos"
-                                      className={showOnlyCritical ? "border-accent bg-accent text-accentForeground ring-2 ring-accent/30" : ""}
+                                      className={`h-7 w-7 rounded-full border-0 bg-transparent p-0 data-[state=on]:border-0 ${
+                                        showOnlyCritical
+                                          ? "bg-accentSoft/35"
+                                          : ""
+                                      }`}
                                     >
-                                      Críticos
+                                      <span className="relative inline-flex h-3.5 w-3.5 items-center justify-center">
+                                        <CriticalIcon compact />
+                                        {showOnlyCritical && (
+                                          <Check size={10} className="absolute text-white" aria-hidden="true" />
+                                        )}
+                                      </span>
                                     </ToggleGroupItem>
                                   </Tooltip>
-                                  <Tooltip content="No vacíos: oculta campos vacíos o sin dato.">
+                                  <Tooltip content="No vacíos: muestra solo campos con valor.">
                                     <ToggleGroupItem
-                                      value="withValue"
-                                      aria-label="Mostrar solo campos con valor"
-                                      className={showOnlyWithValue ? "border-accent bg-accent text-accentForeground ring-2 ring-accent/30" : ""}
+                                      value="nonEmpty"
+                                      aria-label="Mostrar solo campos no vacíos"
+                                      className={`h-7 w-7 rounded-full border-0 bg-transparent p-0 data-[state=on]:border-0 ${
+                                        showOnlyWithValue
+                                          ? "bg-accentSoft/35"
+                                          : ""
+                                      }`}
                                     >
-                                      No vacíos
+                                      <span className="relative inline-flex h-3.5 w-3.5 items-center justify-center">
+                                        <span
+                                          aria-hidden="true"
+                                          className="h-3 w-3 rounded-full bg-black ring-1 ring-black/20"
+                                        />
+                                        {showOnlyWithValue && (
+                                          <Check size={10} className="absolute text-white" aria-hidden="true" />
+                                        )}
+                                      </span>
+                                    </ToggleGroupItem>
+                                  </Tooltip>
+                                  <Tooltip content="Vacíos: muestra solo campos sin dato.">
+                                    <ToggleGroupItem
+                                      value="empty"
+                                      aria-label="Mostrar solo campos vacíos"
+                                      className={`h-7 w-7 rounded-full border-0 bg-transparent p-0 data-[state=on]:border-0 ${
+                                        showOnlyEmpty
+                                          ? "bg-accentSoft/35"
+                                          : ""
+                                      }`}
+                                    >
+                                      <span className="relative inline-flex h-3.5 w-3.5 items-center justify-center">
+                                        <span
+                                          aria-hidden="true"
+                                          className="h-3 w-3 rounded-full border border-black/40 bg-white"
+                                        />
+                                        {showOnlyEmpty && (
+                                          <Check size={10} className="absolute text-text" aria-hidden="true" />
+                                        )}
+                                      </span>
                                     </ToggleGroupItem>
                                   </Tooltip>
                                 </ToggleGroup>
+
                               </div>
                             </div>
 

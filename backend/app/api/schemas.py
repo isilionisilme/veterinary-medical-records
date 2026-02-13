@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -135,3 +137,52 @@ class DocumentReviewResponse(BaseModel):
     raw_text_artifact: RawTextArtifactAvailabilityResponse = Field(
         ..., description="Raw text availability for the review run."
     )
+
+
+class ExtractionFieldSnapshotRequest(BaseModel):
+    status: Literal["missing", "rejected", "accepted"] = Field(
+        ..., description="Field extraction status."
+    )
+    confidence: Literal["low", "mid", "high"] | None = Field(
+        None, description="Confidence bucket when applicable."
+    )
+    valueNormalized: str | None = Field(
+        None, description="Final normalized value used by the UI when accepted."
+    )
+    valueRaw: str | None = Field(
+        None, description="Optional raw extracted value before normalization."
+    )
+    reason: str | None = Field(
+        None, description="Validator rejection reason when status is rejected."
+    )
+
+
+class ExtractionCountsSnapshotRequest(BaseModel):
+    totalFields: int
+    accepted: int
+    rejected: int
+    missing: int
+    low: int
+    mid: int
+    high: int
+
+
+class ExtractionRunSnapshotRequest(BaseModel):
+    runId: str
+    documentId: str
+    createdAt: str
+    schemaVersion: str
+    fields: dict[str, ExtractionFieldSnapshotRequest]
+    counts: ExtractionCountsSnapshotRequest
+
+
+class ExtractionRunPersistResponse(BaseModel):
+    document_id: str
+    run_id: str
+    stored_runs: int
+    changed_fields: int
+
+
+class ExtractionRunsListResponse(BaseModel):
+    document_id: str
+    runs: list[dict[str, object]]

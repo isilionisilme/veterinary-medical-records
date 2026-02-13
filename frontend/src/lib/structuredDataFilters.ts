@@ -19,6 +19,7 @@ export type StructuredDataFilters = {
   selectedConfidence: ConfidenceBucket[];
   onlyCritical: boolean;
   onlyWithValue: boolean;
+  onlyEmpty: boolean;
 };
 
 export function getConfidenceBucket(confidence: number): ConfidenceBucket {
@@ -69,7 +70,14 @@ export function matchesStructuredDataFilters(
   if (filters.onlyCritical && !field.isCritical) {
     return false;
   }
-  if (filters.onlyWithValue && !hasRenderableValue(field)) {
+  const hasValue = hasRenderableValue(field);
+  const restrictToNonEmpty = filters.onlyWithValue && !filters.onlyEmpty;
+  const restrictToEmpty = filters.onlyEmpty && !filters.onlyWithValue;
+
+  if (restrictToNonEmpty && !hasValue) {
+    return false;
+  }
+  if (restrictToEmpty && hasValue) {
     return false;
   }
   if (!matchesConfidence(field, filters.selectedConfidence)) {

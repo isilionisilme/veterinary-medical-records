@@ -12,6 +12,7 @@ const baseFilters: StructuredDataFilters = {
   selectedConfidence: [],
   onlyCritical: false,
   onlyWithValue: false,
+  onlyEmpty: false,
 };
 
 function buildField(partial: Partial<StructuredFilterField>): StructuredFilterField {
@@ -124,5 +125,57 @@ describe("structuredDataFilters", () => {
         }
       )
     ).toBe(false);
+  });
+
+  it("supports empty vs non-empty restrictions and treats both-on as unrestricted", () => {
+    const nonEmptyField = buildField({
+      repeatable: false,
+      items: [{ displayValue: "Luna", confidence: 0.8, isMissing: false }],
+    });
+    const emptyField = buildField({
+      repeatable: false,
+      items: [{ displayValue: "—", confidence: 0, isMissing: true }],
+    });
+
+    expect(
+      matchesStructuredDataFilters(nonEmptyField, {
+        ...baseFilters,
+        onlyWithValue: true,
+      })
+    ).toBe(true);
+    expect(
+      matchesStructuredDataFilters(emptyField, {
+        ...baseFilters,
+        onlyWithValue: true,
+      })
+    ).toBe(false);
+
+    expect(
+      matchesStructuredDataFilters(nonEmptyField, {
+        ...baseFilters,
+        onlyEmpty: true,
+      })
+    ).toBe(false);
+    expect(
+      matchesStructuredDataFilters(emptyField, {
+        ...baseFilters,
+        onlyEmpty: true,
+      })
+    ).toBe(true);
+
+    expect(
+      matchesStructuredDataFilters(nonEmptyField, {
+        ...baseFilters,
+        onlyWithValue: true,
+        onlyEmpty: true,
+      })
+    ).toBe(true);
+    expect(
+      matchesStructuredDataFilters(emptyField, {
+        ...baseFilters,
+        onlyWithValue: true,
+        onlyEmpty: true,
+      })
+    ).toBe(true);
   });
 });

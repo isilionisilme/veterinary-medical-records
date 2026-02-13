@@ -12,3 +12,12 @@ def processing_enabled() -> bool:
     if raw is None:
         return True
     return raw.strip().lower() not in {"1", "true", "yes", "on"}
+
+
+def extraction_observability_enabled() -> bool:
+    """Return whether extraction observability debug endpoints are enabled."""
+
+    raw = os.environ.get("VET_RECORDS_EXTRACTION_OBS")
+    if raw is None:
+        return False
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
