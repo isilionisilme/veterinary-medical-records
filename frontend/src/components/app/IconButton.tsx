@@ -38,7 +38,11 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
         aria-label={label}
         aria-pressed={pressed}
         disabled={disabled}
-        className={cn(pressed && "bg-black/[0.10] text-text", className)}
+        className={cn(
+          "border border-border bg-surface text-text hover:bg-surfaceMuted",
+          pressed && "border-borderSubtle bg-surfaceMuted text-text",
+          className
+        )}
         {...props}
       >
         {children}

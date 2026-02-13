@@ -31,14 +31,17 @@ export function UploadDropzone({
   ariaLabel,
 }: UploadDropzoneProps) {
   const resolvedAriaLabel = ariaLabel ?? (compact ? "Cargar documento" : `${title} ${subtitle}`.trim());
+  const isOverlayActive = showDropOverlay && isDragOver;
 
   return (
     <div
-      className={`relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed text-center transition ${
+      className={`relative flex cursor-pointer flex-col items-center justify-center rounded-card text-center transition ${
         isDragOver
-          ? "border-accent bg-accentSoft/35 ring-2 ring-accent/40"
-          : "border-black/35 bg-white/85 hover:border-black/50 hover:bg-white"
-      } ${compact ? "h-12 w-12 rounded-xl px-1.5 py-1.5" : "px-4 py-5"} ${className}`}
+          ? isOverlayActive
+            ? "border-2 border-dashed border-transparent bg-surface"
+            : "border-2 border-dashed border-statusSuccess bg-statusSuccess/10"
+          : "border-2 border-dashed border-borderSubtle bg-surface hover:border-textSecondary/40"
+      } ${compact ? "h-12 w-12 rounded-control px-1.5 py-1.5" : "px-4 py-5"} ${className}`}
       role="button"
       aria-label={resolvedAriaLabel}
       tabIndex={0}
@@ -55,11 +58,12 @@ export function UploadDropzone({
       onDrop={onDrop}
     >
       {showDropOverlay && isDragOver && (
-        <div className="pointer-events-none absolute inset-2 z-10 flex items-center justify-center rounded-lg border-2 border-dashed border-accent bg-white/75 ring-2 ring-accent/40">
+        <div className="pointer-events-none absolute inset-2 z-10 flex flex-col items-center justify-center gap-2 rounded-control border-2 border-dashed border-statusSuccess bg-surface/75 backdrop-blur-[1px]">
+          <Upload size={18} className="text-statusSuccess" aria-hidden="true" />
           <p className="text-sm font-semibold text-ink">Suelta el PDF para subirlo</p>
         </div>
       )}
-      <Upload size={compact ? 16 : 18} className="text-ink" />
+      <Upload size={compact ? 16 : 18} className="pointer-events-none text-ink" aria-hidden="true" />
       {!compact && (
         <>
           <p className="mt-2 text-sm font-semibold text-ink">{title}</p>

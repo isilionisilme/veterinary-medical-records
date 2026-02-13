@@ -56,13 +56,13 @@ describe("structuredDataFilters", () => {
   });
 
   it("uses confidence buckets with the expected boundaries", () => {
-    expect(getConfidenceBucket(0.49)).toBe("low");
-    expect(getConfidenceBucket(0.5)).toBe("medium");
+    expect(getConfidenceBucket(0.24)).toBe("low");
+    expect(getConfidenceBucket(0.25)).toBe("medium");
     expect(getConfidenceBucket(0.74)).toBe("medium");
     expect(getConfidenceBucket(0.75)).toBe("high");
 
     expect(
-      matchesStructuredDataFilters(buildField({ items: [{ displayValue: "x", confidence: 0.49, isMissing: false }] }), {
+      matchesStructuredDataFilters(buildField({ items: [{ displayValue: "x", confidence: 0.24, isMissing: false }] }), {
         ...baseFilters,
         selectedConfidence: ["low"],
       })

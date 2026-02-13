@@ -1,9 +1,11 @@
 import { type ChangeEvent, type DragEvent, type MouseEvent, type RefObject } from "react";
-import { FileText, Pin, PinOff, RefreshCw } from "lucide-react";
+import { CircleHelp, FileText, Pin, PinOff, RefreshCw } from "lucide-react";
 
+import { DocumentStatusChip } from "./app/DocumentStatusCluster";
 import { IconButton } from "./app/IconButton";
 import { UploadDropzone } from "./UploadDropzone";
 import { Tooltip } from "./ui/tooltip";
+import { type DocumentStatusClusterModel } from "../lib/documentStatus";
 
 type DocumentsSidebarItem = {
   document_id: string;
@@ -20,8 +22,6 @@ type DocumentsSidebarProps = {
   isDocsSidebarPinned: boolean;
   isRefreshingDocuments: boolean;
   isUploadPending: boolean;
-  isHoverDevice: boolean;
-  showUploadInfo: boolean;
   isDragOverSidebarUpload: boolean;
   isDocumentListLoading: boolean;
   isDocumentListError: boolean;
@@ -30,18 +30,14 @@ type DocumentsSidebarProps = {
   documents: DocumentsSidebarItem[];
   activeId: string | null;
   uploadPanelRef: RefObject<HTMLDivElement>;
-  uploadInfoTriggerRef: RefObject<HTMLButtonElement>;
   fileInputRef: RefObject<HTMLInputElement>;
   formatTimestamp: (value: string | null | undefined) => string;
   isProcessingTooLong: (createdAt: string, status: string) => boolean;
-  mapDocumentStatus: (item: DocumentsSidebarItem) => { label: string; tone: "ok" | "warn" | "error" };
+  mapDocumentStatus: (item: DocumentsSidebarItem) => DocumentStatusClusterModel;
   onSidebarMouseEnter: (event: MouseEvent<HTMLElement>) => void;
   onSidebarMouseLeave: () => void;
   onTogglePin: () => void;
   onRefresh: () => void;
-  onOpenUploadInfo: () => void;
-  onCloseUploadInfo: (withDelay: boolean) => void;
-  onToggleUploadInfo: () => void;
   onOpenUploadArea: (event?: { preventDefault?: () => void; stopPropagation?: () => void }) => void;
   onSidebarUploadDragEnter: (event: DragEvent<HTMLDivElement>) => void;
   onSidebarUploadDragOver: (event: DragEvent<HTMLDivElement>) => void;
@@ -58,8 +54,6 @@ export function DocumentsSidebar({
   isDocsSidebarPinned,
   isRefreshingDocuments,
   isUploadPending,
-  isHoverDevice,
-  showUploadInfo,
   isDragOverSidebarUpload,
   isDocumentListLoading,
   isDocumentListError,
@@ -68,7 +62,6 @@ export function DocumentsSidebar({
   documents,
   activeId,
   uploadPanelRef,
-  uploadInfoTriggerRef,
   fileInputRef,
   formatTimestamp,
   isProcessingTooLong,
@@ -77,9 +70,6 @@ export function DocumentsSidebar({
   onSidebarMouseLeave,
   onTogglePin,
   onRefresh,
-  onOpenUploadInfo,
-  onCloseUploadInfo,
-  onToggleUploadInfo,
   onOpenUploadArea,
   onSidebarUploadDragEnter,
   onSidebarUploadDragOver,
@@ -100,82 +90,73 @@ export function DocumentsSidebar({
       onMouseEnter={onSidebarMouseEnter}
       onMouseLeave={onSidebarMouseLeave}
     >
-      <div className="overflow-hidden rounded-3xl border border-black/10 bg-white/80 shadow-xl">
-        <section className={`flex flex-col p-6 ${panelHeightClass}`}>
-          <div className="flex items-center justify-between gap-3">
-            <div
-              className={`min-w-0 transition-opacity duration-150 ${
-                isDocsSidebarExpanded ? "opacity-100" : "pointer-events-none w-0 opacity-0"
-              }`}
-            >
-              <h2 className="font-display text-xl font-semibold">Documentos</h2>
-            </div>
-            {isDocsSidebarExpanded && (
-              <div className="flex items-center gap-2">
+      <div className="overflow-hidden rounded-card bg-surfaceMuted">
+        <section
+          data-testid="docs-column-stack"
+          className={`flex flex-col gap-[var(--canvas-gap)] p-[var(--canvas-gap)] ${panelHeightClass}`}
+        >
+          {isDocsSidebarExpanded ? (
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex items-start gap-2">
+                <span
+                  aria-hidden="true"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-control bg-accent text-sm font-semibold text-accentForeground"
+                >
+                  B
+                </span>
+                <div>
+                  <p className="font-display text-lg font-semibold leading-none text-accent">Barkibu</p>
+                  <p className="mt-1 text-xs text-textMuted">Revisión de reembolsos</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2" data-testid="sidebar-actions-cluster">
                 <IconButton
                   label={isDocsSidebarPinned ? "Desfijar barra" : "Fijar barra"}
                   tooltip={isDocsSidebarPinned ? "Desfijar barra" : "Fijar barra"}
+                  pressed={isDocsSidebarPinned}
                   onClick={onTogglePin}
-                  className={`rounded-full border p-2 shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
-                    isDocsSidebarPinned
-                      ? "border-ink/30 bg-black/[0.06] text-ink"
-                      : "border-black/15 bg-white text-ink hover:bg-accentSoft"
-                  }`}
                 >
-                  {isDocsSidebarPinned ? <PinOff size={16} /> : <Pin size={16} />}
+                  {isDocsSidebarPinned ? <PinOff size={16} aria-hidden="true" /> : <Pin size={16} aria-hidden="true" />}
                 </IconButton>
                 <IconButton
                   label="Actualizar"
                   tooltip="Actualizar"
                   onClick={onRefresh}
                   disabled={isRefreshingDocuments}
-                  className="rounded-full border border-black/15 bg-white p-2 text-ink shadow-sm hover:bg-accentSoft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                 >
-                  <RefreshCw size={16} className={isRefreshingDocuments ? "animate-spin" : ""} />
+                  <RefreshCw size={16} aria-hidden="true" className={isRefreshingDocuments ? "animate-spin" : ""} />
                 </IconButton>
               </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="flex justify-center" data-testid="sidebar-collapsed-brand-mark">
+              <span
+                aria-hidden="true"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-control bg-accent text-xs font-semibold text-accentForeground"
+              >
+                B
+              </span>
+            </div>
+          )}
 
-          <div className="mt-4 flex min-h-[168px] items-center">
+          <div className="flex min-h-[168px] items-center">
             {isDocsSidebarExpanded ? (
               <div
                 ref={uploadPanelRef}
-                className="w-full rounded-2xl border border-black/10 bg-white/70 p-4 transition-opacity duration-150 ease-in-out"
+                className="w-full rounded-card bg-surface p-[var(--canvas-gap)] transition-opacity duration-150 ease-in-out"
               >
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-semibold text-ink">Cargar documento</h3>
+                <div className="flex items-center gap-[var(--canvas-gap)]">
+                  <h3 className="text-base font-semibold text-ink">Cargar documento</h3>
                   <IconButton
-                    ref={uploadInfoTriggerRef}
                     label="Informacion de formatos y tamano"
-                    tooltip="Informacion de formatos y tamano"
-                    aria-expanded={showUploadInfo}
-                    onFocus={onOpenUploadInfo}
-                    onBlur={() => onCloseUploadInfo(false)}
-                    onMouseEnter={() => {
-                      if (isHoverDevice) {
-                        onOpenUploadInfo();
-                      }
-                    }}
-                    onMouseLeave={() => {
-                      if (isHoverDevice) {
-                        onCloseUploadInfo(true);
-                      }
-                    }}
-                    onClick={(event) => {
-                      if (isHoverDevice) {
-                        return;
-                      }
-                      event.stopPropagation();
-                      onToggleUploadInfo();
-                    }}
-                    className="text-sm text-muted"
+                    tooltip="Formatos permitidos: PDF. Tamaño máximo: 20 MB."
+                    className="h-7 w-7 border-0"
                   >
-                    ⓘ
+                    <CircleHelp size={14} />
                   </IconButton>
                 </div>
                 <UploadDropzone
-                  className="mt-3"
+                  className=""
                   isDragOver={isDragOverSidebarUpload}
                   onActivate={onOpenUploadArea}
                   onDragEnter={onSidebarUploadDragEnter}
@@ -183,7 +164,7 @@ export function DocumentsSidebar({
                   onDragLeave={onSidebarUploadDragLeave}
                   onDrop={onSidebarUploadDrop}
                 />
-                <div className="mt-2 flex items-center gap-2">
+                <div className="flex items-center gap-[var(--canvas-gap)]">
                   <input
                     id="upload-document-input"
                     ref={fileInputRef}
@@ -203,7 +184,7 @@ export function DocumentsSidebar({
                 </div>
               </div>
             ) : (
-              <div data-testid="sidebar-collapsed-dropzone" className="flex w-full items-center justify-center py-2">
+              <div data-testid="sidebar-collapsed-dropzone" className="flex w-full items-center justify-center py-1">
                 <UploadDropzone
                   compact
                   ariaLabel="Cargar documento"
@@ -222,18 +203,18 @@ export function DocumentsSidebar({
 
           <div
             data-testid="left-panel-scroll"
-            className={`relative mt-4 min-h-0 flex-1 overflow-y-auto overflow-x-hidden ${
+            className={`relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden ${
               isDocsSidebarExpanded
-                ? "pr-1"
+                ? "pr-0"
                 : "pr-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:w-0 [&::-webkit-scrollbar]:h-0"
             }`}
           >
             {isDocumentListLoading && (
-              <div className="space-y-2 rounded-2xl border border-black/10 bg-white/70 p-4">
+              <div className="flex flex-col gap-[var(--canvas-gap)] rounded-card bg-surface p-[var(--canvas-gap)]">
                 {Array.from({ length: 4 }).map((_, index) => (
                   <div
                     key={`skeleton-initial-${index}`}
-                    className="animate-pulse rounded-xl border border-black/10 bg-white/80 p-3"
+                    className="animate-pulse rounded-card bg-surface p-[var(--canvas-gap)]"
                   >
                     <div className="h-3 w-2/3 rounded bg-black/10" />
                     <div className="mt-2 h-2.5 w-1/2 rounded bg-black/10" />
@@ -243,18 +224,18 @@ export function DocumentsSidebar({
             )}
 
             {isDocumentListError && documentListErrorMessage && (
-              <div className="rounded-2xl border border-black/10 bg-white/80 p-4 text-sm text-ink">
+              <div className="rounded-card bg-surface p-[var(--canvas-gap)] text-sm text-ink">
                 <p>{documentListErrorMessage}</p>
               </div>
             )}
 
             {!isDocumentListLoading && !isDocumentListError &&
               (isListRefreshing ? (
-                <div className="space-y-2 rounded-2xl border border-black/10 bg-white/70 p-4">
+                <div className="flex flex-col gap-[var(--canvas-gap)] rounded-card bg-surface p-[var(--canvas-gap)]">
                   {Array.from({ length: 6 }).map((_, index) => (
                     <div
                       key={`skeleton-refresh-${index}`}
-                      className="animate-pulse rounded-xl border border-black/10 bg-white/80 p-3"
+                      className="animate-pulse rounded-card bg-surface p-[var(--canvas-gap)]"
                     >
                       <div className="h-3 w-2/3 rounded bg-black/10" />
                       <div className="mt-2 h-2.5 w-1/2 rounded bg-black/10" />
@@ -262,7 +243,7 @@ export function DocumentsSidebar({
                   ))}
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className={`flex flex-col gap-[var(--canvas-gap)] ${isDocsSidebarExpanded ? "pr-3" : ""}`}>
                   {documents.length === 0 ? (
                     isDocsSidebarExpanded ? (
                       <p className="px-1 py-2 text-sm text-muted">Aun no hay documentos cargados.</p>
@@ -271,12 +252,6 @@ export function DocumentsSidebar({
                     documents.map((item) => {
                       const isActive = activeId === item.document_id;
                       const status = mapDocumentStatus(item);
-                      const collapsedStatusToneClass =
-                        status.tone === "ok"
-                          ? "bg-emerald-500"
-                          : status.tone === "error"
-                          ? "bg-red-500"
-                          : "bg-amber-500";
                       const button = (
                         <button
                           key={item.document_id}
@@ -287,10 +262,10 @@ export function DocumentsSidebar({
                           className={`w-full overflow-visible text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
                             isDocsSidebarExpanded
                               ? isActive
-                                ? "rounded-xl border border-ink/30 bg-black/[0.04] text-ink shadow-sm ring-1 ring-ink/25"
-                                : "rounded-xl border border-black/10 bg-white/80 text-ink hover:bg-white"
-                              : "rounded-lg border border-transparent bg-transparent text-ink"
-                          } ${isDocsSidebarExpanded ? "px-3 py-2" : "px-1 py-1.5"}`}
+                                ? "rounded-card bg-surface text-ink"
+                                : "rounded-card bg-surface text-ink hover:bg-surfaceMuted"
+                                : "rounded-lg bg-transparent text-ink"
+                          } ${isDocsSidebarExpanded ? "px-3 py-2" : "px-0 py-1"}`}
                         >
                           <div
                             className={`flex items-center ${
@@ -303,43 +278,31 @@ export function DocumentsSidebar({
                               className={
                                 isDocsSidebarExpanded
                                   ? "min-w-0"
-                                  : `relative flex h-8 w-8 items-center justify-center rounded-full transition ${
+                                  : `relative flex h-10 w-10 items-center justify-center rounded-full transition ${
                                       isActive
-                                        ? "bg-black/[0.10]"
-                                        : "bg-transparent hover:bg-black/[0.06]"
+                                        ? "bg-surface text-ink"
+                                        : "bg-transparent hover:bg-surface"
                                     }`
                               }
                             >
                               {isDocsSidebarExpanded ? (
                                 <>
-                                  <p className="truncate text-sm font-medium">{item.original_filename}</p>
-                                  <p className="mt-0.5 text-xs text-muted">Subido: {formatTimestamp(item.created_at)}</p>
+                                  <p className="truncate text-sm font-semibold text-textBody">{item.original_filename}</p>
+                                  <p className="mt-0.5 text-xs text-textMuted">Subido: {formatTimestamp(item.created_at)}</p>
                                 </>
                               ) : (
                                 <FileText size={15} aria-hidden="true" />
                               )}
                               {!isDocsSidebarExpanded && (
-                                <span
-                                  aria-hidden="true"
-                                  className={`absolute right-0 top-0 inline-block h-2.5 w-2.5 rounded-full ring-2 ring-white ${collapsedStatusToneClass}`}
+                                <DocumentStatusChip
+                                  status={status}
+                                  compact
+                                  className="absolute right-0.5 top-0.5"
                                 />
                               )}
                             </div>
                             {isDocsSidebarExpanded ? (
-                              <span
-                                className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${
-                                  status.tone === "ok"
-                                    ? "bg-emerald-100 text-emerald-700"
-                                    : status.tone === "error"
-                                    ? "bg-red-100 text-red-700"
-                                    : "bg-amber-100 text-amber-700"
-                                }`}
-                              >
-                                {status.tone === "warn" && (
-                                  <span className="mr-1 inline-block h-2 w-2 animate-spin rounded-full border border-current border-r-transparent align-middle" />
-                                )}
-                                {status.label}
-                              </span>
+                              <DocumentStatusChip status={status} />
                             ) : null}
                           </div>
                           {isDocsSidebarExpanded && isProcessingTooLong(item.created_at, item.status) && (

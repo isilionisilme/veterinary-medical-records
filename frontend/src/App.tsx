@@ -10,8 +10,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { createPortal } from "react-dom";
-import { AlignLeft, Download, FileText, Info, RefreshCw, Search, X } from "lucide-react";
+import { AlignLeft, Check, Download, FileText, Info, Search, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { ConfidenceDot } from "./components/app/ConfidenceDot";
@@ -46,6 +45,7 @@ import {
   type ConfidenceBucket,
   matchesStructuredDataFilters,
 } from "./lib/structuredDataFilters";
+import { mapDocumentStatus } from "./lib/documentStatus";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 const MAX_UPLOAD_SIZE_BYTES = 20 * 1024 * 1024;
@@ -677,20 +677,6 @@ function isDocumentProcessing(status: string): boolean {
   return status === "PROCESSING" || status === "UPLOADED";
 }
 
-function mapDocumentStatus(item: {
-  status: string;
-  failure_type: string | null | undefined;
-}): { label: string; tone: "ok" | "warn" | "error" } {
-  // Source of truth: derived processing status from GET /documents -> `item.status`.
-  if (item.status === "FAILED" || item.status === "TIMED_OUT" || item.failure_type) {
-    return { label: "Error", tone: "error" };
-  }
-  if (item.status === "COMPLETED") {
-    return { label: "Listo para revision", tone: "ok" };
-  }
-  return { label: "Procesando", tone: "warn" };
-}
-
 function isProcessingTooLong(createdAt: string, status: string): boolean {
   if (!isDocumentProcessing(status)) {
     return false;
@@ -818,7 +804,6 @@ export function App() {
   const [hasShownListErrorToast, setHasShownListErrorToast] = useState(false);
   const [isDragOverViewer, setIsDragOverViewer] = useState(false);
   const [isDragOverSidebarUpload, setIsDragOverSidebarUpload] = useState(false);
-  const [showUploadInfo, setShowUploadInfo] = useState(false);
   const [showRefreshFeedback, setShowRefreshFeedback] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
   const [isCopyingRawText, setIsCopyingRawText] = useState(false);
@@ -859,12 +844,7 @@ export function App() {
     }
     return 2;
   });
-  const [isHoverDevice, setIsHoverDevice] = useState(true);
-  const [uploadInfoPosition, setUploadInfoPosition] = useState({ top: 0, left: 0 });
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const uploadInfoTriggerRef = useRef<HTMLButtonElement | null>(null);
-  const uploadInfoContentRef = useRef<HTMLDivElement | null>(null);
-  const uploadInfoCloseTimerRef = useRef<number | null>(null);
   const uploadPanelRef = useRef<HTMLDivElement | null>(null);
   const structuredSearchInputRef = useRef<HTMLInputElement | null>(null);
   const reviewSplitGridRef = useRef<HTMLDivElement | null>(null);
@@ -876,6 +856,7 @@ export function App() {
   const reviewSplitRatioRef = useRef(reviewSplitRatio);
   const viewerDragDepthRef = useRef(0);
   const sidebarUploadDragDepthRef = useRef(0);
+  const suppressDocsSidebarHoverUntilRef = useRef(0);
   const pendingAutoOpenDocumentIdRef = useRef<string | null>(null);
   const autoOpenRetryCountRef = useRef<Record<string, number>>({});
   const autoOpenRetryTimerRef = useRef<number | null>(null);
@@ -973,25 +954,6 @@ export function App() {
 
   useEffect(() => {
     if (typeof window.matchMedia !== "function") {
-      setIsHoverDevice(true);
-      return;
-    }
-
-    const mediaQuery = window.matchMedia("(hover: hover)");
-    const syncInputMode = () => setIsHoverDevice(mediaQuery.matches);
-    syncInputMode();
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", syncInputMode);
-      return () => mediaQuery.removeEventListener("change", syncInputMode);
-    }
-
-    mediaQuery.addListener(syncInputMode);
-    return () => mediaQuery.removeListener(syncInputMode);
-  }, []);
-
-  useEffect(() => {
-    if (typeof window.matchMedia !== "function") {
       setIsDesktopForPin(true);
       return;
     }
@@ -1027,13 +989,6 @@ export function App() {
     mediaQuery.addListener(syncDocsSidebarCapability);
     return () => mediaQuery.removeListener(syncDocsSidebarCapability);
   }, [docsHoverSidebarMediaQuery]);
-
-  useEffect(() => {
-    if (isDocsSidebarExpanded) {
-      return;
-    }
-    setShowUploadInfo(false);
-  }, [isDocsSidebarExpanded]);
 
   useEffect(() => {
     if (!isDraggingReviewSplit) {
@@ -1102,9 +1057,6 @@ export function App() {
 
   useEffect(() => {
     return () => {
-      if (uploadInfoCloseTimerRef.current) {
-        window.clearTimeout(uploadInfoCloseTimerRef.current);
-      }
       if (autoOpenRetryTimerRef.current) {
         window.clearTimeout(autoOpenRetryTimerRef.current);
       }
@@ -1122,67 +1074,6 @@ export function App() {
       }
     };
   }, [fileUrl]);
-
-  useEffect(() => {
-    if (!showUploadInfo) {
-      return;
-    }
-
-    const updatePosition = () => {
-      if (!uploadInfoTriggerRef.current || !uploadInfoContentRef.current) {
-        return;
-      }
-
-      const triggerRect = uploadInfoTriggerRef.current.getBoundingClientRect();
-      const tooltipRect = uploadInfoContentRef.current.getBoundingClientRect();
-      const offset = 10;
-      const viewportPadding = 8;
-
-      let top = triggerRect.top - tooltipRect.height - offset;
-      if (top < viewportPadding) {
-        top = triggerRect.bottom + offset;
-      }
-
-      let left = triggerRect.left;
-      const maxLeft = window.innerWidth - tooltipRect.width - viewportPadding;
-      if (left > maxLeft) {
-        left = maxLeft;
-      }
-      if (left < viewportPadding) {
-        left = viewportPadding;
-      }
-
-      setUploadInfoPosition({ top, left });
-    };
-
-    updatePosition();
-    window.addEventListener("resize", updatePosition);
-    window.addEventListener("scroll", updatePosition, true);
-    return () => {
-      window.removeEventListener("resize", updatePosition);
-      window.removeEventListener("scroll", updatePosition, true);
-    };
-  }, [showUploadInfo]);
-
-  useEffect(() => {
-    if (!showUploadInfo || isHoverDevice) {
-      return;
-    }
-
-    const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target as Node;
-      if (
-        uploadInfoTriggerRef.current?.contains(target) ||
-        uploadInfoContentRef.current?.contains(target)
-      ) {
-        return;
-      }
-      setShowUploadInfo(false);
-    };
-
-    document.addEventListener("pointerdown", handlePointerDown);
-    return () => document.removeEventListener("pointerdown", handlePointerDown);
-  }, [showUploadInfo, isHoverDevice]);
 
   const loadPdf = useMutation({
     mutationFn: async (docId: string) => fetchOriginalPdf(docId),
@@ -1412,6 +1303,7 @@ export function App() {
     event.stopPropagation();
     sidebarUploadDragDepthRef.current = 0;
     setIsDragOverSidebarUpload(false);
+    suppressDocsSidebarHoverUntilRef.current = Date.now() + 400;
     const file = event.dataTransfer.files?.[0];
     if (!file) {
       return;
@@ -1445,6 +1337,12 @@ export function App() {
 
   const handleDocsSidebarMouseEnter = (event: ReactMouseEvent<HTMLElement>) => {
     isPointerInsideDocsSidebarRef.current = true;
+    if (Date.now() < suppressDocsSidebarHoverUntilRef.current) {
+      return;
+    }
+    if (sidebarUploadDragDepthRef.current > 0 || isDragOverSidebarUpload) {
+      return;
+    }
     if (shouldAutoCollapseDocsSidebar && event.buttons === 0) {
       setIsDocsSidebarHovered(true);
     }
@@ -2393,34 +2291,14 @@ export function App() {
     }
   };
 
-  const openUploadInfo = () => {
-    if (uploadInfoCloseTimerRef.current) {
-      window.clearTimeout(uploadInfoCloseTimerRef.current);
-      uploadInfoCloseTimerRef.current = null;
-    }
-    setShowUploadInfo(true);
-  };
-
-  const closeUploadInfo = (withDelay: boolean) => {
-    if (uploadInfoCloseTimerRef.current) {
-      window.clearTimeout(uploadInfoCloseTimerRef.current);
-      uploadInfoCloseTimerRef.current = null;
-    }
-    if (withDelay) {
-      uploadInfoCloseTimerRef.current = window.setTimeout(() => {
-        setShowUploadInfo(false);
-      }, 150);
-      return;
-    }
-    setShowUploadInfo(false);
-  };
-
   const viewerModeToolbarIcons = (
     <>
       <IconButton
         label="Documento"
         tooltip="Documento"
         pressed={activeViewerTab === "document"}
+        className={activeViewerTab === "document" ? "border-accent bg-accentSoft/35 text-accent ring-2 ring-accent/25" : undefined}
+        aria-current={activeViewerTab === "document" ? "page" : undefined}
         onClick={() => setActiveViewerTab("document")}
       >
         <FileText size={16} aria-hidden="true" />
@@ -2429,6 +2307,8 @@ export function App() {
         label="Texto extraido"
         tooltip="Texto extraído"
         pressed={activeViewerTab === "raw_text"}
+        className={activeViewerTab === "raw_text" ? "border-accent bg-accentSoft/35 text-accent ring-2 ring-accent/25" : undefined}
+        aria-current={activeViewerTab === "raw_text" ? "page" : undefined}
         onClick={() => setActiveViewerTab("raw_text")}
       >
         <AlignLeft size={16} aria-hidden="true" />
@@ -2437,6 +2317,8 @@ export function App() {
         label="Detalles tecnicos"
         tooltip="Detalles técnicos"
         pressed={activeViewerTab === "technical"}
+        className={activeViewerTab === "technical" ? "border-accent bg-accentSoft/35 text-accent ring-2 ring-accent/25" : undefined}
+        aria-current={activeViewerTab === "technical" ? "page" : undefined}
         onClick={() => setActiveViewerTab("technical")}
       >
         <Info size={16} aria-hidden="true" />
@@ -2495,7 +2377,7 @@ export function App() {
             )}
           </div>
           {field.items.length > 0 && (
-            <span className="rounded-full border border-border px-2 py-0.5 text-[10px] font-semibold text-textSecondary">
+            <span className="rounded-full bg-surfaceMuted px-2 py-0.5 text-[10px] font-semibold text-textSecondary">
               {countLabel}
             </span>
           )}
@@ -2510,7 +2392,7 @@ export function App() {
               <div
                 key={item.id}
                 className={`px-1 py-1 ${
-                  isSelected ? "rounded-md border-l-2 border-accent bg-accentSoft/50" : ""
+                  isSelected ? "rounded-md bg-accentSoft/50" : ""
                 }`}
               >
                 <button
@@ -2550,7 +2432,7 @@ export function App() {
       <FieldBlock
         key={field.id}
         className={`px-1 py-1.5 ${
-          isSelected ? "border-l-2 border-accent bg-accentSoft/50" : ""
+          isSelected ? "bg-accentSoft/50" : ""
         }`}
       >
         <button
@@ -2598,14 +2480,14 @@ export function App() {
   const renderRepeatableTileField = (field: ReviewDisplayField) => {
     const countLabel = field.items.length === 1 ? "1 elemento" : `${field.items.length} elementos`;
     return (
-      <article key={field.id} className="rounded-xl border border-black/15 bg-white p-3">
+      <article key={field.id} className="rounded-xl bg-white p-3">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5">
             <p className="text-xs font-semibold text-ink">{field.label}</p>
             {field.isCritical && (
               <span
                 data-testid={`critical-indicator-${field.key}`}
-                className="rounded-full border border-black/15 px-2 py-0.5 text-[10px] font-semibold text-muted"
+                className="rounded-full bg-surfaceMuted px-2 py-0.5 text-[10px] font-semibold text-muted"
               >
                 CRÍTICO
               </span>
@@ -2613,7 +2495,7 @@ export function App() {
           </div>
           <div className="flex items-center gap-2">
             {field.items.length > 0 && (
-              <span className="rounded-full border border-black/10 px-2 py-0.5 text-[10px] font-semibold text-muted">
+              <span className="rounded-full bg-surfaceMuted px-2 py-0.5 text-[10px] font-semibold text-muted">
                 {countLabel}
               </span>
             )}
@@ -2621,7 +2503,7 @@ export function App() {
               <button
                 type="button"
                 disabled
-                className="rounded-full border border-black/10 px-2 py-0.5 text-[10px] font-semibold text-muted/70"
+                className="rounded-full bg-surfaceMuted px-2 py-0.5 text-[10px] font-semibold text-muted/70"
               >
                 + Añadir
               </button>
@@ -2635,8 +2517,8 @@ export function App() {
             return (
               <article
                 key={item.id}
-                className={`rounded-lg border px-2 py-2 ${
-                  isSelected ? "border-accent bg-accentSoft/50" : "border-black/10 bg-white"
+                className={`rounded-lg px-2 py-2 ${
+                  isSelected ? "bg-accentSoft/50" : "bg-white"
                 }`}
               >
                 <button
@@ -2672,8 +2554,8 @@ export function App() {
     return (
       <article
         key={field.id}
-        className={`rounded-xl border p-3 ${
-          isSelected ? "border-accent bg-accentSoft/50" : "border-black/15 bg-white"
+        className={`rounded-xl p-3 ${
+          isSelected ? "bg-accentSoft/50" : "bg-white"
         }`}
       >
         <button
@@ -2692,7 +2574,7 @@ export function App() {
               {field.isCritical && (
                 <span
                   data-testid={`critical-indicator-${field.key}`}
-                  className="rounded-full border border-black/15 px-2 py-0.5 text-[10px] font-semibold text-muted"
+                  className="rounded-full bg-surfaceMuted px-2 py-0.5 text-[10px] font-semibold text-muted"
                 >
                   CRÍTICO
                 </span>
@@ -2726,11 +2608,11 @@ export function App() {
     const isEmptyExtraSection = isExtraSection && section.fields.length === 0;
 
     return (
-      <Section key={section.id} className="border-2 border-border bg-surface">
+      <Section key={section.id} className="bg-surface">
         <SectionHeader title={section.title} />
         <div className="mt-2">
           {isEmptyExtraSection && (
-            <p className="rounded-xl border border-border bg-surface px-3 py-2 text-xs text-textSecondary">
+            <p className="rounded-xl bg-surface px-3 py-2 text-xs text-textSecondary">
               No hay otros campos extraídos.
             </p>
           )}
@@ -2752,11 +2634,11 @@ export function App() {
     const isEmptyExtraSection = isExtraSection && section.fields.length === 0;
 
     return (
-      <section key={section.id} className="rounded-xl border border-black/20 bg-black/[0.01] px-4 py-4">
-        <p className="border-b border-black/15 pb-2 text-base font-semibold text-ink">{section.title}</p>
+      <section key={section.id} className="rounded-xl bg-surface px-4 py-4">
+        <p className="pb-2 text-base font-semibold text-ink">{section.title}</p>
         <div className="mt-3 space-y-3">
           {isEmptyExtraSection && (
-            <p className="rounded-xl border border-black/10 bg-white/90 px-3 py-2 text-xs text-muted">
+            <p className="rounded-xl bg-surface px-3 py-2 text-xs text-muted">
               No hay otros campos extraídos.
             </p>
           )}
@@ -2801,22 +2683,13 @@ export function App() {
   );
 
   return (
-    <div className="min-h-screen bg-[var(--page-bg)] px-4 py-2 md:px-6 lg:px-8 xl:px-10">
-      <header className="sticky top-0 z-40 mx-auto flex w-full max-w-[1600px] flex-col gap-1 py-1">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-[var(--title-accent)]">
-              BARKIBU
-            </p>
-            <h1 className="font-display text-2xl font-semibold leading-tight text-[var(--title-accent)]">
-              Revisión de reembolsos
-            </h1>
-          </div>
-        </div>
-      </header>
-
-      <main className="relative mx-auto mt-2 w-full max-w-[1600px]">
-        <div className="relative z-20 flex gap-6">
+    <div className="min-h-screen bg-page px-4 py-3 md:px-6 lg:px-8 xl:px-10">
+      <div
+        className="mx-auto w-full max-w-[1640px] rounded-frame bg-canvas p-[var(--canvas-gap)]"
+        data-testid="canvas-wrapper"
+      >
+      <main className="relative w-full">
+        <div className="relative z-20 flex gap-[var(--canvas-gap)]" data-testid="main-canvas-layout">
           <DocumentsSidebar
             panelHeightClass={panelHeightClass}
             shouldUseHoverDocsSidebar={shouldUseHoverDocsSidebar}
@@ -2824,8 +2697,6 @@ export function App() {
             isDocsSidebarPinned={isDocsSidebarPinned}
             isRefreshingDocuments={documentList.isFetching || showRefreshFeedback}
             isUploadPending={uploadMutation.isPending}
-            isHoverDevice={isHoverDevice}
-            showUploadInfo={showUploadInfo}
             isDragOverSidebarUpload={isDragOverSidebarUpload}
             isDocumentListLoading={documentList.isLoading}
             isDocumentListError={documentList.isError && !isDocumentListConnectivityError}
@@ -2838,7 +2709,6 @@ export function App() {
             documents={sortedDocuments}
             activeId={activeId}
             uploadPanelRef={uploadPanelRef}
-            uploadInfoTriggerRef={uploadInfoTriggerRef}
             fileInputRef={fileInputRef}
             formatTimestamp={formatTimestamp}
             isProcessingTooLong={isProcessingTooLong}
@@ -2847,9 +2717,6 @@ export function App() {
             onSidebarMouseLeave={handleDocsSidebarMouseLeave}
             onTogglePin={handleToggleDocsSidebarPin}
             onRefresh={handleRefresh}
-            onOpenUploadInfo={openUploadInfo}
-            onCloseUploadInfo={closeUploadInfo}
-            onToggleUploadInfo={() => setShowUploadInfo((current) => !current)}
             onOpenUploadArea={handleOpenUploadArea}
             onSidebarUploadDragEnter={handleSidebarUploadDragEnter}
             onSidebarUploadDragOver={handleSidebarUploadDragOver}
@@ -2858,14 +2725,13 @@ export function App() {
             onSidebarFileInputChange={handleSidebarFileInputChange}
             onSelectDocument={handleSelectDocument}
           />
-
-          <section className={`flex flex-1 flex-col rounded-3xl border border-black/10 bg-white/70 p-6 shadow-xl ${panelHeightClass}`}>
+          <section className={`flex min-w-0 flex-1 flex-col ${panelHeightClass}`}>
             {shouldShowLoadPdfErrorBanner && (
-              <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">
                 {getUserErrorMessage(loadPdf.error, "No se pudo cargar la vista previa del documento.")}
               </div>
             )}
-            <div className="mt-4 flex min-h-0 flex-1 flex-col">
+            <div className="flex min-h-0 flex-1 flex-col">
               <div className="min-h-0 flex-1">
                 {activeViewerTab === "document" && (
                   <div
@@ -2878,7 +2744,7 @@ export function App() {
                   >
                     {!activeId ? (
                       documentList.isError ? (
-                        <div className="flex h-full flex-col rounded-2xl border border-black/10 bg-white/80 p-6">
+                        <div className="flex h-full flex-col rounded-card bg-surface p-6">
                           <div className="flex flex-1 items-center justify-center text-center">
                             <p className="text-sm text-muted">
                               Revisa la lista lateral para reintentar la carga de documentos.
@@ -2888,7 +2754,7 @@ export function App() {
                       ) : (
                         <div
                           data-testid="viewer-empty-state"
-                          className="relative flex h-full flex-col rounded-2xl border border-black/10 bg-white/80 p-6"
+                          className="relative flex h-full flex-col rounded-card bg-surfaceMuted p-6"
                           role="button"
                           tabIndex={0}
                           onClick={handleOpenUploadArea}
@@ -2917,14 +2783,15 @@ export function App() {
                         </div>
                       )
                     ) : (
-                      <div
-                        data-testid="document-layout-grid"
-                        className={`h-full min-h-0 ${
-                          isPinnedSourcePanelVisible
-                            ? "grid grid-cols-[minmax(0,1fr)_minmax(360px,420px)] gap-4"
-                            : ""
-                        }`}
-                      >
+                      <div className="h-full min-h-0">
+                        <div
+                          data-testid="document-layout-grid"
+                          className={`h-full min-h-0 ${
+                            isPinnedSourcePanelVisible
+                              ? "grid grid-cols-[minmax(0,1fr)_minmax(360px,420px)] gap-4"
+                              : ""
+                          }`}
+                        >
                         <div
                           ref={reviewSplitGridRef}
                           data-testid="review-split-grid"
@@ -2933,15 +2800,18 @@ export function App() {
                         >
                           <aside
                             data-testid="center-panel-scroll"
-                            className="flex h-full min-h-0 min-w-[560px] flex-col rounded-2xl border border-black/10 bg-white/80 p-2"
+                            className="flex h-full min-h-0 min-w-[560px] flex-col gap-[var(--canvas-gap)] rounded-card bg-surfaceMuted p-[var(--canvas-gap)]"
                           >
+                            <div>
+                              <h3 className="text-lg font-semibold text-textSecondary">Informe</h3>
+                            </div>
                             {fileUrl ? (
                               <PdfViewer
                                 key={`${effectiveViewMode}-${activeId ?? "empty"}`}
                                 documentId={activeId}
                                 fileUrl={fileUrl}
                                 filename={filename}
-                                isDragOver={false}
+                                isDragOver={isDragOverViewer}
                                 focusPage={selectedReviewField?.evidence?.page ?? null}
                                 highlightSnippet={selectedReviewField?.evidence?.snippet ?? null}
                                 focusRequestId={fieldNavigationRequestId}
@@ -2950,7 +2820,7 @@ export function App() {
                               />
                             ) : (
                               <div className="flex h-full min-h-0 flex-col">
-                                <div className="relative z-20 flex items-center justify-between gap-4 border-b border-black/10 pb-3">
+                                <div className="relative z-20 flex items-center justify-between gap-4 pb-3">
                                   <div className="flex items-center gap-1">{viewerModeToolbarIcons}</div>
                                   <div className="flex items-center gap-1">{viewerDownloadIcon}</div>
                                 </div>
@@ -2980,13 +2850,14 @@ export function App() {
                           </div>
 
                           <aside
-                            className="flex h-full w-full min-h-0 min-w-[420px] flex-1 flex-col rounded-2xl border border-black/10 bg-white/80 p-4"
+                            data-testid="structured-column-stack"
+                            className="flex h-full w-full min-h-0 min-w-[420px] flex-1 flex-col gap-[var(--canvas-gap)] rounded-card bg-surfaceMuted p-[var(--canvas-gap)]"
                           >
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                              <h3 className="text-lg font-semibold text-ink">Datos estructurados</h3>
+                            <div>
+                              <h3 className="text-lg font-semibold text-textSecondary">Datos extraídos</h3>
                             </div>
 
-                            <div className="mt-2 rounded-xl border border-black/10 bg-white/90 px-3 py-2">
+                            <div className="rounded-control bg-surface px-3 py-2">
                               <div className="flex flex-wrap items-center gap-2">
                                 <label className="relative min-w-[220px] flex-1">
                                   <Search
@@ -2997,12 +2868,12 @@ export function App() {
                                   <Input
                                     ref={structuredSearchInputRef}
                                     type="text"
-                                    aria-label="Buscar en datos estructurados"
+                                    aria-label="Buscar en datos extraídos"
                                     value={structuredSearchInput}
                                     disabled={reviewPanelState !== "ready"}
                                     onChange={(event) => setStructuredSearchInput(event.target.value)}
                                     placeholder="Buscar campo, clave o valor"
-                                    className="w-full rounded-full bg-surface py-1.5 pl-9 pr-9 text-xs"
+                                    className="w-full rounded-control border border-borderSubtle bg-surface py-1.5 pl-9 pr-9 text-xs"
                                   />
                                   {structuredSearchInput.trim().length > 0 && (
                                     <div className="absolute right-2 top-1/2 -translate-y-1/2">
@@ -3036,9 +2907,69 @@ export function App() {
                                   }
                                   aria-label="Filtros de confianza"
                                 >
-                                  <ToggleGroupItem value="low" aria-label="Confianza baja">Baja</ToggleGroupItem>
-                                  <ToggleGroupItem value="medium" aria-label="Confianza media">Media</ToggleGroupItem>
-                                  <ToggleGroupItem value="high" aria-label="Confianza alta">Alta</ToggleGroupItem>
+                                  <Tooltip content="Baja">
+                                    <ToggleGroupItem
+                                      value="low"
+                                      aria-label="Baja"
+                                      className={`h-7 w-7 rounded-full p-0 ${
+                                        selectedConfidenceBuckets.includes("low")
+                                          ? "border-2 border-accent bg-accentSoft/35 ring-2 ring-accent/35"
+                                          : ""
+                                      }`}
+                                    >
+                                      <span className="relative inline-flex h-3.5 w-3.5 items-center justify-center">
+                                        <span
+                                          aria-hidden="true"
+                                          className="h-3 w-3 rounded-full bg-confidenceLow ring-1 ring-white/70"
+                                        />
+                                        {selectedConfidenceBuckets.includes("low") && (
+                                          <Check size={10} className="absolute text-white" aria-hidden="true" />
+                                        )}
+                                      </span>
+                                    </ToggleGroupItem>
+                                  </Tooltip>
+                                  <Tooltip content="Media">
+                                    <ToggleGroupItem
+                                      value="medium"
+                                      aria-label="Media"
+                                      className={`h-7 w-7 rounded-full p-0 ${
+                                        selectedConfidenceBuckets.includes("medium")
+                                          ? "border-2 border-accent bg-accentSoft/35 ring-2 ring-accent/35"
+                                          : ""
+                                      }`}
+                                    >
+                                      <span className="relative inline-flex h-3.5 w-3.5 items-center justify-center">
+                                        <span
+                                          aria-hidden="true"
+                                          className="h-3 w-3 rounded-full bg-confidenceMed ring-1 ring-white/70"
+                                        />
+                                        {selectedConfidenceBuckets.includes("medium") && (
+                                          <Check size={10} className="absolute text-white" aria-hidden="true" />
+                                        )}
+                                      </span>
+                                    </ToggleGroupItem>
+                                  </Tooltip>
+                                  <Tooltip content="Alta">
+                                    <ToggleGroupItem
+                                      value="high"
+                                      aria-label="Alta"
+                                      className={`h-7 w-7 rounded-full p-0 ${
+                                        selectedConfidenceBuckets.includes("high")
+                                          ? "border-2 border-accent bg-accentSoft/35 ring-2 ring-accent/35"
+                                          : ""
+                                      }`}
+                                    >
+                                      <span className="relative inline-flex h-3.5 w-3.5 items-center justify-center">
+                                        <span
+                                          aria-hidden="true"
+                                          className="h-3 w-3 rounded-full bg-confidenceHigh ring-1 ring-white/70"
+                                        />
+                                        {selectedConfidenceBuckets.includes("high") && (
+                                          <Check size={10} className="absolute text-white" aria-hidden="true" />
+                                        )}
+                                      </span>
+                                    </ToggleGroupItem>
+                                  </Tooltip>
                                 </ToggleGroup>
 
                                 <ToggleGroup
@@ -3054,31 +2985,43 @@ export function App() {
                                   }}
                                   aria-label="Filtros adicionales"
                                 >
-                                  <ToggleGroupItem value="critical" aria-label="Mostrar solo campos críticos">
-                                    Solo CRÍTICOS
-                                  </ToggleGroupItem>
-                                  <ToggleGroupItem value="withValue" aria-label="Mostrar solo campos con valor">
-                                    Solo con valor
-                                  </ToggleGroupItem>
+                                  <Tooltip content="Críticos: muestra únicamente campos marcados como críticos.">
+                                    <ToggleGroupItem
+                                      value="critical"
+                                      aria-label="Mostrar solo campos críticos"
+                                      className={showOnlyCritical ? "border-accent bg-accent text-accentForeground ring-2 ring-accent/30" : ""}
+                                    >
+                                      Críticos
+                                    </ToggleGroupItem>
+                                  </Tooltip>
+                                  <Tooltip content="No vacíos: oculta campos vacíos o sin dato.">
+                                    <ToggleGroupItem
+                                      value="withValue"
+                                      aria-label="Mostrar solo campos con valor"
+                                      className={showOnlyWithValue ? "border-accent bg-accent text-accentForeground ring-2 ring-accent/30" : ""}
+                                    >
+                                      No vacíos
+                                    </ToggleGroupItem>
+                                  </Tooltip>
                                 </ToggleGroup>
                               </div>
                             </div>
 
-                            <div className="mt-3 flex-1 min-h-0">
+                            <div className="flex-1 min-h-0">
                               {reviewPanelState === "loading" && (
                                 <div
                                   data-testid="right-panel-scroll"
                                   aria-live="polite"
                                   className="h-full min-h-0 overflow-y-auto pr-1 space-y-2"
                                 >
-                                  <p className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700">
+                                  <p className="rounded-xl bg-blue-50 px-3 py-2 text-xs text-blue-700">
                                     {reviewPanelMessage}
                                   </p>
                                   <div data-testid="review-core-skeleton" className="space-y-2">
                                     {Array.from({ length: 6 }).map((_, index) => (
                                       <div
                                         key={`review-skeleton-${index}`}
-                                        className="animate-pulse rounded-xl border border-black/10 bg-white/90 p-3"
+                                        className="animate-pulse rounded-card bg-surface p-3"
                                       >
                                         <div className="h-3 w-1/2 rounded bg-black/10" />
                                         <div className="mt-2 h-2.5 w-5/6 rounded bg-black/10" />
@@ -3142,7 +3085,7 @@ export function App() {
                                 >
                                   <div className="space-y-3">
                                     {hasNoStructuredFilterResults && (
-                                      <p className="rounded-xl border border-black/10 bg-white/90 px-3 py-2 text-xs text-muted">
+                                      <p className="rounded-control bg-surface px-3 py-2 text-xs text-muted">
                                         No hay resultados con los filtros actuales.
                                       </p>
                                     )}
@@ -3157,7 +3100,7 @@ export function App() {
                             </div>
 
                             {evidenceNotice && (
-                              <p className="mt-3 rounded-xl border border-black/10 bg-white/90 px-3 py-2 text-xs text-muted">
+                              <p className="rounded-control bg-surface px-3 py-2 text-xs text-muted">
                                 {evidenceNotice}
                               </p>
                             )}
@@ -3169,6 +3112,7 @@ export function App() {
                             {sourcePanelContent}
                           </aside>
                         )}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -3196,12 +3140,14 @@ export function App() {
                   </>
                 )}
                 {activeViewerTab === "raw_text" && (
-                  <div className="flex h-full flex-col rounded-2xl border border-black/10 bg-white/80 p-4">
-                    <div className="flex items-center justify-between gap-4 border-b border-black/10 pb-3">
+                  <div className="flex h-full flex-col rounded-card bg-surface p-4">
+                    <div className="rounded-control bg-surface px-2 py-2">
+                      <div className="flex items-center justify-between gap-4">
                       <div className="flex items-center gap-1">{viewerModeToolbarIcons}</div>
                       <div className="flex items-center gap-1">{viewerDownloadIcon}</div>
                     </div>
-                    <div className="rounded-2xl border border-black/10 bg-white/90 p-3">
+                    </div>
+                    <div className="rounded-card bg-surface p-3">
                       <div className="flex flex-col gap-2 text-xs text-ink">
                         <span className="text-muted">
                           ¿El texto no es correcto? Puedes reprocesarlo para regenerar la extraccion.
@@ -3226,7 +3172,7 @@ export function App() {
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <input
-                        className="w-full rounded-full border border-black/10 bg-white px-3 py-2 text-xs text-muted outline-none sm:w-64"
+                        className="w-full rounded-control bg-surface px-3 py-2 text-xs text-muted outline-none sm:w-64"
                         placeholder="Buscar en el texto"
                         value={rawSearch}
                         disabled={!canSearchRawText}
@@ -3273,7 +3219,7 @@ export function App() {
                         {rawTextErrorMessage}
                       </p>
                     )}
-                    <div className="mt-3 flex-1 overflow-y-auto rounded-xl border border-dashed border-black/10 bg-white/70 p-3 font-mono text-xs text-muted">
+                    <div className="mt-3 flex-1 overflow-y-auto rounded-card bg-surface p-3 font-mono text-xs text-muted">
                       {rawTextContent ? (
                         <pre>{rawTextContent}</pre>
                       ) : (
@@ -3283,10 +3229,12 @@ export function App() {
                   </div>
                 )}
                 {activeViewerTab === "technical" && (
-                  <div className="h-full overflow-y-auto rounded-2xl border border-black/10 bg-white/70 p-3">
-                    <div className="flex items-center justify-between gap-4 border-b border-black/10 pb-3">
+                  <div className="h-full overflow-y-auto rounded-card bg-surface p-3">
+                    <div className="rounded-control bg-surface px-2 py-2">
+                      <div className="flex items-center justify-between gap-4">
                       <div className="flex items-center gap-1">{viewerModeToolbarIcons}</div>
                       <div className="flex items-center gap-1">{viewerDownloadIcon}</div>
+                    </div>
                     </div>
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
@@ -3334,7 +3282,7 @@ export function App() {
                           {processingHistory.data.runs.map((run) => (
                             <div
                               key={run.run_id}
-                              className="rounded-xl border border-black/10 bg-white/90 p-2"
+                              className="rounded-card bg-surface p-2"
                             >
                               <div className="text-xs font-semibold text-ink">
                                 {formatRunHeader(run)}
@@ -3363,7 +3311,7 @@ export function App() {
                                     return (
                                       <div
                                         key={stepKey}
-                                        className="rounded-lg border border-black/5 bg-white p-2"
+                                        className="rounded-control bg-surface p-2"
                                       >
                                         <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
                                           <span
@@ -3407,7 +3355,7 @@ export function App() {
                                           </div>
                                         )}
                                         {shouldShowDetails(step) && expandedSteps[stepKey] && (
-                                          <div className="mt-2 space-y-1 rounded-lg border border-black/5 bg-white/80 p-2">
+                                          <div className="mt-2 space-y-1 rounded-control bg-surface p-2">
                                             {step.raw_events.map((event, eventIndex) => (
                                               <div
                                                 key={`${stepKey}-event-${eventIndex}`}
@@ -3450,32 +3398,9 @@ export function App() {
           </section>
         </div>
       </main>
-      {showUploadInfo &&
-        createPortal(
-          <div
-            ref={uploadInfoContentRef}
-            role="tooltip"
-            style={{ top: `${uploadInfoPosition.top}px`, left: `${uploadInfoPosition.left}px` }}
-            className="fixed z-[70] w-64 rounded-xl border border-black/10 bg-white p-3 text-xs text-ink shadow-lg"
-            onMouseEnter={() => {
-              if (isHoverDevice) {
-                openUploadInfo();
-              }
-            }}
-            onMouseLeave={() => {
-              if (isHoverDevice) {
-                closeUploadInfo(true);
-              }
-            }}
-          >
-            <p>Formatos permitidos: PDF.</p>
-            <p className="mt-1">Tamaño maximo: 20 MB.</p>
-          </div>,
-          document.body
-        )}
       {showRetryModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-6">
-          <div className="w-full max-w-sm rounded-2xl border border-black/10 bg-white p-4 shadow-xl">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-4">
             <p className="text-sm font-semibold text-ink">Reprocesar documento</p>
             <p className="mt-2 text-xs text-muted">
               Esto volvera a ejecutar extraccion e interpretacion y puede cambiar los resultados.
@@ -3494,7 +3419,7 @@ export function App() {
       {connectivityToast && (
         <div className="fixed left-1/2 top-10 z-[65] w-full max-w-lg -translate-x-1/2 px-4 sm:w-[32rem]">
           <div
-            className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-red-700 shadow-xl"
+            className="rounded-2xl bg-red-50 px-5 py-4 text-red-700"
             role="status"
           >
             <div className="flex items-start justify-between gap-3">
@@ -3517,10 +3442,10 @@ export function App() {
                 }`}
               >
                 <div
-            className={`rounded-2xl border px-5 py-4 text-base shadow-xl ${
+            className={`rounded-2xl px-5 py-4 text-base ${
               uploadFeedback.kind === "success"
-                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                : "border-red-200 bg-red-50 text-red-700"
+                ? "bg-emerald-50 text-emerald-700"
+                : "bg-red-50 text-red-700"
             }`}
             role="status"
           >
@@ -3569,10 +3494,10 @@ export function App() {
                 }`}
               >
                 <div
-                  className={`rounded-2xl border px-5 py-4 text-base shadow-xl ${
+                  className={`rounded-2xl px-5 py-4 text-base ${
                     actionFeedback.kind === "success"
-                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                      : "border-red-200 bg-red-50 text-red-700"
+                      ? "bg-emerald-50 text-emerald-700"
+                      : "bg-red-50 text-red-700"
                   }`}
                   role="status"
                 >
@@ -3597,6 +3522,7 @@ export function App() {
                 </div>
               </div>
             )}
+      </div>
     </div>
   );
 }

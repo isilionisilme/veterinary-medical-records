@@ -5,22 +5,42 @@
 @tailwind utilities;
 
 :root {
-  --color-page-bg: #ebf5ff;
-  --color-surface: #ffffff;
-  --color-surface-muted: #eef1f4;
+  --app-bg: #ebf5ff;
+  --canvas-bg: #ffffff;
+  --card-bg: #ffffff;
+  --app-frame: var(--canvas-bg);
+  --surface: var(--card-bg);
+  --surface-muted: #f7f9fa;
+  --border-subtle: #eef1f4;
+  --shadow-soft: none;
+
+  --radius-frame: 14px;
+  --radius-card: 10px;
+  --radius-control: 8px;
+  --canvas-gap: 12px;
+
+  --color-page-bg: var(--app-bg);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
   --color-text: #1f2933;
   --color-text-secondary: #6b7280;
   --color-text-muted: #9ca3af;
+  --text-title: var(--color-text);
+  --text-body: var(--color-text);
+  --text-muted: var(--color-text-secondary);
   --color-border: #e5e7eb;
-  --color-border-subtle: #eef1f4;
+  --color-border-subtle: var(--border-subtle);
   --color-accent: #fc4e1b;
   --color-accent-foreground: #ffffff;
-  --shadow-subtle: 0 1px 3px rgb(31 41 51 / 0.08);
+  --shadow-subtle: none;
 
-  --confidence-low: #d16d6a;
-  --confidence-med: #e6b566;
-  --confidence-high: #4caf93;
-  --status-critical: #d16d6a;
+  --status-success: #4caf93;
+  --status-warn: #e6b566;
+  --status-error: #d16d6a;
+  --confidence-low: var(--status-error);
+  --confidence-med: var(--status-warn);
+  --confidence-high: var(--status-success);
+  --status-critical: var(--status-error);
   --status-missing: #9ca3af;
 
   --page-bg: var(--color-page-bg);
