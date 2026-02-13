@@ -31,6 +31,7 @@ This folder is split into three areas:
 ### Documentation specific to the project
 - [`docs/agent_router/04_PROJECT/PRODUCT_DESIGN/00_entry.md`](agent_router/04_PROJECT/PRODUCT_DESIGN/00_entry.md) — product summary (split into small modules)
 - [`docs/agent_router/04_PROJECT/UX_DESIGN/00_entry.md`](agent_router/04_PROJECT/UX_DESIGN/00_entry.md) — UX interaction contract (split into small modules)
+- [`docs/project/DESIGN_SYSTEM.md`](project/DESIGN_SYSTEM.md) — lean design-system tokens, primitives, and wrappers for user-visible UI implementation
 - [`docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/00_entry.md`](agent_router/04_PROJECT/TECHNICAL_DESIGN/00_entry.md) — architecture + contracts (split into small modules)
 - [`docs/agent_router/04_PROJECT/BACKEND_IMPLEMENTATION/00_entry.md`](agent_router/04_PROJECT/BACKEND_IMPLEMENTATION/00_entry.md) — backend implementation notes (split into small modules)
 - [`docs/agent_router/04_PROJECT/FRONTEND_IMPLEMENTATION/00_entry.md`](agent_router/04_PROJECT/FRONTEND_IMPLEMENTATION/00_entry.md) — frontend implementation notes (split into small modules)

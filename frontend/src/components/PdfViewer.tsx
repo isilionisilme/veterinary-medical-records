@@ -1,8 +1,8 @@
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, ScanLine, ZoomIn, ZoomOut } from "lucide-react";
-import { motion } from "framer-motion";
 import * as pdfjsLib from "pdfjs-dist";
 import workerSrc from "pdfjs-dist/build/pdf.worker.min?url";
+import { IconButton } from "./app/IconButton";
 import { Tooltip } from "./ui/tooltip";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
@@ -16,37 +16,8 @@ function clampZoomLevel(value: number): number {
   return Math.min(MAX_ZOOM_LEVEL, Math.max(MIN_ZOOM_LEVEL, value));
 }
 
-type IconButtonWithTooltipProps = {
-  ariaLabel: string;
-  tooltip: string;
-  disabled?: boolean;
-  onClick: () => void;
-  children: ReactNode;
-};
-
-function IconButtonWithTooltip({
-  ariaLabel,
-  tooltip,
-  disabled = false,
-  onClick,
-  children,
-}: IconButtonWithTooltipProps) {
-  return (
-    <Tooltip content={tooltip} disabled={disabled}>
-      <button
-        type="button"
-        aria-label={ariaLabel}
-        disabled={disabled}
-        onClick={onClick}
-        className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-transparent p-0 text-ink transition hover:bg-black/[0.06] focus-visible:bg-black/[0.06] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-45"
-      >
-        {children}
-      </button>
-    </Tooltip>
-  );
-}
-
 type PdfViewerProps = {
+  documentId?: string | null;
   fileUrl: string | null;
   filename?: string | null;
   isDragOver?: boolean;
@@ -58,6 +29,7 @@ type PdfViewerProps = {
 };
 
 export function PdfViewer({
+  documentId = null,
   fileUrl,
   filename,
   isDragOver = false,
@@ -67,12 +39,41 @@ export function PdfViewer({
   toolbarLeftContent,
   toolbarRightExtra,
 }: PdfViewerProps) {
+  const debugFlags = useMemo(() => {
+    if (!import.meta.env.DEV || typeof window === "undefined") {
+      return {
+        enabled: false,
+        noTransformSubtree: false,
+        noMotion: false,
+        hardRemountCanvas: false,
+      };
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const enabled =
+      params.get("pdfDebug") === "1" || window.localStorage.getItem("pdfDebug") === "1";
+
+    return {
+      enabled,
+      noTransformSubtree: enabled && params.get("pdfDebugNoTransform") === "1",
+      noMotion: enabled && params.get("pdfDebugNoMotion") === "1",
+      hardRemountCanvas: enabled && params.get("pdfDebugHardRemount") === "1",
+    };
+  }, []);
+
+  const nodeIdentityMapRef = useRef<WeakMap<Element, string>>(new WeakMap());
+  const nodeIdentityCounterRef = useRef(0);
+  const lastCanvasNodeByPageRef = useRef<Map<number, string>>(new Map());
+  const renderTaskStatusRef = useRef<Map<number, string>>(new Map());
+  const renderTasksByPageRef = useRef<Map<number, pdfjsLib.RenderTask>>(new Map());
+  const currentDocumentIdRef = useRef<string | null>(documentId);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const pageRefs = useRef<Array<HTMLDivElement | null>>([]);
   const canvasRefs = useRef<Array<HTMLCanvasElement | null>>([]);
   const renderedPages = useRef<Set<number>>(new Set());
   const renderingPages = useRef<Set<number>>(new Set());
+  const renderSessionRef = useRef(0);
   const [totalPages, setTotalPages] = useState(0);
   const [pageNumber, setPageNumber] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -95,6 +96,228 @@ export function PdfViewer({
     return clampZoomLevel(stored);
   });
 
+  function cancelAllRenderTasks() {
+    for (const task of renderTasksByPageRef.current.values()) {
+      try {
+        task.cancel();
+      } catch {
+        // ignore cancellation errors
+      }
+    }
+    renderTasksByPageRef.current.clear();
+  }
+
+  function getNodeId(element: Element | null): string | null {
+    if (!element) {
+      return null;
+    }
+    let existing = nodeIdentityMapRef.current.get(element);
+    if (!existing) {
+      nodeIdentityCounterRef.current += 1;
+      existing = `node-${nodeIdentityCounterRef.current}`;
+      nodeIdentityMapRef.current.set(element, existing);
+    }
+    return existing;
+  }
+
+  function analyzeTransform(rawTransform: string): {
+    determinant: number | null;
+    negativeDeterminant: boolean;
+    hasMirrorScale: boolean;
+  } {
+    const transform = rawTransform.trim();
+    if (transform === "none") {
+      return {
+        determinant: null,
+        negativeDeterminant: false,
+        hasMirrorScale: false,
+      };
+    }
+
+    const scaleMirrorPattern = /scaleX\(\s*-|scale\(\s*-|matrix\(\s*-|matrix3d\(\s*-/i;
+    const hasMirrorScale = scaleMirrorPattern.test(transform);
+
+    const matrixMatch = transform.match(/^matrix\(([^)]+)\)$/i);
+    if (matrixMatch) {
+      const values = matrixMatch[1].split(",").map((value) => Number(value.trim()));
+      if (values.length === 6 && values.every((value) => Number.isFinite(value))) {
+        const [a, b, c, d] = values;
+        const determinant = a * d - b * c;
+        return {
+          determinant,
+          negativeDeterminant: determinant < 0,
+          hasMirrorScale,
+        };
+      }
+    }
+
+    const matrix3dMatch = transform.match(/^matrix3d\(([^)]+)\)$/i);
+    if (matrix3dMatch) {
+      const values = matrix3dMatch[1].split(",").map((value) => Number(value.trim()));
+      if (values.length === 16 && values.every((value) => Number.isFinite(value))) {
+        const a = values[0];
+        const b = values[1];
+        const c = values[4];
+        const d = values[5];
+        const determinant = a * d - b * c;
+        return {
+          determinant,
+          negativeDeterminant: determinant < 0,
+          hasMirrorScale,
+        };
+      }
+    }
+
+    return {
+      determinant: null,
+      negativeDeterminant: false,
+      hasMirrorScale,
+    };
+  }
+
+  function captureDebugSnapshot(params: {
+    reason: string;
+    pageIndex: number;
+    canvas: HTMLCanvasElement;
+    viewportScale: number;
+    viewportRotation: number;
+    renderTaskStatus: string;
+    textLayerNodeId?: string | null;
+  }) {
+    if (!debugFlags.enabled || typeof window === "undefined") {
+      return;
+    }
+
+    const chain: Array<Record<string, unknown>> = [];
+    let current: HTMLElement | null = params.canvas;
+    for (let depth = 0; depth <= 6 && current; depth += 1) {
+      const style = window.getComputedStyle(current);
+      const transform = style.transform;
+      const analysis = analyzeTransform(transform);
+      chain.push({
+        depth,
+        nodeId: getNodeId(current),
+        tag: current.tagName,
+        id: current.id || null,
+        className: current.className || null,
+        transform,
+        transformOrigin: style.transformOrigin,
+        direction: style.direction,
+        writingMode: style.writingMode,
+        scale: (style as CSSStyleDeclaration & { scale?: string }).scale ?? null,
+        determinant: analysis.determinant,
+        negativeDeterminant: analysis.negativeDeterminant,
+        hasMirrorScale: analysis.hasMirrorScale,
+        dirAttr: current.getAttribute("dir"),
+      });
+      current = current.parentElement;
+    }
+
+    const rect = params.canvas.getBoundingClientRect();
+    const canvasNodeId = getNodeId(params.canvas);
+    const previousCanvasNodeId = lastCanvasNodeByPageRef.current.get(params.pageIndex) ?? null;
+    const canvasReused = previousCanvasNodeId === canvasNodeId;
+    if (canvasNodeId) {
+      lastCanvasNodeByPageRef.current.set(params.pageIndex, canvasNodeId);
+    }
+
+    const chainHasFlip = chain.some((entry) => {
+      const negativeDeterminant = Boolean(entry.negativeDeterminant);
+      const hasMirrorScale = Boolean(entry.hasMirrorScale);
+      return negativeDeterminant || hasMirrorScale;
+    });
+
+    const snapshot = {
+      timestamp: new Date().toISOString(),
+      reason: params.reason,
+      chainHasFlip,
+      viewer: {
+        documentId,
+        fileUrl,
+        filename,
+        pageNumber,
+        renderedPageIndex: params.pageIndex,
+        zoomLevel,
+        viewportScale: params.viewportScale,
+        viewportRotation: params.viewportRotation,
+        appliedRotationState: 0,
+        renderTaskStatus: params.renderTaskStatus,
+        renderSession: renderSessionRef.current,
+      },
+      runtime: {
+        devicePixelRatio: window.devicePixelRatio,
+      },
+      canvas: {
+        nodeId: canvasNodeId,
+        reused: canvasReused,
+        previousNodeId: previousCanvasNodeId,
+        attrWidth: params.canvas.width,
+        attrHeight: params.canvas.height,
+        styleWidth: params.canvas.style.width || null,
+        styleHeight: params.canvas.style.height || null,
+        computedTransform: window.getComputedStyle(params.canvas).transform,
+        rect: {
+          x: rect.x,
+          y: rect.y,
+          width: rect.width,
+          height: rect.height,
+        },
+      },
+      layers: {
+        textLayerNodeId: params.textLayerNodeId ?? null,
+        textLayerReused: false,
+      },
+      chain,
+    };
+
+    const debugWindow = window as Window & {
+      __pdfBugSnapshots?: Array<Record<string, unknown>>;
+    };
+    const store = debugWindow.__pdfBugSnapshots ?? [];
+    store.push(snapshot as unknown as Record<string, unknown>);
+    if (store.length > 200) {
+      store.shift();
+    }
+    debugWindow.__pdfBugSnapshots = store;
+
+    console.groupCollapsed(
+      `[PdfBugSnapshot] ${params.reason} | doc=${documentId ?? "unknown"} page=${params.pageIndex}`
+    );
+    console.log(snapshot);
+    console.groupEnd();
+  }
+
+  useEffect(() => {
+    if (!debugFlags.enabled || !debugFlags.noMotion || typeof document === "undefined") {
+      return;
+    }
+    document.body.classList.add("pdf-debug-no-motion");
+    return () => {
+      document.body.classList.remove("pdf-debug-no-motion");
+    };
+  }, [debugFlags.enabled, debugFlags.noMotion]);
+
+  useEffect(() => {
+    currentDocumentIdRef.current = documentId;
+  }, [documentId]);
+
+  useEffect(() => {
+    renderSessionRef.current += 1;
+    cancelAllRenderTasks();
+    renderedPages.current = new Set();
+    renderingPages.current = new Set();
+    pageRefs.current = [];
+    canvasRefs.current = [];
+    lastCanvasNodeByPageRef.current = new Map();
+    renderTaskStatusRef.current = new Map();
+    setPageTextByIndex({});
+  }, [documentId]);
+
+  useEffect(() => {
+    renderSessionRef.current += 1;
+    cancelAllRenderTasks();
+  }, [zoomLevel]);
+
   useEffect(() => {
     let cancelled = false;
     let loadingTask: pdfjsLib.PDFDocumentLoadingTask | null = null;
@@ -112,6 +335,9 @@ export function PdfViewer({
       canvasRefs.current = [];
       renderedPages.current = new Set();
       renderingPages.current = new Set();
+      renderSessionRef.current += 1;
+      cancelAllRenderTasks();
+      renderTaskStatusRef.current = new Map();
       setPdfDoc(null);
       setTotalPages(0);
       setPageTextByIndex({});
@@ -143,6 +369,7 @@ export function PdfViewer({
 
     return () => {
       cancelled = true;
+      cancelAllRenderTasks();
       if (loadingTask && typeof (loadingTask as { destroy?: unknown }).destroy === "function") {
         void (loadingTask as { destroy: () => Promise<void> | void }).destroy();
       }
@@ -167,6 +394,7 @@ export function PdfViewer({
     }
 
     return () => {
+      cancelAllRenderTasks();
       if (typeof (pdfDoc as { destroy?: unknown }).destroy === "function") {
         void (pdfDoc as { destroy: () => Promise<void> | void }).destroy();
       }
@@ -228,6 +456,8 @@ export function PdfViewer({
   }, [zoomLevel, containerWidth, pdfDoc]);
 
   useEffect(() => {
+    const renderSession = ++renderSessionRef.current;
+    const sessionDocumentId = documentId;
     let cancelled = false;
     let retryCount = 0;
     let retryTimer: number | null = null;
@@ -240,7 +470,7 @@ export function PdfViewer({
 
       let missingCanvas = false;
       for (let pageIndex = 1; pageIndex <= pdfDoc.numPages; pageIndex += 1) {
-        if (cancelled) {
+        if (cancelled || renderSession !== renderSessionRef.current) {
           return;
         }
 
@@ -256,7 +486,7 @@ export function PdfViewer({
         renderingPages.current.add(pageIndex);
         try {
           const page = await pdfDoc.getPage(pageIndex);
-          if (cancelled) {
+          if (cancelled || renderSession !== renderSessionRef.current) {
             return;
           }
 
@@ -264,16 +494,123 @@ export function PdfViewer({
           const fitWidthScale = containerWidth / viewport.width;
           const scale = Math.max(0.1, fitWidthScale * zoomLevel);
           const scaledViewport = page.getViewport({ scale });
+          const expectedPage = pageIndex;
           const context = canvas.getContext("2d");
           if (!context) {
             continue;
           }
 
+          const preRenderTransform =
+            typeof context.getTransform === "function"
+              ? context.getTransform().toString()
+              : "unavailable";
+
           canvas.width = Math.max(1, Math.floor(scaledViewport.width));
           canvas.height = Math.max(1, Math.floor(scaledViewport.height));
+          context.setTransform(1, 0, 0, 1, 0, 0);
+          context.clearRect(0, 0, canvas.width, canvas.height);
 
-          await page.render({ canvasContext: context, viewport: scaledViewport }).promise;
+          const existingTask = renderTasksByPageRef.current.get(pageIndex);
+          if (existingTask) {
+            try {
+              existingTask.cancel();
+            } catch {
+              // ignore cancellation errors
+            }
+          }
+
+          const renderTask = page.render({ canvasContext: context, viewport: scaledViewport });
+          renderTasksByPageRef.current.set(pageIndex, renderTask);
+          renderTaskStatusRef.current.set(pageIndex, "started");
+          await renderTask.promise;
+          renderTasksByPageRef.current.delete(pageIndex);
+          renderTaskStatusRef.current.set(pageIndex, "completed");
+          if (cancelled || renderSession !== renderSessionRef.current) {
+            if (debugFlags.enabled) {
+              console.debug("[PdfViewerDebug] stale-render-ignored", {
+                reason: "session-mismatch",
+                sessionAtStart: renderSession,
+                sessionCurrent: renderSessionRef.current,
+                documentIdAtStart: sessionDocumentId,
+                documentIdCurrent: currentDocumentIdRef.current,
+                pageIndex,
+              });
+            }
+            return;
+          }
+
+          if (sessionDocumentId !== currentDocumentIdRef.current) {
+            if (debugFlags.enabled) {
+              console.debug("[PdfViewerDebug] stale-render-ignored", {
+                reason: "document-mismatch",
+                sessionAtStart: renderSession,
+                sessionCurrent: renderSessionRef.current,
+                documentIdAtStart: sessionDocumentId,
+                documentIdCurrent: currentDocumentIdRef.current,
+                pageIndex,
+              });
+            }
+            return;
+          }
+
+          if (expectedPage !== pageIndex) {
+            if (debugFlags.enabled) {
+              console.debug("[PdfViewerDebug] stale-render-ignored", {
+                reason: "page-mismatch",
+                expectedPage,
+                pageIndex,
+                sessionAtStart: renderSession,
+                sessionCurrent: renderSessionRef.current,
+                documentIdAtStart: sessionDocumentId,
+                documentIdCurrent: currentDocumentIdRef.current,
+              });
+            }
+            return;
+          }
+
+          const postRenderTransform =
+            typeof context.getTransform === "function"
+              ? context.getTransform().toString()
+              : "unavailable";
+
+          if (debugFlags.enabled) {
+            console.debug("[PdfViewerDebug] context-transform", {
+              documentId,
+              pageIndex,
+              preRenderTransform,
+              postRenderTransform,
+              renderTaskStatus: renderTaskStatusRef.current.get(pageIndex),
+            });
+          }
+
+          captureDebugSnapshot({
+            reason: "page-render-finished",
+            pageIndex,
+            canvas,
+            viewportScale: scale,
+            viewportRotation: scaledViewport.rotation,
+            renderTaskStatus: renderTaskStatusRef.current.get(pageIndex) ?? "unknown",
+          });
+
+          const latestSnapshots = (window as Window & {
+            __pdfBugSnapshots?: Array<{ chainHasFlip?: boolean }>;
+          }).__pdfBugSnapshots;
+          const latestSnapshot = latestSnapshots?.[latestSnapshots.length - 1];
+          if (latestSnapshot?.chainHasFlip) {
+            captureDebugSnapshot({
+              reason: "flip-detected-transform-chain",
+              pageIndex,
+              canvas,
+              viewportScale: scale,
+              viewportRotation: scaledViewport.rotation,
+              renderTaskStatus: renderTaskStatusRef.current.get(pageIndex) ?? "unknown",
+            });
+          }
+
           const textContent = await page.getTextContent();
+          if (cancelled || renderSession !== renderSessionRef.current) {
+            return;
+          }
           const pageText = textContent.items
             .map((item) => {
               if (typeof item !== "object" || !("str" in item)) {
@@ -287,7 +624,17 @@ export function PdfViewer({
             .trim();
           setPageTextByIndex((current) => ({ ...current, [pageIndex]: pageText }));
           renderedPages.current.add(pageIndex);
-        } catch {
+        } catch (error) {
+          renderTasksByPageRef.current.delete(pageIndex);
+          const errorName =
+            typeof error === "object" && error && "name" in error
+              ? String((error as { name?: unknown }).name)
+              : "UnknownError";
+          if (errorName === "RenderingCancelledException") {
+            renderTaskStatusRef.current.set(pageIndex, "cancelled");
+          } else {
+            renderTaskStatusRef.current.set(pageIndex, "failed");
+          }
           // Keep rendering other pages even if one page fails.
           continue;
         } finally {
@@ -296,7 +643,13 @@ export function PdfViewer({
       }
 
       const allPagesRendered = renderedPages.current.size >= pdfDoc.numPages;
-      if (!allPagesRendered && missingCanvas && retryCount < MAX_CANVAS_RETRIES && !cancelled) {
+      if (
+        !allPagesRendered &&
+        missingCanvas &&
+        retryCount < MAX_CANVAS_RETRIES &&
+        !cancelled &&
+        renderSession === renderSessionRef.current
+      ) {
         retryCount += 1;
         retryTimer = window.setTimeout(() => {
           void renderAllPages();
@@ -308,11 +661,12 @@ export function PdfViewer({
 
     return () => {
       cancelled = true;
+      cancelAllRenderTasks();
       if (retryTimer) {
         window.clearTimeout(retryTimer);
       }
     };
-  }, [pdfDoc, containerWidth, totalPages, zoomLevel]);
+  }, [pdfDoc, containerWidth, totalPages, zoomLevel, documentId, debugFlags.enabled]);
 
   useEffect(() => {
     if (!focusPage || !pdfDoc || focusPage < 1 || focusPage > pdfDoc.numPages) {
@@ -414,24 +768,29 @@ export function PdfViewer({
     normalizedFocusedPageText.includes(normalizedSnippet);
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div
+      className={`flex h-full min-h-0 flex-col ${
+        debugFlags.enabled && debugFlags.noTransformSubtree ? "pdf-debug-no-transform-subtree" : ""
+      }`}
+      data-pdf-debug={debugFlags.enabled ? "on" : "off"}
+    >
       {showPageNavigation && (
-        <div className="relative z-20 flex items-center justify-between gap-4 border-b border-black/10 pb-3">
+        <div className="relative z-20 flex items-center justify-between gap-4 border-b border-border pb-3">
           <div className="flex min-w-0 items-center gap-1">{toolbarLeftContent}</div>
 
           <div className="flex items-center gap-1">
-            <IconButtonWithTooltip
-              ariaLabel="Alejar"
+            <IconButton
+              label="Alejar"
               tooltip="Alejar"
               disabled={!canZoomOut}
               onClick={() => setZoomLevel((current) => clampZoomLevel(current - ZOOM_STEP))}
             >
-              <ZoomOut size={17} className="h-[17px] w-[17px] shrink-0 text-ink" />
-            </IconButtonWithTooltip>
+              <ZoomOut size={17} className="h-[17px] w-[17px] shrink-0" />
+            </IconButton>
 
             <Tooltip content="Nivel de zoom">
               <p
-                className="min-w-14 text-center text-sm font-semibold text-muted"
+                className="min-w-14 text-center text-sm font-semibold text-textSecondary"
                 aria-label="Nivel de zoom"
                 data-testid="pdf-zoom-indicator"
               >
@@ -439,51 +798,51 @@ export function PdfViewer({
               </p>
             </Tooltip>
 
-            <IconButtonWithTooltip
-              ariaLabel="Acercar"
+            <IconButton
+              label="Acercar"
               tooltip="Acercar"
               disabled={!canZoomIn}
               onClick={() => setZoomLevel((current) => clampZoomLevel(current + ZOOM_STEP))}
             >
-              <ZoomIn size={17} className="h-[17px] w-[17px] shrink-0 text-ink" />
-            </IconButtonWithTooltip>
+              <ZoomIn size={17} className="h-[17px] w-[17px] shrink-0" />
+            </IconButton>
 
-            <IconButtonWithTooltip
-              ariaLabel="Ajustar al ancho"
+            <IconButton
+              label="Ajustar al ancho"
               tooltip="Ajustar al ancho"
               onClick={() => setZoomLevel(1)}
             >
-              <ScanLine size={17} className="h-[17px] w-[17px] shrink-0 text-ink" />
-            </IconButtonWithTooltip>
+              <ScanLine size={17} className="h-[17px] w-[17px] shrink-0" />
+            </IconButton>
           </div>
 
-          <span aria-hidden="true" className="h-5 w-px bg-black/15" />
+          <span aria-hidden="true" className="h-5 w-px bg-border" />
 
           <div className="flex items-center gap-1">
-            <IconButtonWithTooltip
-              ariaLabel="Página anterior"
+            <IconButton
+              label="Página anterior"
               tooltip="Página anterior"
               disabled={navDisabled || !canGoBack}
               onClick={() => scrollToPage(Math.max(1, pageNumber - 1))}
             >
-              <ChevronLeft size={18} className="h-[18px] w-[18px] shrink-0 text-ink" />
-            </IconButtonWithTooltip>
-            <p className="min-w-12 text-center text-sm font-semibold text-muted">
+              <ChevronLeft size={18} className="h-[18px] w-[18px] shrink-0" />
+            </IconButton>
+            <p className="min-w-12 text-center text-sm font-semibold text-textSecondary">
               {pageNumber}/{totalPages}
             </p>
-            <IconButtonWithTooltip
-              ariaLabel="Página siguiente"
+            <IconButton
+              label="Página siguiente"
               tooltip="Página siguiente"
               disabled={navDisabled || !canGoForward}
               onClick={() => scrollToPage(Math.min(totalPages, pageNumber + 1))}
             >
-              <ChevronRight size={18} className="h-[18px] w-[18px] shrink-0 text-ink" />
-            </IconButtonWithTooltip>
+              <ChevronRight size={18} className="h-[18px] w-[18px] shrink-0" />
+            </IconButton>
           </div>
 
           {toolbarRightExtra ? (
             <>
-              <span aria-hidden="true" className="h-5 w-px bg-black/15" />
+              <span aria-hidden="true" className="h-5 w-px bg-border" />
               <div className="flex items-center gap-1">{toolbarRightExtra}</div>
             </>
           ) : null}
@@ -493,17 +852,13 @@ export function PdfViewer({
         <div
           ref={scrollRef}
           data-testid="pdf-scroll-container"
-          className="h-full min-h-0 overflow-y-auto rounded-2xl border border-black/10 bg-white/60 p-4 shadow-sm"
+          className="h-full min-h-0 overflow-y-auto rounded-2xl border border-border bg-surface p-4 shadow-subtle"
         >
         <div ref={contentRef} className="mx-auto w-full">
           {loading && (
-            <motion.div
-              className="flex h-72 items-center justify-center text-sm text-muted"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-            >
+            <div className="flex h-72 items-center justify-center text-sm text-muted">
               Cargando PDF...
-            </motion.div>
+            </div>
           )}
           {error && (
             <div className="flex h-72 items-center justify-center text-sm text-red-600">
@@ -515,7 +870,11 @@ export function PdfViewer({
             fileUrl &&
             pages.map((page) => (
               <div
-                key={page}
+                key={
+                  debugFlags.enabled && debugFlags.hardRemountCanvas
+                    ? `${documentId ?? fileUrl ?? "unknown"}:${page}:${zoomLevel}:0`
+                    : `${documentId ?? fileUrl ?? "unknown"}:${page}`
+                }
                 ref={(node) => {
                   pageRefs.current[page - 1] = node;
                 }}
@@ -527,12 +886,10 @@ export function PdfViewer({
                     : ""
                 }`}
               >
-                  <motion.canvas
+                  <canvas
                     ref={(node) => {
                       canvasRefs.current[page - 1] = node;
                     }}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
                     className="mx-auto rounded-xl bg-white shadow"
                   />
               </div>

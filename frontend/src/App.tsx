@@ -14,11 +14,20 @@ import { createPortal } from "react-dom";
 import { AlignLeft, Download, FileText, Info, RefreshCw, Search, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { ConfidenceDot } from "./components/app/ConfidenceDot";
+import { CriticalBadge } from "./components/app/CriticalBadge";
+import { FieldBlock, FieldRow, RepeatableList } from "./components/app/Field";
+import { IconButton } from "./components/app/IconButton";
+import { Section, SectionHeader } from "./components/app/Section";
 import { DocumentsSidebar } from "./components/DocumentsSidebar";
 import { PdfViewer } from "./components/PdfViewer";
 import { SourcePanel } from "./components/SourcePanel";
 import { UploadDropzone } from "./components/UploadDropzone";
 import { Button } from "./components/ui/button";
+import { Input } from "./components/ui/input";
+import { ScrollArea } from "./components/ui/scroll-area";
+import { Separator } from "./components/ui/separator";
+import { ToggleGroup, ToggleGroupItem } from "./components/ui/toggle-group";
 import { Tooltip } from "./components/ui/tooltip";
 import { useSourcePanelState } from "./hooks/useSourcePanelState";
 import { groupProcessingSteps } from "./lib/processingHistory";
@@ -749,33 +758,17 @@ function clampConfidence(value: number): number {
   return Math.max(0, Math.min(1, value));
 }
 
-type ConfidenceTone = "low" | "medium_low" | "medium_high" | "high";
+type ConfidenceTone = "low" | "med" | "high";
 
 function getConfidenceTone(confidence: number): ConfidenceTone {
   const value = clampConfidence(confidence);
-  if (value < 0.25) {
+  if (value < 0.4) {
     return "low";
   }
-  if (value < 0.5) {
-    return "medium_low";
-  }
   if (value < 0.75) {
-    return "medium_high";
+    return "med";
   }
   return "high";
-}
-
-function getConfidenceIndicatorClass(tone: ConfidenceTone): string {
-  if (tone === "high") {
-    return "bg-emerald-500";
-  }
-  if (tone === "medium_high") {
-    return "bg-yellow-500";
-  }
-  if (tone === "medium_low") {
-    return "bg-orange-500";
-  }
-  return "bg-red-500";
 }
 
 function isFieldValueEmpty(value: unknown): boolean {
@@ -2422,62 +2415,43 @@ export function App() {
     setShowUploadInfo(false);
   };
 
-  const viewerModeIconButton = (
-    key: "document" | "raw_text" | "technical",
-    tooltipLabel: string,
-    ariaLabel: string,
-    icon: ReactNode
-  ) => {
-    const isActive = activeViewerTab === key;
-    return (
-      <Tooltip key={key} content={tooltipLabel}>
-        <button
-          type="button"
-          aria-label={ariaLabel}
-          aria-pressed={isActive}
-          onClick={() => setActiveViewerTab(key)}
-          className={`inline-flex h-9 w-9 items-center justify-center rounded-md transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
-            isActive
-              ? "bg-black/[0.10] text-ink"
-              : "bg-transparent text-ink hover:bg-black/[0.06]"
-          }`}
-        >
-          {icon}
-        </button>
-      </Tooltip>
-    );
-  };
-
   const viewerModeToolbarIcons = (
     <>
-      {viewerModeIconButton("document", "Documento", "Documento", <FileText size={16} aria-hidden="true" />)}
-      {viewerModeIconButton(
-        "raw_text",
-        "Texto extraído",
-        "Texto extraido",
+      <IconButton
+        label="Documento"
+        tooltip="Documento"
+        pressed={activeViewerTab === "document"}
+        onClick={() => setActiveViewerTab("document")}
+      >
+        <FileText size={16} aria-hidden="true" />
+      </IconButton>
+      <IconButton
+        label="Texto extraido"
+        tooltip="Texto extraído"
+        pressed={activeViewerTab === "raw_text"}
+        onClick={() => setActiveViewerTab("raw_text")}
+      >
         <AlignLeft size={16} aria-hidden="true" />
-      )}
-      {viewerModeIconButton(
-        "technical",
-        "Detalles técnicos",
-        "Detalles tecnicos",
+      </IconButton>
+      <IconButton
+        label="Detalles tecnicos"
+        tooltip="Detalles técnicos"
+        pressed={activeViewerTab === "technical"}
+        onClick={() => setActiveViewerTab("technical")}
+      >
         <Info size={16} aria-hidden="true" />
-      )}
+      </IconButton>
     </>
   );
 
   const viewerDownloadIcon = downloadUrl ? (
-    <Tooltip content="Descargar">
-      <a
-        href={downloadUrl}
-        target="_blank"
-        rel="noreferrer"
-        aria-label="Descargar"
-        className="inline-flex h-9 w-9 items-center justify-center rounded-md text-ink transition hover:bg-black/[0.06] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-      >
-        <Download size={16} aria-hidden="true" />
-      </a>
-    </Tooltip>
+    <IconButton
+      label="Descargar"
+      tooltip="Descargar"
+      onClick={() => window.open(downloadUrl, "_blank", "noopener,noreferrer")}
+    >
+      <Download size={16} aria-hidden="true" />
+    </IconButton>
   ) : null;
 
   const buildFieldTooltip = (item: ReviewSelectableField, isCritical: boolean): string => {
@@ -2500,14 +2474,11 @@ export function App() {
     const tooltip = buildFieldTooltip(item, field.isCritical);
     return (
       <span data-testid={`badge-group-${item.id}`} className="inline-flex shrink-0 items-center">
-        <Tooltip content={tooltip}>
-          <span
-            data-testid={`confidence-indicator-${item.id}`}
-            tabIndex={0}
-            aria-label={tooltip}
-            className={`inline-block h-2.5 w-2.5 rounded-full ${getConfidenceIndicatorClass(tone)}`}
-          />
-        </Tooltip>
+        <ConfidenceDot
+          tone={tone}
+          tooltip={tooltip}
+          testId={`confidence-indicator-${item.id}`}
+        />
       </span>
     );
   };
@@ -2515,29 +2486,24 @@ export function App() {
   const renderRepeatableReviewField = (field: ReviewDisplayField) => {
     const countLabel = field.items.length === 1 ? "1 elemento" : `${field.items.length} elementos`;
     return (
-      <article key={field.id} className="px-1 py-1">
+      <FieldBlock key={field.id} className="px-1 py-1">
         <div className="flex items-center justify-between gap-2 pb-1">
           <div className="flex items-center gap-1.5">
-            <p className="text-xs font-semibold text-ink">{field.label}</p>
+            <p className="text-xs font-semibold text-text">{field.label}</p>
             {field.isCritical && (
-              <Tooltip content="CRÍTICO">
-                <span
-                  data-testid={`critical-indicator-${field.key}`}
-                  className="inline-flex h-4 min-w-4 items-center justify-center rounded-full border border-black/15 text-[10px] font-semibold leading-none text-muted"
-                >
-                  !
-                </span>
-              </Tooltip>
+              <CriticalBadge testId={`critical-indicator-${field.key}`} />
             )}
           </div>
           {field.items.length > 0 && (
-            <span className="rounded-full border border-black/10 px-2 py-0.5 text-[10px] font-semibold text-muted">
+            <span className="rounded-full border border-border px-2 py-0.5 text-[10px] font-semibold text-textSecondary">
               {countLabel}
             </span>
           )}
         </div>
-        <div className="mt-1 space-y-1">
-          {field.isEmptyList && <p className="py-0.5 text-sm italic text-muted">{EMPTY_LIST_PLACEHOLDER}</p>}
+        <RepeatableList>
+          {field.isEmptyList && (
+            <p className="py-0.5 text-sm italic text-missing">{EMPTY_LIST_PLACEHOLDER}</p>
+          )}
           {field.items.map((item) => {
             const isSelected = selectedFieldId === item.id;
             return (
@@ -2552,18 +2518,21 @@ export function App() {
                   className="w-full cursor-pointer rounded-md px-1 py-0.5 text-left transition hover:bg-black/[0.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                   onClick={() => handleSelectReviewItem(item)}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <p className={`min-w-0 text-sm ${item.isMissing ? "italic text-muted" : "text-ink"}`}>
-                      {item.displayValue}
-                    </p>
-                    <div className="pt-0.5">{renderConfidenceIndicator(field, item)}</div>
-                  </div>
+                  <FieldRow
+                    label={null}
+                    value={
+                      <p className={`min-w-0 text-sm ${item.isMissing ? "italic text-missing" : "text-text"}`}>
+                        {item.displayValue}
+                      </p>
+                    }
+                    status={<div className="pt-0.5">{renderConfidenceIndicator(field, item)}</div>}
+                  />
                 </button>
               </div>
             );
           })}
-        </div>
-      </article>
+        </RepeatableList>
+      </FieldBlock>
     );
   };
 
@@ -2578,7 +2547,7 @@ export function App() {
     const canExpand = item.displayValue.length > 140;
 
     return (
-      <article
+      <FieldBlock
         key={field.id}
         className={`px-1 py-1.5 ${
           isSelected ? "border-l-2 border-accent bg-accentSoft/50" : ""
@@ -2589,29 +2558,24 @@ export function App() {
           className="w-full cursor-pointer rounded-md px-1 py-0.5 text-left transition hover:bg-black/[0.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           onClick={() => handleSelectReviewItem(item)}
         >
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-1.5 pr-3">
-              <p className="text-xs font-semibold text-ink">{field.label}</p>
-              {field.isCritical && (
-                <Tooltip content="CRÍTICO">
-                  <span
-                    data-testid={`critical-indicator-${field.key}`}
-                    className="inline-flex h-4 min-w-4 items-center justify-center rounded-full border border-black/15 text-[10px] font-semibold leading-none text-muted"
-                  >
-                    !
-                  </span>
-                </Tooltip>
-              )}
-              {renderConfidenceIndicator(field, item)}
-            </div>
-            <p
-              className={`min-w-0 max-w-[65%] text-right text-sm ${
-                item.isMissing ? "italic text-muted" : "text-ink"
-              }`}
-            >
-              {valueText}
-            </p>
-          </div>
+          <FieldRow
+            label={
+              <>
+                <p className="text-xs font-semibold text-text">{field.label}</p>
+                {field.isCritical && <CriticalBadge testId={`critical-indicator-${field.key}`} />}
+              </>
+            }
+            value={
+              <p
+                className={`min-w-0 max-w-[65%] text-right text-sm ${
+                  item.isMissing ? "italic text-missing" : "text-text"
+                }`}
+              >
+                {valueText}
+              </p>
+            }
+            status={renderConfidenceIndicator(field, item)}
+          />
         </button>
         {canExpand && (
           <button
@@ -2627,7 +2591,7 @@ export function App() {
             {isExpanded ? "Ver menos" : "Ver más"}
           </button>
         )}
-      </article>
+      </FieldBlock>
     );
   };
 
@@ -2762,11 +2726,11 @@ export function App() {
     const isEmptyExtraSection = isExtraSection && section.fields.length === 0;
 
     return (
-      <section key={section.id} className="rounded-xl border-2 border-black/20 bg-white px-4 py-4">
-        <p className="border-b border-black/15 pb-2 text-base font-semibold text-ink">{section.title}</p>
+      <Section key={section.id} className="border-2 border-border bg-surface">
+        <SectionHeader title={section.title} />
         <div className="mt-2">
           {isEmptyExtraSection && (
-            <p className="rounded-xl border border-black/10 bg-white/90 px-3 py-2 text-xs text-muted">
+            <p className="rounded-xl border border-border bg-surface px-3 py-2 text-xs text-textSecondary">
               No hay otros campos extraídos.
             </p>
           )}
@@ -2777,7 +2741,7 @@ export function App() {
             <div className="mt-2 space-y-1.5">{repeatableFields.map(renderRepeatableReviewField)}</div>
           )}
         </div>
-      </section>
+      </Section>
     );
   };
 
@@ -2819,6 +2783,7 @@ export function App() {
         fileUrl ? (
           <PdfViewer
             key={`source-${activeId ?? "empty"}`}
+            documentId={activeId}
             fileUrl={fileUrl}
             filename={filename}
             isDragOver={false}
@@ -2973,6 +2938,7 @@ export function App() {
                             {fileUrl ? (
                               <PdfViewer
                                 key={`${effectiveViewMode}-${activeId ?? "empty"}`}
+                                documentId={activeId}
                                 fileUrl={fileUrl}
                                 filename={filename}
                                 isDragOver={false}
@@ -3028,7 +2994,7 @@ export function App() {
                                     className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"
                                     aria-hidden="true"
                                   />
-                                  <input
+                                  <Input
                                     ref={structuredSearchInputRef}
                                     type="text"
                                     aria-label="Buscar en datos estructurados"
@@ -3036,84 +3002,65 @@ export function App() {
                                     disabled={reviewPanelState !== "ready"}
                                     onChange={(event) => setStructuredSearchInput(event.target.value)}
                                     placeholder="Buscar campo, clave o valor"
-                                    className="w-full rounded-full border border-black/10 bg-white py-1.5 pl-9 pr-9 text-xs text-ink outline-none focus-visible:border-black/20 disabled:cursor-not-allowed disabled:bg-black/[0.03]"
+                                    className="w-full rounded-full bg-surface py-1.5 pl-9 pr-9 text-xs"
                                   />
                                   {structuredSearchInput.trim().length > 0 && (
-                                    <button
-                                      type="button"
-                                      aria-label="Limpiar búsqueda"
-                                      onClick={() => {
-                                        setStructuredSearchInput("");
-                                        structuredSearchInputRef.current?.focus();
-                                      }}
-                                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted transition hover:bg-black/[0.06] hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
-                                    >
-                                      <X size={12} aria-hidden="true" />
-                                    </button>
+                                    <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                                      <IconButton
+                                        label="Limpiar búsqueda"
+                                        tooltip="Limpiar búsqueda"
+                                        onClick={() => {
+                                          setStructuredSearchInput("");
+                                          structuredSearchInputRef.current?.focus();
+                                        }}
+                                      >
+                                        <X size={12} aria-hidden="true" />
+                                      </IconButton>
+                                    </div>
                                   )}
                                 </label>
 
-                                {([
-                                  { bucket: "low", label: "Baja" },
-                                  { bucket: "medium", label: "Media" },
-                                  { bucket: "high", label: "Alta" },
-                                ] as const).map(({ bucket, label }) => {
-                                  const isActive = selectedConfidenceBuckets.includes(bucket);
-                                  return (
-                                    <Tooltip key={bucket} content={`Confianza ${label.toLowerCase()}`}>
-                                      <button
-                                        type="button"
-                                        disabled={reviewPanelState !== "ready"}
-                                        aria-pressed={isActive}
-                                        onClick={() =>
-                                          setSelectedConfidenceBuckets((current) =>
-                                            current.includes(bucket)
-                                              ? current.filter((value) => value !== bucket)
-                                              : [...current, bucket]
-                                          )
-                                        }
-                                        className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
-                                          isActive
-                                            ? "border-ink/30 bg-black/[0.06] text-ink"
-                                            : "border-black/10 bg-white text-muted hover:text-ink"
-                                        } disabled:cursor-not-allowed disabled:opacity-60`}
-                                      >
-                                        {label}
-                                      </button>
-                                    </Tooltip>
-                                  );
-                                })}
+                                <Separator orientation="vertical" className="hidden h-6 sm:block" />
 
-                                <Tooltip content="Mostrar solo campos críticos">
-                                  <button
-                                    type="button"
-                                    disabled={reviewPanelState !== "ready"}
-                                    aria-pressed={showOnlyCritical}
-                                    onClick={() => setShowOnlyCritical((current) => !current)}
-                                    className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
-                                      showOnlyCritical
-                                        ? "border-ink/30 bg-black/[0.06] text-ink"
-                                        : "border-black/10 bg-white text-muted hover:text-ink"
-                                    } disabled:cursor-not-allowed disabled:opacity-60`}
-                                  >
+                                <ToggleGroup
+                                  type="multiple"
+                                  value={selectedConfidenceBuckets}
+                                  disabled={reviewPanelState !== "ready"}
+                                  onValueChange={(values) =>
+                                    setSelectedConfidenceBuckets(
+                                      values.filter(
+                                        (value): value is ConfidenceBucket =>
+                                          value === "low" || value === "medium" || value === "high"
+                                      )
+                                    )
+                                  }
+                                  aria-label="Filtros de confianza"
+                                >
+                                  <ToggleGroupItem value="low" aria-label="Confianza baja">Baja</ToggleGroupItem>
+                                  <ToggleGroupItem value="medium" aria-label="Confianza media">Media</ToggleGroupItem>
+                                  <ToggleGroupItem value="high" aria-label="Confianza alta">Alta</ToggleGroupItem>
+                                </ToggleGroup>
+
+                                <ToggleGroup
+                                  type="multiple"
+                                  value={[
+                                    ...(showOnlyCritical ? ["critical"] : []),
+                                    ...(showOnlyWithValue ? ["withValue"] : []),
+                                  ]}
+                                  disabled={reviewPanelState !== "ready"}
+                                  onValueChange={(values) => {
+                                    setShowOnlyCritical(values.includes("critical"));
+                                    setShowOnlyWithValue(values.includes("withValue"));
+                                  }}
+                                  aria-label="Filtros adicionales"
+                                >
+                                  <ToggleGroupItem value="critical" aria-label="Mostrar solo campos críticos">
                                     Solo CRÍTICOS
-                                  </button>
-                                </Tooltip>
-                                <Tooltip content="Mostrar solo campos con valor">
-                                  <button
-                                    type="button"
-                                    disabled={reviewPanelState !== "ready"}
-                                    aria-pressed={showOnlyWithValue}
-                                    onClick={() => setShowOnlyWithValue((current) => !current)}
-                                    className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
-                                      showOnlyWithValue
-                                        ? "border-ink/30 bg-black/[0.06] text-ink"
-                                        : "border-black/10 bg-white text-muted hover:text-ink"
-                                    } disabled:cursor-not-allowed disabled:opacity-60`}
-                                  >
+                                  </ToggleGroupItem>
+                                  <ToggleGroupItem value="withValue" aria-label="Mostrar solo campos con valor">
                                     Solo con valor
-                                  </button>
-                                </Tooltip>
+                                  </ToggleGroupItem>
+                                </ToggleGroup>
                               </div>
                             </div>
 
@@ -3189,21 +3136,23 @@ export function App() {
                               )}
 
                               {reviewPanelState === "ready" && (
-                                <div
+                                <ScrollArea
                                   data-testid="right-panel-scroll"
-                                  className="h-full min-h-0 overflow-y-auto pr-1 space-y-3"
+                                  className="h-full min-h-0 pr-1"
                                 >
-                                  {hasNoStructuredFilterResults && (
-                                    <p className="rounded-xl border border-black/10 bg-white/90 px-3 py-2 text-xs text-muted">
-                                      No hay resultados con los filtros actuales.
-                                    </p>
-                                  )}
-                                  {reportSections.map((section) =>
-                                    reportLayout === 1
-                                      ? renderSectionLayout1(section)
-                                      : renderSectionLayout2(section)
-                                  )}
-                                </div>
+                                  <div className="space-y-3">
+                                    {hasNoStructuredFilterResults && (
+                                      <p className="rounded-xl border border-black/10 bg-white/90 px-3 py-2 text-xs text-muted">
+                                        No hay resultados con los filtros actuales.
+                                      </p>
+                                    )}
+                                    {reportSections.map((section) =>
+                                      reportLayout === 1
+                                        ? renderSectionLayout1(section)
+                                        : renderSectionLayout2(section)
+                                    )}
+                                  </div>
+                                </ScrollArea>
                               )}
                             </div>
 
@@ -3550,14 +3499,13 @@ export function App() {
           >
             <div className="flex items-start justify-between gap-3">
               <p className="text-sm">No se pudo conectar con el servidor.</p>
-              <button
-                type="button"
-                aria-label="Cerrar aviso de conexión"
-                className="text-lg font-semibold leading-none"
+              <IconButton
+                label="Cerrar aviso de conexión"
                 onClick={() => setConnectivityToast(null)}
+                className="text-lg font-semibold leading-none"
               >
                 &times;
-              </button>
+              </IconButton>
             </div>
           </div>
         </div>
@@ -3578,14 +3526,13 @@ export function App() {
           >
                   <div className="flex items-center justify-between gap-3">
                     <span>{uploadFeedback.message}</span>
-              <button
-                type="button"
-                aria-label="Cerrar notificacion"
-                className="text-lg font-semibold leading-none text-ink"
+              <IconButton
+                label="Cerrar notificacion"
                 onClick={() => setUploadFeedback(null)}
+                className="text-lg font-semibold leading-none text-ink"
               >
                 &times;
-              </button>
+              </IconButton>
             </div>
                   {uploadFeedback.kind === "success" &&
                     uploadFeedback.documentId &&
@@ -3631,14 +3578,13 @@ export function App() {
                 >
                   <div className="flex items-center justify-between gap-3">
                     <span>{actionFeedback.message}</span>
-                    <button
-                      type="button"
-                      aria-label="Cerrar notificacion de accion"
-                      className="text-lg font-semibold leading-none text-ink"
+                    <IconButton
+                      label="Cerrar notificacion de accion"
                       onClick={() => setActionFeedback(null)}
+                      className="text-lg font-semibold leading-none text-ink"
                     >
                       &times;
-                    </button>
+                    </IconButton>
                   </div>
                   {actionFeedback.kind === "error" && actionFeedback.technicalDetails && (
                     <div className="mt-2 flex items-center gap-3">

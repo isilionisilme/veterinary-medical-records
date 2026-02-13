@@ -37,6 +37,9 @@ The frontend is implemented using:
   Do not add a UI component library unless required to satisfy accessibility or interaction requirements,
   and justify any new dependency.
 
+- **Lean design system contract**
+  Follow [`docs/project/DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md) for tokens, primitives, wrappers, and guard rules.
+
 - **TanStack Query**  
   Used for server state management (loading, error, invalidation) without introducing global client state complexity.
 

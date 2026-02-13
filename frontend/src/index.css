@@ -1,25 +1,50 @@
-﻿@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap");
+﻿@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --ink: #1f1a14;
-  --surface: #f7f2ea;
-  --muted: #8a7f74;
-  --accent: #d05b2d;
-  --accent-soft: #f1d1c3;
-  --page-bg: #ebf5ff;
-  --title-accent: #fc4e1b;
+  --color-page-bg: #ebf5ff;
+  --color-surface: #ffffff;
+  --color-surface-muted: #eef1f4;
+  --color-text: #1f2933;
+  --color-text-secondary: #6b7280;
+  --color-text-muted: #9ca3af;
+  --color-border: #e5e7eb;
+  --color-border-subtle: #eef1f4;
+  --color-accent: #fc4e1b;
+  --color-accent-foreground: #ffffff;
+  --shadow-subtle: 0 1px 3px rgb(31 41 51 / 0.08);
+
+  --confidence-low: #d16d6a;
+  --confidence-med: #e6b566;
+  --confidence-high: #4caf93;
+  --status-critical: #d16d6a;
+  --status-missing: #9ca3af;
+
+  --page-bg: var(--color-page-bg);
+  --title-accent: var(--color-accent);
 }
 
 body {
-  font-family: "Inter", sans-serif;
-  background: var(--page-bg);
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--color-text);
+  background: var(--color-page-bg);
   min-height: 100vh;
 }
 
 * {
   box-sizing: border-box;
+}
+
+.pdf-debug-no-transform-subtree,
+.pdf-debug-no-transform-subtree * {
+  transform: none !important;
+}
+
+body.pdf-debug-no-motion,
+body.pdf-debug-no-motion * {
+  transition: none !important;
+  animation: none !important;
 }

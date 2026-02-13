@@ -9,4 +9,5 @@ This module applies when changes affect:
 Required:
 - `docs/agent_router/02_PRODUCT/UX/00_entry.md`
 - `docs/agent_router/02_PRODUCT/BRAND/00_entry.md`
+- `docs/agent_router/02_PRODUCT/DESIGN_SYSTEM/00_entry.md`
 

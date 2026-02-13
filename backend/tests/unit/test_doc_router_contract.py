@@ -167,3 +167,15 @@ def test_project_split_entry_includes_implementation_plan_us35_module() -> None:
         in plan_entry
     )
     assert "US-35 — Resizable splitter between PDF Viewer and Structured Data panel" in release4
+
+
+def test_user_visible_entry_includes_design_system_module() -> None:
+    user_visible_entry = _read_text(
+        ROUTER_ROOT / "02_PRODUCT" / "USER_VISIBLE" / "00_entry.md"
+    )
+    design_system_entry = _read_text(
+        ROUTER_ROOT / "02_PRODUCT" / "DESIGN_SYSTEM" / "00_entry.md"
+    )
+
+    assert "docs/agent_router/02_PRODUCT/DESIGN_SYSTEM/00_entry.md" in user_visible_entry
+    assert "docs/agent_router/04_PROJECT/DESIGN_SYSTEM/00_entry.md" in design_system_entry
