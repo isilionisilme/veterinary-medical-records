@@ -684,7 +684,9 @@ describe("App upload and list flow", () => {
       fireEvent.mouseLeave(sidebar);
       expect(sidebar).toHaveAttribute("data-expanded", "true");
 
+      fireEvent.mouseEnter(sidebar);
       fireEvent.click(screen.getByRole("button", { name: /Desfijar barra/i }));
+      expect(sidebar).toHaveAttribute("data-expanded", "true");
       fireEvent.mouseLeave(sidebar);
       expect(sidebar).toHaveAttribute("data-expanded", "false");
     } finally {

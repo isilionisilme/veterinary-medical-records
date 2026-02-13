@@ -810,6 +810,7 @@ export function App() {
   const refreshFeedbackTimerRef = useRef<number | null>(null);
   const copyFeedbackTimerRef = useRef<number | null>(null);
   const latestLoadRequestIdRef = useRef<string | null>(null);
+  const isPointerInsideDocsSidebarRef = useRef(false);
   // Desktop-only hover sidebar for Documents; touch/mobile is deferred to avoid accidental opens.
   const docsHoverSidebarMediaQuery = "(min-width: 1024px) and (hover: hover) and (pointer: fine)";
   const [isDesktopForDocsSidebar, setIsDesktopForDocsSidebar] = useState(false);
@@ -2584,11 +2585,13 @@ export function App() {
                   : "w-80"
               } flex-shrink-0`}
               onMouseEnter={(event) => {
+                isPointerInsideDocsSidebarRef.current = true;
                 if (shouldAutoCollapseDocsSidebar && event.buttons === 0) {
                   setIsDocsSidebarHovered(true);
                 }
               }}
               onMouseLeave={() => {
+                isPointerInsideDocsSidebarRef.current = false;
                 if (shouldAutoCollapseDocsSidebar) {
                   setIsDocsSidebarHovered(false);
                 }
@@ -2611,12 +2614,15 @@ export function App() {
                       <Button
                         variant="ghost"
                         onClick={() => {
-                          setIsDocsSidebarPinned((current) => !current);
-                          if (isDocsSidebarPinned) {
-                            setIsDocsSidebarHovered(false);
-                          } else {
-                            setIsDocsSidebarHovered(true);
-                          }
+                          setIsDocsSidebarPinned((current) => {
+                            const next = !current;
+                            if (next) {
+                              setIsDocsSidebarHovered(true);
+                            } else {
+                              setIsDocsSidebarHovered(isPointerInsideDocsSidebarRef.current);
+                            }
+                            return next;
+                          });
                         }}
                         type="button"
                         title={isDocsSidebarPinned ? "Desfijar barra" : "Fijar barra"}
@@ -2729,6 +2735,7 @@ export function App() {
                     >
                       <UploadDropzone
                         compact
+                        ariaLabel="Cargar documento"
                         title=""
                         subtitle=""
                         isDragOver={isDragOverSidebarUpload}

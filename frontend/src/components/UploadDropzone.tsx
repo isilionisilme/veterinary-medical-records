@@ -13,6 +13,7 @@ type UploadDropzoneProps = {
   title?: string;
   subtitle?: string;
   compact?: boolean;
+  ariaLabel?: string;
 };
 
 export function UploadDropzone({
@@ -27,7 +28,10 @@ export function UploadDropzone({
   title = "Arrastra un PDF aqui",
   subtitle = "o haz clic para cargar",
   compact = false,
+  ariaLabel,
 }: UploadDropzoneProps) {
+  const resolvedAriaLabel = ariaLabel ?? (compact ? "Cargar documento" : `${title} ${subtitle}`.trim());
+
   return (
     <div
       className={`relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed text-center transition ${
@@ -36,6 +40,7 @@ export function UploadDropzone({
           : "border-black/35 bg-white/85 hover:border-black/50 hover:bg-white"
       } ${compact ? "h-12 w-12 px-0 py-0" : "px-4 py-5"} ${className}`}
       role="button"
+      aria-label={resolvedAriaLabel}
       tabIndex={0}
       onClick={onActivate}
       onKeyDown={(event) => {
