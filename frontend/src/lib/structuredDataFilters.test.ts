@@ -73,6 +73,16 @@ describe("structuredDataFilters", () => {
         selectedConfidence: ["medium"],
       })
     ).toBe(false);
+
+    expect(
+      matchesStructuredDataFilters(
+        buildField({ items: [{ displayValue: "—", confidence: 0, isMissing: true }] }),
+        {
+          ...baseFilters,
+          selectedConfidence: ["low"],
+        }
+      )
+    ).toBe(false);
   });
 
   it("treats repeatable fields as matching when any item matches and list length > 0 for onlyWithValue", () => {

@@ -2902,6 +2902,7 @@ export function App() {
                                 />
                                 <input
                                   type="text"
+                                  aria-label="Buscar en datos estructurados"
                                   value={structuredSearchInput}
                                   disabled={reviewPanelState !== "ready"}
                                   onChange={(event) => setStructuredSearchInput(event.target.value)}

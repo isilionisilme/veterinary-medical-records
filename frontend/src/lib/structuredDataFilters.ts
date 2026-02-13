@@ -57,7 +57,9 @@ function matchesConfidence(field: StructuredFilterField, selected: ConfidenceBuc
     return true;
   }
   const allowed = new Set(selected);
-  return field.items.some((item) => allowed.has(getConfidenceBucket(item.confidence)));
+  return field.items.some(
+    (item) => !item.isMissing && allowed.has(getConfidenceBucket(item.confidence))
+  );
 }
 
 export function matchesStructuredDataFilters(
