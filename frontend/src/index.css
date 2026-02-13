@@ -5,13 +5,13 @@
 @tailwind utilities;
 
 :root {
-  --app-bg: #dee8f4;
+  --app-bg: #ebf5ff;
   --canvas-bg: #ffffff;
   --card-bg: #ffffff;
   --app-frame: var(--canvas-bg);
   --surface: var(--card-bg);
-  --surface-muted: #f4f6f8;
-  --border-subtle: #dbe4ef;
+  --surface-muted: #f7f9fa;
+  --border-subtle: #eef1f4;
   --shadow-soft: none;
 
   --radius-frame: 14px;

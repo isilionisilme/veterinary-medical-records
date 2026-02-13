@@ -45,7 +45,14 @@ def _run_git_diff(base_ref: str) -> list[str]:
         "--",
         "frontend",
     ]
-    result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
     if result.returncode != 0:
         print("Brand guard could not compute PR diff.", file=sys.stderr)
         print(result.stderr.strip(), file=sys.stderr)
@@ -62,7 +69,8 @@ def _normalize_hex(hex_token: str) -> str:
 
 def _should_scan(path: str) -> bool:
     p = Path(path)
-    if not str(p).startswith("frontend/"):
+    normalized = p.as_posix()
+    if not normalized.startswith("frontend/"):
         return False
     return p.suffix.lower() in {".css", ".scss", ".ts", ".tsx", ".js", ".jsx", ".html"}
 
