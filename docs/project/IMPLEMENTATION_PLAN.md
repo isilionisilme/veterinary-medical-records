@@ -155,6 +155,7 @@ Enable veterinarians to review the system’s interpretation **in context**, sid
 
 ### User Stories (in order)
 - US-07 — Review document in context
+- US-34 — Search & filters in Structured Data panel
 
 ---
 
@@ -567,6 +568,58 @@ As a veterinarian, I want to review the system’s interpretation while viewing 
 **Test Expectations**
 - Review uses the latest completed run rules.
 - Lack of a completed run yields the normative conflict behavior.
+
+**Definition of Done (DoD)**
+- Acceptance criteria satisfied.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
+
+---
+
+## US-34 — Search & filters in Structured Data panel
+
+**User Story**
+As a veterinarian, I want to quickly narrow down structured fields using search and simple filters so that I can focus on the most relevant data during review.
+
+**Acceptance Criteria**
+- A compact control bar is available under the `Datos estructurados` header.
+- The control bar includes:
+  - Search input with a magnifying-glass icon.
+  - Confidence filter chips: `Baja`, `Media`, `Alta`.
+  - Toggles: `Solo CRÍTICOS`, `Solo con valor`.
+- Filtering applies to rendered Global Schema v0 fields in fixed order.
+- Search is case-insensitive and matches field label, schema key, and rendered value (when present).
+- Confidence bucket semantics are:
+  - `Baja` when confidence < 0.50
+  - `Media` when confidence is 0.50–0.75
+  - `Alta` when confidence >= 0.75
+- Filters combine with logical AND.
+- Repeatable fields:
+  - Match search when at least one item matches.
+  - Match `Solo con valor` when list length is > 0.
+- Section behavior:
+  - Without filters/search, all sections are shown.
+  - With any filter/search active, sections with 0 matches are hidden/collapsed.
+- If no fields match, the panel shows: `No hay resultados con los filtros actuales.`
+- Search uses debounce between 150 and 250 ms.
+
+**Scope Clarification**
+- This story does not change Global Schema v0 keys or ordering.
+- This story does not add or modify endpoints.
+- This story does not change interpretation persistence semantics.
+- Changes should remain localized to the review panel UI and related filtering logic.
+
+**Authoritative References**
+- Product: Canonical field authority and order: [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md) section **Global Schema v0 (Canonical Field List)**.
+- UX: Review rendering baseline and deterministic missing/empty behavior: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) section **Review UI Rendering Rules (Global Schema v0 Template)**.
+- Brand: UI controls and visual consistency: [`docs/shared/BRAND_GUIDELINES.md`](../shared/BRAND_GUIDELINES.md).
+- Frontend context: review rendering backbone: [`docs/project/FRONTEND_IMPLEMENTATION.md`](FRONTEND_IMPLEMENTATION.md) section **Review Rendering Backbone (Global Schema v0)**.
+
+**Test Expectations**
+- Unit tests cover search matching behavior (label/key/rendered value).
+- Unit tests cover confidence bucket classification boundaries.
+- Review panel keeps Global Schema v0 order deterministic while filters are applied.
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.

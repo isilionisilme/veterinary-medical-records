@@ -1,6 +1,6 @@
 import { type DragEvent, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Download, FileText, RefreshCw } from "lucide-react";
+import { Download, FileText, RefreshCw, Search } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { PdfViewer } from "./components/PdfViewer";
@@ -20,6 +20,10 @@ import {
   shouldShowDetails,
   statusIcon,
 } from "./lib/processingHistoryView";
+import {
+  type ConfidenceBucket,
+  matchesStructuredDataFilters,
+} from "./lib/structuredDataFilters";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 const MAX_UPLOAD_SIZE_BYTES = 20 * 1024 * 1024;
@@ -774,6 +778,11 @@ export function App() {
   const [reviewLoadingSinceMs, setReviewLoadingSinceMs] = useState<number | null>(null);
   const [isRetryingInterpretation, setIsRetryingInterpretation] = useState(false);
   const [fieldNavigationRequestId, setFieldNavigationRequestId] = useState(0);
+  const [structuredSearchInput, setStructuredSearchInput] = useState("");
+  const [structuredSearchTerm, setStructuredSearchTerm] = useState("");
+  const [selectedConfidenceBuckets, setSelectedConfidenceBuckets] = useState<ConfidenceBucket[]>([]);
+  const [showOnlyCritical, setShowOnlyCritical] = useState(false);
+  const [showOnlyWithValue, setShowOnlyWithValue] = useState(false);
   const [reportLayout, setReportLayout] = useState<ReportLayout>(() => {
     if (!import.meta.env.DEV || typeof window === "undefined") {
       return 2;
@@ -833,6 +842,13 @@ export function App() {
     }
     window.localStorage.setItem(REPORT_LAYOUT_STORAGE_KEY, String(reportLayout));
   }, [reportLayout]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setStructuredSearchTerm(structuredSearchInput);
+    }, 200);
+    return () => window.clearTimeout(timer);
+  }, [structuredSearchInput]);
 
   useEffect(() => {
     if (!import.meta.env.DEV || typeof window === "undefined") {
@@ -1890,25 +1906,64 @@ export function App() {
     }));
   }, [coreDisplayFields]);
 
+  const structuredDataFilters = useMemo(
+    () => ({
+      searchTerm: structuredSearchTerm,
+      selectedConfidence: selectedConfidenceBuckets,
+      onlyCritical: showOnlyCritical,
+      onlyWithValue: showOnlyWithValue,
+    }),
+    [selectedConfidenceBuckets, showOnlyCritical, showOnlyWithValue, structuredSearchTerm]
+  );
+
+  const hasActiveStructuredFilters =
+    structuredSearchTerm.trim().length > 0 ||
+    selectedConfidenceBuckets.length > 0 ||
+    showOnlyCritical ||
+    showOnlyWithValue;
+
+  const visibleCoreGroups = useMemo(() => {
+    if (!hasActiveStructuredFilters) {
+      return groupedCoreFields;
+    }
+    return groupedCoreFields
+      .map((group) => ({
+        section: group.section,
+        fields: group.fields.filter((field) => matchesStructuredDataFilters(field, structuredDataFilters)),
+      }))
+      .filter((group) => group.fields.length > 0);
+  }, [groupedCoreFields, hasActiveStructuredFilters, structuredDataFilters]);
+
+  const visibleOtherDisplayFields = hasActiveStructuredFilters ? [] : otherDisplayFields;
+
+  const visibleCoreFields = useMemo(
+    () => visibleCoreGroups.flatMap((group) => group.fields),
+    [visibleCoreGroups]
+  );
+
   const reportSections = useMemo(
     () => [
-      ...groupedCoreFields.map((group) => ({
+      ...visibleCoreGroups.map((group) => ({
         id: `core:${group.section}`,
         title: group.section,
         fields: group.fields,
       })),
-      {
-        id: "extra:section",
-        title: "Otros campos extraídos",
-        fields: otherDisplayFields,
-      },
+      ...(!hasActiveStructuredFilters
+        ? [
+            {
+              id: "extra:section",
+              title: "Otros campos extraídos",
+              fields: visibleOtherDisplayFields,
+            },
+          ]
+        : []),
     ],
-    [groupedCoreFields, otherDisplayFields]
+    [hasActiveStructuredFilters, visibleCoreGroups, visibleOtherDisplayFields]
   );
 
   const selectableReviewItems = useMemo(
-    () => [...coreDisplayFields, ...otherDisplayFields].flatMap((field) => field.items),
-    [coreDisplayFields, otherDisplayFields]
+    () => [...visibleCoreFields, ...visibleOtherDisplayFields].flatMap((field) => field.items),
+    [visibleCoreFields, visibleOtherDisplayFields]
   );
 
   const selectedReviewField = useMemo(() => {
@@ -1978,6 +2033,8 @@ export function App() {
 
   const shouldShowReviewEmptyState =
     reviewPanelState !== "loading" && reviewPanelState !== "ready" && Boolean(reviewPanelMessage);
+  const hasNoStructuredFilterResults =
+    reviewPanelState === "ready" && hasActiveStructuredFilters && visibleCoreGroups.length === 0;
   const shouldShowLoadPdfErrorBanner =
     loadPdf.isError && !isConnectivityOrServerError(loadPdf.error);
 
@@ -2835,6 +2892,83 @@ export function App() {
                             </Button>
                           </div>
 
+                          <div className="mt-2 rounded-xl border border-black/10 bg-white/90 px-3 py-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <label className="relative min-w-[220px] flex-1">
+                                <Search
+                                  size={14}
+                                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"
+                                  aria-hidden="true"
+                                />
+                                <input
+                                  type="text"
+                                  value={structuredSearchInput}
+                                  disabled={reviewPanelState !== "ready"}
+                                  onChange={(event) => setStructuredSearchInput(event.target.value)}
+                                  placeholder="Buscar campo, clave o valor"
+                                  className="w-full rounded-full border border-black/10 bg-white py-1.5 pl-9 pr-3 text-xs text-ink outline-none focus-visible:border-black/20 disabled:cursor-not-allowed disabled:bg-black/[0.03]"
+                                />
+                              </label>
+
+                              {([
+                                { bucket: "low", label: "Baja" },
+                                { bucket: "medium", label: "Media" },
+                                { bucket: "high", label: "Alta" },
+                              ] as const).map(({ bucket, label }) => {
+                                const isActive = selectedConfidenceBuckets.includes(bucket);
+                                return (
+                                  <button
+                                    key={bucket}
+                                    type="button"
+                                    disabled={reviewPanelState !== "ready"}
+                                    aria-pressed={isActive}
+                                    onClick={() =>
+                                      setSelectedConfidenceBuckets((current) =>
+                                        current.includes(bucket)
+                                          ? current.filter((value) => value !== bucket)
+                                          : [...current, bucket]
+                                      )
+                                    }
+                                    className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
+                                      isActive
+                                        ? "border-ink/30 bg-black/[0.06] text-ink"
+                                        : "border-black/10 bg-white text-muted hover:text-ink"
+                                    } disabled:cursor-not-allowed disabled:opacity-60`}
+                                  >
+                                    {label}
+                                  </button>
+                                );
+                              })}
+
+                              <button
+                                type="button"
+                                disabled={reviewPanelState !== "ready"}
+                                aria-pressed={showOnlyCritical}
+                                onClick={() => setShowOnlyCritical((current) => !current)}
+                                className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
+                                  showOnlyCritical
+                                    ? "border-ink/30 bg-black/[0.06] text-ink"
+                                    : "border-black/10 bg-white text-muted hover:text-ink"
+                                } disabled:cursor-not-allowed disabled:opacity-60`}
+                              >
+                                Solo CRÍTICOS
+                              </button>
+                              <button
+                                type="button"
+                                disabled={reviewPanelState !== "ready"}
+                                aria-pressed={showOnlyWithValue}
+                                onClick={() => setShowOnlyWithValue((current) => !current)}
+                                className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
+                                  showOnlyWithValue
+                                    ? "border-ink/30 bg-black/[0.06] text-ink"
+                                    : "border-black/10 bg-white text-muted hover:text-ink"
+                                } disabled:cursor-not-allowed disabled:opacity-60`}
+                              >
+                                Solo con valor
+                              </button>
+                            </div>
+                          </div>
+
                           <div className="mt-3 flex-1 min-h-0">
                             {reviewPanelState === "loading" && (
                               <div
@@ -2911,9 +3045,9 @@ export function App() {
                                 data-testid="right-panel-scroll"
                                 className="h-full min-h-0 overflow-y-auto pr-1 space-y-3"
                               >
-                                {reportSections.length === 0 && (
+                                {hasNoStructuredFilterResults && (
                                   <p className="rounded-xl border border-black/10 bg-white/90 px-3 py-2 text-xs text-muted">
-                                    Ningún campo core coincide con los filtros.
+                                    No hay resultados con los filtros actuales.
                                   </p>
                                 )}
                                 {reportSections.map((section) =>
