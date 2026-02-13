@@ -27,8 +27,10 @@ All new user-visible UI must use tokens instead of scattered hard-coded values.
 | Token | Value | Usage |
 |---|---|---|
 | `--app-bg` | `#EDF3FB` | outer page background |
-| `--app-frame` | `#F8FBFF` | main app frame/container |
-| `--surface` | `#F2F5FA` | cards/panels (inner surfaces) |
+| `--canvas-bg` | `#F8FBFF` | main app canvas/container |
+| `--card-bg` | `#F2F5FA` | cards/panels (inner surfaces) |
+| `--app-frame` | `var(--canvas-bg)` | canvas alias |
+| `--surface` | `var(--card-bg)` | card alias |
 | `--surface-muted` | `#E9EFF6` | subtle inner surfaces / toolbar blocks |
 | `--border-subtle` | `#DBE4EF` | subtle separators and panel borders |
 | `--shadow-soft` | `0 10px 28px rgb(31 41 51 / 0.08)` | soft elevation for frame/cards |
@@ -38,11 +40,25 @@ All new user-visible UI must use tokens instead of scattered hard-coded values.
 | `--color-text` | `#1F2933` | primary text |
 | `--color-text-secondary` | `#6B7280` | secondary text |
 | `--color-text-muted` | `#9CA3AF` | metadata/helper text |
+| `--text-title` | `var(--color-text)` | panel/section title text (`text.title`) |
+| `--text-body` | `var(--color-text)` | default body text (`text.body`) |
+| `--text-muted` | `var(--color-text-secondary)` | secondary metadata (`text.muted`) |
 | `--color-border` | `#E5E7EB` | default borders |
 | `--color-border-subtle` | `var(--border-subtle)` | subtle separators alias |
 | `--color-accent` | `#FC4E1B` | primary accent |
 | `--color-accent-foreground` | `#FFFFFF` | text on accent |
 | `--shadow-subtle` | `var(--shadow-soft)` | gentle elevation alias |
+
+### Surface levels (L0–L3)
+
+- **L0 (`--app-bg`)**: page background outside the app frame.
+- **L1 (`--canvas-bg`)**: main application canvas/frame.
+- **L2 (`--card-bg` / `--surface`)**: primary panels/cards (sidebar, viewer, data panel).
+- **L3 (`--surface-muted`)**: inner controls/toolbar blocks/secondary containers.
+
+Rule:
+- Prefer alternating levels to avoid flat “same color everywhere” composition.
+- Use one logical boundary per block; avoid unnecessary nested frames.
 
 ### Semantic/status tokens
 
@@ -73,6 +89,18 @@ Guideline:
 - Frame uses `radius-frame`.
 - Cards and major panels use `radius-card`.
 - Controls (buttons/inputs/toggles/chips) use `radius-control`.
+
+### Text hierarchy
+
+- **Section titles**: stronger size/weight (`text-lg`, `font-semibold`).
+- **Body text**: default readable text tokens (`text-text`).
+- **Metadata/help**: compact muted hierarchy (`text-xs`, `text-textSecondary`/`text-muted`).
+
+### Focus ring & accent usage
+
+- Focus ring token uses `accent` (`focus-visible:outline-accent`) for keyboard visibility.
+- Accent is reserved for primary actions, selected states, and key highlights.
+- Accent must not be used as a background wash for all surfaces.
 
 ---
 
@@ -105,7 +133,7 @@ Project wrappers standardize repeated review UI patterns:
 - `ConfidenceDot`: semantic confidence indicator with tooltip.
 - `CriticalBadge`: consistent critical marker.
 - `RepeatableList`: list container for repeatable values.
-- `DocumentStatusCluster`: compact, reusable status cluster for document list/sidebar (primary status signal).
+- `DocumentStatusChip` (`DocumentStatusCluster` compatibility alias): compact, reusable status chip for document list/sidebar (primary status signal).
 
 ---
 
@@ -158,6 +186,12 @@ Required steps:
   - left: field label,
   - right: value,
   - status cluster: `CriticalBadge` + `ConfidenceDot`.
+
+### Example 3 — Layered panel composition
+
+- App shell at L1 (`bg-canvas`) over L0 (`bg-page`).
+- Main panels at L2 (`bg-surface`, `rounded-card`).
+- Toolbars and control groups at L3 (`bg-surfaceMuted`, `rounded-control`).
 
 ---
 

@@ -4,12 +4,17 @@
     extend: {
       colors: {
         appBg: "var(--app-bg)",
+        canvas: "var(--canvas-bg)",
+        cardBg: "var(--card-bg)",
         frame: "var(--app-frame)",
         page: "var(--app-bg)",
         surface: "var(--color-surface)",
         surfaceMuted: "var(--color-surface-muted)",
         text: "var(--color-text)",
         ink: "var(--color-text)",
+        textTitle: "var(--text-title)",
+        textBody: "var(--text-body)",
+        textMuted: "var(--text-muted)",
         textSecondary: "var(--color-text-secondary)",
         muted: "var(--color-text-muted)",
         border: "var(--color-border)",

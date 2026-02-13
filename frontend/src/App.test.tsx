@@ -560,6 +560,23 @@ describe("App upload and list flow", () => {
     expect(screen.queryByText(/Vista Docs · PDF · Datos/i)).toBeNull();
   });
 
+  it("shows brand header with left brand cluster and right action buttons", async () => {
+    renderApp();
+
+    expect(screen.getByText("Barkibu")).toBeInTheDocument();
+    expect(screen.getByText("Revisión de reembolsos")).toBeInTheDocument();
+
+    const headerRow = screen.getByTestId("header-cluster-row");
+    const brandCluster = within(headerRow).getByTestId("header-brand-cluster");
+    const actionsCluster = within(headerRow).getByTestId("header-actions-cluster");
+
+    expect(within(brandCluster).getByText("Barkibu")).toBeInTheDocument();
+    expect(within(actionsCluster).getByRole("button", { name: /Actualizar/i })).toBeInTheDocument();
+    expect(
+      within(actionsCluster).getByRole("button", { name: /(Fijar barra|Desfijar barra)/i })
+    ).toBeInTheDocument();
+  });
+
   it("auto-collapses docs sidebar on desktop after selecting a document and expands on hover", async () => {
     const originalMatchMedia = window.matchMedia;
     try {
@@ -588,7 +605,7 @@ describe("App upload and list flow", () => {
 
       expect(sidebar).toHaveAttribute("data-expanded", "false");
       expect(sidebar.className).toContain("w-14");
-      expect(screen.queryByRole("button", { name: /Actualizar/i })).toBeNull();
+      expect(screen.getByRole("button", { name: /Actualizar/i })).toBeInTheDocument();
       const leftRailScroll = screen.getByTestId("left-panel-scroll");
       expect(leftRailScroll.className).toContain("[scrollbar-width:none]");
 
@@ -725,7 +742,7 @@ describe("App upload and list flow", () => {
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
     await screen.findByText("Identificacion del caso");
 
-    expect(screen.getByRole("heading", { name: /Datos extraidos/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Datos extraídos/i })).toBeInTheDocument();
     expect(screen.queryByText(/La confianza guia la atencion, no bloquea decisiones\./i)).toBeNull();
     expect(screen.queryByRole("button", { name: /Abrir texto/i })).toBeNull();
     expect(screen.queryByRole("button", { name: /Documento original/i })).toBeNull();
@@ -737,7 +754,7 @@ describe("App upload and list flow", () => {
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
     await screen.findByText("Identificacion del caso");
 
-    const searchInput = screen.getByRole("textbox", { name: /Buscar en datos extraidos/i });
+    const searchInput = screen.getByRole("textbox", { name: /Buscar en datos extraídos/i });
     expect(screen.queryByRole("button", { name: /Limpiar búsqueda/i })).toBeNull();
 
     fireEvent.change(searchInput, { target: { value: "Luna" } });

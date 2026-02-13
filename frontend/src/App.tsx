@@ -10,7 +10,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { AlignLeft, Download, FileText, Info, RefreshCw, Search, X } from "lucide-react";
+import { AlignLeft, Download, FileText, Info, Pin, PinOff, RefreshCw, Search, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { ConfidenceDot } from "./components/app/ConfidenceDot";
@@ -2681,16 +2681,42 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-page px-4 py-3 md:px-6 lg:px-8 xl:px-10">
-      <div className="mx-auto w-full max-w-[1640px] rounded-frame border border-borderSubtle bg-frame px-4 py-3 shadow-soft md:px-5 lg:px-6">
-      <header className="sticky top-0 z-40 flex w-full flex-col gap-1 bg-frame/95 py-1 backdrop-blur-sm">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-[var(--title-accent)]">
-              BARKIBU
-            </p>
-            <h1 className="font-display text-2xl font-semibold leading-tight text-[var(--title-accent)]">
-              Revisión de reembolsos
-            </h1>
+      <div className="mx-auto w-full max-w-[1640px] rounded-frame border border-borderSubtle bg-canvas px-4 py-3 shadow-soft md:px-5 lg:px-6">
+      <header className="sticky top-0 z-40 flex w-full flex-col gap-1 bg-canvas/95 py-1 backdrop-blur-sm">
+        <div className="flex items-center justify-between gap-3" data-testid="header-cluster-row">
+          <div className="flex items-center gap-2" data-testid="header-brand-cluster">
+            <span
+              aria-hidden="true"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-control bg-accent text-xs font-semibold text-accentForeground"
+            >
+              B
+            </span>
+            <div>
+              <p className="font-display text-base font-semibold leading-none text-accent">Barkibu</p>
+              <p className="mt-1 text-xs text-textMuted">Revisión de reembolsos</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2" data-testid="header-actions-cluster">
+            <IconButton
+              label={isDocsSidebarPinned ? "Desfijar barra" : "Fijar barra"}
+              tooltip={isDocsSidebarPinned ? "Desfijar barra" : "Fijar barra"}
+              pressed={isDocsSidebarPinned}
+              onClick={handleToggleDocsSidebarPin}
+            >
+              {isDocsSidebarPinned ? <PinOff size={16} aria-hidden="true" /> : <Pin size={16} aria-hidden="true" />}
+            </IconButton>
+            <IconButton
+              label="Actualizar"
+              tooltip="Actualizar"
+              onClick={handleRefresh}
+              disabled={documentList.isFetching || showRefreshFeedback}
+            >
+              <RefreshCw
+                size={16}
+                aria-hidden="true"
+                className={documentList.isFetching || showRefreshFeedback ? "animate-spin" : ""}
+              />
+            </IconButton>
           </div>
         </div>
       </header>
@@ -2700,8 +2726,6 @@ export function App() {
             panelHeightClass={panelHeightClass}
             shouldUseHoverDocsSidebar={shouldUseHoverDocsSidebar}
             isDocsSidebarExpanded={isDocsSidebarExpanded}
-            isDocsSidebarPinned={isDocsSidebarPinned}
-            isRefreshingDocuments={documentList.isFetching || showRefreshFeedback}
             isUploadPending={uploadMutation.isPending}
             isDragOverSidebarUpload={isDragOverSidebarUpload}
             isDocumentListLoading={documentList.isLoading}
@@ -2721,8 +2745,6 @@ export function App() {
             mapDocumentStatus={mapDocumentStatus}
             onSidebarMouseEnter={handleDocsSidebarMouseEnter}
             onSidebarMouseLeave={handleDocsSidebarMouseLeave}
-            onTogglePin={handleToggleDocsSidebarPin}
-            onRefresh={handleRefresh}
             onOpenUploadArea={handleOpenUploadArea}
             onSidebarUploadDragEnter={handleSidebarUploadDragEnter}
             onSidebarUploadDragOver={handleSidebarUploadDragOver}
@@ -2731,13 +2753,13 @@ export function App() {
             onSidebarFileInputChange={handleSidebarFileInputChange}
             onSelectDocument={handleSelectDocument}
           />
-          <section className={`flex flex-1 flex-col rounded-card border border-borderSubtle bg-surface p-5 shadow-subtle ${panelHeightClass}`}>
+          <section className={`flex min-w-0 flex-1 flex-col ${panelHeightClass}`}>
             {shouldShowLoadPdfErrorBanner && (
               <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 {getUserErrorMessage(loadPdf.error, "No se pudo cargar la vista previa del documento.")}
               </div>
             )}
-            <div className="mt-4 flex min-h-0 flex-1 flex-col">
+            <div className="flex min-h-0 flex-1 flex-col">
               <div className="min-h-0 flex-1">
                 {activeViewerTab === "document" && (
                   <div
@@ -2809,7 +2831,7 @@ export function App() {
                             className="flex h-full min-h-0 min-w-[560px] flex-col rounded-card border border-borderSubtle bg-surface p-2"
                           >
                             <div className="px-2 pb-2">
-                              <h3 className="text-lg font-semibold text-ink">Informe</h3>
+                              <h3 className="text-lg font-semibold text-textTitle">Informe</h3>
                             </div>
                             {fileUrl ? (
                               <PdfViewer
@@ -2858,8 +2880,8 @@ export function App() {
                           <aside
                             className="flex h-full w-full min-h-0 min-w-[420px] flex-1 flex-col rounded-card border border-borderSubtle bg-surface p-4"
                           >
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                              <h3 className="text-lg font-semibold text-ink">Datos extraidos</h3>
+                            <div className="px-1 pb-2">
+                              <h3 className="text-lg font-semibold text-textTitle">Datos extraídos</h3>
                             </div>
 
                             <div className="mt-2 rounded-control border border-borderSubtle bg-surfaceMuted px-3 py-2">
@@ -2873,7 +2895,7 @@ export function App() {
                                   <Input
                                     ref={structuredSearchInputRef}
                                     type="text"
-                                    aria-label="Buscar en datos extraidos"
+                                    aria-label="Buscar en datos extraídos"
                                     value={structuredSearchInput}
                                     disabled={reviewPanelState !== "ready"}
                                     onChange={(event) => setStructuredSearchInput(event.target.value)}

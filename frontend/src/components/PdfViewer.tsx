@@ -902,8 +902,8 @@ export function PdfViewer({
         </div>
         </div>
         {isDragOver && (
-          <div className="pointer-events-none absolute inset-3 z-10 flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-accent bg-surface/75 ring-2 ring-accent/40 backdrop-blur-[1px]">
-            <Upload size={20} className="text-accent" aria-hidden="true" />
+          <div className="pointer-events-none absolute inset-3 z-10 flex flex-col items-center justify-center gap-2 rounded-card border-2 border-dashed border-statusSuccess bg-surface/75 ring-2 ring-statusSuccess/30 backdrop-blur-[1px]">
+            <Upload size={20} className="text-statusSuccess" aria-hidden="true" />
             <p className="text-sm font-semibold text-ink">Suelta el PDF para subirlo</p>
           </div>
         )}

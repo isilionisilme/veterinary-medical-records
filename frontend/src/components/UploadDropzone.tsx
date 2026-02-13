@@ -35,12 +35,12 @@ export function UploadDropzone({
 
   return (
     <div
-      className={`relative flex cursor-pointer flex-col items-center justify-center rounded-card border-2 border-dashed text-center transition ${
+      className={`relative flex cursor-pointer flex-col items-center justify-center rounded-card text-center transition ${
         isDragOver
           ? isOverlayActive
-            ? "border-border bg-surface"
-            : "border-statusSuccess bg-statusSuccess/10 ring-2 ring-statusSuccess/30"
-          : "border-border bg-surface hover:border-textSecondary/50 hover:bg-surface"
+            ? "border border-transparent bg-surface"
+            : "border-2 border-dashed border-statusSuccess bg-statusSuccess/10 ring-2 ring-statusSuccess/30"
+          : "border-2 border-dashed border-border bg-surface hover:border-textSecondary/50 hover:bg-surface"
       } ${compact ? "h-12 w-12 rounded-control px-1.5 py-1.5" : "px-4 py-5"} ${className}`}
       role="button"
       aria-label={resolvedAriaLabel}

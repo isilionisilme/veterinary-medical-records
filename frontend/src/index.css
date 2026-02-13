@@ -6,8 +6,10 @@
 
 :root {
   --app-bg: #edf3fb;
-  --app-frame: #f8fbff;
-  --surface: #f2f5fa;
+  --canvas-bg: #f8fbff;
+  --card-bg: #f2f5fa;
+  --app-frame: var(--canvas-bg);
+  --surface: var(--card-bg);
   --surface-muted: #e9eff6;
   --border-subtle: #dbe4ef;
   --shadow-soft: 0 10px 28px rgb(31 41 51 / 0.08);
@@ -22,6 +24,9 @@
   --color-text: #1f2933;
   --color-text-secondary: #6b7280;
   --color-text-muted: #9ca3af;
+  --text-title: var(--color-text);
+  --text-body: var(--color-text);
+  --text-muted: var(--color-text-secondary);
   --color-border: #e5e7eb;
   --color-border-subtle: var(--border-subtle);
   --color-accent: #fc4e1b;

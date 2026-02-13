@@ -2,7 +2,7 @@ import { cn } from "../../lib/utils";
 import { type DocumentStatusClusterModel } from "../../lib/documentStatus";
 import { Tooltip } from "../ui/tooltip";
 
-type DocumentStatusClusterProps = {
+type DocumentStatusChipProps = {
   status: DocumentStatusClusterModel;
   compact?: boolean;
   className?: string;
@@ -19,18 +19,18 @@ function toneClass(tone: DocumentStatusClusterModel["tone"]): string {
   return "bg-statusError";
 }
 
-export function DocumentStatusCluster({
+export function DocumentStatusChip({
   status,
   compact = false,
   className,
   testId,
-}: DocumentStatusClusterProps) {
+}: DocumentStatusChipProps) {
   return (
     <Tooltip content={status.tooltip}>
       <span
         data-testid={testId}
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-2 py-1 text-[11px] font-semibold text-textSecondary",
+          "inline-flex items-center gap-1.5 rounded-control border border-border bg-surface px-2 py-1 text-[11px] font-semibold text-textSecondary",
           compact && "h-4 min-w-4 justify-center border-0 bg-transparent p-0",
           className
         )}
@@ -49,3 +49,5 @@ export function DocumentStatusCluster({
     </Tooltip>
   );
 }
+
+export const DocumentStatusCluster = DocumentStatusChip;
