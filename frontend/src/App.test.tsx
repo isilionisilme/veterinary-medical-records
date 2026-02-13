@@ -533,30 +533,167 @@ describe("App upload and list flow", () => {
       expect(screen.getByTestId("left-panel-scroll")).toBeInTheDocument();
       expect(screen.getByTestId("center-panel-scroll")).toBeInTheDocument();
       expect(screen.getByTestId("right-panel-scroll")).toBeInTheDocument();
-      expect(screen.queryByTestId("review-docs-handle")).toBeNull();
-      expect(screen.getByTestId("view-mode-browse")).toHaveAttribute("aria-pressed", "true");
-      expect(screen.getByTestId("view-mode-review")).toHaveAttribute("aria-pressed", "false");
-      expect(screen.getByRole("button", { name: /Modo revisión/i })).toBeInTheDocument();
+      expect(screen.queryByTestId("view-mode-toggle")).toBeNull();
+      expect(screen.queryByText(/Vista Docs · PDF · Datos/i)).toBeNull();
     });
   });
 
-  it("uses consistent docs sidebar visibility by mode", async () => {
+  it("uses a unified layout without mode controls or breadcrumb", async () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
     await screen.findByText("Identificacion del caso");
 
     expect(screen.getByTestId("left-panel-scroll")).toBeInTheDocument();
-    expect(screen.queryByTestId("review-docs-handle")).toBeNull();
+    expect(screen.getByTestId("center-panel-scroll")).toBeInTheDocument();
+    expect(screen.getByTestId("right-panel-scroll")).toBeInTheDocument();
+    expect(screen.queryByTestId("view-mode-toggle")).toBeNull();
+    expect(screen.queryByText(/Modo exploración/i)).toBeNull();
+    expect(screen.queryByText(/Modo revisión/i)).toBeNull();
+    expect(screen.queryByText(/Vista Docs · PDF · Datos/i)).toBeNull();
+  });
 
-    fireEvent.click(screen.getByTestId("view-mode-review"));
-    expect(screen.queryByTestId("left-panel-scroll")).toBeNull();
-    expect(screen.getByTestId("review-docs-handle")).toBeInTheDocument();
-    expect(screen.queryByText(/Mostrar documentos/i)).toBeNull();
+  it("auto-collapses docs sidebar on desktop after selecting a document and expands on hover", async () => {
+    const originalMatchMedia = window.matchMedia;
+    try {
+      Object.defineProperty(window, "matchMedia", {
+        configurable: true,
+        writable: true,
+        value: vi.fn((query: string) => ({
+          matches: query.includes("(min-width: 1024px)") || query.includes("(hover: hover)"),
+          media: query,
+          onchange: null,
+          addListener: vi.fn(),
+          removeListener: vi.fn(),
+          addEventListener: vi.fn(),
+          removeEventListener: vi.fn(),
+          dispatchEvent: vi.fn(),
+        })),
+      });
 
-    fireEvent.click(screen.getByTestId("view-mode-browse"));
-    expect(screen.getByTestId("left-panel-scroll")).toBeInTheDocument();
-    expect(screen.queryByTestId("review-docs-handle")).toBeNull();
+      renderApp();
+
+      const sidebar = await screen.findByTestId("documents-sidebar");
+      expect(sidebar).toHaveAttribute("data-expanded", "true");
+
+      fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+      await screen.findByText("Identificacion del caso");
+
+      expect(sidebar).toHaveAttribute("data-expanded", "false");
+      expect(screen.queryByRole("button", { name: /Actualizar/i })).toBeNull();
+
+      fireEvent.mouseEnter(sidebar);
+      expect(sidebar).toHaveAttribute("data-expanded", "true");
+      expect(screen.getByRole("button", { name: /Actualizar/i })).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole("button", { name: /processing\.pdf/i }));
+      expect(sidebar).toHaveAttribute("data-expanded", "true");
+
+      fireEvent.click(screen.getByRole("button", { name: /failed\.pdf/i }));
+      expect(sidebar).toHaveAttribute("data-expanded", "true");
+
+      fireEvent.mouseLeave(sidebar);
+      expect(sidebar).toHaveAttribute("data-expanded", "false");
+    } finally {
+      Object.defineProperty(window, "matchMedia", {
+        configurable: true,
+        writable: true,
+        value: originalMatchMedia,
+      });
+    }
+  });
+
+  it("uploads from collapsed sidebar dropzone without auto-expanding", async () => {
+    const originalMatchMedia = window.matchMedia;
+    try {
+      Object.defineProperty(window, "matchMedia", {
+        configurable: true,
+        writable: true,
+        value: vi.fn((query: string) => ({
+          matches: query.includes("(min-width: 1024px)") || query.includes("(hover: hover)"),
+          media: query,
+          onchange: null,
+          addListener: vi.fn(),
+          removeListener: vi.fn(),
+          addEventListener: vi.fn(),
+          removeEventListener: vi.fn(),
+          dispatchEvent: vi.fn(),
+        })),
+      });
+
+      renderApp();
+      const sidebar = await screen.findByTestId("documents-sidebar");
+
+      fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+      await screen.findByText("Identificacion del caso");
+      expect(sidebar).toHaveAttribute("data-expanded", "false");
+
+      const dropzoneContainer = screen.getByTestId("sidebar-collapsed-dropzone");
+      const dropzone = within(dropzoneContainer).getByRole("button");
+      const file = new File(["pdf"], "rail-upload.pdf", { type: "application/pdf" });
+      const dataTransfer = createDataTransfer(file);
+
+      fireEvent.dragEnter(dropzone, { dataTransfer });
+      expect(sidebar).toHaveAttribute("data-expanded", "false");
+
+      fireEvent.drop(dropzone, { dataTransfer });
+      expect(sidebar).toHaveAttribute("data-expanded", "false");
+
+      await waitFor(() => {
+        const calls = (globalThis.fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls;
+        expect(calls.some(([url]) => String(url).includes("/documents/upload"))).toBe(true);
+      });
+    } finally {
+      Object.defineProperty(window, "matchMedia", {
+        configurable: true,
+        writable: true,
+        value: originalMatchMedia,
+      });
+    }
+  });
+
+  it("keeps sidebar open on mouse leave when pinned, and collapses again after unpin", async () => {
+    const originalMatchMedia = window.matchMedia;
+    try {
+      Object.defineProperty(window, "matchMedia", {
+        configurable: true,
+        writable: true,
+        value: vi.fn((query: string) => ({
+          matches: query.includes("(min-width: 1024px)") || query.includes("(hover: hover)"),
+          media: query,
+          onchange: null,
+          addListener: vi.fn(),
+          removeListener: vi.fn(),
+          addEventListener: vi.fn(),
+          removeEventListener: vi.fn(),
+          dispatchEvent: vi.fn(),
+        })),
+      });
+
+      renderApp();
+      const sidebar = await screen.findByTestId("documents-sidebar");
+
+      fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+      await screen.findByText("Identificacion del caso");
+      expect(sidebar).toHaveAttribute("data-expanded", "false");
+
+      fireEvent.mouseEnter(sidebar);
+      expect(sidebar).toHaveAttribute("data-expanded", "true");
+
+      fireEvent.click(screen.getByRole("button", { name: /Fijar barra/i }));
+      fireEvent.mouseLeave(sidebar);
+      expect(sidebar).toHaveAttribute("data-expanded", "true");
+
+      fireEvent.click(screen.getByRole("button", { name: /Desfijar barra/i }));
+      fireEvent.mouseLeave(sidebar);
+      expect(sidebar).toHaveAttribute("data-expanded", "false");
+    } finally {
+      Object.defineProperty(window, "matchMedia", {
+        configurable: true,
+        writable: true,
+        value: originalMatchMedia,
+      });
+    }
   });
 
   it("uses polished structured header actions and opens source from Documento original", async () => {
@@ -1489,32 +1626,19 @@ describe("App upload and list flow", () => {
     expect(screen.queryByText(/Sin conexión/i)).toBeNull();
   });
 
-  it("collapses docs list in review mode and keeps left handle visible", async () => {
+  it("keeps docs sidebar available in unified layout", async () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
     await screen.findByText("Identificacion del caso");
 
-    fireEvent.click(screen.getByRole("button", { name: /Modo revisión/i }));
-
-    expect(screen.getByTestId("review-docs-handle")).toBeInTheDocument();
-    expect(screen.queryByTestId("left-panel-scroll")).toBeNull();
+    expect(screen.getByTestId("documents-sidebar")).toBeInTheDocument();
+    expect(screen.getByTestId("left-panel-scroll")).toBeInTheDocument();
     expect(screen.getByTestId("right-panel-scroll")).toBeInTheDocument();
-
-    const centerPanelInReview = screen.queryByTestId("center-panel-scroll");
-    if (!centerPanelInReview) {
-      expect(screen.getByRole("button", { name: /Documento original/i })).toBeInTheDocument();
-    }
-
-    fireEvent.click(screen.getByTestId("review-docs-handle"));
-    expect(await screen.findByTestId("left-panel-scroll")).toBeInTheDocument();
-    const centerPanelAfterOpeningDocs = screen.queryByTestId("center-panel-scroll");
-    if (!centerPanelAfterOpeningDocs) {
-      expect(screen.getByRole("button", { name: /Documento original/i })).toBeInTheDocument();
-    }
+    expect(screen.getByTestId("center-panel-scroll")).toBeInTheDocument();
   });
 
-  it("changes layout grid classes when toggling between browse and review mode", async () => {
+  it("uses a single browse grid layout", async () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
@@ -1522,21 +1646,14 @@ describe("App upload and list flow", () => {
 
     const layoutGrid = screen.getByTestId("document-layout-grid");
     expect(layoutGrid.className).toContain("grid-cols-[minmax(0,1fr)_minmax(0,1fr)]");
-
-    fireEvent.click(screen.getByRole("button", { name: /Modo revisión/i }));
-    expect(layoutGrid.className).toContain("grid-cols-1");
-    expect(layoutGrid.className).toContain("xl:grid-cols-[minmax(520px,1fr)_minmax(720px,1.45fr)]");
-
-    fireEvent.click(screen.getByRole("button", { name: /Modo exploración/i }));
-    expect(layoutGrid.className).toContain("grid-cols-[minmax(0,1fr)_minmax(0,1fr)]");
+    expect(layoutGrid.className).not.toContain("grid-cols-1");
   });
 
-  it("navigates PDF from row click in review mode without opening source drawer", async () => {
+  it("navigates PDF from row click without opening source drawer", async () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
     await screen.findByText("Identificacion del caso");
-    fireEvent.click(screen.getByRole("button", { name: /Modo revisión/i }));
 
     const hasInlinePdf = Boolean(screen.queryByTestId("center-panel-scroll"));
     fireEvent.click(screen.getByRole("button", { name: /Nombre del paciente/i }));
@@ -1598,7 +1715,6 @@ describe("App upload and list flow", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
     await screen.findByText("Identificacion del caso");
-    fireEvent.click(screen.getByRole("button", { name: /Modo revisión/i }));
 
     fireEvent.click(screen.getByRole("button", { name: /Documento original/i }));
     expect(screen.getByTestId("source-drawer")).toBeInTheDocument();
@@ -1612,7 +1728,7 @@ describe("App upload and list flow", () => {
     expect(screen.queryByTestId("source-drawer")).toBeNull();
   });
 
-  it("keeps source in drawer in review mode even when source pin is toggled on desktop", async () => {
+  it("moves source to pinned panel on desktop when pin is toggled", async () => {
     const originalMatchMedia = window.matchMedia;
     try {
       Object.defineProperty(window, "matchMedia", {
@@ -1634,18 +1750,16 @@ describe("App upload and list flow", () => {
 
       fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
       await screen.findByText("Identificacion del caso");
-      fireEvent.click(screen.getByRole("button", { name: /Modo revisión/i }));
       fireEvent.click(screen.getByRole("button", { name: /Documento original/i }));
 
       fireEvent.click(screen.getByRole("button", { name: /📌 Fijar/i }));
-      expect(screen.getByTestId("source-drawer")).toBeInTheDocument();
-      expect(screen.queryByTestId("source-pinned-panel")).toBeNull();
+      await waitFor(() => {
+        expect(screen.queryByTestId("source-drawer")).toBeNull();
+        expect(screen.getByTestId("source-pinned-panel")).toBeInTheDocument();
+      });
       expect(screen.getByTestId("right-panel-scroll")).toBeInTheDocument();
 
-      const centerPanel = screen.queryByTestId("center-panel-scroll");
-      if (!centerPanel) {
-        expect(screen.getByRole("button", { name: /Documento original/i })).toBeInTheDocument();
-      }
+      expect(screen.getByTestId("center-panel-scroll")).toBeInTheDocument();
     } finally {
       Object.defineProperty(window, "matchMedia", {
         configurable: true,
@@ -1660,11 +1774,10 @@ describe("App upload and list flow", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
     await screen.findByText("Identificacion del caso");
-    fireEvent.click(screen.getByRole("button", { name: /Modo revisión/i }));
     fireEvent.click(screen.getByRole("button", { name: /Documento original/i }));
     expect(screen.getByTestId("source-drawer")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByTestId("review-docs-handle"));
+    fireEvent.mouseEnter(screen.getByTestId("documents-sidebar"));
     fireEvent.click(screen.getByRole("button", { name: /processing\.pdf/i }));
     expect(screen.queryByTestId("source-drawer")).toBeNull();
   });
@@ -1755,12 +1868,11 @@ describe("App upload and list flow", () => {
     expect(screen.queryByTestId("source-drawer")).toBeNull();
   });
 
-  it("does not open source drawer on plain field click in review mode, only from explicit document action", async () => {
+  it("does not open source drawer on plain field click, only from explicit document action", async () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
     await screen.findByText("Identificacion del caso");
-    fireEvent.click(screen.getByTestId("view-mode-review"));
 
     fireEvent.click(screen.getByRole("button", { name: /Nombre del paciente/i }));
     expect(screen.queryByTestId("source-drawer")).toBeNull();

@@ -12,6 +12,7 @@ type UploadDropzoneProps = {
   className?: string;
   title?: string;
   subtitle?: string;
+  compact?: boolean;
 };
 
 export function UploadDropzone({
@@ -25,14 +26,15 @@ export function UploadDropzone({
   className = "",
   title = "Arrastra un PDF aqui",
   subtitle = "o haz clic para cargar",
+  compact = false,
 }: UploadDropzoneProps) {
   return (
     <div
-      className={`relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-5 text-center transition ${
+      className={`relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed text-center transition ${
         isDragOver
           ? "border-accent bg-accentSoft/35 ring-2 ring-accent/40"
           : "border-black/35 bg-white/85 hover:border-black/50 hover:bg-white"
-      } ${className}`}
+      } ${compact ? "h-12 w-12 px-0 py-0" : "px-4 py-5"} ${className}`}
       role="button"
       tabIndex={0}
       onClick={onActivate}
@@ -53,8 +55,12 @@ export function UploadDropzone({
         </div>
       )}
       <Upload size={18} className="text-ink" />
-      <p className="mt-2 text-sm font-semibold text-ink">{title}</p>
-      <p className="text-xs text-muted">{subtitle}</p>
+      {!compact && (
+        <>
+          <p className="mt-2 text-sm font-semibold text-ink">{title}</p>
+          <p className="text-xs text-muted">{subtitle}</p>
+        </>
+      )}
     </div>
   );
 }
