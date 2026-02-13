@@ -646,7 +646,7 @@ As a veterinarian reviewer, I want to resize the PDF and structured-data panels 
   - Structured panel has a minimum width that preserves field readability.
   - Neither panel can be resized to fully collapse the other.
 - Default layout can be restored via double-click on the splitter handle.
-- Preferred behavior: include an explicit reset affordance near the splitter.
+- Reset behavior is provided via double-click on the splitter handle (without an additional reset button).
 - Preferred behavior: persist split ratio in local storage so it survives page refresh on the same device.
 - Resizing keeps Global Schema rendering deterministic (field order/position remains canonical).
 - Resizing does not break panel scroll/focus behavior and does not interfere with PDF interactions or structured data filtering/search.
