@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, ScanLine, ZoomIn, ZoomOut } from "lucide-react";
+import { ChevronLeft, ChevronRight, ScanLine, Upload, ZoomIn, ZoomOut } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
 import workerSrc from "pdfjs-dist/build/pdf.worker.min?url";
 import { IconButton } from "./app/IconButton";
@@ -902,7 +902,8 @@ export function PdfViewer({
         </div>
         </div>
         {isDragOver && (
-          <div className="pointer-events-none absolute inset-3 z-10 flex items-center justify-center rounded-xl border-2 border-dashed border-accent bg-white/75 ring-2 ring-accent/40">
+          <div className="pointer-events-none absolute inset-3 z-10 flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-accent bg-surface/75 ring-2 ring-accent/40 backdrop-blur-[1px]">
+            <Upload size={20} className="text-accent" aria-hidden="true" />
             <p className="text-sm font-semibold text-ink">Suelta el PDF para subirlo</p>
           </div>
         )}

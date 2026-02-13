@@ -248,10 +248,10 @@ describe("App upload and list flow", () => {
     ).toBeInTheDocument();
     expect(screen.getAllByText(/Arrastra un PDF aqui/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/o haz clic para cargar/i).length).toBeGreaterThan(0);
-    expect(screen.queryByText(/Formatos permitidos: PDF\./i)).toBeNull();
+    expect(screen.getByText(/Formatos permitidos: PDF\./i)).toBeInTheDocument();
     expect(screen.queryByText(/\(\.pdf \/ application\/pdf\)/i)).toBeNull();
-    expect(screen.queryByText(/Tamaño maximo: 20 MB\./i)).toBeNull();
-    expect(screen.getByLabelText(/Informacion de formatos y tamano/i)).toBeInTheDocument();
+    expect(screen.getByText(/Tamaño máximo: 20 MB\./i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Informacion de formatos y tamano/i)).toBeNull();
     expect(screen.queryByText(/Selecciona un PDF/i)).toBeNull();
   });
 

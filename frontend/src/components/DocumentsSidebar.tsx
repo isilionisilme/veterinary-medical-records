@@ -22,8 +22,6 @@ type DocumentsSidebarProps = {
   isDocsSidebarPinned: boolean;
   isRefreshingDocuments: boolean;
   isUploadPending: boolean;
-  isHoverDevice: boolean;
-  showUploadInfo: boolean;
   isDragOverSidebarUpload: boolean;
   isDocumentListLoading: boolean;
   isDocumentListError: boolean;
@@ -32,7 +30,6 @@ type DocumentsSidebarProps = {
   documents: DocumentsSidebarItem[];
   activeId: string | null;
   uploadPanelRef: RefObject<HTMLDivElement>;
-  uploadInfoTriggerRef: RefObject<HTMLButtonElement>;
   fileInputRef: RefObject<HTMLInputElement>;
   formatTimestamp: (value: string | null | undefined) => string;
   isProcessingTooLong: (createdAt: string, status: string) => boolean;
@@ -41,9 +38,6 @@ type DocumentsSidebarProps = {
   onSidebarMouseLeave: () => void;
   onTogglePin: () => void;
   onRefresh: () => void;
-  onOpenUploadInfo: () => void;
-  onCloseUploadInfo: (withDelay: boolean) => void;
-  onToggleUploadInfo: () => void;
   onOpenUploadArea: (event?: { preventDefault?: () => void; stopPropagation?: () => void }) => void;
   onSidebarUploadDragEnter: (event: DragEvent<HTMLDivElement>) => void;
   onSidebarUploadDragOver: (event: DragEvent<HTMLDivElement>) => void;
@@ -60,8 +54,6 @@ export function DocumentsSidebar({
   isDocsSidebarPinned,
   isRefreshingDocuments,
   isUploadPending,
-  isHoverDevice,
-  showUploadInfo,
   isDragOverSidebarUpload,
   isDocumentListLoading,
   isDocumentListError,
@@ -70,7 +62,6 @@ export function DocumentsSidebar({
   documents,
   activeId,
   uploadPanelRef,
-  uploadInfoTriggerRef,
   fileInputRef,
   formatTimestamp,
   isProcessingTooLong,
@@ -79,9 +70,6 @@ export function DocumentsSidebar({
   onSidebarMouseLeave,
   onTogglePin,
   onRefresh,
-  onOpenUploadInfo,
-  onCloseUploadInfo,
-  onToggleUploadInfo,
   onOpenUploadArea,
   onSidebarUploadDragEnter,
   onSidebarUploadDragOver,
@@ -103,7 +91,7 @@ export function DocumentsSidebar({
       onMouseLeave={onSidebarMouseLeave}
     >
       <div className="overflow-hidden rounded-3xl border border-black/10 bg-white/80 shadow-xl">
-        <section className={`flex flex-col p-6 ${panelHeightClass}`}>
+        <section className={`flex flex-col ${isDocsSidebarExpanded ? "p-6" : "px-2 py-4"} ${panelHeightClass}`}>
           <div className="flex items-center justify-between gap-3">
             <div
               className={`min-w-0 transition-opacity duration-150 ${
@@ -147,34 +135,6 @@ export function DocumentsSidebar({
               >
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-semibold text-ink">Cargar documento</h3>
-                  <IconButton
-                    ref={uploadInfoTriggerRef}
-                    label="Informacion de formatos y tamano"
-                    tooltip="Informacion de formatos y tamano"
-                    aria-expanded={showUploadInfo}
-                    onFocus={onOpenUploadInfo}
-                    onBlur={() => onCloseUploadInfo(false)}
-                    onMouseEnter={() => {
-                      if (isHoverDevice) {
-                        onOpenUploadInfo();
-                      }
-                    }}
-                    onMouseLeave={() => {
-                      if (isHoverDevice) {
-                        onCloseUploadInfo(true);
-                      }
-                    }}
-                    onClick={(event) => {
-                      if (isHoverDevice) {
-                        return;
-                      }
-                      event.stopPropagation();
-                      onToggleUploadInfo();
-                    }}
-                    className="text-sm text-muted"
-                  >
-                    ⓘ
-                  </IconButton>
                 </div>
                 <UploadDropzone
                   className="mt-3"
@@ -185,6 +145,7 @@ export function DocumentsSidebar({
                   onDragLeave={onSidebarUploadDragLeave}
                   onDrop={onSidebarUploadDrop}
                 />
+                <p className="mt-2 text-xs text-muted">Formatos permitidos: PDF. Tamaño máximo: 20 MB.</p>
                 <div className="mt-2 flex items-center gap-2">
                   <input
                     id="upload-document-input"
@@ -226,7 +187,7 @@ export function DocumentsSidebar({
             data-testid="left-panel-scroll"
             className={`relative mt-4 min-h-0 flex-1 overflow-y-auto overflow-x-hidden ${
               isDocsSidebarExpanded
-                ? "pr-1"
+                ? "pr-0"
                 : "pr-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:w-0 [&::-webkit-scrollbar]:h-0"
             }`}
           >
@@ -286,7 +247,7 @@ export function DocumentsSidebar({
                                 ? "rounded-xl border border-ink/30 bg-black/[0.04] text-ink shadow-sm ring-1 ring-ink/25"
                                 : "rounded-xl border border-black/10 bg-white/80 text-ink hover:bg-white"
                               : "rounded-lg border border-transparent bg-transparent text-ink"
-                          } ${isDocsSidebarExpanded ? "px-3 py-2" : "px-1 py-1.5"}`}
+                          } ${isDocsSidebarExpanded ? "px-3 py-2" : "px-0.5 py-1"}`}
                         >
                           <div
                             className={`flex items-center ${
@@ -299,7 +260,7 @@ export function DocumentsSidebar({
                               className={
                                 isDocsSidebarExpanded
                                   ? "min-w-0"
-                                  : `relative flex h-8 w-8 items-center justify-center rounded-full transition ${
+                                  : `relative flex h-9 w-9 items-center justify-center rounded-full transition ${
                                       isActive
                                         ? "bg-black/[0.10]"
                                         : "bg-transparent hover:bg-black/[0.06]"
@@ -318,7 +279,7 @@ export function DocumentsSidebar({
                                 <DocumentStatusCluster
                                   status={status}
                                   compact
-                                  className="absolute right-0 top-0"
+                                  className="absolute right-0.5 top-0.5"
                                 />
                               )}
                             </div>

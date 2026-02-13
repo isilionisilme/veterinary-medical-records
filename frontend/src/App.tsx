@@ -10,13 +10,11 @@ import {
   useRef,
   useState,
 } from "react";
-import { createPortal } from "react-dom";
 import { AlignLeft, Download, FileText, Info, RefreshCw, Search, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { ConfidenceDot } from "./components/app/ConfidenceDot";
 import { CriticalBadge } from "./components/app/CriticalBadge";
-import { DocumentStatusCluster } from "./components/app/DocumentStatusCluster";
 import { FieldBlock, FieldRow, RepeatableList } from "./components/app/Field";
 import { IconButton } from "./components/app/IconButton";
 import { Section, SectionHeader } from "./components/app/Section";
@@ -806,7 +804,6 @@ export function App() {
   const [hasShownListErrorToast, setHasShownListErrorToast] = useState(false);
   const [isDragOverViewer, setIsDragOverViewer] = useState(false);
   const [isDragOverSidebarUpload, setIsDragOverSidebarUpload] = useState(false);
-  const [showUploadInfo, setShowUploadInfo] = useState(false);
   const [showRefreshFeedback, setShowRefreshFeedback] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
   const [isCopyingRawText, setIsCopyingRawText] = useState(false);
@@ -847,12 +844,7 @@ export function App() {
     }
     return 2;
   });
-  const [isHoverDevice, setIsHoverDevice] = useState(true);
-  const [uploadInfoPosition, setUploadInfoPosition] = useState({ top: 0, left: 0 });
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const uploadInfoTriggerRef = useRef<HTMLButtonElement | null>(null);
-  const uploadInfoContentRef = useRef<HTMLDivElement | null>(null);
-  const uploadInfoCloseTimerRef = useRef<number | null>(null);
   const uploadPanelRef = useRef<HTMLDivElement | null>(null);
   const structuredSearchInputRef = useRef<HTMLInputElement | null>(null);
   const reviewSplitGridRef = useRef<HTMLDivElement | null>(null);
@@ -961,25 +953,6 @@ export function App() {
 
   useEffect(() => {
     if (typeof window.matchMedia !== "function") {
-      setIsHoverDevice(true);
-      return;
-    }
-
-    const mediaQuery = window.matchMedia("(hover: hover)");
-    const syncInputMode = () => setIsHoverDevice(mediaQuery.matches);
-    syncInputMode();
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", syncInputMode);
-      return () => mediaQuery.removeEventListener("change", syncInputMode);
-    }
-
-    mediaQuery.addListener(syncInputMode);
-    return () => mediaQuery.removeListener(syncInputMode);
-  }, []);
-
-  useEffect(() => {
-    if (typeof window.matchMedia !== "function") {
       setIsDesktopForPin(true);
       return;
     }
@@ -1015,13 +988,6 @@ export function App() {
     mediaQuery.addListener(syncDocsSidebarCapability);
     return () => mediaQuery.removeListener(syncDocsSidebarCapability);
   }, [docsHoverSidebarMediaQuery]);
-
-  useEffect(() => {
-    if (isDocsSidebarExpanded) {
-      return;
-    }
-    setShowUploadInfo(false);
-  }, [isDocsSidebarExpanded]);
 
   useEffect(() => {
     if (!isDraggingReviewSplit) {
@@ -1090,9 +1056,6 @@ export function App() {
 
   useEffect(() => {
     return () => {
-      if (uploadInfoCloseTimerRef.current) {
-        window.clearTimeout(uploadInfoCloseTimerRef.current);
-      }
       if (autoOpenRetryTimerRef.current) {
         window.clearTimeout(autoOpenRetryTimerRef.current);
       }
@@ -1110,67 +1073,6 @@ export function App() {
       }
     };
   }, [fileUrl]);
-
-  useEffect(() => {
-    if (!showUploadInfo) {
-      return;
-    }
-
-    const updatePosition = () => {
-      if (!uploadInfoTriggerRef.current || !uploadInfoContentRef.current) {
-        return;
-      }
-
-      const triggerRect = uploadInfoTriggerRef.current.getBoundingClientRect();
-      const tooltipRect = uploadInfoContentRef.current.getBoundingClientRect();
-      const offset = 10;
-      const viewportPadding = 8;
-
-      let top = triggerRect.top - tooltipRect.height - offset;
-      if (top < viewportPadding) {
-        top = triggerRect.bottom + offset;
-      }
-
-      let left = triggerRect.left;
-      const maxLeft = window.innerWidth - tooltipRect.width - viewportPadding;
-      if (left > maxLeft) {
-        left = maxLeft;
-      }
-      if (left < viewportPadding) {
-        left = viewportPadding;
-      }
-
-      setUploadInfoPosition({ top, left });
-    };
-
-    updatePosition();
-    window.addEventListener("resize", updatePosition);
-    window.addEventListener("scroll", updatePosition, true);
-    return () => {
-      window.removeEventListener("resize", updatePosition);
-      window.removeEventListener("scroll", updatePosition, true);
-    };
-  }, [showUploadInfo]);
-
-  useEffect(() => {
-    if (!showUploadInfo || isHoverDevice) {
-      return;
-    }
-
-    const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target as Node;
-      if (
-        uploadInfoTriggerRef.current?.contains(target) ||
-        uploadInfoContentRef.current?.contains(target)
-      ) {
-        return;
-      }
-      setShowUploadInfo(false);
-    };
-
-    document.addEventListener("pointerdown", handlePointerDown);
-    return () => document.removeEventListener("pointerdown", handlePointerDown);
-  }, [showUploadInfo, isHoverDevice]);
 
   const loadPdf = useMutation({
     mutationFn: async (docId: string) => fetchOriginalPdf(docId),
@@ -1433,6 +1335,9 @@ export function App() {
 
   const handleDocsSidebarMouseEnter = (event: ReactMouseEvent<HTMLElement>) => {
     isPointerInsideDocsSidebarRef.current = true;
+    if (sidebarUploadDragDepthRef.current > 0 || isDragOverSidebarUpload) {
+      return;
+    }
     if (shouldAutoCollapseDocsSidebar && event.buttons === 0) {
       setIsDocsSidebarHovered(true);
     }
@@ -1549,22 +1454,6 @@ export function App() {
       return bTime - aTime;
     });
   }, [documentList.data?.items]);
-
-  const activeDocumentStatus = useMemo(() => {
-    if (!activeId) {
-      return null;
-    }
-
-    const currentDocument = documentDetails.data ?? sortedDocuments.find((item) => item.document_id === activeId);
-    if (!currentDocument) {
-      return null;
-    }
-
-    return mapDocumentStatus({
-      status: currentDocument.status,
-      failure_type: currentDocument.failure_type,
-    });
-  }, [activeId, documentDetails.data, sortedDocuments]);
 
   useEffect(() => {
     setSelectedFieldId(null);
@@ -2397,34 +2286,13 @@ export function App() {
     }
   };
 
-  const openUploadInfo = () => {
-    if (uploadInfoCloseTimerRef.current) {
-      window.clearTimeout(uploadInfoCloseTimerRef.current);
-      uploadInfoCloseTimerRef.current = null;
-    }
-    setShowUploadInfo(true);
-  };
-
-  const closeUploadInfo = (withDelay: boolean) => {
-    if (uploadInfoCloseTimerRef.current) {
-      window.clearTimeout(uploadInfoCloseTimerRef.current);
-      uploadInfoCloseTimerRef.current = null;
-    }
-    if (withDelay) {
-      uploadInfoCloseTimerRef.current = window.setTimeout(() => {
-        setShowUploadInfo(false);
-      }, 150);
-      return;
-    }
-    setShowUploadInfo(false);
-  };
-
   const viewerModeToolbarIcons = (
     <>
       <IconButton
         label="Documento"
         tooltip="Documento"
         pressed={activeViewerTab === "document"}
+        aria-current={activeViewerTab === "document" ? "page" : undefined}
         onClick={() => setActiveViewerTab("document")}
       >
         <FileText size={16} aria-hidden="true" />
@@ -2433,6 +2301,7 @@ export function App() {
         label="Texto extraido"
         tooltip="Texto extraído"
         pressed={activeViewerTab === "raw_text"}
+        aria-current={activeViewerTab === "raw_text" ? "page" : undefined}
         onClick={() => setActiveViewerTab("raw_text")}
       >
         <AlignLeft size={16} aria-hidden="true" />
@@ -2441,6 +2310,7 @@ export function App() {
         label="Detalles tecnicos"
         tooltip="Detalles técnicos"
         pressed={activeViewerTab === "technical"}
+        aria-current={activeViewerTab === "technical" ? "page" : undefined}
         onClick={() => setActiveViewerTab("technical")}
       >
         <Info size={16} aria-hidden="true" />
@@ -2828,8 +2698,6 @@ export function App() {
             isDocsSidebarPinned={isDocsSidebarPinned}
             isRefreshingDocuments={documentList.isFetching || showRefreshFeedback}
             isUploadPending={uploadMutation.isPending}
-            isHoverDevice={isHoverDevice}
-            showUploadInfo={showUploadInfo}
             isDragOverSidebarUpload={isDragOverSidebarUpload}
             isDocumentListLoading={documentList.isLoading}
             isDocumentListError={documentList.isError && !isDocumentListConnectivityError}
@@ -2842,7 +2710,6 @@ export function App() {
             documents={sortedDocuments}
             activeId={activeId}
             uploadPanelRef={uploadPanelRef}
-            uploadInfoTriggerRef={uploadInfoTriggerRef}
             fileInputRef={fileInputRef}
             formatTimestamp={formatTimestamp}
             isProcessingTooLong={isProcessingTooLong}
@@ -2851,9 +2718,6 @@ export function App() {
             onSidebarMouseLeave={handleDocsSidebarMouseLeave}
             onTogglePin={handleToggleDocsSidebarPin}
             onRefresh={handleRefresh}
-            onOpenUploadInfo={openUploadInfo}
-            onCloseUploadInfo={closeUploadInfo}
-            onToggleUploadInfo={() => setShowUploadInfo((current) => !current)}
             onOpenUploadArea={handleOpenUploadArea}
             onSidebarUploadDragEnter={handleSidebarUploadDragEnter}
             onSidebarUploadDragOver={handleSidebarUploadDragOver}
@@ -2922,17 +2786,9 @@ export function App() {
                       )
                     ) : (
                       <div className="h-full min-h-0">
-                        <div className="mb-2 flex items-center justify-between gap-2 rounded-xl border border-border bg-surface px-3 py-2">
-                          <p className="truncate text-xs font-medium text-textSecondary">
-                            {filename ?? "Documento activo"}
-                          </p>
-                          {activeDocumentStatus ? (
-                            <DocumentStatusCluster status={activeDocumentStatus} />
-                          ) : null}
-                        </div>
                         <div
                           data-testid="document-layout-grid"
-                          className={`h-[calc(100%-44px)] min-h-0 ${
+                          className={`h-full min-h-0 ${
                             isPinnedSourcePanelVisible
                               ? "grid grid-cols-[minmax(0,1fr)_minmax(360px,420px)] gap-4"
                               : ""
@@ -2954,7 +2810,7 @@ export function App() {
                                 documentId={activeId}
                                 fileUrl={fileUrl}
                                 filename={filename}
-                                isDragOver={false}
+                                isDragOver={isDragOverViewer}
                                 focusPage={selectedReviewField?.evidence?.page ?? null}
                                 highlightSnippet={selectedReviewField?.evidence?.snippet ?? null}
                                 focusRequestId={fieldNavigationRequestId}
@@ -3474,29 +3330,6 @@ export function App() {
           </section>
         </div>
       </main>
-      {showUploadInfo &&
-        createPortal(
-          <div
-            ref={uploadInfoContentRef}
-            role="tooltip"
-            style={{ top: `${uploadInfoPosition.top}px`, left: `${uploadInfoPosition.left}px` }}
-            className="fixed z-[70] w-64 rounded-xl border border-black/10 bg-white p-3 text-xs text-ink shadow-lg"
-            onMouseEnter={() => {
-              if (isHoverDevice) {
-                openUploadInfo();
-              }
-            }}
-            onMouseLeave={() => {
-              if (isHoverDevice) {
-                closeUploadInfo(true);
-              }
-            }}
-          >
-            <p>Formatos permitidos: PDF.</p>
-            <p className="mt-1">Tamaño maximo: 20 MB.</p>
-          </div>,
-          document.body
-        )}
       {showRetryModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-6">
           <div className="w-full max-w-sm rounded-2xl border border-black/10 bg-white p-4 shadow-xl">

@@ -37,7 +37,7 @@ export function UploadDropzone({
       className={`relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed text-center transition ${
         isDragOver
           ? "border-accent bg-accentSoft/35 ring-2 ring-accent/40"
-          : "border-black/35 bg-white/85 hover:border-black/50 hover:bg-white"
+          : "border-border bg-surface hover:border-textSecondary/50 hover:bg-surface"
       } ${compact ? "h-12 w-12 rounded-xl px-1.5 py-1.5" : "px-4 py-5"} ${className}`}
       role="button"
       aria-label={resolvedAriaLabel}
@@ -55,7 +55,8 @@ export function UploadDropzone({
       onDrop={onDrop}
     >
       {showDropOverlay && isDragOver && (
-        <div className="pointer-events-none absolute inset-2 z-10 flex items-center justify-center rounded-lg border-2 border-dashed border-accent bg-white/75 ring-2 ring-accent/40">
+        <div className="pointer-events-none absolute inset-2 z-10 flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-accent bg-surface/75 ring-2 ring-accent/40 backdrop-blur-[1px]">
+          <Upload size={18} className="text-accent" aria-hidden="true" />
           <p className="text-sm font-semibold text-ink">Suelta el PDF para subirlo</p>
         </div>
       )}
