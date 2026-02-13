@@ -29,6 +29,11 @@ import { Separator } from "./components/ui/separator";
 import { ToggleGroup, ToggleGroupItem } from "./components/ui/toggle-group";
 import { Tooltip } from "./components/ui/tooltip";
 import { useSourcePanelState } from "./hooks/useSourcePanelState";
+import {
+  logExtractionDebugEvent,
+  type ExtractionDebugEvent,
+} from "./extraction/extractionDebug";
+import { validateFieldValue } from "./extraction/fieldValidators";
 import { groupProcessingSteps } from "./lib/processingHistory";
 import {
   GLOBAL_SCHEMA_SECTION_ORDER,
@@ -1838,15 +1843,71 @@ export function App() {
     [documentReview.data?.active_interpretation.data.fields]
   );
 
+  const validatedReviewFields = useMemo(() => {
+    const fieldsByKey = new Map<string, number>();
+    const acceptedFields: ReviewField[] = [];
+    const documentId = documentReview.data?.active_interpretation.data.document_id;
+
+    extractedReviewFields.forEach((field) => {
+      fieldsByKey.set(field.key, (fieldsByKey.get(field.key) ?? 0) + 1);
+    });
+
+    extractedReviewFields.forEach((field) => {
+      const rawValue = field.value === null || field.value === undefined ? "" : String(field.value);
+      const validation = validateFieldValue(field.key, rawValue);
+
+      if (!validation.ok) {
+        logExtractionDebugEvent({
+          field: field.key,
+          status: "rejected",
+          raw: rawValue,
+          reason: validation.reason,
+          docId: documentId,
+          page: field.evidence?.page,
+        } satisfies ExtractionDebugEvent);
+        return;
+      }
+
+      const normalizedValue = validation.normalized ?? rawValue.trim();
+      acceptedFields.push({
+        ...field,
+        value: normalizedValue,
+      });
+
+      logExtractionDebugEvent({
+        field: field.key,
+        status: "accepted",
+        raw: rawValue,
+        normalized: normalizedValue,
+        docId: documentId,
+        page: field.evidence?.page,
+      } satisfies ExtractionDebugEvent);
+    });
+
+    GLOBAL_SCHEMA_V0.forEach((definition) => {
+      if ((fieldsByKey.get(definition.key) ?? 0) > 0) {
+        return;
+      }
+
+      logExtractionDebugEvent({
+        field: definition.key,
+        status: "missing",
+        docId: documentId,
+      } satisfies ExtractionDebugEvent);
+    });
+
+    return acceptedFields;
+  }, [documentReview.data?.active_interpretation.data.document_id, extractedReviewFields]);
+
   const matchesByKey = useMemo(() => {
     const matches = new Map<string, ReviewField[]>();
-    extractedReviewFields.forEach((field) => {
+    validatedReviewFields.forEach((field) => {
       const group = matches.get(field.key) ?? [];
       group.push(field);
       matches.set(field.key, group);
     });
     return matches;
-  }, [extractedReviewFields]);
+  }, [validatedReviewFields]);
 
   const coreDisplayFields = useMemo(() => {
     return GLOBAL_SCHEMA_V0.map((definition): ReviewDisplayField => {
@@ -1937,7 +1998,7 @@ export function App() {
     const grouped = new Map<string, ReviewField[]>();
     const orderedKeys: string[] = [];
 
-    extractedReviewFields.forEach((field) => {
+    validatedReviewFields.forEach((field) => {
       if (coreKeys.has(field.key)) {
         return;
       }
@@ -2018,7 +2079,7 @@ export function App() {
         source: "extracted",
       };
     });
-  }, [extractedReviewFields]);
+  }, [validatedReviewFields]);
 
   const groupedCoreFields = useMemo(() => {
     const groups = new Map<string, ReviewDisplayField[]>();
@@ -2162,6 +2223,44 @@ export function App() {
     reviewPanelState !== "loading" && reviewPanelState !== "ready" && Boolean(reviewPanelMessage);
   const hasNoStructuredFilterResults =
     reviewPanelState === "ready" && hasActiveStructuredFilters && visibleCoreGroups.length === 0;
+  const detectedFieldsSummary = useMemo(() => {
+    let detected = 0;
+    let low = 0;
+    let medium = 0;
+    let high = 0;
+
+    coreDisplayFields.forEach((field) => {
+      const presentItems = field.items.filter(
+        (item) => !item.isMissing && Number.isFinite(item.confidence)
+      );
+      if (presentItems.length === 0) {
+        return;
+      }
+
+      const topConfidence = Math.max(
+        ...presentItems.map((item) => clampConfidence(item.confidence))
+      );
+      detected += 1;
+      const tone = getConfidenceTone(topConfidence);
+      if (tone === "low") {
+        low += 1;
+        return;
+      }
+      if (tone === "med") {
+        medium += 1;
+        return;
+      }
+      high += 1;
+    });
+
+    return {
+      detected,
+      total: GLOBAL_SCHEMA_V0.length,
+      low,
+      medium,
+      high,
+    };
+  }, [coreDisplayFields]);
   const shouldShowLoadPdfErrorBanner =
     loadPdf.isError && !isConnectivityOrServerError(loadPdf.error);
   const isPinnedSourcePanelVisible =
@@ -2853,8 +2952,30 @@ export function App() {
                             data-testid="structured-column-stack"
                             className="flex h-full w-full min-h-0 min-w-[420px] flex-1 flex-col gap-[var(--canvas-gap)] rounded-card bg-surfaceMuted p-[var(--canvas-gap)]"
                           >
-                            <div>
+                            <div className="flex w-full items-center justify-between gap-2">
                               <h3 className="text-lg font-semibold text-textSecondary">Datos extraídos</h3>
+                              <div className="flex items-center justify-end gap-1 text-xs leading-tight text-textSecondary">
+                                <span className="text-muted">Campos detectados:</span>
+                                <span className="inline-flex items-center gap-1 whitespace-nowrap">
+                                  <span className="font-semibold text-text tabular-nums">
+                                    {detectedFieldsSummary.detected}/{detectedFieldsSummary.total}
+                                  </span>
+                                  <span>(</span>
+                                  <span className="inline-flex items-center gap-1">
+                                    <ConfidenceDot tone="low" tooltip="Low" />
+                                    <span className="tabular-nums">{detectedFieldsSummary.low}</span>
+                                  </span>
+                                  <span className="inline-flex items-center gap-1">
+                                    <ConfidenceDot tone="med" tooltip="Medium" />
+                                    <span className="tabular-nums">{detectedFieldsSummary.medium}</span>
+                                  </span>
+                                  <span className="inline-flex items-center gap-1">
+                                    <ConfidenceDot tone="high" tooltip="High" />
+                                    <span className="tabular-nums">{detectedFieldsSummary.high}</span>
+                                  </span>
+                                  <span>)</span>
+                                </span>
+                              </div>
                             </div>
 
                             <div className="rounded-control bg-surface px-3 py-2">
@@ -3004,6 +3125,7 @@ export function App() {
                                     </ToggleGroupItem>
                                   </Tooltip>
                                 </ToggleGroup>
+
                               </div>
                             </div>
 
