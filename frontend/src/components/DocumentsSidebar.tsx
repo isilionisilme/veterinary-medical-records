@@ -1,0 +1,355 @@
+import { type ChangeEvent, type DragEvent, type MouseEvent, type RefObject } from "react";
+import { FileText, Pin, PinOff, RefreshCw } from "lucide-react";
+
+import { UploadDropzone } from "./UploadDropzone";
+import { Button } from "./ui/button";
+
+type DocumentsSidebarItem = {
+  document_id: string;
+  original_filename: string;
+  created_at: string;
+  status: string;
+  failure_type: string | null;
+};
+
+type DocumentsSidebarProps = {
+  panelHeightClass: string;
+  shouldUseHoverDocsSidebar: boolean;
+  isDocsSidebarExpanded: boolean;
+  isDocsSidebarPinned: boolean;
+  isRefreshingDocuments: boolean;
+  isUploadPending: boolean;
+  isHoverDevice: boolean;
+  showUploadInfo: boolean;
+  isDragOverSidebarUpload: boolean;
+  isDocumentListLoading: boolean;
+  isDocumentListError: boolean;
+  isListRefreshing: boolean;
+  documentListErrorMessage: string | null;
+  documents: DocumentsSidebarItem[];
+  activeId: string | null;
+  uploadPanelRef: RefObject<HTMLDivElement | null>;
+  uploadInfoTriggerRef: RefObject<HTMLButtonElement | null>;
+  fileInputRef: RefObject<HTMLInputElement | null>;
+  formatTimestamp: (value: string | null | undefined) => string;
+  isProcessingTooLong: (createdAt: string, status: string) => boolean;
+  mapDocumentStatus: (item: DocumentsSidebarItem) => { label: string; tone: "ok" | "warn" | "error" };
+  onSidebarMouseEnter: (event: MouseEvent<HTMLElement>) => void;
+  onSidebarMouseLeave: () => void;
+  onTogglePin: () => void;
+  onRefresh: () => void;
+  onOpenUploadInfo: () => void;
+  onCloseUploadInfo: (withDelay: boolean) => void;
+  onToggleUploadInfo: () => void;
+  onOpenUploadArea: (event?: { preventDefault?: () => void; stopPropagation?: () => void }) => void;
+  onSidebarUploadDragEnter: (event: DragEvent<HTMLDivElement>) => void;
+  onSidebarUploadDragOver: (event: DragEvent<HTMLDivElement>) => void;
+  onSidebarUploadDragLeave: (event: DragEvent<HTMLDivElement>) => void;
+  onSidebarUploadDrop: (event: DragEvent<HTMLDivElement>) => void;
+  onSidebarFileInputChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  onSelectDocument: (documentId: string) => void;
+};
+
+export function DocumentsSidebar({
+  panelHeightClass,
+  shouldUseHoverDocsSidebar,
+  isDocsSidebarExpanded,
+  isDocsSidebarPinned,
+  isRefreshingDocuments,
+  isUploadPending,
+  isHoverDevice,
+  showUploadInfo,
+  isDragOverSidebarUpload,
+  isDocumentListLoading,
+  isDocumentListError,
+  isListRefreshing,
+  documentListErrorMessage,
+  documents,
+  activeId,
+  uploadPanelRef,
+  uploadInfoTriggerRef,
+  fileInputRef,
+  formatTimestamp,
+  isProcessingTooLong,
+  mapDocumentStatus,
+  onSidebarMouseEnter,
+  onSidebarMouseLeave,
+  onTogglePin,
+  onRefresh,
+  onOpenUploadInfo,
+  onCloseUploadInfo,
+  onToggleUploadInfo,
+  onOpenUploadArea,
+  onSidebarUploadDragEnter,
+  onSidebarUploadDragOver,
+  onSidebarUploadDragLeave,
+  onSidebarUploadDrop,
+  onSidebarFileInputChange,
+  onSelectDocument,
+}: DocumentsSidebarProps) {
+  return (
+    <aside
+      data-testid="documents-sidebar"
+      data-expanded={isDocsSidebarExpanded ? "true" : "false"}
+      className={`${
+        shouldUseHoverDocsSidebar
+          ? `${isDocsSidebarExpanded ? "w-80" : "w-20"} transition-[width] duration-200 ease-in-out`
+          : "w-80"
+      } flex-shrink-0`}
+      onMouseEnter={onSidebarMouseEnter}
+      onMouseLeave={onSidebarMouseLeave}
+    >
+      <div className="overflow-hidden rounded-3xl border border-black/10 bg-white/80 shadow-xl">
+        <section className={`flex flex-col p-6 ${panelHeightClass}`}>
+          <div className="flex items-center justify-between gap-3">
+            <div
+              className={`min-w-0 transition-opacity duration-150 ${
+                isDocsSidebarExpanded ? "opacity-100" : "pointer-events-none w-0 opacity-0"
+              }`}
+            >
+              <h2 className="font-display text-xl font-semibold">Documentos</h2>
+            </div>
+            {isDocsSidebarExpanded && (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  onClick={onTogglePin}
+                  type="button"
+                  title={isDocsSidebarPinned ? "Desfijar barra" : "Fijar barra"}
+                  aria-label={isDocsSidebarPinned ? "Desfijar barra" : "Fijar barra"}
+                  className={`rounded-full border p-2 shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+                    isDocsSidebarPinned
+                      ? "border-ink/30 bg-black/[0.06] text-ink"
+                      : "border-black/15 bg-white text-ink hover:bg-accentSoft"
+                  }`}
+                >
+                  {isDocsSidebarPinned ? <PinOff size={16} /> : <Pin size={16} />}
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={onRefresh}
+                  type="button"
+                  title="Actualizar"
+                  aria-label="Actualizar"
+                  disabled={isRefreshingDocuments}
+                  className="rounded-full border border-black/15 bg-white p-2 text-ink shadow-sm hover:bg-accentSoft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                >
+                  <RefreshCw size={16} className={isRefreshingDocuments ? "animate-spin" : ""} />
+                </Button>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-4 flex min-h-[168px] items-center">
+            {isDocsSidebarExpanded ? (
+              <div
+                ref={uploadPanelRef}
+                className="w-full rounded-2xl border border-black/10 bg-white/70 p-4 transition-opacity duration-150 ease-in-out"
+              >
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-ink">Cargar documento</h3>
+                  <button
+                    ref={uploadInfoTriggerRef}
+                    type="button"
+                    aria-label="Informacion de formatos y tamano"
+                    aria-expanded={showUploadInfo}
+                    onFocus={onOpenUploadInfo}
+                    onBlur={() => onCloseUploadInfo(false)}
+                    onMouseEnter={() => {
+                      if (isHoverDevice) {
+                        onOpenUploadInfo();
+                      }
+                    }}
+                    onMouseLeave={() => {
+                      if (isHoverDevice) {
+                        onCloseUploadInfo(true);
+                      }
+                    }}
+                    onClick={(event) => {
+                      if (isHoverDevice) {
+                        return;
+                      }
+                      event.stopPropagation();
+                      onToggleUploadInfo();
+                    }}
+                    className="text-sm text-muted"
+                  >
+                    ⓘ
+                  </button>
+                </div>
+                <UploadDropzone
+                  className="mt-3"
+                  isDragOver={isDragOverSidebarUpload}
+                  onActivate={onOpenUploadArea}
+                  onDragEnter={onSidebarUploadDragEnter}
+                  onDragOver={onSidebarUploadDragOver}
+                  onDragLeave={onSidebarUploadDragLeave}
+                  onDrop={onSidebarUploadDrop}
+                />
+                <div className="mt-2 flex items-center gap-2">
+                  <input
+                    id="upload-document-input"
+                    ref={fileInputRef}
+                    type="file"
+                    aria-label="Archivo PDF"
+                    accept=".pdf,application/pdf"
+                    className="sr-only"
+                    disabled={isUploadPending}
+                    onChange={onSidebarFileInputChange}
+                  />
+                  {isUploadPending && (
+                    <div className="flex items-center gap-2 text-xs text-muted">
+                      <RefreshCw size={14} className="animate-spin" />
+                      <span>Subiendo...</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div data-testid="sidebar-collapsed-dropzone" className="flex w-full items-center justify-center">
+                <UploadDropzone
+                  compact
+                  ariaLabel="Cargar documento"
+                  title=""
+                  subtitle=""
+                  isDragOver={isDragOverSidebarUpload}
+                  onActivate={onOpenUploadArea}
+                  onDragEnter={onSidebarUploadDragEnter}
+                  onDragOver={onSidebarUploadDragOver}
+                  onDragLeave={onSidebarUploadDragLeave}
+                  onDrop={onSidebarUploadDrop}
+                />
+              </div>
+            )}
+          </div>
+
+          <div
+            data-testid="left-panel-scroll"
+            className={`relative mt-4 min-h-0 flex-1 overflow-y-auto overflow-x-hidden ${
+              isDocsSidebarExpanded ? "pr-1" : "pr-0"
+            }`}
+          >
+            {isDocumentListLoading && (
+              <div className="space-y-2 rounded-2xl border border-black/10 bg-white/70 p-4">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <div
+                    key={`skeleton-initial-${index}`}
+                    className="animate-pulse rounded-xl border border-black/10 bg-white/80 p-3"
+                  >
+                    <div className="h-3 w-2/3 rounded bg-black/10" />
+                    <div className="mt-2 h-2.5 w-1/2 rounded bg-black/10" />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {isDocumentListError && documentListErrorMessage && (
+              <div className="rounded-2xl border border-black/10 bg-white/80 p-4 text-sm text-ink">
+                <p>{documentListErrorMessage}</p>
+              </div>
+            )}
+
+            {!isDocumentListLoading && !isDocumentListError &&
+              (isListRefreshing ? (
+                <div className="space-y-2 rounded-2xl border border-black/10 bg-white/70 p-4">
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <div
+                      key={`skeleton-refresh-${index}`}
+                      className="animate-pulse rounded-xl border border-black/10 bg-white/80 p-3"
+                    >
+                      <div className="h-3 w-2/3 rounded bg-black/10" />
+                      <div className="mt-2 h-2.5 w-1/2 rounded bg-black/10" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {documents.length === 0 ? (
+                    isDocsSidebarExpanded ? (
+                      <p className="px-1 py-2 text-sm text-muted">Aun no hay documentos cargados.</p>
+                    ) : null
+                  ) : (
+                    documents.map((item) => {
+                      const isActive = activeId === item.document_id;
+                      const status = mapDocumentStatus(item);
+                      const collapsedStatusToneClass =
+                        status.tone === "ok"
+                          ? "bg-emerald-500"
+                          : status.tone === "error"
+                          ? "bg-red-500"
+                          : "bg-amber-500";
+                      return (
+                        <button
+                          key={item.document_id}
+                          type="button"
+                          onClick={() => onSelectDocument(item.document_id)}
+                          aria-pressed={isActive}
+                          aria-label={`${item.original_filename} (${status.label})`}
+                          title={item.original_filename}
+                          className={`w-full rounded-xl border text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+                            isDocsSidebarExpanded
+                              ? isActive
+                                ? "border-ink/30 bg-black/[0.04] text-ink shadow-sm ring-1 ring-ink/25"
+                                : "border-black/10 bg-white/80 text-ink hover:bg-white"
+                              : isActive
+                              ? "border-ink/25 bg-white/95 text-ink shadow-sm ring-1 ring-ink/20"
+                              : "border-black/10 bg-white/85 text-ink hover:bg-white"
+                          } ${isDocsSidebarExpanded ? "px-3 py-2" : "px-2.5 py-2"}`}
+                        >
+                          <div
+                            className={`flex items-center ${
+                              isDocsSidebarExpanded
+                                ? "justify-between gap-3"
+                                : "mx-auto w-full max-w-10 justify-between gap-2"
+                            }`}
+                          >
+                            <div className={isDocsSidebarExpanded ? "min-w-0" : "flex items-center justify-center"}>
+                              {isDocsSidebarExpanded ? (
+                                <>
+                                  <p className="truncate text-sm font-medium">{item.original_filename}</p>
+                                  <p className="mt-0.5 text-xs text-muted">Subido: {formatTimestamp(item.created_at)}</p>
+                                </>
+                              ) : (
+                                <FileText size={16} aria-hidden="true" />
+                              )}
+                            </div>
+                            {isDocsSidebarExpanded ? (
+                              <span
+                                className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                  status.tone === "ok"
+                                    ? "bg-emerald-100 text-emerald-700"
+                                    : status.tone === "error"
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-amber-100 text-amber-700"
+                                }`}
+                              >
+                                {status.tone === "warn" && (
+                                  <span className="mr-1 inline-block h-2 w-2 animate-spin rounded-full border border-current border-r-transparent align-middle" />
+                                )}
+                                {status.label}
+                              </span>
+                            ) : (
+                              <span
+                                aria-hidden="true"
+                                className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full ${collapsedStatusToneClass}`}
+                              />
+                            )}
+                          </div>
+                          {isDocsSidebarExpanded && isProcessingTooLong(item.created_at, item.status) && (
+                            <p className="mt-2 text-xs text-muted">Tardando mas de lo esperado</p>
+                          )}
+                          {isDocsSidebarExpanded && item.failure_type && (
+                            <p className="mt-2 text-xs text-red-600">Error: {item.failure_type}</p>
+                          )}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              ))}
+          </div>
+        </section>
+      </div>
+    </aside>
+  );
+}
