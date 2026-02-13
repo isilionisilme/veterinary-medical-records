@@ -294,6 +294,93 @@ type ExtractionRunSnapshotPayload = {
   };
 };
 
+type SnapshotDeliveryStatus = "pending" | "delivered" | "failed";
+type SnapshotErrorKind = "network" | "timeout" | "http_408" | "http_429" | "http_5xx" | "http_4xx" | "unknown";
+
+type SnapshotDeliveryState = {
+  status: SnapshotDeliveryStatus;
+  attemptCount: number;
+  lastAttemptAt: number | null;
+  lastErrorKind: SnapshotErrorKind | null;
+  firstAttemptAt: number | null;
+  permanentFailure: boolean;
+  giveUpLogged: boolean;
+};
+
+const SNAPSHOT_RETRY_BACKOFF_MS = [1000, 5000, 15000, 60000] as const;
+const SNAPSHOT_RETRY_MAX_ATTEMPTS = 8;
+const SNAPSHOT_RETRY_MAX_AGE_MS = 10 * 60 * 1000;
+
+class SnapshotPostError extends Error {
+  readonly kind: SnapshotErrorKind;
+  readonly retryable: boolean;
+  readonly statusCode?: number;
+
+  constructor(kind: SnapshotErrorKind, retryable: boolean, message: string, statusCode?: number) {
+    super(message);
+    this.name = "SnapshotPostError";
+    this.kind = kind;
+    this.retryable = retryable;
+    this.statusCode = statusCode;
+  }
+}
+
+function classifySnapshotHttpError(statusCode: number): {
+  kind: SnapshotErrorKind;
+  retryable: boolean;
+} {
+  if (statusCode === 408) {
+    return { kind: "http_408", retryable: true };
+  }
+  if (statusCode === 429) {
+    return { kind: "http_429", retryable: true };
+  }
+  if (statusCode >= 500) {
+    return { kind: "http_5xx", retryable: true };
+  }
+  return { kind: "http_4xx", retryable: false };
+}
+
+function getSnapshotRetryBackoffMs(runKey: string, attemptCount: number): number {
+  const boundedAttempt = Math.max(1, attemptCount);
+  const base = SNAPSHOT_RETRY_BACKOFF_MS[
+    Math.min(boundedAttempt - 1, SNAPSHOT_RETRY_BACKOFF_MS.length - 1)
+  ];
+  let hash = 0;
+  const seed = `${runKey}|${boundedAttempt}`;
+  for (let index = 0; index < seed.length; index += 1) {
+    hash = (hash * 31 + seed.charCodeAt(index)) >>> 0;
+  }
+  const jitter = 0.8 + ((hash % 401) / 1000);
+  return Math.round(base * jitter);
+}
+
+function getSnapshotErrorMeta(error: unknown): {
+  kind: SnapshotErrorKind;
+  retryable: boolean;
+  detail: string;
+} {
+  if (error instanceof SnapshotPostError) {
+    return {
+      kind: error.kind,
+      retryable: error.retryable,
+      detail: error.message,
+    };
+  }
+  if (isNetworkFetchError(error)) {
+    return {
+      kind: "network",
+      retryable: true,
+      detail: getTechnicalDetails(error) ?? "network error",
+    };
+  }
+  return {
+    kind: "unknown",
+    retryable: true,
+    detail: getTechnicalDetails(error) ?? "unknown snapshot post failure",
+  };
+}
+
 class UiError extends Error {
   readonly userMessage: string;
   readonly technicalDetails?: string;
@@ -653,13 +740,39 @@ async function uploadDocument(file: File): Promise<DocumentUploadResponse> {
 }
 
 async function postExtractionRunSnapshot(payload: ExtractionRunSnapshotPayload): Promise<void> {
-  await fetch(`${API_BASE_URL}/debug/extraction-runs`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/debug/extraction-runs`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch (error) {
+    if (isNetworkFetchError(error)) {
+      throw new SnapshotPostError(
+        "network",
+        true,
+        `Network error calling ${API_BASE_URL}/debug/extraction-runs`
+      );
+    }
+    throw new SnapshotPostError(
+      "unknown",
+      true,
+      getTechnicalDetails(error) ?? "Unknown error calling extraction observability endpoint"
+    );
+  }
+
+  if (!response.ok) {
+    const classified = classifySnapshotHttpError(response.status);
+    throw new SnapshotPostError(
+      classified.kind,
+      classified.retryable,
+      `HTTP ${response.status} calling ${API_BASE_URL}/debug/extraction-runs`,
+      response.status
+    );
+  }
 }
 
 async function copyTextToClipboard(text: string): Promise<void> {
@@ -898,7 +1011,7 @@ export function App() {
   const reviewSplitRatioRef = useRef(reviewSplitRatio);
   const lastExtractionDebugDocIdRef = useRef<string | null>(null);
   const loggedExtractionDebugEventKeysRef = useRef<Set<string>>(new Set());
-  const postedObservabilityRunKeysRef = useRef<Set<string>>(new Set());
+  const snapshotDeliveryStateRef = useRef<Record<string, SnapshotDeliveryState>>({});
   const viewerDragDepthRef = useRef(0);
   const sidebarUploadDragDepthRef = useRef(0);
   const suppressDocsSidebarHoverUntilRef = useRef(0);
@@ -1982,9 +2095,6 @@ export function App() {
     }
 
     const runKey = `${documentId}|${runId}`;
-    if (postedObservabilityRunKeysRef.current.has(runKey)) {
-      return;
-    }
 
     const latestDebugByField = new Map<string, ExtractionDebugEvent>();
     validationResult.debugEvents.forEach((event) => {
@@ -2056,14 +2166,124 @@ export function App() {
       },
     };
 
-    postedObservabilityRunKeysRef.current.add(runKey);
-    void postExtractionRunSnapshot(payload).catch((error) => {
-      postedObservabilityRunKeysRef.current.delete(runKey);
-      console.warn("[extraction-observability] failed to persist snapshot", error);
+    const state =
+      snapshotDeliveryStateRef.current[runKey] ??
+      ({
+        status: "pending",
+        attemptCount: 0,
+        lastAttemptAt: null,
+        lastErrorKind: null,
+        firstAttemptAt: null,
+        permanentFailure: false,
+        giveUpLogged: false,
+      } satisfies SnapshotDeliveryState);
+    snapshotDeliveryStateRef.current[runKey] = state;
+
+    if (state.status === "delivered") {
+      return;
+    }
+
+    const now = Date.now();
+    const ageMs = state.firstAttemptAt === null ? 0 : now - state.firstAttemptAt;
+    const capReached =
+      state.attemptCount >= SNAPSHOT_RETRY_MAX_ATTEMPTS ||
+      (state.firstAttemptAt !== null && ageMs >= SNAPSHOT_RETRY_MAX_AGE_MS);
+
+    if (state.permanentFailure || capReached) {
+      state.status = "failed";
+      if (!state.giveUpLogged) {
+        state.giveUpLogged = true;
+        console.warn("[extraction-observability] giving up snapshot delivery", {
+          documentId,
+          runId,
+          attemptCount: state.attemptCount,
+          lastErrorKind: state.lastErrorKind,
+          reason: state.permanentFailure ? "permanent_failure" : "cap_reached",
+        });
+      }
+      return;
+    }
+
+    if (state.lastAttemptAt !== null) {
+      const backoffMs = getSnapshotRetryBackoffMs(runKey, state.attemptCount);
+      if (now - state.lastAttemptAt < backoffMs) {
+        return;
+      }
+    }
+
+    const previousStatus = state.status;
+    state.status = "pending";
+    state.attemptCount += 1;
+    state.lastAttemptAt = now;
+    state.firstAttemptAt = state.firstAttemptAt ?? now;
+    console.debug("[extraction-observability] snapshot delivery attempt", {
+      documentId,
+      runId,
+      attempt: state.attemptCount,
+      transition: `${previousStatus}->pending`,
     });
+
+    void postExtractionRunSnapshot(payload)
+      .then(() => {
+        state.status = "delivered";
+        state.lastErrorKind = null;
+        console.debug("[extraction-observability] snapshot delivery transition", {
+          documentId,
+          runId,
+          attempt: state.attemptCount,
+          transition: "pending->delivered",
+        });
+      })
+      .catch((error) => {
+        const meta = getSnapshotErrorMeta(error);
+        state.status = "failed";
+        state.lastErrorKind = meta.kind;
+
+        if (!meta.retryable) {
+          state.permanentFailure = true;
+          if (!state.giveUpLogged) {
+            state.giveUpLogged = true;
+            console.warn("[extraction-observability] non-retryable snapshot failure", {
+              documentId,
+              runId,
+              attempt: state.attemptCount,
+              reason: meta.kind,
+              detail: meta.detail,
+            });
+          }
+          return;
+        }
+
+        const currentAgeMs =
+          state.firstAttemptAt === null ? 0 : Date.now() - state.firstAttemptAt;
+        const exceededCap =
+          state.attemptCount >= SNAPSHOT_RETRY_MAX_ATTEMPTS ||
+          (state.firstAttemptAt !== null && currentAgeMs >= SNAPSHOT_RETRY_MAX_AGE_MS);
+
+        console.debug("[extraction-observability] snapshot delivery transition", {
+          documentId,
+          runId,
+          attempt: state.attemptCount,
+          transition: "pending->failed",
+          retryReason: meta.kind,
+        });
+
+        if (exceededCap && !state.giveUpLogged) {
+          state.giveUpLogged = true;
+          console.warn("[extraction-observability] giving up snapshot delivery", {
+            documentId,
+            runId,
+            attemptCount: state.attemptCount,
+            lastErrorKind: meta.kind,
+            detail: meta.detail,
+            reason: "cap_reached",
+          });
+        }
+      });
   }, [
     documentReview.data?.active_interpretation.data.document_id,
     documentReview.data?.latest_completed_run.run_id,
+    documentReview.dataUpdatedAt,
     validatedReviewFields,
     validationResult.debugEvents,
   ]);

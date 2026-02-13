@@ -74,3 +74,25 @@ def test_persist_snapshot_reports_changed_fields_against_previous(
 
     assert first["changed_fields"] == 0
     assert second["changed_fields"] >= 1
+
+
+def test_persist_snapshot_is_idempotent_per_document_and_run_id(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(extraction_observability, "_OBSERVABILITY_DIR", tmp_path)
+
+    document_id = "doc-idempotent"
+    first = extraction_observability.persist_extraction_run_snapshot(
+        _snapshot(run_id="run-1", document_id=document_id, status="missing", confidence=None)
+    )
+    second = extraction_observability.persist_extraction_run_snapshot(
+        _snapshot(run_id="run-1", document_id=document_id, status="accepted", confidence="high")
+    )
+
+    runs = extraction_observability.get_extraction_runs(document_id)
+    assert len(runs) == 1
+    assert runs[0]["runId"] == "run-1"
+    assert runs[0]["fields"]["pet_name"]["status"] == "accepted"
+    assert first["was_created"] is True
+    assert second["was_created"] is False

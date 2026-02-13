@@ -149,20 +149,36 @@ def persist_extraction_run_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
     if not document_id:
         raise ValueError("documentId is required")
 
+    run_id = str(snapshot.get("runId", "")).strip()
+    if not run_id:
+        raise ValueError("runId is required")
+
     path = _document_runs_path(document_id)
     runs = _read_runs(path)
-    previous = runs[-1] if runs else None
-    runs.append(snapshot)
-    if len(runs) > _MAX_RUNS_PER_DOCUMENT:
-        runs = runs[-_MAX_RUNS_PER_DOCUMENT:]
+    existing_index: int | None = None
+    for index, item in enumerate(runs):
+        if str(item.get("runId", "")).strip() == run_id:
+            existing_index = index
+            break
+
+    was_created = existing_index is None
+    if existing_index is None:
+        previous = runs[-1] if runs else None
+        runs.append(snapshot)
+        if len(runs) > _MAX_RUNS_PER_DOCUMENT:
+            runs = runs[-_MAX_RUNS_PER_DOCUMENT:]
+    else:
+        previous = runs[existing_index]
+        runs[existing_index] = snapshot
 
     _write_runs(path, runs)
     changed_fields = _log_diff(document_id=document_id, previous=previous, current=snapshot)
     return {
         "document_id": document_id,
-        "run_id": str(snapshot.get("runId", "")),
+        "run_id": run_id,
         "stored_runs": len(runs),
         "changed_fields": changed_fields,
+        "was_created": was_created,
     }
 
 
