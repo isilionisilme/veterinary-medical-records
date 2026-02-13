@@ -13,5 +13,7 @@ Enable veterinarians to review the system’s interpretation **in context**, sid
 
 ## User Stories (in order)
 - US-07 — Review document in context
+- US-34 — Search & filters in Structured Data panel
+- US-35 — Resizable splitter between PDF Viewer and Structured Data panel
 
 ---

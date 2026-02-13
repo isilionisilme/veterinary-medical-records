@@ -38,7 +38,7 @@ export function UploadDropzone({
         isDragOver
           ? "border-accent bg-accentSoft/35 ring-2 ring-accent/40"
           : "border-black/35 bg-white/85 hover:border-black/50 hover:bg-white"
-      } ${compact ? "h-12 w-12 px-0 py-0" : "px-4 py-5"} ${className}`}
+      } ${compact ? "h-12 w-12 rounded-xl px-1.5 py-1.5" : "px-4 py-5"} ${className}`}
       role="button"
       aria-label={resolvedAriaLabel}
       tabIndex={0}
@@ -59,7 +59,7 @@ export function UploadDropzone({
           <p className="text-sm font-semibold text-ink">Suelta el PDF para subirlo</p>
         </div>
       )}
-      <Upload size={18} className="text-ink" />
+      <Upload size={compact ? 16 : 18} className="text-ink" />
       {!compact && (
         <>
           <p className="mt-2 text-sm font-semibold text-ink">{title}</p>

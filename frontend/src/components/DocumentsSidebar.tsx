@@ -3,6 +3,7 @@ import { FileText, Pin, PinOff, RefreshCw } from "lucide-react";
 
 import { UploadDropzone } from "./UploadDropzone";
 import { Button } from "./ui/button";
+import { Tooltip } from "./ui/tooltip";
 
 type DocumentsSidebarItem = {
   document_id: string;
@@ -28,9 +29,9 @@ type DocumentsSidebarProps = {
   documentListErrorMessage: string | null;
   documents: DocumentsSidebarItem[];
   activeId: string | null;
-  uploadPanelRef: RefObject<HTMLDivElement | null>;
-  uploadInfoTriggerRef: RefObject<HTMLButtonElement | null>;
-  fileInputRef: RefObject<HTMLInputElement | null>;
+  uploadPanelRef: RefObject<HTMLDivElement>;
+  uploadInfoTriggerRef: RefObject<HTMLButtonElement>;
+  fileInputRef: RefObject<HTMLInputElement>;
   formatTimestamp: (value: string | null | undefined) => string;
   isProcessingTooLong: (createdAt: string, status: string) => boolean;
   mapDocumentStatus: (item: DocumentsSidebarItem) => { label: string; tone: "ok" | "warn" | "error" };
@@ -93,7 +94,7 @@ export function DocumentsSidebar({
       data-expanded={isDocsSidebarExpanded ? "true" : "false"}
       className={`${
         shouldUseHoverDocsSidebar
-          ? `${isDocsSidebarExpanded ? "w-80" : "w-20"} transition-[width] duration-200 ease-in-out`
+          ? `${isDocsSidebarExpanded ? "w-80" : "w-16"} transition-[width] duration-200 ease-in-out`
           : "w-80"
       } flex-shrink-0`}
       onMouseEnter={onSidebarMouseEnter}
@@ -206,7 +207,7 @@ export function DocumentsSidebar({
                 </div>
               </div>
             ) : (
-              <div data-testid="sidebar-collapsed-dropzone" className="flex w-full items-center justify-center">
+              <div data-testid="sidebar-collapsed-dropzone" className="flex w-full items-center justify-center py-2">
                 <UploadDropzone
                   compact
                   ariaLabel="Cargar documento"
@@ -226,7 +227,9 @@ export function DocumentsSidebar({
           <div
             data-testid="left-panel-scroll"
             className={`relative mt-4 min-h-0 flex-1 overflow-y-auto overflow-x-hidden ${
-              isDocsSidebarExpanded ? "pr-1" : "pr-0"
+              isDocsSidebarExpanded
+                ? "pr-1"
+                : "pr-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:w-0 [&::-webkit-scrollbar]:h-0"
             }`}
           >
             {isDocumentListLoading && (
@@ -278,39 +281,52 @@ export function DocumentsSidebar({
                           : status.tone === "error"
                           ? "bg-red-500"
                           : "bg-amber-500";
-                      return (
+                      const button = (
                         <button
                           key={item.document_id}
                           type="button"
                           onClick={() => onSelectDocument(item.document_id)}
                           aria-pressed={isActive}
                           aria-label={`${item.original_filename} (${status.label})`}
-                          title={item.original_filename}
-                          className={`w-full rounded-xl border text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+                          className={`w-full overflow-visible text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
                             isDocsSidebarExpanded
                               ? isActive
-                                ? "border-ink/30 bg-black/[0.04] text-ink shadow-sm ring-1 ring-ink/25"
-                                : "border-black/10 bg-white/80 text-ink hover:bg-white"
-                              : isActive
-                              ? "border-ink/25 bg-white/95 text-ink shadow-sm ring-1 ring-ink/20"
-                              : "border-black/10 bg-white/85 text-ink hover:bg-white"
-                          } ${isDocsSidebarExpanded ? "px-3 py-2" : "px-2.5 py-2"}`}
+                                ? "rounded-xl border border-ink/30 bg-black/[0.04] text-ink shadow-sm ring-1 ring-ink/25"
+                                : "rounded-xl border border-black/10 bg-white/80 text-ink hover:bg-white"
+                              : "rounded-lg border border-transparent bg-transparent text-ink"
+                          } ${isDocsSidebarExpanded ? "px-3 py-2" : "px-1 py-1.5"}`}
                         >
                           <div
                             className={`flex items-center ${
                               isDocsSidebarExpanded
                                 ? "justify-between gap-3"
-                                : "mx-auto w-full max-w-10 justify-between gap-2"
+                                : "mx-auto w-full justify-center"
                             }`}
                           >
-                            <div className={isDocsSidebarExpanded ? "min-w-0" : "flex items-center justify-center"}>
+                            <div
+                              className={
+                                isDocsSidebarExpanded
+                                  ? "min-w-0"
+                                  : `relative flex h-8 w-8 items-center justify-center rounded-full transition ${
+                                      isActive
+                                        ? "bg-black/[0.10]"
+                                        : "bg-transparent hover:bg-black/[0.06]"
+                                    }`
+                              }
+                            >
                               {isDocsSidebarExpanded ? (
                                 <>
                                   <p className="truncate text-sm font-medium">{item.original_filename}</p>
                                   <p className="mt-0.5 text-xs text-muted">Subido: {formatTimestamp(item.created_at)}</p>
                                 </>
                               ) : (
-                                <FileText size={16} aria-hidden="true" />
+                                <FileText size={15} aria-hidden="true" />
+                              )}
+                              {!isDocsSidebarExpanded && (
+                                <span
+                                  aria-hidden="true"
+                                  className={`absolute right-0 top-0 inline-block h-2.5 w-2.5 rounded-full ring-2 ring-white ${collapsedStatusToneClass}`}
+                                />
                               )}
                             </div>
                             {isDocsSidebarExpanded ? (
@@ -328,12 +344,7 @@ export function DocumentsSidebar({
                                 )}
                                 {status.label}
                               </span>
-                            ) : (
-                              <span
-                                aria-hidden="true"
-                                className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full ${collapsedStatusToneClass}`}
-                              />
-                            )}
+                            ) : null}
                           </div>
                           {isDocsSidebarExpanded && isProcessingTooLong(item.created_at, item.status) && (
                             <p className="mt-2 text-xs text-muted">Tardando mas de lo esperado</p>
@@ -342,6 +353,20 @@ export function DocumentsSidebar({
                             <p className="mt-2 text-xs text-red-600">Error: {item.failure_type}</p>
                           )}
                         </button>
+                      );
+
+                      if (isDocsSidebarExpanded) {
+                        return button;
+                      }
+
+                      return (
+                        <Tooltip
+                          key={`${item.document_id}-tooltip`}
+                          content={`${item.original_filename} · ${status.label}`}
+                          triggerClassName="flex w-full"
+                        >
+                          {button}
+                        </Tooltip>
                       );
                     })
                   )}

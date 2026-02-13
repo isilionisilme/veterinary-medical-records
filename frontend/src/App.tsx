@@ -1,6 +1,17 @@
-import { type ChangeEvent, type DragEvent, type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type ChangeEvent,
+  type CSSProperties,
+  type DragEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
+  type ReactNode,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { createPortal } from "react-dom";
-import { Download, FileText, RefreshCw, Search } from "lucide-react";
+import { AlignLeft, Download, FileText, Info, RefreshCw, Search, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { DocumentsSidebar } from "./components/DocumentsSidebar";
@@ -8,6 +19,7 @@ import { PdfViewer } from "./components/PdfViewer";
 import { SourcePanel } from "./components/SourcePanel";
 import { UploadDropzone } from "./components/UploadDropzone";
 import { Button } from "./components/ui/button";
+import { Tooltip } from "./components/ui/tooltip";
 import { useSourcePanelState } from "./hooks/useSourcePanelState";
 import { groupProcessingSteps } from "./lib/processingHistory";
 import {
@@ -32,6 +44,47 @@ const MISSING_VALUE_PLACEHOLDER = "—";
 const EMPTY_LIST_PLACEHOLDER = "Sin elementos";
 const REPORT_LAYOUT_STORAGE_KEY = "reportLayout";
 const DOCS_SIDEBAR_PIN_STORAGE_KEY = "docsSidebarPinned";
+const REVIEW_SPLIT_RATIO_STORAGE_KEY = "reviewSplitRatio";
+const DEFAULT_REVIEW_SPLIT_RATIO = 0.62;
+const MIN_PDF_PANEL_WIDTH_PX = 560;
+const MIN_STRUCTURED_PANEL_WIDTH_PX = 420;
+const SPLITTER_COLUMN_WIDTH_PX = 14;
+const REVIEW_SPLIT_MIN_WIDTH_PX =
+  MIN_PDF_PANEL_WIDTH_PX + MIN_STRUCTURED_PANEL_WIDTH_PX + SPLITTER_COLUMN_WIDTH_PX;
+const SPLIT_SNAP_POINTS = [0.7, 0.6, 0.5] as const;
+
+function clampNumber(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
+}
+
+function clampReviewSplitRatio(rawRatio: number, containerWidth: number): number {
+  const safeContainerWidth = Math.max(containerWidth, REVIEW_SPLIT_MIN_WIDTH_PX);
+  const availablePanelWidth = safeContainerWidth - SPLITTER_COLUMN_WIDTH_PX;
+  if (availablePanelWidth <= 0) {
+    return DEFAULT_REVIEW_SPLIT_RATIO;
+  }
+
+  const minRatio = MIN_PDF_PANEL_WIDTH_PX / availablePanelWidth;
+  const maxRatio = 1 - MIN_STRUCTURED_PANEL_WIDTH_PX / availablePanelWidth;
+
+  if (minRatio > maxRatio) {
+    return minRatio;
+  }
+
+  return clampNumber(rawRatio, minRatio, maxRatio);
+}
+
+function snapReviewSplitRatio(rawRatio: number): number {
+  const nearestPoint = SPLIT_SNAP_POINTS.reduce((nearest, candidate) =>
+    Math.abs(candidate - rawRatio) < Math.abs(nearest - rawRatio) ? candidate : nearest
+  );
+
+  if (Math.abs(nearestPoint - rawRatio) <= 0.03) {
+    return nearestPoint;
+  }
+
+  return rawRatio;
+}
 
 type LoadResult = {
   url: string;
@@ -597,7 +650,10 @@ async function copyTextToClipboard(text: string): Promise<void> {
   throw new UiError("No se pudo copiar el texto al portapapeles.");
 }
 
-function formatTimestamp(value: string): string {
+function formatTimestamp(value: string | null | undefined): string {
+  if (!value) {
+    return "--";
+  }
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) {
     return value;
@@ -612,7 +668,10 @@ function isDocumentProcessing(status: string): boolean {
   return status === "PROCESSING" || status === "UPLOADED";
 }
 
-function mapDocumentStatus(item: DocumentListItem): { label: string; tone: "ok" | "warn" | "error" } {
+function mapDocumentStatus(item: {
+  status: string;
+  failure_type: string | null | undefined;
+}): { label: string; tone: "ok" | "warn" | "error" } {
   // Source of truth: derived processing status from GET /documents -> `item.status`.
   if (item.status === "FAILED" || item.status === "TIMED_OUT" || item.failure_type) {
     return { label: "Error", tone: "error" };
@@ -782,6 +841,17 @@ export function App() {
   const [selectedConfidenceBuckets, setSelectedConfidenceBuckets] = useState<ConfidenceBucket[]>([]);
   const [showOnlyCritical, setShowOnlyCritical] = useState(false);
   const [showOnlyWithValue, setShowOnlyWithValue] = useState(false);
+  const [reviewSplitRatio, setReviewSplitRatio] = useState(() => {
+    if (typeof window === "undefined") {
+      return DEFAULT_REVIEW_SPLIT_RATIO;
+    }
+    const stored = Number(window.localStorage.getItem(REVIEW_SPLIT_RATIO_STORAGE_KEY));
+    if (!Number.isFinite(stored) || stored <= 0 || stored >= 1) {
+      return DEFAULT_REVIEW_SPLIT_RATIO;
+    }
+    return stored;
+  });
+  const [isDraggingReviewSplit, setIsDraggingReviewSplit] = useState(false);
   const [reportLayout, setReportLayout] = useState<ReportLayout>(() => {
     if (!import.meta.env.DEV || typeof window === "undefined") {
       return 2;
@@ -803,6 +873,14 @@ export function App() {
   const uploadInfoContentRef = useRef<HTMLDivElement | null>(null);
   const uploadInfoCloseTimerRef = useRef<number | null>(null);
   const uploadPanelRef = useRef<HTMLDivElement | null>(null);
+  const structuredSearchInputRef = useRef<HTMLInputElement | null>(null);
+  const reviewSplitGridRef = useRef<HTMLDivElement | null>(null);
+  const reviewSplitDragStateRef = useRef<{
+    startX: number;
+    startRatio: number;
+    containerWidth: number;
+  } | null>(null);
+  const reviewSplitRatioRef = useRef(reviewSplitRatio);
   const viewerDragDepthRef = useRef(0);
   const sidebarUploadDragDepthRef = useRef(0);
   const pendingAutoOpenDocumentIdRef = useRef<string | null>(null);
@@ -857,6 +935,17 @@ export function App() {
   }, [reportLayout]);
 
   useEffect(() => {
+    reviewSplitRatioRef.current = reviewSplitRatio;
+  }, [reviewSplitRatio]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    window.localStorage.setItem(REVIEW_SPLIT_RATIO_STORAGE_KEY, String(reviewSplitRatio));
+  }, [reviewSplitRatio]);
+
+  useEffect(() => {
     if (typeof window === "undefined") {
       return;
     }
@@ -874,7 +963,7 @@ export function App() {
     if (!import.meta.env.DEV || typeof window === "undefined") {
       return;
     }
-    const onKeyDown = (event: KeyboardEvent) => {
+    const onKeyDown = (event: globalThis.KeyboardEvent) => {
       if (!event.shiftKey || (event.key !== "L" && event.key !== "l")) {
         return;
       }
@@ -952,6 +1041,71 @@ export function App() {
     }
     setShowUploadInfo(false);
   }, [isDocsSidebarExpanded]);
+
+  useEffect(() => {
+    if (!isDraggingReviewSplit) {
+      return;
+    }
+
+    const onMouseMove = (event: globalThis.MouseEvent) => {
+      const dragState = reviewSplitDragStateRef.current;
+      if (!dragState) {
+        return;
+      }
+
+      const availableWidth = dragState.containerWidth - SPLITTER_COLUMN_WIDTH_PX;
+      if (availableWidth <= 0) {
+        return;
+      }
+
+      const deltaRatio = (event.clientX - dragState.startX) / availableWidth;
+      const nextRatio = clampReviewSplitRatio(
+        dragState.startRatio + deltaRatio,
+        dragState.containerWidth
+      );
+      setReviewSplitRatio(nextRatio);
+    };
+
+    const onMouseUp = () => {
+      setIsDraggingReviewSplit(false);
+      reviewSplitDragStateRef.current = null;
+      setReviewSplitRatio((current) => snapReviewSplitRatio(current));
+    };
+
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+
+    return () => {
+      document.body.style.removeProperty("cursor");
+      document.body.style.removeProperty("user-select");
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, [isDraggingReviewSplit]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const clampSplitToContainer = () => {
+      const containerWidth = reviewSplitGridRef.current?.getBoundingClientRect().width ?? 0;
+      if (containerWidth <= 0) {
+        return;
+      }
+      setReviewSplitRatio((current) => clampReviewSplitRatio(current, containerWidth));
+    };
+
+    const rafId = window.requestAnimationFrame(clampSplitToContainer);
+    window.addEventListener("resize", clampSplitToContainer);
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      window.removeEventListener("resize", clampSplitToContainer);
+    };
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -1296,7 +1450,7 @@ export function App() {
     }
   };
 
-  const handleDocsSidebarMouseEnter = (event: MouseEvent<HTMLElement>) => {
+  const handleDocsSidebarMouseEnter = (event: ReactMouseEvent<HTMLElement>) => {
     isPointerInsideDocsSidebarRef.current = true;
     if (shouldAutoCollapseDocsSidebar && event.buttons === 0) {
       setIsDocsSidebarHovered(true);
@@ -2119,6 +2273,15 @@ export function App() {
     reviewPanelState === "ready" && hasActiveStructuredFilters && visibleCoreGroups.length === 0;
   const shouldShowLoadPdfErrorBanner =
     loadPdf.isError && !isConnectivityOrServerError(loadPdf.error);
+  const isPinnedSourcePanelVisible =
+    isBrowseMode && sourcePanel.isSourceOpen && sourcePanel.isSourcePinned && isDesktopForPin;
+  const reviewSplitLayoutStyle = useMemo<CSSProperties>(
+    () => ({
+      minWidth: `${REVIEW_SPLIT_MIN_WIDTH_PX}px`,
+      gridTemplateColumns: `minmax(${MIN_PDF_PANEL_WIDTH_PX}px, ${reviewSplitRatio}fr) ${SPLITTER_COLUMN_WIDTH_PX}px minmax(${MIN_STRUCTURED_PANEL_WIDTH_PX}px, ${1 - reviewSplitRatio}fr)`,
+    }),
+    [reviewSplitRatio]
+  );
 
   const isDocumentListConnectivityError =
     documentList.isError && isConnectivityOrServerError(documentList.error);
@@ -2128,15 +2291,50 @@ export function App() {
     setFieldNavigationRequestId((current) => current + 1);
   };
 
-  const handleOpenSourceFromEvidence = (field: ReviewSelectableField) => {
-    setSelectedFieldId(field.id);
-    setFieldNavigationRequestId((current) => current + 1);
-    sourcePanel.openFromEvidence(field.evidence);
-    if (field.evidence?.page) {
+  const resetReviewSplitRatio = () => {
+    const containerWidth = Math.max(
+      reviewSplitGridRef.current?.getBoundingClientRect().width ?? 0,
+      REVIEW_SPLIT_MIN_WIDTH_PX
+    );
+    setReviewSplitRatio(clampReviewSplitRatio(DEFAULT_REVIEW_SPLIT_RATIO, containerWidth));
+  };
+
+  const startReviewSplitDragging = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    const containerWidth = Math.max(
+      reviewSplitGridRef.current?.getBoundingClientRect().width ?? 0,
+      REVIEW_SPLIT_MIN_WIDTH_PX
+    );
+    reviewSplitDragStateRef.current = {
+      startX: event.clientX,
+      startRatio: reviewSplitRatioRef.current,
+      containerWidth,
+    };
+    setIsDraggingReviewSplit(true);
+    event.preventDefault();
+  };
+
+  const handleReviewSplitKeyboard = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+    const containerWidth = Math.max(
+      reviewSplitGridRef.current?.getBoundingClientRect().width ?? 0,
+      REVIEW_SPLIT_MIN_WIDTH_PX
+    );
+    const step = 0.03;
+
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      setReviewSplitRatio((current) => clampReviewSplitRatio(current - step, containerWidth));
       return;
     }
-    if (!isReviewMode) {
-      sourcePanel.closeOverlay();
+
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      setReviewSplitRatio((current) => clampReviewSplitRatio(current + step, containerWidth));
+      return;
+    }
+
+    if (event.key === "Home") {
+      event.preventDefault();
+      resetReviewSplitRatio();
     }
   };
 
@@ -2224,19 +2422,63 @@ export function App() {
     setShowUploadInfo(false);
   };
 
-  const viewerTabButton = (key: "document" | "raw_text" | "technical", label: string) => (
-    <button
-      type="button"
-      onClick={() => setActiveViewerTab(key)}
-      className={`rounded-full px-4 py-1 text-xs font-semibold transition ${
-        activeViewerTab === key
-          ? "bg-ink text-white"
-          : "border border-black/10 bg-white text-muted hover:text-ink"
-      }`}
-    >
-      {label}
-    </button>
+  const viewerModeIconButton = (
+    key: "document" | "raw_text" | "technical",
+    tooltipLabel: string,
+    ariaLabel: string,
+    icon: ReactNode
+  ) => {
+    const isActive = activeViewerTab === key;
+    return (
+      <Tooltip key={key} content={tooltipLabel}>
+        <button
+          type="button"
+          aria-label={ariaLabel}
+          aria-pressed={isActive}
+          onClick={() => setActiveViewerTab(key)}
+          className={`inline-flex h-9 w-9 items-center justify-center rounded-md transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+            isActive
+              ? "bg-black/[0.10] text-ink"
+              : "bg-transparent text-ink hover:bg-black/[0.06]"
+          }`}
+        >
+          {icon}
+        </button>
+      </Tooltip>
+    );
+  };
+
+  const viewerModeToolbarIcons = (
+    <>
+      {viewerModeIconButton("document", "Documento", "Documento", <FileText size={16} aria-hidden="true" />)}
+      {viewerModeIconButton(
+        "raw_text",
+        "Texto extraído",
+        "Texto extraido",
+        <AlignLeft size={16} aria-hidden="true" />
+      )}
+      {viewerModeIconButton(
+        "technical",
+        "Detalles técnicos",
+        "Detalles tecnicos",
+        <Info size={16} aria-hidden="true" />
+      )}
+    </>
   );
+
+  const viewerDownloadIcon = downloadUrl ? (
+    <Tooltip content="Descargar">
+      <a
+        href={downloadUrl}
+        target="_blank"
+        rel="noreferrer"
+        aria-label="Descargar"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-md text-ink transition hover:bg-black/[0.06] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      >
+        <Download size={16} aria-hidden="true" />
+      </a>
+    </Tooltip>
+  ) : null;
 
   const buildFieldTooltip = (item: ReviewSelectableField, isCritical: boolean): string => {
     const confidence = item.confidence;
@@ -2258,13 +2500,14 @@ export function App() {
     const tooltip = buildFieldTooltip(item, field.isCritical);
     return (
       <span data-testid={`badge-group-${item.id}`} className="inline-flex shrink-0 items-center">
-        <span
-          data-testid={`confidence-indicator-${item.id}`}
-          tabIndex={0}
-          title={tooltip}
-          aria-label={tooltip}
-          className={`inline-block h-2.5 w-2.5 rounded-full ${getConfidenceIndicatorClass(tone)}`}
-        />
+        <Tooltip content={tooltip}>
+          <span
+            data-testid={`confidence-indicator-${item.id}`}
+            tabIndex={0}
+            aria-label={tooltip}
+            className={`inline-block h-2.5 w-2.5 rounded-full ${getConfidenceIndicatorClass(tone)}`}
+          />
+        </Tooltip>
       </span>
     );
   };
@@ -2277,13 +2520,14 @@ export function App() {
           <div className="flex items-center gap-1.5">
             <p className="text-xs font-semibold text-ink">{field.label}</p>
             {field.isCritical && (
-              <span
-                data-testid={`critical-indicator-${field.key}`}
-                title="CRÍTICO"
-                className="inline-flex h-4 min-w-4 items-center justify-center rounded-full border border-black/15 text-[10px] font-semibold leading-none text-muted"
-              >
-                !
-              </span>
+              <Tooltip content="CRÍTICO">
+                <span
+                  data-testid={`critical-indicator-${field.key}`}
+                  className="inline-flex h-4 min-w-4 items-center justify-center rounded-full border border-black/15 text-[10px] font-semibold leading-none text-muted"
+                >
+                  !
+                </span>
+              </Tooltip>
             )}
           </div>
           {field.items.length > 0 && (
@@ -2349,13 +2593,14 @@ export function App() {
             <div className="flex min-w-0 items-center gap-1.5 pr-3">
               <p className="text-xs font-semibold text-ink">{field.label}</p>
               {field.isCritical && (
-                <span
-                  data-testid={`critical-indicator-${field.key}`}
-                  title="CRÍTICO"
-                  className="inline-flex h-4 min-w-4 items-center justify-center rounded-full border border-black/15 text-[10px] font-semibold leading-none text-muted"
-                >
-                  !
-                </span>
+                <Tooltip content="CRÍTICO">
+                  <span
+                    data-testid={`critical-indicator-${field.key}`}
+                    className="inline-flex h-4 min-w-4 items-center justify-center rounded-full border border-black/15 text-[10px] font-semibold leading-none text-muted"
+                  >
+                    !
+                  </span>
+                </Tooltip>
               )}
               {renderConfidenceIndicator(field, item)}
             </div>
@@ -2408,14 +2653,15 @@ export function App() {
                 {countLabel}
               </span>
             )}
-            <button
-              type="button"
-              disabled
-              title="Disponible próximamente"
-              className="rounded-full border border-black/10 px-2 py-0.5 text-[10px] font-semibold text-muted/70"
-            >
-              + Añadir
-            </button>
+            <Tooltip content="Disponible próximamente">
+              <button
+                type="button"
+                disabled
+                className="rounded-full border border-black/10 px-2 py-0.5 text-[10px] font-semibold text-muted/70"
+              >
+                + Añadir
+              </button>
+            </Tooltip>
           </div>
         </div>
         <div className="mt-2 space-y-2">
@@ -2601,14 +2847,6 @@ export function App() {
               Revisión de reembolsos
             </h1>
           </div>
-          {downloadUrl && (
-            <a href={downloadUrl} className="self-start" target="_blank" rel="noreferrer">
-              <Button>
-                <Download size={16} />
-                Descargar
-              </Button>
-            </a>
-          )}
         </div>
       </header>
 
@@ -2663,12 +2901,7 @@ export function App() {
               </div>
             )}
             <div className="mt-4 flex min-h-0 flex-1 flex-col">
-              <div className="flex flex-wrap items-center gap-2">
-                {viewerTabButton("document", "Documento")}
-                {viewerTabButton("raw_text", "Texto extraido")}
-                {viewerTabButton("technical", "Detalles tecnicos")}
-              </div>
-              <div className="mt-4 min-h-0 flex-1">
+              <div className="min-h-0 flex-1">
                 {activeViewerTab === "document" && (
                   <div
                     data-testid="viewer-dropzone"
@@ -2722,228 +2955,267 @@ export function App() {
                       <div
                         data-testid="document-layout-grid"
                         className={`h-full min-h-0 ${
-                          isBrowseMode
-                            ? sourcePanel.isSourceOpen && sourcePanel.isSourcePinned && isDesktopForPin
-                              ? "grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(360px,420px)] gap-4"
-                              : "grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-4"
-                            : "grid grid-cols-1 gap-4 xl:grid-cols-[minmax(520px,1fr)_minmax(720px,1.45fr)] 2xl:grid-cols-[minmax(560px,1fr)_minmax(900px,1.8fr)]"
+                          isPinnedSourcePanelVisible
+                            ? "grid grid-cols-[minmax(0,1fr)_minmax(360px,420px)] gap-4"
+                            : ""
                         }`}
                       >
-                        <aside
-                          data-testid="center-panel-scroll"
-                          className="flex h-full min-h-0 flex-col rounded-2xl border border-black/10 bg-white/80 p-2"
+                        <div
+                          ref={reviewSplitGridRef}
+                          data-testid="review-split-grid"
+                          className="grid h-full min-h-0 overflow-x-auto"
+                          style={reviewSplitLayoutStyle}
                         >
-                          {fileUrl ? (
-                            <PdfViewer
-                              key={`${effectiveViewMode}-${activeId ?? "empty"}`}
-                              fileUrl={fileUrl}
-                              filename={filename}
-                              isDragOver={false}
-                              focusPage={selectedReviewField?.evidence?.page ?? null}
-                              highlightSnippet={selectedReviewField?.evidence?.snippet ?? null}
-                              focusRequestId={fieldNavigationRequestId}
-                            />
-                          ) : (
-                            <div className="flex h-full items-center justify-center text-sm text-muted">
-                              No hay PDF disponible para este documento.
-                            </div>
-                          )}
-                        </aside>
-                        <aside
-                          className="flex h-full w-full min-h-0 flex-col rounded-2xl border border-black/10 bg-white/80 p-4"
-                        >
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <h3 className="text-lg font-semibold text-ink">Datos estructurados</h3>
-                            <Button
+                          <aside
+                            data-testid="center-panel-scroll"
+                            className="flex h-full min-h-0 min-w-[560px] flex-col rounded-2xl border border-black/10 bg-white/80 p-2"
+                          >
+                            {fileUrl ? (
+                              <PdfViewer
+                                key={`${effectiveViewMode}-${activeId ?? "empty"}`}
+                                fileUrl={fileUrl}
+                                filename={filename}
+                                isDragOver={false}
+                                focusPage={selectedReviewField?.evidence?.page ?? null}
+                                highlightSnippet={selectedReviewField?.evidence?.snippet ?? null}
+                                focusRequestId={fieldNavigationRequestId}
+                                toolbarLeftContent={viewerModeToolbarIcons}
+                                toolbarRightExtra={viewerDownloadIcon}
+                              />
+                            ) : (
+                              <div className="flex h-full min-h-0 flex-col">
+                                <div className="relative z-20 flex items-center justify-between gap-4 border-b border-black/10 pb-3">
+                                  <div className="flex items-center gap-1">{viewerModeToolbarIcons}</div>
+                                  <div className="flex items-center gap-1">{viewerDownloadIcon}</div>
+                                </div>
+                                <div className="flex flex-1 items-center justify-center text-sm text-muted">
+                                  No hay PDF disponible para este documento.
+                                </div>
+                              </div>
+                            )}
+                          </aside>
+
+                          <div className="relative flex h-full min-h-0 items-stretch justify-center">
+                            <button
                               type="button"
-                              variant="ghost"
-                              onClick={sourcePanel.openSource}
-                              className="border border-black/10 bg-white/90 hover:bg-accentSoft"
+                              data-testid="review-split-handle"
+                              aria-label="Redimensionar paneles de revisión"
+                              title="Redimensionar paneles de revisión"
+                              onMouseDown={startReviewSplitDragging}
+                              onDoubleClick={resetReviewSplitRatio}
+                              onKeyDown={handleReviewSplitKeyboard}
+                              className="group flex h-full w-full cursor-col-resize items-center justify-center rounded-full bg-transparent transition hover:bg-black/[0.05] focus-visible:bg-black/[0.05] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-accent"
                             >
-                              <FileText size={14} />
-                              Documento original
-                            </Button>
+                              <span
+                                aria-hidden="true"
+                                className="h-24 w-[2px] rounded-full bg-black/15 transition group-hover:bg-black/35"
+                              />
+                            </button>
                           </div>
 
-                          <div className="mt-2 rounded-xl border border-black/10 bg-white/90 px-3 py-2">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <label className="relative min-w-[220px] flex-1">
-                                <Search
-                                  size={14}
-                                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"
-                                  aria-hidden="true"
-                                />
-                                <input
-                                  type="text"
-                                  aria-label="Buscar en datos estructurados"
-                                  value={structuredSearchInput}
-                                  disabled={reviewPanelState !== "ready"}
-                                  onChange={(event) => setStructuredSearchInput(event.target.value)}
-                                  placeholder="Buscar campo, clave o valor"
-                                  className="w-full rounded-full border border-black/10 bg-white py-1.5 pl-9 pr-3 text-xs text-ink outline-none focus-visible:border-black/20 disabled:cursor-not-allowed disabled:bg-black/[0.03]"
-                                />
-                              </label>
+                          <aside
+                            className="flex h-full w-full min-h-0 min-w-[420px] flex-1 flex-col rounded-2xl border border-black/10 bg-white/80 p-4"
+                          >
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <h3 className="text-lg font-semibold text-ink">Datos estructurados</h3>
+                            </div>
 
-                              {([
-                                { bucket: "low", label: "Baja" },
-                                { bucket: "medium", label: "Media" },
-                                { bucket: "high", label: "Alta" },
-                              ] as const).map(({ bucket, label }) => {
-                                const isActive = selectedConfidenceBuckets.includes(bucket);
-                                return (
+                            <div className="mt-2 rounded-xl border border-black/10 bg-white/90 px-3 py-2">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <label className="relative min-w-[220px] flex-1">
+                                  <Search
+                                    size={14}
+                                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"
+                                    aria-hidden="true"
+                                  />
+                                  <input
+                                    ref={structuredSearchInputRef}
+                                    type="text"
+                                    aria-label="Buscar en datos estructurados"
+                                    value={structuredSearchInput}
+                                    disabled={reviewPanelState !== "ready"}
+                                    onChange={(event) => setStructuredSearchInput(event.target.value)}
+                                    placeholder="Buscar campo, clave o valor"
+                                    className="w-full rounded-full border border-black/10 bg-white py-1.5 pl-9 pr-9 text-xs text-ink outline-none focus-visible:border-black/20 disabled:cursor-not-allowed disabled:bg-black/[0.03]"
+                                  />
+                                  {structuredSearchInput.trim().length > 0 && (
+                                    <button
+                                      type="button"
+                                      aria-label="Limpiar búsqueda"
+                                      onClick={() => {
+                                        setStructuredSearchInput("");
+                                        structuredSearchInputRef.current?.focus();
+                                      }}
+                                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted transition hover:bg-black/[0.06] hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
+                                    >
+                                      <X size={12} aria-hidden="true" />
+                                    </button>
+                                  )}
+                                </label>
+
+                                {([
+                                  { bucket: "low", label: "Baja" },
+                                  { bucket: "medium", label: "Media" },
+                                  { bucket: "high", label: "Alta" },
+                                ] as const).map(({ bucket, label }) => {
+                                  const isActive = selectedConfidenceBuckets.includes(bucket);
+                                  return (
+                                    <Tooltip key={bucket} content={`Confianza ${label.toLowerCase()}`}>
+                                      <button
+                                        type="button"
+                                        disabled={reviewPanelState !== "ready"}
+                                        aria-pressed={isActive}
+                                        onClick={() =>
+                                          setSelectedConfidenceBuckets((current) =>
+                                            current.includes(bucket)
+                                              ? current.filter((value) => value !== bucket)
+                                              : [...current, bucket]
+                                          )
+                                        }
+                                        className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
+                                          isActive
+                                            ? "border-ink/30 bg-black/[0.06] text-ink"
+                                            : "border-black/10 bg-white text-muted hover:text-ink"
+                                        } disabled:cursor-not-allowed disabled:opacity-60`}
+                                      >
+                                        {label}
+                                      </button>
+                                    </Tooltip>
+                                  );
+                                })}
+
+                                <Tooltip content="Mostrar solo campos críticos">
                                   <button
-                                    key={bucket}
                                     type="button"
                                     disabled={reviewPanelState !== "ready"}
-                                    aria-pressed={isActive}
-                                    onClick={() =>
-                                      setSelectedConfidenceBuckets((current) =>
-                                        current.includes(bucket)
-                                          ? current.filter((value) => value !== bucket)
-                                          : [...current, bucket]
-                                      )
-                                    }
+                                    aria-pressed={showOnlyCritical}
+                                    onClick={() => setShowOnlyCritical((current) => !current)}
                                     className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
-                                      isActive
+                                      showOnlyCritical
                                         ? "border-ink/30 bg-black/[0.06] text-ink"
                                         : "border-black/10 bg-white text-muted hover:text-ink"
                                     } disabled:cursor-not-allowed disabled:opacity-60`}
                                   >
-                                    {label}
+                                    Solo CRÍTICOS
                                   </button>
-                                );
-                              })}
-
-                              <button
-                                type="button"
-                                disabled={reviewPanelState !== "ready"}
-                                aria-pressed={showOnlyCritical}
-                                onClick={() => setShowOnlyCritical((current) => !current)}
-                                className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
-                                  showOnlyCritical
-                                    ? "border-ink/30 bg-black/[0.06] text-ink"
-                                    : "border-black/10 bg-white text-muted hover:text-ink"
-                                } disabled:cursor-not-allowed disabled:opacity-60`}
-                              >
-                                Solo CRÍTICOS
-                              </button>
-                              <button
-                                type="button"
-                                disabled={reviewPanelState !== "ready"}
-                                aria-pressed={showOnlyWithValue}
-                                onClick={() => setShowOnlyWithValue((current) => !current)}
-                                className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
-                                  showOnlyWithValue
-                                    ? "border-ink/30 bg-black/[0.06] text-ink"
-                                    : "border-black/10 bg-white text-muted hover:text-ink"
-                                } disabled:cursor-not-allowed disabled:opacity-60`}
-                              >
-                                Solo con valor
-                              </button>
-                            </div>
-                          </div>
-
-                          <div className="mt-3 flex-1 min-h-0">
-                            {reviewPanelState === "loading" && (
-                              <div
-                                data-testid="right-panel-scroll"
-                                aria-live="polite"
-                                className="h-full min-h-0 overflow-y-auto pr-1 space-y-2"
-                              >
-                                <p className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700">
-                                  {reviewPanelMessage}
-                                </p>
-                                <div data-testid="review-core-skeleton" className="space-y-2">
-                                  {Array.from({ length: 6 }).map((_, index) => (
-                                    <div
-                                      key={`review-skeleton-${index}`}
-                                      className="animate-pulse rounded-xl border border-black/10 bg-white/90 p-3"
-                                    >
-                                      <div className="h-3 w-1/2 rounded bg-black/10" />
-                                      <div className="mt-2 h-2.5 w-5/6 rounded bg-black/10" />
-                                      <div className="mt-3 h-2 w-1/3 rounded bg-black/10" />
-                                    </div>
-                                  ))}
-                                </div>
+                                </Tooltip>
+                                <Tooltip content="Mostrar solo campos con valor">
+                                  <button
+                                    type="button"
+                                    disabled={reviewPanelState !== "ready"}
+                                    aria-pressed={showOnlyWithValue}
+                                    onClick={() => setShowOnlyWithValue((current) => !current)}
+                                    className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
+                                      showOnlyWithValue
+                                        ? "border-ink/30 bg-black/[0.06] text-ink"
+                                        : "border-black/10 bg-white text-muted hover:text-ink"
+                                    } disabled:cursor-not-allowed disabled:opacity-60`}
+                                  >
+                                    Solo con valor
+                                  </button>
+                                </Tooltip>
                               </div>
-                            )}
+                            </div>
 
-                            {shouldShowReviewEmptyState && (
-                              <div
-                                data-testid="right-panel-scroll"
-                                className="h-full min-h-0 flex items-center justify-center"
-                              >
-                                <div className="mx-auto w-full max-w-md px-4">
-                                  <div className="mx-auto max-w-sm text-center">
-                                    <p className="text-base font-semibold text-ink">
-                                      Interpretación no disponible
-                                    </p>
-                                    <p className="mt-2 text-xs text-muted">
-                                      No se pudo cargar la interpretación. Comprueba tu conexión y vuelve
-                                      a intentarlo.
-                                    </p>
-                                    <div className="mt-4 flex justify-center">
-                                      <Button
-                                        type="button"
-                                        disabled={!activeId || isRetryingInterpretation}
-                                        onClick={async () => {
-                                          const retryStartedAt = Date.now();
-                                          setIsRetryingInterpretation(true);
-                                          await documentReview.refetch();
-                                          const minVisibleMs = 250;
-                                          const elapsedMs = Date.now() - retryStartedAt;
-                                          const remainingMs = Math.max(0, minVisibleMs - elapsedMs);
-                                          if (remainingMs === 0) {
-                                            setIsRetryingInterpretation(false);
-                                            return;
-                                          }
-                                          if (interpretationRetryMinTimerRef.current) {
-                                            window.clearTimeout(interpretationRetryMinTimerRef.current);
-                                          }
-                                          interpretationRetryMinTimerRef.current = window.setTimeout(() => {
-                                            interpretationRetryMinTimerRef.current = null;
-                                            setIsRetryingInterpretation(false);
-                                          }, remainingMs);
-                                        }}
+                            <div className="mt-3 flex-1 min-h-0">
+                              {reviewPanelState === "loading" && (
+                                <div
+                                  data-testid="right-panel-scroll"
+                                  aria-live="polite"
+                                  className="h-full min-h-0 overflow-y-auto pr-1 space-y-2"
+                                >
+                                  <p className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700">
+                                    {reviewPanelMessage}
+                                  </p>
+                                  <div data-testid="review-core-skeleton" className="space-y-2">
+                                    {Array.from({ length: 6 }).map((_, index) => (
+                                      <div
+                                        key={`review-skeleton-${index}`}
+                                        className="animate-pulse rounded-xl border border-black/10 bg-white/90 p-3"
                                       >
-                                        {isRetryingInterpretation ? "Reintentando..." : "Reintentar"}
-                                      </Button>
+                                        <div className="h-3 w-1/2 rounded bg-black/10" />
+                                        <div className="mt-2 h-2.5 w-5/6 rounded bg-black/10" />
+                                        <div className="mt-3 h-2 w-1/3 rounded bg-black/10" />
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {shouldShowReviewEmptyState && (
+                                <div
+                                  data-testid="right-panel-scroll"
+                                  className="h-full min-h-0 flex items-center justify-center"
+                                >
+                                  <div className="mx-auto w-full max-w-md px-4">
+                                    <div className="mx-auto max-w-sm text-center">
+                                      <p className="text-base font-semibold text-ink">
+                                        Interpretación no disponible
+                                      </p>
+                                      <p className="mt-2 text-xs text-muted">
+                                        No se pudo cargar la interpretación. Comprueba tu conexión y vuelve
+                                        a intentarlo.
+                                      </p>
+                                      <div className="mt-4 flex justify-center">
+                                        <Button
+                                          type="button"
+                                          disabled={!activeId || isRetryingInterpretation}
+                                          onClick={async () => {
+                                            const retryStartedAt = Date.now();
+                                            setIsRetryingInterpretation(true);
+                                            await documentReview.refetch();
+                                            const minVisibleMs = 250;
+                                            const elapsedMs = Date.now() - retryStartedAt;
+                                            const remainingMs = Math.max(0, minVisibleMs - elapsedMs);
+                                            if (remainingMs === 0) {
+                                              setIsRetryingInterpretation(false);
+                                              return;
+                                            }
+                                            if (interpretationRetryMinTimerRef.current) {
+                                              window.clearTimeout(interpretationRetryMinTimerRef.current);
+                                            }
+                                            interpretationRetryMinTimerRef.current = window.setTimeout(() => {
+                                              interpretationRetryMinTimerRef.current = null;
+                                              setIsRetryingInterpretation(false);
+                                            }, remainingMs);
+                                          }}
+                                        >
+                                          {isRetryingInterpretation ? "Reintentando..." : "Reintentar"}
+                                        </Button>
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
-                              </div>
+                              )}
+
+                              {reviewPanelState === "ready" && (
+                                <div
+                                  data-testid="right-panel-scroll"
+                                  className="h-full min-h-0 overflow-y-auto pr-1 space-y-3"
+                                >
+                                  {hasNoStructuredFilterResults && (
+                                    <p className="rounded-xl border border-black/10 bg-white/90 px-3 py-2 text-xs text-muted">
+                                      No hay resultados con los filtros actuales.
+                                    </p>
+                                  )}
+                                  {reportSections.map((section) =>
+                                    reportLayout === 1
+                                      ? renderSectionLayout1(section)
+                                      : renderSectionLayout2(section)
+                                  )}
+                                </div>
+                              )}
+                            </div>
+
+                            {evidenceNotice && (
+                              <p className="mt-3 rounded-xl border border-black/10 bg-white/90 px-3 py-2 text-xs text-muted">
+                                {evidenceNotice}
+                              </p>
                             )}
+                          </aside>
+                        </div>
 
-                            {reviewPanelState === "ready" && (
-                              <div
-                                data-testid="right-panel-scroll"
-                                className="h-full min-h-0 overflow-y-auto pr-1 space-y-3"
-                              >
-                                {hasNoStructuredFilterResults && (
-                                  <p className="rounded-xl border border-black/10 bg-white/90 px-3 py-2 text-xs text-muted">
-                                    No hay resultados con los filtros actuales.
-                                  </p>
-                                )}
-                                {reportSections.map((section) =>
-                                  reportLayout === 1
-                                    ? renderSectionLayout1(section)
-                                    : renderSectionLayout2(section)
-                                )}
-                              </div>
-                            )}
-                          </div>
-
-                          {evidenceNotice && (
-                            <p className="mt-3 rounded-xl border border-black/10 bg-white/90 px-3 py-2 text-xs text-muted">
-                              {evidenceNotice}
-                            </p>
-                          )}
-                        </aside>
-
-                        {isBrowseMode &&
-                          sourcePanel.isSourceOpen &&
-                          sourcePanel.isSourcePinned &&
-                          isDesktopForPin && (
+                        {isPinnedSourcePanelVisible && (
                           <aside data-testid="source-pinned-panel" className="min-h-0">
                             {sourcePanelContent}
                           </aside>
@@ -2976,6 +3248,10 @@ export function App() {
                 )}
                 {activeViewerTab === "raw_text" && (
                   <div className="flex h-full flex-col rounded-2xl border border-black/10 bg-white/80 p-4">
+                    <div className="flex items-center justify-between gap-4 border-b border-black/10 pb-3">
+                      <div className="flex items-center gap-1">{viewerModeToolbarIcons}</div>
+                      <div className="flex items-center gap-1">{viewerDownloadIcon}</div>
+                    </div>
                     <div className="rounded-2xl border border-black/10 bg-white/90 p-3">
                       <div className="flex flex-col gap-2 text-xs text-ink">
                         <span className="text-muted">
@@ -3059,6 +3335,10 @@ export function App() {
                 )}
                 {activeViewerTab === "technical" && (
                   <div className="h-full overflow-y-auto rounded-2xl border border-black/10 bg-white/70 p-3">
+                    <div className="flex items-center justify-between gap-4 border-b border-black/10 pb-3">
+                      <div className="flex items-center gap-1">{viewerModeToolbarIcons}</div>
+                      <div className="flex items-center gap-1">{viewerDownloadIcon}</div>
+                    </div>
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
                         Historial de procesamiento

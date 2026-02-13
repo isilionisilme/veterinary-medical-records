@@ -1,10 +1,50 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, ScanLine, ZoomIn, ZoomOut } from "lucide-react";
 import { motion } from "framer-motion";
 import * as pdfjsLib from "pdfjs-dist";
 import workerSrc from "pdfjs-dist/build/pdf.worker.min?url";
+import { Tooltip } from "./ui/tooltip";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
+
+const PDF_ZOOM_STORAGE_KEY = "pdfViewerZoomLevel";
+const MIN_ZOOM_LEVEL = 0.5;
+const MAX_ZOOM_LEVEL = 2;
+const ZOOM_STEP = 0.1;
+
+function clampZoomLevel(value: number): number {
+  return Math.min(MAX_ZOOM_LEVEL, Math.max(MIN_ZOOM_LEVEL, value));
+}
+
+type IconButtonWithTooltipProps = {
+  ariaLabel: string;
+  tooltip: string;
+  disabled?: boolean;
+  onClick: () => void;
+  children: ReactNode;
+};
+
+function IconButtonWithTooltip({
+  ariaLabel,
+  tooltip,
+  disabled = false,
+  onClick,
+  children,
+}: IconButtonWithTooltipProps) {
+  return (
+    <Tooltip content={tooltip} disabled={disabled}>
+      <button
+        type="button"
+        aria-label={ariaLabel}
+        disabled={disabled}
+        onClick={onClick}
+        className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-transparent p-0 text-ink transition hover:bg-black/[0.06] focus-visible:bg-black/[0.06] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-45"
+      >
+        {children}
+      </button>
+    </Tooltip>
+  );
+}
 
 type PdfViewerProps = {
   fileUrl: string | null;
@@ -13,6 +53,8 @@ type PdfViewerProps = {
   focusPage?: number | null;
   highlightSnippet?: string | null;
   focusRequestId?: number;
+  toolbarLeftContent?: ReactNode;
+  toolbarRightExtra?: ReactNode;
 };
 
 export function PdfViewer({
@@ -22,6 +64,8 @@ export function PdfViewer({
   focusPage = null,
   highlightSnippet = null,
   focusRequestId = 0,
+  toolbarLeftContent,
+  toolbarRightExtra,
 }: PdfViewerProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
@@ -36,6 +80,20 @@ export function PdfViewer({
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const [pageTextByIndex, setPageTextByIndex] = useState<Record<number, string>>({});
+  const [zoomLevel, setZoomLevel] = useState(() => {
+    if (typeof window === "undefined") {
+      return 1;
+    }
+    const rawStored = window.localStorage.getItem(PDF_ZOOM_STORAGE_KEY);
+    if (rawStored === null) {
+      return 1;
+    }
+    const stored = Number(rawStored);
+    if (!Number.isFinite(stored)) {
+      return 1;
+    }
+    return clampZoomLevel(stored);
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -134,6 +192,42 @@ export function PdfViewer({
   }, []);
 
   useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) {
+      return;
+    }
+
+    const onWheel = (event: WheelEvent) => {
+      if (!event.ctrlKey) {
+        return;
+      }
+
+      event.preventDefault();
+      setZoomLevel((current) => {
+        const direction = event.deltaY < 0 ? 1 : -1;
+        return clampZoomLevel(current + direction * ZOOM_STEP);
+      });
+    };
+
+    container.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      container.removeEventListener("wheel", onWheel);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    window.localStorage.setItem(PDF_ZOOM_STORAGE_KEY, String(zoomLevel));
+  }, [zoomLevel]);
+
+  useEffect(() => {
+    renderedPages.current = new Set();
+    renderingPages.current = new Set();
+  }, [zoomLevel, containerWidth, pdfDoc]);
+
+  useEffect(() => {
     let cancelled = false;
     let retryCount = 0;
     let retryTimer: number | null = null;
@@ -167,7 +261,8 @@ export function PdfViewer({
           }
 
           const viewport = page.getViewport({ scale: 1 });
-          const scale = containerWidth / viewport.width;
+          const fitWidthScale = containerWidth / viewport.width;
+          const scale = Math.max(0.1, fitWidthScale * zoomLevel);
           const scaledViewport = page.getViewport({ scale });
           const context = canvas.getContext("2d");
           if (!context) {
@@ -217,7 +312,7 @@ export function PdfViewer({
         window.clearTimeout(retryTimer);
       }
     };
-  }, [pdfDoc, containerWidth, totalPages]);
+  }, [pdfDoc, containerWidth, totalPages, zoomLevel]);
 
   useEffect(() => {
     if (!focusPage || !pdfDoc || focusPage < 1 || focusPage > pdfDoc.numPages) {
@@ -304,6 +399,9 @@ export function PdfViewer({
 
   const canGoBack = pageNumber > 1;
   const canGoForward = pageNumber < totalPages;
+  const canZoomOut = zoomLevel > MIN_ZOOM_LEVEL;
+  const canZoomIn = zoomLevel < MAX_ZOOM_LEVEL;
+  const zoomPercent = Math.round(zoomLevel * 100);
   const navDisabled = loading || !pdfDoc;
   const showPageNavigation = Boolean(fileUrl) && !loading && !error && totalPages > 0;
   const normalizedSnippet = (highlightSnippet ?? "").trim().toLowerCase();
@@ -318,28 +416,77 @@ export function PdfViewer({
   return (
     <div className="flex h-full min-h-0 flex-col">
       {showPageNavigation && (
-        <div className="relative z-20 flex items-center justify-center gap-2 border-b border-black/10 pb-3">
-          <button
-            type="button"
-            aria-label="Página anterior"
-            onClick={(event) => scrollToPage(Math.max(1, pageNumber - 1), event)}
-            disabled={navDisabled || !canGoBack}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/15 bg-white/90 p-0 leading-none text-ink shadow-sm transition hover:bg-accentSoft disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronLeft size={18} className="h-[18px] w-[18px] shrink-0 text-ink" />
-          </button>
-          <p className="min-w-12 text-center text-sm font-semibold text-muted">
-            {pageNumber}/{totalPages}
-          </p>
-          <button
-            type="button"
-            aria-label="Página siguiente"
-            onClick={(event) => scrollToPage(Math.min(totalPages, pageNumber + 1), event)}
-            disabled={navDisabled || !canGoForward}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/15 bg-white/90 p-0 leading-none text-ink shadow-sm transition hover:bg-accentSoft disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronRight size={18} className="h-[18px] w-[18px] shrink-0 text-ink" />
-          </button>
+        <div className="relative z-20 flex items-center justify-between gap-4 border-b border-black/10 pb-3">
+          <div className="flex min-w-0 items-center gap-1">{toolbarLeftContent}</div>
+
+          <div className="flex items-center gap-1">
+            <IconButtonWithTooltip
+              ariaLabel="Alejar"
+              tooltip="Alejar"
+              disabled={!canZoomOut}
+              onClick={() => setZoomLevel((current) => clampZoomLevel(current - ZOOM_STEP))}
+            >
+              <ZoomOut size={17} className="h-[17px] w-[17px] shrink-0 text-ink" />
+            </IconButtonWithTooltip>
+
+            <Tooltip content="Nivel de zoom">
+              <p
+                className="min-w-14 text-center text-sm font-semibold text-muted"
+                aria-label="Nivel de zoom"
+                data-testid="pdf-zoom-indicator"
+              >
+                {zoomPercent}%
+              </p>
+            </Tooltip>
+
+            <IconButtonWithTooltip
+              ariaLabel="Acercar"
+              tooltip="Acercar"
+              disabled={!canZoomIn}
+              onClick={() => setZoomLevel((current) => clampZoomLevel(current + ZOOM_STEP))}
+            >
+              <ZoomIn size={17} className="h-[17px] w-[17px] shrink-0 text-ink" />
+            </IconButtonWithTooltip>
+
+            <IconButtonWithTooltip
+              ariaLabel="Ajustar al ancho"
+              tooltip="Ajustar al ancho"
+              onClick={() => setZoomLevel(1)}
+            >
+              <ScanLine size={17} className="h-[17px] w-[17px] shrink-0 text-ink" />
+            </IconButtonWithTooltip>
+          </div>
+
+          <span aria-hidden="true" className="h-5 w-px bg-black/15" />
+
+          <div className="flex items-center gap-1">
+            <IconButtonWithTooltip
+              ariaLabel="Página anterior"
+              tooltip="Página anterior"
+              disabled={navDisabled || !canGoBack}
+              onClick={() => scrollToPage(Math.max(1, pageNumber - 1))}
+            >
+              <ChevronLeft size={18} className="h-[18px] w-[18px] shrink-0 text-ink" />
+            </IconButtonWithTooltip>
+            <p className="min-w-12 text-center text-sm font-semibold text-muted">
+              {pageNumber}/{totalPages}
+            </p>
+            <IconButtonWithTooltip
+              ariaLabel="Página siguiente"
+              tooltip="Página siguiente"
+              disabled={navDisabled || !canGoForward}
+              onClick={() => scrollToPage(Math.min(totalPages, pageNumber + 1))}
+            >
+              <ChevronRight size={18} className="h-[18px] w-[18px] shrink-0 text-ink" />
+            </IconButtonWithTooltip>
+          </div>
+
+          {toolbarRightExtra ? (
+            <>
+              <span aria-hidden="true" className="h-5 w-px bg-black/15" />
+              <div className="flex items-center gap-1">{toolbarRightExtra}</div>
+            </>
+          ) : null}
         </div>
       )}
       <div className="relative mt-4 min-h-0 flex-1">
@@ -348,7 +495,7 @@ export function PdfViewer({
           data-testid="pdf-scroll-container"
           className="h-full min-h-0 overflow-y-auto rounded-2xl border border-black/10 bg-white/60 p-4 shadow-sm"
         >
-        <div ref={contentRef} className="mx-auto w-full max-w-4xl">
+        <div ref={contentRef} className="mx-auto w-full">
           {loading && (
             <motion.div
               className="flex h-72 items-center justify-center text-sm text-muted"
