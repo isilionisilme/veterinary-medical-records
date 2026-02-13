@@ -26,12 +26,6 @@ const MAX_UPLOAD_SIZE_BYTES = 20 * 1024 * 1024;
 const MISSING_VALUE_PLACEHOLDER = "—";
 const EMPTY_LIST_PLACEHOLDER = "Sin elementos";
 const REPORT_LAYOUT_STORAGE_KEY = "reportLayout";
-const REVIEW_GRID_SECTIONS = new Set([
-  "Identificacion del caso",
-  "Paciente",
-  "Propietario",
-  "Visita / episodio",
-]);
 
 type LoadResult = {
   url: string;
@@ -2377,17 +2371,21 @@ export function App() {
   };
 
   const renderSectionLayout2 = (section: { id: string; title: string; fields: ReviewDisplayField[] }) => {
-    const isGridSection = REVIEW_GRID_SECTIONS.has(section.title);
     const scalarFields = section.fields.filter((field) => !field.repeatable);
     const repeatableFields = section.fields.filter((field) => field.repeatable);
+    const isExtraSection = section.id === "extra:section";
+    const isEmptyExtraSection = isExtraSection && section.fields.length === 0;
 
     return (
       <section key={section.id} className="rounded-xl border-2 border-black/20 bg-white px-4 py-4">
         <p className="border-b border-black/15 pb-2 text-base font-semibold text-ink">{section.title}</p>
         <div className="mt-2">
-          {isGridSection ? (
-            <div className="grid gap-x-5 gap-y-1 lg:grid-cols-2">{scalarFields.map(renderScalarReviewField)}</div>
-          ) : (
+          {isEmptyExtraSection && (
+            <p className="rounded-xl border border-black/10 bg-white/90 px-3 py-2 text-xs text-muted">
+              No hay otros campos extraídos.
+            </p>
+          )}
+          {!isEmptyExtraSection && (
             <div className="grid gap-x-5 gap-y-1 lg:grid-cols-2">{scalarFields.map(renderScalarReviewField)}</div>
           )}
           {repeatableFields.length > 0 && (
@@ -2401,11 +2399,18 @@ export function App() {
   const renderSectionLayout1 = (section: { id: string; title: string; fields: ReviewDisplayField[] }) => {
     const scalarFields = section.fields.filter((field) => !field.repeatable);
     const repeatableFields = section.fields.filter((field) => field.repeatable);
+    const isExtraSection = section.id === "extra:section";
+    const isEmptyExtraSection = isExtraSection && section.fields.length === 0;
 
     return (
       <section key={section.id} className="rounded-xl border border-black/20 bg-black/[0.01] px-4 py-4">
         <p className="border-b border-black/15 pb-2 text-base font-semibold text-ink">{section.title}</p>
         <div className="mt-3 space-y-3">
+          {isEmptyExtraSection && (
+            <p className="rounded-xl border border-black/10 bg-white/90 px-3 py-2 text-xs text-muted">
+              No hay otros campos extraídos.
+            </p>
+          )}
           {scalarFields.length > 0 && (
             <div className="grid gap-3 lg:grid-cols-2">{scalarFields.map(renderScalarTileField)}</div>
           )}
