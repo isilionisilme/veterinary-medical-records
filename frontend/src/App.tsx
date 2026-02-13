@@ -3060,9 +3060,9 @@ export function App() {
                                     <ToggleGroupItem
                                       value="low"
                                       aria-label="Baja"
-                                      className={`h-7 w-7 rounded-full p-0 ${
+                                      className={`h-7 w-7 rounded-full border-0 bg-transparent p-0 data-[state=on]:border-0 ${
                                         selectedConfidenceBuckets.includes("low")
-                                          ? "border-2 border-accent bg-accentSoft/35 ring-2 ring-accent/35"
+                                          ? "bg-accentSoft/35"
                                           : ""
                                       }`}
                                     >
@@ -3081,9 +3081,9 @@ export function App() {
                                     <ToggleGroupItem
                                       value="medium"
                                       aria-label="Media"
-                                      className={`h-7 w-7 rounded-full p-0 ${
+                                      className={`h-7 w-7 rounded-full border-0 bg-transparent p-0 data-[state=on]:border-0 ${
                                         selectedConfidenceBuckets.includes("medium")
-                                          ? "border-2 border-accent bg-accentSoft/35 ring-2 ring-accent/35"
+                                          ? "bg-accentSoft/35"
                                           : ""
                                       }`}
                                     >
@@ -3102,9 +3102,9 @@ export function App() {
                                     <ToggleGroupItem
                                       value="high"
                                       aria-label="Alta"
-                                      className={`h-7 w-7 rounded-full p-0 ${
+                                      className={`h-7 w-7 rounded-full border-0 bg-transparent p-0 data-[state=on]:border-0 ${
                                         selectedConfidenceBuckets.includes("high")
-                                          ? "border-2 border-accent bg-accentSoft/35 ring-2 ring-accent/35"
+                                          ? "bg-accentSoft/35"
                                           : ""
                                       }`}
                                     >
@@ -3142,9 +3142,9 @@ export function App() {
                                     <ToggleGroupItem
                                       value="critical"
                                       aria-label="Mostrar solo campos críticos"
-                                      className={`h-7 w-7 rounded-full p-0 ${
+                                      className={`h-7 w-7 rounded-full border-0 bg-transparent p-0 data-[state=on]:border-0 ${
                                         showOnlyCritical
-                                          ? "border-2 border-accent bg-accentSoft/35 ring-2 ring-accent/35"
+                                          ? "bg-accentSoft/35"
                                           : ""
                                       }`}
                                     >
@@ -3160,9 +3160,9 @@ export function App() {
                                     <ToggleGroupItem
                                       value="nonEmpty"
                                       aria-label="Mostrar solo campos no vacíos"
-                                      className={`h-7 w-7 rounded-full p-0 ${
+                                      className={`h-7 w-7 rounded-full border-0 bg-transparent p-0 data-[state=on]:border-0 ${
                                         showOnlyWithValue
-                                          ? "border-2 border-accent bg-accentSoft/35 ring-2 ring-accent/35"
+                                          ? "bg-accentSoft/35"
                                           : ""
                                       }`}
                                     >
@@ -3181,9 +3181,9 @@ export function App() {
                                     <ToggleGroupItem
                                       value="empty"
                                       aria-label="Mostrar solo campos vacíos"
-                                      className={`h-7 w-7 rounded-full p-0 ${
+                                      className={`h-7 w-7 rounded-full border-0 bg-transparent p-0 data-[state=on]:border-0 ${
                                         showOnlyEmpty
-                                          ? "border-2 border-accent bg-accentSoft/35 ring-2 ring-accent/35"
+                                          ? "bg-accentSoft/35"
                                           : ""
                                       }`}
                                     >
