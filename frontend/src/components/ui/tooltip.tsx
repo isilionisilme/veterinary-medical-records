@@ -1,87 +1,90 @@
-import { type ReactNode, useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-
-type TooltipPosition = {
-  top: number;
-  left: number;
-};
+import {
+  cloneElement,
+  isValidElement,
+  type FocusEvent,
+  type MouseEvent,
+  type ReactElement,
+  type ReactNode,
+  useState,
+} from "react";
+import * as TooltipPrimitive from "@radix-ui/react-tooltip";
+import { cn } from "../../lib/utils";
 
 type TooltipProps = {
   content: string;
   children: ReactNode;
   disabled?: boolean;
   offset?: number;
+  side?: "top" | "right" | "bottom" | "left";
   triggerClassName?: string;
 };
+
+export function TooltipProvider({ children }: { children: ReactNode }) {
+  return (
+    <TooltipPrimitive.Provider delayDuration={0} skipDelayDuration={0}>
+      {children}
+    </TooltipPrimitive.Provider>
+  );
+}
 
 export function Tooltip({
   content,
   children,
   disabled = false,
   offset = 8,
+  side = "top",
   triggerClassName = "inline-flex",
 }: TooltipProps) {
-  const triggerRef = useRef<HTMLSpanElement | null>(null);
-  const [isVisible, setIsVisible] = useState(false);
-  const [position, setPosition] = useState<TooltipPosition>({ top: 0, left: 0 });
+  const [open, setOpen] = useState(false);
 
-  useEffect(() => {
-    if (!isVisible) {
-      return undefined;
-    }
+  if (disabled) {
+    return <span className={triggerClassName}>{children}</span>;
+  }
 
-    const updatePosition = () => {
-      const node = triggerRef.current;
-      if (!node) {
-        return;
-      }
-      const rect = node.getBoundingClientRect();
-      setPosition({
-        top: rect.top - offset,
-        left: rect.left + rect.width / 2,
-      });
-    };
-
-    updatePosition();
-    window.addEventListener("scroll", updatePosition, true);
-    window.addEventListener("resize", updatePosition);
-
-    return () => {
-      window.removeEventListener("scroll", updatePosition, true);
-      window.removeEventListener("resize", updatePosition);
-    };
-  }, [isVisible, offset]);
+  const triggerContent = isValidElement(children)
+    ? cloneElement(children as ReactElement<Record<string, unknown>>, {
+      onMouseEnter: (event: MouseEvent) => {
+        (children as ReactElement<{ onMouseEnter?: (event: MouseEvent) => void }>).props
+          .onMouseEnter?.(event);
+        setOpen(true);
+      },
+      onMouseLeave: (event: MouseEvent) => {
+        (children as ReactElement<{ onMouseLeave?: (event: MouseEvent) => void }>).props
+          .onMouseLeave?.(event);
+        setOpen(false);
+      },
+      onFocus: (event: FocusEvent) => {
+        (children as ReactElement<{ onFocus?: (event: FocusEvent) => void }>).props
+          .onFocus?.(event);
+        setOpen(true);
+      },
+      onBlur: (event: FocusEvent) => {
+        (children as ReactElement<{ onBlur?: (event: FocusEvent) => void }>).props
+          .onBlur?.(event);
+        setOpen(false);
+      },
+    })
+    : <span className={triggerClassName}>{children}</span>;
 
   return (
-    <span
-      ref={triggerRef}
-      className={triggerClassName}
-      onMouseEnter={() => {
-        if (!disabled) {
-          setIsVisible(true);
-        }
-      }}
-      onMouseLeave={() => setIsVisible(false)}
-      onFocus={() => {
-        if (!disabled) {
-          setIsVisible(true);
-        }
-      }}
-      onBlur={() => setIsVisible(false)}
-    >
-      {children}
-      {isVisible &&
-        !disabled &&
-        createPortal(
-          <span
-            role="tooltip"
-            className="pointer-events-none fixed z-[90] -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-md bg-ink px-2 py-1 text-[11px] font-medium text-white shadow"
-            style={{ top: `${position.top}px`, left: `${position.left}px` }}
+    <TooltipPrimitive.Provider delayDuration={0} skipDelayDuration={0}>
+      <TooltipPrimitive.Root open={open} onOpenChange={setOpen}>
+        <TooltipPrimitive.Trigger asChild>
+          {triggerContent}
+        </TooltipPrimitive.Trigger>
+        <TooltipPrimitive.Portal>
+          <TooltipPrimitive.Content
+            side={side}
+            sideOffset={offset}
+            collisionPadding={8}
+            className={cn(
+              "z-[90] rounded-md bg-text px-2 py-1 text-[11px] font-medium text-white shadow-subtle"
+            )}
           >
             {content}
-          </span>,
-          document.body
-        )}
-    </span>
+          </TooltipPrimitive.Content>
+        </TooltipPrimitive.Portal>
+      </TooltipPrimitive.Root>
+    </TooltipPrimitive.Provider>
   );
 }

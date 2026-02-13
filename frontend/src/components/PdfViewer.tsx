@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, ScanLine, ZoomIn, ZoomOut } from "lucide-rea
 import { motion } from "framer-motion";
 import * as pdfjsLib from "pdfjs-dist";
 import workerSrc from "pdfjs-dist/build/pdf.worker.min?url";
+import { IconButton } from "./app/IconButton";
 import { Tooltip } from "./ui/tooltip";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
@@ -14,36 +15,6 @@ const ZOOM_STEP = 0.1;
 
 function clampZoomLevel(value: number): number {
   return Math.min(MAX_ZOOM_LEVEL, Math.max(MIN_ZOOM_LEVEL, value));
-}
-
-type IconButtonWithTooltipProps = {
-  ariaLabel: string;
-  tooltip: string;
-  disabled?: boolean;
-  onClick: () => void;
-  children: ReactNode;
-};
-
-function IconButtonWithTooltip({
-  ariaLabel,
-  tooltip,
-  disabled = false,
-  onClick,
-  children,
-}: IconButtonWithTooltipProps) {
-  return (
-    <Tooltip content={tooltip} disabled={disabled}>
-      <button
-        type="button"
-        aria-label={ariaLabel}
-        disabled={disabled}
-        onClick={onClick}
-        className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-transparent p-0 text-ink transition hover:bg-black/[0.06] focus-visible:bg-black/[0.06] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-45"
-      >
-        {children}
-      </button>
-    </Tooltip>
-  );
 }
 
 type PdfViewerProps = {
@@ -416,22 +387,22 @@ export function PdfViewer({
   return (
     <div className="flex h-full min-h-0 flex-col">
       {showPageNavigation && (
-        <div className="relative z-20 flex items-center justify-between gap-4 border-b border-black/10 pb-3">
+        <div className="relative z-20 flex items-center justify-between gap-4 border-b border-border pb-3">
           <div className="flex min-w-0 items-center gap-1">{toolbarLeftContent}</div>
 
           <div className="flex items-center gap-1">
-            <IconButtonWithTooltip
+            <IconButton
               ariaLabel="Alejar"
               tooltip="Alejar"
               disabled={!canZoomOut}
               onClick={() => setZoomLevel((current) => clampZoomLevel(current - ZOOM_STEP))}
             >
-              <ZoomOut size={17} className="h-[17px] w-[17px] shrink-0 text-ink" />
-            </IconButtonWithTooltip>
+              <ZoomOut size={17} className="h-[17px] w-[17px] shrink-0" />
+            </IconButton>
 
             <Tooltip content="Nivel de zoom">
               <p
-                className="min-w-14 text-center text-sm font-semibold text-muted"
+                className="min-w-14 text-center text-sm font-semibold text-textSecondary"
                 aria-label="Nivel de zoom"
                 data-testid="pdf-zoom-indicator"
               >
@@ -439,51 +410,51 @@ export function PdfViewer({
               </p>
             </Tooltip>
 
-            <IconButtonWithTooltip
+            <IconButton
               ariaLabel="Acercar"
               tooltip="Acercar"
               disabled={!canZoomIn}
               onClick={() => setZoomLevel((current) => clampZoomLevel(current + ZOOM_STEP))}
             >
-              <ZoomIn size={17} className="h-[17px] w-[17px] shrink-0 text-ink" />
-            </IconButtonWithTooltip>
+              <ZoomIn size={17} className="h-[17px] w-[17px] shrink-0" />
+            </IconButton>
 
-            <IconButtonWithTooltip
+            <IconButton
               ariaLabel="Ajustar al ancho"
               tooltip="Ajustar al ancho"
               onClick={() => setZoomLevel(1)}
             >
-              <ScanLine size={17} className="h-[17px] w-[17px] shrink-0 text-ink" />
-            </IconButtonWithTooltip>
+              <ScanLine size={17} className="h-[17px] w-[17px] shrink-0" />
+            </IconButton>
           </div>
 
-          <span aria-hidden="true" className="h-5 w-px bg-black/15" />
+          <span aria-hidden="true" className="h-5 w-px bg-border" />
 
           <div className="flex items-center gap-1">
-            <IconButtonWithTooltip
+            <IconButton
               ariaLabel="Página anterior"
               tooltip="Página anterior"
               disabled={navDisabled || !canGoBack}
               onClick={() => scrollToPage(Math.max(1, pageNumber - 1))}
             >
-              <ChevronLeft size={18} className="h-[18px] w-[18px] shrink-0 text-ink" />
-            </IconButtonWithTooltip>
-            <p className="min-w-12 text-center text-sm font-semibold text-muted">
+              <ChevronLeft size={18} className="h-[18px] w-[18px] shrink-0" />
+            </IconButton>
+            <p className="min-w-12 text-center text-sm font-semibold text-textSecondary">
               {pageNumber}/{totalPages}
             </p>
-            <IconButtonWithTooltip
+            <IconButton
               ariaLabel="Página siguiente"
               tooltip="Página siguiente"
               disabled={navDisabled || !canGoForward}
               onClick={() => scrollToPage(Math.min(totalPages, pageNumber + 1))}
             >
-              <ChevronRight size={18} className="h-[18px] w-[18px] shrink-0 text-ink" />
-            </IconButtonWithTooltip>
+              <ChevronRight size={18} className="h-[18px] w-[18px] shrink-0" />
+            </IconButton>
           </div>
 
           {toolbarRightExtra ? (
             <>
-              <span aria-hidden="true" className="h-5 w-px bg-black/15" />
+              <span aria-hidden="true" className="h-5 w-px bg-border" />
               <div className="flex items-center gap-1">{toolbarRightExtra}</div>
             </>
           ) : null}
@@ -493,7 +464,7 @@ export function PdfViewer({
         <div
           ref={scrollRef}
           data-testid="pdf-scroll-container"
-          className="h-full min-h-0 overflow-y-auto rounded-2xl border border-black/10 bg-white/60 p-4 shadow-sm"
+          className="h-full min-h-0 overflow-y-auto rounded-2xl border border-border bg-surface p-4 shadow-subtle"
         >
         <div ref={contentRef} className="mx-auto w-full">
           {loading && (
