@@ -66,3 +66,67 @@ def test_visit_date_fixture_exposes_anchor_based_selection_reason() -> None:
     assert visit_selection["anchor_priority"] >= 4
     assert isinstance(visit_selection["target_reason"], str)
     assert visit_selection["target_reason"].startswith("anchor:")
+
+
+def test_unanchored_dates_default_to_document_date_not_visit_date() -> None:
+    raw_text = """
+    Paciente: Luna
+    Fecha: 14/03/2024
+    """
+
+    payload = _build_interpretation_artifact(
+        document_id="doc-unanchored-date",
+        run_id="run-unanchored-date",
+        raw_text=raw_text,
+    )
+
+    global_schema_v0 = payload["data"]["global_schema_v0"]
+    assert global_schema_v0["document_date"] == "14/03/2024"
+    assert global_schema_v0["visit_date"] is None
+
+
+def test_alphanumeric_microchip_value_is_preserved() -> None:
+    raw_text = """
+    Paciente: Toby
+    Microchip: NHC 2.c AB-77
+    """
+
+    payload = _build_interpretation_artifact(
+        document_id="doc-microchip-alphanumeric",
+        run_id="run-microchip-alphanumeric",
+        raw_text=raw_text,
+    )
+
+    assert payload["data"]["global_schema_v0"]["microchip_id"] == "NHC 2.c AB-77"
+
+
+def test_invalid_calendar_date_is_dropped() -> None:
+    raw_text = """
+    Paciente: Nala
+    Fecha de visita: 39/19/2024
+    """
+
+    payload = _build_interpretation_artifact(
+        document_id="doc-invalid-date",
+        run_id="run-invalid-date",
+        raw_text=raw_text,
+    )
+
+    assert payload["data"]["global_schema_v0"]["visit_date"] is None
+
+
+def test_unanchored_timeline_date_does_not_set_visit_date() -> None:
+    raw_text = """
+    Paciente: Kira
+    - 14/03/2024 - Factura emitida
+    """
+
+    payload = _build_interpretation_artifact(
+        document_id="doc-timeline-unanchored",
+        run_id="run-timeline-unanchored",
+        raw_text=raw_text,
+    )
+
+    global_schema_v0 = payload["data"]["global_schema_v0"]
+    assert global_schema_v0["visit_date"] is None
+    assert global_schema_v0["document_date"] == "14/03/2024"

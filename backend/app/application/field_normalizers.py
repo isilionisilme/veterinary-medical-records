@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Mapping
+from datetime import datetime
 
 _WHITESPACE_PATTERN = re.compile(r"\s+")
 _DATE_PATTERN = re.compile(
@@ -187,47 +188,47 @@ def _normalize_microchip_id(
     value: object,
     evidence: list[dict[str, object]] | None,
 ) -> str | None:
-    cleaned = _normalize_scalar_with_labels(
-        value,
-        ("microchip", "chip", "nº chip", "n.o chip", "n° chip", "id"),
-    )
+    labels = ("microchip", "chip", "nº chip", "n.o chip", "n° chip", "id")
+    cleaned = _normalize_scalar_with_labels(value, labels)
 
-    evidence_text = ""
-    if evidence:
+    if not cleaned and evidence:
         first_evidence = evidence[0]
         raw_evidence = first_evidence.get("evidence") if isinstance(first_evidence, dict) else None
-        if isinstance(raw_evidence, dict):
-            snippet = raw_evidence.get("snippet")
-            if isinstance(snippet, str):
-                evidence_text = _normalize_whitespace(snippet)
+        snippet = raw_evidence.get("snippet") if isinstance(raw_evidence, dict) else None
+        if isinstance(snippet, str):
+            match = re.search(
+                r"(?i)(?:microchip|chip)\s*(?:n[ºo]\.?|id)?\s*[:\-]?\s*([^\n;]{3,80})",
+                _normalize_whitespace(snippet),
+            )
+            if match:
+                cleaned = _normalize_scalar_with_labels(match.group(1), labels)
 
-    merged = " ".join(part for part in (cleaned, evidence_text) if part).strip()
-    if not merged:
+    if not cleaned:
         return None
 
-    token_pattern = re.compile(r"[A-Za-z0-9]+(?:[.\-][A-Za-z0-9]+)*")
-    tokens = token_pattern.findall(merged)
-    if not tokens:
+    compact = _normalize_whitespace(cleaned.strip(" -:;,."))
+    compact = re.sub(r"[^A-Za-z0-9./_\- ]+", " ", compact)
+    compact = _normalize_whitespace(compact)
+    if not compact:
         return None
 
-    primary_index = next(
-        (
-            idx
-            for idx, token in enumerate(tokens)
-            if any(ch.isdigit() for ch in token) and len(re.sub(r"\D", "", token)) >= 8
-        ),
-        None,
-    )
-    if primary_index is None:
-        return cleaned
+    trailing_label_tokens = {
+        "paciente",
+        "propietario",
+        "propietaria",
+        "tutor",
+        "especie",
+        "raza",
+        "sexo",
+        "edad",
+        "fecha",
+    }
+    parts = compact.split(" ")
+    while parts and parts[-1].casefold() in trailing_label_tokens:
+        parts.pop()
 
-    selected = [tokens[primary_index]]
-    for token in tokens[primary_index + 1 : primary_index + 3]:
-        upper = token.upper()
-        if upper in {"NHC", "HC", "ID", "C", "A", "B", "D"} or any(ch.isdigit() for ch in token):
-            selected.append(token)
-
-    return _normalize_whitespace(" ".join(selected))
+    normalized = _normalize_whitespace(" ".join(parts))
+    return normalized or None
 
 
 def _normalize_date_value(value: object) -> str | None:
@@ -237,12 +238,24 @@ def _normalize_date_value(value: object) -> str | None:
 
     match = _DATE_PATTERN.search(cleaned)
     if not match:
-        return cleaned
+        return None
 
     raw = match.group(1).replace("-", "/").replace(".", "/")
     parts = raw.split("/")
+    if len(parts) != 3:
+        return None
+
     if len(parts[0]) == 4:
         year, month, day = parts
-        return f"{day.zfill(2)}/{month.zfill(2)}/{year}"
-    day, month, year = parts
-    return f"{day.zfill(2)}/{month.zfill(2)}/{year}"
+        normalized = f"{day.zfill(2)}/{month.zfill(2)}/{year}"
+    else:
+        day, month, year = parts
+        normalized = f"{day.zfill(2)}/{month.zfill(2)}/{year}"
+
+    for date_format in ("%d/%m/%Y", "%d/%m/%y"):
+        try:
+            datetime.strptime(normalized, date_format)
+            return normalized
+        except ValueError:
+            continue
+    return None

@@ -535,7 +535,7 @@ def _mine_interpretation_candidates(
         ),
         (
             "microchip_id",
-            r"(?:microchip|chip)\s*(?:n[ºo]\.?|id)?\s*[:\-]?\s*([A-Za-z0-9\-]{6,30}(?:\s+[A-Za-z0-9.\-]{1,12}){0,2})",
+            r"(?:microchip|chip)\s*(?:n[ºo]\.?|id)?\s*[:\-]?\s*([A-Za-z0-9][A-Za-z0-9./_\-]{1,30}(?:\s+[A-Za-z0-9][A-Za-z0-9./_\-]{0,20}){0,3})",
             0.88,
         ),
         (
@@ -734,10 +734,11 @@ def _mine_interpretation_candidates(
         timeline_match = re.match(r"^-\s*([0-9]{1,2}/[0-9]{1,2}/[0-9]{2,4})\s*-", line)
         if timeline_match:
             add_candidate(
-                key="visit_date",
+                key="document_date",
                 value=timeline_match.group(1),
                 confidence=0.74,
                 snippet=line,
+                target_reason="timeline_unanchored",
             )
 
     for index, line in enumerate(lines):
@@ -819,10 +820,10 @@ def _extract_date_candidates_with_classification(
         snippet = _WHITESPACE_PATTERN.sub(" ", raw_text[start:end]).strip()
         context = lower_text[start:end]
 
-        chosen_key = "visit_date"
+        chosen_key = "document_date"
         chosen_anchor = "fallback"
         chosen_priority = 1
-        chosen_reason = "fallback_visit_date"
+        chosen_reason = "fallback_document_date"
 
         for key, anchors in _DATE_TARGET_ANCHORS.items():
             matched_anchor = next((anchor for anchor in anchors if anchor in context), None)
