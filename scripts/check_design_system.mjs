@@ -9,11 +9,12 @@ const repoRoot = path.resolve(scriptDir, "..");
 const frontendRoot = path.join(repoRoot, "frontend");
 const srcRoot = path.join(frontendRoot, "src");
 
-const HEX_RE = /#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\b/g;
+const HEX_RE = /#(?:[0-9a-fA-F]{3,8})\b/g;
 const INLINE_STYLE_RE = /style\s*=\s*\{\{/g;
 const ICON_BUTTON_NO_LABEL_RE = /<IconButton(?![^>]*\blabel\s*=)[^>]*>/g;
 const RAW_HTML_BUTTON_RE = /<button\b([\s\S]*?)>([\s\S]*?)<\/button>/g;
 const RAW_DS_BUTTON_RE = /<Button\b([\s\S]*?)>([\s\S]*?)<\/Button>/g;
+const TOOLTIP_PRIMITIVE_BYPASS_RE = /@radix-ui\/react-tooltip|TooltipPrimitive\./g;
 
 const HEX_ALLOWLIST = new Set([
   path.join("frontend", "src", "index.css"),
@@ -27,6 +28,10 @@ const INLINE_STYLE_ALLOWLIST = new Map([
 const ICON_ONLY_ALLOWLIST = new Map([
   [path.join("frontend", "src", "App.tsx"), ["data-testid=\"review-split-handle\""]],
   [path.join("frontend", "src", "components", "app", "IconButton.tsx"), ["<Button"]],
+]);
+
+const TOOLTIP_BYPASS_ALLOWLIST = new Set([
+  path.join("frontend", "src", "components", "ui", "tooltip.tsx"),
 ]);
 
 function walkFiles(dirPath) {
@@ -147,6 +152,14 @@ for (const filePath of files) {
   }
 
   collectRawIconOnlyButtonViolations(relativePath, content, findings);
+
+  if (!TOOLTIP_BYPASS_ALLOWLIST.has(relativePath)) {
+    for (const match of content.matchAll(TOOLTIP_PRIMITIVE_BYPASS_RE)) {
+      findings.push(
+        `${relativePath}:${lineNumberAt(content, match.index)} tooltip implementation bypasses shared Tooltip wrapper`
+      );
+    }
+  }
 }
 
 if (findings.length > 0) {

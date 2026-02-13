@@ -133,6 +133,11 @@ def test_project_split_entry_includes_frontend_global_schema_rendering_module() 
     )
 
 
+def test_project_split_entry_includes_design_system_module() -> None:
+    project_entry = _read_text(ROUTER_ROOT / "04_PROJECT" / "00_entry.md")
+    assert "docs/agent_router/04_PROJECT/DESIGN_SYSTEM/00_entry.md" in project_entry
+
+
 def test_project_split_entry_includes_implementation_plan_us32_module() -> None:
     plan_entry = _read_text(
         ROUTER_ROOT / "04_PROJECT" / "IMPLEMENTATION_PLAN" / "00_entry.md"

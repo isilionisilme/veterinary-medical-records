@@ -12,7 +12,13 @@ This is an implementation-facing UI contract. It does not redefine workflow beha
 
 ---
 
-## Tokens
+## Token strategy
+
+The project uses **CSS variables as canonical tokens** in `frontend/src/index.css`, then maps those tokens into Tailwind in `frontend/tailwind.config.cjs`.
+
+Rule:
+- Define/adjust token values in CSS variables.
+- Consume tokens through Tailwind utility names (not ad-hoc hex values in components).
 
 All new user-visible UI must use tokens instead of scattered hard-coded values.
 
@@ -22,7 +28,7 @@ All new user-visible UI must use tokens instead of scattered hard-coded values.
 |---|---|---|
 | `--color-page-bg` | `#EBF5FF` | app/page background |
 | `--color-surface` | `#FFFFFF` | cards/panels |
-| `--color-surface-muted` | `#F8FAFC` | subtle inner surfaces |
+| `--color-surface-muted` | `#EEF1F4` | subtle inner surfaces |
 | `--color-text` | `#1F2933` | primary text |
 | `--color-text-secondary` | `#6B7280` | secondary text |
 | `--color-text-muted` | `#9CA3AF` | metadata/helper text |
@@ -36,11 +42,18 @@ All new user-visible UI must use tokens instead of scattered hard-coded values.
 
 | Token | Value | Usage |
 |---|---|---|
+| `--status-success` | `#4CAF93` | semantic success / ready |
+| `--status-warn` | `#E6B566` | semantic warning / processing |
+| `--status-error` | `#D16D6A` | semantic error / failure |
 | `--confidence-low` | `#D16D6A` | low-confidence indicator |
 | `--confidence-med` | `#E6B566` | medium-confidence indicator |
 | `--confidence-high` | `#4CAF93` | high-confidence indicator |
 | `--status-critical` | `#D16D6A` | critical badge border/text accent |
 | `--status-missing` | `#9CA3AF` | missing/placeholder state tone |
+
+Brand constraint:
+- Barkibu Orange (`#FC4E1B`) is used as accent/CTA only.
+- Semantic status colors stay muted and never use orange.
 
 ### Spacing scale
 
@@ -67,6 +80,7 @@ Required primitives:
 
 Rules:
 - `Tooltip` content defaults to top placement and renders through portal.
+- Tooltip behavior must remain keyboard-accessible (focus/blur + Escape via Radix behavior).
 - Use primitive variants and tokens first; avoid one-off utility-class styling when a primitive exists.
 
 ---
@@ -80,6 +94,7 @@ Project wrappers standardize repeated review UI patterns:
 - `ConfidenceDot`: semantic confidence indicator with tooltip.
 - `CriticalBadge`: consistent critical marker.
 - `RepeatableList`: list container for repeatable values.
+- `DocumentStatusCluster`: compact, reusable status cluster for document list and active review header.
 
 ---
 
@@ -89,6 +104,13 @@ Project wrappers standardize repeated review UI patterns:
 - Raw icon-only `<button>` / `<Button>` are forbidden unless explicitly allow-listed as an approved exception.
 - Confidence and critical signals cannot rely on color alone (tooltips/labels remain available).
 - Tooltips must be keyboard-accessible and must not clip inside scroll containers.
+
+## Tooltip policy (mandatory)
+
+- Use only `frontend/src/components/ui/tooltip.tsx` for tooltip behavior.
+- Default placement is `top`.
+- Content is rendered via Radix `Portal` to avoid clipping in overflow/scroll containers.
+- Do not implement local tooltip logic with ad-hoc `@radix-ui/react-tooltip` usage outside the shared wrapper.
 
 ### Icon-only controls: do / don't
 
@@ -134,6 +156,18 @@ Use `npm run check:design-system` in `frontend/`.
 
 Current checks:
 - flags hard-coded hex colors outside token/config allowlist,
+- flags direct inline Radix tooltip primitive usage outside the shared tooltip wrapper,
 - flags inline `style={{...}}` outside allowlist,
 - flags `IconButton` usage without `label`,
 - flags raw icon-only `<button>` and `<Button>` usage outside explicit allowlist.
+
+## Do / Don't
+
+Do:
+- Use tokenized Tailwind classes (`bg-surface`, `text-textSecondary`, `border-border`, etc.).
+- Use `IconButton`, `DocumentStatusCluster`, and field/section wrappers in review UI.
+
+Don't:
+- Add new ad-hoc hex values in component implementation files.
+- Reimplement tooltip primitives inline.
+- Introduce one-off status chips when `DocumentStatusCluster` matches the need.

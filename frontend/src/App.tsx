@@ -16,6 +16,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { ConfidenceDot } from "./components/app/ConfidenceDot";
 import { CriticalBadge } from "./components/app/CriticalBadge";
+import { DocumentStatusCluster } from "./components/app/DocumentStatusCluster";
 import { FieldBlock, FieldRow, RepeatableList } from "./components/app/Field";
 import { IconButton } from "./components/app/IconButton";
 import { Section, SectionHeader } from "./components/app/Section";
@@ -46,6 +47,7 @@ import {
   type ConfidenceBucket,
   matchesStructuredDataFilters,
 } from "./lib/structuredDataFilters";
+import { mapDocumentStatus } from "./lib/documentStatus";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 const MAX_UPLOAD_SIZE_BYTES = 20 * 1024 * 1024;
@@ -675,20 +677,6 @@ function formatTimestamp(value: string | null | undefined): string {
 
 function isDocumentProcessing(status: string): boolean {
   return status === "PROCESSING" || status === "UPLOADED";
-}
-
-function mapDocumentStatus(item: {
-  status: string;
-  failure_type: string | null | undefined;
-}): { label: string; tone: "ok" | "warn" | "error" } {
-  // Source of truth: derived processing status from GET /documents -> `item.status`.
-  if (item.status === "FAILED" || item.status === "TIMED_OUT" || item.failure_type) {
-    return { label: "Error", tone: "error" };
-  }
-  if (item.status === "COMPLETED") {
-    return { label: "Listo para revision", tone: "ok" };
-  }
-  return { label: "Procesando", tone: "warn" };
 }
 
 function isProcessingTooLong(createdAt: string, status: string): boolean {
@@ -1561,6 +1549,22 @@ export function App() {
       return bTime - aTime;
     });
   }, [documentList.data?.items]);
+
+  const activeDocumentStatus = useMemo(() => {
+    if (!activeId) {
+      return null;
+    }
+
+    const currentDocument = documentDetails.data ?? sortedDocuments.find((item) => item.document_id === activeId);
+    if (!currentDocument) {
+      return null;
+    }
+
+    return mapDocumentStatus({
+      status: currentDocument.status,
+      failure_type: currentDocument.failure_type,
+    });
+  }, [activeId, documentDetails.data, sortedDocuments]);
 
   useEffect(() => {
     setSelectedFieldId(null);
@@ -2917,14 +2921,23 @@ export function App() {
                         </div>
                       )
                     ) : (
-                      <div
-                        data-testid="document-layout-grid"
-                        className={`h-full min-h-0 ${
-                          isPinnedSourcePanelVisible
-                            ? "grid grid-cols-[minmax(0,1fr)_minmax(360px,420px)] gap-4"
-                            : ""
-                        }`}
-                      >
+                      <div className="h-full min-h-0">
+                        <div className="mb-2 flex items-center justify-between gap-2 rounded-xl border border-border bg-surface px-3 py-2">
+                          <p className="truncate text-xs font-medium text-textSecondary">
+                            {filename ?? "Documento activo"}
+                          </p>
+                          {activeDocumentStatus ? (
+                            <DocumentStatusCluster status={activeDocumentStatus} />
+                          ) : null}
+                        </div>
+                        <div
+                          data-testid="document-layout-grid"
+                          className={`h-[calc(100%-44px)] min-h-0 ${
+                            isPinnedSourcePanelVisible
+                              ? "grid grid-cols-[minmax(0,1fr)_minmax(360px,420px)] gap-4"
+                              : ""
+                          }`}
+                        >
                         <div
                           ref={reviewSplitGridRef}
                           data-testid="review-split-grid"
@@ -3036,9 +3049,15 @@ export function App() {
                                   }
                                   aria-label="Filtros de confianza"
                                 >
-                                  <ToggleGroupItem value="low" aria-label="Confianza baja">Baja</ToggleGroupItem>
-                                  <ToggleGroupItem value="medium" aria-label="Confianza media">Media</ToggleGroupItem>
-                                  <ToggleGroupItem value="high" aria-label="Confianza alta">Alta</ToggleGroupItem>
+                                  <Tooltip content="Baja: confianza menor al 40%.">
+                                    <ToggleGroupItem value="low" aria-label="Confianza baja">Baja</ToggleGroupItem>
+                                  </Tooltip>
+                                  <Tooltip content="Media: confianza entre 40% y 74%.">
+                                    <ToggleGroupItem value="medium" aria-label="Confianza media">Media</ToggleGroupItem>
+                                  </Tooltip>
+                                  <Tooltip content="Alta: confianza igual o mayor al 75%.">
+                                    <ToggleGroupItem value="high" aria-label="Confianza alta">Alta</ToggleGroupItem>
+                                  </Tooltip>
                                 </ToggleGroup>
 
                                 <ToggleGroup
@@ -3054,12 +3073,16 @@ export function App() {
                                   }}
                                   aria-label="Filtros adicionales"
                                 >
-                                  <ToggleGroupItem value="critical" aria-label="Mostrar solo campos críticos">
-                                    Solo CRÍTICOS
-                                  </ToggleGroupItem>
-                                  <ToggleGroupItem value="withValue" aria-label="Mostrar solo campos con valor">
-                                    Solo con valor
-                                  </ToggleGroupItem>
+                                  <Tooltip content="Solo CRÍTICOS: muestra únicamente campos marcados como críticos.">
+                                    <ToggleGroupItem value="critical" aria-label="Mostrar solo campos críticos">
+                                      Solo CRÍTICOS
+                                    </ToggleGroupItem>
+                                  </Tooltip>
+                                  <Tooltip content="Solo con valor: oculta campos vacíos o sin dato.">
+                                    <ToggleGroupItem value="withValue" aria-label="Mostrar solo campos con valor">
+                                      Solo con valor
+                                    </ToggleGroupItem>
+                                  </Tooltip>
                                 </ToggleGroup>
                               </div>
                             </div>
@@ -3169,6 +3192,7 @@ export function App() {
                             {sourcePanelContent}
                           </aside>
                         )}
+                        </div>
                       </div>
                     )}
                   </div>

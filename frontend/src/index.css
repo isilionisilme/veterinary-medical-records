@@ -17,10 +17,13 @@
   --color-accent-foreground: #ffffff;
   --shadow-subtle: 0 1px 3px rgb(31 41 51 / 0.08);
 
-  --confidence-low: #d16d6a;
-  --confidence-med: #e6b566;
-  --confidence-high: #4caf93;
-  --status-critical: #d16d6a;
+  --status-success: #4caf93;
+  --status-warn: #e6b566;
+  --status-error: #d16d6a;
+  --confidence-low: var(--status-error);
+  --confidence-med: var(--status-warn);
+  --confidence-high: var(--status-success);
+  --status-critical: var(--status-error);
   --status-missing: #9ca3af;
 
   --page-bg: var(--color-page-bg);

@@ -1,9 +1,11 @@
 import { type ChangeEvent, type DragEvent, type MouseEvent, type RefObject } from "react";
 import { FileText, Pin, PinOff, RefreshCw } from "lucide-react";
 
+import { DocumentStatusCluster } from "./app/DocumentStatusCluster";
 import { IconButton } from "./app/IconButton";
 import { UploadDropzone } from "./UploadDropzone";
 import { Tooltip } from "./ui/tooltip";
+import { type DocumentStatusClusterModel } from "../lib/documentStatus";
 
 type DocumentsSidebarItem = {
   document_id: string;
@@ -34,7 +36,7 @@ type DocumentsSidebarProps = {
   fileInputRef: RefObject<HTMLInputElement>;
   formatTimestamp: (value: string | null | undefined) => string;
   isProcessingTooLong: (createdAt: string, status: string) => boolean;
-  mapDocumentStatus: (item: DocumentsSidebarItem) => { label: string; tone: "ok" | "warn" | "error" };
+  mapDocumentStatus: (item: DocumentsSidebarItem) => DocumentStatusClusterModel;
   onSidebarMouseEnter: (event: MouseEvent<HTMLElement>) => void;
   onSidebarMouseLeave: () => void;
   onTogglePin: () => void;
@@ -271,12 +273,6 @@ export function DocumentsSidebar({
                     documents.map((item) => {
                       const isActive = activeId === item.document_id;
                       const status = mapDocumentStatus(item);
-                      const collapsedStatusToneClass =
-                        status.tone === "ok"
-                          ? "bg-emerald-500"
-                          : status.tone === "error"
-                          ? "bg-red-500"
-                          : "bg-amber-500";
                       const button = (
                         <button
                           key={item.document_id}
@@ -319,27 +315,15 @@ export function DocumentsSidebar({
                                 <FileText size={15} aria-hidden="true" />
                               )}
                               {!isDocsSidebarExpanded && (
-                                <span
-                                  aria-hidden="true"
-                                  className={`absolute right-0 top-0 inline-block h-2.5 w-2.5 rounded-full ring-2 ring-white ${collapsedStatusToneClass}`}
+                                <DocumentStatusCluster
+                                  status={status}
+                                  compact
+                                  className="absolute right-0 top-0"
                                 />
                               )}
                             </div>
                             {isDocsSidebarExpanded ? (
-                              <span
-                                className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${
-                                  status.tone === "ok"
-                                    ? "bg-emerald-100 text-emerald-700"
-                                    : status.tone === "error"
-                                    ? "bg-red-100 text-red-700"
-                                    : "bg-amber-100 text-amber-700"
-                                }`}
-                              >
-                                {status.tone === "warn" && (
-                                  <span className="mr-1 inline-block h-2 w-2 animate-spin rounded-full border border-current border-r-transparent align-middle" />
-                                )}
-                                {status.label}
-                              </span>
+                              <DocumentStatusCluster status={status} />
                             ) : null}
                           </div>
                           {isDocsSidebarExpanded && isProcessingTooLong(item.created_at, item.status) && (
