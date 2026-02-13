@@ -57,6 +57,19 @@ def _run_git_diff(base_ref: str) -> list[str]:
         print("Brand guard could not compute PR diff.", file=sys.stderr)
         print(result.stderr.strip(), file=sys.stderr)
         sys.exit(2)
+
+    replacement_char = "\ufffd"
+    if replacement_char in result.stdout or replacement_char in result.stderr:
+        print(
+            "Brand guard could not decode git diff output as UTF-8 without replacement characters.",
+            file=sys.stderr,
+        )
+        print(
+            "Ensure git diff content is UTF-8 compatible before running the guard.",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
     return result.stdout.splitlines()
 
 
