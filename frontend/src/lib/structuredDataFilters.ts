@@ -22,7 +22,7 @@ export type StructuredDataFilters = {
 };
 
 export function getConfidenceBucket(confidence: number): ConfidenceBucket {
-  if (confidence < 0.5) {
+  if (confidence < 0.25) {
     return "low";
   }
   if (confidence < 0.75) {

@@ -38,9 +38,9 @@ export function UploadDropzone({
       className={`relative flex cursor-pointer flex-col items-center justify-center rounded-card text-center transition ${
         isDragOver
           ? isOverlayActive
-            ? "border border-transparent bg-surface"
-            : "border-2 border-dashed border-statusSuccess bg-statusSuccess/10 ring-2 ring-statusSuccess/30"
-          : "border-2 border-dashed border-border bg-surface hover:border-textSecondary/50 hover:bg-surface"
+            ? "border-2 border-dashed border-transparent bg-surface"
+            : "border-2 border-dashed border-statusSuccess bg-statusSuccess/10"
+          : "border-2 border-dashed border-borderSubtle bg-surface hover:border-textSecondary/40"
       } ${compact ? "h-12 w-12 rounded-control px-1.5 py-1.5" : "px-4 py-5"} ${className}`}
       role="button"
       aria-label={resolvedAriaLabel}
@@ -58,12 +58,12 @@ export function UploadDropzone({
       onDrop={onDrop}
     >
       {showDropOverlay && isDragOver && (
-        <div className="pointer-events-none absolute inset-2 z-10 flex flex-col items-center justify-center gap-2 rounded-control border-2 border-dashed border-statusSuccess bg-surface/75 ring-2 ring-statusSuccess/30 backdrop-blur-[1px]">
+        <div className="pointer-events-none absolute inset-2 z-10 flex flex-col items-center justify-center gap-2 rounded-control border-2 border-dashed border-statusSuccess bg-surface/75 backdrop-blur-[1px]">
           <Upload size={18} className="text-statusSuccess" aria-hidden="true" />
           <p className="text-sm font-semibold text-ink">Suelta el PDF para subirlo</p>
         </div>
       )}
-      <Upload size={compact ? 16 : 18} className="text-ink" />
+      <Upload size={compact ? 16 : 18} className="pointer-events-none text-ink" aria-hidden="true" />
       {!compact && (
         <>
           <p className="mt-2 text-sm font-semibold text-ink">{title}</p>

@@ -34,6 +34,12 @@ const TOOLTIP_BYPASS_ALLOWLIST = new Set([
   path.join("frontend", "src", "components", "ui", "tooltip.tsx"),
 ]);
 
+function readCssToken(cssContent, tokenName) {
+  const tokenRegex = new RegExp(`${tokenName}\\s*:\\s*([^;]+);`);
+  const match = cssContent.match(tokenRegex);
+  return match ? match[1].trim() : "";
+}
+
 function walkFiles(dirPath) {
   const entries = fs.readdirSync(dirPath, { withFileTypes: true });
   const files = [];
@@ -114,6 +120,26 @@ const files = [
 ];
 
 const findings = [];
+
+const indexCssPath = path.join(frontendRoot, "src", "index.css");
+const indexCssRelativePath = relativeToRepo(indexCssPath);
+const indexCssContent = fs.readFileSync(indexCssPath, "utf8");
+const surfaceTokenValue = readCssToken(indexCssContent, "--surface");
+const surfaceMutedTokenValue = readCssToken(indexCssContent, "--surface-muted");
+
+if (!surfaceTokenValue) {
+  findings.push(`${indexCssRelativePath}: missing --surface token definition`);
+}
+
+if (!surfaceMutedTokenValue) {
+  findings.push(`${indexCssRelativePath}: missing --surface-muted token definition`);
+}
+
+if (surfaceTokenValue && surfaceMutedTokenValue && surfaceTokenValue === surfaceMutedTokenValue) {
+  findings.push(
+    `${indexCssRelativePath}: --surface-muted must differ from --surface to preserve A0 container contrast`
+  );
+}
 
 for (const filePath of files) {
   const relativePath = relativeToRepo(filePath);

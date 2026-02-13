@@ -30,7 +30,7 @@ export function DocumentStatusChip({
       <span
         data-testid={testId}
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-control border border-border bg-surface px-2 py-1 text-[11px] font-semibold text-textSecondary",
+          "inline-flex items-center gap-1.5 rounded-control bg-surfaceMuted px-2 py-1 text-[11px] font-semibold text-textSecondary",
           compact && "h-4 min-w-4 justify-center border-0 bg-transparent p-0",
           className
         )}

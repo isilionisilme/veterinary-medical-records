@@ -5,18 +5,19 @@
 @tailwind utilities;
 
 :root {
-  --app-bg: #edf3fb;
-  --canvas-bg: #f8fbff;
-  --card-bg: #f2f5fa;
+  --app-bg: #dee8f4;
+  --canvas-bg: #ffffff;
+  --card-bg: #ffffff;
   --app-frame: var(--canvas-bg);
   --surface: var(--card-bg);
-  --surface-muted: #e9eff6;
+  --surface-muted: #f4f6f8;
   --border-subtle: #dbe4ef;
-  --shadow-soft: 0 10px 28px rgb(31 41 51 / 0.08);
+  --shadow-soft: none;
 
-  --radius-frame: 18px;
-  --radius-card: 14px;
-  --radius-control: 10px;
+  --radius-frame: 14px;
+  --radius-card: 10px;
+  --radius-control: 8px;
+  --canvas-gap: 12px;
 
   --color-page-bg: var(--app-bg);
   --color-surface: var(--surface);
@@ -31,7 +32,7 @@
   --color-border-subtle: var(--border-subtle);
   --color-accent: #fc4e1b;
   --color-accent-foreground: #ffffff;
-  --shadow-subtle: var(--shadow-soft);
+  --shadow-subtle: none;
 
   --status-success: #4caf93;
   --status-warn: #e6b566;

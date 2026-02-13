@@ -769,13 +769,13 @@ export function PdfViewer({
 
   return (
     <div
-      className={`flex h-full min-h-0 flex-col ${
+      className={`flex h-full min-h-0 flex-col gap-[var(--canvas-gap)] ${
         debugFlags.enabled && debugFlags.noTransformSubtree ? "pdf-debug-no-transform-subtree" : ""
       }`}
       data-pdf-debug={debugFlags.enabled ? "on" : "off"}
     >
       {showPageNavigation && (
-        <div className="relative z-20 flex items-center justify-between gap-4 rounded-control border border-borderSubtle bg-surfaceMuted px-2 py-2">
+        <div className="relative z-20 flex items-center justify-between gap-4 rounded-control bg-surface px-2 py-2">
           <div className="flex min-w-0 items-center gap-1">{toolbarLeftContent}</div>
 
           <div className="flex items-center gap-1">
@@ -816,7 +816,7 @@ export function PdfViewer({
             </IconButton>
           </div>
 
-          <span aria-hidden="true" className="h-5 w-px bg-border" />
+          <span aria-hidden="true" className="h-5 w-px bg-page" />
 
           <div className="flex items-center gap-1">
             <IconButton
@@ -842,17 +842,17 @@ export function PdfViewer({
 
           {toolbarRightExtra ? (
             <>
-              <span aria-hidden="true" className="h-5 w-px bg-border" />
+              <span aria-hidden="true" className="h-5 w-px bg-page" />
               <div className="flex items-center gap-1">{toolbarRightExtra}</div>
             </>
           ) : null}
         </div>
       )}
-      <div className="relative mt-4 min-h-0 flex-1">
+      <div className="relative min-h-0 flex-1">
         <div
           ref={scrollRef}
           data-testid="pdf-scroll-container"
-          className="h-full min-h-0 overflow-y-auto rounded-card border border-borderSubtle bg-surfaceMuted p-4 shadow-subtle"
+          className="h-full min-h-0 overflow-y-auto rounded-card bg-surface p-[var(--canvas-gap)]"
         >
         <div ref={contentRef} className="mx-auto w-full">
           {loading && (
@@ -882,7 +882,7 @@ export function PdfViewer({
                 data-testid="pdf-page"
                 className={`mb-6 last:mb-0 ${
                   focusPage === page && isSnippetLocated
-                    ? "rounded-xl border-2 border-accent p-1"
+                    ? "rounded-xl bg-accent/10 p-1"
                     : ""
                 }`}
               >
@@ -890,7 +890,7 @@ export function PdfViewer({
                     ref={(node) => {
                       canvasRefs.current[page - 1] = node;
                     }}
-                    className="mx-auto rounded-xl bg-white shadow"
+                    className="mx-auto rounded-xl bg-white"
                   />
               </div>
             ))}
@@ -902,7 +902,7 @@ export function PdfViewer({
         </div>
         </div>
         {isDragOver && (
-          <div className="pointer-events-none absolute inset-3 z-10 flex flex-col items-center justify-center gap-2 rounded-card border-2 border-dashed border-statusSuccess bg-surface/75 ring-2 ring-statusSuccess/30 backdrop-blur-[1px]">
+          <div className="pointer-events-none absolute inset-3 z-10 flex flex-col items-center justify-center gap-2 rounded-card border-2 border-dashed border-statusSuccess bg-surface/75 backdrop-blur-[1px]">
             <Upload size={20} className="text-statusSuccess" aria-hidden="true" />
             <p className="text-sm font-semibold text-ink">Suelta el PDF para subirlo</p>
           </div>
