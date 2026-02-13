@@ -1,8 +1,9 @@
-import { type DragEvent, useEffect, useMemo, useRef, useState } from "react";
+import { type ChangeEvent, type DragEvent, type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Download, FileText, Pin, PinOff, RefreshCw, Search } from "lucide-react";
+import { Download, FileText, RefreshCw, Search } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { DocumentsSidebar } from "./components/DocumentsSidebar";
 import { PdfViewer } from "./components/PdfViewer";
 import { SourcePanel } from "./components/SourcePanel";
 import { UploadDropzone } from "./components/UploadDropzone";
@@ -1280,8 +1281,45 @@ export function App() {
 
   const handleOpenUploadArea = (event?: { preventDefault?: () => void; stopPropagation?: () => void }) => {
     event?.stopPropagation?.();
-    // Keep the native file picker call synchronous with the user gesture.
     openUploadFilePicker();
+  };
+
+  const handleSidebarFileInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+    if (!file) {
+      setUploadFeedback(null);
+      return;
+    }
+    const queued = queueUpload(file);
+    if (!queued) {
+      event.currentTarget.value = "";
+    }
+  };
+
+  const handleDocsSidebarMouseEnter = (event: MouseEvent<HTMLElement>) => {
+    isPointerInsideDocsSidebarRef.current = true;
+    if (shouldAutoCollapseDocsSidebar && event.buttons === 0) {
+      setIsDocsSidebarHovered(true);
+    }
+  };
+
+  const handleDocsSidebarMouseLeave = () => {
+    isPointerInsideDocsSidebarRef.current = false;
+    if (shouldAutoCollapseDocsSidebar) {
+      setIsDocsSidebarHovered(false);
+    }
+  };
+
+  const handleToggleDocsSidebarPin = () => {
+    setIsDocsSidebarPinned((current) => {
+      const next = !current;
+      if (next) {
+        setIsDocsSidebarHovered(true);
+      } else {
+        setIsDocsSidebarHovered(isPointerInsideDocsSidebarRef.current);
+      }
+      return next;
+    });
   };
 
   const handleSelectDocument = (docId: string) => {
@@ -2576,310 +2614,47 @@ export function App() {
 
       <main className="relative mx-auto mt-2 w-full max-w-[1600px]">
         <div className="relative z-20 flex gap-6">
-          <aside
-              data-testid="documents-sidebar"
-              data-expanded={isDocsSidebarExpanded ? "true" : "false"}
-              className={`${
-                shouldUseHoverDocsSidebar
-                  ? `${isDocsSidebarExpanded ? "w-80" : "w-20"} transition-[width] duration-200 ease-in-out`
-                  : "w-80"
-              } flex-shrink-0`}
-              onMouseEnter={(event) => {
-                isPointerInsideDocsSidebarRef.current = true;
-                if (shouldAutoCollapseDocsSidebar && event.buttons === 0) {
-                  setIsDocsSidebarHovered(true);
-                }
-              }}
-              onMouseLeave={() => {
-                isPointerInsideDocsSidebarRef.current = false;
-                if (shouldAutoCollapseDocsSidebar) {
-                  setIsDocsSidebarHovered(false);
-                }
-              }}
-            >
-              <div className="overflow-hidden rounded-3xl border border-black/10 bg-white/80 shadow-xl">
-                <section
-                  className={`flex flex-col p-6 ${panelHeightClass}`}
-                >
-                <div className="flex items-center justify-between gap-3">
-                  <div
-                    className={`min-w-0 transition-opacity duration-150 ${
-                      isDocsSidebarExpanded ? "opacity-100" : "pointer-events-none w-0 opacity-0"
-                    }`}
-                  >
-                    <h2 className="font-display text-xl font-semibold">Documentos</h2>
-                  </div>
-                  {isDocsSidebarExpanded && (
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        onClick={() => {
-                          setIsDocsSidebarPinned((current) => {
-                            const next = !current;
-                            if (next) {
-                              setIsDocsSidebarHovered(true);
-                            } else {
-                              setIsDocsSidebarHovered(isPointerInsideDocsSidebarRef.current);
-                            }
-                            return next;
-                          });
-                        }}
-                        type="button"
-                        title={isDocsSidebarPinned ? "Desfijar barra" : "Fijar barra"}
-                        aria-label={isDocsSidebarPinned ? "Desfijar barra" : "Fijar barra"}
-                        className={`rounded-full border p-2 shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
-                          isDocsSidebarPinned
-                            ? "border-ink/30 bg-black/[0.06] text-ink"
-                            : "border-black/15 bg-white text-ink hover:bg-accentSoft"
-                        }`}
-                      >
-                        {isDocsSidebarPinned ? <PinOff size={16} /> : <Pin size={16} />}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        onClick={handleRefresh}
-                        type="button"
-                        title="Actualizar"
-                        aria-label="Actualizar"
-                        disabled={documentList.isFetching || showRefreshFeedback}
-                        className="rounded-full border border-black/15 bg-white p-2 text-ink shadow-sm hover:bg-accentSoft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-                      >
-                        <RefreshCw
-                          size={16}
-                          className={documentList.isFetching || showRefreshFeedback ? "animate-spin" : ""}
-                        />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-
-                <div className="mt-4 flex min-h-[168px] items-center">
-                  {isDocsSidebarExpanded ? (
-                    <div
-                      ref={uploadPanelRef}
-                      className="w-full rounded-2xl border border-black/10 bg-white/70 p-4 transition-opacity duration-150 ease-in-out"
-                    >
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-semibold text-ink">Cargar documento</h3>
-                        <button
-                          ref={uploadInfoTriggerRef}
-                          type="button"
-                          aria-label="Informacion de formatos y tamano"
-                          aria-expanded={showUploadInfo}
-                          onFocus={openUploadInfo}
-                          onBlur={() => closeUploadInfo(false)}
-                          onMouseEnter={() => {
-                            if (isHoverDevice) {
-                              openUploadInfo();
-                            }
-                          }}
-                          onMouseLeave={() => {
-                            if (isHoverDevice) {
-                              closeUploadInfo(true);
-                            }
-                          }}
-                          onClick={(event) => {
-                            if (isHoverDevice) {
-                              return;
-                            }
-                            event.stopPropagation();
-                            setShowUploadInfo((current) => !current);
-                          }}
-                          className="text-sm text-muted"
-                        >
-                          ⓘ
-                        </button>
-                      </div>
-                      <UploadDropzone
-                        className="mt-3"
-                        isDragOver={isDragOverSidebarUpload}
-                        onActivate={handleOpenUploadArea}
-                        onDragEnter={handleSidebarUploadDragEnter}
-                        onDragOver={handleSidebarUploadDragOver}
-                        onDragLeave={handleSidebarUploadDragLeave}
-                        onDrop={handleSidebarUploadDrop}
-                      />
-                      <div className="mt-2 flex items-center gap-2">
-                        <input
-                          id="upload-document-input"
-                          ref={fileInputRef}
-                          type="file"
-                          aria-label="Archivo PDF"
-                          accept=".pdf,application/pdf"
-                          className="sr-only"
-                          disabled={uploadMutation.isPending}
-                          onChange={(event) => {
-                            const file = event.target.files?.[0] ?? null;
-                            if (!file) {
-                              setUploadFeedback(null);
-                              return;
-                            }
-                            const queued = queueUpload(file);
-                            if (!queued) {
-                              event.currentTarget.value = "";
-                            }
-                          }}
-                        />
-                        {uploadMutation.isPending && (
-                          <div className="flex items-center gap-2 text-xs text-muted">
-                            <RefreshCw size={14} className="animate-spin" />
-                            <span>Subiendo...</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div
-                      data-testid="sidebar-collapsed-dropzone"
-                      className="flex w-full items-center justify-center"
-                    >
-                      <UploadDropzone
-                        compact
-                        ariaLabel="Cargar documento"
-                        title=""
-                        subtitle=""
-                        isDragOver={isDragOverSidebarUpload}
-                        onActivate={handleOpenUploadArea}
-                        onDragEnter={handleSidebarUploadDragEnter}
-                        onDragOver={handleSidebarUploadDragOver}
-                        onDragLeave={handleSidebarUploadDragLeave}
-                        onDrop={handleSidebarUploadDrop}
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {/* TODO: Keep improving collapsed/expanded item-start alignment with a shared layout primitive if future changes alter section heights. */}
-
-                    <div
-                      data-testid="left-panel-scroll"
-                      className={`relative mt-4 min-h-0 flex-1 overflow-y-auto overflow-x-hidden ${
-                        isDocsSidebarExpanded ? "pr-1" : "pr-0"
-                      }`}
-                    >
-                      {documentList.isLoading && (
-                        <div className="space-y-2 rounded-2xl border border-black/10 bg-white/70 p-4">
-                          {Array.from({ length: 4 }).map((_, index) => (
-                            <div key={`skeleton-initial-${index}`} className="animate-pulse rounded-xl border border-black/10 bg-white/80 p-3">
-                              <div className="h-3 w-2/3 rounded bg-black/10" />
-                              <div className="mt-2 h-2.5 w-1/2 rounded bg-black/10" />
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {documentList.isError && !isDocumentListConnectivityError && (
-                        <div className="rounded-2xl border border-black/10 bg-white/80 p-4 text-sm text-ink">
-                          <p>{getUserErrorMessage(documentList.error, "No se pudieron cargar los documentos.")}</p>
-                        </div>
-                      )}
-
-                      {documentList.data &&
-                        (isListRefreshing ? (
-                          <div className="space-y-2 rounded-2xl border border-black/10 bg-white/70 p-4">
-                            {Array.from({ length: 6 }).map((_, index) => (
-                              <div
-                                key={`skeleton-refresh-${index}`}
-                                className="animate-pulse rounded-xl border border-black/10 bg-white/80 p-3"
-                              >
-                                <div className="h-3 w-2/3 rounded bg-black/10" />
-                                <div className="mt-2 h-2.5 w-1/2 rounded bg-black/10" />
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="space-y-2">
-                            {sortedDocuments.length === 0 ? (
-                              isDocsSidebarExpanded ? (
-                                <p className="px-1 py-2 text-sm text-muted">Aun no hay documentos cargados.</p>
-                              ) : null
-                            ) : (
-                              sortedDocuments.map((item) => {
-                                const isActive = activeId === item.document_id;
-                                const status = mapDocumentStatus(item);
-                                const collapsedStatusToneClass =
-                                  status.tone === "ok"
-                                    ? "bg-emerald-500"
-                                    : status.tone === "error"
-                                    ? "bg-red-500"
-                                    : "bg-amber-500";
-                                return (
-                                  <button
-                                    key={item.document_id}
-                                    type="button"
-                                    onClick={() => handleSelectDocument(item.document_id)}
-                                    aria-pressed={isActive}
-                                    aria-label={`${item.original_filename} (${status.label})`}
-                                    title={item.original_filename}
-                                    className={`w-full rounded-xl border text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
-                                      isDocsSidebarExpanded
-                                        ? isActive
-                                          ? "border-ink/30 bg-black/[0.04] text-ink shadow-sm ring-1 ring-ink/25"
-                                          : "border-black/10 bg-white/80 text-ink hover:bg-white"
-                                        : isActive
-                                        ? "border-ink/25 bg-white/95 text-ink shadow-sm ring-1 ring-ink/20"
-                                        : "border-black/10 bg-white/85 text-ink hover:bg-white"
-                                    } ${isDocsSidebarExpanded ? "px-3 py-2" : "px-2.5 py-2"}`}
-                                  >
-                                    <div
-                                      className={`flex items-center ${
-                                        isDocsSidebarExpanded ? "justify-between gap-3" : "mx-auto w-full max-w-10 justify-between gap-2"
-                                      }`}
-                                    >
-                                      <div className={isDocsSidebarExpanded ? "min-w-0" : "flex items-center justify-center"}>
-                                        {isDocsSidebarExpanded ? (
-                                          <>
-                                            <p className="truncate text-sm font-medium">{item.original_filename}</p>
-                                            <p className="mt-0.5 text-xs text-muted">
-                                              Subido: {formatTimestamp(item.created_at)}
-                                            </p>
-                                          </>
-                                        ) : (
-                                          <FileText size={16} aria-hidden="true" />
-                                        )}
-                                      </div>
-                                      {isDocsSidebarExpanded ? (
-                                        <span
-                                          className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${
-                                            status.tone === "ok"
-                                              ? "bg-emerald-100 text-emerald-700"
-                                              : status.tone === "error"
-                                              ? "bg-red-100 text-red-700"
-                                              : "bg-amber-100 text-amber-700"
-                                          }`}
-                                        >
-                                          {status.tone === "warn" && (
-                                            <span className="mr-1 inline-block h-2 w-2 animate-spin rounded-full border border-current border-r-transparent align-middle" />
-                                          )}
-                                          {status.label}
-                                        </span>
-                                      ) : (
-                                        <span
-                                          aria-hidden="true"
-                                          className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full ${collapsedStatusToneClass}`}
-                                        />
-                                      )}
-                                    </div>
-                                    {isDocsSidebarExpanded && isProcessingTooLong(item.created_at, item.status) && (
-                                      <p className="mt-2 text-xs text-muted">
-                                        Tardando mas de lo esperado
-                                      </p>
-                                    )}
-                                    {isDocsSidebarExpanded && item.failure_type && (
-                                      <p className="mt-2 text-xs text-red-600">
-                                        Error: {item.failure_type}
-                                      </p>
-                                    )}
-                                  </button>
-                                );
-                              })
-                            )}
-                          </div>
-                        ))}
-                </div>
-                </section>
-              </div>
-            </aside>
+          <DocumentsSidebar
+            panelHeightClass={panelHeightClass}
+            shouldUseHoverDocsSidebar={shouldUseHoverDocsSidebar}
+            isDocsSidebarExpanded={isDocsSidebarExpanded}
+            isDocsSidebarPinned={isDocsSidebarPinned}
+            isRefreshingDocuments={documentList.isFetching || showRefreshFeedback}
+            isUploadPending={uploadMutation.isPending}
+            isHoverDevice={isHoverDevice}
+            showUploadInfo={showUploadInfo}
+            isDragOverSidebarUpload={isDragOverSidebarUpload}
+            isDocumentListLoading={documentList.isLoading}
+            isDocumentListError={documentList.isError && !isDocumentListConnectivityError}
+            isListRefreshing={isListRefreshing}
+            documentListErrorMessage={
+              documentList.isError && !isDocumentListConnectivityError
+                ? getUserErrorMessage(documentList.error, "No se pudieron cargar los documentos.")
+                : null
+            }
+            documents={sortedDocuments}
+            activeId={activeId}
+            uploadPanelRef={uploadPanelRef}
+            uploadInfoTriggerRef={uploadInfoTriggerRef}
+            fileInputRef={fileInputRef}
+            formatTimestamp={formatTimestamp}
+            isProcessingTooLong={isProcessingTooLong}
+            mapDocumentStatus={mapDocumentStatus}
+            onSidebarMouseEnter={handleDocsSidebarMouseEnter}
+            onSidebarMouseLeave={handleDocsSidebarMouseLeave}
+            onTogglePin={handleToggleDocsSidebarPin}
+            onRefresh={handleRefresh}
+            onOpenUploadInfo={openUploadInfo}
+            onCloseUploadInfo={closeUploadInfo}
+            onToggleUploadInfo={() => setShowUploadInfo((current) => !current)}
+            onOpenUploadArea={handleOpenUploadArea}
+            onSidebarUploadDragEnter={handleSidebarUploadDragEnter}
+            onSidebarUploadDragOver={handleSidebarUploadDragOver}
+            onSidebarUploadDragLeave={handleSidebarUploadDragLeave}
+            onSidebarUploadDrop={handleSidebarUploadDrop}
+            onSidebarFileInputChange={handleSidebarFileInputChange}
+            onSelectDocument={handleSelectDocument}
+          />
 
           <section className={`flex flex-1 flex-col rounded-3xl border border-black/10 bg-white/70 p-6 shadow-xl ${panelHeightClass}`}>
             {shouldShowLoadPdfErrorBanner && (
