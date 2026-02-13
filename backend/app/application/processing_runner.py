@@ -16,6 +16,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from backend.app.application.extraction_quality import evaluate_extracted_text_quality
+from backend.app.application.field_normalizers import normalize_canonical_fields
 from backend.app.application.global_schema_v0 import (
     CRITICAL_KEYS_V0,
     GLOBAL_SCHEMA_V0_KEYS,
@@ -42,6 +43,37 @@ PDF_EXTRACTOR_FORCE_ENV = "PDF_EXTRACTOR_FORCE"
 INTERPRETATION_DEBUG_INCLUDE_CANDIDATES_ENV = (
     "VET_RECORDS_INCLUDE_INTERPRETATION_CANDIDATES"
 )
+DATE_TARGET_KEYS = frozenset(
+    {"visit_date", "document_date", "admission_date", "discharge_date"}
+)
+_DATE_CANDIDATE_PATTERN = re.compile(
+    r"\b(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}|\d{4}[\/\-.]\d{1,2}[\/\-.]\d{1,2})\b"
+)
+_DATE_TARGET_ANCHORS: dict[str, tuple[str, ...]] = {
+    "visit_date": (
+        "visita",
+        "consulta",
+        "revision",
+        "revisión",
+        "control",
+        "urgencia",
+    ),
+    "document_date": (
+        "fecha documento",
+        "documento",
+        "informe",
+        "historial",
+        "fecha",
+    ),
+    "admission_date": ("admisión", "admision", "ingreso", "hospitaliza"),
+    "discharge_date": ("alta", "egreso"),
+}
+_DATE_TARGET_PRIORITY: dict[str, int] = {
+    "visit_date": 4,
+    "admission_date": 3,
+    "discharge_date": 3,
+    "document_date": 2,
+}
 
 
 def _default_now_iso() -> str:
@@ -366,11 +398,16 @@ def _build_interpretation_artifact(
     compact_text = _WHITESPACE_PATTERN.sub(" ", raw_text).strip()
     warning_codes: list[str] = []
     candidate_bundle: dict[str, list[dict[str, object]]] = {}
+    canonical_evidence: dict[str, list[dict[str, object]]] = {}
 
     if compact_text:
         candidate_bundle = _mine_interpretation_candidates(raw_text)
         canonical_values, canonical_evidence = _map_candidates_to_global_schema(
             candidate_bundle
+        )
+        canonical_values = normalize_canonical_fields(
+            canonical_values,
+            canonical_evidence,
         )
         normalized_values = normalize_global_schema_v0(canonical_values)
         validation_errors = validate_global_schema_v0_shape(normalized_values)
@@ -414,6 +451,7 @@ def _build_interpretation_artifact(
             "populated_keys": len(populated_keys),
             "keys_present": populated_keys,
             "warning_codes": warning_codes,
+            "date_selection": _build_date_selection_debug(canonical_evidence),
         },
     }
     if _should_include_interpretation_candidates():
@@ -445,6 +483,9 @@ def _mine_interpretation_candidates(
         confidence: float,
         snippet: str,
         page: int | None = 1,
+        anchor: str | None = None,
+        anchor_priority: int = 0,
+        target_reason: str | None = None,
     ) -> None:
         cleaned_value = value.strip(" .,:;\t\r\n")
         if not cleaned_value:
@@ -457,6 +498,9 @@ def _mine_interpretation_candidates(
             {
                 "value": cleaned_value,
                 "confidence": round(min(max(confidence, 0.0), 1.0), 2),
+                "anchor": anchor,
+                "anchor_priority": anchor_priority,
+                "target_reason": target_reason,
                 "evidence": {
                     "page": page,
                     "snippet": snippet.strip()[:220],
@@ -470,6 +514,16 @@ def _mine_interpretation_candidates(
             r"(?:paciente|nombre(?:\s+del\s+paciente)?|patient)\s*[:\-]\s*([^\n;]{2,100})",
             0.88,
         ),
+        (
+            "species",
+            r"(?:especie\s*/\s*raza|raza\s*/\s*especie)\s*[:\-]\s*([^\n;]{2,120})",
+            0.84,
+        ),
+        (
+            "breed",
+            r"(?:especie\s*/\s*raza|raza\s*/\s*especie)\s*[:\-]\s*([^\n;]{2,120})",
+            0.84,
+        ),
         ("species", r"(?:especie|species)\s*[:\-]\s*([^\n;]{2,80})", 0.84),
         ("breed", r"(?:raza|breed)\s*[:\-]\s*([^\n;]{2,80})", 0.84),
         ("sex", r"(?:sexo|sex)\s*[:\-]\s*([^\n;]{1,40})", 0.83),
@@ -481,7 +535,7 @@ def _mine_interpretation_candidates(
         ),
         (
             "microchip_id",
-            r"(?:microchip|chip)\s*(?:n[ºo]\.?|id)?\s*[:\-]?\s*([A-Za-z0-9\-]{6,30})",
+            r"(?:microchip|chip)\s*(?:n[ºo]\.?|id)?\s*[:\-]?\s*([A-Za-z0-9\-]{6,30}(?:\s+[A-Za-z0-9.\-]{1,12}){0,2})",
             0.88,
         ),
         (
@@ -547,6 +601,20 @@ def _mine_interpretation_candidates(
             value=match.group(1),
             confidence=0.62,
             snippet=snippet,
+        )
+
+    for date_candidate in _extract_date_candidates_with_classification(raw_text):
+        add_candidate(
+            key=str(date_candidate["target_key"]),
+            value=str(date_candidate["value"]),
+            confidence=float(date_candidate["confidence"]),
+            snippet=str(date_candidate["snippet"]),
+            page=1,
+            anchor=(
+                str(date_candidate["anchor"]) if date_candidate.get("anchor") else None
+            ),
+            anchor_priority=int(date_candidate["anchor_priority"]),
+            target_reason=str(date_candidate["target_reason"]),
         )
 
     lines = [line.strip() for line in raw_text.splitlines() if line.strip()]
@@ -738,6 +806,52 @@ def _mine_interpretation_candidates(
     return dict(candidates)
 
 
+def _extract_date_candidates_with_classification(
+    raw_text: str,
+) -> list[dict[str, object]]:
+    candidates: list[dict[str, object]] = []
+    lower_text = raw_text.casefold()
+
+    for match in _DATE_CANDIDATE_PATTERN.finditer(raw_text):
+        value = match.group(1)
+        start = max(0, match.start() - 70)
+        end = min(len(raw_text), match.end() + 70)
+        snippet = _WHITESPACE_PATTERN.sub(" ", raw_text[start:end]).strip()
+        context = lower_text[start:end]
+
+        chosen_key = "visit_date"
+        chosen_anchor = "fallback"
+        chosen_priority = 1
+        chosen_reason = "fallback_visit_date"
+
+        for key, anchors in _DATE_TARGET_ANCHORS.items():
+            matched_anchor = next((anchor for anchor in anchors if anchor in context), None)
+            if matched_anchor is None:
+                continue
+
+            priority = _DATE_TARGET_PRIORITY.get(key, 1)
+            if priority > chosen_priority:
+                chosen_key = key
+                chosen_anchor = matched_anchor
+                chosen_priority = priority
+                chosen_reason = f"anchor:{matched_anchor}"
+
+        confidence = 0.84 if chosen_priority > 1 else 0.68
+        candidates.append(
+            {
+                "target_key": chosen_key,
+                "value": value,
+                "confidence": confidence,
+                "snippet": snippet,
+                "anchor": chosen_anchor,
+                "anchor_priority": chosen_priority,
+                "target_reason": chosen_reason,
+            }
+        )
+
+    return candidates
+
+
 def _map_candidates_to_global_schema(
     candidate_bundle: Mapping[str, list[dict[str, object]]]
 ) -> tuple[dict[str, object], dict[str, list[dict[str, object]]]]:
@@ -747,7 +861,7 @@ def _map_candidates_to_global_schema(
     for key in GLOBAL_SCHEMA_V0_KEYS:
         key_candidates = sorted(
             candidate_bundle.get(key, []),
-            key=lambda item: float(item.get("confidence", 0.0)),
+            key=lambda item: _candidate_sort_key(item, key),
             reverse=True,
         )
 
@@ -770,6 +884,31 @@ def _map_candidates_to_global_schema(
             evidence_map[key] = []
 
     return mapped, evidence_map
+
+
+def _candidate_sort_key(item: dict[str, object], key: str) -> tuple[float, float]:
+    confidence = float(item.get("confidence", 0.0))
+    if key in DATE_TARGET_KEYS:
+        return float(item.get("anchor_priority", 0)), confidence
+    return 0.0, confidence
+
+
+def _build_date_selection_debug(
+    evidence_map: Mapping[str, list[dict[str, object]]],
+) -> dict[str, dict[str, object] | None]:
+    payload: dict[str, dict[str, object] | None] = {}
+    for key in ("visit_date", "document_date", "admission_date", "discharge_date"):
+        candidates = evidence_map.get(key, [])
+        if not candidates:
+            payload[key] = None
+            continue
+        top = candidates[0]
+        payload[key] = {
+            "anchor": top.get("anchor"),
+            "anchor_priority": top.get("anchor_priority", 0),
+            "target_reason": top.get("target_reason"),
+        }
+    return payload
 
 
 def _build_structured_fields_from_global_schema(
