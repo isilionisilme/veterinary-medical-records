@@ -1632,6 +1632,53 @@ describe("App upload and list flow", () => {
     expect(snapshotAttempts).toBe(1);
   });
 
+  it("includes backend hint in snapshot failure detail for 403 disabled response", async () => {
+    window.history.replaceState({}, "", "/?extractionDebug=1");
+
+    const hint = "Set VET_RECORDS_EXTRACTION_OBS=1 and restart backend";
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const baseFetch = globalThis.fetch as typeof fetch;
+    let snapshotAttempts = 0;
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = input.toString();
+      const method = (init?.method ?? "GET").toUpperCase();
+
+      if (url.endsWith("/debug/extraction-runs") && method === "POST") {
+        snapshotAttempts += 1;
+        return new Response(
+          JSON.stringify({
+            error: "extraction_observability_disabled",
+            hint,
+          }),
+          { status: 403 }
+        );
+      }
+
+      return baseFetch(input, init);
+    }) as typeof fetch;
+
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+    await screen.findByText("Identificacion del caso");
+
+    await waitFor(() => {
+      expect(snapshotAttempts).toBe(1);
+      const matchingCall = warnSpy.mock.calls.find(
+        (call) =>
+          typeof call[0] === "string" &&
+          call[0].includes("[extraction-observability] non-retryable snapshot failure") &&
+          typeof call[1] === "object" &&
+          call[1] !== null &&
+          "detail" in (call[1] as object) &&
+          typeof (call[1] as { detail?: unknown }).detail === "string" &&
+          ((call[1] as { detail: string }).detail.includes(hint) as boolean)
+      );
+      expect(matchingCall).toBeDefined();
+    });
+  });
+
   it("falls back to visit date when document date is missing", async () => {
     renderApp();
 

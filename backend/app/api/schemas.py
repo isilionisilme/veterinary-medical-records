@@ -155,6 +155,12 @@ class ExtractionFieldSnapshotRequest(BaseModel):
     reason: str | None = Field(
         None, description="Validator rejection reason when status is rejected."
     )
+    rawCandidate: str | None = Field(
+        None, description="Optional raw candidate value used during extraction triage."
+    )
+    sourceHint: str | None = Field(
+        None, description="Optional source location hint for the raw candidate."
+    )
 
 
 class ExtractionCountsSnapshotRequest(BaseModel):
@@ -186,3 +192,31 @@ class ExtractionRunPersistResponse(BaseModel):
 class ExtractionRunsListResponse(BaseModel):
     document_id: str
     runs: list[dict[str, object]]
+
+
+class ExtractionTriageSummaryResponse(BaseModel):
+    accepted: int
+    missing: int
+    rejected: int
+    low: int
+    mid: int
+    high: int
+
+
+class ExtractionTriageItemResponse(BaseModel):
+    field: str
+    value: str | None = None
+    reason: str | None = None
+    flags: list[str] = Field(default_factory=list)
+    rawCandidate: str | None = None
+    sourceHint: str | None = None
+
+
+class ExtractionRunTriageResponse(BaseModel):
+    documentId: str
+    runId: str
+    createdAt: str
+    summary: ExtractionTriageSummaryResponse
+    missing: list[ExtractionTriageItemResponse]
+    rejected: list[ExtractionTriageItemResponse]
+    suspiciousAccepted: list[ExtractionTriageItemResponse]

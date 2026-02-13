@@ -21,6 +21,7 @@ from backend.app.api.schemas import (
     ExtractionRunPersistResponse,
     ExtractionRunsListResponse,
     ExtractionRunSnapshotRequest,
+    ExtractionRunTriageResponse,
     LatestCompletedRunReviewResponse,
     LatestRunResponse,
     ProcessingHistoryResponse,
@@ -41,6 +42,7 @@ from backend.app.application.document_service import (
 )
 from backend.app.application.extraction_observability import (
     get_extraction_runs,
+    get_latest_extraction_run_triage,
     persist_extraction_run_snapshot,
 )
 from backend.app.application.processing_runner import enqueue_processing_run
@@ -681,11 +683,7 @@ def persist_debug_extraction_run(
     payload: ExtractionRunSnapshotRequest,
 ) -> ExtractionRunPersistResponse | JSONResponse:
     if not extraction_observability_enabled():
-        return _error_response(
-            status_code=status.HTTP_404_NOT_FOUND,
-            error_code="NOT_FOUND",
-            message="Endpoint not found.",
-        )
+        return _extraction_observability_disabled_response()
 
     try:
         result = persist_extraction_run_snapshot(payload.model_dump())
@@ -728,14 +726,32 @@ def persist_debug_extraction_run(
 )
 def list_debug_extraction_runs(document_id: str) -> ExtractionRunsListResponse | JSONResponse:
     if not extraction_observability_enabled():
-        return _error_response(
-            status_code=status.HTTP_404_NOT_FOUND,
-            error_code="NOT_FOUND",
-            message="Endpoint not found.",
-        )
+        return _extraction_observability_disabled_response()
 
     runs = get_extraction_runs(document_id)
     return ExtractionRunsListResponse(document_id=document_id, runs=runs)
+
+
+@router.get(
+    "/debug/extraction-runs/{document_id}/triage",
+    response_model=ExtractionRunTriageResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get extraction triage for latest persisted run",
+    description="Return triage report for the latest persisted extraction snapshot.",
+)
+def get_debug_extraction_run_triage(document_id: str) -> ExtractionRunTriageResponse | JSONResponse:
+    if not extraction_observability_enabled():
+        return _extraction_observability_disabled_response()
+
+    triage = get_latest_extraction_run_triage(document_id)
+    if triage is None:
+        return _error_response(
+            status_code=status.HTTP_404_NOT_FOUND,
+            error_code="NOT_FOUND",
+            message="No extraction snapshots found for this document.",
+        )
+
+    return ExtractionRunTriageResponse(**triage)
 
 
 def _validate_upload(file: UploadFile) -> dict[str, Any] | None:
@@ -773,6 +789,16 @@ def _error_response(
     if details:
         payload["details"] = details
     return JSONResponse(status_code=status_code, content=payload)
+
+
+def _extraction_observability_disabled_response() -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_403_FORBIDDEN,
+        content={
+            "error": "extraction_observability_disabled",
+            "hint": "Set VET_RECORDS_EXTRACTION_OBS=1 and restart backend",
+        },
+    )
 
 
 def _log_event(

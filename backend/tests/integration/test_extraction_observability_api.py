@@ -51,14 +51,98 @@ def _snapshot_payload() -> dict[str, object]:
     }
 
 
-def test_debug_extraction_endpoints_return_404_when_disabled(test_client: TestClient) -> None:
+def _triage_snapshot_payload() -> dict[str, object]:
+    return {
+        "runId": "run-triage-1",
+        "documentId": "doc-triage-1",
+        "createdAt": "2026-02-13T20:01:00Z",
+        "schemaVersion": "v1",
+        "fields": {
+            "claim_id": {
+                "status": "missing",
+                "confidence": None,
+                "valueNormalized": None,
+                "valueRaw": None,
+                "reason": None,
+            },
+            "weight": {
+                "status": "rejected",
+                "confidence": None,
+                "valueNormalized": None,
+                "valueRaw": "cien kilos",
+                "reason": "invalid-format",
+                "rawCandidate": "cien kilos",
+                "sourceHint": "page:2",
+            },
+            "microchip_id": {
+                "status": "accepted",
+                "confidence": "mid",
+                "valueNormalized": "Maria Lopez Calle 123",
+                "valueRaw": "Maria Lopez Calle 123",
+                "reason": None,
+                "rawCandidate": "Maria Lopez Calle 123",
+                "sourceHint": "page:1",
+            },
+            "species": {
+                "status": "accepted",
+                "confidence": "low",
+                "valueNormalized": "equino",
+                "valueRaw": "equino",
+                "reason": None,
+                "rawCandidate": "equino",
+                "sourceHint": "page:1",
+            },
+            "sex": {
+                "status": "accepted",
+                "confidence": "low",
+                "valueNormalized": "desconocido",
+                "valueRaw": "desconocido",
+                "reason": None,
+                "rawCandidate": "desconocido",
+                "sourceHint": "page:1",
+            },
+            "notes": {
+                "status": "accepted",
+                "confidence": "high",
+                "valueNormalized": "A" * 90,
+                "valueRaw": "A" * 90,
+                "reason": None,
+                "rawCandidate": "A" * 90,
+                "sourceHint": "page:3",
+            },
+        },
+        "counts": {
+            "totalFields": 6,
+            "accepted": 4,
+            "rejected": 1,
+            "missing": 1,
+            "low": 2,
+            "mid": 1,
+            "high": 1,
+        },
+    }
+
+
+def test_debug_extraction_endpoints_return_forbidden_when_disabled(test_client: TestClient) -> None:
     post_response = test_client.post("/debug/extraction-runs", json=_snapshot_payload())
     get_response = test_client.get("/debug/extraction-runs/doc-1")
+    triage_response = test_client.get("/debug/extraction-runs/doc-1/triage")
 
-    assert post_response.status_code == 404
-    assert post_response.json()["error_code"] == "NOT_FOUND"
-    assert get_response.status_code == 404
-    assert get_response.json()["error_code"] == "NOT_FOUND"
+    assert post_response.status_code == 403
+    assert post_response.json() == {
+        "error": "extraction_observability_disabled",
+        "hint": "Set VET_RECORDS_EXTRACTION_OBS=1 and restart backend",
+    }
+    assert get_response.status_code == 403
+    assert get_response.json() == {
+        "error": "extraction_observability_disabled",
+        "hint": "Set VET_RECORDS_EXTRACTION_OBS=1 and restart backend",
+    }
+    assert triage_response.status_code == 403
+    assert triage_response.json() == {
+        "error": "extraction_observability_disabled",
+        "hint": "Set VET_RECORDS_EXTRACTION_OBS=1 and restart backend",
+    }
 
 
 def test_debug_extraction_endpoints_persist_and_list_when_enabled(
@@ -80,3 +164,74 @@ def test_debug_extraction_endpoints_persist_and_list_when_enabled(
     assert payload["document_id"] == "doc-1"
     assert len(payload["runs"]) == 1
     assert payload["runs"][0]["runId"] == "run-1"
+
+
+def test_debug_extraction_triage_endpoint_returns_expected_shape(
+    test_client: TestClient, monkeypatch
+) -> None:
+    monkeypatch.setenv("VET_RECORDS_EXTRACTION_OBS", "1")
+
+    post_response = test_client.post("/debug/extraction-runs", json=_triage_snapshot_payload())
+    assert post_response.status_code == 201
+
+    triage_response = test_client.get("/debug/extraction-runs/doc-triage-1/triage")
+    assert triage_response.status_code == 200
+    payload = triage_response.json()
+
+    assert payload["documentId"] == "doc-triage-1"
+    assert payload["runId"] == "run-triage-1"
+    assert payload["createdAt"] == "2026-02-13T20:01:00Z"
+    assert payload["summary"] == {
+        "accepted": 4,
+        "missing": 1,
+        "rejected": 1,
+        "low": 2,
+        "mid": 1,
+        "high": 1,
+    }
+
+    assert payload["missing"] == [
+        {
+            "field": "claim_id",
+            "value": None,
+            "reason": "missing",
+            "flags": [],
+            "rawCandidate": None,
+            "sourceHint": None,
+        }
+    ]
+
+    assert payload["rejected"] == [
+        {
+            "field": "weight",
+            "value": "cien kilos",
+            "reason": "invalid-format",
+            "flags": [],
+            "rawCandidate": "cien kilos",
+            "sourceHint": "page:2",
+        }
+    ]
+
+    suspicious_by_field = {item["field"]: item for item in payload["suspiciousAccepted"]}
+    assert "microchip_id" in suspicious_by_field
+    assert "species" in suspicious_by_field
+    assert "sex" in suspicious_by_field
+    assert "notes" in suspicious_by_field
+    assert "microchip_non_digit_characters" in suspicious_by_field["microchip_id"]["flags"]
+    assert "species_outside_allowed_set" in suspicious_by_field["species"]["flags"]
+    assert "sex_outside_allowed_set" in suspicious_by_field["sex"]["flags"]
+    assert "value_too_long" in suspicious_by_field["notes"]["flags"]
+
+
+def test_debug_extraction_triage_endpoint_returns_not_found_without_runs(
+    test_client: TestClient, monkeypatch
+) -> None:
+    monkeypatch.setenv("VET_RECORDS_EXTRACTION_OBS", "1")
+
+    triage_response = test_client.get("/debug/extraction-runs/doc-without-runs/triage")
+
+    assert triage_response.status_code == 404
+    assert triage_response.json() == {
+        "error_code": "NOT_FOUND",
+        "message": "No extraction snapshots found for this document.",
+    }

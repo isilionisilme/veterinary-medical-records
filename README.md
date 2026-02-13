@@ -106,6 +106,10 @@ Frontend (new shell):
 - `npm install`
 - `npm run dev`
 
+Local one-command startup (Windows PowerShell):
+- `./scripts/start-all.ps1`
+- This script starts backend + frontend and sets `VET_RECORDS_EXTRACTION_OBS=1` for the backend process.
+
 OpenAPI and API docs:
 - `http://localhost:8000/docs`
 

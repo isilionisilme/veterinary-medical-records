@@ -275,6 +275,8 @@ type ExtractionFieldSnapshot = {
   valueNormalized?: string;
   valueRaw?: string;
   reason?: string;
+  rawCandidate?: string;
+  sourceHint?: string;
 };
 
 type ExtractionRunSnapshotPayload = {
@@ -766,10 +768,28 @@ async function postExtractionRunSnapshot(payload: ExtractionRunSnapshotPayload):
 
   if (!response.ok) {
     const classified = classifySnapshotHttpError(response.status);
+    let backendReason: string | null = null;
+    try {
+      const payload = (await response.json()) as {
+        error?: string;
+        error_code?: string;
+        message?: string;
+        hint?: string;
+      };
+      const details = [payload.error, payload.error_code, payload.message, payload.hint]
+        .filter((value): value is string => Boolean(value && value.trim()))
+        .join(" | ");
+      backendReason = details || null;
+    } catch {
+      backendReason = null;
+    }
+
     throw new SnapshotPostError(
       classified.kind,
       classified.retryable,
-      `HTTP ${response.status} calling ${API_BASE_URL}/debug/extraction-runs`,
+      backendReason
+        ? `HTTP ${response.status} calling ${API_BASE_URL}/debug/extraction-runs (${backendReason})`
+        : `HTTP ${response.status} calling ${API_BASE_URL}/debug/extraction-runs`,
       response.status
     );
   }
@@ -2113,6 +2133,14 @@ export function App() {
     GLOBAL_SCHEMA_V0.forEach((definition) => {
       const event = latestDebugByField.get(definition.key);
       const acceptedField = bestAcceptedByField.get(definition.key);
+      const sourceHintParts: string[] = [];
+      if (typeof event?.page === "number") {
+        sourceHintParts.push(`page:${event.page}`);
+      }
+      if (acceptedField?.evidence?.snippet) {
+        sourceHintParts.push(`snippet:${acceptedField.evidence.snippet}`);
+      }
+      const sourceHint = sourceHintParts.length > 0 ? sourceHintParts.join(" | ") : undefined;
 
       if (event?.status === "accepted") {
         const tone = acceptedField ? getConfidenceTone(acceptedField.confidence) : "low";
@@ -2124,6 +2152,8 @@ export function App() {
               ? undefined
               : String(acceptedField.value)),
           valueRaw: event.raw,
+          rawCandidate: event.raw,
+          sourceHint,
         };
         return;
       }
@@ -2134,6 +2164,8 @@ export function App() {
           confidence: null,
           valueRaw: event.raw,
           reason: event.reason,
+          rawCandidate: event.raw,
+          sourceHint,
         };
         return;
       }
