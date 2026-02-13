@@ -96,3 +96,75 @@ def test_persist_snapshot_is_idempotent_per_document_and_run_id(
     assert runs[0]["fields"]["pet_name"]["status"] == "accepted"
     assert first["was_created"] is True
     assert second["was_created"] is False
+
+
+def test_build_extraction_triage_populates_missing_and_rejected_lists() -> None:
+    snapshot = {
+        "runId": "run-triage",
+        "documentId": "doc-triage",
+        "createdAt": "2026-02-13T20:05:00Z",
+        "fields": {
+            "claim_id": {"status": "missing", "confidence": None},
+            "weight": {
+                "status": "rejected",
+                "confidence": None,
+                "valueRaw": "cien kilos",
+                "reason": "invalid-format",
+                "rawCandidate": "cien kilos",
+            },
+        },
+        "counts": {"accepted": 0, "missing": 1, "rejected": 1, "low": 0, "mid": 0, "high": 0},
+    }
+
+    triage = extraction_observability.build_extraction_triage(snapshot)
+
+    assert triage["missing"][0]["field"] == "claim_id"
+    assert triage["missing"][0]["reason"] == "missing"
+    assert triage["rejected"][0]["field"] == "weight"
+    assert triage["rejected"][0]["reason"] == "invalid-format"
+    assert triage["rejected"][0]["rawCandidate"] == "cien kilos"
+
+
+def test_build_extraction_triage_flags_suspicious_accepted_fields() -> None:
+    snapshot = {
+        "runId": "run-flags",
+        "documentId": "doc-flags",
+        "createdAt": "2026-02-13T20:06:00Z",
+        "fields": {
+            "microchip_id": {
+                "status": "accepted",
+                "confidence": "mid",
+                "valueNormalized": "Maria Lopez Calle 123",
+            },
+            "weight": {
+                "status": "accepted",
+                "confidence": "mid",
+                "valueNormalized": "500 kg",
+            },
+            "species": {
+                "status": "accepted",
+                "confidence": "low",
+                "valueNormalized": "equino",
+            },
+            "sex": {
+                "status": "accepted",
+                "confidence": "low",
+                "valueNormalized": "desconocido",
+            },
+            "notes": {
+                "status": "accepted",
+                "confidence": "high",
+                "valueNormalized": "x" * 120,
+            },
+        },
+        "counts": {"accepted": 5, "missing": 0, "rejected": 0, "low": 2, "mid": 2, "high": 1},
+    }
+
+    triage = extraction_observability.build_extraction_triage(snapshot)
+    suspicious_by_field = {item["field"]: item for item in triage["suspiciousAccepted"]}
+
+    assert "microchip_non_digit_characters" in suspicious_by_field["microchip_id"]["flags"]
+    assert "weight_out_of_range" in suspicious_by_field["weight"]["flags"]
+    assert "species_outside_allowed_set" in suspicious_by_field["species"]["flags"]
+    assert "sex_outside_allowed_set" in suspicious_by_field["sex"]["flags"]
+    assert "value_too_long" in suspicious_by_field["notes"]["flags"]

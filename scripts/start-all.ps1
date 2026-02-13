@@ -263,7 +263,7 @@ try {
     Stop-PortProcess -Port 5173
     Ensure-BackendPrerequisites
     Ensure-FrontendPrerequisites
-    $backendCommand = "& '$venvPython' -m uvicorn backend.app.main:create_app --factory --reload"
+    $backendCommand = "`$env:VET_RECORDS_EXTRACTION_OBS='1'; & '$venvPython' -m uvicorn backend.app.main:create_app --factory --reload"
     $backendProcess = Start-DevConsole -WorkingDirectory $repoRoot -CommandToRun $backendCommand -WindowTitle $backendWindowTitle
     $frontendProcess = Start-DevConsole -WorkingDirectory $frontendDir -CommandToRun "npm run dev" -WindowTitle $frontendWindowTitle
 
