@@ -14,7 +14,7 @@ import { AlignLeft, Check, Download, FileText, Info, Search, X } from "lucide-re
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { ConfidenceDot } from "./components/app/ConfidenceDot";
-import { CriticalBadge } from "./components/app/CriticalBadge";
+import { CriticalBadge, CriticalIcon } from "./components/app/CriticalBadge";
 import { FieldBlock, FieldRow, RepeatableList } from "./components/app/Field";
 import { IconButton } from "./components/app/IconButton";
 import { Section, SectionHeader } from "./components/app/Section";
@@ -824,6 +824,7 @@ export function App() {
   const [selectedConfidenceBuckets, setSelectedConfidenceBuckets] = useState<ConfidenceBucket[]>([]);
   const [showOnlyCritical, setShowOnlyCritical] = useState(false);
   const [showOnlyWithValue, setShowOnlyWithValue] = useState(false);
+  const [showOnlyEmpty, setShowOnlyEmpty] = useState(false);
   const [reviewSplitRatio, setReviewSplitRatio] = useState(() => {
     if (typeof window === "undefined") {
       return DEFAULT_REVIEW_SPLIT_RATIO;
@@ -2100,15 +2101,24 @@ export function App() {
       selectedConfidence: selectedConfidenceBuckets,
       onlyCritical: showOnlyCritical,
       onlyWithValue: showOnlyWithValue,
+      onlyEmpty: showOnlyEmpty,
     }),
-    [selectedConfidenceBuckets, showOnlyCritical, showOnlyWithValue, structuredSearchTerm]
+    [
+      selectedConfidenceBuckets,
+      showOnlyCritical,
+      showOnlyWithValue,
+      showOnlyEmpty,
+      structuredSearchTerm,
+    ]
   );
+
+  const hasValueRestriction = showOnlyWithValue !== showOnlyEmpty;
 
   const hasActiveStructuredFilters =
     structuredSearchTerm.trim().length > 0 ||
     selectedConfidenceBuckets.length > 0 ||
     showOnlyCritical ||
-    showOnlyWithValue;
+    hasValueRestriction;
 
   const visibleCoreGroups = useMemo(() => {
     if (!hasActiveStructuredFilters) {
@@ -2451,6 +2461,24 @@ export function App() {
   };
 
   const renderConfidenceIndicator = (field: ReviewDisplayField, item: ReviewSelectableField) => {
+    if (item.isMissing) {
+      const emptyTooltip = field.isCritical
+        ? "Confianza: 0% · CRÍTICO · Sin dato"
+        : "Confianza: 0% · Sin dato";
+      return (
+        <span data-testid={`badge-group-${item.id}`} className="inline-flex shrink-0 items-center">
+          <Tooltip content={emptyTooltip}>
+            <span
+              data-testid={`confidence-indicator-${item.id}`}
+              tabIndex={0}
+              aria-label={emptyTooltip}
+              className="inline-block h-2.5 w-2.5 rounded-full border border-black/40 bg-white"
+            />
+          </Tooltip>
+        </span>
+      );
+    }
+
     const tone = getConfidenceTone(item.confidence);
     const tooltip = buildFieldTooltip(item, field.isCritical);
     return (
@@ -3093,16 +3121,20 @@ export function App() {
                                   </Tooltip>
                                 </ToggleGroup>
 
+                                <span aria-hidden="true" className="mx-1 h-6 w-px bg-black/20" />
+
                                 <ToggleGroup
                                   type="multiple"
                                   value={[
                                     ...(showOnlyCritical ? ["critical"] : []),
-                                    ...(showOnlyWithValue ? ["withValue"] : []),
+                                    ...(showOnlyWithValue ? ["nonEmpty"] : []),
+                                    ...(showOnlyEmpty ? ["empty"] : []),
                                   ]}
                                   disabled={reviewPanelState !== "ready"}
                                   onValueChange={(values) => {
                                     setShowOnlyCritical(values.includes("critical"));
-                                    setShowOnlyWithValue(values.includes("withValue"));
+                                    setShowOnlyWithValue(values.includes("nonEmpty"));
+                                    setShowOnlyEmpty(values.includes("empty"));
                                   }}
                                   aria-label="Filtros adicionales"
                                 >
@@ -3110,18 +3142,60 @@ export function App() {
                                     <ToggleGroupItem
                                       value="critical"
                                       aria-label="Mostrar solo campos críticos"
-                                      className={showOnlyCritical ? "border-accent bg-accent text-accentForeground ring-2 ring-accent/30" : ""}
+                                      className={`h-7 w-7 rounded-full p-0 ${
+                                        showOnlyCritical
+                                          ? "border-2 border-accent bg-accentSoft/35 ring-2 ring-accent/35"
+                                          : ""
+                                      }`}
                                     >
-                                      Críticos
+                                      <span className="relative inline-flex h-3.5 w-3.5 items-center justify-center">
+                                        <CriticalIcon compact />
+                                        {showOnlyCritical && (
+                                          <Check size={10} className="absolute text-white" aria-hidden="true" />
+                                        )}
+                                      </span>
                                     </ToggleGroupItem>
                                   </Tooltip>
-                                  <Tooltip content="No vacíos: oculta campos vacíos o sin dato.">
+                                  <Tooltip content="No vacíos: muestra solo campos con valor.">
                                     <ToggleGroupItem
-                                      value="withValue"
-                                      aria-label="Mostrar solo campos con valor"
-                                      className={showOnlyWithValue ? "border-accent bg-accent text-accentForeground ring-2 ring-accent/30" : ""}
+                                      value="nonEmpty"
+                                      aria-label="Mostrar solo campos no vacíos"
+                                      className={`h-7 w-7 rounded-full p-0 ${
+                                        showOnlyWithValue
+                                          ? "border-2 border-accent bg-accentSoft/35 ring-2 ring-accent/35"
+                                          : ""
+                                      }`}
                                     >
-                                      No vacíos
+                                      <span className="relative inline-flex h-3.5 w-3.5 items-center justify-center">
+                                        <span
+                                          aria-hidden="true"
+                                          className="h-3 w-3 rounded-full bg-black ring-1 ring-black/20"
+                                        />
+                                        {showOnlyWithValue && (
+                                          <Check size={10} className="absolute text-white" aria-hidden="true" />
+                                        )}
+                                      </span>
+                                    </ToggleGroupItem>
+                                  </Tooltip>
+                                  <Tooltip content="Vacíos: muestra solo campos sin dato.">
+                                    <ToggleGroupItem
+                                      value="empty"
+                                      aria-label="Mostrar solo campos vacíos"
+                                      className={`h-7 w-7 rounded-full p-0 ${
+                                        showOnlyEmpty
+                                          ? "border-2 border-accent bg-accentSoft/35 ring-2 ring-accent/35"
+                                          : ""
+                                      }`}
+                                    >
+                                      <span className="relative inline-flex h-3.5 w-3.5 items-center justify-center">
+                                        <span
+                                          aria-hidden="true"
+                                          className="h-3 w-3 rounded-full border border-black/40 bg-white"
+                                        />
+                                        {showOnlyEmpty && (
+                                          <Check size={10} className="absolute text-text" aria-hidden="true" />
+                                        )}
+                                      </span>
                                     </ToggleGroupItem>
                                   </Tooltip>
                                 </ToggleGroup>
