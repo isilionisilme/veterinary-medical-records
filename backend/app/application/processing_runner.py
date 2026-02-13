@@ -39,6 +39,9 @@ PROCESSING_TICK_SECONDS = 0.5
 PROCESSING_TIMEOUT_SECONDS = 120.0
 MAX_RUNS_PER_TICK = 10
 PDF_EXTRACTOR_FORCE_ENV = "PDF_EXTRACTOR_FORCE"
+INTERPRETATION_DEBUG_INCLUDE_CANDIDATES_ENV = (
+    "VET_RECORDS_INCLUDE_INTERPRETATION_CANDIDATES"
+)
 
 
 def _default_now_iso() -> str:
@@ -361,28 +364,31 @@ def _build_interpretation_artifact(
     *, document_id: str, run_id: str, raw_text: str
 ) -> dict[str, object]:
     compact_text = _WHITESPACE_PATTERN.sub(" ", raw_text).strip()
-    if not compact_text:
-        raise InterpretationBuildError(
-            error_code="INTERPRETATION_EMPTY_MODEL_OUTPUT",
-            details={"reason": "Raw text is empty after normalization."},
-        )
+    warning_codes: list[str] = []
+    candidate_bundle: dict[str, list[dict[str, object]]] = {}
 
-    candidate_bundle = _mine_interpretation_candidates(raw_text)
-    canonical_values, canonical_evidence = _map_candidates_to_global_schema(
-        candidate_bundle
-    )
-    normalized_values = normalize_global_schema_v0(canonical_values)
-    validation_errors = validate_global_schema_v0_shape(normalized_values)
-    if validation_errors:
-        raise InterpretationBuildError(
-            error_code="INTERPRETATION_VALIDATION_FAILED",
-            details={"errors": validation_errors},
+    if compact_text:
+        candidate_bundle = _mine_interpretation_candidates(raw_text)
+        canonical_values, canonical_evidence = _map_candidates_to_global_schema(
+            candidate_bundle
         )
+        normalized_values = normalize_global_schema_v0(canonical_values)
+        validation_errors = validate_global_schema_v0_shape(normalized_values)
+        if validation_errors:
+            raise InterpretationBuildError(
+                error_code="INTERPRETATION_VALIDATION_FAILED",
+                details={"errors": validation_errors},
+            )
 
-    fields = _build_structured_fields_from_global_schema(
-        normalized_values=normalized_values,
-        evidence_map=canonical_evidence,
-    )
+        fields = _build_structured_fields_from_global_schema(
+            normalized_values=normalized_values,
+            evidence_map=canonical_evidence,
+        )
+    else:
+        normalized_values = normalize_global_schema_v0(None)
+        fields = []
+        warning_codes.append("EMPTY_RAW_TEXT")
+
     populated_keys = [
         key
         for key in GLOBAL_SCHEMA_V0_KEYS
@@ -403,18 +409,26 @@ def _build_interpretation_artifact(
         "created_at": now_iso,
         "fields": fields,
         "global_schema_v0": normalized_values,
-        "candidate_bundle": candidate_bundle,
         "summary": {
             "total_keys": len(GLOBAL_SCHEMA_V0_KEYS),
             "populated_keys": len(populated_keys),
             "keys_present": populated_keys,
+            "warning_codes": warning_codes,
         },
     }
+    if _should_include_interpretation_candidates():
+        data["candidate_bundle"] = candidate_bundle
+
     return {
         "interpretation_id": str(uuid4()),
         "version_number": 1,
         "data": data,
     }
+
+
+def _should_include_interpretation_candidates() -> bool:
+    raw = os.getenv(INTERPRETATION_DEBUG_INCLUDE_CANDIDATES_ENV, "").strip().lower()
+    return raw in {"1", "true", "yes", "on"}
 
 
 def _mine_interpretation_candidates(
