@@ -168,3 +168,39 @@ def test_build_extraction_triage_flags_suspicious_accepted_fields() -> None:
     assert "species_outside_allowed_set" in suspicious_by_field["species"]["flags"]
     assert "sex_outside_allowed_set" in suspicious_by_field["sex"]["flags"]
     assert "value_too_long" in suspicious_by_field["notes"]["flags"]
+
+
+def test_build_extraction_triage_keeps_top_candidates_shape() -> None:
+    snapshot = {
+        "runId": "run-top-candidates",
+        "documentId": "doc-top-candidates",
+        "createdAt": "2026-02-13T20:06:00Z",
+        "fields": {
+            "microchip_id": {
+                "status": "rejected",
+                "confidence": None,
+                "valueRaw": "00023035139 NHC",
+                "reason": "non-digit",
+                "rawCandidate": "00023035139 NHC",
+                "topCandidates": [
+                    {"value": "00023035139 NHC", "confidence": 0.86},
+                    {"value": "NHC 2.c", "confidence": 0.42},
+                ],
+            },
+            "owner_id": {
+                "status": "missing",
+                "confidence": None,
+                "topCandidates": [
+                    {"value": "DNI 12345678A", "confidence": 0.51},
+                ],
+            },
+        },
+        "counts": {"accepted": 0, "missing": 1, "rejected": 1, "low": 0, "mid": 0, "high": 0},
+    }
+
+    triage = extraction_observability.build_extraction_triage(snapshot)
+    rejected_item = triage["rejected"][0]
+    missing_item = triage["missing"][0]
+
+    assert rejected_item["topCandidates"][0]["value"] == "00023035139 NHC"
+    assert missing_item["topCandidates"][0]["value"] == "DNI 12345678A"

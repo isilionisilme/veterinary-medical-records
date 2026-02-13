@@ -161,6 +161,10 @@ class ExtractionFieldSnapshotRequest(BaseModel):
     sourceHint: str | None = Field(
         None, description="Optional source location hint for the raw candidate."
     )
+    topCandidates: list[dict[str, object]] | None = Field(
+        None,
+        description="Optional top candidate list (max 3) with value/confidence/source hints.",
+    )
 
 
 class ExtractionCountsSnapshotRequest(BaseModel):
@@ -220,3 +224,22 @@ class ExtractionRunTriageResponse(BaseModel):
     missing: list[ExtractionTriageItemResponse]
     rejected: list[ExtractionTriageItemResponse]
     suspiciousAccepted: list[ExtractionTriageItemResponse]
+
+
+class ExtractionRunFieldSummaryResponse(BaseModel):
+    field: str
+    missing_count: int
+    rejected_count: int
+    accepted_count: int
+    suspicious_count: int
+    top1_sample: str | None = None
+    avg_conf: float | None = None
+
+
+class ExtractionRunsAggregateSummaryResponse(BaseModel):
+    document_id: str
+    total_runs: int
+    considered_runs: int
+    fields: list[ExtractionRunFieldSummaryResponse]
+    most_missing_fields: list[ExtractionRunFieldSummaryResponse]
+    most_rejected_fields: list[ExtractionRunFieldSummaryResponse]

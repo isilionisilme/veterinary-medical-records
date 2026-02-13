@@ -6,6 +6,7 @@ import json
 import logging
 import re
 import unicodedata
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
@@ -132,6 +133,67 @@ def _suspicious_accepted_flags(field_key: str, value: str | None) -> list[str]:
     return flags
 
 
+def _coerce_confidence(value: Any) -> float | None:
+    if value is None:
+        return None
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return None
+    if numeric < 0:
+        return 0.0
+    if numeric > 1:
+        return 1.0
+    return numeric
+
+
+def _extract_top_candidates(raw_payload: dict[str, Any]) -> list[dict[str, Any]]:
+    raw_candidates = raw_payload.get("topCandidates")
+    candidates: list[dict[str, Any]] = []
+
+    if isinstance(raw_candidates, list):
+        for item in raw_candidates[:3]:
+            if not isinstance(item, dict):
+                continue
+            value = _as_text(item.get("value"))
+            if not value:
+                continue
+            candidates.append(
+                {
+                    "value": value,
+                    "confidence": _coerce_confidence(item.get("confidence")),
+                    "sourceHint": _as_text(item.get("sourceHint")),
+                }
+            )
+
+    if candidates:
+        return candidates
+
+    fallback_value = (
+        _as_text(raw_payload.get("rawCandidate"))
+        or _as_text(raw_payload.get("valueRaw"))
+        or _as_text(raw_payload.get("valueNormalized"))
+    )
+    if fallback_value:
+        return [{"value": fallback_value, "confidence": None, "sourceHint": None}]
+
+    return []
+
+
+def _format_top_candidate_for_log(item: dict[str, Any] | None) -> str:
+    if not isinstance(item, dict):
+        return "top1=<none>"
+
+    value = _preview(_as_text(item.get("value")))
+    if not value:
+        return "top1=<none>"
+
+    confidence = _coerce_confidence(item.get("confidence"))
+    if confidence is None:
+        return f"top1={value!r} (conf=n/a)"
+    return f"top1={value!r} (conf={confidence:.2f})"
+
+
 def build_extraction_triage(snapshot: dict[str, Any]) -> dict[str, Any]:
     fields = snapshot.get("fields") if isinstance(snapshot.get("fields"), dict) else {}
     counts = snapshot.get("counts") if isinstance(snapshot.get("counts"), dict) else {}
@@ -150,7 +212,10 @@ def build_extraction_triage(snapshot: dict[str, Any]) -> dict[str, Any]:
         value_raw = _as_text(raw_payload.get("valueRaw"))
         raw_candidate = _as_text(raw_payload.get("rawCandidate"))
         source_hint = _as_text(raw_payload.get("sourceHint"))
-        value_for_triage = value_normalized or value_raw or raw_candidate
+        top_candidates = _extract_top_candidates(raw_payload)
+        top1 = top_candidates[0] if top_candidates else None
+        top1_value = _as_text(top1.get("value")) if isinstance(top1, dict) else None
+        value_for_triage = value_normalized or value_raw or raw_candidate or top1_value
 
         if status == "missing":
             missing.append(
@@ -161,6 +226,7 @@ def build_extraction_triage(snapshot: dict[str, Any]) -> dict[str, Any]:
                     "flags": [],
                     "rawCandidate": raw_candidate,
                     "sourceHint": source_hint,
+                    "topCandidates": top_candidates,
                 }
             )
             continue
@@ -174,6 +240,7 @@ def build_extraction_triage(snapshot: dict[str, Any]) -> dict[str, Any]:
                     "flags": [],
                     "rawCandidate": raw_candidate,
                     "sourceHint": source_hint,
+                    "topCandidates": top_candidates,
                 }
             )
             continue
@@ -189,6 +256,7 @@ def build_extraction_triage(snapshot: dict[str, Any]) -> dict[str, Any]:
                         "flags": flags,
                         "rawCandidate": raw_candidate,
                         "sourceHint": source_hint,
+                        "topCandidates": top_candidates,
                     }
                 )
 
@@ -232,9 +300,25 @@ def _log_triage_report(document_id: str, triage: dict[str, Any]) -> None:
             f"high={int(summary.get('high', 0) or 0)}"
         ),
         "MISSING:",
-        "- none" if not missing else f"- {', '.join(str(item.get('field')) for item in missing)}",
         "REJECTED:",
     ]
+
+    if not missing:
+        lines.insert(len(lines) - 1, "- none")
+    else:
+        missing_lines: list[str] = []
+        for item in missing:
+            if not isinstance(item, dict):
+                continue
+            field = item.get("field")
+            candidates = (
+                item.get("topCandidates")
+                if isinstance(item.get("topCandidates"), list)
+                else []
+            )
+            top1 = candidates[0] if candidates else None
+            missing_lines.append(f"- {field}: {_format_top_candidate_for_log(top1)}")
+        lines[len(lines) - 1:len(lines) - 1] = missing_lines
 
     if not rejected:
         lines.append("- none")
@@ -245,7 +329,13 @@ def _log_triage_report(document_id: str, triage: dict[str, Any]) -> None:
             field = item.get("field")
             reason = item.get("reason")
             raw_candidate = _preview(_as_text(item.get("rawCandidate")))
-            line = f"- {field}: reason={reason}"
+            candidates = (
+                item.get("topCandidates")
+                if isinstance(item.get("topCandidates"), list)
+                else []
+            )
+            top1 = candidates[0] if candidates else None
+            line = f"- {field}: reason={reason} {_format_top_candidate_for_log(top1)}"
             if raw_candidate:
                 line += f" rawCandidate={raw_candidate!r}"
             lines.append(line)
@@ -422,3 +512,187 @@ def get_latest_extraction_run_triage(document_id: str) -> dict[str, Any] | None:
         return None
     latest = runs[-1]
     return build_extraction_triage(latest)
+
+
+def _truncate_text(value: str | None, *, limit: int = 80) -> str | None:
+    if value is None:
+        return None
+    compact = value.strip()
+    if not compact:
+        return None
+    if len(compact) <= limit:
+        return compact
+    return f"{compact[: limit - 1].rstrip()}…"
+
+
+def summarize_extraction_runs(document_id: str, *, limit: int = 20) -> dict[str, Any] | None:
+    runs = get_extraction_runs(document_id)
+    if not runs:
+        return None
+
+    selected_runs = runs[-max(1, limit):]
+    stats: dict[str, dict[str, Any]] = defaultdict(
+        lambda: {
+            "missing_count": 0,
+            "rejected_count": 0,
+            "accepted_count": 0,
+            "suspicious_count": 0,
+            "top1_counter": Counter(),
+            "top1_confidences": [],
+        }
+    )
+
+    for run in selected_runs:
+        fields = run.get("fields") if isinstance(run.get("fields"), dict) else {}
+        for field_key, raw_payload in fields.items():
+            if not isinstance(raw_payload, dict):
+                continue
+
+            status = str(raw_payload.get("status", "")).strip().lower()
+            field_stats = stats[str(field_key)]
+            if status == "missing":
+                field_stats["missing_count"] += 1
+            elif status == "rejected":
+                field_stats["rejected_count"] += 1
+            elif status == "accepted":
+                field_stats["accepted_count"] += 1
+
+            top_candidates = _extract_top_candidates(raw_payload)
+            top1 = top_candidates[0] if top_candidates else None
+            top1_value = _as_text(top1.get("value")) if isinstance(top1, dict) else None
+            if status in {"missing", "rejected"} and top1_value:
+                field_stats["top1_counter"][top1_value] += 1
+                top1_conf = (
+                    _coerce_confidence(top1.get("confidence"))
+                    if isinstance(top1, dict)
+                    else None
+                )
+                if top1_conf is not None:
+                    field_stats["top1_confidences"].append(top1_conf)
+
+            if status == "accepted":
+                value_for_flags = (
+                    _as_text(raw_payload.get("valueNormalized"))
+                    or _as_text(raw_payload.get("valueRaw"))
+                    or _as_text(raw_payload.get("rawCandidate"))
+                    or top1_value
+                )
+                if _suspicious_accepted_flags(str(field_key), value_for_flags):
+                    field_stats["suspicious_count"] += 1
+
+    field_rows: list[dict[str, Any]] = []
+    for field, field_stats in stats.items():
+        top1_sample = None
+        if field_stats["top1_counter"]:
+            top1_sample = field_stats["top1_counter"].most_common(1)[0][0]
+
+        confidences = field_stats["top1_confidences"]
+        avg_conf = None
+        if confidences:
+            avg_conf = round(sum(confidences) / len(confidences), 2)
+
+        field_rows.append(
+            {
+                "field": field,
+                "missing_count": int(field_stats["missing_count"]),
+                "rejected_count": int(field_stats["rejected_count"]),
+                "accepted_count": int(field_stats["accepted_count"]),
+                "suspicious_count": int(field_stats["suspicious_count"]),
+                "top1_sample": _truncate_text(top1_sample),
+                "avg_conf": avg_conf,
+            }
+        )
+
+    field_rows.sort(
+        key=lambda item: (
+            int(item.get("missing_count", 0) or 0),
+            int(item.get("rejected_count", 0) or 0),
+            int(item.get("suspicious_count", 0) or 0),
+            str(item.get("field", "")),
+        ),
+        reverse=True,
+    )
+
+    most_missing = sorted(
+        [item for item in field_rows if int(item.get("missing_count", 0) or 0) > 0],
+        key=lambda item: (
+            int(item.get("missing_count", 0) or 0),
+            int(item.get("rejected_count", 0) or 0),
+            str(item.get("field", "")),
+        ),
+        reverse=True,
+    )
+    most_rejected = sorted(
+        [item for item in field_rows if int(item.get("rejected_count", 0) or 0) > 0],
+        key=lambda item: (
+            int(item.get("rejected_count", 0) or 0),
+            int(item.get("missing_count", 0) or 0),
+            str(item.get("field", "")),
+        ),
+        reverse=True,
+    )
+
+    summary = {
+        "document_id": document_id,
+        "total_runs": len(runs),
+        "considered_runs": len(selected_runs),
+        "fields": field_rows,
+        "most_missing_fields": most_missing[:10],
+        "most_rejected_fields": most_rejected[:10],
+    }
+    _log_extraction_runs_summary(summary)
+    return summary
+
+
+def _log_extraction_runs_summary(summary: dict[str, Any]) -> None:
+    document_id = _as_text(summary.get("document_id")) or ""
+    considered_runs = int(summary.get("considered_runs", 0) or 0)
+    fields = summary.get("fields") if isinstance(summary.get("fields"), list) else []
+    most_missing = (
+        summary.get("most_missing_fields")
+        if isinstance(summary.get("most_missing_fields"), list)
+        else []
+    )
+    most_rejected = (
+        summary.get("most_rejected_fields")
+        if isinstance(summary.get("most_rejected_fields"), list)
+        else []
+    )
+
+    lines = [
+        (
+            "[extraction-observability] "
+            f"document={document_id} runs_summary considered_runs={considered_runs} "
+            f"tracked_fields={len(fields)}"
+        ),
+        "MOST_MISSING:",
+    ]
+
+    if not most_missing:
+        lines.append("- none")
+    else:
+        for item in most_missing[:5]:
+            if not isinstance(item, dict):
+                continue
+            lines.append(
+                "- "
+                f"{item.get('field')}: missing={int(item.get('missing_count', 0) or 0)} "
+                f"rejected={int(item.get('rejected_count', 0) or 0)} "
+                f"top1={item.get('top1_sample')!r} avg_conf={item.get('avg_conf')}"
+            )
+
+    lines.append("MOST_REJECTED:")
+    if not most_rejected:
+        lines.append("- none")
+    else:
+        for item in most_rejected[:5]:
+            if not isinstance(item, dict):
+                continue
+            lines.append(
+                "- "
+                f"{item.get('field')}: rejected={int(item.get('rejected_count', 0) or 0)} "
+                f"missing={int(item.get('missing_count', 0) or 0)} "
+                f"top1={item.get('top1_sample')!r} avg_conf={item.get('avg_conf')}"
+            )
+
+    _emit_info("\n".join(lines))

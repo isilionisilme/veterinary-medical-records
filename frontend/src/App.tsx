@@ -277,6 +277,11 @@ type ExtractionFieldSnapshot = {
   reason?: string;
   rawCandidate?: string;
   sourceHint?: string;
+  topCandidates?: Array<{
+    value: string;
+    confidence: number | null;
+    sourceHint?: string;
+  }>;
 };
 
 type ExtractionRunSnapshotPayload = {
@@ -2129,6 +2134,56 @@ export function App() {
       }
     });
 
+    const topCandidatesByField = new Map<
+      string,
+      Array<{
+        value: string;
+        confidence: number | null;
+        sourceHint?: string;
+      }>
+    >();
+    const candidateDedupByField = new Map<string, Set<string>>();
+
+    extractedReviewFields.forEach((field) => {
+      const rawValue =
+        field.value === null || field.value === undefined ? "" : String(field.value).trim();
+      if (!rawValue) {
+        return;
+      }
+
+      const confidence = clampConfidence(field.confidence);
+      const sourceHintParts: string[] = [];
+      if (typeof field.evidence?.page === "number") {
+        sourceHintParts.push(`page:${field.evidence.page}`);
+      }
+      if (field.evidence?.snippet) {
+        sourceHintParts.push(`snippet:${field.evidence.snippet}`);
+      }
+
+      const candidate = {
+        value: rawValue,
+        confidence,
+        sourceHint: sourceHintParts.length > 0 ? sourceHintParts.join(" | ") : undefined,
+      };
+
+      const dedupKey = rawValue.toLowerCase();
+      const knownValues = candidateDedupByField.get(field.key) ?? new Set<string>();
+      if (knownValues.has(dedupKey)) {
+        return;
+      }
+      knownValues.add(dedupKey);
+      candidateDedupByField.set(field.key, knownValues);
+
+      const current = topCandidatesByField.get(field.key) ?? [];
+      current.push(candidate);
+      current.sort((left, right) => {
+        const leftConfidence = left.confidence ?? 0;
+        const rightConfidence = right.confidence ?? 0;
+        return rightConfidence - leftConfidence;
+      });
+      topCandidatesByField.set(field.key, current.slice(0, 3));
+    });
+
     const fields: Record<string, ExtractionFieldSnapshot> = {};
     GLOBAL_SCHEMA_V0.forEach((definition) => {
       const event = latestDebugByField.get(definition.key);
@@ -2141,6 +2196,7 @@ export function App() {
         sourceHintParts.push(`snippet:${acceptedField.evidence.snippet}`);
       }
       const sourceHint = sourceHintParts.length > 0 ? sourceHintParts.join(" | ") : undefined;
+      const topCandidates = topCandidatesByField.get(definition.key) ?? [];
 
       if (event?.status === "accepted") {
         const tone = acceptedField ? getConfidenceTone(acceptedField.confidence) : "low";
@@ -2154,6 +2210,7 @@ export function App() {
           valueRaw: event.raw,
           rawCandidate: event.raw,
           sourceHint,
+          topCandidates,
         };
         return;
       }
@@ -2166,6 +2223,7 @@ export function App() {
           reason: event.reason,
           rawCandidate: event.raw,
           sourceHint,
+          topCandidates,
         };
         return;
       }
@@ -2173,6 +2231,7 @@ export function App() {
       fields[definition.key] = {
         status: "missing",
         confidence: null,
+        topCandidates,
       };
     });
 
