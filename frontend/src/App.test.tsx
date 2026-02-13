@@ -1526,6 +1526,26 @@ describe("App upload and list flow", () => {
     expect(within(medicationCard as HTMLElement).getByText("Sin elementos")).toBeInTheDocument();
   });
 
+  it("uses empty indicator for missing fields and keeps low-confidence filter scoped to non-empty values", async () => {
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+
+    await screen.findByText("Identificacion del caso");
+
+    const panel = screen.getByTestId("right-panel-scroll");
+    const missingIndicator = within(panel).getByTestId("confidence-indicator-core:claim_id");
+    expect(missingIndicator).toHaveAttribute("aria-label", expect.stringMatching(/Sin dato/i));
+    expect(missingIndicator.className).toContain("bg-white");
+
+    fireEvent.click(screen.getByRole("button", { name: "Baja" }));
+    expect(within(screen.getByTestId("right-panel-scroll")).queryByText("ID de reclamacion")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Baja" }));
+    fireEvent.click(screen.getByRole("button", { name: "Mostrar solo campos vacíos" }));
+    expect(within(screen.getByTestId("right-panel-scroll")).getByText("ID de reclamacion")).toBeInTheDocument();
+  });
+
   it("falls back to visit date when document date is missing", async () => {
     renderApp();
 

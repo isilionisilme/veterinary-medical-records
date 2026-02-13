@@ -19,6 +19,12 @@ describe("validateFieldValue", () => {
     expect(result).toEqual({ ok: true, normalized: "7.2 kg" });
   });
 
+  it("rejects weight values without explicit unit", () => {
+    const result = validateFieldValue("weight", "7.2");
+    expect(result.ok).toBe(false);
+    expect(result.reason).toBe("invalid-weight");
+  });
+
   it("normalizes date values to ISO", () => {
     const result = validateFieldValue("visit_date", "7/2/2026");
     expect(result).toEqual({ ok: true, normalized: "2026-02-07" });

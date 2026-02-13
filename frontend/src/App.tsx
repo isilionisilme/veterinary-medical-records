@@ -30,6 +30,7 @@ import { ToggleGroup, ToggleGroupItem } from "./components/ui/toggle-group";
 import { Tooltip } from "./components/ui/tooltip";
 import { useSourcePanelState } from "./hooks/useSourcePanelState";
 import {
+  isExtractionDebugEnabled,
   logExtractionDebugEvent,
   type ExtractionDebugEvent,
 } from "./extraction/extractionDebug";
@@ -267,6 +268,31 @@ type ActionFeedback = {
 };
 
 type ConnectivityToast = Record<string, never>;
+
+type ExtractionFieldSnapshot = {
+  status: "missing" | "rejected" | "accepted";
+  confidence: "low" | "mid" | "high" | null;
+  valueNormalized?: string;
+  valueRaw?: string;
+  reason?: string;
+};
+
+type ExtractionRunSnapshotPayload = {
+  runId: string;
+  documentId: string;
+  createdAt: string;
+  schemaVersion: string;
+  fields: Record<string, ExtractionFieldSnapshot>;
+  counts: {
+    totalFields: number;
+    accepted: number;
+    rejected: number;
+    missing: number;
+    low: number;
+    mid: number;
+    high: number;
+  };
+};
 
 class UiError extends Error {
   readonly userMessage: string;
@@ -626,6 +652,16 @@ async function uploadDocument(file: File): Promise<DocumentUploadResponse> {
   return response.json();
 }
 
+async function postExtractionRunSnapshot(payload: ExtractionRunSnapshotPayload): Promise<void> {
+  await fetch(`${API_BASE_URL}/debug/extraction-runs`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+}
+
 async function copyTextToClipboard(text: string): Promise<void> {
   if (!text) {
     throw new UiError("No hay texto disponible para copiar.");
@@ -860,6 +896,9 @@ export function App() {
     containerWidth: number;
   } | null>(null);
   const reviewSplitRatioRef = useRef(reviewSplitRatio);
+  const lastExtractionDebugDocIdRef = useRef<string | null>(null);
+  const loggedExtractionDebugEventKeysRef = useRef<Set<string>>(new Set());
+  const postedObservabilityRunKeysRef = useRef<Set<string>>(new Set());
   const viewerDragDepthRef = useRef(0);
   const sidebarUploadDragDepthRef = useRef(0);
   const suppressDocsSidebarHoverUntilRef = useRef(0);
@@ -1844,9 +1883,10 @@ export function App() {
     [documentReview.data?.active_interpretation.data.fields]
   );
 
-  const validatedReviewFields = useMemo(() => {
+  const validationResult = useMemo(() => {
     const fieldsByKey = new Map<string, number>();
     const acceptedFields: ReviewField[] = [];
+    const debugEvents: ExtractionDebugEvent[] = [];
     const documentId = documentReview.data?.active_interpretation.data.document_id;
 
     extractedReviewFields.forEach((field) => {
@@ -1858,14 +1898,14 @@ export function App() {
       const validation = validateFieldValue(field.key, rawValue);
 
       if (!validation.ok) {
-        logExtractionDebugEvent({
+        debugEvents.push({
           field: field.key,
           status: "rejected",
           raw: rawValue,
           reason: validation.reason,
           docId: documentId,
           page: field.evidence?.page,
-        } satisfies ExtractionDebugEvent);
+        });
         return;
       }
 
@@ -1875,14 +1915,14 @@ export function App() {
         value: normalizedValue,
       });
 
-      logExtractionDebugEvent({
+      debugEvents.push({
         field: field.key,
         status: "accepted",
         raw: rawValue,
         normalized: normalizedValue,
         docId: documentId,
         page: field.evidence?.page,
-      } satisfies ExtractionDebugEvent);
+      });
     });
 
     GLOBAL_SCHEMA_V0.forEach((definition) => {
@@ -1890,15 +1930,143 @@ export function App() {
         return;
       }
 
-      logExtractionDebugEvent({
+      debugEvents.push({
         field: definition.key,
         status: "missing",
         docId: documentId,
-      } satisfies ExtractionDebugEvent);
+      });
     });
 
-    return acceptedFields;
+    return {
+      acceptedFields,
+      debugEvents,
+    };
   }, [documentReview.data?.active_interpretation.data.document_id, extractedReviewFields]);
+
+  useEffect(() => {
+    const documentId = documentReview.data?.active_interpretation.data.document_id ?? null;
+    if (lastExtractionDebugDocIdRef.current !== documentId) {
+      loggedExtractionDebugEventKeysRef.current.clear();
+      lastExtractionDebugDocIdRef.current = documentId;
+    }
+
+    validationResult.debugEvents.forEach((event) => {
+      const eventKey = [
+        event.docId ?? "",
+        event.field,
+        event.status,
+        event.raw ?? "",
+        event.normalized ?? "",
+        event.reason ?? "",
+        event.page ?? "",
+      ].join("|");
+      if (loggedExtractionDebugEventKeysRef.current.has(eventKey)) {
+        return;
+      }
+      loggedExtractionDebugEventKeysRef.current.add(eventKey);
+      logExtractionDebugEvent(event);
+    });
+  }, [documentReview.data?.active_interpretation.data.document_id, validationResult.debugEvents]);
+
+  const validatedReviewFields = validationResult.acceptedFields;
+
+  useEffect(() => {
+    if (!isExtractionDebugEnabled()) {
+      return;
+    }
+
+    const documentId = documentReview.data?.active_interpretation.data.document_id;
+    const runId = documentReview.data?.latest_completed_run.run_id;
+    if (!documentId || !runId) {
+      return;
+    }
+
+    const runKey = `${documentId}|${runId}`;
+    if (postedObservabilityRunKeysRef.current.has(runKey)) {
+      return;
+    }
+
+    const latestDebugByField = new Map<string, ExtractionDebugEvent>();
+    validationResult.debugEvents.forEach((event) => {
+      latestDebugByField.set(event.field, event);
+    });
+
+    const bestAcceptedByField = new Map<string, ReviewField>();
+    validatedReviewFields.forEach((field) => {
+      const current = bestAcceptedByField.get(field.key);
+      if (!current || clampConfidence(field.confidence) > clampConfidence(current.confidence)) {
+        bestAcceptedByField.set(field.key, field);
+      }
+    });
+
+    const fields: Record<string, ExtractionFieldSnapshot> = {};
+    GLOBAL_SCHEMA_V0.forEach((definition) => {
+      const event = latestDebugByField.get(definition.key);
+      const acceptedField = bestAcceptedByField.get(definition.key);
+
+      if (event?.status === "accepted") {
+        const tone = acceptedField ? getConfidenceTone(acceptedField.confidence) : "low";
+        fields[definition.key] = {
+          status: "accepted",
+          confidence: tone === "med" ? "mid" : tone,
+          valueNormalized:
+            event.normalized ?? (acceptedField?.value === null || acceptedField?.value === undefined
+              ? undefined
+              : String(acceptedField.value)),
+          valueRaw: event.raw,
+        };
+        return;
+      }
+
+      if (event?.status === "rejected") {
+        fields[definition.key] = {
+          status: "rejected",
+          confidence: null,
+          valueRaw: event.raw,
+          reason: event.reason,
+        };
+        return;
+      }
+
+      fields[definition.key] = {
+        status: "missing",
+        confidence: null,
+      };
+    });
+
+    const allFieldSnapshots = Object.values(fields);
+    const accepted = allFieldSnapshots.filter((field) => field.status === "accepted");
+    const rejected = allFieldSnapshots.filter((field) => field.status === "rejected");
+    const missing = allFieldSnapshots.filter((field) => field.status === "missing");
+
+    const payload: ExtractionRunSnapshotPayload = {
+      runId,
+      documentId,
+      createdAt: new Date().toISOString(),
+      schemaVersion: "v1",
+      fields,
+      counts: {
+        totalFields: GLOBAL_SCHEMA_V0.length,
+        accepted: accepted.length,
+        rejected: rejected.length,
+        missing: missing.length,
+        low: accepted.filter((field) => field.confidence === "low").length,
+        mid: accepted.filter((field) => field.confidence === "mid").length,
+        high: accepted.filter((field) => field.confidence === "high").length,
+      },
+    };
+
+    postedObservabilityRunKeysRef.current.add(runKey);
+    void postExtractionRunSnapshot(payload).catch((error) => {
+      postedObservabilityRunKeysRef.current.delete(runKey);
+      console.warn("[extraction-observability] failed to persist snapshot", error);
+    });
+  }, [
+    documentReview.data?.active_interpretation.data.document_id,
+    documentReview.data?.latest_completed_run.run_id,
+    validatedReviewFields,
+    validationResult.debugEvents,
+  ]);
 
   const matchesByKey = useMemo(() => {
     const matches = new Map<string, ReviewField[]>();

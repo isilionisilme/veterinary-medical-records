@@ -55,7 +55,7 @@ function validateWeight(value: string): FieldValidationResult {
     return { ok: false, reason: "empty" };
   }
 
-  const match = compact.match(/(\d+(?:[.,]\d+)?)\s*(?:kg)?\b/i);
+  const match = compact.match(/^(\d+(?:[.,]\d+)?)\s*(kg|kgs)\s*$/i);
   if (!match) {
     return { ok: false, reason: "invalid-weight" };
   }
