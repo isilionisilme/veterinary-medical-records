@@ -20,7 +20,7 @@ This folder tracks the extraction program using an evidence-first, one-field-per
 
 ## Anchor policy (required per entry)
 - Golden iteration entries must include: field, commit hash, branch, test command.
-- Add PR link when available; otherwise use `TODO(PR: pending)`.
+- Add PR link when available; if a verified direct commit has no PR, use `N/A (direct commit, no PR)`.
 - Run diagnostics must include `document_id`, `run_id`, and endpoint(s) queried.
 - Keep detailed history in `fields/*.md`; keep `INDEX.md` concise and pointer-oriented.
 
