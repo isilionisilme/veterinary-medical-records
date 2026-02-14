@@ -48,6 +48,31 @@ PDF_EXTRACTOR_FORCE_ENV = "PDF_EXTRACTOR_FORCE"
 INTERPRETATION_DEBUG_INCLUDE_CANDIDATES_ENV = (
     "VET_RECORDS_INCLUDE_INTERPRETATION_CANDIDATES"
 )
+COVERAGE_CONFIDENCE_LABEL = 0.66
+COVERAGE_CONFIDENCE_FALLBACK = 0.50
+MVP_COVERAGE_DEBUG_KEYS: tuple[str, ...] = (
+    "microchip_id",
+    "clinical_record_number",
+    "pet_name",
+    "species",
+    "breed",
+    "sex",
+    "weight",
+    "visit_date",
+    "owner_name",
+    "owner_address",
+    "diagnosis",
+    "procedure",
+    "medication",
+    "reason_for_visit",
+    "symptoms",
+    "treatment_plan",
+    "clinic_address",
+    "clinic_name",
+    "coat_color",
+    "hair_length",
+    "repro_status",
+)
 DATE_TARGET_KEYS = frozenset(
     {"visit_date", "document_date", "admission_date", "discharge_date"}
 )
@@ -118,6 +143,7 @@ _OWNER_PATIENT_LABEL_PATTERN = re.compile(r"(?i)\bpaciente\b\s*[:\-]")
 _VET_OR_CLINIC_CONTEXT_PATTERN = re.compile(
     r"(?i)\b(?:veterinari[oa]|vet\b|doctor(?:a)?\b|dra\.?\b|dr\.?\b|cl[ií]nica|hospital|centro\s+veterinario)\b"
 )
+_CLINICAL_RECORD_GUARD_PATTERN = re.compile(r"(?i)\b(?:\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4})\b")
 
 
 def _default_now_iso() -> str:
@@ -525,6 +551,12 @@ def _build_interpretation_artifact(
         )
     ]
     now_iso = _default_now_iso()
+    mvp_coverage_debug = _build_mvp_coverage_debug_summary(
+        raw_text=raw_text,
+        normalized_values=normalized_values,
+        candidate_bundle=candidate_bundle,
+        evidence_map=canonical_evidence,
+    )
     data = {
         "schema_version": "v0",
         "document_id": document_id,
@@ -538,8 +570,15 @@ def _build_interpretation_artifact(
             "keys_present": populated_keys,
             "warning_codes": warning_codes,
             "date_selection": _build_date_selection_debug(canonical_evidence),
+            "mvp_coverage_debug": mvp_coverage_debug,
         },
     }
+    logger.info(
+        "MVP coverage debug run_id=%s document_id=%s fields=%s",
+        run_id,
+        document_id,
+        mvp_coverage_debug,
+    )
     if _should_include_interpretation_candidates():
         data["candidate_bundle"] = candidate_bundle
 
@@ -662,10 +701,15 @@ def _mine_interpretation_candidates(
         if normalized_key in seen_values[key]:
             return
         seen_values[key].add(normalized_key)
+        effective_confidence = (
+            COVERAGE_CONFIDENCE_LABEL
+            if confidence >= COVERAGE_CONFIDENCE_LABEL
+            else COVERAGE_CONFIDENCE_FALLBACK
+        )
         candidates[key].append(
             {
                 "value": cleaned_value,
-                "confidence": round(min(max(confidence, 0.0), 1.0), 2),
+                "confidence": round(min(max(effective_confidence, 0.0), 1.0), 2),
                 "anchor": anchor,
                 "anchor_priority": anchor_priority,
                 "target_reason": target_reason,
@@ -728,12 +772,12 @@ def _mine_interpretation_candidates(
     add_labeled_person_candidates(
         key="vet_name",
         pattern=_VET_LABEL_LINE_PATTERN,
-        confidence=0.64,
+        confidence=COVERAGE_CONFIDENCE_LABEL,
     )
     add_labeled_person_candidates(
         key="owner_name",
         pattern=_OWNER_LABEL_LINE_PATTERN,
-        confidence=0.66,
+        confidence=COVERAGE_CONFIDENCE_LABEL,
         owner_mode=True,
     )
 
@@ -807,7 +851,7 @@ def _mine_interpretation_candidates(
         add_candidate(
             key="owner_name",
             value=normalized,
-            confidence=0.62,
+            confidence=COVERAGE_CONFIDENCE_LABEL,
             snippet=line,
         )
 
@@ -815,72 +859,117 @@ def _mine_interpretation_candidates(
         (
             "pet_name",
             r"(?:paciente|nombre(?:\s+del\s+paciente)?|patient)\s*[:\-]\s*([^\n;]{2,100})",
-            0.88,
+            COVERAGE_CONFIDENCE_LABEL,
         ),
         (
             "species",
             r"(?:especie\s*/\s*raza|raza\s*/\s*especie)\s*[:\-]\s*([^\n;]{2,120})",
-            0.84,
+            COVERAGE_CONFIDENCE_LABEL,
         ),
         (
             "breed",
             r"(?:especie\s*/\s*raza|raza\s*/\s*especie)\s*[:\-]\s*([^\n;]{2,120})",
-            0.84,
+            COVERAGE_CONFIDENCE_LABEL,
         ),
-        ("species", r"(?:especie|species)\s*[:\-]\s*([^\n;]{2,80})", 0.84),
-        ("breed", r"(?:raza|breed)\s*[:\-]\s*([^\n;]{2,80})", 0.84),
-        ("sex", r"(?:sexo|sex)\s*[:\-]\s*([^\n;]{1,40})", 0.83),
-        ("age", r"(?:edad|age)\s*[:\-]\s*([^\n;]{1,60})", 0.82),
+        ("species", r"(?:especie|species)\s*[:\-]\s*([^\n;]{2,80})", COVERAGE_CONFIDENCE_LABEL),
+        ("breed", r"(?:raza|breed)\s*[:\-]\s*([^\n;]{2,80})", COVERAGE_CONFIDENCE_LABEL),
+        ("sex", r"(?:sexo|sex)\s*[:\-]\s*([^\n;]{1,40})", COVERAGE_CONFIDENCE_LABEL),
+        ("age", r"(?:edad|age)\s*[:\-]\s*([^\n;]{1,60})", COVERAGE_CONFIDENCE_LABEL),
+        (
+            "dob",
+            r"(?:f(?:echa)?\s*(?:de\s*)?(?:nacimiento|nac\.|nac)|dob|birth\s*date)\s*[:\-]\s*([0-9]{1,2}[\/\-.][0-9]{1,2}[\/\-.][0-9]{2,4})",
+            COVERAGE_CONFIDENCE_LABEL,
+        ),
         (
             "weight",
             r"(?:peso|weight)\s*[:\-]?\s*([0-9]+(?:[\.,][0-9]+)?\s*(?:kg|kgs|g)?)",
-            0.84,
+            COVERAGE_CONFIDENCE_LABEL,
         ),
         (
             "microchip_id",
             r"(?:microchip|chip)\s*(?:n[ºo°\uFFFD]\.?|nro\.?|id)?\s*[:\-]?\s*([A-Za-z0-9][A-Za-z0-9./_\-]{1,30}(?:\s+[A-Za-z0-9][A-Za-z0-9./_\-]{0,20}){0,3})",
-            0.88,
+            COVERAGE_CONFIDENCE_LABEL,
+        ),
+        (
+            "clinical_record_number",
+            r"(?:nhc|n[ºo°]?\s*(?:historial|historia\s*cl[ií]nica)|historial\s*cl[ií]nico|n[uú]mero\s*de\s*historial)\s*[:\-]?\s*([A-Za-z0-9./_\-]{2,40})",
+            COVERAGE_CONFIDENCE_LABEL,
         ),
         (
             "visit_date",
             r"(?:fecha\s+de\s+visita|visita|consulta|visit\s+date)\s*[:\-]\s*([0-9]{1,2}[\/\-.][0-9]{1,2}[\/\-.][0-9]{2,4})",
-            0.86,
+            COVERAGE_CONFIDENCE_LABEL,
         ),
         (
             "document_date",
             r"(?:fecha\s+documento|fecha|date)\s*[:\-]\s*([0-9]{1,2}[\/\-.][0-9]{1,2}[\/\-.][0-9]{2,4})",
-            0.75,
+            COVERAGE_CONFIDENCE_LABEL,
         ),
         (
             "clinic_name",
             r"(?:cl[ií]nica|centro\s+veterinario|hospital\s+veterinario)\s*[:\-]\s*([^\n;]{3,120})",
-            0.76,
+            COVERAGE_CONFIDENCE_LABEL,
+        ),
+        (
+            "clinic_address",
+            r"(?:direcci[oó]n\s*(?:de\s*la\s*cl[ií]nica)?|domicilio\s*(?:de\s*la\s*cl[ií]nica)?)\s*[:\-]\s*([^\n;]{4,160})",
+            COVERAGE_CONFIDENCE_LABEL,
         ),
         (
             "vet_name",
             r"(?:veterinari[oa]|dr\.?|dra\.?)\s*[:\-]\s*([^\n;]{3,120})",
-            0.74,
+            COVERAGE_CONFIDENCE_LABEL,
         ),
-        ("owner_name", r"(?:propietari[oa]|tutor)\s*[:\-]\s*([^\n;]{3,120})", 0.78),
+        (
+            "owner_name",
+            r"(?:propietari[oa]|tutor)\s*[:\-]\s*([^\n;]{3,120})",
+            COVERAGE_CONFIDENCE_LABEL,
+        ),
+        (
+            "owner_address",
+            (
+                r"(?:direcci[oó]n\s*(?:del\s*propietari[oa])?|domicilio\s*"
+                r"(?:del\s*propietari[oa])?)\s*[:\-]\s*([^\n;]{4,160})"
+            ),
+            COVERAGE_CONFIDENCE_LABEL,
+        ),
+        (
+            "coat_color",
+            r"(?:capa|color\s*(?:del\s*(?:pelaje|pelo))?)\s*[:\-]\s*([^\n;]{2,100})",
+            COVERAGE_CONFIDENCE_LABEL,
+        ),
+        (
+            "hair_length",
+            r"(?:pelo|longitud\s*del\s*pelo)\s*[:\-]\s*([^\n;]{2,100})",
+            COVERAGE_CONFIDENCE_LABEL,
+        ),
+        (
+            "repro_status",
+            (
+                r"(?:estado\s*reproductivo|repro(?:ductivo)?|esterilizad[oa]|"
+                r"castrad[oa]|f[eé]rtil)\s*[:\-]\s*([^\n;]{2,80})"
+            ),
+            COVERAGE_CONFIDENCE_LABEL,
+        ),
         (
             "reason_for_visit",
             r"(?:motivo(?:\s+de\s+consulta)?|reason\s+for\s+visit)\s*[:\-]\s*([^\n]{3,200})",
-            0.75,
+            COVERAGE_CONFIDENCE_LABEL,
         ),
         (
             "invoice_total",
             r"(?:total|importe\s+total|total\s+factura)\s*[:\-]?\s*([0-9]+(?:[\.,][0-9]{2})?\s*(?:€|eur)?)",
-            0.8,
+            COVERAGE_CONFIDENCE_LABEL,
         ),
         (
             "covered_amount",
             r"(?:cubierto|covered)\s*[:\-]?\s*([0-9]+(?:[\.,][0-9]{2})?\s*(?:€|eur)?)",
-            0.78,
+            COVERAGE_CONFIDENCE_LABEL,
         ),
         (
             "non_covered_amount",
             r"(?:no\s+cubierto|non[-\s]?covered)\s*[:\-]?\s*([0-9]+(?:[\.,][0-9]{2})?\s*(?:€|eur)?)",
-            0.78,
+            COVERAGE_CONFIDENCE_LABEL,
         ),
     )
 
@@ -901,7 +990,24 @@ def _mine_interpretation_candidates(
         add_candidate(
             key="microchip_id",
             value=digit_match.group(1),
-            confidence=0.6,
+            confidence=COVERAGE_CONFIDENCE_LABEL,
+            snippet=match.group(0),
+        )
+
+    for match in re.finditer(
+        (
+            r"(?is)(?:nhc|n[ºo°]?\s*(?:historial|historia\s*cl[ií]nica)|"
+            r"historial\s*cl[ií]nico)\s*[:\-]?\s*([^\n]{1,60})"
+        ),
+        raw_text,
+    ):
+        raw_value = str(match.group(1)).strip()
+        if not raw_value or _CLINICAL_RECORD_GUARD_PATTERN.search(raw_value):
+            continue
+        add_candidate(
+            key="clinical_record_number",
+            value=raw_value,
+            confidence=COVERAGE_CONFIDENCE_LABEL,
             snippet=match.group(0),
         )
 
@@ -913,7 +1019,7 @@ def _mine_interpretation_candidates(
         add_candidate(
             key="microchip_id",
             value=digit_match.group(1),
-            confidence=0.58,
+            confidence=COVERAGE_CONFIDENCE_FALLBACK,
             snippet=match.group(0),
         )
 
@@ -926,7 +1032,7 @@ def _mine_interpretation_candidates(
         add_candidate(
             key="document_date",
             value=match.group(1),
-            confidence=0.62,
+            confidence=COVERAGE_CONFIDENCE_FALLBACK,
             snippet=snippet,
         )
 
@@ -987,14 +1093,20 @@ def _mine_interpretation_candidates(
         if value:
             if any(token in lower_header for token in ("diagn", "impresi")):
                 add_candidate(
-                    key="diagnosis", value=value, confidence=0.8, snippet=line
+                    key="diagnosis",
+                    value=value,
+                    confidence=COVERAGE_CONFIDENCE_LABEL,
+                    snippet=line,
                 )
             if any(
                 token in lower_header
                 for token in ("trat", "medic", "prescrip", "receta")
             ):
                 add_candidate(
-                    key="medication", value=value, confidence=0.78, snippet=line
+                    key="medication",
+                    value=value,
+                    confidence=COVERAGE_CONFIDENCE_LABEL,
+                    snippet=line,
                 )
                 add_candidate(
                     key="treatment_plan", value=value, confidence=0.7, snippet=line
@@ -1003,36 +1115,66 @@ def _mine_interpretation_candidates(
                 token in lower_header for token in ("proced", "interv", "cirug", "quir")
             ):
                 add_candidate(
-                    key="procedure", value=value, confidence=0.78, snippet=line
+                    key="procedure",
+                    value=value,
+                    confidence=COVERAGE_CONFIDENCE_LABEL,
+                    snippet=line,
                 )
             if any(token in lower_header for token in ("sintom", "symptom")):
                 add_candidate(
-                    key="symptoms", value=value, confidence=0.74, snippet=line
+                    key="symptoms",
+                    value=value,
+                    confidence=COVERAGE_CONFIDENCE_LABEL,
+                    snippet=line,
                 )
             if any(token in lower_header for token in ("vacun", "vaccin")):
                 add_candidate(
-                    key="vaccinations", value=value, confidence=0.75, snippet=line
+                    key="vaccinations",
+                    value=value,
+                    confidence=COVERAGE_CONFIDENCE_LABEL,
+                    snippet=line,
                 )
             if any(token in lower_header for token in ("laboratorio", "analit", "lab")):
                 add_candidate(
-                    key="lab_result", value=value, confidence=0.72, snippet=line
+                    key="lab_result",
+                    value=value,
+                    confidence=COVERAGE_CONFIDENCE_LABEL,
+                    snippet=line,
                 )
             if any(
                 token in lower_header
                 for token in ("radiograf", "ecograf", "imagen", "tac", "rm")
             ):
-                add_candidate(key="imaging", value=value, confidence=0.72, snippet=line)
+                add_candidate(
+                    key="imaging",
+                    value=value,
+                    confidence=COVERAGE_CONFIDENCE_LABEL,
+                    snippet=line,
+                )
             if any(token in lower_header for token in ("linea", "concepto", "item")):
                 add_candidate(
-                    key="line_item", value=value, confidence=0.75, snippet=line
+                    key="line_item",
+                    value=value,
+                    confidence=COVERAGE_CONFIDENCE_LABEL,
+                    snippet=line,
                 )
 
         lower_line = line.casefold()
         if any(token in lower_line for token in ("macho", "hembra", "male", "female")):
             if "macho" in lower_line or "male" in lower_line:
-                add_candidate(key="sex", value="macho", confidence=0.65, snippet=line)
+                add_candidate(
+                    key="sex",
+                    value="macho",
+                    confidence=COVERAGE_CONFIDENCE_FALLBACK,
+                    snippet=line,
+                )
             if "hembra" in lower_line or "female" in lower_line:
-                add_candidate(key="sex", value="hembra", confidence=0.65, snippet=line)
+                add_candidate(
+                    key="sex",
+                    value="hembra",
+                    confidence=COVERAGE_CONFIDENCE_FALLBACK,
+                    snippet=line,
+                )
 
         if (
             any(token in lower_line for token in ("diagn", "impresi"))
@@ -1051,19 +1193,29 @@ def _mine_interpretation_candidates(
                 "cada",
             )
         ):
-            add_candidate(key="medication", value=line, confidence=0.62, snippet=line)
+            add_candidate(
+                key="medication",
+                value=line,
+                confidence=COVERAGE_CONFIDENCE_FALLBACK,
+                snippet=line,
+            )
         if any(
             token in lower_line
             for token in ("cirug", "proced", "sut", "cura", "ecograf", "radiograf")
         ):
-            add_candidate(key="procedure", value=line, confidence=0.61, snippet=line)
+            add_candidate(
+                key="procedure",
+                value=line,
+                confidence=COVERAGE_CONFIDENCE_FALLBACK,
+                snippet=line,
+            )
 
         timeline_match = re.match(r"^-\s*([0-9]{1,2}/[0-9]{1,2}/[0-9]{2,4})\s*-", line)
         if timeline_match:
             add_candidate(
                 key="document_date",
                 value=timeline_match.group(1),
-                confidence=0.74,
+                confidence=COVERAGE_CONFIDENCE_FALLBACK,
                 snippet=line,
                 target_reason="timeline_unanchored",
             )
@@ -1076,12 +1228,17 @@ def _mine_interpretation_candidates(
             add_candidate(
                 key="species",
                 value=species_keywords[normalized_single],
-                confidence=0.73,
+                confidence=COVERAGE_CONFIDENCE_FALLBACK,
                 snippet=line,
             )
 
         if any(keyword in lower_line for keyword in breed_keywords) and len(line) <= 80:
-            add_candidate(key="breed", value=line, confidence=0.72, snippet=line)
+            add_candidate(
+                key="breed",
+                value=line,
+                confidence=COVERAGE_CONFIDENCE_FALLBACK,
+                snippet=line,
+            )
 
         if normalized_single in {"m", "macho", "male", "h", "hembra", "female"}:
             window = " ".join(
@@ -1094,7 +1251,7 @@ def _mine_interpretation_candidates(
                 add_candidate(
                     key="sex",
                     value=sex_value,
-                    confidence=0.77,
+                    confidence=COVERAGE_CONFIDENCE_FALLBACK,
                     snippet=" ".join(
                         lines[max(0, index - 1) : min(len(lines), index + 2)]
                     ),
@@ -1112,7 +1269,10 @@ def _mine_interpretation_candidates(
                 for token in ("canino", "felino", "raza", "chip", "especie")
             ):
                 add_candidate(
-                    key="pet_name", value=line.title(), confidence=0.7, snippet=line
+                    key="pet_name",
+                    value=line.title(),
+                    confidence=COVERAGE_CONFIDENCE_FALLBACK,
+                    snippet=line,
                 )
 
     if (
@@ -1126,7 +1286,7 @@ def _mine_interpretation_candidates(
         add_candidate(
             key="language",
             value="es",
-            confidence=0.55,
+            confidence=COVERAGE_CONFIDENCE_FALLBACK,
             snippet="Heuristic language inference based on Spanish clinical tokens",
             page=None,
         )
@@ -1164,7 +1324,11 @@ def _extract_date_candidates_with_classification(
                 chosen_priority = priority
                 chosen_reason = f"anchor:{matched_anchor}"
 
-        confidence = 0.84 if chosen_priority > 1 else 0.68
+        confidence = (
+            COVERAGE_CONFIDENCE_LABEL
+            if chosen_priority > 1
+            else COVERAGE_CONFIDENCE_FALLBACK
+        )
         candidates.append(
             {
                 "target_key": chosen_key,
@@ -1194,7 +1358,7 @@ def _map_candidates_to_global_schema(
         )
 
         if key in REPEATABLE_KEYS_V0:
-            selected = key_candidates[:5]
+            selected = key_candidates[:3]
             mapped[key] = [
                 str(item.get("value", "")).strip()
                 for item in selected
@@ -1246,6 +1410,80 @@ def _build_date_selection_debug(
             "target_reason": top.get("target_reason"),
         }
     return payload
+
+
+def _build_mvp_coverage_debug_summary(
+    *,
+    raw_text: str,
+    normalized_values: Mapping[str, object],
+    candidate_bundle: Mapping[str, list[dict[str, object]]],
+    evidence_map: Mapping[str, list[dict[str, object]]],
+) -> dict[str, dict[str, object] | None]:
+    summary: dict[str, dict[str, object] | None] = {}
+    for key in MVP_COVERAGE_DEBUG_KEYS:
+        raw_value = normalized_values.get(key)
+        accepted = (
+            isinstance(raw_value, str)
+            and bool(raw_value.strip())
+        ) or (
+            isinstance(raw_value, list)
+            and len(raw_value) > 0
+        )
+
+        key_candidates = sorted(
+            candidate_bundle.get(key, []),
+            key=lambda item: _candidate_sort_key(item, key),
+            reverse=True,
+        )
+        top1 = key_candidates[0] if key_candidates else None
+        top1_value = (
+            str(top1.get("value", "")).strip() if isinstance(top1, dict) else None
+        )
+        top1_conf = (
+            float(top1.get("confidence", 0.0)) if isinstance(top1, dict) else None
+        )
+
+        line_number: int | None = None
+        if accepted:
+            key_evidence = evidence_map.get(key, [])
+            top_evidence = key_evidence[0] if key_evidence else None
+            evidence_payload = (
+                top_evidence.get("evidence")
+                if isinstance(top_evidence, dict)
+                else None
+            )
+            snippet = (
+                evidence_payload.get("snippet")
+                if isinstance(evidence_payload, dict)
+                else None
+            )
+            if isinstance(snippet, str) and snippet.strip():
+                line_number = _find_line_number_for_snippet(raw_text, snippet)
+
+        summary[key] = {
+            "status": "accepted" if accepted else "missing",
+            "top1": top1_value,
+            "confidence": round(top1_conf, 2) if isinstance(top1_conf, float) else None,
+            "line_number": line_number,
+        }
+
+    return summary
+
+
+def _find_line_number_for_snippet(raw_text: str, snippet: str) -> int | None:
+    lines = raw_text.splitlines()
+    compact_snippet = _WHITESPACE_PATTERN.sub(" ", snippet).strip().casefold()
+    if not compact_snippet:
+        return None
+
+    for index, line in enumerate(lines, start=1):
+        compact_line = _WHITESPACE_PATTERN.sub(" ", line).strip().casefold()
+        if not compact_line:
+            continue
+        if compact_snippet in compact_line or compact_line in compact_snippet:
+            return index
+
+    return None
 
 
 def _build_structured_fields_from_global_schema(

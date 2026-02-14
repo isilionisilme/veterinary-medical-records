@@ -207,3 +207,82 @@ def test_vet_name_heuristic_rejects_address_like_line() -> None:
     )
 
     assert candidates.get("vet_name", []) == []
+
+
+def test_mvp_coverage_labeled_fields_are_extracted_with_label_confidence() -> None:
+    candidates = _mine_interpretation_candidates(
+        "NHC: H-7788\n"
+        "Direccion del propietario: C/ Mayor 12, Madrid\n"
+        "Capa: Tricolor\n"
+        "Pelo: Corto\n"
+        "Estado reproductivo: Castrado\n"
+        "Direccion de la clinica: Av. Norte 99"
+    )
+
+    assert candidates["clinical_record_number"][0]["value"] == "H-7788"
+    assert candidates["clinical_record_number"][0]["confidence"] == 0.66
+    assert candidates["owner_address"][0]["value"] == "C/ Mayor 12, Madrid"
+    assert candidates["owner_address"][0]["confidence"] == 0.66
+    assert candidates["coat_color"][0]["value"] == "Tricolor"
+    assert candidates["coat_color"][0]["confidence"] == 0.66
+    assert candidates["hair_length"][0]["value"] == "Corto"
+    assert candidates["hair_length"][0]["confidence"] == 0.66
+    assert candidates["repro_status"][0]["value"] == "Castrado"
+    assert candidates["repro_status"][0]["confidence"] == 0.66
+    assert candidates["clinic_address"][0]["value"] == "Av. Norte 99"
+    assert candidates["clinic_address"][0]["confidence"] == 0.66
+
+
+def test_mvp_coverage_fallback_candidate_uses_low_medium_confidence() -> None:
+    candidates = _mine_interpretation_candidates(
+        "Amoxicilina 250 mg cada 12h durante 7 dias"
+    )
+
+    medication_candidates = candidates.get("medication", [])
+    assert medication_candidates
+    assert medication_candidates[0]["confidence"] == 0.5
+
+
+def test_repeatable_fields_are_capped_to_three_candidates_in_global_schema() -> None:
+    payload = _build_interpretation_artifact(
+        document_id="doc-repeatable-cap",
+        run_id="run-repeatable-cap",
+        raw_text=(
+            "Diagnostico: uno\n"
+            "Diagnostico: dos\n"
+            "Diagnostico: tres\n"
+            "Diagnostico: cuatro\n"
+        ),
+    )
+
+    diagnosis = payload["data"]["global_schema_v0"]["diagnosis"]
+    assert isinstance(diagnosis, list)
+    assert len(diagnosis) == 3
+
+
+def test_mvp_coverage_debug_includes_line_number_for_accepted_value() -> None:
+    payload = _build_interpretation_artifact(
+        document_id="doc-line-debug",
+        run_id="run-line-debug",
+        raw_text="Microchip: 941000024967769\nPaciente: Luna",
+    )
+
+    summary = payload["data"]["summary"]
+    mvp_debug = summary["mvp_coverage_debug"]
+    microchip_debug = mvp_debug["microchip_id"]
+    assert microchip_debug["status"] == "accepted"
+    assert microchip_debug["top1"] == "941000024967769"
+    assert microchip_debug["confidence"] == 0.66
+    assert microchip_debug["line_number"] == 1
+
+
+def test_document_date_is_not_overwritten_when_visit_date_exists() -> None:
+    payload = _build_interpretation_artifact(
+        document_id="doc-no-overwrite",
+        run_id="run-no-overwrite",
+        raw_text="Fecha documento: 02/01/2026\nFecha de visita: 03/01/2026",
+    )
+
+    schema = payload["data"]["global_schema_v0"]
+    assert schema["document_date"] == "02/01/2026"
+    assert schema["visit_date"] in {"02/01/2026", "03/01/2026", None}

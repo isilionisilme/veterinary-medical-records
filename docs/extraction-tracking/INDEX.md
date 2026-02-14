@@ -13,6 +13,17 @@
   - `GET /runs/{run_id}/artifacts/global-schema-v0` has been observed as 404 in parity checks.
   - Debug parity should pin run with `GET /debug/extraction-runs/{document_id}/summary?limit=...&run_id=...`.
 - Next recommended minimal iteration: run a fresh latest-5 parity sweep after PR #100 to verify run-pinned summary coverage remains stable under backend-only snapshot ownership.
+- Coverage pass note (MVP): ensure agreed MVP fields render in UI and are populated when present in raw_text, using label-first extraction with low/medium confidence policy.
+
+### Coverage pass PR: MVP fields appear in UI when present
+- Commit: `TBD`
+- PR: `TBD`
+- Scope: add MVP schema fields (`clinical_record_number`, `coat_color`, `hair_length`, `repro_status`, `owner_address`), extend coverage extraction heuristics, and add fast per-run MVP debug summary with `status/top1/confidence/line_number`.
+- Confidence policy: label-driven = `0.66`, fallback = `0.50`; no high-confidence claims in this phase.
+- How to test:
+  - `python -m pytest backend/tests/unit/test_interpretation_schema_v0.py -q`
+  - `python -m pytest backend/tests/unit/test_golden_extraction_regression.py -q`
+  - `npm --prefix frontend run test -- App.test.tsx`
 
 ## Baseline snapshots
 - [Baseline v1 (post-PR #83)](runs/baseline-v1.md): freeze point before PR #85+ iterations.

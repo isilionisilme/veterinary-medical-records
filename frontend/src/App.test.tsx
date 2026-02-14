@@ -1456,6 +1456,11 @@ describe("App upload and list flow", () => {
     GLOBAL_SCHEMA_V0.forEach((field) => {
       expect(within(panel).getByText(field.label)).toBeInTheDocument();
     });
+    expect(within(panel).getByText("NHC / Historial clinico")).toBeInTheDocument();
+    expect(within(panel).getByText("Direccion del propietario")).toBeInTheDocument();
+    expect(within(panel).getByText("Capa")).toBeInTheDocument();
+    expect(within(panel).getByText("Pelo")).toBeInTheDocument();
+    expect(within(panel).getByText("Estado reproductivo")).toBeInTheDocument();
     expect(within(panel).getAllByText("—").length).toBeGreaterThan(0);
     expect(within(panel).getByText("Otros campos extraídos")).toBeInTheDocument();
     expect(within(panel).getByText("Custom tag")).toBeInTheDocument();
