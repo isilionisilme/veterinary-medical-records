@@ -5,8 +5,8 @@ The comment must use the mandatory structure from `docs/agent_router/01_WORKFLOW
 
 ## Blocking execution sequence
 1) Resolve PR reference.
-	- Use explicit PR id when provided.
-	- If only branch context exists, resolve PR from branch.
+  - Use explicit PR id when provided.
+  - If only branch context exists, resolve PR from branch.
 2) Publish review comment to PR.
 3) Return the published PR comment URL in the assistant response.
 

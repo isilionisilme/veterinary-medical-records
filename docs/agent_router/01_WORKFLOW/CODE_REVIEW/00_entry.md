@@ -70,6 +70,7 @@ Rules:
   1) the PR comment is posted, and
   2) the PR comment URL is returned to the user.
 - If one or more findings are later addressed in commits, you MUST publish a follow-up PR comment summarizing addressed points and include the follow-up comment URL in your response.
+- This follow-up publication rule applies whenever you perform a code review (always), regardless of how the review was initiated.
 - If PR id/reference is missing, resolve it first. If it cannot be resolved or auth is missing, STOP and ask.
 
 ## Safety rule

@@ -201,3 +201,8 @@ def test_code_review_protocol_requires_pr_comment_urls_and_follow_up() -> None:
     assert "Blocking execution sequence" in pr_commenting
     assert "Return the published PR comment URL" in pr_commenting
     assert "Return the follow-up PR comment URL" in pr_commenting
+    assert (
+        "This follow-up must be published automatically as part of the "
+        "remediation workflow (do not wait for a separate user prompt)."
+        in pr_commenting
+    )
