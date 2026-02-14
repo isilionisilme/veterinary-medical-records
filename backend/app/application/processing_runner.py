@@ -87,8 +87,14 @@ _VET_LABEL_LINE_PATTERN = re.compile(
 _OWNER_LABEL_LINE_PATTERN = re.compile(
     r"(?i)^\s*(?:propietari(?:o|a)|titular|dueñ(?:o|a)|owner)\b\s*[:\-]?\s*(.*)$"
 )
-_OWNER_NOMBRE_LINE_PATTERN = re.compile(r"(?i)^\s*nombre\s*[:\-]\s*(.*)$")
+_OWNER_NOMBRE_LINE_PATTERN = re.compile(r"(?i)^\s*nombre\s*(?::|-)?\s*(.*)$")
 _OWNER_CLIENT_HEADER_LINE_PATTERN = re.compile(r"(?i)^\s*datos\s+del\s+cliente\s*$")
+_OWNER_CLIENT_TABULAR_LABEL_LINE_PATTERN = re.compile(
+    r"(?i)^\s*(?:especie|raza|f/?nto|capa|n[º°o]?\s*chip)\s*$"
+)
+_OWNER_INLINE_CONTEXT_WINDOW_LINES = 2
+_OWNER_HEADER_LOOKBACK_LINES = 8
+_OWNER_TABULAR_FORWARD_SCAN_LINES = 8
 _NAME_TOKEN_PATTERN = re.compile(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ][A-Za-zÁÉÍÓÚÜÑáéíóúüñ'\.-]*$")
 _ADDRESS_SPLIT_PATTERN = re.compile(
     r"(?i)\b(?:c/|calle|av\.?|avenida|cp\b|n[º°o]\.?|num\.?|número|plaza|pte\.?|portal|piso|puerta)\b"
@@ -103,6 +109,7 @@ _LICENSE_ONLY_PATTERN = re.compile(
 _OWNER_CONTEXT_PATTERN = re.compile(
     r"(?i)\b(?:propietari(?:o|a)|titular|dueñ(?:o|a)|owner)\b"
 )
+_OWNER_PATIENT_LABEL_PATTERN = re.compile(r"(?i)\bpaciente\b\s*[:\-]")
 _VET_OR_CLINIC_CONTEXT_PATTERN = re.compile(
     r"(?i)\b(?:veterinari[oa]|vet\b|doctor(?:a)?\b|dra\.?\b|dr\.?\b|cl[ií]nica|hospital|centro\s+veterinario)\b"
 )
@@ -692,9 +699,13 @@ def _mine_interpretation_candidates(
         if match is None:
             continue
 
-        window_start = max(0, index - 2)
-        window_end = min(len(raw_lines), index + 3)
+        window_start = max(0, index - _OWNER_INLINE_CONTEXT_WINDOW_LINES)
+        window_end = min(
+            len(raw_lines),
+            index + _OWNER_INLINE_CONTEXT_WINDOW_LINES + 1,
+        )
         context_window = " ".join(raw_lines[window_start:window_end])
+        pre_context_window = " ".join(raw_lines[window_start:index])
         has_owner_context = _OWNER_CONTEXT_PATTERN.search(context_window) is not None
         previous_non_empty_line = ""
         for back_index in range(index - 1, -1, -1):
@@ -708,11 +719,38 @@ def _mine_interpretation_candidates(
             and _OWNER_CLIENT_HEADER_LINE_PATTERN.match(previous_non_empty_line)
         )
         if not has_owner_context and not has_client_header_context:
+            lookback_start = max(0, index - _OWNER_HEADER_LOOKBACK_LINES)
+            has_client_header_context = any(
+                _OWNER_CLIENT_HEADER_LINE_PATTERN.match(raw_lines[lookback_index].strip())
+                for lookback_index in range(lookback_start, index)
+            )
+        if not has_owner_context and not has_client_header_context:
             continue
         if _VET_OR_CLINIC_CONTEXT_PATTERN.search(context_window) is not None:
             continue
+        if not has_owner_context and _OWNER_PATIENT_LABEL_PATTERN.search(pre_context_window):
+            continue
 
         candidate_source = match.group(1).strip() if isinstance(match.group(1), str) else ""
+        if not candidate_source:
+            for next_index in range(
+                index + 1,
+                min(index + _OWNER_TABULAR_FORWARD_SCAN_LINES + 1, len(raw_lines)),
+            ):
+                next_line = raw_lines[next_index].strip()
+                if not next_line:
+                    continue
+                if _OWNER_CLIENT_TABULAR_LABEL_LINE_PATTERN.match(next_line):
+                    continue
+
+                inline_candidate = split_owner_before_address_tokens(next_line)
+                inline_normalized = normalize_person_fragment(inline_candidate)
+                if inline_normalized is None:
+                    continue
+
+                candidate_source = inline_normalized
+                break
+
         candidate_source = split_owner_before_address_tokens(candidate_source)
 
         normalized = normalize_person_fragment(candidate_source)
