@@ -16,6 +16,7 @@
 - If raw text has no chip label and no 9–15 digit sequence, extraction remains empty by design.
 - Free-text mentions like "poner el chip" without an ID should not produce a candidate.
 - Generic invoice/reference lines such as `No: 941000024967769` should remain excluded.
+- Historical completed runs may still expose non-canonical legacy values in review payloads (e.g., `00023035139 NHC`, `BEATRIZ ABARCA C/ ORTEGA`); next loop should normalize/block these in review-facing output.
 
 ## How to test (exact commands)
 - `python -m pytest backend/tests/unit/test_golden_extraction_regression.py -s -q`
