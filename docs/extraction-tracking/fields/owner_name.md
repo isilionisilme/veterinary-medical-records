@@ -26,3 +26,4 @@
 - Branch `fix/golden-owner-name-minimal-loop` | Commits `efcab057`, `9bce25cf` | PR: [#85](https://github.com/isilionisilme/veterinary-medical-records/pull/85) | accepts `Nombre:` with strict context and guards patient-labeled ambiguity.
 - Diagnostic run anchor (no code change): `document_id=e05bef44-79d9-4c36-a8f4-490cf6d87473`, `run_id=d838c09a-9589-4dec-811e-dedeb7c75380` (owner missing with no candidate).
 - Post-fix parity anchor (no code change): `document_id=e05bef44-79d9-4c36-a8f4-490cf6d87473`, `run_id=a7229396-e639-4937-bf0d-8d31036c77bd` (owner still missing with `has_candidates=false`, classified as detection-missing).
+- Post-PR93 parity anchor set (no code change): latest-5 documents show `owner_name=null` and `has_candidates=false` in all sampled runs (see `runs/ui-field-parity-owner-name-post-pr93.md`).

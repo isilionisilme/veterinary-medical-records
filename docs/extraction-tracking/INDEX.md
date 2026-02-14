@@ -10,7 +10,7 @@
   - UI-facing structured values are in `active_interpretation.data.global_schema_v0`.
   - `GET /runs/{run_id}/artifacts/global-schema-v0` has been observed as 404 in parity checks.
   - Debug parity should pin run with `GET /debug/extraction-runs/{document_id}/summary?limit=...&run_id=...`.
-- Next recommended minimal iteration: keep monitoring `microchip_id` parity on fresh runs and decide whether historical debug artifacts require optional backfill/cleanup.
+- Next recommended minimal iteration: run a minimal owner-signal loop (`owner_name`) with deterministic fixtures to reduce persistent detection-missing cases.
 
 ## Baseline snapshots
 - [Baseline v1 (post-PR #83)](runs/baseline-v1.md): freeze point before PR #85+ iterations.
@@ -83,5 +83,6 @@ The following PRs represent the evolution of the extraction tracking system. Eac
 - [UI field parity (microchip post-PR87)](runs/ui-field-parity-microchip-post-pr87.md): latest-5 recheck shows stable missing parity but residual canonical drift (`NHC` suffix and one non-chip false-positive historical value).
 - [UI field parity (microchip post-PR92)](runs/ui-field-parity-microchip-post-pr92.md): latest-5 recheck confirms review-facing digits-only normalization and blocking of legacy non-chip values.
 - [UI field parity (owner_name post-PR85)](runs/ui-field-parity-owner-name-post-pr85.md): reprocess run remains `owner_name=null` with `has_candidates=false`, confirming detection-missing and no UI mismatch.
+- [UI field parity (owner_name post-PR93)](runs/ui-field-parity-owner-name-post-pr93.md): latest-5 recheck remains `owner_name=null` with `has_candidates=false` across sampled runs.
 - [Baseline v1 snapshot](runs/baseline-v1.md): freeze point (post-PR #83) for expected-vs-observed comparison before next loop.
 - [Raw-text signal diagnostic (microchip/owner)](../debug/raw-text-signal-microchip-owner.md): later evidence found clear raw_text signal for microchip and prompted a minimal microchip-only heuristic fix.
