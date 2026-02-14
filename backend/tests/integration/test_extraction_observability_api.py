@@ -335,3 +335,23 @@ def test_debug_extraction_summary_endpoint_filters_by_run_id(
     missing_body = filtered_missing.json()
     missing_by_field_a = {item["field"]: item for item in missing_body["most_missing_fields"]}
     assert missing_by_field_a["claim_id"]["missing_count"] == 1
+
+
+def test_debug_extraction_summary_endpoint_returns_not_found_for_unknown_run_id(
+    test_client: TestClient, monkeypatch
+) -> None:
+    monkeypatch.setenv("VET_RECORDS_EXTRACTION_OBS", "1")
+
+    payload = _triage_snapshot_payload()
+    payload["runId"] = "run-triage-existing"
+    post_response = test_client.post("/debug/extraction-runs", json=payload)
+    assert post_response.status_code == 201
+
+    summary_response = test_client.get(
+        "/debug/extraction-runs/doc-triage-1/summary?limit=20&run_id=run-triage-missing"
+    )
+    assert summary_response.status_code == 404
+    assert summary_response.json() == {
+        "error_code": "NOT_FOUND",
+        "message": "No extraction snapshots found for this document.",
+    }

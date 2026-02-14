@@ -777,6 +777,9 @@ def get_debug_extraction_run_summary(
     if not extraction_observability_enabled():
         return _extraction_observability_disabled_response()
 
+    if isinstance(run_id, str):
+        run_id = run_id.strip() or None
+
     summary = summarize_extraction_runs(document_id=document_id, limit=limit, run_id=run_id)
     if summary is None:
         return _error_response(
