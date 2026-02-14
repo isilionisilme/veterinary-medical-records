@@ -20,7 +20,7 @@
 
 ### Anchor legend
 - `Commit`: required
-- `PR`: link if available, else `TODO(PR: pending)`
+- `PR`: link if available; if no PR exists for a verified direct commit, use `N/A (direct commit, no PR)`
 - `Run/document`: required in run-parity reports
 
 ## PR Storyline
@@ -48,12 +48,12 @@ The following PRs represent the evolution of the extraction tracking system. Eac
 |---|---|---|---|---|---|---|---|---|---|
 | [microchip_id](fields/microchip_id.md) | docA + docB + OCR synthetic | Existing signal + nearby-label signal (`N� Chip` + digits) + OCR `N�`/`Nro` prefix window fallback | docA/docB missing→accepted (`00023035139`, `941000024967769`); OCR synthetic now accepted (`941000024967769`) | `0.66` | `fix/golden-microchip-ocr-hardening` | `7d4b2d7a`, `9b1a691c`, `97a014a1`, `1a732ba2` | [#87](https://github.com/isilionisilme/veterinary-medical-records/pull/87) | `python -m pytest backend/tests/unit/test_interpretation_schema_v0.py backend/tests/unit/test_golden_extraction_regression.py -q` | Digits-only 9–15; no overwrite. |
 | [owner_name](fields/owner_name.md) | docB + owner-context synthetic | Existing signal + conservative fallback + `Datos del Cliente` context support for `Nombre:` lines | docB missing→accepted (`NOMBRE DEMO`); synthetic owner block now accepted (`BEATRIZ ABARCA`) | `0.66` | `fix/golden-owner-name-minimal-loop` | `b012628e`, `efcab057`, `9bce25cf` | [#85](https://github.com/isilionisilme/veterinary-medical-records/pull/85) | `python -m pytest backend/tests/unit/test_interpretation_schema_v0.py backend/tests/unit/test_golden_extraction_regression.py -q` | Keep deterministic context; no free-name guessing. |
-| [weight](fields/weight.md) | docB | Added fixture line: `Peso: 7,2 kg` | docB missing→accepted (`7.2 kg`) | `0.66` | `fix/golden-weight-iteration` | `ad366cd0` | TODO(PR: pending) | `python -m pytest backend/tests/unit/test_golden_extraction_regression.py backend/tests/unit/test_interpretation_schema_v0.py -q` | Range `[0.5,120]`; ignore `0`. |
-| [vet_name](fields/vet_name.md) | docA | Existing signal | docA missing→accepted (`NOMBRE DEMO`) | `0.66` | `fix/golden-vet-name-iteration` | `40762a48` | TODO(PR: pending) | `python -m pytest backend/tests/unit/test_golden_extraction_regression.py backend/tests/unit/test_interpretation_schema_v0.py -q` | Exclude clinic/address values. |
-| [visit_date](fields/visit_date.md) | docA | Existing signal | docA missing→accepted (`2024-07-17`) | `0.66` | `fix/golden-visit-date-iteration` | `6749aa38` | TODO(PR: pending) | `python -m pytest backend/tests/unit/test_golden_extraction_regression.py backend/tests/unit/test_interpretation_schema_v0.py -q` | Ignore birthdate context. |
-| [discharge_date](fields/discharge_date.md) | docA | Added fixture line: `Alta: 20/07/2024` | docA missing→accepted (`2024-07-20`) | `0.66` | `fix/golden-discharge-date-iteration` | `cb95be5e` | TODO(PR: pending) | `python -m pytest backend/tests/unit/test_golden_extraction_regression.py backend/tests/unit/test_interpretation_schema_v0.py -q` | Label-based only. |
-| [vaccinations](fields/vaccinations.md) | docA | Added fixture line: `Vacunas: Rabia, Moquillo, Parvo` | docA missing→accepted (`Rabia, Moquillo, Parvo`) | `0.66` | `fix/golden-vaccinations-iteration` | `c5d3ffbe` | TODO(PR: pending) | `python -m pytest backend/tests/unit/test_golden_extraction_regression.py backend/tests/unit/test_interpretation_schema_v0.py -q` | Strict label-only. |
-| [symptoms](fields/symptoms.md) | docA | Added fixture line: `Síntomas: vómitos y diarrea` | docA missing→accepted (`vómitos y diarrea`) | `0.66` | `fix/golden-symptoms-iteration` | `3401c318` | TODO(PR: pending) | `python -m pytest backend/tests/unit/test_golden_extraction_regression.py backend/tests/unit/test_interpretation_schema_v0.py -q` | Strict label-only; reject treatment noise. |
+| [weight](fields/weight.md) | docB | Added fixture line: `Peso: 7,2 kg` | docB missing→accepted (`7.2 kg`) | `0.66` | `fix/golden-weight-iteration` | `ad366cd0` | N/A (direct commit, no PR) | `python -m pytest backend/tests/unit/test_golden_extraction_regression.py backend/tests/unit/test_interpretation_schema_v0.py -q` | Range `[0.5,120]`; ignore `0`. |
+| [vet_name](fields/vet_name.md) | docA | Existing signal | docA missing→accepted (`NOMBRE DEMO`) | `0.66` | `fix/golden-vet-name-iteration` | `40762a48` | N/A (direct commit, no PR) | `python -m pytest backend/tests/unit/test_golden_extraction_regression.py backend/tests/unit/test_interpretation_schema_v0.py -q` | Exclude clinic/address values. |
+| [visit_date](fields/visit_date.md) | docA | Existing signal | docA missing→accepted (`2024-07-17`) | `0.66` | `fix/golden-visit-date-iteration` | `6749aa38` | N/A (direct commit, no PR) | `python -m pytest backend/tests/unit/test_golden_extraction_regression.py backend/tests/unit/test_interpretation_schema_v0.py -q` | Ignore birthdate context. |
+| [discharge_date](fields/discharge_date.md) | docA | Added fixture line: `Alta: 20/07/2024` | docA missing→accepted (`2024-07-20`) | `0.66` | `fix/golden-discharge-date-iteration` | `cb95be5e` | N/A (direct commit, no PR) | `python -m pytest backend/tests/unit/test_golden_extraction_regression.py backend/tests/unit/test_interpretation_schema_v0.py -q` | Label-based only. |
+| [vaccinations](fields/vaccinations.md) | docA | Added fixture line: `Vacunas: Rabia, Moquillo, Parvo` | docA missing→accepted (`Rabia, Moquillo, Parvo`) | `0.66` | `fix/golden-vaccinations-iteration` | `c5d3ffbe` | N/A (direct commit, no PR) | `python -m pytest backend/tests/unit/test_golden_extraction_regression.py backend/tests/unit/test_interpretation_schema_v0.py -q` | Strict label-only. |
+| [symptoms](fields/symptoms.md) | docA | Added fixture line: `Síntomas: vómitos y diarrea` | docA missing→accepted (`vómitos y diarrea`) | `0.66` | `fix/golden-symptoms-iteration` | `3401c318` | N/A (direct commit, no PR) | `python -m pytest backend/tests/unit/test_golden_extraction_regression.py backend/tests/unit/test_interpretation_schema_v0.py -q` | Strict label-only; reject treatment noise. |
 
 ### Promotion iteration (candidates → structured interpretation)
 - Commit: `c27b2e14`
@@ -71,7 +71,7 @@ The following PRs represent the evolution of the extraction tracking system. Eac
 
 ## Chapter closeout (through PR #88)
 - Completed chapter scope: golden field hardening, parity evidence loops (`owner_name`, `microchip_id`), and consolidated reviewer guardrails matrix.
-- Remaining anchor gaps: historical rows still marked `TODO(PR: pending)` for fields whose original PR mapping was not finalized in this pass.
+- Remaining anchor gaps: none for verified historical commits in the golden-iteration table; non-PR direct commits are explicitly marked as such.
 - Exit criteria met for this chapter: each recent iteration (#85–#88) has commit anchors, tests, and reviewer-facing docs linkage.
 
 ## UI ↔ Backend parity / debugging reports
