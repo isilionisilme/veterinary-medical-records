@@ -85,6 +85,7 @@ _OWNER_LABEL_LINE_PATTERN = re.compile(
     r"(?i)^\s*(?:propietari(?:o|a)|titular|dueñ(?:o|a)|owner)\b\s*[:\-]?\s*(.*)$"
 )
 _OWNER_NOMBRE_LINE_PATTERN = re.compile(r"(?i)^\s*nombre\s*[:\-]\s*(.*)$")
+_OWNER_CLIENT_HEADER_LINE_PATTERN = re.compile(r"(?i)^\s*datos\s+del\s+cliente\s*$")
 _NAME_TOKEN_PATTERN = re.compile(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ][A-Za-zÁÉÍÓÚÜÑáéíóúüñ'\.-]*$")
 _ADDRESS_SPLIT_PATTERN = re.compile(
     r"(?i)\b(?:c/|calle|av\.?|avenida|cp\b|n[º°o]\.?|num\.?|número|plaza|pte\.?|portal|piso|puerta)\b"
@@ -97,7 +98,7 @@ _LICENSE_ONLY_PATTERN = re.compile(
     r"(?i)^\s*(?:col(?:egiad[oa])?\.?|n[º°o]?\s*col\.?|lic(?:encia)?\.?|cmp\.?|nif\b|dni\b)\s*[:\-]?\s*[A-Za-z0-9\-./\s]{3,}$"
 )
 _OWNER_CONTEXT_PATTERN = re.compile(
-    r"(?i)(?:\b(?:propietari(?:o|a)|titular|dueñ(?:o|a)|owner)\b|datos\s+del\s+cliente)"
+    r"(?i)\b(?:propietari(?:o|a)|titular|dueñ(?:o|a)|owner)\b"
 )
 _VET_OR_CLINIC_CONTEXT_PATTERN = re.compile(
     r"(?i)\b(?:veterinari[oa]|vet\b|doctor(?:a)?\b|dra\.?\b|dr\.?\b|cl[ií]nica|hospital|centro\s+veterinario)\b"
@@ -691,7 +692,21 @@ def _mine_interpretation_candidates(
         window_start = max(0, index - 2)
         window_end = min(len(raw_lines), index + 3)
         context_window = " ".join(raw_lines[window_start:window_end])
-        if _OWNER_CONTEXT_PATTERN.search(context_window) is None:
+        has_owner_context = _OWNER_CONTEXT_PATTERN.search(context_window) is not None
+        previous_non_empty_line = ""
+        for back_index in range(index - 1, -1, -1):
+            previous_line = raw_lines[back_index].strip()
+            if previous_line:
+                previous_non_empty_line = previous_line
+                break
+
+        has_client_header_context = bool(
+            previous_non_empty_line
+            and _OWNER_CLIENT_HEADER_LINE_PATTERN.match(previous_non_empty_line)
+        )
+        if not has_owner_context and not has_client_header_context:
+            continue
+        if _VET_OR_CLINIC_CONTEXT_PATTERN.search(context_window) is not None:
             continue
 
         candidate_source = match.group(1).strip() if isinstance(match.group(1), str) else ""

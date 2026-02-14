@@ -9,9 +9,11 @@
 - Must not infer owner from a standalone person-like name without deterministic owner context.
 - Must not accept values that include address/contact payload.
 - Must not use vet/clinic-context lines for owner candidate extraction.
+- For `Nombre:` fallback, accept only with explicit owner cue in local context or when previous non-empty line is exactly `Datos del Cliente`.
 
 ## Known failure modes / blocked-by-signal notes
 - `Datos del Cliente` + `Nombre:` is now accepted as owner context; other unlabeled headers can still be ambiguous.
+- Not accepted example: `Datos del Cliente` + `Paciente: LUNA BELLA` + `Nombre: LUNA BELLA` (patient-labeled block).
 - When debug shows `has_candidates=false`, do not guess owner from arbitrary nearby names.
 
 ## How to test (exact commands)

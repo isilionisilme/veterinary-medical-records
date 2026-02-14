@@ -131,6 +131,14 @@ def test_owner_name_nombre_line_uses_datos_del_cliente_context() -> None:
     assert owner_candidates[0]["value"] == "BEATRIZ ABARCA"
 
 
+def test_owner_name_nombre_line_rejects_patient_labeled_block() -> None:
+    candidates = _mine_interpretation_candidates(
+        "Datos del Cliente\nPaciente: LUNA BELLA\nNombre: LUNA BELLA"
+    )
+
+    assert candidates.get("owner_name", []) == []
+
+
 def test_vet_name_heuristic_rejects_address_like_line() -> None:
     candidates = _mine_interpretation_candidates(
         "Veterinario: Calle Mayor 123\nCentro Veterinario Central"
