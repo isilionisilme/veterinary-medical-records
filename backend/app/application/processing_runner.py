@@ -515,6 +515,10 @@ def _mine_interpretation_candidates(
             "av.",
             "avenida",
             "cp",
+            "codigo",
+            "postal",
+            "no",
+            "no.",
             "nº",
             "n°",
             "num",
@@ -529,6 +533,12 @@ def _mine_interpretation_candidates(
         }
         for index, token in enumerate(tokens):
             normalized_token = token.casefold().strip(".,:;()[]{}")
+            if (
+                normalized_token == "codigo"
+                and index + 1 < len(tokens)
+                and tokens[index + 1].casefold().strip(".,:;()[]{}") == "postal"
+            ):
+                return " ".join(tokens[:index]).strip()
             if normalized_token.startswith("c/") or normalized_token in address_markers:
                 return " ".join(tokens[:index]).strip()
         return text
