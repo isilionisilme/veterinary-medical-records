@@ -15,7 +15,7 @@
 - `Datos del Cliente` + `Nombre:` is now accepted as owner context; other unlabeled headers can still be ambiguous.
 - Not accepted example: `Datos del Cliente` + `Paciente: LUNA BELLA` + `Nombre: LUNA BELLA` (patient-labeled block).
 - When debug shows `has_candidates=false`, do not guess owner from arbitrary nearby names.
-- Post-PR95, some runs can show `owner_name` populated in `/review` while debug summary still reports missing for the same `run_id`; treat this as observability lag, not extraction absence.
+- Post-PR97, `run_id`-pinned debug summary is available, but returns `404` when no snapshot exists for that run; this indicates snapshot availability gap, not extraction absence.
 
 ## How to test (exact commands)
 - `python -m pytest backend/tests/unit/test_golden_extraction_regression.py backend/tests/unit/test_interpretation_schema_v0.py -q`
@@ -30,3 +30,4 @@
 - Post-fix parity anchor (no code change): `document_id=e05bef44-79d9-4c36-a8f4-490cf6d87473`, `run_id=a7229396-e639-4937-bf0d-8d31036c77bd` (owner still missing with `has_candidates=false`, classified as detection-missing).
 - Post-PR93 parity anchor set (no code change): latest-5 documents show `owner_name=null` and `has_candidates=false` in all sampled runs (see `runs/ui-field-parity-owner-name-post-pr93.md`).
 - Post-PR95 parity anchor set (no code change): fresh runs include accepted review values (`owner_name=BEATRIZ ABARCA`) for tabular documents; see `runs/ui-field-parity-owner-name-post-pr95.md` for run-level details and debug-summary lag note.
+- Post-PR97 parity anchor set (no code change): run-pinned summary requests (`run_id`) return `404` on sampled runs without persisted snapshots; see `runs/ui-field-parity-owner-name-post-pr97.md`.
