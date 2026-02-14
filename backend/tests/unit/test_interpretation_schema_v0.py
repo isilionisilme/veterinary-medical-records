@@ -91,6 +91,16 @@ def test_microchip_heuristic_skips_owner_address_without_chip_digits() -> None:
     assert candidates.get("microchip_id", []) == []
 
 
+def test_microchip_heuristic_extracts_digits_from_ocr_n_prefix_line() -> None:
+    candidates = _mine_interpretation_candidates(
+        "N�: 941000024967769\nPaciente: Luna"
+    )
+
+    microchip_candidates = candidates.get("microchip_id", [])
+    assert microchip_candidates
+    assert microchip_candidates[0]["value"] == "941000024967769"
+
+
 def test_vet_name_label_heuristic_extracts_name_candidate() -> None:
     candidates = _mine_interpretation_candidates(
         "Centro Veterinario Norte\nVeterinario: Dr. Juan Pérez\nPaciente: Luna"

@@ -75,9 +75,12 @@ _DATE_TARGET_PRIORITY: dict[str, int] = {
     "document_date": 2,
 }
 _MICROCHIP_KEYWORD_WINDOW_PATTERN = re.compile(
-    r"(?is)(?:microchip|chip|n[ºo°]\s*chip)\s*(?:n[ºo°]\.?|id)?\s*[:\-]?\s*([^\n]{0,90})"
+    r"(?is)(?:microchip|chip|n[ºo°\uFFFD]\s*chip)\s*(?:n[ºo°\uFFFD]\.?|id)?\s*[:\-]?\s*([^\n]{0,90})"
 )
 _MICROCHIP_DIGITS_PATTERN = re.compile(r"(?<!\d)(\d{9,15})(?!\d)")
+_MICROCHIP_OCR_PREFIX_WINDOW_PATTERN = re.compile(
+    r"(?is)\bn(?:[ºo°\uFFFD]|ro)\s*[:\-]?\s*([^\n]{0,60})"
+)
 _VET_LABEL_LINE_PATTERN = re.compile(
     r"(?i)^\s*(?:veterinari(?:o|a|o/a)|vet|dr\.?|dra\.?|dr/a|doctor|doctora)\b\s*[:\-]?\s*(.*)$"
 )
@@ -750,7 +753,7 @@ def _mine_interpretation_candidates(
         ),
         (
             "microchip_id",
-            r"(?:microchip|chip)\s*(?:n[ºo]\.?|id)?\s*[:\-]?\s*([A-Za-z0-9][A-Za-z0-9./_\-]{1,30}(?:\s+[A-Za-z0-9][A-Za-z0-9./_\-]{0,20}){0,3})",
+            r"(?:microchip|chip)\s*(?:n[ºo°\uFFFD]\.?|nro\.?|id)?\s*[:\-]?\s*([A-Za-z0-9][A-Za-z0-9./_\-]{1,30}(?:\s+[A-Za-z0-9][A-Za-z0-9./_\-]{0,20}){0,3})",
             0.88,
         ),
         (
@@ -814,6 +817,18 @@ def _mine_interpretation_candidates(
             key="microchip_id",
             value=digit_match.group(1),
             confidence=0.6,
+            snippet=match.group(0),
+        )
+
+    for match in _MICROCHIP_OCR_PREFIX_WINDOW_PATTERN.finditer(raw_text):
+        window = match.group(1) if isinstance(match.group(1), str) else ""
+        digit_match = _MICROCHIP_DIGITS_PATTERN.search(window)
+        if digit_match is None:
+            continue
+        add_candidate(
+            key="microchip_id",
+            value=digit_match.group(1),
+            confidence=0.58,
             snippet=match.group(0),
         )
 
