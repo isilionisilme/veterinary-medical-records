@@ -16,7 +16,7 @@
 - If raw text has no chip label and no 9–15 digit sequence, extraction remains empty by design.
 - Free-text mentions like "poner el chip" without an ID should not produce a candidate.
 - Generic invoice/reference lines such as `No: 941000024967769` should remain excluded.
-- Historical completed runs may still expose non-canonical legacy values in review payloads (e.g., `00023035139 NHC`, `BEATRIZ ABARCA C/ ORTEGA`); next loop should normalize/block these in review-facing output.
+- Historical completed runs may still keep legacy values in debug summary traces (`top1_sample`), but `/review` now normalizes/blocks those values after PR #92.
 
 ## How to test (exact commands)
 - `python -m pytest backend/tests/unit/test_golden_extraction_regression.py -s -q`
@@ -28,3 +28,4 @@
 - Commit `c27b2e14` | PR: [#80](https://github.com/isilionisilme/veterinary-medical-records/pull/80) | promotion from top1 candidate when canonical is missing.
 - Commit `9b1a691c` | PR: [#77](https://github.com/isilionisilme/veterinary-medical-records/pull/77) | nearby-label fix for real-run pattern (`N� Chip` + digits).
 - Branch `fix/golden-microchip-ocr-hardening` | Commits `97a014a1`, `1a732ba2` | PR: [#87](https://github.com/isilionisilme/veterinary-medical-records/pull/87) | adds OCR fallback for malformed `N�`/`Nro` prefixes and guards generic `No:` references.
+- Commit `22f64701` | PR: [#92](https://github.com/isilionisilme/veterinary-medical-records/pull/92) | normalizes review-facing `microchip_id` to digits-only and blocks legacy non-chip values in `/review`.
