@@ -15,6 +15,6 @@ These fixtures are a regression mini dataset built from the only two real source
   - Includes owner-context mentions (`PROPIETARIA`) and vet-responsible lines.
 
 - `docB.txt`
-  - Covers owner name + address adjacency (`BEATRIZ ABARCA` + `C/ ORTEGA...`) used by owner trimming tests.
+  - Covers owner name + address adjacency (`NOMBRE DEMO` + `C/ CALLE DEMO...`) used by owner trimming tests.
   - Covers date-like and microchip-like numeric patterns.
   - Includes a `Vet` line for vet-context handling.
