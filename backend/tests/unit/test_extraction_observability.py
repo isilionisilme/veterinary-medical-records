@@ -204,3 +204,84 @@ def test_build_extraction_triage_keeps_top_candidates_shape() -> None:
 
     assert rejected_item["topCandidates"][0]["value"] == "00023035139 NHC"
     assert missing_item["topCandidates"][0]["value"] == "DNI 12345678A"
+
+
+def test_persist_snapshot_logs_goal_fields_status_and_diff(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(extraction_observability, "_OBSERVABILITY_DIR", tmp_path)
+
+    emitted_logs: list[str] = []
+
+    def _capture(message: str) -> None:
+        emitted_logs.append(message)
+
+    monkeypatch.setattr(extraction_observability, "_emit_info", _capture)
+
+    first_snapshot = {
+        "runId": "run-goal-1",
+        "documentId": "doc-goal",
+        "createdAt": "2026-02-14T07:40:00Z",
+        "schemaVersion": "v1",
+        "fields": {
+            "owner_name": {
+                "status": "missing",
+                "confidence": None,
+                "topCandidates": [
+                    {"value": "BEATRIZ ABARCA", "confidence": 0.66},
+                ],
+            },
+            "vet_name": {
+                "status": "missing",
+                "confidence": None,
+            },
+        },
+        "counts": {
+            "totalFields": 2,
+            "accepted": 0,
+            "rejected": 0,
+            "missing": 2,
+            "low": 0,
+            "mid": 0,
+            "high": 0,
+        },
+    }
+    second_snapshot = {
+        "runId": "run-goal-2",
+        "documentId": "doc-goal",
+        "createdAt": "2026-02-14T07:41:00Z",
+        "schemaVersion": "v1",
+        "fields": {
+            "owner_name": {
+                "status": "accepted",
+                "confidence": "mid",
+                "valueNormalized": "BEATRIZ ABARCA",
+                "topCandidates": [
+                    {"value": "BEATRIZ ABARCA", "confidence": 0.66},
+                ],
+            },
+            "vet_name": {
+                "status": "missing",
+                "confidence": None,
+            },
+        },
+        "counts": {
+            "totalFields": 2,
+            "accepted": 1,
+            "rejected": 0,
+            "missing": 1,
+            "low": 0,
+            "mid": 1,
+            "high": 0,
+        },
+    }
+
+    extraction_observability.persist_extraction_run_snapshot(first_snapshot)
+    extraction_observability.persist_extraction_run_snapshot(second_snapshot)
+
+    logs_joined = "\n".join(emitted_logs)
+    assert "goal_fields" in logs_joined
+    assert "GOAL_FIELDS_DIFF" in logs_joined
+    assert "owner_name: status=missing" in logs_joined
+    assert "owner_name: status=missing" in logs_joined and "-> status=accepted" in logs_joined

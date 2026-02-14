@@ -23,6 +23,15 @@ def _emit_info(message: str) -> None:
 _MAX_RUNS_PER_DOCUMENT = 20
 _PROJECT_ROOT = Path(__file__).resolve().parents[3]
 _OBSERVABILITY_DIR = _PROJECT_ROOT / ".local" / "extraction_runs"
+_GOAL_FIELDS = (
+    "microchip_id",
+    "owner_name",
+    "weight",
+    "document_date",
+    "visit_date",
+    "discharge_date",
+    "vet_name",
+)
 
 
 def _safe_document_filename(document_id: str) -> str:
@@ -192,6 +201,65 @@ def _format_top_candidate_for_log(item: dict[str, Any] | None) -> str:
     if confidence is None:
         return f"top1={value!r} (conf=n/a)"
     return f"top1={value!r} (conf={confidence:.2f})"
+
+
+def _goal_field_state(raw_payload: dict[str, Any] | None) -> dict[str, str]:
+    payload = raw_payload if isinstance(raw_payload, dict) else {}
+    status = str(payload.get("status", "missing")).strip().lower() or "missing"
+    top_candidates = _extract_top_candidates(payload)
+    top1 = top_candidates[0] if top_candidates else None
+    return {
+        "status": status,
+        "top1": _format_top_candidate_for_log(top1),
+    }
+
+
+def _log_goal_fields_report(
+    *,
+    document_id: str,
+    current: dict[str, Any],
+    previous: dict[str, Any] | None,
+) -> None:
+    current_fields = (
+        current.get("fields") if isinstance(current.get("fields"), dict) else {}
+    )
+    previous_fields = (
+        previous.get("fields")
+        if isinstance(previous, dict) and isinstance(previous.get("fields"), dict)
+        else {}
+    )
+
+    lines = [
+        (
+            "[extraction-observability] "
+            f"document={document_id} run={current.get('runId')} goal_fields"
+        )
+    ]
+
+    for field in _GOAL_FIELDS:
+        state = _goal_field_state(current_fields.get(field))
+        lines.append(f"- {field}: status={state['status']} {state['top1']}")
+
+    lines.append("GOAL_FIELDS_DIFF:")
+    if not previous_fields:
+        lines.append("- none (first snapshot)")
+    else:
+        has_diff = False
+        for field in _GOAL_FIELDS:
+            current_state = _goal_field_state(current_fields.get(field))
+            previous_state = _goal_field_state(previous_fields.get(field))
+            if current_state == previous_state:
+                continue
+            has_diff = True
+            lines.append(
+                "- "
+                f"{field}: status={previous_state['status']} {previous_state['top1']} "
+                f"-> status={current_state['status']} {current_state['top1']}"
+            )
+        if not has_diff:
+            lines.append("- none")
+
+    _emit_info("\n".join(lines))
 
 
 def build_extraction_triage(snapshot: dict[str, Any]) -> dict[str, Any]:
@@ -491,6 +559,7 @@ def persist_extraction_run_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
     _write_runs(path, runs)
     triage = build_extraction_triage(snapshot)
     _log_triage_report(document_id, triage)
+    _log_goal_fields_report(document_id=document_id, current=snapshot, previous=previous)
     changed_fields = _log_diff(document_id=document_id, previous=previous, current=snapshot)
     return {
         "document_id": document_id,
