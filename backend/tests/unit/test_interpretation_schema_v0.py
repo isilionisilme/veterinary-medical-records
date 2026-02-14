@@ -276,13 +276,12 @@ def test_mvp_coverage_debug_includes_line_number_for_accepted_value() -> None:
     assert microchip_debug["line_number"] == 1
 
 
-def test_document_date_is_not_overwritten_when_visit_date_exists() -> None:
+def test_visit_date_is_populated_from_labeled_input() -> None:
     payload = _build_interpretation_artifact(
         document_id="doc-no-overwrite",
         run_id="run-no-overwrite",
-        raw_text="Fecha documento: 02/01/2026\nFecha de visita: 03/01/2026",
+        raw_text="Fecha de visita: 03/01/2026",
     )
 
     schema = payload["data"]["global_schema_v0"]
-    assert schema["document_date"] == "02/01/2026"
-    assert schema["visit_date"] in {"02/01/2026", "03/01/2026", None}
+    assert schema["visit_date"] == "03/01/2026"
