@@ -11,7 +11,7 @@
 - Must not use vet/clinic-context lines for owner candidate extraction.
 
 ## Known failure modes / blocked-by-signal notes
-- `Datos del Cliente` header blocks without explicit owner label can be ambiguous.
+- `Datos del Cliente` + `Nombre:` is now accepted as owner context; other unlabeled headers can still be ambiguous.
 - When debug shows `has_candidates=false`, do not guess owner from arbitrary nearby names.
 
 ## How to test (exact commands)
@@ -19,6 +19,7 @@
 - For parity: `GET /debug/extraction-runs/{document_id}/summary?limit=1&run_id={run_id}` and inspect `owner_name`.
 
 ## History (commit + PR link)
-- Branch `fix/golden-owner-name-iteration` | Commit `b012628e` | PR: [#77](https://github.com/your-org/veterinary-medical-records/pull/77) | docB missing→accepted (`NOMBRE DEMO`).
-- Commit `c27b2e14` | PR: [#80](https://github.com/your-org/veterinary-medical-records/pull/80) | promotion includes owner_name when top1 exists and canonical value is missing.
+- Branch `fix/golden-owner-name-iteration` | Commit `b012628e` | PR: [#77](https://github.com/isilionisilme/veterinary-medical-records/pull/77) | docB missing→accepted (`NOMBRE DEMO`).
+- Commit `c27b2e14` | PR: [#80](https://github.com/isilionisilme/veterinary-medical-records/pull/80) | promotion includes owner_name when top1 exists and canonical value is missing.
+- Branch `fix/golden-owner-name-minimal-loop` | Commit `efcab057` | PR: TODO(PR: pending) | accepts `Nombre:` when `Datos del Cliente` context is present.
 - Diagnostic run anchor (no code change): `document_id=e05bef44-79d9-4c36-a8f4-490cf6d87473`, `run_id=d838c09a-9589-4dec-811e-dedeb7c75380` (owner missing with no candidate).
