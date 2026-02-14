@@ -50,6 +50,16 @@ describe("validateFieldValue", () => {
     expect(result).toEqual({ ok: true, normalized: "2020-06-05" });
   });
 
+  it("normalizes document_date with two-digit year", () => {
+    const result = validateFieldValue("document_date", "04/10/19");
+    expect(result).toEqual({ ok: true, normalized: "2019-10-04" });
+  });
+
+  it("normalizes discharge_date in year-first slash format", () => {
+    const result = validateFieldValue("discharge_date", "2020/06/05");
+    expect(result).toEqual({ ok: true, normalized: "2020-06-05" });
+  });
+
   it("normalizes controlled vocab fields", () => {
     expect(validateFieldValue("sex", "female")).toEqual({ ok: true, normalized: "hembra" });
     expect(validateFieldValue("species", "gato")).toEqual({ ok: true, normalized: "felino" });

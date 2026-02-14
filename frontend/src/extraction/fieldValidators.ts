@@ -143,7 +143,7 @@ function validateDate(value: string): FieldValidationResult {
     return { ok: true, normalized };
   }
 
-  const isoMatch = compact.match(/\b(\d{4})-(\d{1,2})-(\d{1,2})\b/);
+  const isoMatch = compact.match(/\b(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})\b/);
   if (isoMatch) {
     const year = Number.parseInt(isoMatch[1], 10);
     const month = Number.parseInt(isoMatch[2], 10);

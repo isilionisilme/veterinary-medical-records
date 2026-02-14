@@ -271,9 +271,15 @@ def test_debug_extraction_summary_endpoint_returns_ranked_aggregate(
 
     assert body["document_id"] == "doc-triage-1"
     assert body["considered_runs"] == 1
+    assert "missing_fields_with_candidates" in body
+    assert "missing_fields_without_candidates" in body
     assert isinstance(body["fields"], list)
     assert isinstance(body["most_missing_fields"], list)
     assert isinstance(body["most_rejected_fields"], list)
+
+    missing_by_field = {item["field"]: item for item in body["most_missing_fields"]}
+    assert missing_by_field["claim_id"]["has_candidates"] is False
+    assert missing_by_field["claim_id"]["top_key_tokens"] is None
 
     rejected_by_field = {item["field"]: item for item in body["most_rejected_fields"]}
     assert rejected_by_field["visit_date"]["rejected_count"] == 1

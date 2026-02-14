@@ -539,6 +539,10 @@ def summarize_extraction_runs(document_id: str, *, limit: int = 20) -> dict[str,
             "suspicious_count": 0,
             "top1_counter": Counter(),
             "top1_confidences": [],
+            "missing_top1_counter": Counter(),
+            "missing_top1_confidences": [],
+            "missing_with_candidates_count": 0,
+            "missing_without_candidates_count": 0,
         }
     )
 
@@ -570,6 +574,22 @@ def summarize_extraction_runs(document_id: str, *, limit: int = 20) -> dict[str,
                 if top1_conf is not None:
                     field_stats["top1_confidences"].append(top1_conf)
 
+            if status == "missing":
+                if top1_value:
+                    field_stats["missing_with_candidates_count"] += 1
+                    field_stats["missing_top1_counter"][top1_value] += 1
+                    missing_top1_conf = (
+                        _coerce_confidence(top1.get("confidence"))
+                        if isinstance(top1, dict)
+                        else None
+                    )
+                    if missing_top1_conf is not None:
+                        field_stats["missing_top1_confidences"].append(
+                            missing_top1_conf
+                        )
+                else:
+                    field_stats["missing_without_candidates_count"] += 1
+
             if status == "accepted":
                 value_for_flags = (
                     _as_text(raw_payload.get("valueNormalized"))
@@ -591,6 +611,21 @@ def summarize_extraction_runs(document_id: str, *, limit: int = 20) -> dict[str,
         if confidences:
             avg_conf = round(sum(confidences) / len(confidences), 2)
 
+        missing_top1_sample = None
+        if field_stats["missing_top1_counter"]:
+            missing_top1_sample = field_stats["missing_top1_counter"].most_common(1)[0][0]
+
+        missing_confidences = field_stats["missing_top1_confidences"]
+        avg_top1_conf = None
+        if missing_confidences:
+            avg_top1_conf = round(sum(missing_confidences) / len(missing_confidences), 2)
+
+        missing_with_candidates_count = int(field_stats["missing_with_candidates_count"])
+        missing_without_candidates_count = int(
+            field_stats["missing_without_candidates_count"]
+        )
+        has_candidates = missing_with_candidates_count > 0
+
         field_rows.append(
             {
                 "field": field,
@@ -600,6 +635,11 @@ def summarize_extraction_runs(document_id: str, *, limit: int = 20) -> dict[str,
                 "suspicious_count": int(field_stats["suspicious_count"]),
                 "top1_sample": _truncate_text(top1_sample),
                 "avg_conf": avg_conf,
+                "has_candidates": has_candidates,
+                "missing_with_candidates_count": missing_with_candidates_count,
+                "missing_without_candidates_count": missing_without_candidates_count,
+                "avg_top1_conf": avg_top1_conf,
+                "top_key_tokens": _truncate_text(missing_top1_sample, limit=30),
             }
         )
 
@@ -632,10 +672,23 @@ def summarize_extraction_runs(document_id: str, *, limit: int = 20) -> dict[str,
         reverse=True,
     )
 
+    missing_fields_with_candidates = sum(
+        1
+        for item in most_missing
+        if bool(item.get("has_candidates"))
+    )
+    missing_fields_without_candidates = sum(
+        1
+        for item in most_missing
+        if not bool(item.get("has_candidates"))
+    )
+
     summary = {
         "document_id": document_id,
         "total_runs": len(runs),
         "considered_runs": len(selected_runs),
+        "missing_fields_with_candidates": missing_fields_with_candidates,
+        "missing_fields_without_candidates": missing_fields_without_candidates,
         "fields": field_rows,
         "most_missing_fields": most_missing[:10],
         "most_rejected_fields": most_rejected[:10],
@@ -647,6 +700,8 @@ def summarize_extraction_runs(document_id: str, *, limit: int = 20) -> dict[str,
 def _log_extraction_runs_summary(summary: dict[str, Any]) -> None:
     document_id = _as_text(summary.get("document_id")) or ""
     considered_runs = int(summary.get("considered_runs", 0) or 0)
+    missing_with_candidates = int(summary.get("missing_fields_with_candidates", 0) or 0)
+    missing_without_candidates = int(summary.get("missing_fields_without_candidates", 0) or 0)
     fields = summary.get("fields") if isinstance(summary.get("fields"), list) else []
     most_missing = (
         summary.get("most_missing_fields")
@@ -663,7 +718,9 @@ def _log_extraction_runs_summary(summary: dict[str, Any]) -> None:
         (
             "[extraction-observability] "
             f"document={document_id} runs_summary considered_runs={considered_runs} "
-            f"tracked_fields={len(fields)}"
+            f"tracked_fields={len(fields)} "
+            f"missing_fields_with_candidates={missing_with_candidates} "
+            f"missing_fields_without_candidates={missing_without_candidates}"
         ),
         "MOST_MISSING:",
     ]
@@ -678,7 +735,10 @@ def _log_extraction_runs_summary(summary: dict[str, Any]) -> None:
                 "- "
                 f"{item.get('field')}: missing={int(item.get('missing_count', 0) or 0)} "
                 f"rejected={int(item.get('rejected_count', 0) or 0)} "
-                f"top1={item.get('top1_sample')!r} avg_conf={item.get('avg_conf')}"
+                f"has_candidates={bool(item.get('has_candidates'))} "
+                f"top1={item.get('top1_sample')!r} "
+                f"avg_top1_conf={item.get('avg_top1_conf')} "
+                f"top_key_tokens={item.get('top_key_tokens')!r}"
             )
 
     lines.append("MOST_REJECTED:")

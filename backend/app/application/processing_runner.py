@@ -74,6 +74,10 @@ _DATE_TARGET_PRIORITY: dict[str, int] = {
     "discharge_date": 3,
     "document_date": 2,
 }
+_MICROCHIP_KEYWORD_WINDOW_PATTERN = re.compile(
+    r"(?is)(?:microchip|chip|n[ºo°]\s*chip)\s*(?:n[ºo°]\.?|id)?\s*[:\-]?\s*([^\n]{0,90})"
+)
+_MICROCHIP_DIGITS_PATTERN = re.compile(r"(?<!\d)(\d{9,15})(?!\d)")
 
 
 def _default_now_iso() -> str:
@@ -490,6 +494,13 @@ def _mine_interpretation_candidates(
         cleaned_value = value.strip(" .,:;\t\r\n")
         if not cleaned_value:
             return
+
+        if key == "microchip_id":
+            digit_match = _MICROCHIP_DIGITS_PATTERN.search(cleaned_value)
+            if digit_match is None:
+                return
+            cleaned_value = digit_match.group(1)
+
         normalized_key = cleaned_value.casefold()
         if normalized_key in seen_values[key]:
             return
@@ -589,6 +600,18 @@ def _mine_interpretation_candidates(
                 confidence=confidence,
                 snippet=match.group(0),
             )
+
+    for match in _MICROCHIP_KEYWORD_WINDOW_PATTERN.finditer(raw_text):
+        window = match.group(1) if isinstance(match.group(1), str) else ""
+        digit_match = _MICROCHIP_DIGITS_PATTERN.search(window)
+        if digit_match is None:
+            continue
+        add_candidate(
+            key="microchip_id",
+            value=digit_match.group(1),
+            confidence=0.6,
+            snippet=match.group(0),
+        )
 
     for match in re.finditer(
         r"\b([0-9]{1,2}[\/\-.][0-9]{1,2}[\/\-.][0-9]{2,4})\b", raw_text
@@ -891,6 +914,15 @@ def _candidate_sort_key(item: dict[str, object], key: str) -> tuple[float, float
     confidence = float(item.get("confidence", 0.0))
     if key in DATE_TARGET_KEYS:
         return float(item.get("anchor_priority", 0)), confidence
+
+    if key == "microchip_id":
+        raw_value = str(item.get("value", "")).strip()
+        if _MICROCHIP_DIGITS_PATTERN.fullmatch(raw_value):
+            return 2.0, confidence
+        if _MICROCHIP_DIGITS_PATTERN.search(raw_value):
+            return 1.0, confidence
+        return 0.0, confidence
+
     return 0.0, confidence
 
 

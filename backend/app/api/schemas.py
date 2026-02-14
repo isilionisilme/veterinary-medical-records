@@ -232,14 +232,21 @@ class ExtractionRunFieldSummaryResponse(BaseModel):
     rejected_count: int
     accepted_count: int
     suspicious_count: int
+    has_candidates: bool = False
+    missing_with_candidates_count: int = 0
+    missing_without_candidates_count: int = 0
     top1_sample: str | None = None
     avg_conf: float | None = None
+    avg_top1_conf: float | None = None
+    top_key_tokens: str | None = None
 
 
 class ExtractionRunsAggregateSummaryResponse(BaseModel):
     document_id: str
     total_runs: int
     considered_runs: int
+    missing_fields_with_candidates: int = 0
+    missing_fields_without_candidates: int = 0
     fields: list[ExtractionRunFieldSummaryResponse]
     most_missing_fields: list[ExtractionRunFieldSummaryResponse]
     most_rejected_fields: list[ExtractionRunFieldSummaryResponse]
