@@ -26,4 +26,4 @@
 - Commit `7d4b2d7a` | PR: [#77](https://github.com/isilionisilme/veterinary-medical-records/pull/77) | improved microchip capture; docA/docB missing→accepted.
 - Commit `c27b2e14` | PR: [#80](https://github.com/isilionisilme/veterinary-medical-records/pull/80) | promotion from top1 candidate when canonical is missing.
 - Commit `9b1a691c` | PR: [#77](https://github.com/isilionisilme/veterinary-medical-records/pull/77) | nearby-label fix for real-run pattern (`N� Chip` + digits).
-- Branch `fix/golden-microchip-ocr-hardening` | Commit `97a014a1` | PR: TODO(PR: pending) | adds OCR fallback for malformed `N�`/`Nro` microchip prefixes.
+- Branch `fix/golden-microchip-ocr-hardening` | Commits `97a014a1`, `1a732ba2` | PR: [#87](https://github.com/isilionisilme/veterinary-medical-records/pull/87) | adds OCR fallback for malformed `N�`/`Nro` prefixes and guards generic `No:` references.
