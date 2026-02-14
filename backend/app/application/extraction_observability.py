@@ -38,13 +38,16 @@ _GOAL_FIELDS = (
     "vet_name",
 )
 
+SNAPSHOT_CONFIDENCE_MID_MIN = 0.6
+SNAPSHOT_CONFIDENCE_HIGH_MIN = 0.8
+
 
 def _confidence_to_band(confidence: float | None) -> str | None:
     if confidence is None:
         return None
-    if confidence >= 0.8:
+    if confidence >= SNAPSHOT_CONFIDENCE_HIGH_MIN:
         return "high"
-    if confidence >= 0.6:
+    if confidence >= SNAPSHOT_CONFIDENCE_MID_MIN:
         return "mid"
     return "low"
 

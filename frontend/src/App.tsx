@@ -925,6 +925,9 @@ function clampConfidence(value: number): number {
 
 type ConfidenceTone = "low" | "med" | "high";
 
+const SNAPSHOT_CONFIDENCE_MID_MIN = 0.6;
+const SNAPSHOT_CONFIDENCE_HIGH_MIN = 0.8;
+
 function getConfidenceTone(confidence: number): ConfidenceTone {
   const value = clampConfidence(confidence);
   if (value < 0.4) {
@@ -934,6 +937,19 @@ function getConfidenceTone(confidence: number): ConfidenceTone {
     return "med";
   }
   return "high";
+}
+
+function getObservabilitySnapshotConfidenceBand(
+  confidence: number
+): "low" | "mid" | "high" {
+  const value = clampConfidence(confidence);
+  if (value >= SNAPSHOT_CONFIDENCE_HIGH_MIN) {
+    return "high";
+  }
+  if (value >= SNAPSHOT_CONFIDENCE_MID_MIN) {
+    return "mid";
+  }
+  return "low";
 }
 
 function isFieldValueEmpty(value: unknown): boolean {
@@ -2199,10 +2215,12 @@ export function App() {
       const topCandidates = topCandidatesByField.get(definition.key) ?? [];
 
       if (event?.status === "accepted") {
-        const tone = acceptedField ? getConfidenceTone(acceptedField.confidence) : "low";
+        const confidenceBand = acceptedField
+          ? getObservabilitySnapshotConfidenceBand(acceptedField.confidence)
+          : "low";
         fields[definition.key] = {
           status: "accepted",
-          confidence: tone === "med" ? "mid" : tone,
+          confidence: confidenceBand,
           valueNormalized:
             event.normalized ?? (acceptedField?.value === null || acceptedField?.value === undefined
               ? undefined
