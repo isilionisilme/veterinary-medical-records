@@ -15,6 +15,10 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
+from backend.app.application.extraction_observability import (
+    build_extraction_snapshot_from_interpretation,
+    persist_extraction_run_snapshot,
+)
 from backend.app.application.extraction_quality import evaluate_extracted_text_quality
 from backend.app.application.field_normalizers import normalize_canonical_fields
 from backend.app.application.global_schema_v0 import (
@@ -25,6 +29,7 @@ from backend.app.application.global_schema_v0 import (
     normalize_global_schema_v0,
     validate_global_schema_v0_shape,
 )
+from backend.app.config import extraction_observability_enabled
 from backend.app.domain.models import (
     ProcessingRun,
     ProcessingRunState,
@@ -242,12 +247,54 @@ async def _execute_run(
         )
         return
 
+    completed_at = _default_now_iso()
     repository.complete_run(
         run_id=run.run_id,
         state=ProcessingRunState.COMPLETED,
-        completed_at=_default_now_iso(),
+        completed_at=completed_at,
         failure_type=None,
     )
+    _persist_observability_snapshot_for_completed_run(
+        repository=repository,
+        document_id=run.document_id,
+        run_id=run.run_id,
+        created_at=completed_at,
+    )
+
+
+def _persist_observability_snapshot_for_completed_run(
+    *,
+    repository: DocumentRepository,
+    document_id: str,
+    run_id: str,
+    created_at: str,
+) -> None:
+    if not extraction_observability_enabled():
+        return
+
+    interpretation_payload = repository.get_latest_artifact_payload(
+        run_id=run_id,
+        artifact_type="STRUCTURED_INTERPRETATION",
+    )
+    if not isinstance(interpretation_payload, dict):
+        return
+
+    snapshot = build_extraction_snapshot_from_interpretation(
+        document_id=document_id,
+        run_id=run_id,
+        created_at=created_at,
+        interpretation_payload=interpretation_payload,
+    )
+    if not isinstance(snapshot, dict):
+        return
+
+    try:
+        persist_extraction_run_snapshot(snapshot)
+    except Exception:  # pragma: no cover - defensive
+        logger.exception(
+            "Failed to persist extraction observability snapshot for completed run",
+            extra={"document_id": document_id, "run_id": run_id},
+        )
 
 
 async def _process_document(

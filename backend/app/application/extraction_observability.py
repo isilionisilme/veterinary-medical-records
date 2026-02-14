@@ -10,6 +10,11 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
+from backend.app.application.global_schema_v0 import (
+    GLOBAL_SCHEMA_V0_KEYS,
+    REPEATABLE_KEYS_V0,
+)
+
 logger = logging.getLogger(__name__)
 _uvicorn_logger = logging.getLogger("uvicorn.error")
 
@@ -32,6 +37,165 @@ _GOAL_FIELDS = (
     "discharge_date",
     "vet_name",
 )
+
+
+def _confidence_to_band(confidence: float | None) -> str | None:
+    if confidence is None:
+        return None
+    if confidence >= 0.8:
+        return "high"
+    if confidence >= 0.6:
+        return "mid"
+    return "low"
+
+
+def _source_hint_from_evidence(raw_field: dict[str, Any]) -> str | None:
+    evidence = raw_field.get("evidence") if isinstance(raw_field, dict) else None
+    if not isinstance(evidence, dict):
+        return None
+
+    parts: list[str] = []
+    page = evidence.get("page")
+    if isinstance(page, int):
+        parts.append(f"page:{page}")
+
+    snippet = _as_text(evidence.get("snippet"))
+    if snippet:
+        parts.append(f"snippet:{snippet}")
+
+    if not parts:
+        return None
+    return " | ".join(parts)
+
+
+def build_extraction_snapshot_from_interpretation(
+    *,
+    document_id: str,
+    run_id: str,
+    created_at: str,
+    interpretation_payload: dict[str, Any],
+) -> dict[str, Any] | None:
+    if not document_id.strip() or not run_id.strip() or not created_at.strip():
+        return None
+
+    data = (
+        interpretation_payload.get("data")
+        if isinstance(interpretation_payload, dict)
+        else None
+    )
+    if not isinstance(data, dict):
+        return None
+
+    global_schema = (
+        data.get("global_schema_v0")
+        if isinstance(data.get("global_schema_v0"), dict)
+        else {}
+    )
+    raw_fields = data.get("fields") if isinstance(data.get("fields"), list) else []
+
+    top_candidates_by_field: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    dedup_values_by_field: dict[str, set[str]] = defaultdict(set)
+
+    for raw_field in raw_fields:
+        if not isinstance(raw_field, dict):
+            continue
+        field_key = _as_text(raw_field.get("key"))
+        if not field_key or field_key not in GLOBAL_SCHEMA_V0_KEYS:
+            continue
+
+        candidate_value = _as_text(raw_field.get("value"))
+        if not candidate_value:
+            continue
+
+        candidate_key = candidate_value.casefold()
+        if candidate_key in dedup_values_by_field[field_key]:
+            continue
+        dedup_values_by_field[field_key].add(candidate_key)
+
+        top_candidates_by_field[field_key].append(
+            {
+                "value": candidate_value,
+                "confidence": _coerce_confidence(raw_field.get("confidence")),
+                "sourceHint": _source_hint_from_evidence(raw_field),
+            }
+        )
+
+    for field_key, candidates in top_candidates_by_field.items():
+        candidates.sort(
+            key=lambda item: float(item.get("confidence") or 0.0),
+            reverse=True,
+        )
+        top_candidates_by_field[field_key] = candidates[:3]
+
+    fields: dict[str, dict[str, Any]] = {}
+    for field_key in GLOBAL_SCHEMA_V0_KEYS:
+        top_candidates = top_candidates_by_field.get(field_key, [])
+        top1 = top_candidates[0] if top_candidates else None
+
+        raw_value = global_schema.get(field_key)
+        normalized_value: str | None
+        if field_key in REPEATABLE_KEYS_V0:
+            if isinstance(raw_value, list):
+                normalized_value = next(
+                    (str(item).strip() for item in raw_value if str(item).strip()),
+                    None,
+                )
+            else:
+                normalized_value = None
+        else:
+            normalized_value = _as_text(raw_value)
+
+        if normalized_value:
+            confidence = (
+                _coerce_confidence(top1.get("confidence"))
+                if isinstance(top1, dict)
+                else None
+            )
+            fields[field_key] = {
+                "status": "accepted",
+                "confidence": _confidence_to_band(confidence),
+                "valueNormalized": normalized_value,
+                "valueRaw": (
+                    _as_text(top1.get("value"))
+                    if isinstance(top1, dict)
+                    else normalized_value
+                ),
+                "rawCandidate": _as_text(top1.get("value")) if isinstance(top1, dict) else None,
+                "sourceHint": _as_text(top1.get("sourceHint")) if isinstance(top1, dict) else None,
+                "topCandidates": top_candidates,
+            }
+            continue
+
+        fields[field_key] = {
+            "status": "missing",
+            "confidence": None,
+            "topCandidates": top_candidates,
+        }
+
+    field_values = list(fields.values())
+    accepted_count = sum(1 for item in field_values if item.get("status") == "accepted")
+    rejected_count = sum(1 for item in field_values if item.get("status") == "rejected")
+    missing_count = sum(1 for item in field_values if item.get("status") == "missing")
+    low_count = sum(1 for item in field_values if item.get("confidence") == "low")
+    mid_count = sum(1 for item in field_values if item.get("confidence") == "mid")
+    high_count = sum(1 for item in field_values if item.get("confidence") == "high")
+
+    return {
+        "runId": run_id,
+        "documentId": document_id,
+        "createdAt": created_at,
+        "schemaVersion": "v1",
+        "fields": fields,
+        "counts": {
+            "totalFields": len(GLOBAL_SCHEMA_V0_KEYS),
+            "accepted": accepted_count,
+            "rejected": rejected_count,
+            "missing": missing_count,
+            "low": low_count,
+            "mid": mid_count,
+            "high": high_count,
+        },
+    }
 
 
 def _safe_document_filename(document_id: str) -> str:

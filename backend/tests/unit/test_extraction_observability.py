@@ -285,3 +285,92 @@ def test_persist_snapshot_logs_goal_fields_status_and_diff(
     assert "GOAL_FIELDS_DIFF" in logs_joined
     assert "owner_name: status=missing" in logs_joined
     assert "owner_name: status=missing" in logs_joined and "-> status=accepted" in logs_joined
+
+
+def test_build_snapshot_from_interpretation_returns_expected_shape() -> None:
+    interpretation_payload = {
+        "interpretation_id": "int-1",
+        "version_number": 1,
+        "data": {
+            "global_schema_v0": {
+                "pet_name": "Luna",
+                "owner_name": "BEATRIZ ABARCA",
+                "microchip_id": "00023035139",
+            },
+            "fields": [
+                {
+                    "key": "pet_name",
+                    "value": "Luna",
+                    "confidence": 0.72,
+                    "evidence": {"page": 1, "snippet": "Paciente: Luna"},
+                },
+                {
+                    "key": "owner_name",
+                    "value": "BEATRIZ ABARCA",
+                    "confidence": 0.66,
+                    "evidence": {"page": 2, "snippet": "Nombre BEATRIZ ABARCA"},
+                },
+                {
+                    "key": "microchip_id",
+                    "value": "00023035139",
+                    "confidence": 0.91,
+                    "evidence": {"page": 2, "snippet": "Chip 00023035139"},
+                },
+            ],
+        },
+    }
+
+    snapshot = extraction_observability.build_extraction_snapshot_from_interpretation(
+        document_id="doc-auto",
+        run_id="run-auto-1",
+        created_at="2026-02-14T08:00:00Z",
+        interpretation_payload=interpretation_payload,
+    )
+
+    assert snapshot is not None
+    assert snapshot["documentId"] == "doc-auto"
+    assert snapshot["runId"] == "run-auto-1"
+    assert snapshot["counts"]["accepted"] == 3
+    assert snapshot["counts"]["rejected"] == 0
+    assert snapshot["fields"]["pet_name"]["status"] == "accepted"
+    assert snapshot["fields"]["owner_name"]["status"] == "accepted"
+    assert snapshot["fields"]["microchip_id"]["status"] == "accepted"
+    assert snapshot["fields"]["pet_name"]["topCandidates"][0]["value"] == "Luna"
+
+
+def test_build_snapshot_from_interpretation_uses_first_repeatable_value() -> None:
+    interpretation_payload = {
+        "interpretation_id": "int-2",
+        "version_number": 1,
+        "data": {
+            "global_schema_v0": {
+                "medication": ["Amoxicilina", "Meloxicam"],
+            },
+            "fields": [
+                {
+                    "key": "medication",
+                    "value": "Amoxicilina",
+                    "confidence": 0.81,
+                    "evidence": {"page": 1, "snippet": "Medicacion: Amoxicilina"},
+                },
+                {
+                    "key": "medication",
+                    "value": "Meloxicam",
+                    "confidence": 0.62,
+                    "evidence": {"page": 1, "snippet": "Medicacion: Meloxicam"},
+                },
+            ],
+        },
+    }
+
+    snapshot = extraction_observability.build_extraction_snapshot_from_interpretation(
+        document_id="doc-auto",
+        run_id="run-auto-2",
+        created_at="2026-02-14T08:01:00Z",
+        interpretation_payload=interpretation_payload,
+    )
+
+    assert snapshot is not None
+    assert snapshot["fields"]["medication"]["status"] == "accepted"
+    assert snapshot["fields"]["medication"]["valueNormalized"] == "Amoxicilina"
+    assert snapshot["fields"]["medication"]["topCandidates"][0]["value"] == "Amoxicilina"
