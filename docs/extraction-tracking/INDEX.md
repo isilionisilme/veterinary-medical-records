@@ -8,9 +8,11 @@
 - Current UI/backend facts:
   - UI renders extracted values from `GET /documents/{document_id}/review`.
   - UI-facing structured values are in `active_interpretation.data.global_schema_v0`.
+  - Debug extraction snapshots are auto-persisted by backend for completed runs.
+  - Snapshot ownership is backend-canonical; frontend no longer posts `POST /debug/extraction-runs`.
   - `GET /runs/{run_id}/artifacts/global-schema-v0` has been observed as 404 in parity checks.
   - Debug parity should pin run with `GET /debug/extraction-runs/{document_id}/summary?limit=...&run_id=...`.
-- Next recommended minimal iteration: persist debug extraction snapshots for completed runs so run-pinned (`run_id`) parity checks can compare review and debug on the same run.
+- Next recommended minimal iteration: run a fresh latest-5 parity sweep after PR #100 to verify run-pinned summary coverage remains stable under backend-only snapshot ownership.
 
 ## Baseline snapshots
 - [Baseline v1 (post-PR #83)](runs/baseline-v1.md): freeze point before PR #85+ iterations.
@@ -46,6 +48,8 @@ The following PRs represent the evolution of the extraction tracking system. Eac
 | 15. microchip Review-Normalization | [#92](https://github.com/isilionisilme/veterinary-medical-records/pull/92) | Normalizes `microchip_id` to digits-only in review-facing payloads and blocks legacy non-chip values in `/review`. |
 | 16. owner_name Tabular Nombre Fix | [#95](https://github.com/isilionisilme/veterinary-medical-records/pull/95) | Extracts `owner_name` from tabular `Datos del Cliente` + `Nombre` layout with conservative ambiguity guards. |
 | 17. debug Summary `run_id` Filter | [#97](https://github.com/isilionisilme/veterinary-medical-records/pull/97) | Adds optional `run_id` filtering to debug extraction summary and contracts for unknown/missing run ids. |
+| 18. Backend Snapshot Auto-persist | [#99](https://github.com/isilionisilme/veterinary-medical-records/pull/99) | Persists debug extraction snapshots in backend at completed-run boundary so run-pinned parity has canonical server-side data. |
+| 19. Frontend Snapshot Writer Removal | [#100](https://github.com/isilionisilme/veterinary-medical-records/pull/100) | Removes frontend snapshot POST path and keeps snapshot ownership backend-canonical to avoid split-write drift. |
 
 ## Golden iterations (one-field loop)
 
@@ -88,5 +92,7 @@ The following PRs represent the evolution of the extraction tracking system. Eac
 - [UI field parity (owner_name post-PR93)](runs/ui-field-parity-owner-name-post-pr93.md): latest-5 recheck remains `owner_name=null` with `has_candidates=false` across sampled runs.
 - [UI field parity (owner_name post-PR95)](runs/ui-field-parity-owner-name-post-pr95.md): fresh recheck shows `owner_name` accepted in review for tabular cases, with residual debug-summary lag for those same runs.
 - [UI field parity (owner_name post-PR97)](runs/ui-field-parity-owner-name-post-pr97.md): `run_id`-pinned debug summary now filters correctly; current 404s indicate missing persisted snapshots for those runs.
+- [UI field parity (owner_name post-PR99)](runs/ui-field-parity-owner-name-post-pr99.md): backend now auto-persists snapshots for completed runs, closing the primary 404 persistence gap for new runs.
+- [UI field parity (owner_name post-PR100)](runs/ui-field-parity-owner-name-post-pr100.md): ownership policy update confirms backend-only snapshot writes and removes frontend POST path.
 - [Baseline v1 snapshot](runs/baseline-v1.md): freeze point (post-PR #83) for expected-vs-observed comparison before next loop.
 - [Raw-text signal diagnostic (microchip/owner)](../debug/raw-text-signal-microchip-owner.md): later evidence found clear raw_text signal for microchip and prompted a minimal microchip-only heuristic fix.

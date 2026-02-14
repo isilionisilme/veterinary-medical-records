@@ -23,4 +23,4 @@
 ## Conclusion
 - PR #97 resolves the endpoint contract gap (`run_id` is now honored when snapshots exist).
 - Current 404 outcomes are expected for these runs because no debug extraction snapshots were persisted for those specific `run_id` values.
-- Next minimal iteration should persist extraction snapshots for completed runs (or expose a deterministic bridge) so run-pinned parity checks can compare review and debug on the same run.
+- This gap is addressed for new runs by PR #99 (backend auto-persist) and ownership was made backend-only in PR #100.
