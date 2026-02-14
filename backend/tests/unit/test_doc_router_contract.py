@@ -184,3 +184,25 @@ def test_user_visible_entry_includes_design_system_module() -> None:
 
     assert "docs/agent_router/02_PRODUCT/DESIGN_SYSTEM/00_entry.md" in user_visible_entry
     assert "docs/agent_router/04_PROJECT/DESIGN_SYSTEM/00_entry.md" in design_system_entry
+
+
+def test_code_review_protocol_requires_pr_comment_urls_and_follow_up() -> None:
+    code_review_entry = _read_text(
+        ROUTER_ROOT / "01_WORKFLOW" / "CODE_REVIEW" / "00_entry.md"
+    )
+    pr_commenting = _read_text(
+        ROUTER_ROOT / "01_WORKFLOW" / "CODE_REVIEW" / "20_pr_commenting.md"
+    )
+
+    assert "Mandatory publication protocol (blocking)" in code_review_entry
+    assert "the PR comment URL is returned to the user" in code_review_entry
+    assert "follow-up PR comment" in code_review_entry
+
+    assert "Blocking execution sequence" in pr_commenting
+    assert "Return the published PR comment URL" in pr_commenting
+    assert "Return the follow-up PR comment URL" in pr_commenting
+    assert (
+        "This follow-up must be published automatically as part of the "
+        "remediation workflow (do not wait for a separate user prompt)."
+        in pr_commenting
+    )
