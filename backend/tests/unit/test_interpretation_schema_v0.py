@@ -121,6 +121,16 @@ def test_owner_name_heuristic_drops_address_suffix_after_split() -> None:
     assert owner_candidates[0]["value"] == "BEATRIZ ABARCA"
 
 
+def test_owner_name_nombre_line_uses_datos_del_cliente_context() -> None:
+    candidates = _mine_interpretation_candidates(
+        "Datos del Cliente\nNombre: BEATRIZ ABARCA\nPaciente: Luna"
+    )
+
+    owner_candidates = candidates.get("owner_name", [])
+    assert owner_candidates
+    assert owner_candidates[0]["value"] == "BEATRIZ ABARCA"
+
+
 def test_vet_name_heuristic_rejects_address_like_line() -> None:
     candidates = _mine_interpretation_candidates(
         "Veterinario: Calle Mayor 123\nCentro Veterinario Central"
