@@ -10,7 +10,7 @@
   - UI-facing structured values are in `active_interpretation.data.global_schema_v0`.
   - `GET /runs/{run_id}/artifacts/global-schema-v0` has been observed as 404 in parity checks.
   - Debug parity should pin run with `GET /debug/extraction-runs/{document_id}/summary?limit=...&run_id=...`.
-- Next recommended minimal iteration: owner_name UI/backend parity re-check on same `run_id` after the `Datos del Cliente` context fix.
+- Next recommended minimal iteration: owner-name detection deep-dive for records where `Datos del Cliente` exists but `has_candidates=false` persists.
 
 ## Baseline snapshots
 - [Baseline v1 (post-PR #83)](runs/baseline-v1.md): freeze point before PR #85+ iterations.
@@ -34,6 +34,7 @@ The following PRs represent the evolution of the extraction tracking system. Eac
 | 6. Docs-Only PR | [#82](https://github.com/isilionisilme/veterinary-medical-records/pull/82) | Creates a single, clean docs-only PR for all extraction tracking documentation. |
 | 7. PR Storyline & Anchors | [#83](https://github.com/isilionisilme/veterinary-medical-records/pull/83) | Adds PR Storyline, explicit PR anchors, and final reviewer-facing improvements. |
 | 8. Baseline Snapshot v1 | [#84](https://github.com/isilionisilme/veterinary-medical-records/pull/84) | Freezes post-#83 baseline and expected-vs-observed anchors before next loop. |
+| 9. owner_name Parity Recheck | [#85](https://github.com/isilionisilme/veterinary-medical-records/pull/85) | Applies conservative `Datos del Cliente` fallback and hardens ambiguity guardrails. |
 
 ## Golden iterations (one-field loop)
 
@@ -65,5 +66,6 @@ The following PRs represent the evolution of the extraction tracking system. Eac
 ## UI ↔ Backend parity / debugging reports
 - [UI run parity](runs/ui-run-parity.md): UI fields come from `/documents/{document_id}/review`, using `active_interpretation.data.global_schema_v0`; explicit `/runs/{run_id}/artifacts/global-schema-v0` observed as 404 in checks.
 - [UI field parity (microchip/owner)](runs/ui-field-parity-microchip-owner.md): in one real run, both empty with `has_candidates=false`, classified as detection-missing at that point.
+- [UI field parity (owner_name post-PR85)](runs/ui-field-parity-owner-name-post-pr85.md): reprocess run remains `owner_name=null` with `has_candidates=false`, confirming detection-missing and no UI mismatch.
 - [Baseline v1 snapshot](runs/baseline-v1.md): freeze point (post-PR #83) for expected-vs-observed comparison before next loop.
 - [Raw-text signal diagnostic (microchip/owner)](../debug/raw-text-signal-microchip-owner.md): later evidence found clear raw_text signal for microchip and prompted a minimal microchip-only heuristic fix.
