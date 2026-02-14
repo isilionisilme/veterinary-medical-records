@@ -235,3 +235,52 @@ def test_debug_extraction_triage_endpoint_returns_not_found_without_runs(
         "error_code": "NOT_FOUND",
         "message": "No extraction snapshots found for this document.",
     }
+
+
+def test_debug_extraction_summary_endpoint_returns_ranked_aggregate(
+    test_client: TestClient, monkeypatch
+) -> None:
+    monkeypatch.setenv("VET_RECORDS_EXTRACTION_OBS", "1")
+
+    payload = _triage_snapshot_payload()
+    payload["runId"] = "run-triage-2"
+    payload["fields"]["visit_date"] = {
+        "status": "rejected",
+        "confidence": None,
+        "valueRaw": "08/12/19",
+        "reason": "invalid-date",
+        "rawCandidate": "08/12/19",
+        "topCandidates": [{"value": "08/12/19", "confidence": 0.84}],
+    }
+    payload["counts"] = {
+        "totalFields": 7,
+        "accepted": 4,
+        "rejected": 2,
+        "missing": 1,
+        "low": 2,
+        "mid": 1,
+        "high": 1,
+    }
+
+    post_response = test_client.post("/debug/extraction-runs", json=payload)
+    assert post_response.status_code == 201
+
+    summary_response = test_client.get("/debug/extraction-runs/doc-triage-1/summary?limit=20")
+    assert summary_response.status_code == 200
+    body = summary_response.json()
+
+    assert body["document_id"] == "doc-triage-1"
+    assert body["considered_runs"] == 1
+    assert "missing_fields_with_candidates" in body
+    assert "missing_fields_without_candidates" in body
+    assert isinstance(body["fields"], list)
+    assert isinstance(body["most_missing_fields"], list)
+    assert isinstance(body["most_rejected_fields"], list)
+
+    missing_by_field = {item["field"]: item for item in body["most_missing_fields"]}
+    assert missing_by_field["claim_id"]["has_candidates"] is False
+    assert missing_by_field["claim_id"]["top_key_tokens"] is None
+
+    rejected_by_field = {item["field"]: item for item in body["most_rejected_fields"]}
+    assert rejected_by_field["visit_date"]["rejected_count"] == 1
+    assert rejected_by_field["visit_date"]["top1_sample"] == "08/12/19"

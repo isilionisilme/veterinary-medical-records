@@ -37,6 +37,12 @@ function validateMicrochip(value: string): FieldValidationResult {
   if (!compact) {
     return { ok: false, reason: "empty" };
   }
+
+  const leadingDigitsWithTrailingNonDigits = compact.match(/^(\d{9,15})\D+$/);
+  if (leadingDigitsWithTrailingNonDigits) {
+    return { ok: true, normalized: leadingDigitsWithTrailingNonDigits[1] };
+  }
+
   if (/[a-z]/i.test(compact)) {
     return { ok: false, reason: "non-digit" };
   }
@@ -55,7 +61,7 @@ function validateWeight(value: string): FieldValidationResult {
     return { ok: false, reason: "empty" };
   }
 
-  const match = compact.match(/^(\d+(?:[.,]\d+)?)\s*(kg|kgs)\s*$/i);
+  const match = compact.match(/^(\d+(?:[.,]\d+)?)\s*(kg|kgs)?\s*$/i);
   if (!match) {
     return { ok: false, reason: "invalid-weight" };
   }
@@ -63,6 +69,14 @@ function validateWeight(value: string): FieldValidationResult {
   const numericRaw = match[1].replace(",", ".");
   const parsed = Number.parseFloat(numericRaw);
   if (!Number.isFinite(parsed)) {
+    return { ok: false, reason: "invalid-weight" };
+  }
+
+  if (parsed === 0) {
+    return { ok: false, reason: "empty" };
+  }
+
+  if (parsed < 0.5 || parsed > 120) {
     return { ok: false, reason: "invalid-weight" };
   }
 
@@ -79,6 +93,21 @@ function normalizeDateToIso(year: number, month: number, day: number): string | 
     return null;
   }
   return `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+function normalizeYearToken(rawYear: string): number | null {
+  const compact = rawYear.trim();
+  if (!/^\d{2,4}$/.test(compact)) {
+    return null;
+  }
+  const year = Number.parseInt(compact, 10);
+  if (!Number.isFinite(year)) {
+    return null;
+  }
+  if (compact.length === 4) {
+    return year;
+  }
+  return year >= 70 ? 1900 + year : 2000 + year;
 }
 
 function validateDate(value: string): FieldValidationResult {
@@ -99,11 +128,14 @@ function validateDate(value: string): FieldValidationResult {
     return { ok: true, normalized };
   }
 
-  const dmyMatch = compact.match(/\b(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})\b/);
+  const dmyMatch = compact.match(/\b(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2}|\d{4})\b/);
   if (dmyMatch) {
     const day = Number.parseInt(dmyMatch[1], 10);
     const month = Number.parseInt(dmyMatch[2], 10);
-    const year = Number.parseInt(dmyMatch[3], 10);
+    const year = normalizeYearToken(dmyMatch[3]);
+    if (year === null) {
+      return { ok: false, reason: "invalid-date" };
+    }
     const normalized = normalizeDateToIso(year, month, day);
     if (!normalized) {
       return { ok: false, reason: "invalid-date" };
@@ -111,7 +143,7 @@ function validateDate(value: string): FieldValidationResult {
     return { ok: true, normalized };
   }
 
-  const isoMatch = compact.match(/\b(\d{4})-(\d{1,2})-(\d{1,2})\b/);
+  const isoMatch = compact.match(/\b(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})\b/);
   if (isoMatch) {
     const year = Number.parseInt(isoMatch[1], 10);
     const month = Number.parseInt(isoMatch[2], 10);

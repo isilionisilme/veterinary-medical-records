@@ -19,6 +19,7 @@ from backend.app.api.schemas import (
     DocumentReviewResponse,
     DocumentUploadResponse,
     ExtractionRunPersistResponse,
+    ExtractionRunsAggregateSummaryResponse,
     ExtractionRunsListResponse,
     ExtractionRunSnapshotRequest,
     ExtractionRunTriageResponse,
@@ -44,6 +45,7 @@ from backend.app.application.extraction_observability import (
     get_extraction_runs,
     get_latest_extraction_run_triage,
     persist_extraction_run_snapshot,
+    summarize_extraction_runs,
 )
 from backend.app.application.processing_runner import enqueue_processing_run
 from backend.app.config import extraction_observability_enabled, processing_enabled
@@ -752,6 +754,34 @@ def get_debug_extraction_run_triage(document_id: str) -> ExtractionRunTriageResp
         )
 
     return ExtractionRunTriageResponse(**triage)
+
+
+@router.get(
+    "/debug/extraction-runs/{document_id}/summary",
+    response_model=ExtractionRunsAggregateSummaryResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get aggregated extraction evidence for recent runs",
+    description=(
+        "Aggregate missing/rejected/accepted counts over latest persisted runs and expose "
+        "representative top1 samples for triage."
+    ),
+)
+def get_debug_extraction_run_summary(
+    document_id: str,
+    limit: int = Query(20, ge=1, le=20, description="How many latest runs to aggregate."),
+) -> ExtractionRunsAggregateSummaryResponse | JSONResponse:
+    if not extraction_observability_enabled():
+        return _extraction_observability_disabled_response()
+
+    summary = summarize_extraction_runs(document_id=document_id, limit=limit)
+    if summary is None:
+        return _error_response(
+            status_code=status.HTTP_404_NOT_FOUND,
+            error_code="NOT_FOUND",
+            message="No extraction snapshots found for this document.",
+        )
+
+    return ExtractionRunsAggregateSummaryResponse(**summary)
 
 
 def _validate_upload(file: UploadFile) -> dict[str, Any] | None:

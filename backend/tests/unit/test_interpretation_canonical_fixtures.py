@@ -15,7 +15,7 @@ FIXTURES_DIR = Path(__file__).resolve().parents[1] / "fixtures" / "interpretatio
         ("species_breed_case.txt", "species", "canino"),
         ("species_breed_case.txt", "breed", "YORKSHIRE TERRIER"),
         ("sex_case.txt", "sex", "hembra"),
-        ("microchip_suffix_case.txt", "microchip_id", "00023035139 NHC 2.c"),
+        ("microchip_suffix_case.txt", "microchip_id", "00023035139"),
         ("visit_date_anchor_case.txt", "visit_date", "07/03/2024"),
     ],
 )
@@ -85,7 +85,7 @@ def test_unanchored_dates_default_to_document_date_not_visit_date() -> None:
     assert global_schema_v0["visit_date"] is None
 
 
-def test_alphanumeric_microchip_value_is_preserved() -> None:
+def test_alphanumeric_microchip_value_without_digits_is_dropped() -> None:
     raw_text = """
     Paciente: Toby
     Microchip: NHC 2.c AB-77
@@ -97,7 +97,7 @@ def test_alphanumeric_microchip_value_is_preserved() -> None:
         raw_text=raw_text,
     )
 
-    assert payload["data"]["global_schema_v0"]["microchip_id"] == "NHC 2.c AB-77"
+    assert payload["data"]["global_schema_v0"]["microchip_id"] is None
 
 
 def test_invalid_calendar_date_is_dropped() -> None:

@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from backend.app.application.global_schema_v0 import GLOBAL_SCHEMA_V0_KEYS, REPEATABLE_KEYS_V0
-from backend.app.application.processing_runner import _build_interpretation_artifact
+from backend.app.application.processing_runner import (
+    _build_interpretation_artifact,
+    _mine_interpretation_candidates,
+)
 
 
 def test_interpretation_artifact_contains_full_global_schema_v0_shape() -> None:
@@ -70,3 +73,19 @@ def test_candidate_bundle_is_persisted_when_debug_flag_enabled(monkeypatch) -> N
 
     candidate_bundle = payload["data"].get("candidate_bundle")
     assert isinstance(candidate_bundle, dict)
+
+
+def test_microchip_heuristic_extracts_digits_from_keyworded_line() -> None:
+    candidates = _mine_interpretation_candidates(
+        "Microchip: 00023035139 NHC\nPaciente: Luna"
+    )
+
+    microchip_candidates = candidates.get("microchip_id", [])
+    assert microchip_candidates
+    assert microchip_candidates[0]["value"] == "00023035139"
+
+
+def test_microchip_heuristic_skips_owner_address_without_chip_digits() -> None:
+    candidates = _mine_interpretation_candidates("BEATRIZ ABARCA C/ ORTEGA")
+
+    assert candidates.get("microchip_id", []) == []
