@@ -92,6 +92,9 @@ _OWNER_CLIENT_HEADER_LINE_PATTERN = re.compile(r"(?i)^\s*datos\s+del\s+cliente\s
 _OWNER_CLIENT_TABULAR_LABEL_LINE_PATTERN = re.compile(
     r"(?i)^\s*(?:especie|raza|f/?nto|capa|n[º°o]?\s*chip)\s*$"
 )
+_OWNER_INLINE_CONTEXT_WINDOW_LINES = 2
+_OWNER_HEADER_LOOKBACK_LINES = 8
+_OWNER_TABULAR_FORWARD_SCAN_LINES = 8
 _NAME_TOKEN_PATTERN = re.compile(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ][A-Za-zÁÉÍÓÚÜÑáéíóúüñ'\.-]*$")
 _ADDRESS_SPLIT_PATTERN = re.compile(
     r"(?i)\b(?:c/|calle|av\.?|avenida|cp\b|n[º°o]\.?|num\.?|número|plaza|pte\.?|portal|piso|puerta)\b"
@@ -696,8 +699,11 @@ def _mine_interpretation_candidates(
         if match is None:
             continue
 
-        window_start = max(0, index - 2)
-        window_end = min(len(raw_lines), index + 3)
+        window_start = max(0, index - _OWNER_INLINE_CONTEXT_WINDOW_LINES)
+        window_end = min(
+            len(raw_lines),
+            index + _OWNER_INLINE_CONTEXT_WINDOW_LINES + 1,
+        )
         context_window = " ".join(raw_lines[window_start:window_end])
         pre_context_window = " ".join(raw_lines[window_start:index])
         has_owner_context = _OWNER_CONTEXT_PATTERN.search(context_window) is not None
@@ -713,7 +719,7 @@ def _mine_interpretation_candidates(
             and _OWNER_CLIENT_HEADER_LINE_PATTERN.match(previous_non_empty_line)
         )
         if not has_owner_context and not has_client_header_context:
-            lookback_start = max(0, index - 8)
+            lookback_start = max(0, index - _OWNER_HEADER_LOOKBACK_LINES)
             has_client_header_context = any(
                 _OWNER_CLIENT_HEADER_LINE_PATTERN.match(raw_lines[lookback_index].strip())
                 for lookback_index in range(lookback_start, index)
@@ -727,7 +733,10 @@ def _mine_interpretation_candidates(
 
         candidate_source = match.group(1).strip() if isinstance(match.group(1), str) else ""
         if not candidate_source:
-            for next_index in range(index + 1, min(index + 9, len(raw_lines))):
+            for next_index in range(
+                index + 1,
+                min(index + _OWNER_TABULAR_FORWARD_SCAN_LINES + 1, len(raw_lines)),
+            ):
                 next_line = raw_lines[next_index].strip()
                 if not next_line:
                     continue

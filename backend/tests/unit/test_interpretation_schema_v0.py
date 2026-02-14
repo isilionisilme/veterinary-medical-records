@@ -180,6 +180,27 @@ def test_owner_name_tabular_nombre_header_extracts_owner_from_following_lines() 
     assert owner_candidates[0]["value"] == "BEATRIZ ABARCA"
 
 
+def test_owner_name_tabular_nombre_rejects_when_client_header_is_too_far() -> None:
+    candidates = _mine_interpretation_candidates(
+        "Datos del Cliente\n"
+        "Linea 01\n"
+        "Linea 02\n"
+        "Linea 03\n"
+        "Linea 04\n"
+        "Linea 05\n"
+        "Linea 06\n"
+        "Linea 07\n"
+        "Linea 08\n"
+        "Linea 09\n"
+        "Nombre\n"
+        "Especie\n"
+        "Raza\n"
+        "BEATRIZ ABARCA"
+    )
+
+    assert candidates.get("owner_name", []) == []
+
+
 def test_vet_name_heuristic_rejects_address_like_line() -> None:
     candidates = _mine_interpretation_candidates(
         "Veterinario: Calle Mayor 123\nCentro Veterinario Central"
