@@ -218,3 +218,29 @@ def test_document_review_drops_legacy_non_digit_microchip_value(test_client):
     assert response.status_code == 200
     payload = response.json()
     assert payload["active_interpretation"]["data"]["global_schema_v0"]["microchip_id"] is None
+
+
+def test_document_review_keeps_canonical_microchip_digits_unchanged(test_client):
+    document_id = _upload_sample_document(test_client)
+    run_id = "run-review-microchip-canonical"
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(
+        run_id=run_id,
+        data={
+            "schema_version": "v0",
+            "global_schema_v0": {"microchip_id": "00023035139"},
+        },
+    )
+
+    response = test_client.get(f"/documents/{document_id}/review")
+    assert response.status_code == 200
+    payload = response.json()
+    assert (
+        payload["active_interpretation"]["data"]["global_schema_v0"]["microchip_id"]
+        == "00023035139"
+    )

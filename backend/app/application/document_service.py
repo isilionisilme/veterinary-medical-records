@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-import re
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
+from backend.app.application.field_normalizers import normalize_microchip_digits_only
 from backend.app.domain.models import (
     Document,
     DocumentWithLatestRun,
@@ -21,8 +21,6 @@ from backend.app.domain.models import (
 from backend.app.domain.status import DocumentStatusView, derive_document_status, map_status_label
 from backend.app.ports.document_repository import DocumentRepository
 from backend.app.ports.file_storage import FileStorage
-
-_MICROCHIP_DIGITS_PATTERN = re.compile(r"(?<!\d)(\d{9,15})(?!\d)")
 
 
 def _default_now_iso() -> str:
@@ -345,7 +343,7 @@ def _normalize_review_interpretation_data(data: dict[str, object]) -> dict[str, 
         return data
 
     raw_microchip = global_schema.get("microchip_id")
-    normalized_microchip = _normalize_review_microchip_id(raw_microchip)
+    normalized_microchip = normalize_microchip_digits_only(raw_microchip)
     if normalized_microchip == raw_microchip:
         return data
 
@@ -354,20 +352,6 @@ def _normalize_review_interpretation_data(data: dict[str, object]) -> dict[str, 
     normalized_global_schema["microchip_id"] = normalized_microchip
     normalized_data["global_schema_v0"] = normalized_global_schema
     return normalized_data
-
-
-def _normalize_review_microchip_id(value: object) -> str | None:
-    if not isinstance(value, str):
-        return None
-
-    cleaned = value.strip()
-    if not cleaned:
-        return None
-
-    match = _MICROCHIP_DIGITS_PATTERN.search(cleaned)
-    if match is None:
-        return None
-    return match.group(1)
 
 
 def _to_processing_run_history(
