@@ -79,7 +79,7 @@ _MICROCHIP_KEYWORD_WINDOW_PATTERN = re.compile(
 )
 _MICROCHIP_DIGITS_PATTERN = re.compile(r"(?<!\d)(\d{9,15})(?!\d)")
 _MICROCHIP_OCR_PREFIX_WINDOW_PATTERN = re.compile(
-    r"(?is)\bn(?:[ºo°\uFFFD]|ro)\s*[:\-]?\s*([^\n]{0,60})"
+    r"(?is)\bn(?:[º°\uFFFD]|ro)\.?\s*[:\-]?\s*([^\n]{0,60})"
 )
 _VET_LABEL_LINE_PATTERN = re.compile(
     r"(?i)^\s*(?:veterinari(?:o|a|o/a)|vet|dr\.?|dra\.?|dr/a|doctor|doctora)\b\s*[:\-]?\s*(.*)$"

@@ -10,10 +10,12 @@
 - Must not produce a candidate when there is no 9–15 digit sequence.
 - Must not promote non-digit chip strings.
 - Must not overwrite existing canonical value during promotion.
+- Must not accept generic `No:`/`Nro:` reference numbers without chip/microchip context.
 
 ## Known failure modes / blocked-by-signal notes
 - If raw text has no chip label and no 9–15 digit sequence, extraction remains empty by design.
 - Free-text mentions like "poner el chip" without an ID should not produce a candidate.
+- Generic invoice/reference lines such as `No: 941000024967769` should remain excluded.
 
 ## How to test (exact commands)
 - `python -m pytest backend/tests/unit/test_golden_extraction_regression.py -s -q`
