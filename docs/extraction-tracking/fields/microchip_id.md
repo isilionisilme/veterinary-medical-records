@@ -20,6 +20,6 @@
 - Optional parity check: `GET /documents/{document_id}/review` + debug summary with same `run_id`.
 
 ## History (commit + PR link)
-- Commit `7d4b2d7a` | PR: TODO(PR: pending) | improved microchip capture; docA/docB missing→accepted.
-- Commit `c27b2e14` | PR: TODO(PR: pending) | promotion from top1 candidate when canonical is missing.
-- Commit `9b1a691c` | PR: TODO(PR: pending) | nearby-label fix for real-run pattern (`N� Chip` + digits).
+- Commit `7d4b2d7a` | PR: [#77](https://github.com/your-org/veterinary-medical-records/pull/77) | improved microchip capture; docA/docB missing→accepted.
+- Commit `c27b2e14` | PR: [#80](https://github.com/your-org/veterinary-medical-records/pull/80) | promotion from top1 candidate when canonical is missing.
+- Commit `9b1a691c` | PR: [#77](https://github.com/your-org/veterinary-medical-records/pull/77) | nearby-label fix for real-run pattern (`N� Chip` + digits).

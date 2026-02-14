@@ -19,6 +19,6 @@
 - `python -m pytest backend/tests/unit/test_interpretation_schema_v0.py -q`
 
 ## History (commit + PR link)
-- Branch `fix/golden-weight-iteration` | Commit `ad366cd0` | PR: TODO(PR: pending) | docB missing→accepted (`7.2 kg`).
-- Commit `c27b2e14` | PR: TODO(PR: pending) | promotion includes weight when canonical value is missing.
-- Weight-noise guard tracked (`0` ignored) | PR: TODO(PR: pending).
+- Branch `fix/golden-weight-iteration` | Commit `ad366cd0` | PR: [#77](https://github.com/your-org/veterinary-medical-records/pull/77) | docB missing→accepted (`7.2 kg`).
+- Commit `c27b2e14` | PR: [#80](https://github.com/your-org/veterinary-medical-records/pull/80) | promotion includes weight when canonical value is missing.
+- Weight-noise guard tracked (`0` ignored) | PR: [#80](https://github.com/your-org/veterinary-medical-records/pull/80).

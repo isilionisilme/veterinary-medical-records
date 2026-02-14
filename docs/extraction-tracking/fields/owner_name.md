@@ -19,6 +19,6 @@
 - For parity: `GET /debug/extraction-runs/{document_id}/summary?limit=1&run_id={run_id}` and inspect `owner_name`.
 
 ## History (commit + PR link)
-- Branch `fix/golden-owner-name-iteration` | Commit `b012628e` | PR: TODO(PR: pending) | docB missing→accepted (`NOMBRE DEMO`).
-- Commit `c27b2e14` | PR: TODO(PR: pending) | promotion includes owner_name when top1 exists and canonical value is missing.
+- Branch `fix/golden-owner-name-iteration` | Commit `b012628e` | PR: [#77](https://github.com/your-org/veterinary-medical-records/pull/77) | docB missing→accepted (`NOMBRE DEMO`).
+- Commit `c27b2e14` | PR: [#80](https://github.com/your-org/veterinary-medical-records/pull/80) | promotion includes owner_name when top1 exists and canonical value is missing.
 - Diagnostic run anchor (no code change): `document_id=e05bef44-79d9-4c36-a8f4-490cf6d87473`, `run_id=d838c09a-9589-4dec-811e-dedeb7c75380` (owner missing with no candidate).

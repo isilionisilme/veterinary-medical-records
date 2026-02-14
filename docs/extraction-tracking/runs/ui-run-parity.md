@@ -1,5 +1,7 @@
 # UI run parity (canonical report)
 
+**PR anchor:** [#78](https://github.com/your-org/veterinary-medical-records/pull/78)
+
 ## Scope
 - Verify UI uses the same run_id and values as backend review/debug surfaces.
 

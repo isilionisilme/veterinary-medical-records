@@ -18,5 +18,5 @@
 - `python -m pytest backend/tests/unit/test_golden_extraction_regression.py backend/tests/unit/test_interpretation_schema_v0.py -q`
 
 ## History (commit + PR link)
-- Branch `fix/golden-vet-name-iteration` | Commit `40762a48` | PR: TODO(PR: pending) | docA missing→accepted (`NOMBRE DEMO`).
-- Commit `c27b2e14` | PR: TODO(PR: pending) | promotion includes vet_name when canonical value is missing.
+- Branch `fix/golden-vet-name-iteration` | Commit `40762a48` | PR: [#77](https://github.com/your-org/veterinary-medical-records/pull/77) | docA missing→accepted (`NOMBRE DEMO`).
+- Commit `c27b2e14` | PR: [#80](https://github.com/your-org/veterinary-medical-records/pull/80) | promotion includes vet_name when canonical value is missing.

@@ -1,5 +1,7 @@
 # UI field parity: microchip_id + owner_name (canonical report)
 
+**PR anchor:** [#78](https://github.com/your-org/veterinary-medical-records/pull/78)
+
 ## Scope
 - Verify whether empty `microchip_id` and `owner_name` in UI are detection, promotion, or UI-mapping issues.
 

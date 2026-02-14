@@ -19,5 +19,5 @@
 - `python -m pytest backend/tests/unit/test_interpretation_schema_v0.py -q`
 
 ## History (commit + PR link)
-- Branch `fix/golden-visit-date-iteration` | Commit `6749aa38` | PR: TODO(PR: pending) | docA missing→accepted (`2024-07-17`).
-- Commit `c27b2e14` | PR: TODO(PR: pending) | promotion includes visit_date when canonical is missing.
+- Branch `fix/golden-visit-date-iteration` | Commit `6749aa38` | PR: [#77](https://github.com/your-org/veterinary-medical-records/pull/77) | docA missing→accepted (`2024-07-17`).
+- Commit `c27b2e14` | PR: [#80](https://github.com/your-org/veterinary-medical-records/pull/80) | promotion includes visit_date when canonical is missing.
