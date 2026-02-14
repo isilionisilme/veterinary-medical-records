@@ -769,11 +769,18 @@ def get_debug_extraction_run_triage(document_id: str) -> ExtractionRunTriageResp
 def get_debug_extraction_run_summary(
     document_id: str,
     limit: int = Query(20, ge=1, le=20, description="How many latest runs to aggregate."),
+    run_id: str | None = Query(
+        None,
+        description="Optional run id to summarize a specific persisted extraction snapshot.",
+    ),
 ) -> ExtractionRunsAggregateSummaryResponse | JSONResponse:
     if not extraction_observability_enabled():
         return _extraction_observability_disabled_response()
 
-    summary = summarize_extraction_runs(document_id=document_id, limit=limit)
+    if isinstance(run_id, str):
+        run_id = run_id.strip() or None
+
+    summary = summarize_extraction_runs(document_id=document_id, limit=limit, run_id=run_id)
     if summary is None:
         return _error_response(
             status_code=status.HTTP_404_NOT_FOUND,
