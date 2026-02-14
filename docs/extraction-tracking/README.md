@@ -14,6 +14,7 @@ This folder tracks the extraction program using an evidence-first, one-field-per
 - Open `INDEX.md` first for latest state, field-level completion, and next minimal step.
 - Open `fields/<field>.md` for guardrails and exact test commands before reviewing any diff.
 - Open `risk-matrix.md` for a consolidated view of false-positive risks and active guardrails.
+- Open `INDEX.md` section `Chapter closeout` for chapter status and remaining anchor gaps.
 - Open `runs/*.md` only when validating UI/backend parity or run-specific diagnostics.
 - For frozen comparison before new iterations, open `runs/baseline-v1.md`.
 

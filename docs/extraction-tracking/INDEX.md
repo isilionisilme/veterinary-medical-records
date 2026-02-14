@@ -40,13 +40,14 @@ The following PRs represent the evolution of the extraction tracking system. Eac
 | 9. owner_name Parity Recheck | [#85](https://github.com/isilionisilme/veterinary-medical-records/pull/85) | Applies conservative `Datos del Cliente` fallback and hardens ambiguity guardrails. |
 | 10. owner_name Post-fix Parity Evidence | [#86](https://github.com/isilionisilme/veterinary-medical-records/pull/86) | Confirms owner_name remains detection-missing (no UI mismatch) on a fresh post-fix run. |
 | 11. microchip OCR Hardening | [#87](https://github.com/isilionisilme/veterinary-medical-records/pull/87) | Hardens malformed `N�`/`Nro` microchip capture and adds false-positive guardrails. |
+| 12. Guardrails Risk Matrix | [#88](https://github.com/isilionisilme/veterinary-medical-records/pull/88) | Consolidates cross-field risk/guardrail matrix and aligns reviewer navigation. |
 
 ## Golden iterations (one-field loop)
 
 | Field | Fixture(s) (docA/docB) | Signal source (existing vs added line) | Outcome (missing→accepted) | Conf policy | Branch | Commit | PR link | Tests (commands) | Notes |
 |---|---|---|---|---|---|---|---|---|---|
 | [microchip_id](fields/microchip_id.md) | docA + docB + OCR synthetic | Existing signal + nearby-label signal (`N� Chip` + digits) + OCR `N�`/`Nro` prefix window fallback | docA/docB missing→accepted (`00023035139`, `941000024967769`); OCR synthetic now accepted (`941000024967769`) | `0.66` | `fix/golden-microchip-ocr-hardening` | `7d4b2d7a`, `9b1a691c`, `97a014a1`, `1a732ba2` | [#87](https://github.com/isilionisilme/veterinary-medical-records/pull/87) | `python -m pytest backend/tests/unit/test_interpretation_schema_v0.py backend/tests/unit/test_golden_extraction_regression.py -q` | Digits-only 9–15; no overwrite. |
-| [owner_name](fields/owner_name.md) | docB + owner-context synthetic | Existing signal + conservative fallback + `Datos del Cliente` context support for `Nombre:` lines | docB missing→accepted (`NOMBRE DEMO`); synthetic owner block now accepted (`BEATRIZ ABARCA`) | `0.66` | `fix/golden-owner-name-minimal-loop` | `b012628e`, `efcab057` | TODO(PR: pending) | `python -m pytest backend/tests/unit/test_interpretation_schema_v0.py backend/tests/unit/test_golden_extraction_regression.py -q` | Keep deterministic context; no free-name guessing. |
+| [owner_name](fields/owner_name.md) | docB + owner-context synthetic | Existing signal + conservative fallback + `Datos del Cliente` context support for `Nombre:` lines | docB missing→accepted (`NOMBRE DEMO`); synthetic owner block now accepted (`BEATRIZ ABARCA`) | `0.66` | `fix/golden-owner-name-minimal-loop` | `b012628e`, `efcab057`, `9bce25cf` | [#85](https://github.com/isilionisilme/veterinary-medical-records/pull/85) | `python -m pytest backend/tests/unit/test_interpretation_schema_v0.py backend/tests/unit/test_golden_extraction_regression.py -q` | Keep deterministic context; no free-name guessing. |
 | [weight](fields/weight.md) | docB | Added fixture line: `Peso: 7,2 kg` | docB missing→accepted (`7.2 kg`) | `0.66` | `fix/golden-weight-iteration` | `ad366cd0` | TODO(PR: pending) | `python -m pytest backend/tests/unit/test_golden_extraction_regression.py backend/tests/unit/test_interpretation_schema_v0.py -q` | Range `[0.5,120]`; ignore `0`. |
 | [vet_name](fields/vet_name.md) | docA | Existing signal | docA missing→accepted (`NOMBRE DEMO`) | `0.66` | `fix/golden-vet-name-iteration` | `40762a48` | TODO(PR: pending) | `python -m pytest backend/tests/unit/test_golden_extraction_regression.py backend/tests/unit/test_interpretation_schema_v0.py -q` | Exclude clinic/address values. |
 | [visit_date](fields/visit_date.md) | docA | Existing signal | docA missing→accepted (`2024-07-17`) | `0.66` | `fix/golden-visit-date-iteration` | `6749aa38` | TODO(PR: pending) | `python -m pytest backend/tests/unit/test_golden_extraction_regression.py backend/tests/unit/test_interpretation_schema_v0.py -q` | Ignore birthdate context. |
@@ -67,6 +68,11 @@ The following PRs represent the evolution of the extraction tracking system. Eac
 
 ### Weight noise fix
 - Rule tracked: `weight` must ignore zero candidates (`0`).
+
+## Chapter closeout (through PR #88)
+- Completed chapter scope: golden field hardening, parity evidence loops (`owner_name`, `microchip_id`), and consolidated reviewer guardrails matrix.
+- Remaining anchor gaps: historical rows still marked `TODO(PR: pending)` for fields whose original PR mapping was not finalized in this pass.
+- Exit criteria met for this chapter: each recent iteration (#85–#88) has commit anchors, tests, and reviewer-facing docs linkage.
 
 ## UI ↔ Backend parity / debugging reports
 - [UI run parity](runs/ui-run-parity.md): UI fields come from `/documents/{document_id}/review`, using `active_interpretation.data.global_schema_v0`; explicit `/runs/{run_id}/artifacts/global-schema-v0` observed as 404 in checks.
