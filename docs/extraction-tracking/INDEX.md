@@ -12,7 +12,13 @@
   - Debug parity should pin run with `GET /debug/extraction-runs/{document_id}/summary?limit=...&run_id=...`.
 - Next recommended minimal iteration: `owner_name` only, because real-run evidence shows owner context (`Datos del Cliente`) but no deterministic label→value extraction accepted yet.
 
+## Baseline snapshots
+- [Baseline v1 (post-PR #83)](runs/baseline-v1.md): freeze point before PR #85+ iterations.
+
 ### Anchor legend
+- `Commit`: required
+- `PR`: link if available, else `TODO(PR: pending)`
+- `Run/document`: required in run-parity reports
 
 ## PR Storyline
 
@@ -20,13 +26,13 @@ The following PRs represent the evolution of the extraction tracking system. Eac
 
 | Chapter | PR | Title & Summary |
 |---------|----|-----------------|
-| 1. Golden Loop Foundation | [#77](https://github.com/your-org/veterinary-medical-records/pull/77) | Initial golden loop extraction tracking docs. Establishes evidence-first, one-field-per-iteration, test-driven process. |
-| 2. UI/Backend Parity | [#78](https://github.com/your-org/veterinary-medical-records/pull/78) | Adds UI parity tracking and run reports. Ensures backend and UI extraction are synchronized. |
-| 3. Field Catalogs | [#79](https://github.com/your-org/veterinary-medical-records/pull/79) | Introduces per-field documentation and catalogs for all golden fields. |
-| 4. Run Reports | [#80](https://github.com/your-org/veterinary-medical-records/pull/80) | Adds detailed run/debug reports for extraction and UI parity. |
-| 5. Reviewer Hardening | [#81](https://github.com/your-org/veterinary-medical-records/pull/81) | Refactors docs for reviewer-friendliness, PR/commit anchoring, and minimal duplication. |
-| 6. Docs-Only PR | [#82](https://github.com/your-org/veterinary-medical-records/pull/82) | Creates a single, clean docs-only PR for all extraction tracking documentation. |
-| 7. PR Storyline & Anchors | [#83](https://github.com/your-org/veterinary-medical-records/pull/83) | Adds PR Storyline, explicit PR anchors, and final reviewer-facing improvements. |
+| 1. Golden Loop Foundation | [#77](https://github.com/isilionisilme/veterinary-medical-records/pull/77) | Initial golden loop extraction tracking docs. Establishes evidence-first, one-field-per-iteration, test-driven process. |
+| 2. UI/Backend Parity | [#78](https://github.com/isilionisilme/veterinary-medical-records/pull/78) | Adds UI parity tracking and run reports. Ensures backend and UI extraction are synchronized. |
+| 3. Field Catalogs | [#79](https://github.com/isilionisilme/veterinary-medical-records/pull/79) | Introduces per-field documentation and catalogs for all golden fields. |
+| 4. Run Reports | [#80](https://github.com/isilionisilme/veterinary-medical-records/pull/80) | Adds detailed run/debug reports for extraction and UI parity. |
+| 5. Reviewer Hardening | [#81](https://github.com/isilionisilme/veterinary-medical-records/pull/81) | Refactors docs for reviewer-friendliness, PR/commit anchoring, and minimal duplication. |
+| 6. Docs-Only PR | [#82](https://github.com/isilionisilme/veterinary-medical-records/pull/82) | Creates a single, clean docs-only PR for all extraction tracking documentation. |
+| 7. PR Storyline & Anchors | [#83](https://github.com/isilionisilme/veterinary-medical-records/pull/83) | Adds PR Storyline, explicit PR anchors, and final reviewer-facing improvements. |
 
 ## Golden iterations (one-field loop)
 
@@ -58,4 +64,5 @@ The following PRs represent the evolution of the extraction tracking system. Eac
 ## UI ↔ Backend parity / debugging reports
 - [UI run parity](runs/ui-run-parity.md): UI fields come from `/documents/{document_id}/review`, using `active_interpretation.data.global_schema_v0`; explicit `/runs/{run_id}/artifacts/global-schema-v0` observed as 404 in checks.
 - [UI field parity (microchip/owner)](runs/ui-field-parity-microchip-owner.md): in one real run, both empty with `has_candidates=false`, classified as detection-missing at that point.
+- [Baseline v1 snapshot](runs/baseline-v1.md): freeze point (post-PR #83) for expected-vs-observed comparison before next loop.
 - [Raw-text signal diagnostic (microchip/owner)](../debug/raw-text-signal-microchip-owner.md): later evidence found clear raw_text signal for microchip and prompted a minimal microchip-only heuristic fix.
