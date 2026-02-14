@@ -594,12 +594,29 @@ def _truncate_text(value: str | None, *, limit: int = 80) -> str | None:
     return f"{compact[: limit - 1].rstrip()}…"
 
 
-def summarize_extraction_runs(document_id: str, *, limit: int = 20) -> dict[str, Any] | None:
+def summarize_extraction_runs(
+    document_id: str,
+    *,
+    limit: int = 20,
+    run_id: str | None = None,
+) -> dict[str, Any] | None:
     runs = get_extraction_runs(document_id)
     if not runs:
         return None
 
-    selected_runs = runs[-max(1, limit):]
+    selected_runs: list[dict[str, Any]]
+    if run_id:
+        selected_runs = [
+            run
+            for run in runs
+            if str(run.get("runId", "")).strip() == run_id
+        ]
+    else:
+        selected_runs = runs[-max(1, limit):]
+
+    if not selected_runs:
+        return None
+
     stats: dict[str, dict[str, Any]] = defaultdict(
         lambda: {
             "missing_count": 0,

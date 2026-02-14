@@ -284,3 +284,54 @@ def test_debug_extraction_summary_endpoint_returns_ranked_aggregate(
     rejected_by_field = {item["field"]: item for item in body["most_rejected_fields"]}
     assert rejected_by_field["visit_date"]["rejected_count"] == 1
     assert rejected_by_field["visit_date"]["top1_sample"] == "08/12/19"
+
+
+def test_debug_extraction_summary_endpoint_filters_by_run_id(
+    test_client: TestClient, monkeypatch
+) -> None:
+    monkeypatch.setenv("VET_RECORDS_EXTRACTION_OBS", "1")
+
+    first_payload = _triage_snapshot_payload()
+    first_payload["runId"] = "run-triage-filter-a"
+    post_first = test_client.post("/debug/extraction-runs", json=first_payload)
+    assert post_first.status_code == 201
+
+    second_payload = _triage_snapshot_payload()
+    second_payload["runId"] = "run-triage-filter-b"
+    second_payload["fields"]["claim_id"] = {
+        "status": "accepted",
+        "confidence": "mid",
+        "valueNormalized": "CLM-2026-02",
+        "valueRaw": "CLM-2026-02",
+        "reason": None,
+    }
+    second_payload["counts"] = {
+        "totalFields": 6,
+        "accepted": 5,
+        "rejected": 1,
+        "missing": 0,
+        "low": 2,
+        "mid": 2,
+        "high": 1,
+    }
+    post_second = test_client.post("/debug/extraction-runs", json=second_payload)
+    assert post_second.status_code == 201
+
+    filtered = test_client.get(
+        "/debug/extraction-runs/doc-triage-1/summary?limit=20&run_id=run-triage-filter-b"
+    )
+    assert filtered.status_code == 200
+    body = filtered.json()
+
+    assert body["total_runs"] == 2
+    assert body["considered_runs"] == 1
+    missing_by_field = {item["field"]: item for item in body["most_missing_fields"]}
+    assert "claim_id" not in missing_by_field
+
+    filtered_missing = test_client.get(
+        "/debug/extraction-runs/doc-triage-1/summary?limit=20&run_id=run-triage-filter-a"
+    )
+    assert filtered_missing.status_code == 200
+    missing_body = filtered_missing.json()
+    missing_by_field_a = {item["field"]: item for item in missing_body["most_missing_fields"]}
+    assert missing_by_field_a["claim_id"]["missing_count"] == 1
