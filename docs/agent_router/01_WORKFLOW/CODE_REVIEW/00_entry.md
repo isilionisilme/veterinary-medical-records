@@ -64,6 +64,14 @@ Rules:
   - `- **Non-compliant / risk:**`
   - `  - None.`
 
+## Mandatory publication protocol (blocking)
+- If the review is for a PR (or PR id can be resolved), you MUST publish the review output as a PR comment before finishing.
+- A code review is not complete until:
+  1) the PR comment is posted, and
+  2) the PR comment URL is returned to the user.
+- If one or more findings are later addressed in commits, you MUST publish a follow-up PR comment summarizing addressed points and include the follow-up comment URL in your response.
+- If PR id/reference is missing, resolve it first. If it cannot be resolved or auth is missing, STOP and ask.
+
 ## Safety rule
 After producing the review, STOP and wait for explicit user instruction before making code changes.
 
