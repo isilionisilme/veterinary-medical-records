@@ -23,5 +23,6 @@
 ## History (commit + PR link)
 - Branch `fix/golden-owner-name-iteration` | Commit `b012628e` | PR: [#77](https://github.com/isilionisilme/veterinary-medical-records/pull/77) | docB missing→accepted (`NOMBRE DEMO`).
 - Commit `c27b2e14` | PR: [#80](https://github.com/isilionisilme/veterinary-medical-records/pull/80) | promotion includes owner_name when top1 exists and canonical value is missing.
-- Branch `fix/golden-owner-name-minimal-loop` | Commit `efcab057` | PR: TODO(PR: pending) | accepts `Nombre:` when `Datos del Cliente` context is present.
+- Branch `fix/golden-owner-name-minimal-loop` | Commits `efcab057`, `9bce25cf` | PR: [#85](https://github.com/isilionisilme/veterinary-medical-records/pull/85) | accepts `Nombre:` with strict context and guards patient-labeled ambiguity.
 - Diagnostic run anchor (no code change): `document_id=e05bef44-79d9-4c36-a8f4-490cf6d87473`, `run_id=d838c09a-9589-4dec-811e-dedeb7c75380` (owner missing with no candidate).
+- Post-fix parity anchor (no code change): `document_id=e05bef44-79d9-4c36-a8f4-490cf6d87473`, `run_id=a7229396-e639-4937-bf0d-8d31036c77bd` (owner still missing with `has_candidates=false`, classified as detection-missing).
