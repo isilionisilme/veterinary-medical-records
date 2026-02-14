@@ -10,6 +10,7 @@ _WHITESPACE_PATTERN = re.compile(r"\s+")
 _DATE_PATTERN = re.compile(
     r"\b(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}|\d{4}[\/\-.]\d{1,2}[\/\-.]\d{1,2})\b"
 )
+_MICROCHIP_DIGITS_PATTERN = re.compile(r"(?<!\d)(\d{9,15})(?!\d)")
 
 _SPECIES_TOKEN_TO_CANONICAL: dict[str, str] = {
     "canina": "canino",
@@ -48,6 +49,20 @@ def normalize_canonical_fields(
     normalized["discharge_date"] = _normalize_date_value(normalized.get("discharge_date"))
 
     return normalized
+
+
+def normalize_microchip_digits_only(value: object) -> str | None:
+    if not isinstance(value, str):
+        return None
+
+    cleaned = value.strip()
+    if not cleaned:
+        return None
+
+    match = _MICROCHIP_DIGITS_PATTERN.search(cleaned)
+    if match is None:
+        return None
+    return match.group(1)
 
 
 def _normalize_whitespace(value: str) -> str:
@@ -228,7 +243,9 @@ def _normalize_microchip_id(
         parts.pop()
 
     normalized = _normalize_whitespace(" ".join(parts))
-    return normalized or None
+    if not normalized:
+        return None
+    return normalize_microchip_digits_only(normalized)
 
 
 def _normalize_date_value(value: object) -> str | None:

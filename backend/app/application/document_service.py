@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
+from backend.app.application.field_normalizers import normalize_microchip_digits_only
 from backend.app.domain.models import (
     Document,
     DocumentWithLatestRun,
@@ -308,6 +309,7 @@ def get_document_review(
     structured_data = interpretation_payload.get("data")
     if not isinstance(structured_data, dict):
         structured_data = {}
+    structured_data = _normalize_review_interpretation_data(structured_data)
 
     return DocumentReviewLookupResult(
         review=DocumentReview(
@@ -333,6 +335,23 @@ def get_document_review(
         ),
         unavailable_reason=None,
     )
+
+
+def _normalize_review_interpretation_data(data: dict[str, object]) -> dict[str, object]:
+    global_schema = data.get("global_schema_v0")
+    if not isinstance(global_schema, dict):
+        return data
+
+    raw_microchip = global_schema.get("microchip_id")
+    normalized_microchip = normalize_microchip_digits_only(raw_microchip)
+    if normalized_microchip == raw_microchip:
+        return data
+
+    normalized_data = dict(data)
+    normalized_global_schema = dict(global_schema)
+    normalized_global_schema["microchip_id"] = normalized_microchip
+    normalized_data["global_schema_v0"] = normalized_global_schema
+    return normalized_data
 
 
 def _to_processing_run_history(
