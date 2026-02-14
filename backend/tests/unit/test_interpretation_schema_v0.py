@@ -89,3 +89,41 @@ def test_microchip_heuristic_skips_owner_address_without_chip_digits() -> None:
     candidates = _mine_interpretation_candidates("BEATRIZ ABARCA C/ ORTEGA")
 
     assert candidates.get("microchip_id", []) == []
+
+
+def test_vet_name_label_heuristic_extracts_name_candidate() -> None:
+    candidates = _mine_interpretation_candidates(
+        "Centro Veterinario Norte\nVeterinario: Dr. Juan Pérez\nPaciente: Luna"
+    )
+
+    vet_candidates = candidates.get("vet_name", [])
+    assert vet_candidates
+    assert vet_candidates[0]["value"] == "Dr. Juan Pérez"
+
+
+def test_owner_name_label_heuristic_extracts_owner_candidate() -> None:
+    candidates = _mine_interpretation_candidates(
+        "Propietario: BEATRIZ ABARCA\nPaciente: Luna"
+    )
+
+    owner_candidates = candidates.get("owner_name", [])
+    assert owner_candidates
+    assert owner_candidates[0]["value"] == "BEATRIZ ABARCA"
+
+
+def test_owner_name_heuristic_drops_address_suffix_after_split() -> None:
+    candidates = _mine_interpretation_candidates(
+        "Propietario: BEATRIZ ABARCA C/ ORTEGA 12\nPaciente: Luna"
+    )
+
+    owner_candidates = candidates.get("owner_name", [])
+    assert owner_candidates
+    assert owner_candidates[0]["value"] == "BEATRIZ ABARCA"
+
+
+def test_vet_name_heuristic_rejects_address_like_line() -> None:
+    candidates = _mine_interpretation_candidates(
+        "Veterinario: Calle Mayor 123\nCentro Veterinario Central"
+    )
+
+    assert candidates.get("vet_name", []) == []

@@ -78,6 +78,30 @@ _MICROCHIP_KEYWORD_WINDOW_PATTERN = re.compile(
     r"(?is)(?:microchip|chip|n[ºo°]\s*chip)\s*(?:n[ºo°]\.?|id)?\s*[:\-]?\s*([^\n]{0,90})"
 )
 _MICROCHIP_DIGITS_PATTERN = re.compile(r"(?<!\d)(\d{9,15})(?!\d)")
+_VET_LABEL_LINE_PATTERN = re.compile(
+    r"(?i)^\s*(?:veterinari(?:o|a|o/a)|vet|dr\.?|dra\.?|dr/a|doctor|doctora)\b\s*[:\-]?\s*(.*)$"
+)
+_OWNER_LABEL_LINE_PATTERN = re.compile(
+    r"(?i)^\s*(?:propietari(?:o|a)|titular|dueñ(?:o|a)|owner)\b\s*[:\-]?\s*(.*)$"
+)
+_OWNER_NOMBRE_LINE_PATTERN = re.compile(r"(?i)^\s*nombre\s*[:\-]\s*(.*)$")
+_NAME_TOKEN_PATTERN = re.compile(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ][A-Za-zÁÉÍÓÚÜÑáéíóúüñ'\.-]*$")
+_ADDRESS_SPLIT_PATTERN = re.compile(
+    r"(?i)\b(?:c/|calle|av\.?|avenida|cp\b|n[º°o]\.?|num\.?|número|plaza|pte\.?|portal|piso|puerta)\b"
+)
+_ADDRESS_LIKE_PATTERN = re.compile(
+    r"(?i)(?:\b(?:c/|calle|av\.?|avenida|cp\b|portal|piso|puerta)\b|\d+\s*(?:[,\-]|$))"
+)
+_PHONE_LIKE_PATTERN = re.compile(r"\+?\d[\d\s().-]{6,}")
+_LICENSE_ONLY_PATTERN = re.compile(
+    r"(?i)^\s*(?:col(?:egiad[oa])?\.?|n[º°o]?\s*col\.?|lic(?:encia)?\.?|cmp\.?|nif\b|dni\b)\s*[:\-]?\s*[A-Za-z0-9\-./\s]{3,}$"
+)
+_OWNER_CONTEXT_PATTERN = re.compile(
+    r"(?i)\b(?:propietari(?:o|a)|titular|dueñ(?:o|a)|owner)\b"
+)
+_VET_OR_CLINIC_CONTEXT_PATTERN = re.compile(
+    r"(?i)\b(?:veterinari[oa]|vet\b|doctor(?:a)?\b|dra\.?\b|dr\.?\b|cl[ií]nica|hospital|centro\s+veterinario)\b"
+)
 
 
 def _default_now_iso() -> str:
@@ -480,6 +504,54 @@ def _mine_interpretation_candidates(
     candidates: dict[str, list[dict[str, object]]] = defaultdict(list)
     seen_values: dict[str, set[str]] = defaultdict(set)
 
+    def split_owner_before_address_tokens(text: str) -> str:
+        tokens = text.split()
+        if not tokens:
+            return ""
+
+        address_markers = {
+            "calle",
+            "av",
+            "av.",
+            "avenida",
+            "cp",
+            "nº",
+            "n°",
+            "num",
+            "num.",
+            "número",
+            "plaza",
+            "pte",
+            "pte.",
+            "portal",
+            "piso",
+            "puerta",
+        }
+        for index, token in enumerate(tokens):
+            normalized_token = token.casefold().strip(".,:;()[]{}")
+            if normalized_token.startswith("c/") or normalized_token in address_markers:
+                return " ".join(tokens[:index]).strip()
+        return text
+
+    def normalize_person_fragment(fragment: str) -> str | None:
+        value = _WHITESPACE_PATTERN.sub(" ", fragment).strip(" .,:;\t\r\n")
+        if not value:
+            return None
+        if "@" in value or _PHONE_LIKE_PATTERN.search(value):
+            return None
+        if _LICENSE_ONLY_PATTERN.match(value):
+            return None
+        if _ADDRESS_LIKE_PATTERN.search(value):
+            return None
+
+        tokens = value.split()
+        if not 2 <= len(tokens) <= 5:
+            return None
+        letter_tokens = [token for token in tokens if _NAME_TOKEN_PATTERN.match(token)]
+        if len(letter_tokens) < max(2, int(len(tokens) * 0.6)):
+            return None
+        return " ".join(tokens)
+
     def add_candidate(
         *,
         key: str,
@@ -501,6 +573,23 @@ def _mine_interpretation_candidates(
                 return
             cleaned_value = digit_match.group(1)
 
+        if key == "owner_name":
+            cleaned_value = split_owner_before_address_tokens(cleaned_value)
+            normalized_person = normalize_person_fragment(cleaned_value)
+            if normalized_person is None:
+                return
+            cleaned_value = normalized_person
+            if _VET_OR_CLINIC_CONTEXT_PATTERN.search(snippet) is not None:
+                return
+
+        if key == "vet_name":
+            normalized_person = normalize_person_fragment(cleaned_value)
+            if normalized_person is None:
+                return
+            if _ADDRESS_LIKE_PATTERN.search(normalized_person):
+                return
+            cleaned_value = normalized_person
+
         normalized_key = cleaned_value.casefold()
         if normalized_key in seen_values[key]:
             return
@@ -517,6 +606,96 @@ def _mine_interpretation_candidates(
                     "snippet": snippet.strip()[:220],
                 },
             }
+        )
+
+    def add_labeled_person_candidates(
+        *,
+        key: str,
+        pattern: re.Pattern[str],
+        confidence: float,
+        owner_mode: bool = False,
+    ) -> None:
+        raw_lines = raw_text.splitlines()
+
+        for index, raw_line in enumerate(raw_lines):
+            line = raw_line.strip()
+            if not line:
+                continue
+
+            match = pattern.match(line)
+            if match is None:
+                continue
+
+            candidate_source = match.group(1).strip() if isinstance(match.group(1), str) else ""
+            if not candidate_source and ":" in line:
+                for next_index in range(index + 1, min(index + 4, len(raw_lines))):
+                    next_line = raw_lines[next_index].strip()
+                    if next_line:
+                        candidate_source = next_line
+                        break
+
+            if not candidate_source:
+                continue
+
+            if owner_mode:
+                candidate_source = split_owner_before_address_tokens(candidate_source)
+
+            normalized = normalize_person_fragment(candidate_source)
+            if normalized is None:
+                continue
+
+            lower_line = line.casefold()
+            if key == "vet_name" and _ADDRESS_LIKE_PATTERN.search(lower_line):
+                continue
+            if key == "owner_name" and _VET_OR_CLINIC_CONTEXT_PATTERN.search(lower_line):
+                continue
+
+            add_candidate(
+                key=key,
+                value=normalized,
+                confidence=confidence,
+                snippet=line,
+            )
+
+    add_labeled_person_candidates(
+        key="vet_name",
+        pattern=_VET_LABEL_LINE_PATTERN,
+        confidence=0.64,
+    )
+    add_labeled_person_candidates(
+        key="owner_name",
+        pattern=_OWNER_LABEL_LINE_PATTERN,
+        confidence=0.66,
+        owner_mode=True,
+    )
+
+    raw_lines = raw_text.splitlines()
+    for index, raw_line in enumerate(raw_lines):
+        line = raw_line.strip()
+        if not line:
+            continue
+        match = _OWNER_NOMBRE_LINE_PATTERN.match(line)
+        if match is None:
+            continue
+
+        window_start = max(0, index - 2)
+        window_end = min(len(raw_lines), index + 3)
+        context_window = " ".join(raw_lines[window_start:window_end])
+        if _OWNER_CONTEXT_PATTERN.search(context_window) is None:
+            continue
+
+        candidate_source = match.group(1).strip() if isinstance(match.group(1), str) else ""
+        candidate_source = split_owner_before_address_tokens(candidate_source)
+
+        normalized = normalize_person_fragment(candidate_source)
+        if normalized is None:
+            continue
+
+        add_candidate(
+            key="owner_name",
+            value=normalized,
+            confidence=0.62,
+            snippet=line,
         )
 
     labeled_patterns: tuple[tuple[str, str, float], ...] = (
