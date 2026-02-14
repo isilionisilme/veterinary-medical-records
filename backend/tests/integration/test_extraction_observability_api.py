@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import io
+import time
 from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 
-from backend.app.application import extraction_observability
+from backend.app.application import extraction_observability, processing_runner
 from backend.app.main import create_app
 
 
@@ -355,3 +357,53 @@ def test_debug_extraction_summary_endpoint_returns_not_found_for_unknown_run_id(
         "error_code": "NOT_FOUND",
         "message": "No extraction snapshots found for this document.",
     }
+
+
+def test_debug_extraction_summary_endpoint_reads_auto_persisted_snapshot_after_processing(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("VET_RECORDS_DB_PATH", str(tmp_path / "documents.db"))
+    monkeypatch.setenv("VET_RECORDS_STORAGE_PATH", str(tmp_path / "storage"))
+    monkeypatch.delenv("VET_RECORDS_DISABLE_PROCESSING", raising=False)
+    monkeypatch.setenv("VET_RECORDS_EXTRACTION_OBS", "1")
+    monkeypatch.setattr(extraction_observability, "_OBSERVABILITY_DIR", tmp_path / "obs")
+    monkeypatch.setattr(
+        processing_runner,
+        "_extract_pdf_text_with_extractor",
+        lambda _path: (
+            "Paciente: Luna\nEspecie: canino\nRaza: mestizo\nDiagnostico: control",
+            "test",
+        ),
+    )
+
+    app = create_app()
+    with TestClient(app) as processing_client:
+        files = {
+            "file": (
+                "record.pdf",
+                io.BytesIO(b"%PDF-1.5 auto snapshot processing test"),
+                "application/pdf",
+            )
+        }
+        upload_response = processing_client.post("/documents/upload", files=files)
+        assert upload_response.status_code == 201
+        document_id = upload_response.json()["document_id"]
+
+        run_id: str | None = None
+        for _ in range(80):
+            review_response = processing_client.get(f"/documents/{document_id}/review")
+            if review_response.status_code == 200:
+                run_id = review_response.json()["latest_completed_run"]["run_id"]
+                break
+            time.sleep(0.05)
+
+        assert run_id is not None
+
+        summary_response = processing_client.get(
+            f"/debug/extraction-runs/{document_id}/summary?limit=20&run_id={run_id}"
+        )
+        assert summary_response.status_code == 200
+        summary = summary_response.json()
+        assert summary["considered_runs"] == 1
+        assert summary["total_runs"] >= 1
