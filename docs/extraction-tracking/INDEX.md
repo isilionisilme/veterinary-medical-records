@@ -2,7 +2,7 @@
 
 ## Latest state
 - Last updated: 2026-02-14
-- Last field iterated: `owner_name`
+- Last field iterated: `microchip_id`
 - Golden fields completed: `microchip_id`, `owner_name`, `weight`, `vet_name`, `visit_date`, `discharge_date`, `vaccinations`, `symptoms`
 - Current confidence policy: fixed `0.66` for golden-loop promotion and conservative field heuristics.
 - Current UI/backend facts:
@@ -10,7 +10,7 @@
   - UI-facing structured values are in `active_interpretation.data.global_schema_v0`.
   - `GET /runs/{run_id}/artifacts/global-schema-v0` has been observed as 404 in parity checks.
   - Debug parity should pin run with `GET /debug/extraction-runs/{document_id}/summary?limit=...&run_id=...`.
-- Next recommended minimal iteration: owner-name detection deep-dive for records where `Datos del Cliente` exists but `has_candidates=false` persists.
+- Next recommended minimal iteration: microchip parity re-check on recent real runs to confirm OCR `N�`/`Nro` variants increase candidate presence without false positives.
 
 ## Baseline snapshots
 - [Baseline v1 (post-PR #83)](runs/baseline-v1.md): freeze point before PR #85+ iterations.
@@ -35,12 +35,13 @@ The following PRs represent the evolution of the extraction tracking system. Eac
 | 7. PR Storyline & Anchors | [#83](https://github.com/isilionisilme/veterinary-medical-records/pull/83) | Adds PR Storyline, explicit PR anchors, and final reviewer-facing improvements. |
 | 8. Baseline Snapshot v1 | [#84](https://github.com/isilionisilme/veterinary-medical-records/pull/84) | Freezes post-#83 baseline and expected-vs-observed anchors before next loop. |
 | 9. owner_name Parity Recheck | [#85](https://github.com/isilionisilme/veterinary-medical-records/pull/85) | Applies conservative `Datos del Cliente` fallback and hardens ambiguity guardrails. |
+| 10. owner_name Post-fix Parity Evidence | [#86](https://github.com/isilionisilme/veterinary-medical-records/pull/86) | Confirms owner_name remains detection-missing (no UI mismatch) on a fresh post-fix run. |
 
 ## Golden iterations (one-field loop)
 
 | Field | Fixture(s) (docA/docB) | Signal source (existing vs added line) | Outcome (missing→accepted) | Conf policy | Branch | Commit | PR link | Tests (commands) | Notes |
 |---|---|---|---|---|---|---|---|---|---|
-| [microchip_id](fields/microchip_id.md) | docA + docB | Existing signal + later real-run nearby-label signal (`N� Chip` + digits) | docA/docB missing→accepted (`00023035139`, `941000024967769`) | `0.66` | N/A | `7d4b2d7a`, `9b1a691c` | TODO(PR: pending) | `python -m pytest backend/tests/unit/test_golden_extraction_regression.py backend/tests/unit/test_interpretation_schema_v0.py -q` | Digits-only 9–15; no overwrite. |
+| [microchip_id](fields/microchip_id.md) | docA + docB + OCR synthetic | Existing signal + nearby-label signal (`N� Chip` + digits) + OCR `N�`/`Nro` prefix window fallback | docA/docB missing→accepted (`00023035139`, `941000024967769`); OCR synthetic now accepted (`941000024967769`) | `0.66` | `fix/golden-microchip-ocr-hardening` | `7d4b2d7a`, `9b1a691c`, `97a014a1` | TODO(PR: pending) | `python -m pytest backend/tests/unit/test_interpretation_schema_v0.py backend/tests/unit/test_golden_extraction_regression.py -q` | Digits-only 9–15; no overwrite. |
 | [owner_name](fields/owner_name.md) | docB + owner-context synthetic | Existing signal + conservative fallback + `Datos del Cliente` context support for `Nombre:` lines | docB missing→accepted (`NOMBRE DEMO`); synthetic owner block now accepted (`BEATRIZ ABARCA`) | `0.66` | `fix/golden-owner-name-minimal-loop` | `b012628e`, `efcab057` | TODO(PR: pending) | `python -m pytest backend/tests/unit/test_interpretation_schema_v0.py backend/tests/unit/test_golden_extraction_regression.py -q` | Keep deterministic context; no free-name guessing. |
 | [weight](fields/weight.md) | docB | Added fixture line: `Peso: 7,2 kg` | docB missing→accepted (`7.2 kg`) | `0.66` | `fix/golden-weight-iteration` | `ad366cd0` | TODO(PR: pending) | `python -m pytest backend/tests/unit/test_golden_extraction_regression.py backend/tests/unit/test_interpretation_schema_v0.py -q` | Range `[0.5,120]`; ignore `0`. |
 | [vet_name](fields/vet_name.md) | docA | Existing signal | docA missing→accepted (`NOMBRE DEMO`) | `0.66` | `fix/golden-vet-name-iteration` | `40762a48` | TODO(PR: pending) | `python -m pytest backend/tests/unit/test_golden_extraction_regression.py backend/tests/unit/test_interpretation_schema_v0.py -q` | Exclude clinic/address values. |
