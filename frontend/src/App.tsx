@@ -1014,95 +1014,127 @@ export function App() {
         return;
       }
 
-      const deltaX = event.clientX - dragState.startX;
-      const ratioDelta = deltaX / availableWidth;
-      const rawRatio = dragState.startRatio + ratioDelta;
-      setReviewSplitRatio(clampReviewSplitRatio(rawRatio, dragState.containerWidth));
+      const deltaRatio = (event.clientX - dragState.startX) / availableWidth;
+      const nextRatio = clampReviewSplitRatio(
+        dragState.startRatio + deltaRatio,
+        dragState.containerWidth
+      );
+      setReviewSplitRatio(nextRatio);
     };
 
-    const finishDrag = () => {
+    const onMouseUp = () => {
       setIsDraggingReviewSplit(false);
-      const dragState = reviewSplitDragStateRef.current;
-      if (!dragState) {
-        return;
-      }
       reviewSplitDragStateRef.current = null;
-
-      setReviewSplitRatio((current) => {
-        const snapped = snapReviewSplitRatio(current);
-        return clampReviewSplitRatio(snapped, dragState.containerWidth);
-      });
+      setReviewSplitRatio((current) => snapReviewSplitRatio(current));
     };
 
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
     window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", finishDrag);
+    window.addEventListener("mouseup", onMouseUp);
 
     return () => {
+      document.body.style.removeProperty("cursor");
+      document.body.style.removeProperty("user-select");
       window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", finishDrag);
+      window.removeEventListener("mouseup", onMouseUp);
     };
   }, [isDraggingReviewSplit]);
 
-  const loadPdf = useMutation({
-    mutationFn: async (documentId: string): Promise<LoadResult> => {
-      const response = await fetch(`${API_BASE_URL}/documents/${documentId}/download`);
-      if (!response.ok) {
-        throw new UiError("No pudimos cargar el PDF.", `HTTP ${response.status}`);
-      }
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
 
-      const blob = await response.blob();
-      const disposition = response.headers.get("content-disposition");
-      const dispositionName = disposition
-        ? /filename\*?=(?:UTF-8''|\")?([^\";]+)/i.exec(disposition)?.[1]
-        : null;
-      const resolvedFilename = dispositionName ? decodeURIComponent(dispositionName) : null;
-
-      return {
-        url: URL.createObjectURL(blob),
-        filename: resolvedFilename,
-      };
-    },
-    onSuccess: ({ url, filename: loadedFilename }, documentId) => {
-      const requestedDocumentId = latestLoadRequestIdRef.current;
-      if (requestedDocumentId && requestedDocumentId !== documentId) {
-        URL.revokeObjectURL(url);
+    const clampSplitToContainer = () => {
+      const containerWidth = reviewSplitGridRef.current?.getBoundingClientRect().width ?? 0;
+      if (containerWidth <= 0) {
         return;
       }
+      setReviewSplitRatio((current) => clampReviewSplitRatio(current, containerWidth));
+    };
 
-      setFileUrl((previousUrl) => {
-        if (previousUrl) {
-          URL.revokeObjectURL(previousUrl);
+    const rafId = window.requestAnimationFrame(clampSplitToContainer);
+    window.addEventListener("resize", clampSplitToContainer);
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      window.removeEventListener("resize", clampSplitToContainer);
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (autoOpenRetryTimerRef.current) {
+        window.clearTimeout(autoOpenRetryTimerRef.current);
+      }
+      if (refreshFeedbackTimerRef.current) {
+        window.clearTimeout(refreshFeedbackTimerRef.current);
+      }
+      if (copyFeedbackTimerRef.current) {
+        window.clearTimeout(copyFeedbackTimerRef.current);
+      }
+      if (interpretationRetryMinTimerRef.current) {
+        window.clearTimeout(interpretationRetryMinTimerRef.current);
+      }
+      if (fileUrl) {
+        URL.revokeObjectURL(fileUrl);
+      }
+    };
+  }, [fileUrl]);
+
+  const loadPdf = useMutation({
+    mutationFn: async (docId: string) => fetchOriginalPdf(docId),
+    onSuccess: (result, docId) => {
+      if (latestLoadRequestIdRef.current !== docId) {
+        URL.revokeObjectURL(result.url);
+        return;
+      }
+      if (pendingAutoOpenDocumentIdRef.current === docId) {
+        pendingAutoOpenDocumentIdRef.current = null;
+        delete autoOpenRetryCountRef.current[docId];
+        if (autoOpenRetryTimerRef.current) {
+          window.clearTimeout(autoOpenRetryTimerRef.current);
+          autoOpenRetryTimerRef.current = null;
         }
-        return url;
-      });
-      setFilename(loadedFilename);
-
-      if (pendingAutoOpenDocumentIdRef.current === documentId) {
-        const selected = queryClient
-          .getQueryData<DocumentListResponse>(["documents", "list"])
-          ?.items.find((item) => item.document_id === documentId);
-
-        if (!selected || isDocumentProcessing(selected.status)) {
-          const retryCount = autoOpenRetryCountRef.current[documentId] ?? 0;
-          if (retryCount < 6) {
-            autoOpenRetryCountRef.current[documentId] = retryCount + 1;
-            if (autoOpenRetryTimerRef.current !== null) {
-              window.clearTimeout(autoOpenRetryTimerRef.current);
-            }
-            autoOpenRetryTimerRef.current = window.setTimeout(() => {
-              queryClient.invalidateQueries({ queryKey: ["documents", "list"] });
-            }, 1000);
-            return;
+        setUploadFeedback((current) => {
+          if (current?.kind !== "success" || current.documentId !== docId) {
+            return current;
           }
-          pendingAutoOpenDocumentIdRef.current = null;
-          delete autoOpenRetryCountRef.current[documentId];
-          setUploadFeedback({
-            kind: "success",
-            message: "Documento subido correctamente.",
-            documentId: documentId,
-            showOpenAction: true,
-          });
+          return { ...current, showOpenAction: false };
+        });
+      }
+      setActiveId(docId);
+      setFileUrl((currentUrl) => {
+        if (currentUrl) {
+          URL.revokeObjectURL(currentUrl);
         }
+        return result.url;
+      });
+      setFilename(result.filename);
+    },
+    onError: (_, docId) => {
+      if (latestLoadRequestIdRef.current !== docId) {
+        return;
+      }
+      if (pendingAutoOpenDocumentIdRef.current === docId) {
+        const retries = autoOpenRetryCountRef.current[docId] ?? 0;
+        if (retries < 1) {
+          autoOpenRetryCountRef.current[docId] = retries + 1;
+          autoOpenRetryTimerRef.current = window.setTimeout(() => {
+            latestLoadRequestIdRef.current = docId;
+            requestPdfLoad(docId);
+          }, 1000);
+          return;
+        }
+        pendingAutoOpenDocumentIdRef.current = null;
+        delete autoOpenRetryCountRef.current[docId];
+        setUploadFeedback({
+          kind: "success",
+          message: "Documento subido correctamente.",
+          documentId: docId,
+          showOpenAction: true,
+        });
       }
     },
   });

@@ -1546,6 +1546,32 @@ describe("App upload and list flow", () => {
     expect(within(screen.getByTestId("right-panel-scroll")).getByText("ID de reclamacion")).toBeInTheDocument();
   });
 
+  it("does not post extraction snapshots from the UI", async () => {
+    const baseFetch = globalThis.fetch as typeof fetch;
+    let snapshotPostAttempts = 0;
+
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = input.toString();
+      const method = (init?.method ?? "GET").toUpperCase();
+      if (url.endsWith("/debug/extraction-runs") && method === "POST") {
+        snapshotPostAttempts += 1;
+      }
+      return baseFetch(input, init);
+    }) as typeof fetch;
+
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+    await screen.findByText("Identificacion del caso");
+
+    fireEvent.click(screen.getByRole("button", { name: /Actualizar/i }));
+    await screen.findByText("Identificacion del caso");
+
+    await waitFor(() => {
+      expect(snapshotPostAttempts).toBe(0);
+    });
+  });
+
   it("falls back to visit date when document date is missing", async () => {
     renderApp();
 
