@@ -15,9 +15,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { ConfidenceDot } from "./components/app/ConfidenceDot";
 import { CriticalBadge, CriticalIcon } from "./components/app/CriticalBadge";
-import { FieldBlock, FieldRow, RepeatableList } from "./components/app/Field";
+import { FieldBlock, FieldRow, RepeatableList, ValueSurface } from "./components/app/Field";
 import { IconButton } from "./components/app/IconButton";
-import { Section, SectionHeader } from "./components/app/Section";
+import { SectionBlock, SectionHeader } from "./components/app/Section";
 import { DocumentsSidebar } from "./components/DocumentsSidebar";
 import { PdfViewer } from "./components/PdfViewer";
 import { SourcePanel } from "./components/SourcePanel";
@@ -66,15 +66,14 @@ const SPLITTER_COLUMN_WIDTH_PX = 14;
 const REVIEW_SPLIT_MIN_WIDTH_PX =
   MIN_PDF_PANEL_WIDTH_PX + MIN_STRUCTURED_PANEL_WIDTH_PX + SPLITTER_COLUMN_WIDTH_PX;
 const SPLIT_SNAP_POINTS = [0.7, 0.6, 0.5] as const;
-const STRUCTURED_MUTED_ROW_GRID_CLASS = "grid w-full items-start";
-const STRUCTURED_MUTED_ROW_GRID_STYLE: CSSProperties = {
-  gridTemplateColumns: "var(--field-row-dot-col) var(--field-row-label-col) minmax(0, 1fr)",
-  columnGap: "var(--field-row-gap)",
+const STRUCTURED_FIELD_ROW_CLASS = "w-full";
+const STRUCTURED_FIELD_ROW_STYLE: CSSProperties = {
+  gridTemplateColumns: "var(--field-row-label-col) minmax(0, 1fr)",
+  columnGap: "var(--field-row-gap-x)",
 };
-const STRUCTURED_MUTED_ROW_LABEL_CLASS = "min-w-0 self-start text-sm font-medium leading-5 break-words";
-const STRUCTURED_MUTED_ROW_DOT_CLASS = "mt-[var(--dot-offset)] flex h-4 w-4 items-center justify-center self-start";
-const LONG_TEXT_VALUE_BASE_CLASS = "w-full min-h-[7rem] rounded-md bg-surfaceMuted p-3 text-left text-sm leading-6 whitespace-pre-wrap break-words max-h-40 overflow-auto";
-const LONG_TEXT_VALUE_WRAPPER_CLASS = "min-w-0 w-full col-start-2 col-span-2 mt-1";
+const STRUCTURED_FIELD_LABEL_CLASS = "min-w-0 text-sm font-medium leading-5 break-words";
+const STRUCTURED_FIELD_STACK_CLASS = "space-y-[var(--field-row-gap-y)]";
+const LONG_TEXT_FALLBACK_THRESHOLD = 180;
 const LONG_TEXT_FIELD_KEYS = new Set([
   "treatment_plan",
   "diagnosis",
@@ -94,6 +93,13 @@ const VISIT_SECTION_FIELD_KEYS = new Set([
 
 function isLongTextFieldKey(fieldKey: string): boolean {
   return LONG_TEXT_FIELD_KEYS.has(fieldKey);
+}
+
+function shouldRenderLongTextValue(fieldKey: string, value: string): boolean {
+  if (isLongTextFieldKey(fieldKey)) {
+    return true;
+  }
+  return value.includes("\n") || value.length > LONG_TEXT_FALLBACK_THRESHOLD;
 }
 
 function getStructuredFieldPrefix(fieldKey: string): "owner" | "visit" | "core" {
@@ -160,12 +166,13 @@ function renderLongTextValue(options: {
   const { value, isMissing, missingClassName, valueClassName, testId } = options;
 
   return (
-    <div
-      data-testid={testId}
-      className={`${LONG_TEXT_VALUE_BASE_CLASS} ${isMissing ? `italic ${missingClassName}` : valueClassName}`}
+    <ValueSurface
+      variant="long"
+      testId={testId}
+      className={isMissing ? `italic ${missingClassName}` : valueClassName}
     >
       {value}
-    </div>
+    </ValueSurface>
   );
 }
 
@@ -2587,8 +2594,8 @@ export function App() {
   const renderConfidenceIndicator = (field: ReviewDisplayField, item: ReviewSelectableField) => {
     if (item.isMissing) {
       const emptyTooltip = field.isCritical
-        ? "Confianza: 0% · CRÍTICO · Sin dato"
-        : "Confianza: 0% · Sin dato";
+        ? "No encontrado en documento · CRÍTICO"
+        : "No encontrado en documento";
       return (
         <span data-testid={`badge-group-${item.id}`} className="inline-flex shrink-0 items-center">
           <Tooltip content={emptyTooltip}>
@@ -2596,7 +2603,7 @@ export function App() {
               data-testid={`confidence-indicator-${item.id}`}
               tabIndex={0}
               aria-label={emptyTooltip}
-              className="inline-block h-2.5 w-2.5 rounded-full border border-black/40 bg-white"
+              className="inline-block h-2.5 w-2.5 rounded-full bg-missing"
             />
           </Tooltip>
         </span>
@@ -2618,7 +2625,6 @@ export function App() {
 
   const renderRepeatableReviewField = (field: ReviewDisplayField) => {
     const countLabel = field.items.length === 1 ? "1 elemento" : `${field.items.length} elementos`;
-    const useLongTextFormat = isLongTextFieldKey(field.key);
     return (
       <FieldBlock key={field.id} className="px-1 py-1">
         <div className="flex items-center justify-between gap-2 pb-1">
@@ -2652,29 +2658,35 @@ export function App() {
                   className="w-full cursor-pointer rounded-md px-1 py-0.5 text-left transition hover:bg-black/[0.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                   onClick={() => handleSelectReviewItem(item)}
                 >
-                  {useLongTextFormat ? (
-                    <div className="grid w-full grid-cols-[var(--field-row-dot-col)_1fr] items-start gap-x-[var(--field-row-gap)]">
-                      <div className={STRUCTURED_MUTED_ROW_DOT_CLASS}>{renderConfidenceIndicator(field, item)}</div>
-                      <div className="col-start-2 w-full min-w-0">
-                        {renderLongTextValue({
-                          value: item.displayValue,
-                          isMissing: item.isMissing,
-                          missingClassName: "text-missing",
-                          valueClassName: "text-text",
-                        })}
-                      </div>
-                    </div>
-                  ) : (
                     <FieldRow
-                      label={null}
-                      value={
-                        <p className={`min-w-0 text-sm ${item.isMissing ? "italic text-missing" : "text-text"}`}>
-                          {item.displayValue}
-                        </p>
+                      indicator={renderConfidenceIndicator(field, item)}
+                      label={<p className={`${STRUCTURED_FIELD_LABEL_CLASS} text-text`}>{field.label}</p>}
+                      labelMeta={null}
+                      rowStyle={STRUCTURED_FIELD_ROW_STYLE}
+                      className={STRUCTURED_FIELD_ROW_CLASS}
+                      valuePlacement={
+                        shouldRenderLongTextValue(field.key, item.displayValue)
+                          ? "below-label"
+                          : "inline"
                       }
-                      status={<div className="pt-0.5">{renderConfidenceIndicator(field, item)}</div>}
+                      value={
+                        shouldRenderLongTextValue(field.key, item.displayValue) ? (
+                          renderLongTextValue({
+                            value: item.displayValue,
+                            isMissing: item.isMissing,
+                            missingClassName: "text-missing",
+                            valueClassName: "text-text",
+                          })
+                        ) : (
+                          <ValueSurface
+                            variant="short"
+                            className={item.isMissing ? "italic text-missing" : "text-text"}
+                          >
+                            {item.displayValue}
+                          </ValueSurface>
+                        )
+                      }
                     />
-                  )}
                 </button>
               </div>
             );
@@ -2691,7 +2703,7 @@ export function App() {
     }
     const isSelected = selectedFieldId === item.id;
     const isExpanded = Boolean(expandedFieldValues[item.id]);
-    const shouldUseLongText = isLongTextFieldKey(field.key);
+    const shouldUseLongText = shouldRenderLongTextValue(field.key, item.displayValue);
     const shouldSpanFullSectionWidth = shouldUseLongText;
     const valueText = shouldUseLongText
       ? item.displayValue
@@ -2713,29 +2725,19 @@ export function App() {
           className="w-full cursor-pointer rounded-md px-1 py-0.5 text-left transition hover:bg-black/[0.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           onClick={() => handleSelectReviewItem(item)}
         >
-          <div
-            data-testid={`${styledPrefix}-row-${field.key}`}
-            className={STRUCTURED_MUTED_ROW_GRID_CLASS}
-            style={STRUCTURED_MUTED_ROW_GRID_STYLE}
-          >
-            <div
-              data-testid={`${styledPrefix}-dot-${field.key}`}
-              className={STRUCTURED_MUTED_ROW_DOT_CLASS}
-            >
-              {renderConfidenceIndicator(field, item)}
-            </div>
-            <div
-              data-testid={`${styledPrefix}-label-${field.key}`}
-              className="min-w-0 self-start"
-            >
-              <p className={`${STRUCTURED_MUTED_ROW_LABEL_CLASS} text-text`}>{field.label}</p>
-              {field.isCritical && <CriticalBadge testId={`critical-indicator-${field.key}`} />}
-            </div>
-            <div
-              className={shouldUseLongText ? LONG_TEXT_VALUE_WRAPPER_CLASS : "min-w-0 w-full"}
-              data-testid={shouldUseLongText ? `field-value-${field.key}-wrapper` : undefined}
-            >
-              {shouldUseLongText ? (
+          <FieldRow
+            leftTestId={`${styledPrefix}-row-${field.key}`}
+            labelTestId={`${styledPrefix}-label-${field.key}`}
+            indicatorTestId={`${styledPrefix}-dot-${field.key}`}
+            valueWrapperTestId={shouldUseLongText ? `field-value-${field.key}-wrapper` : undefined}
+            indicator={renderConfidenceIndicator(field, item)}
+            label={<p className={`${STRUCTURED_FIELD_LABEL_CLASS} text-text`}>{field.label}</p>}
+            labelMeta={field.isCritical ? <CriticalBadge testId={`critical-indicator-${field.key}`} /> : null}
+            rowStyle={STRUCTURED_FIELD_ROW_STYLE}
+            className={STRUCTURED_FIELD_ROW_CLASS}
+            valuePlacement={shouldUseLongText ? "below-label" : "inline"}
+            value={
+              shouldUseLongText ? (
                 renderLongTextValue({
                   value: valueText,
                   isMissing: item.isMissing,
@@ -2744,17 +2746,16 @@ export function App() {
                   testId: `field-value-${field.key}`,
                 })
               ) : (
-                <div
-                  data-testid={`${styledPrefix}-value-${field.key}`}
-                  className={`w-full min-w-0 rounded-md bg-surfaceMuted py-1.5 px-3 text-left text-sm break-words ${
-                    item.isMissing ? "italic text-missing" : "text-text"
-                  }`}
+                <ValueSurface
+                  testId={`${styledPrefix}-value-${field.key}`}
+                  variant="short"
+                  className={item.isMissing ? "italic text-missing" : "text-text"}
                 >
                   {valueText}
-                </div>
-              )}
-            </div>
-          </div>
+                </ValueSurface>
+              )
+            }
+          />
         </button>
         {canExpand && (
           <button
@@ -2775,179 +2776,11 @@ export function App() {
   };
 
   const renderRepeatableTileField = (field: ReviewDisplayField) => {
-    const countLabel = field.items.length === 1 ? "1 elemento" : `${field.items.length} elementos`;
-    const useLongTextFormat = isLongTextFieldKey(field.key);
-    return (
-      <article key={field.id} className="rounded-xl bg-white p-3">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5">
-            <p className="text-xs font-semibold text-ink">{field.label}</p>
-            {field.isCritical && (
-              <span
-                data-testid={`critical-indicator-${field.key}`}
-                className="rounded-full bg-surfaceMuted px-2 py-0.5 text-[10px] font-semibold text-muted"
-              >
-                CRÍTICO
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            {field.items.length > 0 && (
-              <span className="rounded-full bg-surfaceMuted px-2 py-0.5 text-[10px] font-semibold text-muted">
-                {countLabel}
-              </span>
-            )}
-            <Tooltip content="Disponible próximamente">
-              <button
-                type="button"
-                disabled
-                className="rounded-full bg-surfaceMuted px-2 py-0.5 text-[10px] font-semibold text-muted/70"
-              >
-                + Añadir
-              </button>
-            </Tooltip>
-          </div>
-        </div>
-        <div className="mt-2 space-y-2">
-          {field.isEmptyList && <p className="text-sm italic text-muted">{EMPTY_LIST_PLACEHOLDER}</p>}
-          {field.items.map((item) => {
-            const isSelected = selectedFieldId === item.id;
-            return (
-              <article
-                key={item.id}
-                className={`rounded-lg px-2 py-2 ${
-                  isSelected ? "bg-accentSoft/50" : "bg-white"
-                }`}
-              >
-                <button
-                  type="button"
-                  className="w-full cursor-pointer rounded-md text-left transition hover:bg-black/[0.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-                  onClick={() => handleSelectReviewItem(item)}
-                >
-                  {useLongTextFormat ? (
-                    <div className="grid w-full grid-cols-[var(--field-row-dot-col)_1fr] items-start gap-x-[var(--field-row-gap)]">
-                      <div className={STRUCTURED_MUTED_ROW_DOT_CLASS}>{renderConfidenceIndicator(field, item)}</div>
-                      <div className="col-start-2 w-full min-w-0">
-                        {renderLongTextValue({
-                          value: item.displayValue,
-                          isMissing: item.isMissing,
-                          missingClassName: "text-muted",
-                          valueClassName: "text-ink",
-                        })}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-start justify-between gap-3">
-                      <p className={`min-w-0 text-sm ${item.isMissing ? "italic text-muted" : "text-ink"}`}>
-                        {item.displayValue}
-                      </p>
-                      <div className="pt-0.5">{renderConfidenceIndicator(field, item)}</div>
-                    </div>
-                  )}
-                </button>
-              </article>
-            );
-          })}
-        </div>
-      </article>
-    );
+    return renderRepeatableReviewField(field);
   };
 
   const renderScalarTileField = (field: ReviewDisplayField) => {
-    const item = field.items[0];
-    if (!item) {
-      return null;
-    }
-    const isSelected = selectedFieldId === item.id;
-    const isExpanded = Boolean(expandedFieldValues[item.id]);
-    const shouldUseLongText = isLongTextFieldKey(field.key);
-    const shouldSpanFullSectionWidth = shouldUseLongText;
-    const valueText = shouldUseLongText
-      ? item.displayValue
-      : isExpanded
-        ? item.displayValue
-        : truncateText(item.displayValue, 180);
-    const canExpand = !shouldUseLongText && item.displayValue.length > 180;
-    const styledPrefix = getStructuredFieldPrefix(field.key);
-
-    return (
-      <article
-        key={field.id}
-        className={`rounded-xl p-3 ${shouldSpanFullSectionWidth ? "lg:col-span-2" : ""} ${
-          isSelected ? "bg-accentSoft/50" : "bg-white"
-        }`}
-      >
-        <button
-          type="button"
-          className="w-full cursor-pointer rounded-md text-left transition hover:bg-black/[0.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-          onClick={() => handleSelectReviewItem(item)}
-        >
-          <div
-            data-testid={`${styledPrefix}-row-${field.key}`}
-            className={STRUCTURED_MUTED_ROW_GRID_CLASS}
-            style={STRUCTURED_MUTED_ROW_GRID_STYLE}
-          >
-            <div
-              data-testid={`${styledPrefix}-dot-${field.key}`}
-              className={STRUCTURED_MUTED_ROW_DOT_CLASS}
-            >
-              {renderConfidenceIndicator(field, item)}
-            </div>
-            <div
-              data-testid={`${styledPrefix}-label-${field.key}`}
-              className="min-w-0 self-start"
-            >
-              <p className={`${STRUCTURED_MUTED_ROW_LABEL_CLASS} text-ink`}>{field.label}</p>
-              {field.isCritical && (
-                <span
-                  data-testid={`critical-indicator-${field.key}`}
-                  className="rounded-full bg-surfaceMuted px-2 py-0.5 text-[10px] font-semibold text-muted"
-                >
-                  CRÍTICO
-                </span>
-              )}
-            </div>
-            <div
-              className={shouldUseLongText ? LONG_TEXT_VALUE_WRAPPER_CLASS : "min-w-0 w-full"}
-              data-testid={shouldUseLongText ? `field-value-${field.key}-wrapper` : undefined}
-            >
-              {shouldUseLongText ? (
-                renderLongTextValue({
-                  value: valueText,
-                  isMissing: item.isMissing,
-                  missingClassName: "text-muted",
-                  valueClassName: "text-ink",
-                  testId: `field-value-${field.key}`,
-                })
-              ) : (
-                <div
-                  data-testid={`${styledPrefix}-value-${field.key}`}
-                  className={`w-full min-w-0 rounded-md bg-surfaceMuted py-1.5 px-3 text-left text-sm break-words ${
-                    item.isMissing ? "italic text-muted" : "text-ink"
-                  }`}
-                >
-                  {valueText}
-                </div>
-              )}
-            </div>
-          </div>
-        </button>
-        {canExpand && (
-          <button
-            type="button"
-            className="mt-1 text-xs font-semibold text-muted underline underline-offset-2"
-            onClick={() =>
-              setExpandedFieldValues((current) => ({
-                ...current,
-                [item.id]: !current[item.id],
-              }))
-            }
-          >
-            {isExpanded ? "Ver menos" : "Ver más"}
-          </button>
-        )}
-      </article>
-    );
+    return renderScalarReviewField(field);
   };
 
   const renderSectionLayout2 = (section: { id: string; title: string; fields: ReviewDisplayField[] }) => {
@@ -2960,7 +2793,7 @@ export function App() {
     const shouldUseSingleColumn = isOwnerSection || isVisitSection;
 
     return (
-      <Section key={section.id} className="bg-surface">
+      <SectionBlock key={section.id} variant="twoColumn" className="border border-borderSubtle/70 bg-surface">
         <SectionHeader title={section.title} />
         <div className="mt-2">
           {isEmptyExtraSection && (
@@ -2969,15 +2802,21 @@ export function App() {
             </p>
           )}
           {!isEmptyExtraSection && (
-            <div className={shouldUseSingleColumn ? "grid gap-x-5 gap-y-1 grid-cols-1" : "grid gap-x-5 gap-y-1 lg:grid-cols-2"}>
+            <div
+              className={
+                shouldUseSingleColumn
+                  ? `grid grid-cols-1 gap-x-5 ${STRUCTURED_FIELD_STACK_CLASS}`
+                  : `grid gap-x-5 ${STRUCTURED_FIELD_STACK_CLASS} lg:grid-cols-2`
+              }
+            >
               {scalarFields.map(renderScalarReviewField)}
             </div>
           )}
           {repeatableFields.length > 0 && (
-            <div className="mt-2 space-y-1.5">{repeatableFields.map(renderRepeatableReviewField)}</div>
+            <div className={`mt-2 ${STRUCTURED_FIELD_STACK_CLASS}`}>{repeatableFields.map(renderRepeatableReviewField)}</div>
           )}
         </div>
-      </Section>
+      </SectionBlock>
     );
   };
 
@@ -2991,24 +2830,30 @@ export function App() {
     const shouldUseSingleColumn = isOwnerSection || isVisitSection;
 
     return (
-      <section key={section.id} className="rounded-xl bg-surface px-4 py-4">
-        <p className="pb-2 text-base font-semibold text-ink">{section.title}</p>
-        <div className="mt-3 space-y-3">
+      <SectionBlock key={section.id} variant="oneColumn" className="border border-borderSubtle/70 bg-surface">
+        <SectionHeader title={section.title} />
+        <div className={`mt-2 ${STRUCTURED_FIELD_STACK_CLASS}`}>
           {isEmptyExtraSection && (
             <p className="rounded-xl bg-surface px-3 py-2 text-xs text-muted">
               No hay otros campos extraídos.
             </p>
           )}
           {scalarFields.length > 0 && (
-            <div className={shouldUseSingleColumn ? "grid gap-3 grid-cols-1" : "grid gap-3 lg:grid-cols-2"}>
+            <div
+              className={
+                shouldUseSingleColumn
+                  ? `grid grid-cols-1 gap-x-5 ${STRUCTURED_FIELD_STACK_CLASS}`
+                  : `grid gap-x-5 ${STRUCTURED_FIELD_STACK_CLASS} lg:grid-cols-2`
+              }
+            >
               {scalarFields.map(renderScalarTileField)}
             </div>
           )}
           {repeatableFields.length > 0 && (
-            <div className="space-y-3">{repeatableFields.map(renderRepeatableTileField)}</div>
+            <div className={STRUCTURED_FIELD_STACK_CLASS}>{repeatableFields.map(renderRepeatableTileField)}</div>
           )}
         </div>
-      </section>
+      </SectionBlock>
     );
   };
 

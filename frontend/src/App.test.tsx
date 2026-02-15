@@ -1561,8 +1561,8 @@ describe("App upload and list flow", () => {
     const clinicRow = within(caseSection as HTMLElement).getByTestId("core-row-clinic_name");
     expect(clinicRow).toHaveClass("grid");
     expect(clinicRow).toHaveStyle({
-      gridTemplateColumns: "var(--field-row-dot-col) var(--field-row-label-col) minmax(0, 1fr)",
-      columnGap: "var(--field-row-gap)",
+      gridTemplateColumns: "var(--field-row-label-col) minmax(0, 1fr)",
+      columnGap: "var(--field-row-gap-x)",
     });
     const clinicValue = within(caseSection as HTMLElement).getByTestId("core-value-clinic_name");
     expect(clinicValue).toHaveClass("w-full");
@@ -1572,16 +1572,13 @@ describe("App upload and list flow", () => {
       treatmentValueCandidates.find((node) => node.textContent?.includes("Reposo relativo")) ??
       treatmentValueCandidates[0];
     expect(treatmentValue.tagName).toBe("DIV");
-    expect(treatmentValue).toHaveClass("min-h-[7rem]");
-    expect(treatmentValue).toHaveClass("p-3");
+    expect(treatmentValue).toHaveClass("min-h-[var(--long-text-min-height)]");
+    expect(treatmentValue).toHaveClass("max-h-[var(--long-text-max-height)]");
+    expect(treatmentValue).toHaveClass("overflow-auto");
+    expect(treatmentValue).toHaveClass("px-[var(--value-padding-long-x)]");
     expect(treatmentValue).toHaveClass("whitespace-pre-wrap");
     expect(treatmentValue).toHaveClass("break-words");
-    const treatmentWrappers = within(panel).getAllByTestId("field-value-treatment_plan-wrapper");
-    expect(treatmentWrappers.length).toBeGreaterThan(0);
-    treatmentWrappers.forEach((wrapper) => {
-      expect(wrapper).toHaveClass("col-start-2");
-      expect(wrapper).toHaveClass("col-span-2");
-    });
+    expect(within(panel).queryAllByRole("textbox")).toHaveLength(0);
     const ownerGrid = (ownerSection as HTMLElement).querySelector("div.grid");
     expect(ownerGrid).not.toBeNull();
     expect(ownerGrid).toHaveClass("grid-cols-1");
@@ -1590,8 +1587,8 @@ describe("App upload and list flow", () => {
     const ownerNameRow = within(ownerSection as HTMLElement).getByTestId("owner-row-owner_name");
     expect(ownerNameRow).toHaveClass("grid");
     expect(ownerNameRow).toHaveStyle({
-      gridTemplateColumns: "var(--field-row-dot-col) var(--field-row-label-col) minmax(0, 1fr)",
-      columnGap: "var(--field-row-gap)",
+      gridTemplateColumns: "var(--field-row-label-col) minmax(0, 1fr)",
+      columnGap: "var(--field-row-gap-x)",
     });
 
     const ownerNameLabel = within(ownerSection as HTMLElement).getByTestId("owner-label-owner_name");
@@ -1630,12 +1627,12 @@ describe("App upload and list flow", () => {
     expect(visitDateRow).toHaveClass("grid");
     expect(visitReasonRow).toHaveClass("grid");
     expect(visitDateRow).toHaveStyle({
-      gridTemplateColumns: "var(--field-row-dot-col) var(--field-row-label-col) minmax(0, 1fr)",
-      columnGap: "var(--field-row-gap)",
+      gridTemplateColumns: "var(--field-row-label-col) minmax(0, 1fr)",
+      columnGap: "var(--field-row-gap-x)",
     });
     expect(visitReasonRow).toHaveStyle({
-      gridTemplateColumns: "var(--field-row-dot-col) var(--field-row-label-col) minmax(0, 1fr)",
-      columnGap: "var(--field-row-gap)",
+      gridTemplateColumns: "var(--field-row-label-col) minmax(0, 1fr)",
+      columnGap: "var(--field-row-gap-x)",
     });
 
     const visitReasonLabel = within(visitSection as HTMLElement).getByTestId("visit-label-reason_for_visit");
@@ -1646,16 +1643,11 @@ describe("App upload and list flow", () => {
 
     const visitDateValue = within(visitSection as HTMLElement).getByTestId("visit-value-visit_date");
     const visitReasonValue = within(visitSection as HTMLElement).getByTestId("field-value-reason_for_visit");
-    const visitReasonWrapper = within(visitSection as HTMLElement).getByTestId(
-      "field-value-reason_for_visit-wrapper",
-    );
     expect(visitDateValue).toHaveClass("w-full");
     expect(visitReasonValue).toHaveClass("w-full");
-    expect(visitReasonValue).toHaveClass("min-h-[7rem]");
+    expect(visitReasonValue).toHaveClass("min-h-[var(--long-text-min-height)]");
     expect(visitDateValue).toHaveClass("bg-surfaceMuted");
     expect(visitReasonValue).toHaveClass("bg-surfaceMuted");
-    expect(visitReasonWrapper).toHaveClass("col-start-2");
-    expect(visitReasonWrapper).toHaveClass("col-span-2");
   });
 
   it("shows subtle CRÍTICO marker and confidence tooltip for core fields", async () => {
@@ -1696,14 +1688,13 @@ describe("App upload and list flow", () => {
     const clinicalRecordConfidence = within(clinicalRecordCard as HTMLElement).getByTestId(
       "confidence-indicator-core:clinical_record_number"
     );
-    expect(clinicalRecordConfidence).toHaveAttribute("aria-label", expect.stringMatching(/Confianza:\s*\d+%/i));
+    expect(clinicalRecordConfidence).toHaveAttribute(
+      "aria-label",
+      expect.stringMatching(/No encontrado en documento/i)
+    );
     expect(clinicalRecordConfidence).toHaveAttribute("aria-label", expect.not.stringMatching(/CRÍTICO/i));
 
-    const diagnosisCard = within(panel).getByText("Diagnostico").closest("article");
-    expect(diagnosisCard).not.toBeNull();
-    expect(
-      within(diagnosisCard as HTMLElement).queryByTestId("critical-indicator-diagnosis")
-    ).toBeInTheDocument();
+    expect(within(panel).queryByTestId("critical-indicator-diagnosis")).toBeInTheDocument();
   });
 
   it("shows an empty list state for repeatable fields", async () => {
@@ -1728,8 +1719,11 @@ describe("App upload and list flow", () => {
 
     const panel = screen.getByTestId("right-panel-scroll");
     const missingIndicator = within(panel).getByTestId("confidence-indicator-core:clinical_record_number");
-    expect(missingIndicator).toHaveAttribute("aria-label", expect.stringMatching(/Sin dato/i));
-    expect(missingIndicator.className).toContain("bg-white");
+    expect(missingIndicator).toHaveAttribute(
+      "aria-label",
+      expect.stringMatching(/No encontrado en documento/i)
+    );
+    expect(missingIndicator.className).toContain("bg-missing");
 
     fireEvent.click(screen.getByRole("button", { name: "Baja" }));
     expect(within(screen.getByTestId("right-panel-scroll")).queryByText("NHC")).toBeNull();
@@ -2136,16 +2130,16 @@ describe("App upload and list flow", () => {
     fireEvent.keyDown(window, { key: "L", shiftKey: true });
 
     await waitFor(() => {
-      expect(screen.getAllByRole("button", { name: /\+\s*Añadir/i }).length).toBeGreaterThan(0);
+      expect(window.localStorage.getItem("reportLayout")).toBe("1");
     });
-    expect(window.localStorage.getItem("reportLayout")).toBe("1");
+    expect(screen.queryByRole("button", { name: /\+\s*Añadir/i })).toBeNull();
 
     fireEvent.keyDown(window, { key: "L", shiftKey: true });
 
     await waitFor(() => {
-      expect(screen.queryByRole("button", { name: /\+\s*Añadir/i })).toBeNull();
+      expect(window.localStorage.getItem("reportLayout")).toBe("2");
     });
-    expect(window.localStorage.getItem("reportLayout")).toBe("2");
+    expect(screen.queryByRole("button", { name: /\+\s*Añadir/i })).toBeNull();
   });
 
   it("initializes report layout from query param before localStorage", async () => {
@@ -2155,7 +2149,7 @@ describe("App upload and list flow", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
     await screen.findByText("Datos de la clínica");
-    expect(screen.getAllByRole("button", { name: /\+\s*Añadir/i }).length).toBeGreaterThan(0);
+    expect(screen.queryByRole("button", { name: /\+\s*Añadir/i })).toBeNull();
     expect(window.localStorage.getItem("reportLayout")).toBe("1");
   });
 
@@ -2165,7 +2159,8 @@ describe("App upload and list flow", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
     await screen.findByText("Datos de la clínica");
-    expect(screen.getAllByRole("button", { name: /\+\s*Añadir/i }).length).toBeGreaterThan(0);
+    expect(screen.queryByRole("button", { name: /\+\s*Añadir/i })).toBeNull();
+    expect(window.localStorage.getItem("reportLayout")).toBe("1");
   });
 
   it("synchronizes selected field with viewer context repeatedly, including repeated same-field clicks", async () => {
