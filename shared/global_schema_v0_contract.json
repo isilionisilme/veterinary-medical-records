@@ -1,0 +1,230 @@
+{
+  "schema_version": "v0",
+  "fields": [
+    {
+      "key": "claim_id",
+      "label": "ID de reclamacion",
+      "section": "Identificacion del caso",
+      "value_type": "string",
+      "repeatable": false,
+      "critical": false,
+      "optional": false
+    },
+    {
+      "key": "clinic_name",
+      "label": "Clinica",
+      "section": "Identificacion del caso",
+      "value_type": "string",
+      "repeatable": false,
+      "critical": false,
+      "optional": false
+    },
+    {
+      "key": "clinic_address",
+      "label": "Direccion de la clinica",
+      "section": "Identificacion del caso",
+      "value_type": "string",
+      "repeatable": false,
+      "critical": false,
+      "optional": false
+    },
+    {
+      "key": "vet_name",
+      "label": "Veterinario",
+      "section": "Identificacion del caso",
+      "value_type": "string",
+      "repeatable": false,
+      "critical": false,
+      "optional": false
+    },
+    {
+      "key": "document_date",
+      "label": "Fecha del documento",
+      "section": "Identificacion del caso",
+      "value_type": "date",
+      "repeatable": false,
+      "critical": false,
+      "optional": false
+    },
+    {
+      "key": "pet_name",
+      "label": "Nombre del paciente",
+      "section": "Paciente",
+      "value_type": "string",
+      "repeatable": false,
+      "critical": true,
+      "optional": false
+    },
+    {
+      "key": "species",
+      "label": "Especie",
+      "section": "Paciente",
+      "value_type": "string",
+      "repeatable": false,
+      "critical": true,
+      "optional": false
+    },
+    {
+      "key": "breed",
+      "label": "Raza",
+      "section": "Paciente",
+      "value_type": "string",
+      "repeatable": false,
+      "critical": true,
+      "optional": false
+    },
+    {
+      "key": "sex",
+      "label": "Sexo",
+      "section": "Paciente",
+      "value_type": "string",
+      "repeatable": false,
+      "critical": true,
+      "optional": false
+    },
+    {
+      "key": "age",
+      "label": "Edad",
+      "section": "Paciente",
+      "value_type": "string",
+      "repeatable": false,
+      "critical": true,
+      "optional": false
+    },
+    {
+      "key": "dob",
+      "label": "Fecha de nacimiento",
+      "section": "Paciente",
+      "value_type": "date",
+      "repeatable": false,
+      "critical": false,
+      "optional": true
+    },
+    {
+      "key": "microchip_id",
+      "label": "Microchip",
+      "section": "Paciente",
+      "value_type": "string",
+      "repeatable": false,
+      "critical": false,
+      "optional": true
+    },
+    {
+      "key": "weight",
+      "label": "Peso",
+      "section": "Paciente",
+      "value_type": "string",
+      "repeatable": false,
+      "critical": true,
+      "optional": false
+    },
+    {
+      "key": "owner_name",
+      "label": "Nombre del propietario",
+      "section": "Propietario",
+      "value_type": "string",
+      "repeatable": false,
+      "critical": false,
+      "optional": false
+    },
+    {
+      "key": "owner_id",
+      "label": "ID del propietario",
+      "section": "Propietario",
+      "value_type": "string",
+      "repeatable": false,
+      "critical": false,
+      "optional": true
+    },
+    {
+      "key": "visit_date",
+      "label": "Fecha de visita",
+      "section": "Visita / episodio",
+      "value_type": "date",
+      "repeatable": false,
+      "critical": true,
+      "optional": false
+    },
+    {
+      "key": "admission_date",
+      "label": "Fecha de admision",
+      "section": "Visita / episodio",
+      "value_type": "date",
+      "repeatable": false,
+      "critical": false,
+      "optional": true
+    },
+    {
+      "key": "discharge_date",
+      "label": "Fecha de alta",
+      "section": "Visita / episodio",
+      "value_type": "date",
+      "repeatable": false,
+      "critical": false,
+      "optional": true
+    },
+    {
+      "key": "reason_for_visit",
+      "label": "Motivo de consulta",
+      "section": "Visita / episodio",
+      "value_type": "string",
+      "repeatable": false,
+      "critical": false,
+      "optional": false
+    },
+    {
+      "key": "diagnosis",
+      "label": "Diagnostico",
+      "section": "Clinico",
+      "value_type": "string",
+      "repeatable": true,
+      "critical": true,
+      "optional": false
+    },
+    {
+      "key": "symptoms",
+      "label": "Sintomas",
+      "section": "Clinico",
+      "value_type": "string",
+      "repeatable": true,
+      "critical": false,
+      "optional": false
+    },
+    {
+      "key": "procedure",
+      "label": "Procedimiento",
+      "section": "Clinico",
+      "value_type": "string",
+      "repeatable": true,
+      "critical": true,
+      "optional": false
+    },
+    {
+      "key": "medication",
+      "label": "Medicacion",
+      "section": "Clinico",
+      "value_type": "string",
+      "repeatable": true,
+      "critical": true,
+      "optional": false
+    },
+    {
+      "key": "treatment_plan",
+      "label": "Plan de tratamiento",
+      "section": "Clinico",
+      "value_type": "string",
+      "repeatable": false,
+      "critical": false,
+      "optional": false
+    },
+    {
+      "key": "allergies",
+      "label": "Alergias",
+      "section": "Clinico",
+      "value_type": "string",
+      "repeatable": false,
+      "critical": false,
+      "optional": false
+    }
+  ]
+}

@@ -2,86 +2,50 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Mapping
+from pathlib import Path
 
-GLOBAL_SCHEMA_V0_KEYS: tuple[str, ...] = (
-    "clinic_name",
-    "clinic_address",
-    "clinical_record_number",
-    "vet_name",
-    "pet_name",
-    "species",
-    "breed",
-    "sex",
-    "age",
-    "dob",
-    "microchip_id",
-    "weight",
-    "coat_color",
-    "hair_length",
-    "repro_status",
-    "owner_name",
-    "owner_address",
-    "visit_date",
-    "reason_for_visit",
-    "diagnosis",
-    "symptoms",
-    "procedure",
-    "medication",
-    "treatment_plan",
-    "language",
+_SCHEMA_CONTRACT_PATH = (
+    Path(__file__).resolve().parents[3] / "shared" / "global_schema_v0_contract.json"
+)
+
+
+def _load_schema_contract() -> dict[str, object]:
+    raw = json.loads(_SCHEMA_CONTRACT_PATH.read_text(encoding="utf-8"))
+    if not isinstance(raw, dict):
+        raise RuntimeError("Global Schema v0 contract must be a JSON object")
+    fields = raw.get("fields")
+    if not isinstance(fields, list) or not fields:
+        raise RuntimeError("Global Schema v0 contract must define a non-empty fields list")
+    return raw
+
+
+_SCHEMA_CONTRACT = _load_schema_contract()
+SCHEMA_VERSION_V0 = str(_SCHEMA_CONTRACT.get("schema_version", ""))
+_FIELD_DEFINITIONS_V0 = [
+    field for field in _SCHEMA_CONTRACT["fields"] if isinstance(field, dict)
+]
+
+GLOBAL_SCHEMA_V0_KEYS: tuple[str, ...] = tuple(
+    str(field["key"]).strip() for field in _FIELD_DEFINITIONS_V0
 )
 
 REPEATABLE_KEYS_V0: frozenset[str] = frozenset(
-    {
-        "medication",
-        "diagnosis",
-        "procedure",
-        "symptoms",
-    }
+    str(field["key"]).strip()
+    for field in _FIELD_DEFINITIONS_V0
+    if bool(field.get("repeatable"))
 )
 
 CRITICAL_KEYS_V0: frozenset[str] = frozenset(
-    {
-        "pet_name",
-        "species",
-        "breed",
-        "sex",
-        "age",
-        "weight",
-        "visit_date",
-        "diagnosis",
-        "medication",
-        "procedure",
-    }
+    str(field["key"]).strip()
+    for field in _FIELD_DEFINITIONS_V0
+    if bool(field.get("critical"))
 )
 
 VALUE_TYPE_BY_KEY_V0: dict[str, str] = {
-    "clinic_name": "string",
-    "clinic_address": "string",
-    "clinical_record_number": "string",
-    "vet_name": "string",
-    "pet_name": "string",
-    "species": "string",
-    "breed": "string",
-    "sex": "string",
-    "age": "string",
-    "dob": "date",
-    "microchip_id": "string",
-    "weight": "string",
-    "coat_color": "string",
-    "hair_length": "string",
-    "repro_status": "string",
-    "owner_name": "string",
-    "owner_address": "string",
-    "visit_date": "date",
-    "reason_for_visit": "string",
-    "diagnosis": "string",
-    "symptoms": "string",
-    "procedure": "string",
-    "medication": "string",
-    "treatment_plan": "string",
-    "language": "string",
+    str(field["key"]).strip(): str(field.get("value_type", "string"))
+    for field in _FIELD_DEFINITIONS_V0
 }
 
 
@@ -119,6 +83,10 @@ def normalize_global_schema_v0(payload: Mapping[str, object] | None) -> dict[str
 
         text_value = str(raw_value).strip()
         normalized[key] = text_value if text_value else None
+
+    visit_date = normalized.get("visit_date")
+    if normalized.get("document_date") is None and isinstance(visit_date, str) and visit_date:
+        normalized["document_date"] = visit_date
 
     return normalized
 
