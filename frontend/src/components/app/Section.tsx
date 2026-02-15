@@ -2,8 +2,22 @@ import type { ReactNode } from "react";
 
 import { cn } from "../../lib/utils";
 
+export function SectionBlock({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <section className={cn("rounded-xl bg-surface px-4 py-4", className)}>
+      {children}
+    </section>
+  );
+}
+
 export function Section({ children, className }: { children: ReactNode; className?: string }) {
-  return <section className={cn("rounded-xl bg-surface px-4 py-4", className)}>{children}</section>;
+  return <SectionBlock className={className}>{children}</SectionBlock>;
 }
 
 export function SectionHeader({ title, rightSlot }: { title: string; rightSlot?: ReactNode }) {

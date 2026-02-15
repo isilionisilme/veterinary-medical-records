@@ -6,23 +6,96 @@ export function FieldBlock({ children, className }: { children: ReactNode; class
   return <article className={cn("px-1 py-1.5", className)}>{children}</article>;
 }
 
-export function FieldRow({
-  label,
-  value,
-  status,
+type ValueSurfaceVariant = "short" | "long";
+
+export function ValueSurface({
+  children,
+  variant,
   className,
+  testId,
 }: {
-  label: ReactNode;
-  value: ReactNode;
-  status?: ReactNode;
+  children: ReactNode;
+  variant: ValueSurfaceVariant;
   className?: string;
+  testId?: string;
 }) {
   return (
-    <div className={cn("flex items-start justify-between gap-3", className)}>
-      <div className="min-w-0 flex items-center gap-1.5 pr-3">{label}</div>
-      <div className="flex min-w-0 max-w-[70%] items-start gap-2">
-        <div className="min-w-0 text-right">{value}</div>
-        {status ? <div className="flex shrink-0 items-center gap-1.5">{status}</div> : null}
+    <div
+      data-testid={testId}
+      className={cn(
+        "w-full min-w-0 rounded-md bg-surfaceMuted text-left text-sm break-words",
+        variant === "long"
+          ? "px-[var(--value-padding-long-x)] py-[var(--value-padding-long-y)] leading-6 whitespace-pre-wrap min-h-[var(--long-text-min-height)] max-h-[var(--long-text-max-height)] overflow-auto"
+          : "px-[var(--value-padding-short-x)] py-[var(--value-padding-short-y)]",
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+export function FieldRow({
+  indicator,
+  label,
+  labelMeta,
+  value,
+  valuePlacement,
+  leftTestId,
+  labelTestId,
+  indicatorTestId,
+  valueWrapperTestId,
+  className,
+}: {
+  indicator?: ReactNode;
+  label: ReactNode;
+  labelMeta?: ReactNode;
+  value: ReactNode;
+  valuePlacement?: "inline" | "below-label";
+  leftTestId?: string;
+  labelTestId?: string;
+  indicatorTestId?: string;
+  valueWrapperTestId?: string;
+  className?: string;
+}) {
+  const resolvedValuePlacement = valuePlacement ?? "inline";
+
+  return (
+    <div
+      data-testid={leftTestId}
+      className={cn(
+        "grid w-full items-start grid-cols-[var(--field-row-label-col)_minmax(0,1fr)] gap-x-[var(--field-row-gap-x)]",
+        className
+      )}
+    >
+      <div className="min-w-0 self-start">
+        <div className="min-w-0 flex items-start justify-between gap-2">
+          <div className="min-w-0 flex items-start gap-2">
+            {indicator ? (
+              <div
+                data-testid={indicatorTestId}
+                className="mt-[var(--dot-offset)] flex h-4 w-4 shrink-0 items-center justify-center self-start"
+              >
+                {indicator}
+              </div>
+            ) : null}
+            <div data-testid={labelTestId} className="min-w-0 self-start">
+              {label}
+            </div>
+          </div>
+          {labelMeta ? <div className="mt-[1px] inline-flex shrink-0 items-center gap-1.5">{labelMeta}</div> : null}
+        </div>
+      </div>
+      <div
+        data-testid={valueWrapperTestId}
+        className={cn(
+          "min-w-0 w-full self-start",
+          resolvedValuePlacement === "below-label"
+            ? "col-span-2 pl-[var(--field-row-label-indent)]"
+            : ""
+        )}
+      >
+        {value}
       </div>
     </div>
   );
