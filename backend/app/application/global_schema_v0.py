@@ -15,17 +15,63 @@ def _load_schema_contract() -> dict[str, object]:
     raw = json.loads(_SCHEMA_CONTRACT_PATH.read_text(encoding="utf-8"))
     if not isinstance(raw, dict):
         raise RuntimeError("Global Schema v0 contract must be a JSON object")
+
+    schema_version = raw.get("schema_version")
+    if not isinstance(schema_version, str) or not schema_version.strip():
+        raise RuntimeError("Global Schema v0 contract must define a non-empty schema_version")
+
     fields = raw.get("fields")
     if not isinstance(fields, list) or not fields:
         raise RuntimeError("Global Schema v0 contract must define a non-empty fields list")
+
+    required_keys = {
+        "key",
+        "label",
+        "section",
+        "value_type",
+        "repeatable",
+        "critical",
+        "optional",
+    }
+    seen_keys: set[str] = set()
+    for index, field in enumerate(fields):
+        if not isinstance(field, dict):
+            raise RuntimeError(f"Global Schema v0 field at index {index} must be an object")
+
+        missing_keys = sorted(required_keys.difference(field.keys()))
+        if missing_keys:
+            missing_keys_text = ", ".join(missing_keys)
+            raise RuntimeError(
+                f"Global Schema v0 field at index {index} is missing keys: {missing_keys_text}"
+            )
+
+        field_key = str(field.get("key", "")).strip()
+        if not field_key:
+            raise RuntimeError(
+                f"Global Schema v0 field at index {index} must define a non-empty key"
+            )
+        if field_key in seen_keys:
+            raise RuntimeError(f"Global Schema v0 contains duplicate key: {field_key}")
+        seen_keys.add(field_key)
+
+        value_type = field.get("value_type")
+        if not isinstance(value_type, str) or not value_type.strip():
+            raise RuntimeError(
+                f"Global Schema v0 field '{field_key}' must define a non-empty string value_type"
+            )
+
+        for flag in ("repeatable", "critical", "optional"):
+            if not isinstance(field.get(flag), bool):
+                raise RuntimeError(
+                    f"Global Schema v0 field '{field_key}' must define boolean flag '{flag}'"
+                )
+
     return raw
 
 
 _SCHEMA_CONTRACT = _load_schema_contract()
 SCHEMA_VERSION_V0 = str(_SCHEMA_CONTRACT.get("schema_version", ""))
-_FIELD_DEFINITIONS_V0 = [
-    field for field in _SCHEMA_CONTRACT["fields"] if isinstance(field, dict)
-]
+_FIELD_DEFINITIONS_V0 = list(_SCHEMA_CONTRACT["fields"])
 
 GLOBAL_SCHEMA_V0_KEYS: tuple[str, ...] = tuple(
     str(field["key"]).strip() for field in _FIELD_DEFINITIONS_V0

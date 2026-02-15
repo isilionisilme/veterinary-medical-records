@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+import json
+
+import pytest
+
+import backend.app.application.global_schema_v0 as schema_module
 from backend.app.application.global_schema_v0 import (
     CRITICAL_KEYS_V0,
     GLOBAL_SCHEMA_V0_KEYS,
@@ -56,3 +61,65 @@ def test_global_schema_v0_contract_critical_subset() -> None:
     }
 
     assert CRITICAL_KEYS_V0 == expected_critical
+
+
+def test_load_schema_contract_rejects_missing_required_field_keys(tmp_path, monkeypatch) -> None:
+    invalid_contract_path = tmp_path / "invalid_schema_contract.json"
+    invalid_contract_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "v0",
+                "fields": [
+                    {
+                        "label": "Missing key",
+                        "section": "Test",
+                        "value_type": "string",
+                        "repeatable": False,
+                        "critical": False,
+                        "optional": False,
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(schema_module, "_SCHEMA_CONTRACT_PATH", invalid_contract_path)
+
+    with pytest.raises(RuntimeError, match="missing keys: key"):
+        schema_module._load_schema_contract()
+
+
+def test_load_schema_contract_rejects_duplicate_keys(tmp_path, monkeypatch) -> None:
+    invalid_contract_path = tmp_path / "duplicate_schema_contract.json"
+    invalid_contract_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "v0",
+                "fields": [
+                    {
+                        "key": "pet_name",
+                        "label": "Nombre",
+                        "section": "Paciente",
+                        "value_type": "string",
+                        "repeatable": False,
+                        "critical": True,
+                        "optional": False,
+                    },
+                    {
+                        "key": "pet_name",
+                        "label": "Nombre duplicado",
+                        "section": "Paciente",
+                        "value_type": "string",
+                        "repeatable": False,
+                        "critical": True,
+                        "optional": False,
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(schema_module, "_SCHEMA_CONTRACT_PATH", invalid_contract_path)
+
+    with pytest.raises(RuntimeError, match="duplicate key: pet_name"):
+        schema_module._load_schema_contract()
