@@ -46,6 +46,21 @@ function createDataTransfer(file: File): DataTransfer {
   } as unknown as DataTransfer;
 }
 
+function clickPetNameField() {
+  const indicator = screen.getByTestId("confidence-indicator-core:pet_name");
+  const fieldCard = indicator.closest("article");
+  expect(fieldCard).not.toBeNull();
+  const button = (fieldCard as HTMLElement).querySelector("button");
+  expect(button).not.toBeNull();
+  fireEvent.click(button as HTMLButtonElement);
+}
+
+async function openReadyDocumentAndGetPanel() {
+  fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+  await screen.findByText("Datos de la clínica");
+  return screen.getByTestId("right-panel-scroll");
+}
+
 describe("App upload and list flow", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -197,6 +212,16 @@ describe("App upload and list flow", () => {
                     evidence: { page: 2, snippet: "Diagnostico: Gastroenteritis" },
                   },
                   {
+                    field_id: `field-treatment-${docId}`,
+                    key: "treatment_plan",
+                    value:
+                      "Reposo relativo durante 7 días.\nDieta blanda en 3 tomas al día y control de hidratación.",
+                    value_type: "string",
+                    confidence: 0.72,
+                    is_critical: false,
+                    origin: "machine",
+                  },
+                  {
                     field_id: `field-extra-${docId}`,
                     key: "custom_tag",
                     value: "Prioridad",
@@ -205,6 +230,51 @@ describe("App upload and list flow", () => {
                     is_critical: false,
                     origin: "machine",
                     evidence: { page: 1, snippet: "Prioridad: Alta" },
+                  },
+                  {
+                    field_id: `field-imagen-${docId}`,
+                    key: "imagen",
+                    value: "Rx abdomen",
+                    value_type: "string",
+                    confidence: 0.61,
+                    is_critical: false,
+                    origin: "machine",
+                  },
+                  {
+                    field_id: `field-imagine-${docId}`,
+                    key: "imagine",
+                    value: "Eco",
+                    value_type: "string",
+                    confidence: 0.58,
+                    is_critical: false,
+                    origin: "machine",
+                  },
+                  {
+                    field_id: `field-owner-name-${docId}`,
+                    key: "owner_name",
+                    value: "BEATRIZ ABARCA",
+                    value_type: "string",
+                    confidence: 0.84,
+                    is_critical: false,
+                    origin: "machine",
+                  },
+                  {
+                    field_id: `field-owner-address-${docId}`,
+                    key: "owner_address",
+                    value: "Calle Mayor 10, Madrid",
+                    value_type: "string",
+                    confidence: 0.77,
+                    is_critical: false,
+                    origin: "machine",
+                  },
+                  {
+                    field_id: `field-imaging-${docId}`,
+                    key: "IMAGING:",
+                    value: "Radiografia lateral",
+                    value_type: "string",
+                    confidence: 0.57,
+                    is_critical: false,
+                    origin: "machine",
                   },
                 ],
               },
@@ -549,7 +619,7 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Identificacion del caso");
+    await screen.findByText("Datos de la clínica");
 
     expect(screen.getByTestId("canvas-wrapper")).toHaveClass("p-[var(--canvas-gap)]");
     expect(screen.getByTestId("main-canvas-layout")).toHaveClass("gap-[var(--canvas-gap)]");
@@ -625,7 +695,7 @@ describe("App upload and list flow", () => {
       expect(sidebar).toHaveAttribute("data-expanded", "true");
 
       fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-      await screen.findByText("Identificacion del caso");
+      await screen.findByText("Datos de la clínica");
 
       expect(sidebar).toHaveAttribute("data-expanded", "false");
       expect(sidebar.className).toContain("w-16");
@@ -695,7 +765,7 @@ describe("App upload and list flow", () => {
       const sidebar = await screen.findByTestId("documents-sidebar");
 
       fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-      await screen.findByText("Identificacion del caso");
+      await screen.findByText("Datos de la clínica");
       expect(sidebar).toHaveAttribute("data-expanded", "false");
 
       const dropzoneContainer = screen.getByTestId("sidebar-collapsed-dropzone");
@@ -744,7 +814,7 @@ describe("App upload and list flow", () => {
       const sidebar = await screen.findByTestId("documents-sidebar");
 
       fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-      await screen.findByText("Identificacion del caso");
+      await screen.findByText("Datos de la clínica");
       expect(sidebar).toHaveAttribute("data-expanded", "false");
 
       fireEvent.mouseEnter(sidebar);
@@ -772,7 +842,7 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Identificacion del caso");
+    await screen.findByText("Datos de la clínica");
 
     const activeViewerTool = screen.getByRole("button", { name: /^Documento$/i });
     expect(activeViewerTool).toHaveAttribute("aria-pressed", "true");
@@ -788,7 +858,7 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Identificacion del caso");
+    await screen.findByText("Datos de la clínica");
 
     const searchInput = screen.getByRole("textbox", { name: /Buscar en datos extraídos/i });
     expect(screen.queryByRole("button", { name: /Limpiar búsqueda/i })).toBeNull();
@@ -1448,16 +1518,17 @@ describe("App upload and list flow", () => {
 
   it("renders the full Global Schema v0 template with explicit missing states", async () => {
     renderApp();
+    const panel = await openReadyDocumentAndGetPanel();
 
-    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-
-    expect(await screen.findByText("Identificacion del caso")).toBeInTheDocument();
-    const panel = screen.getByTestId("right-panel-scroll");
     GLOBAL_SCHEMA_V0.forEach((field) => {
-      expect(within(panel).getByText(field.label)).toBeInTheDocument();
+      expect(within(panel).getAllByText(field.label).length).toBeGreaterThan(0);
     });
-    expect(within(panel).getByText("NCH")).toBeInTheDocument();
-    expect(within(panel).getByText("Direccion del propietario")).toBeInTheDocument();
+    expect(within(panel).getByText("NHC")).toBeInTheDocument();
+    expect(within(panel).getAllByText("Nombre").length).toBeGreaterThanOrEqual(2);
+    expect(within(panel).getByText("Nacimiento")).toBeInTheDocument();
+    expect(within(panel).getAllByText("Dirección").length).toBeGreaterThan(0);
+    expect(within(panel).getByText("Tratamiento")).toBeInTheDocument();
+    expect(within(panel).getByText("Visita")).toBeInTheDocument();
     expect(within(panel).getByText("Capa")).toBeInTheDocument();
     expect(within(panel).getByText("Pelo")).toBeInTheDocument();
     expect(within(panel).getByText("Estado reproductivo")).toBeInTheDocument();
@@ -1467,31 +1538,148 @@ describe("App upload and list flow", () => {
     expect(within(panel).getByText("Prioridad")).toBeInTheDocument();
   });
 
+  it("hides configured extracted fields from the extra section", async () => {
+    renderApp();
+    const panel = await openReadyDocumentAndGetPanel();
+
+    expect(within(panel).queryByText("Document date")).toBeNull();
+    expect(within(panel).queryByText("Imagen")).toBeNull();
+    expect(within(panel).queryByText("Imagine")).toBeNull();
+    expect(within(panel).queryByText(/Imaging/i)).toBeNull();
+  });
+
+  it("uses structured owner/visit rows and long-text wrappers", async () => {
+    renderApp();
+    const panel = await openReadyDocumentAndGetPanel();
+
+    const ownerSectionTitle = within(panel).getByText("Propietario");
+    const ownerSection = ownerSectionTitle.closest("section");
+    expect(ownerSection).not.toBeNull();
+    const caseSectionTitle = within(panel).getByText("Datos de la clínica");
+    const caseSection = caseSectionTitle.closest("section");
+    expect(caseSection).not.toBeNull();
+    const clinicRow = within(caseSection as HTMLElement).getByTestId("core-row-clinic_name");
+    expect(clinicRow).toHaveClass("grid");
+    expect(clinicRow).toHaveStyle({
+      gridTemplateColumns: "var(--field-row-dot-col) var(--field-row-label-col) minmax(0, 1fr)",
+      columnGap: "var(--field-row-gap)",
+    });
+    const clinicValue = within(caseSection as HTMLElement).getByTestId("core-value-clinic_name");
+    expect(clinicValue).toHaveClass("w-full");
+    expect(clinicValue).toHaveClass("bg-surfaceMuted");
+    const treatmentValueCandidates = within(panel).getAllByTestId("field-value-treatment_plan");
+    const treatmentValue =
+      treatmentValueCandidates.find((node) => node.textContent?.includes("Reposo relativo")) ??
+      treatmentValueCandidates[0];
+    expect(treatmentValue.tagName).toBe("DIV");
+    expect(treatmentValue).toHaveClass("min-h-[7rem]");
+    expect(treatmentValue).toHaveClass("p-3");
+    expect(treatmentValue).toHaveClass("whitespace-pre-wrap");
+    expect(treatmentValue).toHaveClass("break-words");
+    const treatmentWrappers = within(panel).getAllByTestId("field-value-treatment_plan-wrapper");
+    expect(treatmentWrappers.length).toBeGreaterThan(0);
+    treatmentWrappers.forEach((wrapper) => {
+      expect(wrapper).toHaveClass("col-start-2");
+      expect(wrapper).toHaveClass("col-span-2");
+    });
+    const ownerGrid = (ownerSection as HTMLElement).querySelector("div.grid");
+    expect(ownerGrid).not.toBeNull();
+    expect(ownerGrid).toHaveClass("grid-cols-1");
+    expect(ownerGrid).not.toHaveClass("lg:grid-cols-2");
+
+    const ownerNameRow = within(ownerSection as HTMLElement).getByTestId("owner-row-owner_name");
+    expect(ownerNameRow).toHaveClass("grid");
+    expect(ownerNameRow).toHaveStyle({
+      gridTemplateColumns: "var(--field-row-dot-col) var(--field-row-label-col) minmax(0, 1fr)",
+      columnGap: "var(--field-row-gap)",
+    });
+
+    const ownerNameLabel = within(ownerSection as HTMLElement).getByTestId("owner-label-owner_name");
+    expect(ownerNameLabel).toHaveClass("self-start");
+    const ownerNameDot = within(ownerSection as HTMLElement).getByTestId("owner-dot-owner_name");
+    expect(ownerNameDot).toHaveClass("self-start");
+    expect(ownerNameDot).toHaveClass("mt-[var(--dot-offset)]");
+    expect(ownerNameDot).toHaveClass("h-4");
+    expect(ownerNameDot).toHaveClass("w-4");
+    expect(ownerNameDot).toHaveClass("items-center");
+    expect(ownerNameDot).toHaveClass("justify-center");
+
+    const ownerNameValue = within(ownerSection as HTMLElement).getByText("BEATRIZ ABARCA");
+    expect(ownerNameValue).toHaveAttribute("data-testid", "owner-value-owner_name");
+    expect(ownerNameValue).toHaveClass("text-left");
+    expect(ownerNameValue).toHaveClass("break-words");
+    expect(ownerNameValue).toHaveClass("bg-surfaceMuted");
+    expect(ownerNameValue).toHaveClass("rounded-md");
+    expect(ownerNameValue).toHaveClass("w-full");
+    expect(ownerNameValue).toHaveClass("min-w-0");
+
+    const ownerAddressValue = within(ownerSection as HTMLElement).getByTestId("owner-value-owner_address");
+    expect(ownerAddressValue).toHaveClass("w-full");
+    expect(ownerAddressValue).toHaveClass("bg-surfaceMuted");
+
+    const visitSectionTitle = within(panel).getByText("Visita");
+    const visitSection = visitSectionTitle.closest("section");
+    expect(visitSection).not.toBeNull();
+    const visitGrid = (visitSection as HTMLElement).querySelector("div.grid");
+    expect(visitGrid).not.toBeNull();
+    expect(visitGrid).toHaveClass("grid-cols-1");
+    expect(visitGrid).not.toHaveClass("lg:grid-cols-2");
+
+    const visitDateRow = within(visitSection as HTMLElement).getByTestId("visit-row-visit_date");
+    const visitReasonRow = within(visitSection as HTMLElement).getByTestId("visit-row-reason_for_visit");
+    expect(visitDateRow).toHaveClass("grid");
+    expect(visitReasonRow).toHaveClass("grid");
+    expect(visitDateRow).toHaveStyle({
+      gridTemplateColumns: "var(--field-row-dot-col) var(--field-row-label-col) minmax(0, 1fr)",
+      columnGap: "var(--field-row-gap)",
+    });
+    expect(visitReasonRow).toHaveStyle({
+      gridTemplateColumns: "var(--field-row-dot-col) var(--field-row-label-col) minmax(0, 1fr)",
+      columnGap: "var(--field-row-gap)",
+    });
+
+    const visitReasonLabel = within(visitSection as HTMLElement).getByTestId("visit-label-reason_for_visit");
+    expect(visitReasonLabel).toHaveClass("self-start");
+    const visitReasonDot = within(visitSection as HTMLElement).getByTestId("visit-dot-reason_for_visit");
+    expect(visitReasonDot).toHaveClass("self-start");
+    expect(visitReasonDot).toHaveClass("mt-[var(--dot-offset)]");
+
+    const visitDateValue = within(visitSection as HTMLElement).getByTestId("visit-value-visit_date");
+    const visitReasonValue = within(visitSection as HTMLElement).getByTestId("field-value-reason_for_visit");
+    const visitReasonWrapper = within(visitSection as HTMLElement).getByTestId(
+      "field-value-reason_for_visit-wrapper",
+    );
+    expect(visitDateValue).toHaveClass("w-full");
+    expect(visitReasonValue).toHaveClass("w-full");
+    expect(visitReasonValue).toHaveClass("min-h-[7rem]");
+    expect(visitDateValue).toHaveClass("bg-surfaceMuted");
+    expect(visitReasonValue).toHaveClass("bg-surfaceMuted");
+    expect(visitReasonWrapper).toHaveClass("col-start-2");
+    expect(visitReasonWrapper).toHaveClass("col-span-2");
+  });
+
   it("shows subtle CRÍTICO marker and confidence tooltip for core fields", async () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
 
-    await screen.findByText("Identificacion del caso");
+    await screen.findByText("Datos de la clínica");
 
     const panel = screen.getByTestId("right-panel-scroll");
     const criticalFields = GLOBAL_SCHEMA_V0.filter((field) => field.critical);
     const nonCriticalFields = GLOBAL_SCHEMA_V0.filter((field) => !field.critical);
 
     criticalFields.forEach((field) => {
-      const fieldCard = within(panel).getByText(field.label).closest("article");
-      expect(fieldCard).not.toBeNull();
-      const card = fieldCard as HTMLElement;
-      expect(within(card).queryByTestId(`critical-indicator-${field.key}`)).toBeInTheDocument();
+      expect(within(panel).queryByTestId(`critical-indicator-${field.key}`)).toBeInTheDocument();
     });
 
     nonCriticalFields.forEach((field) => {
-      const fieldCard = within(panel).getByText(field.label).closest("article");
-      expect(fieldCard).not.toBeNull();
-      expect(within(fieldCard as HTMLElement).queryByTestId(`critical-indicator-${field.key}`)).toBeNull();
+      expect(within(panel).queryByTestId(`critical-indicator-${field.key}`)).toBeNull();
     });
 
-    const petNameCard = within(panel).getByText("Nombre del paciente").closest("article");
+    const petNameCard = within(panel)
+      .getByTestId("confidence-indicator-core:pet_name")
+      .closest("article");
     expect(petNameCard).not.toBeNull();
     const petNameCritical = within(petNameCard as HTMLElement).getByTestId(
       "critical-indicator-pet_name"
@@ -1503,7 +1691,7 @@ describe("App upload and list flow", () => {
     expect(petNameConfidence).toHaveAttribute("aria-label", expect.stringMatching(/Confianza:\s*\d+%/i));
     expect(petNameConfidence).toHaveAttribute("aria-label", expect.stringMatching(/CRÍTICO/i));
 
-    const clinicalRecordCard = within(panel).getByText("NCH").closest("article");
+    const clinicalRecordCard = within(panel).getByText("NHC").closest("article");
     expect(clinicalRecordCard).not.toBeNull();
     const clinicalRecordConfidence = within(clinicalRecordCard as HTMLElement).getByTestId(
       "confidence-indicator-core:clinical_record_number"
@@ -1523,7 +1711,7 @@ describe("App upload and list flow", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
 
-    await screen.findByText("Identificacion del caso");
+    await screen.findByText("Datos de la clínica");
 
     const panel = screen.getByTestId("right-panel-scroll");
     const medicationCard = within(panel).getByText("Medicacion").closest("article");
@@ -1536,7 +1724,7 @@ describe("App upload and list flow", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
 
-    await screen.findByText("Identificacion del caso");
+    await screen.findByText("Datos de la clínica");
 
     const panel = screen.getByTestId("right-panel-scroll");
     const missingIndicator = within(panel).getByTestId("confidence-indicator-core:clinical_record_number");
@@ -1544,11 +1732,11 @@ describe("App upload and list flow", () => {
     expect(missingIndicator.className).toContain("bg-white");
 
     fireEvent.click(screen.getByRole("button", { name: "Baja" }));
-    expect(within(screen.getByTestId("right-panel-scroll")).queryByText("NCH")).toBeNull();
+    expect(within(screen.getByTestId("right-panel-scroll")).queryByText("NHC")).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "Baja" }));
     fireEvent.click(screen.getByRole("button", { name: "Mostrar solo campos vacíos" }));
-    expect(within(screen.getByTestId("right-panel-scroll")).getByText("NCH")).toBeInTheDocument();
+    expect(within(screen.getByTestId("right-panel-scroll")).getByText("NHC")).toBeInTheDocument();
   });
 
   it("does not post extraction snapshots from the UI", async () => {
@@ -1567,10 +1755,10 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Identificacion del caso");
+    await screen.findByText("Datos de la clínica");
 
     fireEvent.click(screen.getByRole("button", { name: /Actualizar/i }));
-    await screen.findByText("Identificacion del caso");
+    await screen.findByText("Datos de la clínica");
 
     await waitFor(() => {
       expect(snapshotPostAttempts).toBe(0);
@@ -1582,7 +1770,7 @@ describe("App upload and list flow", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
 
-    await screen.findByText("Identificacion del caso");
+    await screen.findByText("Datos de la clínica");
 
     const panel = screen.getByTestId("right-panel-scroll");
     const expectedDate = new Date("2026-02-11T00:00:00Z").toLocaleDateString("es-ES");
@@ -1622,7 +1810,7 @@ describe("App upload and list flow", () => {
     expect(typeof releaseReviewRequest).toBe("function");
     releaseReviewRequest();
 
-    expect(await screen.findByText("Identificacion del caso")).toBeInTheDocument();
+    expect(await screen.findByText("Datos de la clínica")).toBeInTheDocument();
   });
 
   it("shows centered interpretation empty state, retries with loading button, and recovers on success", async () => {
@@ -1765,7 +1953,7 @@ describe("App upload and list flow", () => {
 
     expect(typeof resolveRetryReview).toBe("function");
     resolveRetryReview();
-    expect(await screen.findByText("Identificacion del caso")).toBeInTheDocument();
+    expect(await screen.findByText("Datos de la clínica")).toBeInTheDocument();
     expect(screen.getByText(/No se pudo conectar con el servidor\./i)).toBeInTheDocument();
     expect(screen.queryByText(/Sin conexión/i)).toBeNull();
   });
@@ -1774,7 +1962,7 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Identificacion del caso");
+    await screen.findByText("Datos de la clínica");
 
     expect(screen.getByTestId("documents-sidebar")).toBeInTheDocument();
     expect(screen.getByTestId("left-panel-scroll")).toBeInTheDocument();
@@ -1786,7 +1974,7 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Identificacion del caso");
+    await screen.findByText("Datos de la clínica");
 
     const layoutGrid = screen.getByTestId("document-layout-grid");
     expect(layoutGrid).toBeInTheDocument();
@@ -1801,7 +1989,7 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Identificacion del caso");
+    await screen.findByText("Datos de la clínica");
 
     const splitGrid = screen.getByTestId("review-split-grid") as HTMLDivElement;
     vi.spyOn(splitGrid, "getBoundingClientRect").mockReturnValue({
@@ -1834,7 +2022,7 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Identificacion del caso");
+    await screen.findByText("Datos de la clínica");
 
     const splitGrid = screen.getByTestId("review-split-grid") as HTMLDivElement;
     vi.spyOn(splitGrid, "getBoundingClientRect").mockReturnValue({
@@ -1863,10 +2051,10 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Identificacion del caso");
+    await screen.findByText("Datos de la clínica");
 
     const hasInlinePdf = Boolean(screen.queryByTestId("center-panel-scroll"));
-    fireEvent.click(screen.getByRole("button", { name: /Nombre del paciente/i }));
+    clickPetNameField();
 
     expect(screen.queryByTestId("source-drawer")).toBeNull();
     const viewer = screen.getByTestId("pdf-viewer");
@@ -1881,7 +2069,7 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Identificacion del caso");
+    await screen.findByText("Datos de la clínica");
 
     const leftPanelScroll = screen.getByTestId("left-panel-scroll");
     const centerPanelScroll = screen.getByTestId("center-panel-scroll");
@@ -1893,7 +2081,7 @@ describe("App upload and list flow", () => {
     rightPanelScroll.scrollTop = 140;
     fireEvent.scroll(rightPanelScroll);
 
-    fireEvent.click(screen.getByRole("button", { name: /Nombre del paciente/i }));
+    clickPetNameField();
 
     expect(screen.getByTestId("right-panel-scroll")).toBe(rightPanelScroll);
     expect(rightPanelScroll.scrollTop).toBe(140);
@@ -1903,13 +2091,13 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Identificacion del caso");
+    await screen.findByText("Datos de la clínica");
 
     const confidenceIndicator = screen.getByTestId("confidence-indicator-core:pet_name");
     expect(confidenceIndicator).toHaveAttribute("aria-label", expect.stringMatching(/Página 1/i));
     expect(confidenceIndicator).toHaveAttribute("aria-label", expect.stringMatching(/Paciente: Luna/i));
 
-    fireEvent.click(screen.getByRole("button", { name: /Nombre del paciente/i }));
+    clickPetNameField();
     const viewer = screen.getAllByTestId("pdf-viewer")[0];
     expect(viewer).toHaveAttribute("data-focus-page", "1");
     expect(viewer).toHaveAttribute("data-highlight-snippet", "Paciente: Luna");
@@ -1924,7 +2112,7 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Identificacion del caso");
+    await screen.findByText("Datos de la clínica");
 
     expect(screen.queryByText(/^Fuente:/i)).toBeNull();
     const withEvidence = screen.getByTestId("confidence-indicator-core:pet_name");
@@ -1940,7 +2128,7 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Identificacion del caso");
+    await screen.findByText("Datos de la clínica");
 
     expect(screen.queryByRole("button", { name: /\+\s*Añadir/i })).toBeNull();
     expect(window.localStorage.getItem("reportLayout")).toBe("2");
@@ -1966,7 +2154,7 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Identificacion del caso");
+    await screen.findByText("Datos de la clínica");
     expect(screen.getAllByRole("button", { name: /\+\s*Añadir/i }).length).toBeGreaterThan(0);
     expect(window.localStorage.getItem("reportLayout")).toBe("1");
   });
@@ -1976,7 +2164,7 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Identificacion del caso");
+    await screen.findByText("Datos de la clínica");
     expect(screen.getAllByRole("button", { name: /\+\s*Añadir/i }).length).toBeGreaterThan(0);
   });
 
@@ -1984,7 +2172,7 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Identificacion del caso");
+    await screen.findByText("Datos de la clínica");
 
     fireEvent.click(screen.getByRole("button", { name: /Gastroenteritis/i }));
     let viewer = screen.getByTestId("pdf-viewer");
@@ -1992,14 +2180,14 @@ describe("App upload and list flow", () => {
     expect(viewer).toHaveAttribute("data-highlight-snippet", "Diagnostico: Gastroenteritis");
     const firstRequestId = Number(viewer.getAttribute("data-focus-request-id"));
 
-    fireEvent.click(screen.getByRole("button", { name: /Nombre del paciente/i }));
+    clickPetNameField();
     viewer = screen.getByTestId("pdf-viewer");
     expect(viewer).toHaveAttribute("data-focus-page", "1");
     expect(viewer).toHaveAttribute("data-highlight-snippet", "Paciente: Luna");
     const secondRequestId = Number(viewer.getAttribute("data-focus-request-id"));
     expect(secondRequestId).toBeGreaterThan(firstRequestId);
 
-    fireEvent.click(screen.getByRole("button", { name: /Nombre del paciente/i }));
+    clickPetNameField();
     viewer = screen.getByTestId("pdf-viewer");
     const thirdRequestId = Number(viewer.getAttribute("data-focus-request-id"));
     expect(thirdRequestId).toBeGreaterThan(secondRequestId);
@@ -2010,9 +2198,9 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Identificacion del caso");
+    await screen.findByText("Datos de la clínica");
 
-    fireEvent.click(screen.getByRole("button", { name: /Nombre del paciente/i }));
+    clickPetNameField();
     expect(screen.queryByTestId("source-drawer")).toBeNull();
   });
 });
