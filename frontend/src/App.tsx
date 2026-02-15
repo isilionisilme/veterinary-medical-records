@@ -66,6 +66,33 @@ const SPLITTER_COLUMN_WIDTH_PX = 14;
 const REVIEW_SPLIT_MIN_WIDTH_PX =
   MIN_PDF_PANEL_WIDTH_PX + MIN_STRUCTURED_PANEL_WIDTH_PX + SPLITTER_COLUMN_WIDTH_PX;
 const SPLIT_SNAP_POINTS = [0.7, 0.6, 0.5] as const;
+const STRUCTURED_MUTED_ROW_GRID_CLASS = "grid w-full items-start";
+const STRUCTURED_MUTED_ROW_GRID_STYLE: CSSProperties = {
+  gridTemplateColumns: "var(--field-row-dot-col) var(--field-row-label-col) minmax(0, 1fr)",
+  columnGap: "var(--field-row-gap)",
+};
+const STRUCTURED_MUTED_ROW_LABEL_CLASS = "min-w-0 self-start text-sm font-medium leading-5 break-words";
+const STRUCTURED_MUTED_ROW_DOT_CLASS = "mt-[var(--dot-offset)] flex h-4 w-4 items-center justify-center self-start";
+const LONG_TEXT_VALUE_BASE_CLASS = "w-full min-h-[7rem] rounded-md bg-surfaceMuted p-3 text-left text-sm leading-6 whitespace-pre-wrap break-words max-h-40 overflow-auto";
+const LONG_TEXT_VALUE_WRAPPER_CLASS = "min-w-0 w-full col-start-2 col-span-2 mt-1";
+const LONG_TEXT_FIELD_KEYS = new Set([
+  "treatment_plan",
+  "diagnosis",
+  "symptoms",
+  "procedure",
+  "medication",
+  "reason_for_visit",
+]);
+const HIDDEN_EXTRACTED_FIELDS = new Set([
+  "document date",
+  "document_date",
+  "fecha de documento",
+  "fecha documento",
+  "fecha_documento",
+  "imaging",
+  "imagine",
+  "imagen",
+]);
 
 function clampNumber(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
@@ -98,6 +125,25 @@ function snapReviewSplitRatio(rawRatio: number): number {
   }
 
   return rawRatio;
+}
+
+function renderLongTextValue(options: {
+  value: string;
+  isMissing: boolean;
+  missingClassName: string;
+  valueClassName: string;
+  testId?: string;
+}): ReactNode {
+  const { value, isMissing, missingClassName, valueClassName, testId } = options;
+
+  return (
+    <div
+      data-testid={testId}
+      className={`${LONG_TEXT_VALUE_BASE_CLASS} ${isMissing ? `italic ${missingClassName}` : valueClassName}`}
+    >
+      {value}
+    </div>
+  );
 }
 
 type LoadResult = {
@@ -740,6 +786,25 @@ function formatReviewKeyLabel(key: string): string {
     .replace(/\s+/g, " ")
     .trim()
     .replace(/^./, (char) => char.toUpperCase());
+}
+
+function normalizeFieldIdentifier(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, " ")
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function shouldHideExtractedField(key: string): boolean {
+  const normalizedKey = normalizeFieldIdentifier(key);
+  if (HIDDEN_EXTRACTED_FIELDS.has(normalizedKey)) {
+    return true;
+  }
+  const normalizedLabel = normalizeFieldIdentifier(formatReviewKeyLabel(key));
+  return HIDDEN_EXTRACTED_FIELDS.has(normalizedLabel);
 }
 
 function clampConfidence(value: number): number {
@@ -2036,6 +2101,9 @@ export function App() {
       if (coreKeys.has(field.key)) {
         return;
       }
+      if (shouldHideExtractedField(field.key)) {
+        return;
+      }
       if (!grouped.has(field.key)) {
         grouped.set(field.key, []);
         orderedKeys.push(field.key);
@@ -2527,6 +2595,7 @@ export function App() {
 
   const renderRepeatableReviewField = (field: ReviewDisplayField) => {
     const countLabel = field.items.length === 1 ? "1 elemento" : `${field.items.length} elementos`;
+    const useLongTextFormat = LONG_TEXT_FIELD_KEYS.has(field.key);
     return (
       <FieldBlock key={field.id} className="px-1 py-1">
         <div className="flex items-center justify-between gap-2 pb-1">
@@ -2560,15 +2629,29 @@ export function App() {
                   className="w-full cursor-pointer rounded-md px-1 py-0.5 text-left transition hover:bg-black/[0.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                   onClick={() => handleSelectReviewItem(item)}
                 >
-                  <FieldRow
-                    label={null}
-                    value={
-                      <p className={`min-w-0 text-sm ${item.isMissing ? "italic text-missing" : "text-text"}`}>
-                        {item.displayValue}
-                      </p>
-                    }
-                    status={<div className="pt-0.5">{renderConfidenceIndicator(field, item)}</div>}
-                  />
+                  {useLongTextFormat ? (
+                    <div className="grid w-full grid-cols-[var(--field-row-dot-col)_1fr] items-start gap-x-[var(--field-row-gap)]">
+                      <div className={STRUCTURED_MUTED_ROW_DOT_CLASS}>{renderConfidenceIndicator(field, item)}</div>
+                      <div className="col-start-2 w-full min-w-0">
+                        {renderLongTextValue({
+                          value: item.displayValue,
+                          isMissing: item.isMissing,
+                          missingClassName: "text-missing",
+                          valueClassName: "text-text",
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <FieldRow
+                      label={null}
+                      value={
+                        <p className={`min-w-0 text-sm ${item.isMissing ? "italic text-missing" : "text-text"}`}>
+                          {item.displayValue}
+                        </p>
+                      }
+                      status={<div className="pt-0.5">{renderConfidenceIndicator(field, item)}</div>}
+                    />
+                  )}
                 </button>
               </div>
             );
@@ -2585,13 +2668,22 @@ export function App() {
     }
     const isSelected = selectedFieldId === item.id;
     const isExpanded = Boolean(expandedFieldValues[item.id]);
-    const valueText = isExpanded ? item.displayValue : truncateText(item.displayValue, 140);
-    const canExpand = item.displayValue.length > 140;
+    const shouldUseLongText = LONG_TEXT_FIELD_KEYS.has(field.key);
+    const shouldSpanFullSectionWidth = LONG_TEXT_FIELD_KEYS.has(field.key);
+    const valueText = shouldUseLongText
+      ? item.displayValue
+      : isExpanded
+        ? item.displayValue
+        : truncateText(item.displayValue, 140);
+    const canExpand = !shouldUseLongText && item.displayValue.length > 140;
+    const isOwnerField = field.section === "Propietario";
+    const isVisitField = field.section === "Visita";
+    const styledPrefix = isOwnerField ? "owner" : isVisitField ? "visit" : "core";
 
     return (
       <FieldBlock
         key={field.id}
-        className={`px-1 py-1.5 ${
+        className={`px-1 py-1.5 ${shouldSpanFullSectionWidth ? "lg:col-span-2" : ""} ${
           isSelected ? "bg-accentSoft/50" : ""
         }`}
       >
@@ -2600,24 +2692,48 @@ export function App() {
           className="w-full cursor-pointer rounded-md px-1 py-0.5 text-left transition hover:bg-black/[0.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           onClick={() => handleSelectReviewItem(item)}
         >
-          <FieldRow
-            label={
-              <>
-                <p className="text-xs font-semibold text-text">{field.label}</p>
-                {field.isCritical && <CriticalBadge testId={`critical-indicator-${field.key}`} />}
-              </>
-            }
-            value={
-              <p
-                className={`min-w-0 max-w-[65%] text-right text-sm ${
-                  item.isMissing ? "italic text-missing" : "text-text"
-                }`}
-              >
-                {valueText}
-              </p>
-            }
-            status={renderConfidenceIndicator(field, item)}
-          />
+          <div
+            data-testid={`${styledPrefix}-row-${field.key}`}
+            className={STRUCTURED_MUTED_ROW_GRID_CLASS}
+            style={STRUCTURED_MUTED_ROW_GRID_STYLE}
+          >
+            <div
+              data-testid={`${styledPrefix}-dot-${field.key}`}
+              className={STRUCTURED_MUTED_ROW_DOT_CLASS}
+            >
+              {renderConfidenceIndicator(field, item)}
+            </div>
+            <div
+              data-testid={`${styledPrefix}-label-${field.key}`}
+              className="min-w-0 self-start"
+            >
+              <p className={`${STRUCTURED_MUTED_ROW_LABEL_CLASS} text-text`}>{field.label}</p>
+              {field.isCritical && <CriticalBadge testId={`critical-indicator-${field.key}`} />}
+            </div>
+            <div
+              className={shouldUseLongText ? LONG_TEXT_VALUE_WRAPPER_CLASS : "min-w-0 w-full"}
+              data-testid={shouldUseLongText ? `field-value-${field.key}-wrapper` : undefined}
+            >
+              {shouldUseLongText ? (
+                renderLongTextValue({
+                  value: valueText,
+                  isMissing: item.isMissing,
+                  missingClassName: "text-missing",
+                  valueClassName: "text-text",
+                  testId: `field-value-${field.key}`,
+                })
+              ) : (
+                <div
+                  data-testid={`${styledPrefix}-value-${field.key}`}
+                  className={`w-full min-w-0 rounded-md bg-surfaceMuted py-1.5 px-3 text-left text-sm break-words ${
+                    item.isMissing ? "italic text-missing" : "text-text"
+                  }`}
+                >
+                  {valueText}
+                </div>
+              )}
+            </div>
+          </div>
         </button>
         {canExpand && (
           <button
@@ -2639,6 +2755,7 @@ export function App() {
 
   const renderRepeatableTileField = (field: ReviewDisplayField) => {
     const countLabel = field.items.length === 1 ? "1 elemento" : `${field.items.length} elementos`;
+    const useLongTextFormat = LONG_TEXT_FIELD_KEYS.has(field.key);
     return (
       <article key={field.id} className="rounded-xl bg-white p-3">
         <div className="flex items-center justify-between gap-2">
@@ -2686,12 +2803,26 @@ export function App() {
                   className="w-full cursor-pointer rounded-md text-left transition hover:bg-black/[0.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                   onClick={() => handleSelectReviewItem(item)}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <p className={`min-w-0 text-sm ${item.isMissing ? "italic text-muted" : "text-ink"}`}>
-                      {item.displayValue}
-                    </p>
-                    <div className="pt-0.5">{renderConfidenceIndicator(field, item)}</div>
-                  </div>
+                  {useLongTextFormat ? (
+                    <div className="grid w-full grid-cols-[var(--field-row-dot-col)_1fr] items-start gap-x-[var(--field-row-gap)]">
+                      <div className={STRUCTURED_MUTED_ROW_DOT_CLASS}>{renderConfidenceIndicator(field, item)}</div>
+                      <div className="col-start-2 w-full min-w-0">
+                        {renderLongTextValue({
+                          value: item.displayValue,
+                          isMissing: item.isMissing,
+                          missingClassName: "text-muted",
+                          valueClassName: "text-ink",
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start justify-between gap-3">
+                      <p className={`min-w-0 text-sm ${item.isMissing ? "italic text-muted" : "text-ink"}`}>
+                        {item.displayValue}
+                      </p>
+                      <div className="pt-0.5">{renderConfidenceIndicator(field, item)}</div>
+                    </div>
+                  )}
                 </button>
               </article>
             );
@@ -2708,13 +2839,22 @@ export function App() {
     }
     const isSelected = selectedFieldId === item.id;
     const isExpanded = Boolean(expandedFieldValues[item.id]);
-    const valueText = isExpanded ? item.displayValue : truncateText(item.displayValue, 180);
-    const canExpand = item.displayValue.length > 180;
+    const shouldUseLongText = LONG_TEXT_FIELD_KEYS.has(field.key);
+    const shouldSpanFullSectionWidth = LONG_TEXT_FIELD_KEYS.has(field.key);
+    const valueText = shouldUseLongText
+      ? item.displayValue
+      : isExpanded
+        ? item.displayValue
+        : truncateText(item.displayValue, 180);
+    const canExpand = !shouldUseLongText && item.displayValue.length > 180;
+    const isOwnerField = field.section === "Propietario";
+    const isVisitField = field.section === "Visita";
+    const styledPrefix = isOwnerField ? "owner" : isVisitField ? "visit" : "core";
 
     return (
       <article
         key={field.id}
-        className={`rounded-xl p-3 ${
+        className={`rounded-xl p-3 ${shouldSpanFullSectionWidth ? "lg:col-span-2" : ""} ${
           isSelected ? "bg-accentSoft/50" : "bg-white"
         }`}
       >
@@ -2723,14 +2863,22 @@ export function App() {
           className="w-full cursor-pointer rounded-md text-left transition hover:bg-black/[0.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           onClick={() => handleSelectReviewItem(item)}
         >
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-xs font-semibold text-ink">{field.label}</p>
-              <p className={`mt-2 text-sm ${item.isMissing ? "italic text-muted" : "text-ink"}`}>
-                {valueText}
-              </p>
+          <div
+            data-testid={`${styledPrefix}-row-${field.key}`}
+            className={STRUCTURED_MUTED_ROW_GRID_CLASS}
+            style={STRUCTURED_MUTED_ROW_GRID_STYLE}
+          >
+            <div
+              data-testid={`${styledPrefix}-dot-${field.key}`}
+              className={STRUCTURED_MUTED_ROW_DOT_CLASS}
+            >
+              {renderConfidenceIndicator(field, item)}
             </div>
-            <div className="flex shrink-0 items-center gap-1.5">
+            <div
+              data-testid={`${styledPrefix}-label-${field.key}`}
+              className="min-w-0 self-start"
+            >
+              <p className={`${STRUCTURED_MUTED_ROW_LABEL_CLASS} text-ink`}>{field.label}</p>
               {field.isCritical && (
                 <span
                   data-testid={`critical-indicator-${field.key}`}
@@ -2739,7 +2887,29 @@ export function App() {
                   CRÍTICO
                 </span>
               )}
-              {renderConfidenceIndicator(field, item)}
+            </div>
+            <div
+              className={shouldUseLongText ? LONG_TEXT_VALUE_WRAPPER_CLASS : "min-w-0 w-full"}
+              data-testid={shouldUseLongText ? `field-value-${field.key}-wrapper` : undefined}
+            >
+              {shouldUseLongText ? (
+                renderLongTextValue({
+                  value: valueText,
+                  isMissing: item.isMissing,
+                  missingClassName: "text-muted",
+                  valueClassName: "text-ink",
+                  testId: `field-value-${field.key}`,
+                })
+              ) : (
+                <div
+                  data-testid={`${styledPrefix}-value-${field.key}`}
+                  className={`w-full min-w-0 rounded-md bg-surfaceMuted py-1.5 px-3 text-left text-sm break-words ${
+                    item.isMissing ? "italic text-muted" : "text-ink"
+                  }`}
+                >
+                  {valueText}
+                </div>
+              )}
             </div>
           </div>
         </button>
@@ -2766,6 +2936,9 @@ export function App() {
     const repeatableFields = section.fields.filter((field) => field.repeatable);
     const isExtraSection = section.id === "extra:section";
     const isEmptyExtraSection = isExtraSection && section.fields.length === 0;
+    const isOwnerSection = section.title === "Propietario";
+    const isVisitSection = section.title === "Visita";
+    const shouldUseSingleColumn = isOwnerSection || isVisitSection;
 
     return (
       <Section key={section.id} className="bg-surface">
@@ -2777,7 +2950,9 @@ export function App() {
             </p>
           )}
           {!isEmptyExtraSection && (
-            <div className="grid gap-x-5 gap-y-1 lg:grid-cols-2">{scalarFields.map(renderScalarReviewField)}</div>
+            <div className={shouldUseSingleColumn ? "grid gap-x-5 gap-y-1 grid-cols-1" : "grid gap-x-5 gap-y-1 lg:grid-cols-2"}>
+              {scalarFields.map(renderScalarReviewField)}
+            </div>
           )}
           {repeatableFields.length > 0 && (
             <div className="mt-2 space-y-1.5">{repeatableFields.map(renderRepeatableReviewField)}</div>
@@ -2792,6 +2967,9 @@ export function App() {
     const repeatableFields = section.fields.filter((field) => field.repeatable);
     const isExtraSection = section.id === "extra:section";
     const isEmptyExtraSection = isExtraSection && section.fields.length === 0;
+    const isOwnerSection = section.title === "Propietario";
+    const isVisitSection = section.title === "Visita";
+    const shouldUseSingleColumn = isOwnerSection || isVisitSection;
 
     return (
       <section key={section.id} className="rounded-xl bg-surface px-4 py-4">
@@ -2803,7 +2981,9 @@ export function App() {
             </p>
           )}
           {scalarFields.length > 0 && (
-            <div className="grid gap-3 lg:grid-cols-2">{scalarFields.map(renderScalarTileField)}</div>
+            <div className={shouldUseSingleColumn ? "grid gap-3 grid-cols-1" : "grid gap-3 lg:grid-cols-2"}>
+              {scalarFields.map(renderScalarTileField)}
+            </div>
           )}
           {repeatableFields.length > 0 && (
             <div className="space-y-3">{repeatableFields.map(renderRepeatableTileField)}</div>

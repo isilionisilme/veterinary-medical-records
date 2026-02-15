@@ -10,7 +10,7 @@ export type GlobalSchemaField = {
 };
 
 export const GLOBAL_SCHEMA_SECTION_ORDER: string[] = [
-  "Identificacion del caso",
+  "Datos de la clínica",
   "Paciente",
   "Propietario",
   "Visita / episodio",
@@ -22,8 +22,8 @@ export const GLOBAL_SCHEMA_SECTION_ORDER: string[] = [
 export const GLOBAL_SCHEMA_V0: GlobalSchemaField[] = [
   {
     key: "clinic_name",
-    label: "Clinica",
-    section: "Identificacion del caso",
+    label: "Clínica",
+    section: "Datos de la clínica",
     order: 1,
     value_type: "string",
     repeatable: false,
@@ -32,8 +32,8 @@ export const GLOBAL_SCHEMA_V0: GlobalSchemaField[] = [
   },
   {
     key: "clinic_address",
-    label: "Direccion de la clinica",
-    section: "Identificacion del caso",
+    label: "Dirección",
+    section: "Datos de la clínica",
     order: 2,
     value_type: "string",
     repeatable: false,
@@ -42,8 +42,8 @@ export const GLOBAL_SCHEMA_V0: GlobalSchemaField[] = [
   },
   {
     key: "clinical_record_number",
-    label: "NCH",
-    section: "Identificacion del caso",
+    label: "NHC",
+    section: "Datos de la clínica",
     order: 3,
     value_type: "string",
     repeatable: false,
@@ -53,7 +53,7 @@ export const GLOBAL_SCHEMA_V0: GlobalSchemaField[] = [
   {
     key: "vet_name",
     label: "Veterinario",
-    section: "Identificacion del caso",
+    section: "Datos de la clínica",
     order: 4,
     value_type: "string",
     repeatable: false,
