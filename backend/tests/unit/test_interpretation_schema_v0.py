@@ -1,10 +1,33 @@
 from __future__ import annotations
 
-from backend.app.application.global_schema_v0 import GLOBAL_SCHEMA_V0_KEYS, REPEATABLE_KEYS_V0
+import re
+from pathlib import Path
+
+from backend.app.application.global_schema_v0 import (
+    GLOBAL_SCHEMA_V0_KEYS,
+    REPEATABLE_KEYS_V0,
+    VALUE_TYPE_BY_KEY_V0,
+)
 from backend.app.application.processing_runner import (
     _build_interpretation_artifact,
     _mine_interpretation_candidates,
 )
+
+_FRONTEND_SCHEMA_PATH = (
+    Path(__file__).resolve().parents[3] / "frontend" / "src" / "lib" / "globalSchemaV0.ts"
+)
+
+
+def _parse_frontend_global_schema_v0() -> dict[str, str]:
+    schema_text = _FRONTEND_SCHEMA_PATH.read_text(encoding="utf-8")
+    pattern = re.compile(
+        r'\{[^{}]*?key:\s*"(?P<key>[a-z_]+)"[^{}]*?value_type:\s*"(?P<value_type>[a-z]+)"[^{}]*?\}',
+        re.DOTALL,
+    )
+    return {
+        match.group("key"): match.group("value_type")
+        for match in pattern.finditer(schema_text)
+    }
 
 
 def test_interpretation_artifact_contains_full_global_schema_v0_shape() -> None:
@@ -207,3 +230,90 @@ def test_vet_name_heuristic_rejects_address_like_line() -> None:
     )
 
     assert candidates.get("vet_name", []) == []
+
+
+def test_mvp_coverage_labeled_fields_are_extracted_with_label_confidence() -> None:
+    candidates = _mine_interpretation_candidates(
+        "NHC: H-7788\n"
+        "Direccion del propietario: C/ Mayor 12, Madrid\n"
+        "Capa: Tricolor\n"
+        "Pelo: Corto\n"
+        "Estado reproductivo: Castrado\n"
+        "Direccion de la clinica: Av. Norte 99"
+    )
+
+    assert candidates["clinical_record_number"][0]["value"] == "H-7788"
+    assert candidates["clinical_record_number"][0]["confidence"] == 0.66
+    assert candidates["owner_address"][0]["value"] == "C/ Mayor 12, Madrid"
+    assert candidates["owner_address"][0]["confidence"] == 0.66
+    assert candidates["coat_color"][0]["value"] == "Tricolor"
+    assert candidates["coat_color"][0]["confidence"] == 0.66
+    assert candidates["hair_length"][0]["value"] == "Corto"
+    assert candidates["hair_length"][0]["confidence"] == 0.66
+    assert candidates["repro_status"][0]["value"] == "Castrado"
+    assert candidates["repro_status"][0]["confidence"] == 0.66
+    assert candidates["clinic_address"][0]["value"] == "Av. Norte 99"
+    assert candidates["clinic_address"][0]["confidence"] == 0.66
+
+
+def test_mvp_coverage_fallback_candidate_uses_low_medium_confidence() -> None:
+    candidates = _mine_interpretation_candidates(
+        "Amoxicilina 250 mg cada 12h durante 7 dias"
+    )
+
+    medication_candidates = candidates.get("medication", [])
+    assert medication_candidates
+    assert medication_candidates[0]["confidence"] == 0.5
+
+
+def test_repeatable_fields_are_capped_to_three_candidates_in_global_schema() -> None:
+    payload = _build_interpretation_artifact(
+        document_id="doc-repeatable-cap",
+        run_id="run-repeatable-cap",
+        raw_text=(
+            "Diagnostico: uno\n"
+            "Diagnostico: dos\n"
+            "Diagnostico: tres\n"
+            "Diagnostico: cuatro\n"
+        ),
+    )
+
+    diagnosis = payload["data"]["global_schema_v0"]["diagnosis"]
+    assert isinstance(diagnosis, list)
+    assert len(diagnosis) == 3
+
+
+def test_mvp_coverage_debug_includes_line_number_for_accepted_value() -> None:
+    payload = _build_interpretation_artifact(
+        document_id="doc-line-debug",
+        run_id="run-line-debug",
+        raw_text="Microchip: 941000024967769\nPaciente: Luna",
+    )
+
+    summary = payload["data"]["summary"]
+    mvp_debug = summary["mvp_coverage_debug"]
+    microchip_debug = mvp_debug["microchip_id"]
+    assert microchip_debug["status"] == "accepted"
+    assert microchip_debug["top1"] == "941000024967769"
+    assert microchip_debug["confidence"] == 0.66
+    assert microchip_debug["line_number"] == 1
+
+
+def test_visit_date_is_populated_from_labeled_input() -> None:
+    payload = _build_interpretation_artifact(
+        document_id="doc-no-overwrite",
+        run_id="run-no-overwrite",
+        raw_text="Fecha de visita: 03/01/2026",
+    )
+
+    schema = payload["data"]["global_schema_v0"]
+    assert schema["visit_date"] == "03/01/2026"
+
+
+def test_frontend_and_backend_global_schema_v0_keys_and_types_are_in_sync() -> None:
+    frontend_schema = _parse_frontend_global_schema_v0()
+
+    assert set(frontend_schema.keys()) == set(GLOBAL_SCHEMA_V0_KEYS)
+
+    for key in GLOBAL_SCHEMA_V0_KEYS:
+        assert frontend_schema[key] == VALUE_TYPE_BY_KEY_V0[key]

@@ -5,11 +5,10 @@ from __future__ import annotations
 from collections.abc import Mapping
 
 GLOBAL_SCHEMA_V0_KEYS: tuple[str, ...] = (
-    "claim_id",
     "clinic_name",
     "clinic_address",
+    "clinical_record_number",
     "vet_name",
-    "document_date",
     "pet_name",
     "species",
     "breed",
@@ -18,26 +17,18 @@ GLOBAL_SCHEMA_V0_KEYS: tuple[str, ...] = (
     "dob",
     "microchip_id",
     "weight",
+    "coat_color",
+    "hair_length",
+    "repro_status",
     "owner_name",
-    "owner_id",
+    "owner_address",
     "visit_date",
-    "admission_date",
-    "discharge_date",
     "reason_for_visit",
     "diagnosis",
     "symptoms",
     "procedure",
     "medication",
     "treatment_plan",
-    "allergies",
-    "vaccinations",
-    "lab_result",
-    "imaging",
-    "invoice_total",
-    "covered_amount",
-    "non_covered_amount",
-    "line_item",
-    "notes",
     "language",
 )
 
@@ -46,11 +37,7 @@ REPEATABLE_KEYS_V0: frozenset[str] = frozenset(
         "medication",
         "diagnosis",
         "procedure",
-        "lab_result",
-        "line_item",
         "symptoms",
-        "vaccinations",
-        "imaging",
     }
 )
 
@@ -70,11 +57,10 @@ CRITICAL_KEYS_V0: frozenset[str] = frozenset(
 )
 
 VALUE_TYPE_BY_KEY_V0: dict[str, str] = {
-    "claim_id": "string",
     "clinic_name": "string",
     "clinic_address": "string",
+    "clinical_record_number": "string",
     "vet_name": "string",
-    "document_date": "date",
     "pet_name": "string",
     "species": "string",
     "breed": "string",
@@ -83,26 +69,18 @@ VALUE_TYPE_BY_KEY_V0: dict[str, str] = {
     "dob": "date",
     "microchip_id": "string",
     "weight": "string",
+    "coat_color": "string",
+    "hair_length": "string",
+    "repro_status": "string",
     "owner_name": "string",
-    "owner_id": "string",
+    "owner_address": "string",
     "visit_date": "date",
-    "admission_date": "date",
-    "discharge_date": "date",
     "reason_for_visit": "string",
     "diagnosis": "string",
     "symptoms": "string",
     "procedure": "string",
     "medication": "string",
     "treatment_plan": "string",
-    "allergies": "string",
-    "vaccinations": "string",
-    "lab_result": "string",
-    "imaging": "string",
-    "invoice_total": "string",
-    "covered_amount": "string",
-    "non_covered_amount": "string",
-    "line_item": "string",
-    "notes": "string",
     "language": "string",
 }
 
@@ -141,10 +119,6 @@ def normalize_global_schema_v0(payload: Mapping[str, object] | None) -> dict[str
 
         text_value = str(raw_value).strip()
         normalized[key] = text_value if text_value else None
-
-    visit_date = normalized.get("visit_date")
-    if normalized.get("document_date") is None and isinstance(visit_date, str) and visit_date:
-        normalized["document_date"] = visit_date
 
     return normalized
 

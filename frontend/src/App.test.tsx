@@ -1456,6 +1456,11 @@ describe("App upload and list flow", () => {
     GLOBAL_SCHEMA_V0.forEach((field) => {
       expect(within(panel).getByText(field.label)).toBeInTheDocument();
     });
+    expect(within(panel).getByText("NCH")).toBeInTheDocument();
+    expect(within(panel).getByText("Direccion del propietario")).toBeInTheDocument();
+    expect(within(panel).getByText("Capa")).toBeInTheDocument();
+    expect(within(panel).getByText("Pelo")).toBeInTheDocument();
+    expect(within(panel).getByText("Estado reproductivo")).toBeInTheDocument();
     expect(within(panel).getAllByText("—").length).toBeGreaterThan(0);
     expect(within(panel).getByText("Otros campos extraídos")).toBeInTheDocument();
     expect(within(panel).getByText("Custom tag")).toBeInTheDocument();
@@ -1498,13 +1503,13 @@ describe("App upload and list flow", () => {
     expect(petNameConfidence).toHaveAttribute("aria-label", expect.stringMatching(/Confianza:\s*\d+%/i));
     expect(petNameConfidence).toHaveAttribute("aria-label", expect.stringMatching(/CRÍTICO/i));
 
-    const claimIdCard = within(panel).getByText("ID de reclamacion").closest("article");
-    expect(claimIdCard).not.toBeNull();
-    const claimIdConfidence = within(claimIdCard as HTMLElement).getByTestId(
-      "confidence-indicator-core:claim_id"
+    const clinicalRecordCard = within(panel).getByText("NCH").closest("article");
+    expect(clinicalRecordCard).not.toBeNull();
+    const clinicalRecordConfidence = within(clinicalRecordCard as HTMLElement).getByTestId(
+      "confidence-indicator-core:clinical_record_number"
     );
-    expect(claimIdConfidence).toHaveAttribute("aria-label", expect.stringMatching(/Confianza:\s*\d+%/i));
-    expect(claimIdConfidence).toHaveAttribute("aria-label", expect.not.stringMatching(/CRÍTICO/i));
+    expect(clinicalRecordConfidence).toHaveAttribute("aria-label", expect.stringMatching(/Confianza:\s*\d+%/i));
+    expect(clinicalRecordConfidence).toHaveAttribute("aria-label", expect.not.stringMatching(/CRÍTICO/i));
 
     const diagnosisCard = within(panel).getByText("Diagnostico").closest("article");
     expect(diagnosisCard).not.toBeNull();
@@ -1534,16 +1539,16 @@ describe("App upload and list flow", () => {
     await screen.findByText("Identificacion del caso");
 
     const panel = screen.getByTestId("right-panel-scroll");
-    const missingIndicator = within(panel).getByTestId("confidence-indicator-core:claim_id");
+    const missingIndicator = within(panel).getByTestId("confidence-indicator-core:clinical_record_number");
     expect(missingIndicator).toHaveAttribute("aria-label", expect.stringMatching(/Sin dato/i));
     expect(missingIndicator.className).toContain("bg-white");
 
     fireEvent.click(screen.getByRole("button", { name: "Baja" }));
-    expect(within(screen.getByTestId("right-panel-scroll")).queryByText("ID de reclamacion")).toBeNull();
+    expect(within(screen.getByTestId("right-panel-scroll")).queryByText("NCH")).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "Baja" }));
     fireEvent.click(screen.getByRole("button", { name: "Mostrar solo campos vacíos" }));
-    expect(within(screen.getByTestId("right-panel-scroll")).getByText("ID de reclamacion")).toBeInTheDocument();
+    expect(within(screen.getByTestId("right-panel-scroll")).getByText("NCH")).toBeInTheDocument();
   });
 
   it("does not post extraction snapshots from the UI", async () => {
@@ -1572,7 +1577,7 @@ describe("App upload and list flow", () => {
     });
   });
 
-  it("falls back to visit date when document date is missing", async () => {
+  it("shows visit date value when present", async () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
@@ -1580,10 +1585,10 @@ describe("App upload and list flow", () => {
     await screen.findByText("Identificacion del caso");
 
     const panel = screen.getByTestId("right-panel-scroll");
-    const documentDateCard = within(panel).getByText("Fecha del documento").closest("article");
     const expectedDate = new Date("2026-02-11T00:00:00Z").toLocaleDateString("es-ES");
-    expect(documentDateCard).not.toBeNull();
-    expect(within(documentDateCard as HTMLElement).getByText(expectedDate)).toBeInTheDocument();
+    const visitDateCard = within(panel).getByText("Fecha de visita").closest("article");
+    expect(visitDateCard).not.toBeNull();
+    expect(within(visitDateCard as HTMLElement).getByText(expectedDate)).toBeInTheDocument();
   });
 
   it("keeps right panel mounted and shows skeleton while loading interpretation", async () => {

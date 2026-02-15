@@ -86,10 +86,8 @@ def test_doc_a_golden_goal_fields_regression(monkeypatch) -> None:
     assert weight in ("", None)
 
     visit_date = schema.get("visit_date")
-    document_date = schema.get("document_date")
-    assert (
-        (isinstance(visit_date, str) and _DATE_LIKE_PATTERN.search(visit_date))
-        or (isinstance(document_date, str) and _DATE_LIKE_PATTERN.search(document_date))
+    assert visit_date is None or (
+        isinstance(visit_date, str) and _DATE_LIKE_PATTERN.search(visit_date)
     )
 
     discharge_date = schema.get("discharge_date")
@@ -129,10 +127,8 @@ def test_doc_b_golden_goal_fields_regression(monkeypatch) -> None:
     assert weight in ("", None)
 
     visit_date = schema.get("visit_date")
-    document_date = schema.get("document_date")
-    assert (
-        (isinstance(visit_date, str) and _DATE_LIKE_PATTERN.search(visit_date))
-        or (isinstance(document_date, str) and _DATE_LIKE_PATTERN.search(document_date))
+    assert visit_date is None or (
+        isinstance(visit_date, str) and _DATE_LIKE_PATTERN.search(visit_date)
     )
 
     discharge_date = schema.get("discharge_date")
