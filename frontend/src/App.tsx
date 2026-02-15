@@ -67,10 +67,6 @@ const REVIEW_SPLIT_MIN_WIDTH_PX =
   MIN_PDF_PANEL_WIDTH_PX + MIN_STRUCTURED_PANEL_WIDTH_PX + SPLITTER_COLUMN_WIDTH_PX;
 const SPLIT_SNAP_POINTS = [0.7, 0.6, 0.5] as const;
 const STRUCTURED_FIELD_ROW_CLASS = "w-full";
-const STRUCTURED_FIELD_ROW_STYLE: CSSProperties = {
-  gridTemplateColumns: "var(--field-row-label-col) minmax(0, 1fr)",
-  columnGap: "var(--field-row-gap-x)",
-};
 const STRUCTURED_FIELD_LABEL_CLASS = "min-w-0 text-sm font-medium leading-5 break-words";
 const STRUCTURED_FIELD_STACK_CLASS = "space-y-[var(--field-row-gap-y)]";
 const LONG_TEXT_FALLBACK_THRESHOLD = 180;
@@ -2662,7 +2658,6 @@ export function App() {
                       indicator={renderConfidenceIndicator(field, item)}
                       label={<p className={`${STRUCTURED_FIELD_LABEL_CLASS} text-text`}>{field.label}</p>}
                       labelMeta={null}
-                      rowStyle={STRUCTURED_FIELD_ROW_STYLE}
                       className={STRUCTURED_FIELD_ROW_CLASS}
                       valuePlacement={
                         shouldRenderLongTextValue(field.key, item.displayValue)
@@ -2733,7 +2728,6 @@ export function App() {
             indicator={renderConfidenceIndicator(field, item)}
             label={<p className={`${STRUCTURED_FIELD_LABEL_CLASS} text-text`}>{field.label}</p>}
             labelMeta={field.isCritical ? <CriticalBadge testId={`critical-indicator-${field.key}`} /> : null}
-            rowStyle={STRUCTURED_FIELD_ROW_STYLE}
             className={STRUCTURED_FIELD_ROW_CLASS}
             valuePlacement={shouldUseLongText ? "below-label" : "inline"}
             value={

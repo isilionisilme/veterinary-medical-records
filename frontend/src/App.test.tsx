@@ -1560,10 +1560,8 @@ describe("App upload and list flow", () => {
     expect(caseSection).not.toBeNull();
     const clinicRow = within(caseSection as HTMLElement).getByTestId("core-row-clinic_name");
     expect(clinicRow).toHaveClass("grid");
-    expect(clinicRow).toHaveStyle({
-      gridTemplateColumns: "var(--field-row-label-col) minmax(0, 1fr)",
-      columnGap: "var(--field-row-gap-x)",
-    });
+    expect(clinicRow).toHaveClass("grid-cols-[var(--field-row-label-col)_minmax(0,1fr)]");
+    expect(clinicRow).toHaveClass("gap-x-[var(--field-row-gap-x)]");
     const clinicValue = within(caseSection as HTMLElement).getByTestId("core-value-clinic_name");
     expect(clinicValue).toHaveClass("w-full");
     expect(clinicValue).toHaveClass("bg-surfaceMuted");
@@ -1586,10 +1584,8 @@ describe("App upload and list flow", () => {
 
     const ownerNameRow = within(ownerSection as HTMLElement).getByTestId("owner-row-owner_name");
     expect(ownerNameRow).toHaveClass("grid");
-    expect(ownerNameRow).toHaveStyle({
-      gridTemplateColumns: "var(--field-row-label-col) minmax(0, 1fr)",
-      columnGap: "var(--field-row-gap-x)",
-    });
+    expect(ownerNameRow).toHaveClass("grid-cols-[var(--field-row-label-col)_minmax(0,1fr)]");
+    expect(ownerNameRow).toHaveClass("gap-x-[var(--field-row-gap-x)]");
 
     const ownerNameLabel = within(ownerSection as HTMLElement).getByTestId("owner-label-owner_name");
     expect(ownerNameLabel).toHaveClass("self-start");
@@ -1626,14 +1622,10 @@ describe("App upload and list flow", () => {
     const visitReasonRow = within(visitSection as HTMLElement).getByTestId("visit-row-reason_for_visit");
     expect(visitDateRow).toHaveClass("grid");
     expect(visitReasonRow).toHaveClass("grid");
-    expect(visitDateRow).toHaveStyle({
-      gridTemplateColumns: "var(--field-row-label-col) minmax(0, 1fr)",
-      columnGap: "var(--field-row-gap-x)",
-    });
-    expect(visitReasonRow).toHaveStyle({
-      gridTemplateColumns: "var(--field-row-label-col) minmax(0, 1fr)",
-      columnGap: "var(--field-row-gap-x)",
-    });
+    expect(visitDateRow).toHaveClass("grid-cols-[var(--field-row-label-col)_minmax(0,1fr)]");
+    expect(visitDateRow).toHaveClass("gap-x-[var(--field-row-gap-x)]");
+    expect(visitReasonRow).toHaveClass("grid-cols-[var(--field-row-label-col)_minmax(0,1fr)]");
+    expect(visitReasonRow).toHaveClass("gap-x-[var(--field-row-gap-x)]");
 
     const visitReasonLabel = within(visitSection as HTMLElement).getByTestId("visit-label-reason_for_visit");
     expect(visitReasonLabel).toHaveClass("self-start");

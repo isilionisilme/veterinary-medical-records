@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import { cn } from "../../lib/utils";
 
@@ -45,7 +45,6 @@ export function FieldRow({
   labelTestId,
   indicatorTestId,
   valueWrapperTestId,
-  rowStyle,
   className,
 }: {
   indicator?: ReactNode;
@@ -57,7 +56,6 @@ export function FieldRow({
   labelTestId?: string;
   indicatorTestId?: string;
   valueWrapperTestId?: string;
-  rowStyle?: CSSProperties;
   className?: string;
 }) {
   const resolvedValuePlacement = valuePlacement ?? "inline";
@@ -65,12 +63,10 @@ export function FieldRow({
   return (
     <div
       data-testid={leftTestId}
-      className={cn("grid w-full items-start", className)}
-      style={{
-        gridTemplateColumns: "var(--field-row-label-col) minmax(0, 1fr)",
-        columnGap: "var(--field-row-gap-x)",
-        ...rowStyle,
-      }}
+      className={cn(
+        "grid w-full items-start grid-cols-[var(--field-row-label-col)_minmax(0,1fr)] gap-x-[var(--field-row-gap-x)]",
+        className
+      )}
     >
       <div className="min-w-0 self-start">
         <div className="min-w-0 flex items-start justify-between gap-2">
