@@ -83,6 +83,11 @@ const LONG_TEXT_FIELD_KEYS = new Set([
   "medication",
   "reason_for_visit",
 ]);
+
+function isLongTextFieldKey(fieldKey: string): boolean {
+  return LONG_TEXT_FIELD_KEYS.has(fieldKey);
+}
+
 const HIDDEN_EXTRACTED_FIELDS = new Set([
   "document date",
   "document_date",
@@ -2595,7 +2600,7 @@ export function App() {
 
   const renderRepeatableReviewField = (field: ReviewDisplayField) => {
     const countLabel = field.items.length === 1 ? "1 elemento" : `${field.items.length} elementos`;
-    const useLongTextFormat = LONG_TEXT_FIELD_KEYS.has(field.key);
+    const useLongTextFormat = isLongTextFieldKey(field.key);
     return (
       <FieldBlock key={field.id} className="px-1 py-1">
         <div className="flex items-center justify-between gap-2 pb-1">
@@ -2668,8 +2673,8 @@ export function App() {
     }
     const isSelected = selectedFieldId === item.id;
     const isExpanded = Boolean(expandedFieldValues[item.id]);
-    const shouldUseLongText = LONG_TEXT_FIELD_KEYS.has(field.key);
-    const shouldSpanFullSectionWidth = LONG_TEXT_FIELD_KEYS.has(field.key);
+    const shouldUseLongText = isLongTextFieldKey(field.key);
+    const shouldSpanFullSectionWidth = shouldUseLongText;
     const valueText = shouldUseLongText
       ? item.displayValue
       : isExpanded
@@ -2755,7 +2760,7 @@ export function App() {
 
   const renderRepeatableTileField = (field: ReviewDisplayField) => {
     const countLabel = field.items.length === 1 ? "1 elemento" : `${field.items.length} elementos`;
-    const useLongTextFormat = LONG_TEXT_FIELD_KEYS.has(field.key);
+    const useLongTextFormat = isLongTextFieldKey(field.key);
     return (
       <article key={field.id} className="rounded-xl bg-white p-3">
         <div className="flex items-center justify-between gap-2">
@@ -2839,8 +2844,8 @@ export function App() {
     }
     const isSelected = selectedFieldId === item.id;
     const isExpanded = Boolean(expandedFieldValues[item.id]);
-    const shouldUseLongText = LONG_TEXT_FIELD_KEYS.has(field.key);
-    const shouldSpanFullSectionWidth = LONG_TEXT_FIELD_KEYS.has(field.key);
+    const shouldUseLongText = isLongTextFieldKey(field.key);
+    const shouldSpanFullSectionWidth = shouldUseLongText;
     const valueText = shouldUseLongText
       ? item.displayValue
       : isExpanded
