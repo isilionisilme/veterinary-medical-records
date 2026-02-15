@@ -13,7 +13,7 @@ export const GLOBAL_SCHEMA_SECTION_ORDER: string[] = [
   "Datos de la clínica",
   "Paciente",
   "Propietario",
-  "Visita / episodio",
+  "Visita",
   "Clinico",
   "Costes / facturacion",
   "Metadatos / revision",
@@ -45,7 +45,7 @@ export const GLOBAL_SCHEMA_V0: GlobalSchemaField[] = [
     label: "NHC",
     section: "Datos de la clínica",
     order: 3,
-    value_type: "string",
+    value_type: "date",
     repeatable: false,
     critical: false,
     optional: false,
@@ -62,7 +62,7 @@ export const GLOBAL_SCHEMA_V0: GlobalSchemaField[] = [
   },
   {
     key: "pet_name",
-    label: "Nombre del paciente",
+    label: "Nombre",
     section: "Paciente",
     order: 5,
     value_type: "string",
@@ -112,7 +112,7 @@ export const GLOBAL_SCHEMA_V0: GlobalSchemaField[] = [
   },
   {
     key: "dob",
-    label: "Fecha de nacimiento",
+    label: "Nacimiento",
     section: "Paciente",
     order: 10,
     value_type: "date",
@@ -172,7 +172,7 @@ export const GLOBAL_SCHEMA_V0: GlobalSchemaField[] = [
   },
   {
     key: "owner_name",
-    label: "Nombre del propietario",
+    label: "Nombre",
     section: "Propietario",
     order: 16,
     value_type: "string",
@@ -182,7 +182,7 @@ export const GLOBAL_SCHEMA_V0: GlobalSchemaField[] = [
   },
   {
     key: "owner_address",
-    label: "Direccion del propietario",
+    label: "Dirección",
     section: "Propietario",
     order: 17,
     value_type: "string",
@@ -193,7 +193,7 @@ export const GLOBAL_SCHEMA_V0: GlobalSchemaField[] = [
   {
     key: "visit_date",
     label: "Fecha de visita",
-    section: "Visita / episodio",
+    section: "Visita",
     order: 18,
     value_type: "date",
     repeatable: false,
@@ -203,7 +203,7 @@ export const GLOBAL_SCHEMA_V0: GlobalSchemaField[] = [
   {
     key: "reason_for_visit",
     label: "Motivo de consulta",
-    section: "Visita / episodio",
+    section: "Visita",
     order: 19,
     value_type: "string",
     repeatable: false,
@@ -252,7 +252,7 @@ export const GLOBAL_SCHEMA_V0: GlobalSchemaField[] = [
   },
   {
     key: "treatment_plan",
-    label: "Plan de tratamiento",
+    label: "Tratamiento",
     section: "Clinico",
     order: 24,
     value_type: "string",
