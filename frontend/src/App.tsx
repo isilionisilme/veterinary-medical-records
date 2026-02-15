@@ -83,9 +83,27 @@ const LONG_TEXT_FIELD_KEYS = new Set([
   "medication",
   "reason_for_visit",
 ]);
+const OWNER_SECTION_FIELD_KEYS = new Set([
+  "owner_name",
+  "owner_address",
+]);
+const VISIT_SECTION_FIELD_KEYS = new Set([
+  "visit_date",
+  "reason_for_visit",
+]);
 
 function isLongTextFieldKey(fieldKey: string): boolean {
   return LONG_TEXT_FIELD_KEYS.has(fieldKey);
+}
+
+function getStructuredFieldPrefix(fieldKey: string): "owner" | "visit" | "core" {
+  if (OWNER_SECTION_FIELD_KEYS.has(fieldKey)) {
+    return "owner";
+  }
+  if (VISIT_SECTION_FIELD_KEYS.has(fieldKey)) {
+    return "visit";
+  }
+  return "core";
 }
 
 const HIDDEN_EXTRACTED_FIELDS = new Set([
@@ -2681,9 +2699,7 @@ export function App() {
         ? item.displayValue
         : truncateText(item.displayValue, 140);
     const canExpand = !shouldUseLongText && item.displayValue.length > 140;
-    const isOwnerField = field.section === "Propietario";
-    const isVisitField = field.section === "Visita";
-    const styledPrefix = isOwnerField ? "owner" : isVisitField ? "visit" : "core";
+    const styledPrefix = getStructuredFieldPrefix(field.key);
 
     return (
       <FieldBlock
@@ -2852,9 +2868,7 @@ export function App() {
         ? item.displayValue
         : truncateText(item.displayValue, 180);
     const canExpand = !shouldUseLongText && item.displayValue.length > 180;
-    const isOwnerField = field.section === "Propietario";
-    const isVisitField = field.section === "Visita";
-    const styledPrefix = isOwnerField ? "owner" : isVisitField ? "visit" : "core";
+    const styledPrefix = getStructuredFieldPrefix(field.key);
 
     return (
       <article

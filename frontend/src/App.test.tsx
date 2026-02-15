@@ -55,6 +55,12 @@ function clickPetNameField() {
   fireEvent.click(button as HTMLButtonElement);
 }
 
+async function openReadyDocumentAndGetPanel() {
+  fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+  await screen.findByText("Datos de la clínica");
+  return screen.getByTestId("right-panel-scroll");
+}
+
 describe("App upload and list flow", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -1512,11 +1518,8 @@ describe("App upload and list flow", () => {
 
   it("renders the full Global Schema v0 template with explicit missing states", async () => {
     renderApp();
+    const panel = await openReadyDocumentAndGetPanel();
 
-    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-
-    expect(await screen.findByText("Datos de la clínica")).toBeInTheDocument();
-    const panel = screen.getByTestId("right-panel-scroll");
     GLOBAL_SCHEMA_V0.forEach((field) => {
       expect(within(panel).getAllByText(field.label).length).toBeGreaterThan(0);
     });
@@ -1531,12 +1534,23 @@ describe("App upload and list flow", () => {
     expect(within(panel).getByText("Estado reproductivo")).toBeInTheDocument();
     expect(within(panel).getAllByText("—").length).toBeGreaterThan(0);
     expect(within(panel).getByText("Otros campos extraídos")).toBeInTheDocument();
+    expect(within(panel).getByText("Custom tag")).toBeInTheDocument();
+    expect(within(panel).getByText("Prioridad")).toBeInTheDocument();
+  });
+
+  it("hides configured extracted fields from the extra section", async () => {
+    renderApp();
+    const panel = await openReadyDocumentAndGetPanel();
+
     expect(within(panel).queryByText("Document date")).toBeNull();
     expect(within(panel).queryByText("Imagen")).toBeNull();
     expect(within(panel).queryByText("Imagine")).toBeNull();
     expect(within(panel).queryByText(/Imaging/i)).toBeNull();
-    expect(within(panel).getByText("Custom tag")).toBeInTheDocument();
-    expect(within(panel).getByText("Prioridad")).toBeInTheDocument();
+  });
+
+  it("uses structured owner/visit rows and long-text wrappers", async () => {
+    renderApp();
+    const panel = await openReadyDocumentAndGetPanel();
 
     const ownerSectionTitle = within(panel).getByText("Propietario");
     const ownerSection = ownerSectionTitle.closest("section");
