@@ -44,10 +44,10 @@
   --status-missing: #9ca3af;
   --dot-offset: 2px;
   --field-row-dot-col: 16px;
-  --field-row-label-col: 200px;
-  --field-row-gap-x: 14px;
+  --field-row-label-col: 180px;
+  --field-row-gap-x: 12px;
   --field-row-gap-y: 11px;
-  --field-row-label-indent: 24px;
+  --field-row-label-indent: 20px;
   --field-row-gap: var(--field-row-gap-x);
   --value-padding-short-x: 12px;
   --value-padding-short-y: 6px;
