@@ -45,7 +45,7 @@ export const GLOBAL_SCHEMA_V0: GlobalSchemaField[] = [
     label: "NHC",
     section: "Datos de la clínica",
     order: 3,
-    value_type: "date",
+    value_type: "string",
     repeatable: false,
     critical: false,
     optional: false,
