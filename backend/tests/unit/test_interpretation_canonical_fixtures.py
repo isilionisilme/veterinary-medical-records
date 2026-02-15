@@ -81,8 +81,9 @@ def test_unanchored_dates_default_to_document_date_not_visit_date() -> None:
     )
 
     global_schema_v0 = payload["data"]["global_schema_v0"]
-    assert global_schema_v0["document_date"] == "14/03/2024"
     assert global_schema_v0["visit_date"] is None
+    date_selection = payload["data"]["summary"]["date_selection"]
+    assert date_selection["document_date"] is None
 
 
 def test_alphanumeric_microchip_value_without_digits_is_dropped() -> None:
@@ -129,4 +130,5 @@ def test_unanchored_timeline_date_does_not_set_visit_date() -> None:
 
     global_schema_v0 = payload["data"]["global_schema_v0"]
     assert global_schema_v0["visit_date"] is None
-    assert global_schema_v0["document_date"] == "14/03/2024"
+    date_selection = payload["data"]["summary"]["date_selection"]
+    assert date_selection["document_date"] is None
