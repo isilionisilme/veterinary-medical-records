@@ -2642,6 +2642,7 @@ export function App() {
           )}
           {field.items.map((item) => {
             const isSelected = selectedFieldId === item.id;
+            const isLongText = shouldRenderLongTextValue(field.key, item.displayValue);
             return (
               <div
                 key={item.id}
@@ -2659,13 +2660,9 @@ export function App() {
                       label={<p className={`${STRUCTURED_FIELD_LABEL_CLASS} text-text`}>{field.label}</p>}
                       labelMeta={null}
                       className={STRUCTURED_FIELD_ROW_CLASS}
-                      valuePlacement={
-                        shouldRenderLongTextValue(field.key, item.displayValue)
-                          ? "below-label"
-                          : "inline"
-                      }
+                      valuePlacement={isLongText ? "below-label" : "inline"}
                       value={
-                        shouldRenderLongTextValue(field.key, item.displayValue) ? (
+                        isLongText ? (
                           renderLongTextValue({
                             value: item.displayValue,
                             isMissing: item.isMissing,
@@ -2787,7 +2784,7 @@ export function App() {
     const shouldUseSingleColumn = isOwnerSection || isVisitSection;
 
     return (
-      <SectionBlock key={section.id} variant="twoColumn" className="border border-borderSubtle/70 bg-surface">
+      <SectionBlock key={section.id} className="border border-borderSubtle/70 bg-surface">
         <SectionHeader title={section.title} />
         <div className="mt-2">
           {isEmptyExtraSection && (
@@ -2824,7 +2821,7 @@ export function App() {
     const shouldUseSingleColumn = isOwnerSection || isVisitSection;
 
     return (
-      <SectionBlock key={section.id} variant="oneColumn" className="border border-borderSubtle/70 bg-surface">
+      <SectionBlock key={section.id} className="border border-borderSubtle/70 bg-surface">
         <SectionHeader title={section.title} />
         <div className={`mt-2 ${STRUCTURED_FIELD_STACK_CLASS}`}>
           {isEmptyExtraSection && (

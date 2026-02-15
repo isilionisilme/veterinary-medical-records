@@ -2,25 +2,15 @@ import type { ReactNode } from "react";
 
 import { cn } from "../../lib/utils";
 
-type SectionBlockVariant = "oneColumn" | "twoColumn";
-
 export function SectionBlock({
   children,
   className,
-  variant,
 }: {
   children: ReactNode;
   className?: string;
-  variant?: SectionBlockVariant;
 }) {
   return (
-    <section
-      className={cn(
-        "rounded-xl bg-surface px-4 py-4",
-        variant === "twoColumn" ? "" : "",
-        className
-      )}
-    >
+    <section className={cn("rounded-xl bg-surface px-4 py-4", className)}>
       {children}
     </section>
   );
