@@ -1,10 +1,33 @@
 from __future__ import annotations
 
-from backend.app.application.global_schema_v0 import GLOBAL_SCHEMA_V0_KEYS, REPEATABLE_KEYS_V0
+import re
+from pathlib import Path
+
+from backend.app.application.global_schema_v0 import (
+    GLOBAL_SCHEMA_V0_KEYS,
+    REPEATABLE_KEYS_V0,
+    VALUE_TYPE_BY_KEY_V0,
+)
 from backend.app.application.processing_runner import (
     _build_interpretation_artifact,
     _mine_interpretation_candidates,
 )
+
+_FRONTEND_SCHEMA_PATH = (
+    Path(__file__).resolve().parents[3] / "frontend" / "src" / "lib" / "globalSchemaV0.ts"
+)
+
+
+def _parse_frontend_global_schema_v0() -> dict[str, str]:
+    schema_text = _FRONTEND_SCHEMA_PATH.read_text(encoding="utf-8")
+    pattern = re.compile(
+        r'\{[^{}]*?key:\s*"(?P<key>[a-z_]+)"[^{}]*?value_type:\s*"(?P<value_type>[a-z]+)"[^{}]*?\}',
+        re.DOTALL,
+    )
+    return {
+        match.group("key"): match.group("value_type")
+        for match in pattern.finditer(schema_text)
+    }
 
 
 def test_interpretation_artifact_contains_full_global_schema_v0_shape() -> None:
@@ -285,3 +308,12 @@ def test_visit_date_is_populated_from_labeled_input() -> None:
 
     schema = payload["data"]["global_schema_v0"]
     assert schema["visit_date"] == "03/01/2026"
+
+
+def test_frontend_and_backend_global_schema_v0_keys_and_types_are_in_sync() -> None:
+    frontend_schema = _parse_frontend_global_schema_v0()
+
+    assert set(frontend_schema.keys()) == set(GLOBAL_SCHEMA_V0_KEYS)
+
+    for key in GLOBAL_SCHEMA_V0_KEYS:
+        assert frontend_schema[key] == VALUE_TYPE_BY_KEY_V0[key]

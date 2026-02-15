@@ -956,21 +956,6 @@ def _mine_interpretation_candidates(
             r"(?:motivo(?:\s+de\s+consulta)?|reason\s+for\s+visit)\s*[:\-]\s*([^\n]{3,200})",
             COVERAGE_CONFIDENCE_LABEL,
         ),
-        (
-            "invoice_total",
-            r"(?:total|importe\s+total|total\s+factura)\s*[:\-]?\s*([0-9]+(?:[\.,][0-9]{2})?\s*(?:€|eur)?)",
-            COVERAGE_CONFIDENCE_LABEL,
-        ),
-        (
-            "covered_amount",
-            r"(?:cubierto|covered)\s*[:\-]?\s*([0-9]+(?:[\.,][0-9]{2})?\s*(?:€|eur)?)",
-            COVERAGE_CONFIDENCE_LABEL,
-        ),
-        (
-            "non_covered_amount",
-            r"(?:no\s+cubierto|non[-\s]?covered)\s*[:\-]?\s*([0-9]+(?:[\.,][0-9]{2})?\s*(?:€|eur)?)",
-            COVERAGE_CONFIDENCE_LABEL,
-        ),
     )
 
     for key, pattern, confidence in labeled_patterns:
