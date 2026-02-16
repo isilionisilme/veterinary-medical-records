@@ -155,9 +155,11 @@ Enable veterinarians to review the system’s interpretation **in context**, sid
 
 ### User Stories (in order)
 - US-07 — Review document in context
-- US-38 — Mark document as reviewed (toggle)
 - US-34 — Search & filters in Structured Data panel
 - US-35 — Resizable splitter between PDF Viewer and Structured Data panel
+- US-32 — Align review rendering to Global Schema v0 template
+- US-39 — Align veterinarian confidence signal with mapping confidence policy
+- US-38 — Mark document as reviewed (toggle)
 
 ---
 
@@ -176,7 +178,6 @@ Allow veterinarians to correct structured data naturally, while capturing append
 ### User Stories (in order)
 - US-36 — Lean design system (tokens + primitives)
 - US-08 — Edit structured data
-- US-37 — Explicitly confirm fields as correct (1-click, reversible, selective)
 - US-09 — Capture correction signals
 
 ---
@@ -184,18 +185,14 @@ Allow veterinarians to correct structured data naturally, while capturing append
 ## Release 6 — Explicit overrides & workflow closure
 
 ### Goal
-Give veterinarians explicit control over processing context and a clear way to close work on a document.
+Focus this release on manual language override and reprocessing with the updated language context.
 
 ### Scope
 - Manual language override
-- Reprocessing with new language context
-- Explicit “reviewed” status
-- Automatic reopening on edits
+- Reprocess with updated language context
 
 ### User Stories (in order)
 - US-10 — Change document language and reprocess
-- US-12 — Mark document as reviewed
-- US-32 — Align review rendering to Global Schema v0 template
 
 ---
 
@@ -282,6 +279,8 @@ All contracts (API map, persistence model, schema, error semantics, invariants, 
 
 ## US-01 — Upload document
 
+**Status**: Implemented (2026-02-16)
+
 **User Story**
 As a user, I want to upload a document so that it is stored and available for processing.
 
@@ -315,6 +314,8 @@ As a user, I want to upload a document so that it is stored and available for pr
 
 ## US-02 — View document status
 
+**Status**: Implemented (2026-02-16)
+
 **User Story**
 As a user, I want to see the current status of a document so that I understand its processing state.
 
@@ -346,6 +347,8 @@ As a user, I want to see the current status of a document so that I understand i
 
 ## US-03 — Download / preview original document
 
+**Status**: Implemented (2026-02-16)
+
 **User Story**
 As a user, I want to download and preview the original uploaded document so that I can access the source material.
 
@@ -376,6 +379,8 @@ As a user, I want to download and preview the original uploaded document so that
 
 ## US-04 — List uploaded documents and their status
 
+**Status**: Implemented (2026-02-16)
+
 **User Story**
 As a user, I want to list uploaded documents and see their status so that I can navigate my work.
 
@@ -404,6 +409,8 @@ As a user, I want to list uploaded documents and see their status so that I can 
 ---
 
 ## US-05 — Process document
+
+**Status**: Implemented (2026-02-16)
 
 **User Story**
 As a veterinarian, I want uploaded PDF documents to be processed automatically so that I can review the system’s interpretation without changing my workflow.
@@ -440,6 +447,8 @@ As a veterinarian, I want uploaded PDF documents to be processed automatically s
 ---
 
 ## US-21 — Upload medical documents
+
+**Status**: Implemented (2026-02-16)
 
 **User Story**
 As a user, I want to upload a medical document so that the system can start processing it.
@@ -489,6 +498,8 @@ As a user, I want to upload a medical document so that the system can start proc
 
 ## US-11 — View document processing history
 
+**Status**: Implemented (2026-02-16)
+
 **User Story**
 As a veterinarian, I want to see the processing history of a document so that I can understand which steps were executed and whether any failures occurred.
 
@@ -518,6 +529,8 @@ As a veterinarian, I want to see the processing history of a document so that I 
 
 ## US-06 — View extracted text
 
+**Status**: Implemented (2026-02-16)
+
 **User Story**
 As a veterinarian, I want to view the raw text extracted from a document so that I understand what the system has read before any structured interpretation is applied.
 
@@ -546,6 +559,8 @@ As a veterinarian, I want to view the raw text extracted from a document so that
 ---
 
 ## US-07 — Review document in context
+
+**Status**: Implemented (2026-02-16)
 
 **User Story**
 As a veterinarian, I want to review the system’s interpretation while viewing the original document so that I can verify it.
@@ -590,25 +605,36 @@ As a veterinarian reviewer, I want to mark a document as reviewed and unmark it 
 - In document view, I can use a single action button labeled `Mark as reviewed`.
 - When a document is marked reviewed:
   - The left sidebar item status indicator changes from the current dot to a checkmark.
-  - The sidebar status label changes to `Reviewed` (instead of `Ready/Listo`).
-  - The document is removed from the default “to review” list.
-- Unmarking/reopening is possible from the reviewed state (checkmark click or explicit `Reopen` action).
-- When reopened, the document returns to the review queue and the sidebar indicator/label returns to the non-reviewed state.
+  - The sidebar status label changes to `Reviewed` (instead of `Ready`).
+  - Reviewed documents remain visible in the sidebar, visually separated (e.g., grouped under a `Reviewed` label/section) and visually muted.
+- When a document is marked as Reviewed, structured data is rendered in read-only mode.
+- Reopening is only possible from the document view using the explicit `Reopen` action.
+- The sidebar checkmark is a visual indicator only and is not interactive.
+- While Reviewed, structured data is read-only (no editing), safe interactions (e.g., text selection/copy) remain available without toasts, and a non-blocking informational toast is shown only on edit attempts.
+- Visual styling clearly indicates non-editable state (e.g., muted text styling, no edit affordances).
+- When reopened from the document view, the document returns to the non-reviewed state and re-enters the to-review subset.
 - Toggling reviewed/reopened status does not remove or reset extracted/corrected field values.
+- Reviewed status is independent from processing status.
+- Reprocessing does not change review status.
 
 **Scope Clarification**
 - In scope: veterinarian-facing reviewed toggle behavior in document view and sidebar list status representation.
-- In scope: reversible reviewed state transitions (`to_review` ↔ `reviewed`) without field-value loss.
-- In scope: default list behavior excludes reviewed documents.
+- In scope: reversible reviewed state transitions (`to_review` ↔ `reviewed`) from document view only, without field-value loss.
+- In scope: reviewed documents remain discoverable in the sidebar via visual separation from the to-review subset.
+- In scope: reviewed documents are non-editable until explicitly reopened.
 
 **Out of Scope**
-- Automatic reopening triggered by edits (covered by US-12).
+- Automatic reopening triggered by edits.
+- Reopen interactions from the sidebar list/checkmark.
+- Implicit state transitions from field interaction while reviewed.
 - Reviewer/governance workflows or schema evolution behavior.
 
 **UX Behavior**
 - Primary action in document view: `Mark as reviewed`.
-- Reviewed state is represented in sidebar list by checkmark + `Reviewed` label.
-- Reopen returns the document to the default review queue with the original non-reviewed visual status.
+- Reviewed state is represented in sidebar list by non-interactive checkmark + `Reviewed` label, visually separated from the to-review subset and visually muted.
+- While reviewed, structured data appears visually muted/non-editable and does not show edit affordances.
+- Safe interactions (e.g., text selection/copy) do not show toasts; an edit attempt is any interaction that would enter edit mode or change a field value; only edit attempts show a non-blocking informational toast; reopening requires explicit `Reopen` in document view.
+- Reopen from document view returns the document to the non-reviewed state and re-enters the to-review subset.
 - Future enhancement (not required in this story): add a `Show reviewed` toggle to reveal reviewed items inline.
 
 **Data / State Notes**
@@ -624,8 +650,9 @@ As a veterinarian reviewer, I want to mark a document as reviewed and unmark it 
 
 **Test Expectations**
 - Sidebar status icon/label switches correctly between non-reviewed and reviewed states.
-- Mark reviewed removes the document from the default “to review” list.
-- Reopen returns the document to the default review queue.
+- Mark reviewed keeps the document visible in the sidebar, visually separated from the to-review subset and visually muted.
+- Reopen from document view returns the document to the non-reviewed state and re-enters the to-review subset.
+- While reviewed, fields are non-editable; safe interactions (e.g., text selection/copy) do not show toasts; edit attempts trigger a non-blocking informational toast.
 - Repeated toggle actions are idempotent and do not lose field edits/corrections.
 
 **Definition of Done (DoD)**
@@ -637,6 +664,8 @@ As a veterinarian reviewer, I want to mark a document as reviewed and unmark it 
 ---
 
 ## US-34 — Search & filters in Structured Data panel
+
+**Status**: Implemented (2026-02-16)
 
 **User Story**
 As a veterinarian, I want to quickly narrow down structured fields using search and simple filters so that I can focus on the most relevant data during review.
@@ -689,6 +718,8 @@ As a veterinarian, I want to quickly narrow down structured fields using search 
 ---
 
 ## US-35 — Resizable splitter between PDF Viewer and Structured Data panel
+
+**Status**: Implemented (2026-02-16)
 
 **User Story**
 As a veterinarian reviewer, I want to resize the PDF and structured-data panels so that I can optimize my workspace for reading the document or validating fields.
@@ -836,60 +867,6 @@ As a veterinarian, I want to edit structured information extracted from a docume
 
 ---
 
-## US-37 — Explicitly confirm fields as correct (1-click, reversible, selective)
-
-**User Story**
-As a veterinary reviewer, I want to explicitly mark an extracted field as correct without editing it so that I can leave a clear review trail, reduce ambiguity between “not edited” and “reviewed”, and support auditability and extraction quality feedback.
-
-**Context / Principles**
-- The Structured Data panel continues to render the fixed Global Schema in deterministic order.
-- Confirmation is per-field and inline; no global edit/review mode is introduced.
-- Confirmation must be low-friction and must not change field/section ordering.
-
-**Acceptance Criteria**
-- Confirm is shown only when at least one condition is true: field confidence bucket is Low/Medium, or the field is CRITICAL (including CRITICAL with High confidence).
-- Confirm is not shown for fields that are High confidence and not CRITICAL.
-- Clicking Confirm sets field review status to `confirmed`, updates UI immediately to a reviewed/confirmed state, keeps value unchanged, and does not open an editor.
-- Confirmed fields expose inline Undo; Undo returns the field to `unreviewed`.
-- Editing + saving a field (US-08) sets status to `corrected`.
-- If a field was confirmed and is later edited + saved, status becomes `corrected` (editing precedence).
-- If a field is `corrected`, Confirm is not shown.
-- Confirmed/corrected review statuses persist across reload and are restored correctly.
-- Confirm/Confirmed/Undo controls are rendered in the existing `FieldRow` status cluster area on the label line, preserving layout alignment.
-- Once confirmed, Confirmed/Reviewed is the dominant status signal; original confidence remains accessible but not primary.
-
-**Scope Clarification**
-- In scope: explicit per-field confirmation without editing, undo for confirmed fields, and deterministic precedence with editing.
-- In scope: persistence metadata for field-level review status:
-  - `review_status`: `unreviewed | confirmed | corrected`
-  - `reviewed_at`: timestamp
-  - `reviewed_by`: user identity when available; otherwise null/omitted per current auth model
-- In scope (implementation notes): extend the field-level persistence contract and review payload serialization to include review metadata; update read/write API behavior used by Structured Data review for confirm/undo/edit precedence.
-- Out of scope: bulk confirmation actions (`confirm all`, `confirm pending`).
-- Out of scope: conditional confirmation rules by claim type beyond confidence + CRITICAL.
-- Out of scope: advanced audit workflows beyond storing `review_status` metadata.
-
-**Authoritative References**
-- Product: Canonical field order and schema constraints: [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md) section **Global Schema v0 (Canonical Field List)**.
-- UX: Review rendering contract and confidence semantics: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) sections **Review UI Rendering Rules (Global Schema v0 Template)** and Sections 2–4.
-- Frontend context: review rendering and `FieldRow` alignment baseline: [`docs/project/FRONTEND_IMPLEMENTATION.md`](FRONTEND_IMPLEMENTATION.md) section **Review Rendering Backbone (Global Schema v0)**.
-- Tech: Interpretation/editing persistence and versioning constraints: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix A3 + Appendix B2.4 + Appendix B2.5.
-
-**Test Expectations**
-- Unit/component tests verify Confirm visibility rules (Low/Medium OR CRITICAL; hidden for High + non-CRITICAL).
-- Interaction tests cover `confirm -> confirmed` and `confirmed -> undo -> unreviewed` transitions without opening field editor.
-- Precedence tests cover `confirmed -> edit+save -> corrected` and ensure corrected fields do not show Confirm.
-- Persistence tests verify confirmed/corrected statuses survive reload (via mocked API/store state rehydration).
-- Layout tests/snapshots verify FieldRow alignment remains stable after introducing Confirm/Undo controls.
-
-**Definition of Done (DoD)**
-- Acceptance criteria satisfied.
-- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
-- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
-
----
-
 ## US-09 — Capture correction signals
 
 **User Story**
@@ -952,35 +929,6 @@ As a veterinarian, I want to change the detected language of a document so that 
 
 ---
 
-## US-12 — Mark document as reviewed
-
-**User Story**
-As a veterinarian, I want to mark a document as reviewed so that I can explicitly close out my work.
-
-**Acceptance Criteria**
-- I can mark a document as reviewed.
-- Reviewed status is independent from processing status.
-- Editing after marking reviewed automatically reopens review.
-- Reprocessing does not change review status.
-
-**Scope Clarification**
-- No reviewer/governance behavior is introduced.
-
-**Authoritative References**
-- Tech: Review status rules: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix A1.3
-- Tech: Mark-reviewed endpoint idempotency and retry rules: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B4
-
-**Test Expectations**
-- Review status transitions follow the authoritative rules.
-
-**Definition of Done (DoD)**
-- Acceptance criteria satisfied.
-- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
-- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
-
----
-
 ## US-32 — Align review rendering to Global Schema v0 template
 
 **User Story**
@@ -1010,6 +958,40 @@ As a veterinarian, I want the review view to always use the full Global Schema v
 - Review screens always show the same section/key structure, independent of extraction completeness.
 - Missing scalar values, missing repeatable values, and loading states are visually distinguishable and deterministic.
 - Non-schema extracted keys are visible under `Other extracted fields`.
+
+**Definition of Done (DoD)**
+- Acceptance criteria satisfied.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
+
+---
+
+## US-39 — Align veterinarian confidence signal with mapping confidence policy
+
+**User Story**
+As a veterinarian, I want confidence dots/colors in the review UI to reflect mapping confidence policy so that the signal is consistent, explainable, and reliable for triage.
+
+**Acceptance Criteria**
+- Existing confidence dots/colors in veterinarian UI represent `mapping_confidence` (not candidate/legacy confidence).
+- Low/medium/high confidence bands are derived from backend-provided `policy_version` + confidence band cutoffs.
+- The UI does not use hardcoded confidence thresholds.
+- If `policy_version` or confidence band cutoffs are missing, UI does not crash, explicitly indicates missing policy configuration (degraded mode), and emits a diagnostic/telemetry event without inventing fallback thresholds.
+
+**Scope Clarification**
+- This story aligns veterinarian-facing confidence semantics and display only.
+- This story does not redefine policy contracts, persistence shape, or backend threshold logic.
+- This story depends on the backend exposing `policy_version` + confidence band cutoffs in the document/schema payload per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md).
+
+**Authoritative References**
+- Product: Confidence meaning and veterinarian-facing signal intent: [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md).
+- UX: Confidence visualization behavior in review surfaces: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md).
+- Tech: Policy-provided confidence configuration and response semantics: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md).
+- Frontend context: Confidence rendering implementation points: [`docs/project/FRONTEND_IMPLEMENTATION.md`](FRONTEND_IMPLEMENTATION.md).
+
+**Test Expectations**
+- Confidence dot/color mapping uses `mapping_confidence` with backend-provided confidence band cutoffs.
+- Missing policy configuration triggers explicit degraded-mode UI behavior and a diagnostic/telemetry event without app crash.
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
