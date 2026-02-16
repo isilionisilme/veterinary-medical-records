@@ -257,6 +257,51 @@ If a client attempts to edit/review while a `RUNNING` run exists, the API MUST r
 - Hysteresis uses separate enter/exit thresholds for policy-state transitions.
 - Minimum volume is required before policy-state transitions are applied.
 
+### MVP payload & storage implications
+
+Minimum field-level payload for calibration-aware review must support:
+- `mapping_confidence` (0–1), the primary veterinarian-facing confidence signal.
+- `policy_state` (`neutral|boosted|demoted|suppressed`).
+- `mapping_id` (stable strategy identifier).
+- `context_key` (derived from Context v1).
+- `candidate_confidence` (optional, diagnostic only, not shown by default).
+
+### `confidence_policy.yaml` (minimum spec)
+
+Required keys:
+- `policy_version`
+- `band_cutoffs` (`low_max`, `mid_max`)
+- enter/exit thresholds (hysteresis)
+- `min_volume`
+
+Deterministic policy-state selection rules:
+- Apply threshold/hysteresis transitions only when `volume >= min_volume`.
+- `neutral` is the default when `volume < min_volume` or no transition rule is matched.
+- Threshold sets must be mutually exclusive by design; if overlap is misconfigured, fail config validation.
+- `suppressed` is supported by the enum and may be disabled by default in MVP unless explicit thresholds are configured.
+- If `thresholds.suppressed` is absent, `suppressed` is never entered.
+
+Band mapping rule:
+- `low` if `mapping_confidence < low_max`; `mid` if `mapping_confidence < mid_max`; otherwise `high`.
+
+Compact example:
+
+```yaml
+policy_version: "v1"
+band_cutoffs: { low_max: 0.50, mid_max: 0.75 }
+thresholds:
+  boosted: { enter: 0.82, exit: 0.74 }
+  demoted: { enter: 0.38, exit: 0.46 }
+min_volume: 5
+```
+
+### Reviewed signal semantics (deterministic)
+
+- When a document is marked reviewed and a field remains unchanged, emit a weak-positive signal for that mapping in context.
+- `unchanged` is determined by equality of `normalized_value` at review time against the active interpreted value after applying persisted overrides.
+- Placeholder/empty handling is deterministic: placeholder text is not a value; unchanged requires both sides null/empty-equivalent (null, empty string, or whitespace-only) or both sides equal normalized strings.
+- Signal effects are prospective only and never auto-change Global Schema keys/order.
+
 ---
 
 ## 8. Error Handling & States

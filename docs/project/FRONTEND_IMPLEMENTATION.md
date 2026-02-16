@@ -201,6 +201,21 @@ The frontend must treat confidence as:
 
 No frontend logic may interpret confidence as correctness or validation.
 
+### Confidence rendering rules (UX contract)
+
+- Show `mapping_confidence` by default in veterinarian UI; `candidate_confidence` is diagnostic-only and must never be rendered in veterinarian UI unless explicit debug mode is enabled.
+- Derive low/mid/high confidence bands from `mapping_confidence` using cutoffs from the active policy version (temporary hardcoded cutoffs are acceptable only until policy config wiring is complete).
+- When backend provides `policy_version` + cutoffs, frontend must consume those values instead of hardcoding band thresholds.
+- Avoid visual churn on confidence updates: do not animate rapid oscillations; treat updates as stable presentation changes.
+- Smoothing/calibration mechanics are backend responsibilities and must not be reimplemented in frontend.
+- Do not expose governance terms such as `pending_review`, `reviewer`, or `governance` in veterinarian-facing UI.
+
+### Reviewed toggle UI behavior
+
+- Provide a single action toggle: `Mark as reviewed` / `Reopen`.
+- After toggle, refetch both document-list status and current document review payload to avoid stale UI state.
+- Toggling reviewed state must not reset or discard edited field values.
+
 ---
 
 ## API Integration

@@ -241,6 +241,28 @@ Update behavior:
 - use smoothing and asymmetric updates (slow increase / faster decrease),
 - enforce minimum-volume and hysteresis thresholds from policy configuration.
 
+### Confidence calibration & policy (MVP contracts)
+
+- Compute Context v1 during interpretation/review event handling and derive `context_key` as a stable canonical serialization/hash.
+- Context-key serialization is versioned and stable across runs (for example, prefix with `ctx_v1:` before serialization/hash).
+- `mapping_id` originates from the extraction/mapping strategy used for each field result and is persisted with the field payload used for calibration events.
+- `candidate_confidence` is diagnostic and is exposed only via debug endpoints/flags, never by default veterinarian UI endpoints.
+- Persist signal-source events with deterministic identifiers:
+  - reviewed toggle: `document_id`, `reviewed_at`, `review_status`
+  - field edits/corrections: persisted via existing edit/override flow as negative signals
+  - field reassignment signal: optional/future where reassignment detection is not yet emitted in all paths
+- Persist aggregates by (`context_key`, `field_key`, `mapping_id`):
+  - `mapping_confidence`
+  - `policy_state` derived via thresholds/hysteresis/min_volume
+- Load thresholds from versioned `config/confidence_policy.yaml` and persist/emit the active policy version with calibration updates.
+- Structured logs for calibration updates must include: `document_id`, `run_id`, `context_key`, `field_key`, `mapping_id`, old/new `mapping_confidence`, and policy-state transitions.
+
+### Reviewed toggle persistence (MVP contract)
+
+- Reviewed toggle is reversible (`mark_reviewed`/`unmark_reviewed`) and must not delete extracted/corrected values.
+- Backend persists `review_status` and review timestamps as source of truth for reviewed state.
+- Default list exclusion of reviewed items is a UI behavior; backend exposes persisted reviewed state and timestamps consistently.
+
 
 ## API implementation 
 
