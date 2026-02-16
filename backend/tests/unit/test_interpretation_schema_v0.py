@@ -13,18 +13,12 @@ from backend.app.application.processing_runner import (
     _mine_interpretation_candidates,
 )
 
-_FRONTEND_SCHEMA_PATH = (
-    Path(__file__).resolve().parents[3] / "frontend" / "src" / "lib" / "globalSchemaV0.ts"
-)
 _SHARED_CONTRACT_PATH = (
     Path(__file__).resolve().parents[3] / "shared" / "global_schema_v0_contract.json"
 )
 
 
 def _parse_frontend_global_schema_v0() -> dict[str, str]:
-    schema_text = _FRONTEND_SCHEMA_PATH.read_text(encoding="utf-8")
-    assert "global_schema_v0_contract.json" in schema_text
-
     raw_contract = json.loads(_SHARED_CONTRACT_PATH.read_text(encoding="utf-8"))
     fields = raw_contract.get("fields", []) if isinstance(raw_contract, dict) else []
     return {

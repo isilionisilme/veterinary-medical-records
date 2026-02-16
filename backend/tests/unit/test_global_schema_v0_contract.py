@@ -123,3 +123,20 @@ def test_load_schema_contract_rejects_duplicate_keys(tmp_path, monkeypatch) -> N
 
     with pytest.raises(RuntimeError, match="duplicate key: pet_name"):
         schema_module._load_schema_contract()
+
+
+def test_load_schema_contract_rejects_missing_file(tmp_path, monkeypatch) -> None:
+    missing_contract_path = tmp_path / "missing_schema_contract.json"
+    monkeypatch.setattr(schema_module, "_SCHEMA_CONTRACT_PATH", missing_contract_path)
+
+    with pytest.raises(RuntimeError, match="contract file not found"):
+        schema_module._load_schema_contract()
+
+
+def test_load_schema_contract_rejects_invalid_json(tmp_path, monkeypatch) -> None:
+    invalid_contract_path = tmp_path / "invalid_json_contract.json"
+    invalid_contract_path.write_text("{ invalid json", encoding="utf-8")
+    monkeypatch.setattr(schema_module, "_SCHEMA_CONTRACT_PATH", invalid_contract_path)
+
+    with pytest.raises(RuntimeError, match="contract JSON is invalid"):
+        schema_module._load_schema_contract()

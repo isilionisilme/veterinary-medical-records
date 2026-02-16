@@ -12,7 +12,20 @@ _SCHEMA_CONTRACT_PATH = (
 
 
 def _load_schema_contract() -> dict[str, object]:
-    raw = json.loads(_SCHEMA_CONTRACT_PATH.read_text(encoding="utf-8"))
+    try:
+        raw_text = _SCHEMA_CONTRACT_PATH.read_text(encoding="utf-8")
+    except FileNotFoundError as exc:
+        raise RuntimeError(
+            f"Global Schema v0 contract file not found: {_SCHEMA_CONTRACT_PATH}"
+        ) from exc
+
+    try:
+        raw = json.loads(raw_text)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(
+            f"Global Schema v0 contract JSON is invalid: {_SCHEMA_CONTRACT_PATH}"
+        ) from exc
+
     if not isinstance(raw, dict):
         raise RuntimeError("Global Schema v0 contract must be a JSON object")
 
