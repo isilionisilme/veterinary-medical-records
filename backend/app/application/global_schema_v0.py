@@ -2,86 +2,109 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Mapping
+from pathlib import Path
 
-GLOBAL_SCHEMA_V0_KEYS: tuple[str, ...] = (
-    "clinic_name",
-    "clinic_address",
-    "clinical_record_number",
-    "vet_name",
-    "pet_name",
-    "species",
-    "breed",
-    "sex",
-    "age",
-    "dob",
-    "microchip_id",
-    "weight",
-    "coat_color",
-    "hair_length",
-    "repro_status",
-    "owner_name",
-    "owner_address",
-    "visit_date",
-    "reason_for_visit",
-    "diagnosis",
-    "symptoms",
-    "procedure",
-    "medication",
-    "treatment_plan",
-    "language",
+_SCHEMA_CONTRACT_PATH = (
+    Path(__file__).resolve().parents[3] / "shared" / "global_schema_v0_contract.json"
+)
+
+
+def _load_schema_contract() -> dict[str, object]:
+    try:
+        raw_text = _SCHEMA_CONTRACT_PATH.read_text(encoding="utf-8")
+    except FileNotFoundError as exc:
+        raise RuntimeError(
+            f"Global Schema v0 contract file not found: {_SCHEMA_CONTRACT_PATH}"
+        ) from exc
+
+    try:
+        raw = json.loads(raw_text)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(
+            f"Global Schema v0 contract JSON is invalid: {_SCHEMA_CONTRACT_PATH}"
+        ) from exc
+
+    if not isinstance(raw, dict):
+        raise RuntimeError("Global Schema v0 contract must be a JSON object")
+
+    schema_version = raw.get("schema_version")
+    if not isinstance(schema_version, str) or not schema_version.strip():
+        raise RuntimeError("Global Schema v0 contract must define a non-empty schema_version")
+
+    fields = raw.get("fields")
+    if not isinstance(fields, list) or not fields:
+        raise RuntimeError("Global Schema v0 contract must define a non-empty fields list")
+
+    required_keys = {
+        "key",
+        "label",
+        "section",
+        "value_type",
+        "repeatable",
+        "critical",
+        "optional",
+    }
+    seen_keys: set[str] = set()
+    for index, field in enumerate(fields):
+        if not isinstance(field, dict):
+            raise RuntimeError(f"Global Schema v0 field at index {index} must be an object")
+
+        missing_keys = sorted(required_keys.difference(field.keys()))
+        if missing_keys:
+            missing_keys_text = ", ".join(missing_keys)
+            raise RuntimeError(
+                f"Global Schema v0 field at index {index} is missing keys: {missing_keys_text}"
+            )
+
+        field_key = str(field.get("key", "")).strip()
+        if not field_key:
+            raise RuntimeError(
+                f"Global Schema v0 field at index {index} must define a non-empty key"
+            )
+        if field_key in seen_keys:
+            raise RuntimeError(f"Global Schema v0 contains duplicate key: {field_key}")
+        seen_keys.add(field_key)
+
+        value_type = field.get("value_type")
+        if not isinstance(value_type, str) or not value_type.strip():
+            raise RuntimeError(
+                f"Global Schema v0 field '{field_key}' must define a non-empty string value_type"
+            )
+
+        for flag in ("repeatable", "critical", "optional"):
+            if not isinstance(field.get(flag), bool):
+                raise RuntimeError(
+                    f"Global Schema v0 field '{field_key}' must define boolean flag '{flag}'"
+                )
+
+    return raw
+
+
+_SCHEMA_CONTRACT = _load_schema_contract()
+SCHEMA_VERSION_V0 = str(_SCHEMA_CONTRACT.get("schema_version", ""))
+_FIELD_DEFINITIONS_V0 = list(_SCHEMA_CONTRACT["fields"])
+
+GLOBAL_SCHEMA_V0_KEYS: tuple[str, ...] = tuple(
+    str(field["key"]).strip() for field in _FIELD_DEFINITIONS_V0
 )
 
 REPEATABLE_KEYS_V0: frozenset[str] = frozenset(
-    {
-        "medication",
-        "diagnosis",
-        "procedure",
-        "symptoms",
-    }
+    str(field["key"]).strip()
+    for field in _FIELD_DEFINITIONS_V0
+    if bool(field.get("repeatable"))
 )
 
 CRITICAL_KEYS_V0: frozenset[str] = frozenset(
-    {
-        "pet_name",
-        "species",
-        "breed",
-        "sex",
-        "age",
-        "weight",
-        "visit_date",
-        "diagnosis",
-        "medication",
-        "procedure",
-    }
+    str(field["key"]).strip()
+    for field in _FIELD_DEFINITIONS_V0
+    if bool(field.get("critical"))
 )
 
 VALUE_TYPE_BY_KEY_V0: dict[str, str] = {
-    "clinic_name": "string",
-    "clinic_address": "string",
-    "clinical_record_number": "string",
-    "vet_name": "string",
-    "pet_name": "string",
-    "species": "string",
-    "breed": "string",
-    "sex": "string",
-    "age": "string",
-    "dob": "date",
-    "microchip_id": "string",
-    "weight": "string",
-    "coat_color": "string",
-    "hair_length": "string",
-    "repro_status": "string",
-    "owner_name": "string",
-    "owner_address": "string",
-    "visit_date": "date",
-    "reason_for_visit": "string",
-    "diagnosis": "string",
-    "symptoms": "string",
-    "procedure": "string",
-    "medication": "string",
-    "treatment_plan": "string",
-    "language": "string",
+    str(field["key"]).strip(): str(field.get("value_type", "string"))
+    for field in _FIELD_DEFINITIONS_V0
 }
 
 
@@ -119,6 +142,10 @@ def normalize_global_schema_v0(payload: Mapping[str, object] | None) -> dict[str
 
         text_value = str(raw_value).strip()
         normalized[key] = text_value if text_value else None
+
+    visit_date = normalized.get("visit_date")
+    if normalized.get("document_date") is None and isinstance(visit_date, str) and visit_date:
+        normalized["document_date"] = visit_date
 
     return normalized
 

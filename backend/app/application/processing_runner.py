@@ -25,6 +25,7 @@ from backend.app.application.global_schema_v0 import (
     CRITICAL_KEYS_V0,
     GLOBAL_SCHEMA_V0_KEYS,
     REPEATABLE_KEYS_V0,
+    SCHEMA_VERSION_V0,
     VALUE_TYPE_BY_KEY_V0,
     normalize_global_schema_v0,
     validate_global_schema_v0_shape,
@@ -558,7 +559,7 @@ def _build_interpretation_artifact(
         evidence_map=canonical_evidence,
     )
     data = {
-        "schema_version": "v0",
+        "schema_version": SCHEMA_VERSION_V0,
         "document_id": document_id,
         "processing_run_id": run_id,
         "created_at": now_iso,
