@@ -155,6 +155,7 @@ Enable veterinarians to review the system’s interpretation **in context**, sid
 
 ### User Stories (in order)
 - US-07 — Review document in context
+- US-38 — Mark document as reviewed (toggle)
 - US-34 — Search & filters in Structured Data panel
 - US-35 — Resizable splitter between PDF Viewer and Structured Data panel
 
@@ -175,6 +176,7 @@ Allow veterinarians to correct structured data naturally, while capturing append
 ### User Stories (in order)
 - US-36 — Lean design system (tokens + primitives)
 - US-08 — Edit structured data
+- US-37 — Explicitly confirm fields as correct (1-click, reversible, selective)
 - US-09 — Capture correction signals
 
 ---
@@ -579,6 +581,61 @@ As a veterinarian, I want to review the system’s interpretation while viewing 
 
 ---
 
+## US-38 — Mark document as reviewed (toggle)
+
+**User Story**
+As a veterinarian reviewer, I want to mark a document as reviewed and unmark it later so that I can manage my review queue without losing my corrections.
+
+**Acceptance Criteria**
+- In document view, I can use a single action button labeled `Mark as reviewed`.
+- When a document is marked reviewed:
+  - The left sidebar item status indicator changes from the current dot to a checkmark.
+  - The sidebar status label changes to `Reviewed` (instead of `Ready/Listo`).
+  - The document is removed from the default “to review” list.
+- Unmarking/reopening is possible from the reviewed state (checkmark click or explicit `Reopen` action).
+- When reopened, the document returns to the review queue and the sidebar indicator/label returns to the non-reviewed state.
+- Toggling reviewed/reopened status does not remove or reset extracted/corrected field values.
+
+**Scope Clarification**
+- In scope: veterinarian-facing reviewed toggle behavior in document view and sidebar list status representation.
+- In scope: reversible reviewed state transitions (`to_review` ↔ `reviewed`) without field-value loss.
+- In scope: default list behavior excludes reviewed documents.
+
+**Out of Scope**
+- Automatic reopening triggered by edits (covered by US-12).
+- Reviewer/governance workflows or schema evolution behavior.
+
+**UX Behavior**
+- Primary action in document view: `Mark as reviewed`.
+- Reviewed state is represented in sidebar list by checkmark + `Reviewed` label.
+- Reopen returns the document to the default review queue with the original non-reviewed visual status.
+- Future enhancement (not required in this story): add a `Show reviewed` toggle to reveal reviewed items inline.
+
+**Data / State Notes**
+- Persist review state via `review_status` (`to_review` or `reviewed`).
+- Persist `reviewed_at` timestamp when entering reviewed state.
+- `reviewed_by` is optional and recorded when user identity is available.
+- Reopen clears or updates reviewed-state metadata per authoritative contract while preserving extracted/corrected field content.
+
+**Authoritative References**
+- UX: Veterinarian review flow and status visibility: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) Sections 1, 4, and section **Review UI Rendering Rules (Global Schema v0 Template)**.
+- Product: Human-in-the-loop and non-blocking workflow principles: [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md) Sections 2 and 5.
+- Tech: Review status model and transition rules: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix A1.3 + Appendix B4.
+
+**Test Expectations**
+- Sidebar status icon/label switches correctly between non-reviewed and reviewed states.
+- Mark reviewed removes the document from the default “to review” list.
+- Reopen returns the document to the default review queue.
+- Repeated toggle actions are idempotent and do not lose field edits/corrections.
+
+**Definition of Done (DoD)**
+- Acceptance criteria satisfied.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
+
+---
+
 ## US-34 — Search & filters in Structured Data panel
 
 **User Story**
@@ -770,6 +827,60 @@ As a veterinarian, I want to edit structured information extracted from a docume
 **Test Expectations**
 - Each edit produces a new interpretation version and appends change-log entries.
 - Editing is blocked only by the authoritative “active run” rule.
+
+**Definition of Done (DoD)**
+- Acceptance criteria satisfied.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
+
+---
+
+## US-37 — Explicitly confirm fields as correct (1-click, reversible, selective)
+
+**User Story**
+As a veterinary reviewer, I want to explicitly mark an extracted field as correct without editing it so that I can leave a clear review trail, reduce ambiguity between “not edited” and “reviewed”, and support auditability and extraction quality feedback.
+
+**Context / Principles**
+- The Structured Data panel continues to render the fixed Global Schema in deterministic order.
+- Confirmation is per-field and inline; no global edit/review mode is introduced.
+- Confirmation must be low-friction and must not change field/section ordering.
+
+**Acceptance Criteria**
+- Confirm is shown only when at least one condition is true: field confidence bucket is Low/Medium, or the field is CRITICAL (including CRITICAL with High confidence).
+- Confirm is not shown for fields that are High confidence and not CRITICAL.
+- Clicking Confirm sets field review status to `confirmed`, updates UI immediately to a reviewed/confirmed state, keeps value unchanged, and does not open an editor.
+- Confirmed fields expose inline Undo; Undo returns the field to `unreviewed`.
+- Editing + saving a field (US-08) sets status to `corrected`.
+- If a field was confirmed and is later edited + saved, status becomes `corrected` (editing precedence).
+- If a field is `corrected`, Confirm is not shown.
+- Confirmed/corrected review statuses persist across reload and are restored correctly.
+- Confirm/Confirmed/Undo controls are rendered in the existing `FieldRow` status cluster area on the label line, preserving layout alignment.
+- Once confirmed, Confirmed/Reviewed is the dominant status signal; original confidence remains accessible but not primary.
+
+**Scope Clarification**
+- In scope: explicit per-field confirmation without editing, undo for confirmed fields, and deterministic precedence with editing.
+- In scope: persistence metadata for field-level review status:
+  - `review_status`: `unreviewed | confirmed | corrected`
+  - `reviewed_at`: timestamp
+  - `reviewed_by`: user identity when available; otherwise null/omitted per current auth model
+- In scope (implementation notes): extend the field-level persistence contract and review payload serialization to include review metadata; update read/write API behavior used by Structured Data review for confirm/undo/edit precedence.
+- Out of scope: bulk confirmation actions (`confirm all`, `confirm pending`).
+- Out of scope: conditional confirmation rules by claim type beyond confidence + CRITICAL.
+- Out of scope: advanced audit workflows beyond storing `review_status` metadata.
+
+**Authoritative References**
+- Product: Canonical field order and schema constraints: [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md) section **Global Schema v0 (Canonical Field List)**.
+- UX: Review rendering contract and confidence semantics: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) sections **Review UI Rendering Rules (Global Schema v0 Template)** and Sections 2–4.
+- Frontend context: review rendering and `FieldRow` alignment baseline: [`docs/project/FRONTEND_IMPLEMENTATION.md`](FRONTEND_IMPLEMENTATION.md) section **Review Rendering Backbone (Global Schema v0)**.
+- Tech: Interpretation/editing persistence and versioning constraints: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix A3 + Appendix B2.4 + Appendix B2.5.
+
+**Test Expectations**
+- Unit/component tests verify Confirm visibility rules (Low/Medium OR CRITICAL; hidden for High + non-CRITICAL).
+- Interaction tests cover `confirm -> confirmed` and `confirmed -> undo -> unreviewed` transitions without opening field editor.
+- Precedence tests cover `confirmed -> edit+save -> corrected` and ensure corrected fields do not show Confirm.
+- Persistence tests verify confirmed/corrected statuses survive reload (via mocked API/store state rehydration).
+- Layout tests/snapshots verify FieldRow alignment remains stable after introducing Confirm/Undo controls.
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
