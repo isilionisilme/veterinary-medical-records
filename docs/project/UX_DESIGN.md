@@ -66,6 +66,7 @@ UX rules:
 - Confidence guides **attention**, not decisions.
 - Confidence never blocks actions.
 - Confidence never overrides human judgment.
+- `candidate_confidence` and `mapping_confidence` are distinct and must not be conflated in UX copy.
 
 ---
 
@@ -122,10 +123,28 @@ The veterinarian can:
 UX rules:
 - Changes apply immediately to the current document.
 - No explicit actions exist to submit feedback or “teach” the system.
+- No explicit per-field confirmation is required in the current phase.
 - A single explicit action may exist to mark the document as reviewed.
+
+- If the veterinarian marks the document as reviewed and a field remains unchanged, that outcome is treated as a weak positive signal for mapping stability.
+- This implicit signal must not introduce extra steps or friction in veterinarian flow.
 
 From the veterinarian’s perspective:
 > “I am done with this document.”
+
+---
+
+### Step 4 — Mark document as reviewed (toggle)
+
+The veterinarian can explicitly toggle review state from document view.
+
+UX rules:
+- A single action button `Mark as reviewed` is available in document view.
+- `Mark as reviewed` is the canonical user action that completes review for a document.
+- When marked as reviewed, the document list shows a checkmark indicator and the status label `Reviewed`.
+- The veterinarian can unmark/reopen the document, returning it to the review queue and restoring the non-reviewed list indicator/label state.
+- Unmark/reopen does not delete extracted values, corrections, or prior edits.
+- Implicit review signal fires when the veterinarian marks reviewed and a field remains unchanged.
 
 ---
 
@@ -147,6 +166,7 @@ Normative behavior:
 1) Always render the full Global Schema v0 template
 - The UI MUST render the complete Global Schema v0 in fixed order and by sections, regardless of how many fields the extractor produced.
 - Extracted keys outside Global Schema v0 MUST appear in a separate section: **Other extracted fields**.
+- Global Schema v0 keys/order do not change automatically; only mapping_confidence/policy may change.
 
 2) Missing vs loading (deterministic)
 - While structured data is loading, show a clear loading state (skeleton/spinner) and do not show missing placeholders yet.
@@ -162,6 +182,21 @@ Normative behavior:
 
 5) No governance terminology in veterinarian UX
 - The veterinarian UI copy must not expose terms such as `pending_review`, `governance`, or `reviewer`.
+
+## 4.2 Confidence Propagation & Calibration (UX Contract)
+
+- `candidate_confidence` is an extraction-time diagnostic signal for a local candidate.
+- `mapping_confidence` is a context stability signal used over time for the same semantic mapping.
+- `mapping_confidence` is the primary UX signal; `candidate_confidence` is diagnostic and should not be shown by default.
+- Veterinarian-facing review UI shows only `mapping_confidence` by default.
+- `mapping_confidence` propagates continuously with smoothing; UI state should remain stable and avoid abrupt visual churn.
+- Product policy actions (for example default suggestion or demotion) occur only via thresholds + hysteresis + minimum volume; UX should reflect outcomes, not expose calibration mechanics.
+
+### Future Improvements
+
+- Random audit sampling support for occasional spot checks.
+- Explicit per-field confirmation as an optional strong positive signal, stronger than implicit unchanged-on-complete signals.
+- Fields proposed by veterinarians from **Other extracted fields** become high-priority reviewer proposals; naming reconciliation is expected future complexity.
 
 ---
 

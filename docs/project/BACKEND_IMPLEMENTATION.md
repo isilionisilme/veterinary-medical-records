@@ -216,6 +216,31 @@ Backend responsibility:
 - Apply deterministic derivation at write-time (or validate on write).
 - Do not allow the model to decide criticality.
 
+### Review Events (contract)
+
+Emit review/calibration-relevant events on:
+- `mark_reviewed`
+- `unmark_reviewed` (reopen)
+- `field_edited`
+- `field_reassigned`
+
+Event handling rules:
+- On `mark_reviewed`, compute weak-positive signals only for non-missing fields with a value that remains unchanged.
+- On `field_edited`, emit negative correction signals for the affected mapping unit.
+- On `field_reassigned`, emit negative reassignment signals for the previous field mapping unit.
+- `unmark_reviewed` records a separate event and does not retroactively revert previously emitted signals by default.
+
+### Calibration Store (contract)
+
+Persist calibration state keyed by (`context_key`, `field_key`, `mapping_id`):
+- `mapping_confidence`
+- `policy_state` (`neutral|boosted|demoted|suppressed`)
+- supporting counters/metadata required by the active policy version
+
+Update behavior:
+- use smoothing and asymmetric updates (slow increase / faster decrease),
+- enforce minimum-volume and hysteresis thresholds from policy configuration.
+
 
 ## API implementation 
 

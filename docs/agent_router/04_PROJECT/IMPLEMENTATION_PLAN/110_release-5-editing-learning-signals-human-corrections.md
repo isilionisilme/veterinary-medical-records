@@ -12,6 +12,7 @@ Allow veterinarians to correct structured data naturally, while capturing append
 
 ## User Stories (in order)
 - US-08 — Edit structured data
+- US-37 — Explicitly confirm fields as correct (1-click, reversible, selective)
 - US-09 — Capture correction signals
 
 ---

@@ -237,6 +237,26 @@ If a client attempts to edit/review while a `RUNNING` run exists, the API MUST r
 - Confidence is a stored **attention signal** only.
 - The meaning/governance of confidence in veterinarian workflows is defined in [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md).
 
+### Context v1 (Deterministic)
+
+- Purpose: deterministic aggregation key for signals and `mapping_confidence`.
+- Context v1 fields: `doc_family`/`document_type`, `language`, `country`, `layout_fingerprint`, `extractor_version`, `schema_version`.
+- Context v1 is serialized into a stable canonical representation and/or hash key for storage and aggregation.
+- Exclusions: do not include `veterinarian_id`; avoid `clinic_id` as a first-class key (use `layout_fingerprint`).
+- Versioning: this contract is named **Context v1** to allow future context evolution.
+
+### Learnable Unit Key (`mapping_id`)
+
+- `mapping_id` is a stable strategy identifier (string enum-style scheme), e.g., `label_regex::<label>`, `anchor::<anchor_id>`, `fallback::<heuristic_name>`.
+- Calibration storage/aggregation key is: (`context_key`, `field_key`, `mapping_id`).
+
+### Policy Thresholds & Hysteresis
+
+- Thresholds and hysteresis parameters MUST live in a versioned config file (for example `config/confidence_policy.yaml`) and include a policy version field.
+- UX confidence bands are derived from `mapping_confidence` (low/mid/high; exact numeric cutoffs may be configured per policy version).
+- Hysteresis uses separate enter/exit thresholds for policy-state transitions.
+- Minimum volume is required before policy-state transitions are applied.
+
 ---
 
 ## 8. Error Handling & States
@@ -266,6 +286,11 @@ Each log entry must include:
 - `event_type`
 - `timestamp`
 - `error_code` (if any)
+- `context_key`, `field_key`, and `mapping_id` for mapping-confidence events
+- old/new `mapping_confidence` and any policy-state transition (`neutral|boosted|demoted|suppressed`)
+
+Observability requirement for confidence calibration:
+- The system must provide enough traceability to explain why a field is low/high confidence in a given context.
 
 Logs must be best-effort and must **never block processing**.
 
