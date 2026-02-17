@@ -22,6 +22,12 @@ import { DocumentsSidebar } from "./components/DocumentsSidebar";
 import { PdfViewer } from "./components/PdfViewer";
 import { SourcePanel } from "./components/SourcePanel";
 import { UploadDropzone } from "./components/UploadDropzone";
+import { ToastHost } from "./components/toast/ToastHost";
+import {
+  type ActionFeedback,
+  type ConnectivityToast,
+  type UploadFeedback,
+} from "./components/toast/toast-types";
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
 import { ScrollArea } from "./components/ui/scroll-area";
@@ -332,22 +338,6 @@ type DocumentUploadResponse = {
   status: string;
   created_at: string;
 };
-
-type UploadFeedback = {
-  kind: "success" | "error";
-  message: string;
-  documentId?: string;
-  showOpenAction?: boolean;
-  technicalDetails?: string;
-};
-
-type ActionFeedback = {
-  kind: "success" | "error" | "info";
-  message: string;
-  technicalDetails?: string;
-};
-
-type ConnectivityToast = Record<string, never>;
 
 class UiError extends Error {
   readonly userMessage: string;
@@ -3927,114 +3917,19 @@ export function App() {
           </div>
         </div>
       )}
-      {connectivityToast && (
-        <div className="fixed left-1/2 top-10 z-[65] w-full max-w-lg -translate-x-1/2 px-4 sm:w-[32rem]">
-          <div
-            className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-red-700"
-            role="status"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <p className="text-sm">No se pudo conectar con el servidor.</p>
-              <IconButton
-                label="Cerrar aviso de conexión"
-                onClick={() => setConnectivityToast(null)}
-                className="text-lg font-semibold leading-none"
-              >
-                &times;
-              </IconButton>
-            </div>
-          </div>
-        </div>
-      )}
-            {uploadFeedback && (
-              <div
-                className={`fixed left-1/2 z-[60] w-full max-w-lg -translate-x-1/2 px-4 sm:w-[32rem] ${
-                  connectivityToast ? "top-28" : "top-10"
-                }`}
-              >
-                <div
-            className={`rounded-2xl border px-5 py-4 text-base ${
-              uploadFeedback.kind === "success"
-                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                : "border-red-200 bg-red-50 text-red-700"
-            }`}
-            role="status"
-          >
-                  <div className="flex items-center justify-between gap-3">
-                    <span>{uploadFeedback.message}</span>
-              <IconButton
-                label="Cerrar notificacion"
-                onClick={() => setUploadFeedback(null)}
-                className="text-lg font-semibold leading-none text-ink"
-              >
-                &times;
-              </IconButton>
-            </div>
-                  {uploadFeedback.kind === "success" &&
-                    uploadFeedback.documentId &&
-                    uploadFeedback.showOpenAction && (
-              <button
-                type="button"
-                className="mt-2 text-xs font-semibold text-ink underline"
-                onClick={() => {
-                  setActiveViewerTab("document");
-                  requestPdfLoad(uploadFeedback.documentId!);
-                  setUploadFeedback(null);
-                }}
-              >
-                Ver documento
-              </button>
-                  )}
-                  {uploadFeedback.kind === "error" && (
-                    <div className="mt-2 flex items-center gap-3">
-                      {uploadFeedback.technicalDetails && (
-                        <details className="text-xs text-muted">
-                          <summary className="cursor-pointer">Ver detalles tecnicos</summary>
-                          <p className="mt-1">{uploadFeedback.technicalDetails}</p>
-                        </details>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-            {actionFeedback && (
-              <div
-                className={`fixed left-1/2 z-[60] w-full max-w-lg -translate-x-1/2 px-4 sm:w-[32rem] ${
-                  connectivityToast ? "top-44" : "top-28"
-                }`}
-              >
-                <div
-                  className={`rounded-2xl border px-5 py-4 text-base ${
-                    actionFeedback.kind === "success"
-                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                      : actionFeedback.kind === "info"
-                        ? "border-blue-200 bg-blue-50 text-blue-700"
-                        : "border-red-200 bg-red-50 text-red-700"
-                  }`}
-                  role="status"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <span>{actionFeedback.message}</span>
-                    <IconButton
-                      label="Cerrar notificacion de accion"
-                      onClick={() => setActionFeedback(null)}
-                      className="text-lg font-semibold leading-none text-ink"
-                    >
-                      &times;
-                    </IconButton>
-                  </div>
-                  {actionFeedback.kind === "error" && actionFeedback.technicalDetails && (
-                    <div className="mt-2 flex items-center gap-3">
-                      <details className="text-xs text-muted">
-                        <summary className="cursor-pointer">Ver detalles tecnicos</summary>
-                        <p className="mt-1">{actionFeedback.technicalDetails}</p>
-                      </details>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+      <ToastHost
+        connectivityToast={connectivityToast}
+        uploadFeedback={uploadFeedback}
+        actionFeedback={actionFeedback}
+        onCloseConnectivityToast={() => setConnectivityToast(null)}
+        onCloseUploadFeedback={() => setUploadFeedback(null)}
+        onCloseActionFeedback={() => setActionFeedback(null)}
+        onOpenUploadedDocument={(documentId) => {
+          setActiveViewerTab("document");
+          requestPdfLoad(documentId);
+          setUploadFeedback(null);
+        }}
+      />
       </div>
     </div>
   );
