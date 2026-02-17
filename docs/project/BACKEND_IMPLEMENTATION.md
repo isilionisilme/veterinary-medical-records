@@ -257,6 +257,13 @@ Update behavior:
 - Load thresholds from versioned `config/confidence_policy.yaml` and persist/emit the active policy version with calibration updates.
 - Structured logs for calibration updates must include: `document_id`, `run_id`, `context_key`, `field_key`, `mapping_id`, old/new `mapping_confidence`, and policy-state transitions.
 
+### Tooltip breakdown data sourcing (MVP)
+
+- Backend is responsible for deriving/providing tooltip breakdown values when available.
+- `extraction_reliability` is sourced from run/extraction diagnostics artifacts/metrics; when unavailable, expose `null`.
+- `review_history_adjustment` is sourced from calibration aggregates for (`context_key`, `field_key`, `mapping_id`) under the active `policy_version`; when no history exists, expose deterministic `0`.
+- Frontend must not compute these values.
+
 ### Reviewed toggle persistence (MVP contract)
 
 - Reviewed toggle is reversible (`mark_reviewed`/`unmark_reviewed`) and must not delete extracted/corrected values.

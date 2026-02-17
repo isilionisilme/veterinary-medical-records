@@ -210,6 +210,17 @@ No frontend logic may interpret confidence as correctness or validation.
 - Smoothing/calibration mechanics are backend responsibilities and must not be reimplemented in frontend.
 - Do not expose governance terms such as `pending_review`, `reviewer`, or `governance` in veterinarian-facing UI.
 
+### Confidence tooltip breakdown rendering (MVP)
+
+- Tooltip may show numeric `mapping_confidence` and breakdown components, but `mapping_confidence` remains the primary visual signal.
+- Frontend must render only values provided by backend.
+- Frontend must not infer `extraction_reliability` from `candidate_confidence` and must not implement calibration math.
+- Edge cases:
+  - no history: show `Ajuste por histórico de revisiones: 0%`.
+  - missing extraction reliability: show `Fiabilidad de la extracción de texto: No disponible`.
+- Positive/negative/neutral adjustment styling must use existing semantic tokens/classes; do not introduce new colors.
+- Keep veterinarian copy free of governance terminology.
+
 ### Reviewed toggle UI behavior
 
 - Provide a single action toggle: `Mark as reviewed` / `Reopen`.

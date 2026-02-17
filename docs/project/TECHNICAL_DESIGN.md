@@ -266,6 +266,23 @@ Minimum field-level payload for calibration-aware review must support:
 - `context_key` (derived from Context v1).
 - `candidate_confidence` (optional, diagnostic only, not shown by default).
 
+### Confidence breakdown for veterinarian tooltip (MVP visibility contract)
+
+- `mapping_confidence` remains the primary veterinarian-facing confidence signal.
+- Tooltip-only breakdown components are optional diagnostics:
+  - `extraction_reliability` (0–1, nullable): per-run/per-document diagnostic tied to text-extraction quality; this is **not** `candidate_confidence`.
+  - `review_history_adjustment` (signed percentage points): explanatory cross-document/system-level delta derived from calibration aggregates.
+- UI invariant:
+  - the confidence dot/band uses `mapping_confidence`,
+  - tooltip breakdown is explanatory only,
+  - no document-level policy UI is exposed.
+- Missingness behavior:
+  - `extraction_reliability` may be `null` (UI shows `No disponible`).
+  - `review_history_adjustment` must be present and deterministic; use `0` when no review history is available.
+- Terminology clarification:
+  - `candidate_confidence` = diagnostic pre-mapping score (hidden by default).
+  - `extraction_reliability` != `candidate_confidence`.
+
 ### `confidence_policy.yaml` (minimum spec)
 
 Required keys:
