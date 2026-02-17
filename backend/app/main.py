@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
@@ -49,6 +50,8 @@ def _is_dev_runtime() -> bool:
         return True
     uvicorn_reload = os.environ.get("UVICORN_RELOAD", "").strip().lower()
     if uvicorn_reload in {"1", "true", "yes", "on"}:
+        return True
+    if "--reload" in sys.argv:
         return True
     return False
 

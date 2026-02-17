@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from backend.app.config import confidence_policy_explicit_config_diagnostics
-from backend.app.main import _load_backend_dotenv_for_dev
+from backend.app.main import _is_dev_runtime, _load_backend_dotenv_for_dev
 
 
 def test_load_backend_dotenv_for_dev_configures_confidence_policy(
@@ -35,3 +35,13 @@ def test_load_backend_dotenv_for_dev_configures_confidence_policy(
     assert reason == "policy_configured"
     assert missing_keys == []
     assert invalid_keys == []
+
+
+def test_is_dev_runtime_detects_reload_flag(monkeypatch) -> None:
+    monkeypatch.delenv("ENV", raising=False)
+    monkeypatch.delenv("APP_ENV", raising=False)
+    monkeypatch.delenv("VET_RECORDS_ENV", raising=False)
+    monkeypatch.delenv("UVICORN_RELOAD", raising=False)
+    monkeypatch.setattr("sys.argv", ["uvicorn", "backend.app.main:create_app", "--reload"])
+
+    assert _is_dev_runtime() is True
