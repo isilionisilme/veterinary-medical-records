@@ -5,7 +5,9 @@ from pathlib import Path
 from backend.app.application.document_service import (
     get_document_original_location,
     get_document_status_details,
+    mark_document_reviewed,
     register_document_upload,
+    reopen_document_review,
 )
 from backend.app.domain.models import (
     Document,
@@ -220,4 +222,123 @@ def test_get_document_status_details_keeps_completed_when_raw_text_is_usable() -
     assert result is not None
     assert result.status_view.status == ProcessingStatus.COMPLETED
     assert result.status_view.failure_type is None
+
+
+def test_mark_document_reviewed_updates_review_metadata() -> None:
+    document = Document(
+        document_id="doc-review",
+        original_filename="record.pdf",
+        content_type="application/pdf",
+        file_size=10,
+        storage_path="doc-review/original.pdf",
+        created_at="2026-02-02T09:00:00+00:00",
+        updated_at="2026-02-02T09:00:00+00:00",
+        review_status=ReviewStatus.IN_REVIEW,
+    )
+
+    class StubRepository(FakeDocumentRepository):
+        def __init__(self) -> None:
+            super().__init__()
+            self.document = document
+
+        def get(self, document_id: str) -> Document | None:
+            return self.document if document_id == self.document.document_id else None
+
+        def update_review_status(
+            self,
+            *,
+            document_id: str,
+            review_status: str,
+            updated_at: str,
+            reviewed_at: str | None,
+            reviewed_by: str | None,
+        ) -> Document | None:
+            if document_id != self.document.document_id:
+                return None
+            self.document = Document(
+                document_id=self.document.document_id,
+                original_filename=self.document.original_filename,
+                content_type=self.document.content_type,
+                file_size=self.document.file_size,
+                storage_path=self.document.storage_path,
+                created_at=self.document.created_at,
+                updated_at=updated_at,
+                review_status=ReviewStatus(review_status),
+                reviewed_at=reviewed_at,
+                reviewed_by=reviewed_by,
+            )
+            return self.document
+
+    repository = StubRepository()
+    result = mark_document_reviewed(
+        document_id="doc-review",
+        repository=repository,
+        now_provider=lambda: "2026-02-03T10:00:00+00:00",
+        reviewed_by="vet-1",
+    )
+
+    assert result is not None
+    assert result.review_status == "REVIEWED"
+    assert result.reviewed_at == "2026-02-03T10:00:00+00:00"
+    assert result.reviewed_by == "vet-1"
+
+
+def test_reopen_document_review_clears_review_metadata() -> None:
+    document = Document(
+        document_id="doc-review",
+        original_filename="record.pdf",
+        content_type="application/pdf",
+        file_size=10,
+        storage_path="doc-review/original.pdf",
+        created_at="2026-02-02T09:00:00+00:00",
+        updated_at="2026-02-02T09:00:00+00:00",
+        review_status=ReviewStatus.REVIEWED,
+        reviewed_at="2026-02-03T10:00:00+00:00",
+        reviewed_by="vet-1",
+    )
+
+    class StubRepository(FakeDocumentRepository):
+        def __init__(self) -> None:
+            super().__init__()
+            self.document = document
+
+        def get(self, document_id: str) -> Document | None:
+            return self.document if document_id == self.document.document_id else None
+
+        def update_review_status(
+            self,
+            *,
+            document_id: str,
+            review_status: str,
+            updated_at: str,
+            reviewed_at: str | None,
+            reviewed_by: str | None,
+        ) -> Document | None:
+            if document_id != self.document.document_id:
+                return None
+            self.document = Document(
+                document_id=self.document.document_id,
+                original_filename=self.document.original_filename,
+                content_type=self.document.content_type,
+                file_size=self.document.file_size,
+                storage_path=self.document.storage_path,
+                created_at=self.document.created_at,
+                updated_at=updated_at,
+                review_status=ReviewStatus(review_status),
+                reviewed_at=reviewed_at,
+                reviewed_by=reviewed_by,
+            )
+            return self.document
+
+    repository = StubRepository()
+    result = reopen_document_review(
+        document_id="doc-review",
+        repository=repository,
+        now_provider=lambda: "2026-02-04T10:00:00+00:00",
+    )
+
+    assert result is not None
+    assert result.review_status == "IN_REVIEW"
+    assert result.reviewed_at is None
+    assert result.reviewed_by is None
 

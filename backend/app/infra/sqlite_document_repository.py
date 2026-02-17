@@ -51,9 +51,11 @@ class SqliteDocumentRepository:
                     storage_path,
                     created_at,
                     updated_at,
-                    review_status
+                    review_status,
+                    reviewed_at,
+                    reviewed_by
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     document.document_id,
@@ -64,6 +66,8 @@ class SqliteDocumentRepository:
                     document.created_at,
                     document.updated_at,
                     document.review_status.value,
+                    document.reviewed_at,
+                    document.reviewed_by,
                 ),
             )
             conn.execute(
@@ -96,7 +100,9 @@ class SqliteDocumentRepository:
                     storage_path,
                     created_at,
                     updated_at,
-                    review_status
+                    review_status,
+                    reviewed_at,
+                    reviewed_by
                 FROM documents
                 WHERE document_id = ?
                 """,
@@ -115,6 +121,8 @@ class SqliteDocumentRepository:
             created_at=row["created_at"],
             updated_at=row["updated_at"],
             review_status=ReviewStatus(row["review_status"]),
+            reviewed_at=row["reviewed_at"],
+            reviewed_by=row["reviewed_by"],
         )
 
     def get_latest_run(self, document_id: str) -> ProcessingRunSummary | None:
@@ -351,6 +359,8 @@ class SqliteDocumentRepository:
                     d.created_at,
                     d.updated_at,
                     d.review_status,
+                    d.reviewed_at,
+                    d.reviewed_by,
                     r.run_id AS latest_run_id,
                     r.state AS latest_run_state,
                     r.failure_type AS latest_run_failure_type
@@ -380,6 +390,8 @@ class SqliteDocumentRepository:
                 created_at=row["created_at"],
                 updated_at=row["updated_at"],
                 review_status=ReviewStatus(row["review_status"]),
+                reviewed_at=row["reviewed_at"],
+                reviewed_by=row["reviewed_by"],
             )
             latest_run = None
             if row["latest_run_id"] is not None:
@@ -510,4 +522,88 @@ class SqliteDocumentRepository:
         if not isinstance(payload, dict):
             return None
         return payload
+
+    def update_review_status(
+        self,
+        *,
+        document_id: str,
+        review_status: str,
+        updated_at: str,
+        reviewed_at: str | None,
+        reviewed_by: str | None,
+    ) -> Document | None:
+        """Update document review metadata and return the updated record."""
+
+        if review_status == ReviewStatus.REVIEWED.value:
+            query = """
+                UPDATE documents
+                SET
+                    review_status = ?,
+                    updated_at = CASE
+                        WHEN review_status = ? THEN updated_at
+                        ELSE ?
+                    END,
+                    reviewed_at = CASE
+                        WHEN review_status = ? THEN reviewed_at
+                        ELSE ?
+                    END,
+                    reviewed_by = CASE
+                        WHEN review_status = ? THEN reviewed_by
+                        ELSE ?
+                    END
+                WHERE document_id = ?
+            """
+            params = (
+                review_status,
+                ReviewStatus.REVIEWED.value,
+                updated_at,
+                ReviewStatus.REVIEWED.value,
+                reviewed_at,
+                ReviewStatus.REVIEWED.value,
+                reviewed_by,
+                document_id,
+            )
+        elif review_status == ReviewStatus.IN_REVIEW.value:
+            query = """
+                UPDATE documents
+                SET
+                    review_status = ?,
+                    updated_at = CASE
+                        WHEN review_status = ? THEN updated_at
+                        ELSE ?
+                    END,
+                    reviewed_at = NULL,
+                    reviewed_by = NULL
+                WHERE document_id = ?
+            """
+            params = (
+                review_status,
+                ReviewStatus.IN_REVIEW.value,
+                updated_at,
+                document_id,
+            )
+        else:
+            query = """
+                UPDATE documents
+                SET review_status = ?, updated_at = ?, reviewed_at = ?, reviewed_by = ?
+                WHERE document_id = ?
+            """
+            params = (
+                review_status,
+                updated_at,
+                reviewed_at,
+                reviewed_by,
+                document_id,
+            )
+
+        with database.get_connection() as conn:
+            cursor = conn.execute(
+                query,
+                params,
+            )
+            conn.commit()
+
+        if cursor.rowcount != 1:
+            return None
+        return self.get(document_id)
 

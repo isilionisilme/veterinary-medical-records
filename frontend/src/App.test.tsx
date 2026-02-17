@@ -61,6 +61,165 @@ async function openReadyDocumentAndGetPanel() {
   return screen.getByTestId("right-panel-scroll");
 }
 
+function installReviewedModeFetchMock() {
+  const docs = [
+    {
+      document_id: "doc-ready",
+      original_filename: "ready.pdf",
+      created_at: "2026-02-09T10:00:00Z",
+      status: "COMPLETED",
+      status_label: "Completed",
+      failure_type: null,
+      review_status: "IN_REVIEW" as const,
+      reviewed_at: null as string | null,
+      reviewed_by: null as string | null,
+    },
+  ];
+
+  globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = input.toString();
+    const method = (init?.method ?? "GET").toUpperCase();
+    const activeDoc = docs[0];
+
+    if (url.includes("/documents?") && method === "GET") {
+      return new Response(
+        JSON.stringify({ items: docs, limit: 50, offset: 0, total: docs.length }),
+        { status: 200 }
+      );
+    }
+
+    if (url.includes("/download") && method === "GET") {
+      return new Response(new Blob(["pdf"], { type: "application/pdf" }), { status: 200 });
+    }
+
+    if (url.includes("/documents/doc-ready/reviewed") && method === "POST") {
+      if (activeDoc.review_status !== "REVIEWED") {
+        activeDoc.review_status = "REVIEWED";
+        activeDoc.reviewed_at = "2026-02-10T10:30:00Z";
+        activeDoc.reviewed_by = null;
+      }
+      return new Response(
+        JSON.stringify({
+          document_id: activeDoc.document_id,
+          review_status: activeDoc.review_status,
+          reviewed_at: activeDoc.reviewed_at,
+          reviewed_by: activeDoc.reviewed_by,
+        }),
+        { status: 200 }
+      );
+    }
+
+    if (url.includes("/documents/doc-ready/reviewed") && method === "DELETE") {
+      activeDoc.review_status = "IN_REVIEW";
+      activeDoc.reviewed_at = null;
+      activeDoc.reviewed_by = null;
+      return new Response(
+        JSON.stringify({
+          document_id: activeDoc.document_id,
+          review_status: activeDoc.review_status,
+          reviewed_at: activeDoc.reviewed_at,
+          reviewed_by: activeDoc.reviewed_by,
+        }),
+        { status: 200 }
+      );
+    }
+
+    if (url.match(/\/documents\/doc-ready$/) && method === "GET") {
+      return new Response(
+        JSON.stringify({
+          document_id: activeDoc.document_id,
+          original_filename: activeDoc.original_filename,
+          content_type: "application/pdf",
+          file_size: 10,
+          created_at: activeDoc.created_at,
+          updated_at: "2026-02-10T10:00:00Z",
+          status: activeDoc.status,
+          status_message: "Completed",
+          failure_type: activeDoc.failure_type,
+          review_status: activeDoc.review_status,
+          reviewed_at: activeDoc.reviewed_at,
+          reviewed_by: activeDoc.reviewed_by,
+          latest_run: { run_id: "run-doc-ready", state: "COMPLETED", failure_type: null },
+        }),
+        { status: 200 }
+      );
+    }
+
+    if (url.match(/\/documents\/doc-ready\/review$/) && method === "GET") {
+      return new Response(
+        JSON.stringify({
+          document_id: activeDoc.document_id,
+          latest_completed_run: {
+            run_id: "run-doc-ready",
+            state: "COMPLETED",
+            completed_at: "2026-02-10T10:00:00Z",
+            failure_type: null,
+          },
+          active_interpretation: {
+            interpretation_id: "interp-doc-ready",
+            version_number: 1,
+            data: {
+              schema_version: "v0",
+              document_id: activeDoc.document_id,
+              processing_run_id: "run-doc-ready",
+              created_at: "2026-02-10T10:00:00Z",
+              fields: [
+                {
+                  field_id: "field-pet-name-doc-ready",
+                  key: "pet_name",
+                  value: "Luna",
+                  value_type: "string",
+                  confidence: 0.82,
+                  is_critical: false,
+                  origin: "machine",
+                  evidence: { page: 1, snippet: "Paciente: Luna" },
+                },
+                {
+                  field_id: "field-species-doc-ready",
+                  key: "species",
+                  value: "Canina",
+                  value_type: "string",
+                  confidence: 0.9,
+                  is_critical: false,
+                  origin: "machine",
+                },
+              ],
+            },
+          },
+          raw_text_artifact: {
+            run_id: "run-doc-ready",
+            available: true,
+          },
+          review_status: activeDoc.review_status,
+          reviewed_at: activeDoc.reviewed_at,
+          reviewed_by: activeDoc.reviewed_by,
+        }),
+        { status: 200 }
+      );
+    }
+
+    if (url.includes("/processing-history") && method === "GET") {
+      return new Response(JSON.stringify({ document_id: "doc-ready", runs: [] }), { status: 200 });
+    }
+
+    return new Response(JSON.stringify({ error_code: "NOT_FOUND" }), { status: 404 });
+  }) as typeof fetch;
+}
+
+async function openReviewedDocument() {
+  fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+  await screen.findByTestId("confidence-indicator-core:pet_name");
+}
+
+function getPetNameFieldButton() {
+  const indicator = screen.getByTestId("confidence-indicator-core:pet_name");
+  const fieldCard = indicator.closest("article");
+  expect(fieldCard).not.toBeNull();
+  const button = (fieldCard as HTMLElement).querySelector("button");
+  expect(button).not.toBeNull();
+  return button as HTMLButtonElement;
+}
+
 describe("App upload and list flow", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -2189,6 +2348,74 @@ describe("App upload and list flow", () => {
 
     clickPetNameField();
     expect(screen.queryByTestId("source-drawer")).toBeNull();
+  });
+
+  it("shows destructive blocked-edit toast on first reviewed-mode click", async () => {
+    installReviewedModeFetchMock();
+    renderApp();
+
+    await openReviewedDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Marcar como revisado/i }));
+
+    await screen.findByRole("button", { name: /^Reabrir$/i });
+
+    fireEvent.mouseUp(getPetNameFieldButton(), { button: 0 });
+
+    const status = await screen.findByRole("status");
+    expect(status).toHaveTextContent("Documento revisado: usa Reabrir para habilitar edición.");
+    expect(status).toHaveClass("bg-red-50", "text-red-700");
+  });
+
+  it("does not show blocked-edit toast while selecting text in reviewed mode", async () => {
+    installReviewedModeFetchMock();
+    const getSelectionSpy = vi
+      .spyOn(window, "getSelection")
+      .mockReturnValue({ toString: () => "Luna" } as unknown as Selection);
+
+    renderApp();
+    await openReviewedDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Marcar como revisado/i }));
+    await screen.findByRole("button", { name: /^Reabrir$/i });
+    fireEvent.click(screen.getByLabelText(/Cerrar notificacion de accion/i));
+
+    fireEvent.mouseUp(getPetNameFieldButton(), { button: 0 });
+
+    expect(screen.queryByText(/Documento revisado: usa Reabrir para habilitar edición\./i)).toBeNull();
+    getSelectionSpy.mockRestore();
+  });
+
+  it("renders reviewed warning banner with amber border styling", async () => {
+    installReviewedModeFetchMock();
+    renderApp();
+
+    await openReviewedDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Marcar como revisado/i }));
+
+    const bannerText = await screen.findByText(/Los datos están en modo de solo lectura\./i);
+    const banner = bannerText.closest("p");
+    expect(banner).not.toBeNull();
+    expect(banner).toHaveClass("border", "border-amber-200", "bg-amber-50", "text-amber-900");
+  });
+
+  it("toggles reviewed action visual state and supports keyboard blocked-edit feedback", async () => {
+    installReviewedModeFetchMock();
+    renderApp();
+
+    await openReviewedDocument();
+
+    const markButton = screen.getByRole("button", { name: /Marcar como revisado/i });
+    expect(markButton).toHaveClass("bg-accent", "text-accentForeground");
+    fireEvent.click(markButton);
+
+    const reopenButton = await screen.findByRole("button", { name: /^Reabrir$/i });
+    expect(reopenButton).toHaveClass("border", "bg-surface", "text-text");
+
+    fireEvent.keyDown(getPetNameFieldButton(), { key: "Enter" });
+    await screen.findByText(/Documento revisado: usa Reabrir para habilitar edición\./i);
+
+    fireEvent.click(reopenButton);
+    await screen.findByRole("button", { name: /Marcar como revisado/i });
   });
 });
 

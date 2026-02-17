@@ -51,6 +51,8 @@ def test_list_documents_returns_uploaded_documents(test_client):
     assert item["status"] == app_models.ProcessingStatus.UPLOADED.value
     assert item["status_label"] == "Uploaded"
     assert item["failure_type"] is None
+    assert item["review_status"] == "IN_REVIEW"
+    assert item["reviewed_at"] is None
 
 
 def test_list_documents_returns_processing_status_from_latest_run(test_client):

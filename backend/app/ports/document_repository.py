@@ -107,3 +107,14 @@ class DocumentRepository(Protocol):
     ) -> dict[str, object] | None:
         """Return latest artifact payload for a run and artifact type."""
 
+    def update_review_status(
+        self,
+        *,
+        document_id: str,
+        review_status: str,
+        updated_at: str,
+        reviewed_at: str | None,
+        reviewed_by: str | None,
+    ) -> Document | None:
+        """Update review metadata and return the updated document."""
+

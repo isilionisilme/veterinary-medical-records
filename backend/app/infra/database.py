@@ -88,11 +88,18 @@ def _ensure_documents_schema(conn: sqlite3.Connection) -> None:
                 storage_path TEXT NOT NULL,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL,
-                review_status TEXT NOT NULL
+                review_status TEXT NOT NULL,
+                reviewed_at TEXT,
+                reviewed_by TEXT
             );
             """
         )
         return
+
+    if "reviewed_at" not in columns:
+        conn.execute("ALTER TABLE documents ADD COLUMN reviewed_at TEXT;")
+    if "reviewed_by" not in columns:
+        conn.execute("ALTER TABLE documents ADD COLUMN reviewed_by TEXT;")
 
     if "original_filename" in columns and "storage_path" in columns:
         return
@@ -107,7 +114,9 @@ def _ensure_documents_schema(conn: sqlite3.Connection) -> None:
             storage_path TEXT NOT NULL,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL,
-            review_status TEXT NOT NULL
+            review_status TEXT NOT NULL,
+            reviewed_at TEXT,
+            reviewed_by TEXT
         );
         """
     )
@@ -121,7 +130,9 @@ def _ensure_documents_schema(conn: sqlite3.Connection) -> None:
             storage_path,
             created_at,
             updated_at,
-            review_status
+            review_status,
+            reviewed_at,
+            reviewed_by
         )
         SELECT
             document_id,
@@ -131,7 +142,9 @@ def _ensure_documents_schema(conn: sqlite3.Connection) -> None:
             document_id || '/original.pdf',
             created_at,
             created_at,
-            'IN_REVIEW'
+            'IN_REVIEW',
+            NULL,
+            NULL
         FROM documents;
         """
     )

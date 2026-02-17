@@ -10,7 +10,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { AlignLeft, Check, Download, FileText, Info, Search, X } from "lucide-react";
+import { AlignLeft, Check, Download, FileText, Info, RefreshCw, Search, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { ConfidenceDot } from "./components/app/ConfidenceDot";
@@ -184,6 +184,9 @@ type DocumentListItem = {
   status: string;
   status_label: string;
   failure_type: string | null;
+  review_status?: "IN_REVIEW" | "REVIEWED";
+  reviewed_at?: string | null;
+  reviewed_by?: string | null;
 };
 
 type DocumentListResponse = {
@@ -209,6 +212,9 @@ type DocumentDetailResponse = {
   status: string;
   status_message: string;
   failure_type: string | null;
+  review_status: "IN_REVIEW" | "REVIEWED";
+  reviewed_at: string | null;
+  reviewed_by: string | null;
   latest_run: LatestRun | null;
 };
 
@@ -316,6 +322,9 @@ type DocumentReviewResponse = {
     run_id: string;
     available: boolean;
   };
+  review_status: "IN_REVIEW" | "REVIEWED";
+  reviewed_at: string | null;
+  reviewed_by: string | null;
 };
 
 type DocumentUploadResponse = {
@@ -333,7 +342,7 @@ type UploadFeedback = {
 };
 
 type ActionFeedback = {
-  kind: "success" | "error";
+  kind: "success" | "error" | "info";
   message: string;
   technicalDetails?: string;
 };
@@ -609,6 +618,83 @@ async function triggerReprocess(documentId: string): Promise<LatestRun> {
     }
     throw new Error(errorMessage);
   }
+  return response.json();
+}
+
+type ReviewToggleResponse = {
+  document_id: string;
+  review_status: "IN_REVIEW" | "REVIEWED";
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+};
+
+async function markDocumentReviewed(documentId: string): Promise<ReviewToggleResponse> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/documents/${documentId}/reviewed`, {
+      method: "POST",
+    });
+  } catch (error) {
+    if (isNetworkFetchError(error)) {
+      throw new UiError(
+        "No se pudo conectar con el servidor.",
+        `Network error calling ${API_BASE_URL}/documents/${documentId}/reviewed`
+      );
+    }
+    throw error;
+  }
+
+  if (!response.ok) {
+    let errorMessage = "No se pudo marcar como revisado.";
+    try {
+      const payload = await response.json();
+      if (typeof payload?.message === "string" && payload.message.trim()) {
+        errorMessage = payload.message;
+      }
+    } catch {
+      // Ignore JSON parse errors for non-JSON responses.
+    }
+    throw new UiError(
+      errorMessage,
+      `HTTP ${response.status} calling ${API_BASE_URL}/documents/${documentId}/reviewed`
+    );
+  }
+
+  return response.json();
+}
+
+async function reopenDocumentReview(documentId: string): Promise<ReviewToggleResponse> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/documents/${documentId}/reviewed`, {
+      method: "DELETE",
+    });
+  } catch (error) {
+    if (isNetworkFetchError(error)) {
+      throw new UiError(
+        "No se pudo conectar con el servidor.",
+        `Network error calling ${API_BASE_URL}/documents/${documentId}/reviewed`
+      );
+    }
+    throw error;
+  }
+
+  if (!response.ok) {
+    let errorMessage = "No se pudo reabrir el documento.";
+    try {
+      const payload = await response.json();
+      if (typeof payload?.message === "string" && payload.message.trim()) {
+        errorMessage = payload.message;
+      }
+    } catch {
+      // Ignore JSON parse errors for non-JSON responses.
+    }
+    throw new UiError(
+      errorMessage,
+      `HTTP ${response.status} calling ${API_BASE_URL}/documents/${documentId}/reviewed`
+    );
+  }
+
   return response.json();
 }
 
@@ -1730,6 +1816,81 @@ export function App() {
     },
   });
 
+  const reviewToggleMutation = useMutation({
+    mutationFn: async (variables: { docId: string; target: "reviewed" | "in_review" }) => {
+      if (variables.target === "reviewed") {
+        return markDocumentReviewed(variables.docId);
+      }
+      return reopenDocumentReview(variables.docId);
+    },
+    onSuccess: (result, variables) => {
+      queryClient.setQueryData<DocumentListResponse | undefined>(["documents", "list"], (current) => {
+        if (!current) {
+          return current;
+        }
+        return {
+          ...current,
+          items: current.items.map((item) =>
+            item.document_id === variables.docId
+              ? {
+                  ...item,
+                  review_status: result.review_status,
+                  reviewed_at: result.reviewed_at,
+                  reviewed_by: result.reviewed_by,
+                }
+              : item
+          ),
+        };
+      });
+      queryClient.setQueryData<DocumentDetailResponse | undefined>(
+        ["documents", "detail", variables.docId],
+        (current) => {
+          if (!current) {
+            return current;
+          }
+          return {
+            ...current,
+            review_status: result.review_status,
+            reviewed_at: result.reviewed_at,
+            reviewed_by: result.reviewed_by,
+          };
+        }
+      );
+      queryClient.setQueryData<DocumentReviewResponse | undefined>(
+        ["documents", "review", variables.docId],
+        (current) => {
+          if (!current) {
+            return current;
+          }
+          return {
+            ...current,
+            review_status: result.review_status,
+            reviewed_at: result.reviewed_at,
+            reviewed_by: result.reviewed_by,
+          };
+        }
+      );
+
+      setActionFeedback({
+        kind: "success",
+        message:
+          result.review_status === "REVIEWED"
+            ? "Documento marcado como revisado."
+            : "Documento reabierto para revisión.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["documents", "list"] });
+      queryClient.invalidateQueries({ queryKey: ["documents", "detail", variables.docId] });
+      queryClient.invalidateQueries({ queryKey: ["documents", "review", variables.docId] });
+    },
+    onError: (error) => {
+      setActionFeedback({
+        kind: "error",
+        message: getUserErrorMessage(error, "No se pudo actualizar el estado de revisión."),
+        technicalDetails: getTechnicalDetails(error),
+      });
+    },
+  });
+
   const handleRefresh = () => {
     setShowRefreshFeedback(true);
     if (refreshFeedbackTimerRef.current) {
@@ -1761,6 +1922,9 @@ export function App() {
     () => (activeId ? (documentList.data?.items ?? []).find((item) => item.document_id === activeId) : null),
     [activeId, documentList.data?.items]
   );
+  const activeReviewStatus =
+    documentDetails.data?.review_status ?? activeListDocument?.review_status ?? "IN_REVIEW";
+  const isDocumentReviewed = activeReviewStatus === "REVIEWED";
   const isActiveListProcessing = Boolean(
     activeListDocument && isDocumentProcessing(activeListDocument.status)
   );
@@ -2418,6 +2582,36 @@ export function App() {
     setFieldNavigationRequestId((current) => current + 1);
   };
 
+  const handleReviewedEditAttempt = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    if (!isDocumentReviewed || event.button !== 0) {
+      return;
+    }
+    const selectedText = window.getSelection?.()?.toString().trim() ?? "";
+    if (selectedText.length > 0) {
+      return;
+    }
+    setActionFeedback({
+      kind: "error",
+      message: "Documento revisado: usa Reabrir para habilitar edición.",
+    });
+  };
+
+  const handleReviewedKeyboardEditAttempt = (
+    event: ReactKeyboardEvent<HTMLButtonElement>
+  ) => {
+    if (!isDocumentReviewed) {
+      return;
+    }
+    if (event.key !== "Enter" && event.key !== " ") {
+      return;
+    }
+    event.preventDefault();
+    setActionFeedback({
+      kind: "error",
+      message: "Documento revisado: usa Reabrir para habilitar edición.",
+    });
+  };
+
   const resetReviewSplitRatio = () => {
     const containerWidth = Math.max(
       reviewSplitGridRef.current?.getBoundingClientRect().width ?? 0,
@@ -2652,8 +2846,12 @@ export function App() {
               >
                 <button
                   type="button"
-                  className="w-full cursor-pointer rounded-md px-1 py-0.5 text-left transition hover:bg-black/[0.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                  className={`w-full rounded-md px-1 py-0.5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+                    isDocumentReviewed ? "cursor-default" : "cursor-pointer hover:bg-black/[0.03]"
+                  }`}
                   onClick={() => handleSelectReviewItem(item)}
+                  onMouseUp={handleReviewedEditAttempt}
+                  onKeyDown={handleReviewedKeyboardEditAttempt}
                 >
                     <FieldRow
                       indicator={renderConfidenceIndicator(field, item)}
@@ -2714,8 +2912,12 @@ export function App() {
       >
         <button
           type="button"
-          className="w-full cursor-pointer rounded-md px-1 py-0.5 text-left transition hover:bg-black/[0.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          className={`w-full rounded-md px-1 py-0.5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+            isDocumentReviewed ? "cursor-default" : "cursor-pointer hover:bg-black/[0.03]"
+          }`}
           onClick={() => handleSelectReviewItem(item)}
+          onMouseUp={handleReviewedEditAttempt}
+          onKeyDown={handleReviewedKeyboardEditAttempt}
         >
           <FieldRow
             leftTestId={`${styledPrefix}-row-${field.key}`}
@@ -3050,7 +3252,45 @@ export function App() {
                           >
                             <div className="flex w-full items-center justify-between gap-2">
                               <h3 className="text-lg font-semibold text-textSecondary">Datos extraídos</h3>
-                              <div className="flex items-center justify-end gap-1 text-xs leading-tight text-textSecondary">
+                              <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  type="button"
+                                  variant={isDocumentReviewed ? "ghost" : "primary"}
+                                  size="default"
+                                  className={
+                                    isDocumentReviewed
+                                      ? "border border-border bg-surface text-text font-medium hover:bg-surfaceMuted"
+                                      : undefined
+                                  }
+                                  disabled={
+                                    !activeId ||
+                                    isActiveDocumentProcessing ||
+                                    reviewToggleMutation.isPending
+                                  }
+                                  onClick={() => {
+                                    if (!activeId) {
+                                      return;
+                                    }
+                                    reviewToggleMutation.mutate({
+                                      docId: activeId,
+                                      target: isDocumentReviewed ? "in_review" : "reviewed",
+                                    });
+                                  }}
+                                >
+                                  {reviewToggleMutation.isPending
+                                    ? isDocumentReviewed
+                                      ? "Reabriendo..."
+                                      : "Marcando..."
+                                    : isDocumentReviewed
+                                      ? (
+                                        <>
+                                          <RefreshCw size={14} aria-hidden="true" />
+                                          Reabrir
+                                        </>
+                                      )
+                                      : "Marcar como revisado"}
+                                </Button>
+                                <div className="flex items-center justify-end gap-1 text-xs leading-tight text-textSecondary">
                                 <span className="text-muted">Campos detectados:</span>
                                 <span className="inline-flex items-center gap-1 whitespace-nowrap">
                                   <span className="font-semibold text-text tabular-nums">
@@ -3071,6 +3311,7 @@ export function App() {
                                   </span>
                                   <span>)</span>
                                 </span>
+                                </div>
                               </div>
                             </div>
 
@@ -3345,9 +3586,15 @@ export function App() {
                               {reviewPanelState === "ready" && (
                                 <ScrollArea
                                   data-testid="right-panel-scroll"
-                                  className="h-full min-h-0 pr-1"
+                                  className={`h-full min-h-0 pr-1 ${isDocumentReviewed ? "opacity-80" : ""}`}
                                 >
                                   <div className="space-y-3">
+                                    {isDocumentReviewed && (
+                                      <p className="rounded-control border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                                        Documento marcado como revisado. Los datos están en modo de solo lectura.
+                                        Usa Reabrir para editar.
+                                      </p>
+                                    )}
                                     {hasNoStructuredFilterResults && (
                                       <p className="rounded-control bg-surface px-3 py-2 text-xs text-muted">
                                         No hay resultados con los filtros actuales.

@@ -61,6 +61,8 @@ class Document:
     created_at: str
     updated_at: str
     review_status: ReviewStatus
+    reviewed_at: str | None = None
+    reviewed_by: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
