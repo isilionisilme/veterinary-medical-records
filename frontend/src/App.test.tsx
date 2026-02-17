@@ -1940,6 +1940,15 @@ describe("App upload and list flow", () => {
     );
   });
 
+  it("does not show degraded confidence mode when policy config is valid", async () => {
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+    await waitForStructuredDataReady();
+
+    expect(screen.queryByTestId("confidence-policy-degraded")).toBeNull();
+  });
+
   it("does not fallback to legacy confidence when mapping_confidence is missing", async () => {
     const baseFetch = globalThis.fetch as typeof fetch;
 
