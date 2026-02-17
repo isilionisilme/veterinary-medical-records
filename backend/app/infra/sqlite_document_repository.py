@@ -534,20 +534,72 @@ class SqliteDocumentRepository:
     ) -> Document | None:
         """Update document review metadata and return the updated record."""
 
-        with database.get_connection() as conn:
-            cursor = conn.execute(
-                """
+        if review_status == ReviewStatus.REVIEWED.value:
+            query = """
+                UPDATE documents
+                SET
+                    review_status = ?,
+                    updated_at = CASE
+                        WHEN review_status = ? THEN updated_at
+                        ELSE ?
+                    END,
+                    reviewed_at = CASE
+                        WHEN review_status = ? THEN reviewed_at
+                        ELSE ?
+                    END,
+                    reviewed_by = CASE
+                        WHEN review_status = ? THEN reviewed_by
+                        ELSE ?
+                    END
+                WHERE document_id = ?
+            """
+            params = (
+                review_status,
+                ReviewStatus.REVIEWED.value,
+                updated_at,
+                ReviewStatus.REVIEWED.value,
+                reviewed_at,
+                ReviewStatus.REVIEWED.value,
+                reviewed_by,
+                document_id,
+            )
+        elif review_status == ReviewStatus.IN_REVIEW.value:
+            query = """
+                UPDATE documents
+                SET
+                    review_status = ?,
+                    updated_at = CASE
+                        WHEN review_status = ? THEN updated_at
+                        ELSE ?
+                    END,
+                    reviewed_at = NULL,
+                    reviewed_by = NULL
+                WHERE document_id = ?
+            """
+            params = (
+                review_status,
+                ReviewStatus.IN_REVIEW.value,
+                updated_at,
+                document_id,
+            )
+        else:
+            query = """
                 UPDATE documents
                 SET review_status = ?, updated_at = ?, reviewed_at = ?, reviewed_by = ?
                 WHERE document_id = ?
-                """,
-                (
-                    review_status,
-                    updated_at,
-                    reviewed_at,
-                    reviewed_by,
-                    document_id,
-                ),
+            """
+            params = (
+                review_status,
+                updated_at,
+                reviewed_at,
+                reviewed_by,
+                document_id,
+            )
+
+        with database.get_connection() as conn:
+            cursor = conn.execute(
+                query,
+                params,
             )
             conn.commit()
 

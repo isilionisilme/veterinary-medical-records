@@ -2596,6 +2596,22 @@ export function App() {
     });
   };
 
+  const handleReviewedKeyboardEditAttempt = (
+    event: ReactKeyboardEvent<HTMLButtonElement>
+  ) => {
+    if (!isDocumentReviewed) {
+      return;
+    }
+    if (event.key !== "Enter" && event.key !== " ") {
+      return;
+    }
+    event.preventDefault();
+    setActionFeedback({
+      kind: "error",
+      message: "Documento revisado: usa Reabrir para habilitar edición.",
+    });
+  };
+
   const resetReviewSplitRatio = () => {
     const containerWidth = Math.max(
       reviewSplitGridRef.current?.getBoundingClientRect().width ?? 0,
@@ -2835,6 +2851,7 @@ export function App() {
                   }`}
                   onClick={() => handleSelectReviewItem(item)}
                   onMouseUp={handleReviewedEditAttempt}
+                  onKeyDown={handleReviewedKeyboardEditAttempt}
                 >
                     <FieldRow
                       indicator={renderConfidenceIndicator(field, item)}
@@ -2900,6 +2917,7 @@ export function App() {
           }`}
           onClick={() => handleSelectReviewItem(item)}
           onMouseUp={handleReviewedEditAttempt}
+          onKeyDown={handleReviewedKeyboardEditAttempt}
         >
           <FieldRow
             leftTestId={`${styledPrefix}-row-${field.key}`}
