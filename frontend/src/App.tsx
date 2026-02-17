@@ -21,6 +21,7 @@ import { SectionBlock, SectionHeader } from "./components/app/Section";
 import { DocumentsSidebar } from "./components/DocumentsSidebar";
 import { PdfViewer } from "./components/PdfViewer";
 import { SourcePanel } from "./components/SourcePanel";
+import { FieldEditDialog } from "./components/structured/FieldEditDialog";
 import { UploadDropzone } from "./components/UploadDropzone";
 import { ToastHost } from "./components/toast/ToastHost";
 import {
@@ -1050,6 +1051,8 @@ export function App() {
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
   const [isCopyingRawText, setIsCopyingRawText] = useState(false);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
+  const [editingField, setEditingField] = useState<ReviewSelectableField | null>(null);
+  const [editingFieldDraftValue, setEditingFieldDraftValue] = useState("");
   const [evidenceNotice, setEvidenceNotice] = useState<string | null>(null);
   const [expandedFieldValues, setExpandedFieldValues] = useState<Record<string, boolean>>({});
   const [reviewLoadingDocId, setReviewLoadingDocId] = useState<string | null>(null);
@@ -2918,31 +2921,41 @@ export function App() {
     );
   };
 
-  const handleEditField = (item: ReviewSelectableField) => {
+  const openFieldEditDialog = (item: ReviewSelectableField) => {
     const rawCurrentValue = item.rawField?.value;
     const currentValue =
       rawCurrentValue === null || rawCurrentValue === undefined
         ? ""
         : String(rawCurrentValue);
-    const nextValueInput = window.prompt(`Editar "${item.label}"`, currentValue);
-    if (nextValueInput === null) {
+    setEditingField(item);
+    setEditingFieldDraftValue(currentValue);
+  };
+
+  const closeFieldEditDialog = () => {
+    setEditingField(null);
+    setEditingFieldDraftValue("");
+  };
+
+  const saveFieldEditDialog = () => {
+    if (!editingField) {
       return;
     }
-    const nextValue = nextValueInput.trim();
-    const valueType = item.rawField?.value_type ?? item.valueType ?? "string";
+    const nextValue = editingFieldDraftValue.trim();
+    const valueType = editingField.rawField?.value_type ?? editingField.valueType ?? "string";
 
-    if (item.rawField) {
+    if (editingField.rawField) {
       submitInterpretationChanges(
         [
           {
             op: "UPDATE",
-            field_id: item.rawField.field_id,
+            field_id: editingField.rawField.field_id,
             value: nextValue.length > 0 ? nextValue : null,
             value_type: valueType,
           },
         ],
         "Campo actualizado."
       );
+      closeFieldEditDialog();
       return;
     }
 
@@ -2950,13 +2963,14 @@ export function App() {
       [
         {
           op: "ADD",
-          key: item.key,
+          key: editingField.key,
           value: nextValue.length > 0 ? nextValue : null,
           value_type: valueType,
         },
       ],
       "Campo actualizado."
     );
+    closeFieldEditDialog();
   };
 
   const renderModifiedBadge = (item: ReviewSelectableField) => {
@@ -3090,7 +3104,7 @@ export function App() {
                       variant="ghost"
                       className="border border-border bg-surface text-text hover:bg-surfaceMuted"
                       disabled={interpretationEditMutation.isPending}
-                      onClick={() => handleEditField(item)}
+                      onClick={() => openFieldEditDialog(item)}
                     >
                       Editar
                     </Button>
@@ -3181,7 +3195,7 @@ export function App() {
               variant="ghost"
               className="border border-border bg-surface text-text hover:bg-surfaceMuted"
               disabled={interpretationEditMutation.isPending}
-              onClick={() => handleEditField(item)}
+              onClick={() => openFieldEditDialog(item)}
             >
               Editar
             </Button>
@@ -3318,6 +3332,19 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-page px-4 py-3 md:px-6 lg:px-8 xl:px-10">
+      <FieldEditDialog
+        open={editingField !== null}
+        fieldLabel={editingField?.label ?? ""}
+        value={editingFieldDraftValue}
+        isSaving={interpretationEditMutation.isPending}
+        onValueChange={setEditingFieldDraftValue}
+        onOpenChange={(open) => {
+          if (!open) {
+            closeFieldEditDialog();
+          }
+        }}
+        onSave={saveFieldEditDialog}
+      />
       <div
         className="mx-auto w-full max-w-[1640px] rounded-frame bg-canvas p-[var(--canvas-gap)]"
         data-testid="canvas-wrapper"
