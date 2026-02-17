@@ -599,6 +599,8 @@ As a veterinarian, I want to review the system’s interpretation while viewing 
 
 ## US-38 — Mark document as reviewed (toggle)
 
+**Status**: Implemented (2026-02-17)
+
 **User Story**
 As a veterinarian reviewer, I want to mark a document as reviewed and unmark it later so that I can manage my review queue without losing my corrections.
 
@@ -782,6 +784,8 @@ As a veterinarian reviewer, I want to resize the PDF and structured-data panels 
 ---
 
 ## US-36 — Lean design system (tokens + primitives)
+
+**Status**: Implemented (2026-02-17)
 
 **User Story**
 As a veterinarian reviewing claims, I want a consistent UI foundation (tokens and reusable primitives) so that interactions remain predictable and future editable-field work does not introduce visual drift.
