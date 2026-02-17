@@ -179,7 +179,7 @@ Allow veterinarians to correct structured data naturally, while capturing append
 - US-09 — Capture correction signals
 - US-39 — Align veterinarian confidence signal with mapping confidence policy
 - US-40 — Implement field-level confidence tooltip breakdown
-- US-32 — Align review rendering to Global Schema v0 template
+- US-32 — Align review rendering to Global Schema v0 template (Implemented 2026-02-17)
 
 ---
 
@@ -939,6 +939,8 @@ As a veterinarian, I want to change the detected language of a document so that 
 ---
 
 ## US-32 — Align review rendering to Global Schema v0 template
+
+**Status**: Implemented (2026-02-17)
 
 **User Story**
 As a veterinarian, I want the review view to always use the full Global Schema v0 template so that scanning is consistent across documents.

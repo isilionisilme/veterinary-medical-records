@@ -1,5 +1,7 @@
 # US-32 — Align review rendering to Global Schema v0 template
 
+**Status**: Implemented (2026-02-17)
+
 **User Story**
 As a veterinarian, I want the review view to always use the full Global Schema v0 template so that scanning is consistent across documents.
 

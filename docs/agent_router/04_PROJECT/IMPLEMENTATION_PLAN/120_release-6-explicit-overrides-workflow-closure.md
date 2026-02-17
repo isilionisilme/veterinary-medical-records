@@ -12,6 +12,6 @@ Give veterinarians explicit control over processing context and a clear way to c
 ## User Stories (in order)
 - US-10 — Change document language and reprocess
 - US-12 — Mark document as reviewed
-- US-32 — Align review rendering to Global Schema v0 template
+- US-32 — Align review rendering to Global Schema v0 template (Implemented 2026-02-17)
 
 ---
