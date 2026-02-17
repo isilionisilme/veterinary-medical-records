@@ -30,7 +30,6 @@ Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for i
 - `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/220_us-06-view-extracted-text.md`
 - `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/230_us-07-review-document-in-context.md`
 - `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/240_us-08-edit-structured-data.md`
-- `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/245_us-37-explicitly-confirm-fields-as-correct.md`
 - `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/250_us-09-capture-correction-signals.md`
 - `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/260_us-10-change-document-language-and-reprocess.md`
 - `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/270_us-12-mark-document-as-reviewed.md`

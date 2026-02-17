@@ -174,36 +174,6 @@ def test_project_split_entry_includes_implementation_plan_us35_module() -> None:
     assert "US-35 — Resizable splitter between PDF Viewer and Structured Data panel" in release4
 
 
-def test_project_split_entry_includes_implementation_plan_us37_module_and_release5_order() -> None:
-    plan_entry = _read_text(
-        ROUTER_ROOT / "04_PROJECT" / "IMPLEMENTATION_PLAN" / "00_entry.md"
-    )
-    release5 = _read_text(
-        ROUTER_ROOT
-        / "04_PROJECT"
-        / "IMPLEMENTATION_PLAN"
-        / "110_release-5-editing-learning-signals-human-corrections.md"
-    )
-
-    assert (
-        "docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/245_us-37-explicitly-confirm-fields-as-correct.md"
-        in plan_entry
-    )
-    assert "US-08 — Edit structured data" in release5
-    assert (
-        "US-37 — Explicitly confirm fields as correct (1-click, reversible, selective)"
-        in release5
-    )
-    assert "US-09 — Capture correction signals" in release5
-    assert (
-        release5.index("US-08 — Edit structured data")
-        < release5.index(
-            "US-37 — Explicitly confirm fields as correct (1-click, reversible, selective)"
-        )
-        < release5.index("US-09 — Capture correction signals")
-    )
-
-
 def test_user_visible_entry_includes_design_system_module() -> None:
     user_visible_entry = _read_text(
         ROUTER_ROOT / "02_PRODUCT" / "USER_VISIBLE" / "00_entry.md"
