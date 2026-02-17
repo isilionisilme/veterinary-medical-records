@@ -192,6 +192,33 @@ Normative behavior:
 - `mapping_confidence` propagates continuously with smoothing; UI state should remain stable and avoid abrupt visual churn.
 - Product policy actions (for example default suggestion or demotion) occur only via thresholds + hysteresis + minimum volume; UX should reflect outcomes, not expose calibration mechanics.
 
+## 4.3 Confidence Tooltip Breakdown (Veterinarian UI)
+
+- The veterinarian UI must show `mapping_confidence` as the default confidence signal.
+- Numeric confidence values are secondary and may appear only inside tooltip details.
+- `candidate_confidence` and `mapping_confidence` must not be conflated in UI copy or semantics.
+
+Tooltip structure (Spanish, standard copy):
+- First line: `Confianza: 72% (Media)`
+- Explanation sentence: `Indica qué tan fiable es el valor extraído automáticamente.`
+- `Desglose:`
+  - `Fiabilidad de la extracción de texto: 65%`
+  - `Ajuste por histórico de revisiones: +7%`
+
+Semantic rules:
+- `Fiabilidad de la extracción de texto` is a per-document diagnostic component tied to extraction quality for the current run.
+- `Ajuste por histórico de revisiones` is an aggregated cross-document, system-level adjustment and is not about this single document only.
+- The displayed confidence remains a field-level result; no document-level confidence policy UI is shown.
+
+Visual rule:
+- Adjustment value color is green when `> 0`, red when `< 0`, and neutral/muted when `= 0`.
+
+Edge cases:
+- If there is no review history, show `Ajuste por histórico de revisiones: 0%`.
+- If extraction reliability is unavailable, show `Fiabilidad de la extracción de texto: No disponible`.
+
+The rule "No governance terminology in veterinarian UX" remains in force for confidence tooltip copy.
+
 ### Future Improvements
 
 - Random audit sampling support for occasional spot checks.
