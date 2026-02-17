@@ -157,8 +157,6 @@ Enable veterinarians to review the system’s interpretation **in context**, sid
 - US-07 — Review document in context
 - US-34 — Search & filters in Structured Data panel
 - US-35 — Resizable splitter between PDF Viewer and Structured Data panel
-- US-32 — Align review rendering to Global Schema v0 template
-- US-39 — Align veterinarian confidence signal with mapping confidence policy
 - US-38 — Mark document as reviewed (toggle)
 
 ---
@@ -179,6 +177,9 @@ Allow veterinarians to correct structured data naturally, while capturing append
 - US-36 — Lean design system (tokens + primitives)
 - US-08 — Edit structured data
 - US-09 — Capture correction signals
+- US-39 — Align veterinarian confidence signal with mapping confidence policy
+- US-40 — Implement field-level confidence tooltip breakdown
+- US-32 — Align review rendering to Global Schema v0 template
 
 ---
 
@@ -598,6 +599,8 @@ As a veterinarian, I want to review the system’s interpretation while viewing 
 
 ## US-38 — Mark document as reviewed (toggle)
 
+**Status**: Implemented (2026-02-17)
+
 **User Story**
 As a veterinarian reviewer, I want to mark a document as reviewed and unmark it later so that I can manage my review queue without losing my corrections.
 
@@ -781,6 +784,8 @@ As a veterinarian reviewer, I want to resize the PDF and structured-data panels 
 ---
 
 ## US-36 — Lean design system (tokens + primitives)
+
+**Status**: Implemented (2026-02-17)
 
 **User Story**
 As a veterinarian reviewing claims, I want a consistent UI foundation (tokens and reusable primitives) so that interactions remain predictable and future editable-field work does not introduce visual drift.
@@ -996,6 +1001,61 @@ As a veterinarian, I want confidence dots/colors in the review UI to reflect map
 **Test Expectations**
 - Confidence dot/color mapping uses `mapping_confidence` with backend-provided confidence band cutoffs.
 - Missing policy configuration triggers explicit degraded-mode UI behavior and a diagnostic/telemetry event without app crash.
+
+**Definition of Done (DoD)**
+- Acceptance criteria satisfied.
+- Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
+
+---
+
+## US-40 — Implement field-level confidence tooltip breakdown
+
+**User Story**
+As a veterinarian, I want to understand why a field confidence looks the way it does so I can triage and review faster.
+
+**Acceptance Criteria**
+- Tooltip renders consistently for all fields that expose confidence dot/band.
+- Tooltip is implemented with the shared wrapper and is keyboard accessible on focus/hover.
+- Tooltip shows overall confidence percentage + band, explanatory copy, and breakdown lines for extraction reliability and review history adjustment.
+- Adjustment semantic styling follows positive/negative/zero rules using existing tokens/classes.
+- Edge cases are rendered deterministically: no history shows adjustment `0`; missing extraction reliability shows `No disponible`.
+- Dot/band behavior remains unchanged and continues to use `mapping_confidence` as the primary visible signal.
+- Confidence computation/propagation behavior is unchanged.
+- Tooltip copy and structure align with [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) section **4.3 Confidence Tooltip Breakdown (Veterinarian UI)**.
+
+**Scope Clarification**
+- Implements the confidence tooltip pattern defined in UX + Design System for veterinarian review fields.
+- `mapping_confidence` remains the primary visible signal (dot + band); tooltip is explanatory.
+- Frontend consumes backend-provided breakdown values as render-only input.
+- This story does not change confidence computation or propagation.
+- This story does not add analytics/chart views, document-level confidence policy UI, recalibration mechanics, field reordering, layout shifts, or governance terminology in veterinarian-facing copy.
+
+**Data Assumptions / Dependencies**
+- Review payload includes field-level `mapping_confidence` (0–1).
+- Review payload may include `extraction_reliability` (0–1, nullable); it must not be inferred from `candidate_confidence`.
+- Review payload includes deterministic `review_history_adjustment` (signed percentage points), with `0` when no history is available.
+- Exact payload shape and sourcing are governed by the authoritative technical docs referenced below.
+
+**Out of Scope**
+- Calibration/policy management UI.
+- Document-level confidence policy UI.
+- Charts, analytics, or historical dashboards.
+- Recalibration logic changes or any confidence algorithm change.
+
+**Authoritative References**
+- UX tooltip contract: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) section **4.3 Confidence Tooltip Breakdown (Veterinarian UI)**.
+- Design system tooltip pattern: [`docs/project/DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md).
+- Technical contract and visibility invariants: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md).
+- Backend sourcing responsibilities: [`docs/project/BACKEND_IMPLEMENTATION.md`](BACKEND_IMPLEMENTATION.md).
+- Frontend rendering responsibilities: [`docs/project/FRONTEND_IMPLEMENTATION.md`](FRONTEND_IMPLEMENTATION.md).
+
+**Test Expectations**
+- Confidence tooltip appears on all confidence-bearing fields with consistent structure and accessibility behavior.
+- Positive/negative/zero adjustment styling uses existing semantic tokens/classes with no new color system.
+- No-history and missing-extraction edge cases render as defined without fallback computation in frontend.
+- No regressions to existing dot/band behavior, field ordering, or review interaction flow.
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
@@ -1585,6 +1645,8 @@ As an operator, I want key runtime configuration externalized and visible in-app
 ---
 
 ## US-33 — PDF Viewer Zoom (Nice to have)
+
+**Status**: Implemented (2026-02-13)
 
 **User Story**
 As a veterinarian reviewer, I want to zoom in/out the PDF viewer so I can read small text without losing context.

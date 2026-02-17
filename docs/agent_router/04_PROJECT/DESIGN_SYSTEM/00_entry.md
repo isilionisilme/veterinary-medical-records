@@ -4,3 +4,6 @@ Use this module for project-level design system rules.
 
 Source of truth:
 - `docs/project/DESIGN_SYSTEM.md`
+
+Propagation note:
+- Confidence tooltip content standard includes optional breakdown lines and positive/negative/neutral adjustment styling using existing semantic tokens.

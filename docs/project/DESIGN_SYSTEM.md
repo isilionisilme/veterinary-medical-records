@@ -130,7 +130,7 @@ Project wrappers standardize repeated review UI patterns:
 - `IconButton`: icon-only button with required accessible name + tooltip.
 - `Section` / `SectionHeader`: report-like section container and heading row.
 - `FieldRow` / `FieldBlock`: label/value row and grouped field block with right-aligned status cluster.
-- `ConfidenceDot`: semantic confidence indicator with tooltip.
+- `ConfidenceDot`: semantic confidence indicator with tooltip (may include a compact breakdown; adjustment text supports positive/negative/neutral treatment).
 - `CriticalBadge`: consistent critical marker.
 - `RepeatableList`: list container for repeatable values.
 - `DocumentStatusChip` (`DocumentStatusCluster` compatibility alias): compact, reusable status chip for document list/sidebar (primary status signal).
@@ -150,6 +150,23 @@ Project wrappers standardize repeated review UI patterns:
 - Default placement is `top`.
 - Content is rendered via Radix `Portal` to avoid clipping in overflow/scroll containers.
 - Do not implement local tooltip logic with ad-hoc `@radix-ui/react-tooltip` usage outside the shared wrapper.
+
+### Confidence tooltip content (standard)
+
+Tooltip template (Spanish):
+- `Confianza: 72% (Media)`
+- `Indica qué tan fiable es el valor extraído automáticamente.`
+- `Desglose:`
+  - `Fiabilidad de la extracción de texto: 65%`
+  - `Ajuste por histórico de revisiones: +7%`
+
+Adjustment coloring rule:
+- `+` uses success semantic styling, `-` uses error semantic styling, `0` uses muted/neutral styling.
+- Reuse existing semantic tokens/classes (for example `status-success`, `status-error`, `text-muted`).
+- Do not introduce new hex colors for this tooltip pattern.
+
+Accessibility reminder:
+- Confidence tooltips must remain keyboard-accessible and must render through the shared tooltip wrapper defined in `frontend/src/components/ui/tooltip.tsx`.
 
 ### Icon-only controls: do / don't
 

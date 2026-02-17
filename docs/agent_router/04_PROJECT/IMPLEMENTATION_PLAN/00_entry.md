@@ -46,4 +46,8 @@ Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for i
 
 ## Propagated updates
 - Story status propagation requires `**Status**: Implemented (YYYY-MM-DD)` updates in the implementation plan when explicitly requested.
+
+### Confidence-related propagation
 - US-38 reviewed-toggle workflow and US-39 confidence-policy alignment are tracked as authoritative story-level contracts in this owner module family.
+- US-40 field-level confidence tooltip breakdown is tracked as a dedicated story-level contract in this owner module family.
+- US-33 is marked implemented with status date `2026-02-13` in the source plan.
