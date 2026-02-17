@@ -978,6 +978,8 @@ As a veterinarian, I want the review view to always use the full Global Schema v
 
 ## US-39 — Align veterinarian confidence signal with mapping confidence policy
 
+**Status**: Implemented (2026-02-17)
+
 **User Story**
 As a veterinarian, I want confidence dots/colors in the review UI to reflect mapping confidence policy so that the signal is consistent, explainable, and reliable for triage.
 
