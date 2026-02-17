@@ -58,3 +58,7 @@ Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for i
 - `docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/510_e1-pdf-text-extraction.md`
 - `docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/520_e2-language-detection.md`
 - `docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/530_e3-dependency-justification-repository-requirement.md`
+
+## Propagated updates (2026-02-17)
+- Context v1 deterministic keying, `mapping_id` learnable-unit identity, and policy thresholds/hysteresis contracts are maintained in technical-design modules.
+- Reviewed signal semantics and calibration observability requirements remain authoritative within this module family.

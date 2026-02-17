@@ -30,3 +30,7 @@ Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for i
 - `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/230_user-story-kickoff-checklist.md`
 - `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/240_definition-of-done.md`
 - `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/250_execution-rule.md`
+
+## Propagated updates (2026-02-17)
+- User-story completion discipline includes same-change status propagation to implementation-plan owner modules when requested.
+- Backfill policy for implemented story status/date updates remains allowed when explicitly requested.

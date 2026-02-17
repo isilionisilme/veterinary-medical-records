@@ -20,3 +20,8 @@ Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for i
 - `docs/agent_router/04_PROJECT/BACKEND_IMPLEMENTATION/130_logging-structured.md`
 - `docs/agent_router/04_PROJECT/BACKEND_IMPLEMENTATION/140_testing-expectations.md`
 - `docs/agent_router/04_PROJECT/BACKEND_IMPLEMENTATION/150_stop-rule.md`
+
+## Propagated updates (2026-02-17)
+- Review-event contracts (`mark_reviewed`, `unmark_reviewed`, `field_edited`, `field_reassigned`) are authoritative in this module set.
+- Calibration-store contracts for (`context_key`, `field_key`, `mapping_id`) ownership are maintained under backend implementation modules.
+- Confidence-calibration observability requirements (old/new confidence and policy-state transitions) are owned in backend implementation modules.
