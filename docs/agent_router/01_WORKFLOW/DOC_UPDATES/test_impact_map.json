@@ -1,5 +1,11 @@
 {
   "fail_on_unmapped_docs": true,
+  "required_doc_globs": [
+    "docs/project/*.md",
+    "docs/project/**/*.md",
+    "docs/shared/*.md",
+    "docs/shared/**/*.md"
+  ],
   "rules": [
     {
       "doc_glob": "docs/agent_router/*.md",

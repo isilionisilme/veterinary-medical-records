@@ -81,6 +81,7 @@ def evaluate_sync(
     changed_files: list[str],
     rules: list[dict[str, object]],
     fail_on_unmapped_docs: bool,
+    required_doc_globs: list[str] | None = None,
 ) -> list[str]:
     changed_docs = [
         path
@@ -93,6 +94,20 @@ def evaluate_sync(
         return findings
 
     valid_rules: list[dict[str, object]] = []
+    normalized_required_globs = [
+        pattern.strip()
+        for pattern in (required_doc_globs or [])
+        if isinstance(pattern, str) and pattern.strip()
+    ]
+
+    if fail_on_unmapped_docs and normalized_required_globs:
+        scoped_docs = [
+            doc for doc in changed_docs if _matches_any(doc, normalized_required_globs)
+        ]
+    else:
+        scoped_docs = []
+
+    mapped_scoped_docs: set[str] = set()
     for raw_rule in rules:
         doc_glob = str(raw_rule.get("doc_glob", "")).strip()
         if not doc_glob:
@@ -124,16 +139,27 @@ def evaluate_sync(
         matched_docs = [doc for doc in changed_docs if fnmatch.fnmatch(doc, doc_glob)]
         for doc in matched_docs:
             doc_to_rules[doc].append(rule)
+            if doc in scoped_docs:
+                mapped_scoped_docs.add(doc)
 
     if fail_on_unmapped_docs:
-        unmapped_docs = [doc for doc, matched in doc_to_rules.items() if not matched]
+        if normalized_required_globs:
+            unmapped_docs = [doc for doc in scoped_docs if doc not in mapped_scoped_docs]
+        else:
+            unmapped_docs = [doc for doc, matched in doc_to_rules.items() if not matched]
         if unmapped_docs:
-            findings.append(
-                "Changed docs with no mapping coverage: "
-                + ", ".join(sorted(unmapped_docs))
-                + ". Add/adjust mapping rules in "
-                + "docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json."
-            )
+            if normalized_required_globs:
+                findings.append(
+                    "Changed docs in required source scope are not mapped in test_impact_map.json: "
+                    + ", ".join(sorted(unmapped_docs))
+                )
+            else:
+                findings.append(
+                    "Changed docs with no mapping coverage: "
+                    + ", ".join(sorted(unmapped_docs))
+                    + ". Add/adjust mapping rules in "
+                    + "docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json."
+                )
 
     for doc, matched_rules in doc_to_rules.items():
         for rule in matched_rules:
@@ -156,7 +182,6 @@ def evaluate_sync(
                     "but no owner propagation file changed. Expected one of: "
                     f"{', '.join(owner_patterns)}"
                 )
-
     return findings
 
 
@@ -178,7 +203,27 @@ def main() -> int:
     config = _load_config(Path(args.map_file))
     rules = config.get("rules", [])
     fail_on_unmapped_docs = bool(config.get("fail_on_unmapped_docs", False))
-    findings = evaluate_sync(changed_files, rules, fail_on_unmapped_docs)
+    required_doc_globs_raw = config.get("required_doc_globs", [])
+    if required_doc_globs_raw is None:
+        required_doc_globs_raw = []
+    if not isinstance(required_doc_globs_raw, list):
+        print(
+            f"Invalid required_doc_globs list in {args.map_file}",
+            file=sys.stderr,
+        )
+        return 2
+
+    required_doc_globs = [
+        str(item).strip()
+        for item in required_doc_globs_raw
+        if str(item).strip()
+    ]
+    findings = evaluate_sync(
+        changed_files,
+        rules,
+        fail_on_unmapped_docs,
+        required_doc_globs=required_doc_globs,
+    )
 
     if findings:
         print("Doc/test sync guard failed.")

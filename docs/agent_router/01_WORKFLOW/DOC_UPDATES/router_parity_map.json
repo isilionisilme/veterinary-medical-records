@@ -115,7 +115,10 @@
             "Signals & Weighting (qualitative)",
             "Policy State (soft behavior)",
             "Confidence Propagation & Calibration",
-            "Global Schema v0 keys/order do not change automatically during this propagation"
+            "Global Schema v0 keys/order do not change automatically during this propagation",
+            "smoothing to avoid abrupt oscillations from isolated events",
+            "thresholds are met with hysteresis and minimum volume",
+            "captured as a structural signal"
           ]
         }
       ]

@@ -190,10 +190,13 @@ def main() -> int:
             print(f"- {finding}")
         return 1
 
-    if any(path.startswith("docs/") and path.endswith(".md") for path in changed_files):
+    if any(
+        any(fnmatch.fnmatch(path, str(rule.get("source_doc", "")).strip()) for rule in rules)
+        for path in changed_files
+    ):
         print("Doc/router parity guard passed.")
     else:
-        print("Doc/router parity guard: no project docs changed.")
+        print("Doc/router parity guard: no mapped source docs changed.")
     return 0
 
 

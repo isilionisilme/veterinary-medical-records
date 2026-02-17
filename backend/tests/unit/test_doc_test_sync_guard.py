@@ -80,6 +80,39 @@ def test_evaluate_sync_covers_root_router_docs() -> None:
     assert "test_doc_router_contract.py" in findings[0]
 
 
+def test_evaluate_sync_fails_on_unmapped_doc_in_required_scope() -> None:
+    module = _load_guard_module()
+    findings = module.evaluate_sync(
+        changed_files=["docs/project/UX_DESIGN.md"],
+        rules=[
+            {
+                "doc_glob": "docs/shared/BRAND_GUIDELINES.md",
+                "required_any": ["scripts/check_brand_compliance.py"],
+            }
+        ],
+        fail_on_unmapped_docs=True,
+        required_doc_globs=["docs/project/*.md", "docs/shared/*.md"],
+    )
+    assert len(findings) == 1
+    assert "not mapped in test_impact_map.json" in findings[0]
+
+
+def test_evaluate_sync_ignores_unmapped_doc_outside_required_scope() -> None:
+    module = _load_guard_module()
+    findings = module.evaluate_sync(
+        changed_files=["docs/extraction/STRATEGY.md"],
+        rules=[
+            {
+                "doc_glob": "docs/shared/BRAND_GUIDELINES.md",
+                "required_any": ["scripts/check_brand_compliance.py"],
+            }
+        ],
+        fail_on_unmapped_docs=True,
+        required_doc_globs=["docs/project/*.md", "docs/shared/*.md"],
+    )
+    assert findings == []
+
+
 def test_evaluate_sync_fails_on_unmapped_doc_when_fail_closed_enabled() -> None:
     module = _load_guard_module()
     findings = module.evaluate_sync(
