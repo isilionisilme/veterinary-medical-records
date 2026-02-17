@@ -3930,7 +3930,7 @@ export function App() {
       {connectivityToast && (
         <div className="fixed left-1/2 top-10 z-[65] w-full max-w-lg -translate-x-1/2 px-4 sm:w-[32rem]">
           <div
-            className="rounded-2xl bg-red-50 px-5 py-4 text-red-700"
+            className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-red-700"
             role="status"
           >
             <div className="flex items-start justify-between gap-3">
@@ -3953,10 +3953,10 @@ export function App() {
                 }`}
               >
                 <div
-            className={`rounded-2xl px-5 py-4 text-base ${
+            className={`rounded-2xl border px-5 py-4 text-base ${
               uploadFeedback.kind === "success"
-                ? "bg-emerald-50 text-emerald-700"
-                : "bg-red-50 text-red-700"
+                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                : "border-red-200 bg-red-50 text-red-700"
             }`}
             role="status"
           >
@@ -4005,10 +4005,12 @@ export function App() {
                 }`}
               >
                 <div
-                  className={`rounded-2xl px-5 py-4 text-base ${
+                  className={`rounded-2xl border px-5 py-4 text-base ${
                     actionFeedback.kind === "success"
-                      ? "bg-emerald-50 text-emerald-700"
-                      : "bg-red-50 text-red-700"
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : actionFeedback.kind === "info"
+                        ? "border-blue-200 bg-blue-50 text-blue-700"
+                        : "border-red-200 bg-red-50 text-red-700"
                   }`}
                   role="status"
                 >
