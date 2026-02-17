@@ -62,7 +62,17 @@ async function openReadyDocumentAndGetPanel() {
 }
 
 function installReviewedModeFetchMock() {
-  const docs = [
+  const docs: Array<{
+    document_id: string;
+    original_filename: string;
+    created_at: string;
+    status: string;
+    status_label: string;
+    failure_type: string | null;
+    review_status: "IN_REVIEW" | "REVIEWED";
+    reviewed_at: string | null;
+    reviewed_by: string | null;
+  }> = [
     {
       document_id: "doc-ready",
       original_filename: "ready.pdf",
@@ -70,9 +80,9 @@ function installReviewedModeFetchMock() {
       status: "COMPLETED",
       status_label: "Completed",
       failure_type: null,
-      review_status: "IN_REVIEW" as const,
-      reviewed_at: null as string | null,
-      reviewed_by: null as string | null,
+      review_status: "IN_REVIEW",
+      reviewed_at: null,
+      reviewed_by: null,
     },
   ];
 

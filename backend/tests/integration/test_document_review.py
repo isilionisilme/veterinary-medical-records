@@ -407,3 +407,66 @@ def test_interpretation_edit_returns_conflict_when_active_run_exists(test_client
     payload = response.json()
     assert payload["error_code"] == "CONFLICT"
     assert payload["details"]["reason"] == "REVIEW_BLOCKED_BY_ACTIVE_RUN"
+
+
+def test_interpretation_edit_returns_conflict_when_base_version_mismatches(test_client):
+    document_id = _upload_sample_document(test_client)
+    run_id = "run-review-edit-version-mismatch"
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(run_id=run_id)
+
+    response = test_client.post(
+        f"/runs/{run_id}/interpretations",
+        json={
+            "base_version_number": 2,
+            "changes": [
+                {
+                    "op": "UPDATE",
+                    "field_id": "field-1",
+                    "value": "Nala",
+                    "value_type": "string",
+                }
+            ],
+        },
+    )
+
+    assert response.status_code == 409
+    payload = response.json()
+    assert payload["error_code"] == "CONFLICT"
+    assert payload["details"]["reason"] == "BASE_VERSION_MISMATCH"
+
+
+def test_interpretation_edit_returns_conflict_when_interpretation_is_missing(test_client):
+    document_id = _upload_sample_document(test_client)
+    run_id = "run-review-edit-missing-interpretation"
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+
+    response = test_client.post(
+        f"/runs/{run_id}/interpretations",
+        json={
+            "base_version_number": 1,
+            "changes": [
+                {
+                    "op": "UPDATE",
+                    "field_id": "field-1",
+                    "value": "Nala",
+                    "value_type": "string",
+                }
+            ],
+        },
+    )
+
+    assert response.status_code == 409
+    payload = response.json()
+    assert payload["error_code"] == "CONFLICT"
+    assert payload["details"]["reason"] == "INTERPRETATION_MISSING"

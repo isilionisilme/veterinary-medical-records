@@ -21,6 +21,7 @@ import { SectionBlock, SectionHeader } from "./components/app/Section";
 import { DocumentsSidebar } from "./components/DocumentsSidebar";
 import { PdfViewer } from "./components/PdfViewer";
 import { SourcePanel } from "./components/SourcePanel";
+import { AddFieldDialog } from "./components/structured/AddFieldDialog";
 import { FieldEditDialog } from "./components/structured/FieldEditDialog";
 import { UploadDropzone } from "./components/UploadDropzone";
 import { ToastHost } from "./components/toast/ToastHost";
@@ -1053,6 +1054,9 @@ export function App() {
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [editingField, setEditingField] = useState<ReviewSelectableField | null>(null);
   const [editingFieldDraftValue, setEditingFieldDraftValue] = useState("");
+  const [isAddFieldDialogOpen, setIsAddFieldDialogOpen] = useState(false);
+  const [addFieldKeyDraft, setAddFieldKeyDraft] = useState("");
+  const [addFieldValueDraft, setAddFieldValueDraft] = useState("");
   const [evidenceNotice, setEvidenceNotice] = useState<string | null>(null);
   const [expandedFieldValues, setExpandedFieldValues] = useState<Record<string, boolean>>({});
   const [reviewLoadingDocId, setReviewLoadingDocId] = useState<string | null>(null);
@@ -2891,11 +2895,19 @@ export function App() {
   };
 
   const handleAddField = () => {
-    const keyInput = window.prompt("Clave del nuevo campo", "");
-    if (keyInput === null) {
-      return;
-    }
-    const key = keyInput.trim();
+    setAddFieldKeyDraft("");
+    setAddFieldValueDraft("");
+    setIsAddFieldDialogOpen(true);
+  };
+
+  const closeAddFieldDialog = () => {
+    setIsAddFieldDialogOpen(false);
+    setAddFieldKeyDraft("");
+    setAddFieldValueDraft("");
+  };
+
+  const saveAddFieldDialog = () => {
+    const key = addFieldKeyDraft.trim();
     if (!key) {
       setActionFeedback({
         kind: "error",
@@ -2903,11 +2915,7 @@ export function App() {
       });
       return;
     }
-    const valueInput = window.prompt(`Valor para "${key}"`, "");
-    if (valueInput === null) {
-      return;
-    }
-    const value = valueInput.trim();
+    const value = addFieldValueDraft.trim();
     submitInterpretationChanges(
       [
         {
@@ -2919,6 +2927,7 @@ export function App() {
       ],
       "Campo añadido."
     );
+    closeAddFieldDialog();
   };
 
   const openFieldEditDialog = (item: ReviewSelectableField) => {
@@ -3020,6 +3029,70 @@ export function App() {
     );
   };
 
+  const renderEditableFieldValue = (options: {
+    item: ReviewSelectableField;
+    value: string;
+    isLongText: boolean;
+    longTextTestId?: string;
+    shortTextTestId?: string;
+  }) => {
+    const { item, value, isLongText, longTextTestId, shortTextTestId } = options;
+    const isFieldModified = item.rawField?.origin === "human";
+    const modifiedValueClass = isFieldModified
+      ? "bg-amber-50 ring-1 ring-amber-300/70"
+      : "";
+
+    return (
+      <div className="relative rounded-control">
+        {isLongText ? (
+          renderLongTextValue({
+            value,
+            isMissing: item.isMissing,
+            missingClassName: isDocumentReviewed
+              ? `text-missing ${modifiedValueClass}`
+              : `text-missing pr-9 ${modifiedValueClass}`,
+            valueClassName: isDocumentReviewed
+              ? `text-text ${modifiedValueClass}`
+              : `text-text pr-9 ${modifiedValueClass}`,
+            testId: longTextTestId,
+          })
+        ) : (
+          <ValueSurface
+            testId={shortTextTestId}
+            variant="short"
+            className={
+              item.isMissing
+                ? isDocumentReviewed
+                  ? `relative italic text-missing ${modifiedValueClass}`
+                  : `relative pr-9 italic text-missing ${modifiedValueClass}`
+                : isDocumentReviewed
+                  ? `relative text-text ${modifiedValueClass}`
+                  : `relative pr-9 text-text ${modifiedValueClass}`
+            }
+          >
+            {value}
+          </ValueSurface>
+        )}
+        {!isDocumentReviewed && (
+          <IconButton
+            label="Editar"
+            tooltip="Editar"
+            type="button"
+            className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 rounded-md border-0 bg-transparent p-0 text-text opacity-55 hover:bg-surfaceMuted hover:opacity-100 focus-visible:opacity-100"
+            disabled={interpretationEditMutation.isPending}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              openFieldEditDialog(item);
+            }}
+          >
+            <Pencil className="h-4 w-4" aria-hidden="true" />
+          </IconButton>
+        )}
+      </div>
+    );
+  };
+
   const renderRepeatableReviewField = (field: ReviewDisplayField) => {
     const countLabel = field.items.length === 1 ? "1 elemento" : `${field.items.length} elementos`;
     return (
@@ -3044,10 +3117,6 @@ export function App() {
           {field.items.map((item) => {
             const isSelected = selectedFieldId === item.id;
             const isLongText = shouldRenderLongTextValue(field.key, item.displayValue);
-            const isFieldModified = item.rawField?.origin === "human";
-            const modifiedValueClass = isFieldModified
-              ? "bg-amber-50 ring-1 ring-amber-300/70"
-              : "";
             return (
               <div
                 key={item.id}
@@ -3070,53 +3139,11 @@ export function App() {
                       labelMeta={null}
                       className={STRUCTURED_FIELD_ROW_CLASS}
                       valuePlacement={isLongText ? "below-label" : "inline"}
-                      value={
-                        <div className="relative rounded-control">
-                          {isLongText ? (
-                            renderLongTextValue({
-                              value: item.displayValue,
-                              isMissing: item.isMissing,
-                              missingClassName: isDocumentReviewed
-                                ? `text-missing ${modifiedValueClass}`
-                                : `text-missing pr-9 ${modifiedValueClass}`,
-                              valueClassName: isDocumentReviewed
-                                ? `text-text ${modifiedValueClass}`
-                                : `text-text pr-9 ${modifiedValueClass}`,
-                            })
-                          ) : (
-                            <ValueSurface
-                              variant="short"
-                              className={
-                                item.isMissing
-                                  ? isDocumentReviewed
-                                    ? `relative italic text-missing ${modifiedValueClass}`
-                                    : `relative pr-9 italic text-missing ${modifiedValueClass}`
-                                  : isDocumentReviewed
-                                    ? `relative text-text ${modifiedValueClass}`
-                                    : `relative pr-9 text-text ${modifiedValueClass}`
-                              }
-                            >
-                              {item.displayValue}
-                            </ValueSurface>
-                          )}
-                          {!isDocumentReviewed && (
-                            <IconButton
-                              label="Editar"
-                              tooltip="Editar"
-                              type="button"
-                              className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 rounded-md border-0 bg-transparent p-0 text-text opacity-55 hover:bg-surfaceMuted hover:opacity-100 focus-visible:opacity-100"
-                              disabled={interpretationEditMutation.isPending}
-                              onClick={(event) => {
-                                event.preventDefault();
-                                event.stopPropagation();
-                                openFieldEditDialog(item);
-                              }}
-                            >
-                              <Pencil className="h-4 w-4" aria-hidden="true" />
-                            </IconButton>
-                          )}
-                        </div>
-                      }
+                      value={renderEditableFieldValue({
+                        item,
+                        value: item.displayValue,
+                        isLongText,
+                      })}
                     />
                 </button>
               </div>
@@ -3135,10 +3162,6 @@ export function App() {
     const isSelected = selectedFieldId === item.id;
     const isExpanded = Boolean(expandedFieldValues[item.id]);
     const shouldUseLongText = shouldRenderLongTextValue(field.key, item.displayValue);
-    const isFieldModified = item.rawField?.origin === "human";
-    const modifiedValueClass = isFieldModified
-      ? "bg-amber-50 ring-1 ring-amber-300/70"
-      : "";
     const shouldSpanFullSectionWidth = shouldUseLongText;
     const valueText = shouldUseLongText
       ? item.displayValue
@@ -3176,55 +3199,13 @@ export function App() {
             }
             className={STRUCTURED_FIELD_ROW_CLASS}
             valuePlacement={shouldUseLongText ? "below-label" : "inline"}
-            value={
-              <div className="relative rounded-control">
-                {shouldUseLongText ? (
-                  renderLongTextValue({
-                    value: valueText,
-                    isMissing: item.isMissing,
-                    missingClassName: isDocumentReviewed
-                      ? `text-missing ${modifiedValueClass}`
-                      : `text-missing pr-9 ${modifiedValueClass}`,
-                    valueClassName: isDocumentReviewed
-                      ? `text-text ${modifiedValueClass}`
-                      : `text-text pr-9 ${modifiedValueClass}`,
-                    testId: `field-value-${field.key}`,
-                  })
-                ) : (
-                  <ValueSurface
-                    testId={`${styledPrefix}-value-${field.key}`}
-                    variant="short"
-                    className={
-                      item.isMissing
-                        ? isDocumentReviewed
-                          ? `relative italic text-missing ${modifiedValueClass}`
-                          : `relative pr-9 italic text-missing ${modifiedValueClass}`
-                        : isDocumentReviewed
-                          ? `relative text-text ${modifiedValueClass}`
-                          : `relative pr-9 text-text ${modifiedValueClass}`
-                    }
-                  >
-                    {valueText}
-                  </ValueSurface>
-                )}
-                {!isDocumentReviewed && (
-                  <IconButton
-                    label="Editar"
-                    tooltip="Editar"
-                    type="button"
-                    className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 rounded-md border-0 bg-transparent p-0 text-text opacity-55 hover:bg-surfaceMuted hover:opacity-100 focus-visible:opacity-100"
-                    disabled={interpretationEditMutation.isPending}
-                    onClick={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      openFieldEditDialog(item);
-                    }}
-                  >
-                    <Pencil className="h-4 w-4" aria-hidden="true" />
-                  </IconButton>
-                )}
-              </div>
-            }
+            value={renderEditableFieldValue({
+              item,
+              value: valueText,
+              isLongText: shouldUseLongText,
+              longTextTestId: `field-value-${field.key}`,
+              shortTextTestId: `${styledPrefix}-value-${field.key}`,
+            })}
           />
         </button>
         {canExpand && (
@@ -3358,6 +3339,20 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-page px-4 py-3 md:px-6 lg:px-8 xl:px-10">
+      <AddFieldDialog
+        open={isAddFieldDialogOpen}
+        isSaving={interpretationEditMutation.isPending}
+        fieldKey={addFieldKeyDraft}
+        fieldValue={addFieldValueDraft}
+        onFieldKeyChange={setAddFieldKeyDraft}
+        onFieldValueChange={setAddFieldValueDraft}
+        onOpenChange={(open) => {
+          if (!open) {
+            closeAddFieldDialog();
+          }
+        }}
+        onSave={saveAddFieldDialog}
+      />
       <FieldEditDialog
         open={editingField !== null}
         fieldLabel={editingField?.label ?? ""}
