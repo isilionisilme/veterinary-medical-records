@@ -1,3 +1,4 @@
+// Variant ownership by flow: uploads use success/error, action toasts use success/info/error.
 export type UploadFeedback = {
   kind: "success" | "error";
   message: string;
