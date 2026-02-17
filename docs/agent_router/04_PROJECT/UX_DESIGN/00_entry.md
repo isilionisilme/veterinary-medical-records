@@ -17,6 +17,6 @@ Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for i
 - `docs/agent_router/04_PROJECT/UX_DESIGN/90_8-separation-of-responsibilities-non-negotiable.md`
 - `docs/agent_router/04_PROJECT/UX_DESIGN/100_9-final-ux-rule.md`
 
-## Propagated updates (2026-02-17)
+## Propagated updates
 - UX confidence semantics distinguish `candidate_confidence` (diagnostic) from `mapping_confidence` (veterinarian-facing signal).
 - Reviewed-toggle behavior and implicit unchanged-field weak-positive signal contracts are reflected in UX owner modules.
