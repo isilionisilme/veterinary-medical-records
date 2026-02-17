@@ -281,6 +281,34 @@ def test_repeatable_fields_are_capped_to_three_candidates_in_global_schema() -> 
     assert len(diagnosis) == 3
 
 
+def test_interpretation_artifact_exposes_confidence_policy_cutoffs() -> None:
+    payload = _build_interpretation_artifact(
+        document_id="doc-policy",
+        run_id="run-policy",
+        raw_text="Paciente: Luna",
+    )
+
+    confidence_policy = payload["data"]["confidence_policy"]
+    assert confidence_policy["policy_version"] == "v1"
+    assert confidence_policy["band_cutoffs"] == {"low_max": 0.5, "mid_max": 0.75}
+
+
+def test_structured_fields_include_mapping_confidence_signal() -> None:
+    payload = _build_interpretation_artifact(
+        document_id="doc-mapping-confidence",
+        run_id="run-mapping-confidence",
+        raw_text="Paciente: Luna",
+    )
+
+    pet_name_field = next(
+        field
+        for field in payload["data"]["fields"]
+        if isinstance(field, dict) and field.get("key") == "pet_name"
+    )
+    assert "mapping_confidence" in pet_name_field
+    assert pet_name_field["mapping_confidence"] == pet_name_field["confidence"]
+
+
 def test_mvp_coverage_debug_includes_line_number_for_accepted_value() -> None:
     payload = _build_interpretation_artifact(
         document_id="doc-line-debug",

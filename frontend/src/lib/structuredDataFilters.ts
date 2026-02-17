@@ -3,6 +3,7 @@ export type ConfidenceBucket = "low" | "medium" | "high";
 export type StructuredFilterItem = {
   displayValue: string;
   confidence: number;
+  confidenceBand: ConfidenceBucket | null;
   isMissing: boolean;
 };
 
@@ -21,16 +22,6 @@ export type StructuredDataFilters = {
   onlyWithValue: boolean;
   onlyEmpty: boolean;
 };
-
-export function getConfidenceBucket(confidence: number): ConfidenceBucket {
-  if (confidence < 0.25) {
-    return "low";
-  }
-  if (confidence < 0.75) {
-    return "medium";
-  }
-  return "high";
-}
 
 function hasRenderableValue(field: StructuredFilterField): boolean {
   if (field.repeatable) {
@@ -58,9 +49,7 @@ function matchesConfidence(field: StructuredFilterField, selected: ConfidenceBuc
     return true;
   }
   const allowed = new Set(selected);
-  return field.items.some(
-    (item) => !item.isMissing && allowed.has(getConfidenceBucket(item.confidence))
-  );
+  return field.items.some((item) => !item.isMissing && item.confidenceBand !== null && allowed.has(item.confidenceBand));
 }
 
 export function matchesStructuredDataFilters(

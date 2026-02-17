@@ -30,7 +30,11 @@ from backend.app.application.global_schema_v0 import (
     normalize_global_schema_v0,
     validate_global_schema_v0_shape,
 )
-from backend.app.config import extraction_observability_enabled
+from backend.app.config import (
+    confidence_band_cutoffs,
+    confidence_policy_version,
+    extraction_observability_enabled,
+)
 from backend.app.domain.models import (
     ProcessingRun,
     ProcessingRunState,
@@ -552,6 +556,7 @@ def _build_interpretation_artifact(
         )
     ]
     now_iso = _default_now_iso()
+    low_max, mid_max = confidence_band_cutoffs()
     mvp_coverage_debug = _build_mvp_coverage_debug_summary(
         raw_text=raw_text,
         normalized_values=normalized_values,
@@ -564,6 +569,13 @@ def _build_interpretation_artifact(
         "processing_run_id": run_id,
         "created_at": now_iso,
         "fields": fields,
+        "confidence_policy": {
+            "policy_version": confidence_policy_version(),
+            "band_cutoffs": {
+                "low_max": round(low_max, 4),
+                "mid_max": round(mid_max, 4),
+            },
+        },
         "global_schema_v0": normalized_values,
         "summary": {
             "total_keys": len(GLOBAL_SCHEMA_V0_KEYS),
@@ -1553,12 +1565,14 @@ def _build_structured_field(
     normalized_snippet = snippet.strip()
     if len(normalized_snippet) > 180:
         normalized_snippet = normalized_snippet[:177].rstrip() + "..."
+    mapping_confidence = round(min(max(confidence, 0.0), 1.0), 2)
     return {
         "field_id": str(uuid4()),
         "key": key,
         "value": value,
         "value_type": value_type,
-        "confidence": round(min(max(confidence, 0.0), 1.0), 2),
+        "mapping_confidence": mapping_confidence,
+        "confidence": mapping_confidence,
         "is_critical": key in CRITICAL_KEYS_V0,
         "origin": "machine",
         "evidence": {
