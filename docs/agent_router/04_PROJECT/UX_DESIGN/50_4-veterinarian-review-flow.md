@@ -18,6 +18,15 @@ These elements must never be split into separate screens.
 
 The UI guides *where to look first*, not *what to decide*.
 
+### Confidence tooltip breakdown (veterinarian UI)
+
+- `mapping_confidence` remains the primary visible confidence signal.
+- Numeric values are secondary and shown in tooltip details only.
+- Tooltip may include:
+  - `Fiabilidad de la extracción de texto` (per-document diagnostic for current run)
+  - `Ajuste por histórico de revisiones` (cross-document/system-level explanatory adjustment)
+- Keep veterinarian-facing copy free of governance terminology.
+
 ---
 
 ## Step 3 — Immediate Local Correction

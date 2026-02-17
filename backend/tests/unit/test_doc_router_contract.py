@@ -227,3 +227,54 @@ def test_product_design_module_76_includes_confidence_context_contract_terms() -
         "Global Schema v0 keys/order do not change automatically during this propagation",
     ):
         assert required_term in module_76
+
+
+def test_project_owner_modules_include_confidence_tooltip_breakdown_propagation() -> None:
+    ux_module = _read_text(
+        ROUTER_ROOT / "04_PROJECT" / "UX_DESIGN" / "50_4-veterinarian-review-flow.md"
+    )
+    design_system_module = _read_text(
+        ROUTER_ROOT / "04_PROJECT" / "DESIGN_SYSTEM" / "00_entry.md"
+    )
+    technical_module = _read_text(
+        ROUTER_ROOT
+        / "04_PROJECT"
+        / "TECHNICAL_DESIGN"
+        / "140_7-confidence-technical-contract.md"
+    )
+    backend_module = _read_text(
+        ROUTER_ROOT
+        / "04_PROJECT"
+        / "BACKEND_IMPLEMENTATION"
+        / "100_structured-interpretation-schema.md"
+    )
+    frontend_module = _read_text(
+        ROUTER_ROOT
+        / "04_PROJECT"
+        / "FRONTEND_IMPLEMENTATION"
+        / "110_confidence-rendering.md"
+    )
+    implementation_plan_release = _read_text(
+        ROUTER_ROOT
+        / "04_PROJECT"
+        / "IMPLEMENTATION_PLAN"
+        / "110_release-5-editing-learning-signals-human-corrections.md"
+    )
+
+    assert "Confidence tooltip breakdown" in ux_module
+    assert "optional breakdown lines" in design_system_module
+    assert "Tooltip breakdown visibility contract (MVP)" in technical_module
+    assert "Tooltip breakdown data sourcing (MVP)" in backend_module
+    assert "Confidence tooltip breakdown rendering (MVP)" in frontend_module
+    assert (
+        "US-39 — Align veterinarian confidence signal with mapping confidence policy"
+        in implementation_plan_release
+    )
+    assert (
+        "US-40 — Implement field-level confidence tooltip breakdown"
+        in implementation_plan_release
+    )
+    assert (
+        "US-32 — Align review rendering to Global Schema v0 template"
+        in implementation_plan_release
+    )

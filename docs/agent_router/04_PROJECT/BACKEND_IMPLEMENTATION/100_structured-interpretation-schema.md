@@ -23,3 +23,10 @@ Source of truth: [`docs/project/PRODUCT_DESIGN.md`](../PRODUCT_DESIGN/00_entry.m
 Backend responsibility:
 - Apply deterministic derivation at write-time (or validate on write).
 - Do not allow the model to decide criticality.
+
+## Tooltip breakdown data sourcing (MVP)
+
+- Backend provides tooltip breakdown values when available.
+- `extraction_reliability` comes from run/extraction diagnostics; if unavailable, expose `null`.
+- `review_history_adjustment` comes from calibration aggregates for (`context_key`, `field_key`, `mapping_id`) under active `policy_version`; when no history exists, expose deterministic `0`.
+- Frontend must not compute these values.
