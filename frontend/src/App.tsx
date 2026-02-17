@@ -10,7 +10,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { AlignLeft, Check, Download, FileText, Info, RefreshCw, Search, X } from "lucide-react";
+import { AlignLeft, Check, Download, FileText, Info, Pencil, RefreshCw, Search, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { ConfidenceDot } from "./components/app/ConfidenceDot";
@@ -3078,38 +3078,54 @@ export function App() {
                       className={STRUCTURED_FIELD_ROW_CLASS}
                       valuePlacement={isLongText ? "below-label" : "inline"}
                       value={
-                        isLongText ? (
-                          renderLongTextValue({
-                            value: item.displayValue,
-                            isMissing: item.isMissing,
-                            missingClassName: "text-missing",
-                            valueClassName: "text-text",
-                          })
-                        ) : (
-                          <ValueSurface
-                            variant="short"
-                            className={item.isMissing ? "italic text-missing" : "text-text"}
-                          >
-                            {item.displayValue}
-                          </ValueSurface>
-                        )
+                        <div className="relative">
+                          {isLongText ? (
+                            renderLongTextValue({
+                              value: item.displayValue,
+                              isMissing: item.isMissing,
+                              missingClassName: isDocumentReviewed
+                                ? "text-missing"
+                                : "text-missing pr-9",
+                              valueClassName: isDocumentReviewed ? "text-text" : "text-text pr-9",
+                            })
+                          ) : (
+                            <ValueSurface
+                              variant="short"
+                              className={
+                                item.isMissing
+                                  ? isDocumentReviewed
+                                    ? "relative italic text-missing"
+                                    : "relative pr-9 italic text-missing"
+                                  : isDocumentReviewed
+                                    ? "relative text-text"
+                                    : "relative pr-9 text-text"
+                              }
+                            >
+                              {item.displayValue}
+                            </ValueSurface>
+                          )}
+                          {!isDocumentReviewed && (
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 p-0 rounded-md text-text opacity-55 hover:opacity-100 focus-visible:opacity-100 hover:bg-surfaceMuted"
+                              aria-label="Editar"
+                              title="Editar"
+                              disabled={interpretationEditMutation.isPending}
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                openFieldEditDialog(item);
+                              }}
+                            >
+                              <Pencil className="h-4 w-4" aria-hidden="true" />
+                            </Button>
+                          )}
+                        </div>
                       }
                     />
                 </button>
-                {!isDocumentReviewed && (
-                  <div className="mt-1 flex justify-end">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      className="border border-border bg-surface text-text hover:bg-surfaceMuted"
-                      disabled={interpretationEditMutation.isPending}
-                      onClick={() => openFieldEditDialog(item)}
-                    >
-                      Editar
-                    </Button>
-                  </div>
-                )}
               </div>
             );
           })}
@@ -3167,40 +3183,54 @@ export function App() {
             className={STRUCTURED_FIELD_ROW_CLASS}
             valuePlacement={shouldUseLongText ? "below-label" : "inline"}
             value={
-              shouldUseLongText ? (
-                renderLongTextValue({
-                  value: valueText,
-                  isMissing: item.isMissing,
-                  missingClassName: "text-missing",
-                  valueClassName: "text-text",
-                  testId: `field-value-${field.key}`,
-                })
-              ) : (
-                <ValueSurface
-                  testId={`${styledPrefix}-value-${field.key}`}
-                  variant="short"
-                  className={item.isMissing ? "italic text-missing" : "text-text"}
-                >
-                  {valueText}
-                </ValueSurface>
-              )
+              <div className="relative">
+                {shouldUseLongText ? (
+                  renderLongTextValue({
+                    value: valueText,
+                    isMissing: item.isMissing,
+                    missingClassName: isDocumentReviewed ? "text-missing" : "text-missing pr-9",
+                    valueClassName: isDocumentReviewed ? "text-text" : "text-text pr-9",
+                    testId: `field-value-${field.key}`,
+                  })
+                ) : (
+                  <ValueSurface
+                    testId={`${styledPrefix}-value-${field.key}`}
+                    variant="short"
+                    className={
+                      item.isMissing
+                        ? isDocumentReviewed
+                          ? "relative italic text-missing"
+                          : "relative pr-9 italic text-missing"
+                        : isDocumentReviewed
+                          ? "relative text-text"
+                          : "relative pr-9 text-text"
+                    }
+                  >
+                    {valueText}
+                  </ValueSurface>
+                )}
+                {!isDocumentReviewed && (
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 p-0 rounded-md text-text opacity-55 hover:opacity-100 focus-visible:opacity-100 hover:bg-surfaceMuted"
+                    aria-label="Editar"
+                    title="Editar"
+                    disabled={interpretationEditMutation.isPending}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      openFieldEditDialog(item);
+                    }}
+                  >
+                    <Pencil className="h-4 w-4" aria-hidden="true" />
+                  </Button>
+                )}
+              </div>
             }
           />
         </button>
-        {!isDocumentReviewed && (
-          <div className="mt-1 flex justify-end">
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              className="border border-border bg-surface text-text hover:bg-surfaceMuted"
-              disabled={interpretationEditMutation.isPending}
-              onClick={() => openFieldEditDialog(item)}
-            >
-              Editar
-            </Button>
-          </div>
-        )}
         {canExpand && (
           <button
             type="button"
