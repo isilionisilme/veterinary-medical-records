@@ -237,6 +237,9 @@ class DocumentReview:
     latest_completed_run: LatestCompletedRunReview
     active_interpretation: ActiveInterpretationReview
     raw_text_artifact: RawTextArtifactAvailability
+    review_status: str
+    reviewed_at: str | None
+    reviewed_by: str | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -332,6 +335,9 @@ def get_document_review(
                     run_id=latest_completed_run.run_id,
                 ),
             ),
+            review_status=document.review_status.value,
+            reviewed_at=document.reviewed_at,
+            reviewed_by=document.reviewed_by,
         ),
         unavailable_reason=None,
     )
@@ -391,6 +397,9 @@ class DocumentListItem:
     status: str
     status_label: str
     failure_type: str | None
+    review_status: str
+    reviewed_at: str | None
+    reviewed_by: str | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -435,4 +444,95 @@ def _to_list_item(*, row: DocumentWithLatestRun) -> DocumentListItem:
         status=status_view.status.value,
         status_label=map_status_label(status_view.status),
         failure_type=status_view.failure_type,
+        review_status=row.document.review_status.value,
+        reviewed_at=row.document.reviewed_at,
+        reviewed_by=row.document.reviewed_by,
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewToggleResult:
+    """Document review toggle result."""
+
+    document_id: str
+    review_status: str
+    reviewed_at: str | None
+    reviewed_by: str | None
+
+
+def mark_document_reviewed(
+    *,
+    document_id: str,
+    repository: DocumentRepository,
+    now_provider: Callable[[], str] = _default_now_iso,
+    reviewed_by: str | None = None,
+) -> ReviewToggleResult | None:
+    """Mark a document as reviewed (idempotent)."""
+
+    document = repository.get(document_id)
+    if document is None:
+        return None
+
+    if document.review_status == ReviewStatus.REVIEWED:
+        return ReviewToggleResult(
+            document_id=document.document_id,
+            review_status=document.review_status.value,
+            reviewed_at=document.reviewed_at,
+            reviewed_by=document.reviewed_by,
+        )
+
+    reviewed_at = now_provider()
+    updated = repository.update_review_status(
+        document_id=document_id,
+        review_status=ReviewStatus.REVIEWED.value,
+        updated_at=reviewed_at,
+        reviewed_at=reviewed_at,
+        reviewed_by=reviewed_by,
+    )
+    if updated is None:
+        return None
+
+    return ReviewToggleResult(
+        document_id=updated.document_id,
+        review_status=updated.review_status.value,
+        reviewed_at=updated.reviewed_at,
+        reviewed_by=updated.reviewed_by,
+    )
+
+
+def reopen_document_review(
+    *,
+    document_id: str,
+    repository: DocumentRepository,
+    now_provider: Callable[[], str] = _default_now_iso,
+) -> ReviewToggleResult | None:
+    """Reopen a reviewed document (idempotent)."""
+
+    document = repository.get(document_id)
+    if document is None:
+        return None
+
+    if document.review_status == ReviewStatus.IN_REVIEW:
+        return ReviewToggleResult(
+            document_id=document.document_id,
+            review_status=document.review_status.value,
+            reviewed_at=document.reviewed_at,
+            reviewed_by=document.reviewed_by,
+        )
+
+    updated = repository.update_review_status(
+        document_id=document_id,
+        review_status=ReviewStatus.IN_REVIEW.value,
+        updated_at=now_provider(),
+        reviewed_at=None,
+        reviewed_by=None,
+    )
+    if updated is None:
+        return None
+
+    return ReviewToggleResult(
+        document_id=updated.document_id,
+        review_status=updated.review_status.value,
+        reviewed_at=updated.reviewed_at,
+        reviewed_by=updated.reviewed_by,
     )

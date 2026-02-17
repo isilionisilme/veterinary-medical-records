@@ -137,6 +137,8 @@ def test_document_review_returns_latest_completed_run_context(test_client):
     assert payload["active_interpretation"]["version_number"] == 1
     assert payload["active_interpretation"]["data"]["schema_version"] == "v0"
     assert payload["raw_text_artifact"]["available"] is True
+    assert payload["review_status"] == "IN_REVIEW"
+    assert payload["reviewed_at"] is None
 
 
 def test_document_review_returns_conflict_when_no_completed_run(test_client):
@@ -244,3 +246,48 @@ def test_document_review_keeps_canonical_microchip_digits_unchanged(test_client)
         payload["active_interpretation"]["data"]["global_schema_v0"]["microchip_id"]
         == "00023035139"
     )
+
+
+def test_mark_document_reviewed_is_idempotent(test_client):
+    document_id = _upload_sample_document(test_client)
+
+    first = test_client.post(f"/documents/{document_id}/reviewed")
+    assert first.status_code == 200
+    first_payload = first.json()
+    assert first_payload["document_id"] == document_id
+    assert first_payload["review_status"] == "REVIEWED"
+    assert isinstance(first_payload["reviewed_at"], str)
+
+    second = test_client.post(f"/documents/{document_id}/reviewed")
+    assert second.status_code == 200
+    second_payload = second.json()
+    assert second_payload["review_status"] == "REVIEWED"
+    assert second_payload["reviewed_at"] == first_payload["reviewed_at"]
+
+
+def test_reopen_document_review_is_idempotent(test_client):
+    document_id = _upload_sample_document(test_client)
+    marked = test_client.post(f"/documents/{document_id}/reviewed")
+    assert marked.status_code == 200
+
+    reopened = test_client.delete(f"/documents/{document_id}/reviewed")
+    assert reopened.status_code == 200
+    reopened_payload = reopened.json()
+    assert reopened_payload["review_status"] == "IN_REVIEW"
+    assert reopened_payload["reviewed_at"] is None
+
+    reopened_again = test_client.delete(f"/documents/{document_id}/reviewed")
+    assert reopened_again.status_code == 200
+    reopened_again_payload = reopened_again.json()
+    assert reopened_again_payload["review_status"] == "IN_REVIEW"
+    assert reopened_again_payload["reviewed_at"] is None
+
+
+def test_reviewed_toggle_returns_not_found_for_unknown_document(test_client):
+    response = test_client.post("/documents/does-not-exist/reviewed")
+    assert response.status_code == 404
+    assert response.json()["error_code"] == "NOT_FOUND"
+
+    reopen_response = test_client.delete("/documents/does-not-exist/reviewed")
+    assert reopen_response.status_code == 404
+    assert reopen_response.json()["error_code"] == "NOT_FOUND"

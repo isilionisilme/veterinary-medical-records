@@ -43,6 +43,13 @@ class DocumentResponse(BaseModel):
     failure_type: str | None = Field(
         None, description="Failure category when processing failed or timed out."
     )
+    review_status: str = Field(..., description="Human review state for the document.")
+    reviewed_at: str | None = Field(
+        None, description="UTC ISO timestamp when the document was marked as reviewed."
+    )
+    reviewed_by: str | None = Field(
+        None, description="Optional user identifier that marked the document as reviewed."
+    )
     latest_run: LatestRunResponse | None = Field(
         None, description="Latest processing run summary when available."
     )
@@ -58,6 +65,13 @@ class DocumentListItemResponse(BaseModel):
     )
     failure_type: str | None = Field(
         None, description="Failure category when processing failed or timed out."
+    )
+    review_status: str = Field(..., description="Human review state for the document.")
+    reviewed_at: str | None = Field(
+        None, description="UTC ISO timestamp when the document was marked as reviewed."
+    )
+    reviewed_by: str | None = Field(
+        None, description="Optional user identifier that marked the document as reviewed."
     )
 
 
@@ -136,6 +150,24 @@ class DocumentReviewResponse(BaseModel):
     )
     raw_text_artifact: RawTextArtifactAvailabilityResponse = Field(
         ..., description="Raw text availability for the review run."
+    )
+    review_status: str = Field(..., description="Human review state for the document.")
+    reviewed_at: str | None = Field(
+        None, description="UTC ISO timestamp when the document was marked as reviewed."
+    )
+    reviewed_by: str | None = Field(
+        None, description="Optional user identifier that marked the document as reviewed."
+    )
+
+
+class ReviewStatusToggleResponse(BaseModel):
+    document_id: str = Field(..., description="Unique identifier of the document.")
+    review_status: str = Field(..., description="Updated human review state.")
+    reviewed_at: str | None = Field(
+        None, description="UTC ISO timestamp for reviewed state."
+    )
+    reviewed_by: str | None = Field(
+        None, description="Optional user identifier that marked the document as reviewed."
     )
 
 

@@ -13,6 +13,9 @@ type DocumentsSidebarItem = {
   created_at: string;
   status: string;
   failure_type: string | null;
+  review_status?: string;
+  reviewed_at?: string | null;
+  reviewed_by?: string | null;
 };
 
 type DocumentsSidebarProps = {
@@ -78,6 +81,13 @@ export function DocumentsSidebar({
   onSidebarFileInputChange,
   onSelectDocument,
 }: DocumentsSidebarProps) {
+  const toReviewDocuments = documents.filter((item) => item.review_status !== "REVIEWED");
+  const reviewedDocuments = documents.filter((item) => item.review_status === "REVIEWED");
+  const groupedDocuments = [
+    { key: "to-review", title: "Para revisar", items: toReviewDocuments, reviewed: false },
+    { key: "reviewed", title: "Revisados", items: reviewedDocuments, reviewed: true },
+  ] as const;
+
   return (
     <aside
       data-testid="documents-sidebar"
@@ -249,7 +259,12 @@ export function DocumentsSidebar({
                       <p className="px-1 py-2 text-sm text-muted">Aun no hay documentos cargados.</p>
                     ) : null
                   ) : (
-                    documents.map((item) => {
+                    groupedDocuments.flatMap((group) => {
+                      if (group.items.length === 0) {
+                        return [];
+                      }
+
+                      const sectionItems = group.items.map((item) => {
                       const isActive = activeId === item.document_id;
                       const status = mapDocumentStatus(item);
                       const button = (
@@ -262,10 +277,12 @@ export function DocumentsSidebar({
                           className={`w-full overflow-visible text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
                             isDocsSidebarExpanded
                               ? isActive
-                                ? "rounded-card bg-surface text-ink"
-                                : "rounded-card bg-surface text-ink hover:bg-surfaceMuted"
+                                ? `rounded-card bg-surface text-ink ${group.reviewed ? "opacity-75" : ""}`
+                                : `rounded-card bg-surface text-ink hover:bg-surfaceMuted ${group.reviewed ? "opacity-70" : ""}`
                                 : "rounded-lg bg-transparent text-ink"
-                          } ${isDocsSidebarExpanded ? "px-3 py-2" : "px-0 py-1"}`}
+                          } ${isDocsSidebarExpanded ? "px-3 py-2" : "px-0 py-1"} ${
+                            !isDocsSidebarExpanded && group.reviewed ? "opacity-70" : ""
+                          }`}
                         >
                           <div
                             className={`flex items-center ${
@@ -327,6 +344,21 @@ export function DocumentsSidebar({
                           {button}
                         </Tooltip>
                       );
+                    });
+
+                      if (!isDocsSidebarExpanded) {
+                        return sectionItems;
+                      }
+
+                      return [
+                        <p
+                          key={`${group.key}-header`}
+                          className="px-1 pt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-textMuted"
+                        >
+                          {group.title}
+                        </p>,
+                        ...sectionItems,
+                      ];
                     })
                   )}
                 </div>

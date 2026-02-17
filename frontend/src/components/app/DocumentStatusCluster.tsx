@@ -1,6 +1,7 @@
 import { cn } from "../../lib/utils";
 import { type DocumentStatusClusterModel } from "../../lib/documentStatus";
 import { Tooltip } from "../ui/tooltip";
+import { Check } from "lucide-react";
 
 type DocumentStatusChipProps = {
   status: DocumentStatusClusterModel;
@@ -38,11 +39,13 @@ export function DocumentStatusChip({
         <span
           aria-hidden="true"
           className={cn(
-            "inline-block h-2 w-2 rounded-full",
+            "inline-flex h-2 w-2 items-center justify-center rounded-full",
             compact && "ring-2 ring-surface",
             toneClass(status.tone)
           )}
-        />
+        >
+          {status.icon === "check" ? <Check size={8} className="text-white" /> : null}
+        </span>
         {compact ? <span className="sr-only">{status.label}</span> : <span>{status.label}</span>}
         {!compact && status.hint ? <span className="text-muted">· {status.hint}</span> : null}
       </span>

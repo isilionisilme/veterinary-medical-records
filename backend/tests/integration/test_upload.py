@@ -110,6 +110,8 @@ def test_get_document_returns_metadata_and_state(test_client):
     assert payload["status"] == app_models.ProcessingStatus.UPLOADED.value
     assert payload["status_message"]
     assert payload["failure_type"] is None
+    assert payload["review_status"] == "IN_REVIEW"
+    assert payload["reviewed_at"] is None
     assert payload["latest_run"] is None
     assert isinstance(payload["created_at"], str)
     assert payload["created_at"]

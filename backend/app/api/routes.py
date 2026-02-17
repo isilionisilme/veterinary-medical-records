@@ -31,6 +31,7 @@ from backend.app.api.schemas import (
     ProcessingStepResponse,
     RawTextArtifactAvailabilityResponse,
     RawTextArtifactResponse,
+    ReviewStatusToggleResponse,
 )
 from backend.app.application.document_service import (
     get_document,
@@ -39,7 +40,9 @@ from backend.app.application.document_service import (
     get_document_status_details,
     get_processing_history,
     list_documents,
+    mark_document_reviewed,
     register_document_upload,
+    reopen_document_review,
 )
 from backend.app.application.extraction_observability import (
     get_extraction_runs,
@@ -141,6 +144,9 @@ def list_documents_route(
             status=item.status,
             status_label=item.status_label,
             failure_type=item.failure_type,
+            review_status=item.review_status,
+            reviewed_at=item.reviewed_at,
+            reviewed_by=item.reviewed_by,
         )
         for item in result.items
     ]
@@ -210,6 +216,9 @@ def get_document_status(request: Request, document_id: str) -> DocumentResponse 
         status=details.status_view.status.value,
         status_message=details.status_view.status_message,
         failure_type=details.status_view.failure_type,
+        review_status=details.document.review_status.value,
+        reviewed_at=details.document.reviewed_at,
+        reviewed_by=details.document.reviewed_by,
         latest_run=latest_run,
     )
 
@@ -341,6 +350,65 @@ def get_document_review_context(
             run_id=review.review.raw_text_artifact.run_id,
             available=review.review.raw_text_artifact.available,
         ),
+        review_status=review.review.review_status,
+        reviewed_at=review.review.reviewed_at,
+        reviewed_by=review.review.reviewed_by,
+    )
+
+
+@router.post(
+    "/documents/{document_id}/reviewed",
+    response_model=ReviewStatusToggleResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Mark a document as reviewed",
+    description="Idempotently mark a document as reviewed.",
+    responses={404: {"description": "Document not found (NOT_FOUND)."}},
+)
+def mark_document_reviewed_route(
+    request: Request,
+    document_id: str,
+) -> ReviewStatusToggleResponse | JSONResponse:
+    repository = cast(DocumentRepository, request.app.state.document_repository)
+    result = mark_document_reviewed(document_id=document_id, repository=repository)
+    if result is None:
+        return _error_response(
+            status_code=status.HTTP_404_NOT_FOUND,
+            error_code="NOT_FOUND",
+            message="Document not found.",
+        )
+    return ReviewStatusToggleResponse(
+        document_id=result.document_id,
+        review_status=result.review_status,
+        reviewed_at=result.reviewed_at,
+        reviewed_by=result.reviewed_by,
+    )
+
+
+@router.delete(
+    "/documents/{document_id}/reviewed",
+    response_model=ReviewStatusToggleResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Reopen a reviewed document",
+    description="Idempotently reopen a reviewed document.",
+    responses={404: {"description": "Document not found (NOT_FOUND)."}},
+)
+def reopen_document_review_route(
+    request: Request,
+    document_id: str,
+) -> ReviewStatusToggleResponse | JSONResponse:
+    repository = cast(DocumentRepository, request.app.state.document_repository)
+    result = reopen_document_review(document_id=document_id, repository=repository)
+    if result is None:
+        return _error_response(
+            status_code=status.HTTP_404_NOT_FOUND,
+            error_code="NOT_FOUND",
+            message="Document not found.",
+        )
+    return ReviewStatusToggleResponse(
+        document_id=result.document_id,
+        review_status=result.review_status,
+        reviewed_at=result.reviewed_at,
+        reviewed_by=result.reviewed_by,
     )
 
 
