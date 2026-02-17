@@ -135,9 +135,12 @@ def test_doc_test_sync_map_has_minimum_rules() -> None:
     assert "\"doc_glob\": \"docs/agent_router/*.md\"" in text
     assert "\"doc_glob\": \"docs/agent_router/**/*.md\"" in text
     assert "\"doc_glob\": \"docs/shared/ENGINEERING_PLAYBOOK.md\"" in text
+    assert "\"doc_glob\": \"docs/project/BACKEND_IMPLEMENTATION.md\"" in text
     assert "\"doc_glob\": \"docs/project/UX_DESIGN.md\"" in text
     assert "\"doc_glob\": \"docs/project/TECHNICAL_DESIGN.md\"" in text
     assert "\"owner_any\"" in text
+    assert "\"docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/*.md\"" in text
+    assert "\"docs/agent_router/04_PROJECT/BACKEND_IMPLEMENTATION/*.md\"" in text
     assert "\"doc_glob\": \"docs/shared/BRAND_GUIDELINES.md\"" in text
     assert "test_doc_updates_contract.py" in text
     assert "check_brand_compliance.py" in text

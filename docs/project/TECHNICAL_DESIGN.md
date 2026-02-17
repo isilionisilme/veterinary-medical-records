@@ -237,6 +237,71 @@ If a client attempts to edit/review while a `RUNNING` run exists, the API MUST r
 - Confidence is a stored **attention signal** only.
 - The meaning/governance of confidence in veterinarian workflows is defined in [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md).
 
+### Context v1 (Deterministic)
+
+- Purpose: deterministic aggregation key for signals and `mapping_confidence`.
+- Context v1 fields: `doc_family`/`document_type`, `language`, `country`, `layout_fingerprint`, `extractor_version`, `schema_version`.
+- Context v1 is serialized into a stable canonical representation and/or hash key for storage and aggregation.
+- Exclusions: do not include `veterinarian_id`; avoid `clinic_id` as a first-class key (use `layout_fingerprint`).
+- Versioning: this contract is named **Context v1** to allow future context evolution.
+
+### Learnable Unit Key (`mapping_id`)
+
+- `mapping_id` is a stable strategy identifier (string enum-style scheme), e.g., `label_regex::<label>`, `anchor::<anchor_id>`, `fallback::<heuristic_name>`.
+- Calibration storage/aggregation key is: (`context_key`, `field_key`, `mapping_id`).
+
+### Policy Thresholds & Hysteresis
+
+- Thresholds and hysteresis parameters MUST live in a versioned config file (for example `config/confidence_policy.yaml`) and include a policy version field.
+- UX confidence bands are derived from `mapping_confidence` (low/mid/high; exact numeric cutoffs may be configured per policy version).
+- Hysteresis uses separate enter/exit thresholds for policy-state transitions.
+- Minimum volume is required before policy-state transitions are applied.
+
+### MVP payload & storage implications
+
+Minimum field-level payload for calibration-aware review must support:
+- `mapping_confidence` (0–1), the primary veterinarian-facing confidence signal.
+- `policy_state` (`neutral|boosted|demoted|suppressed`).
+- `mapping_id` (stable strategy identifier).
+- `context_key` (derived from Context v1).
+- `candidate_confidence` (optional, diagnostic only, not shown by default).
+
+### `confidence_policy.yaml` (minimum spec)
+
+Required keys:
+- `policy_version`
+- `band_cutoffs` (`low_max`, `mid_max`)
+- enter/exit thresholds (hysteresis)
+- `min_volume`
+
+Deterministic policy-state selection rules:
+- Apply threshold/hysteresis transitions only when `volume >= min_volume`.
+- `neutral` is the default when `volume < min_volume` or no transition rule is matched.
+- Threshold sets must be mutually exclusive by design; if overlap is misconfigured, fail config validation.
+- `suppressed` is supported by the enum and may be disabled by default in MVP unless explicit thresholds are configured.
+- If `thresholds.suppressed` is absent, `suppressed` is never entered.
+
+Band mapping rule:
+- `low` if `mapping_confidence < low_max`; `mid` if `mapping_confidence < mid_max`; otherwise `high`.
+
+Compact example:
+
+```yaml
+policy_version: "v1"
+band_cutoffs: { low_max: 0.50, mid_max: 0.75 }
+thresholds:
+  boosted: { enter: 0.82, exit: 0.74 }
+  demoted: { enter: 0.38, exit: 0.46 }
+min_volume: 5
+```
+
+### Reviewed signal semantics (deterministic)
+
+- When a document is marked reviewed and a field remains unchanged, emit a weak-positive signal for that mapping in context.
+- `unchanged` is determined by equality of `normalized_value` at review time against the active interpreted value after applying persisted overrides.
+- Placeholder/empty handling is deterministic: placeholder text is not a value; unchanged requires both sides null/empty-equivalent (null, empty string, or whitespace-only) or both sides equal normalized strings.
+- Signal effects are prospective only and never auto-change Global Schema keys/order.
+
 ---
 
 ## 8. Error Handling & States
@@ -266,6 +331,11 @@ Each log entry must include:
 - `event_type`
 - `timestamp`
 - `error_code` (if any)
+- `context_key`, `field_key`, and `mapping_id` for mapping-confidence events
+- old/new `mapping_confidence` and any policy-state transition (`neutral|boosted|demoted|suppressed`)
+
+Observability requirement for confidence calibration:
+- The system must provide enough traceability to explain why a field is low/high confidence in a given context.
 
 Logs must be best-effort and must **never block processing**.
 

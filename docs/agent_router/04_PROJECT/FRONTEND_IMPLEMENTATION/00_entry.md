@@ -21,3 +21,8 @@ Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for i
 - `docs/agent_router/04_PROJECT/FRONTEND_IMPLEMENTATION/130_sequencing-authority.md`
 - `docs/agent_router/04_PROJECT/FRONTEND_IMPLEMENTATION/140_testing-strategy.md`
 - `docs/agent_router/04_PROJECT/FRONTEND_IMPLEMENTATION/150_implementation-note.md`
+
+## Propagated updates
+- Veterinarian UI confidence rendering is aligned to `mapping_confidence` policy semantics; `candidate_confidence` remains diagnostic-only.
+- Reviewed-toggle UX contracts (mark reviewed / reopen) are reflected as authoritative frontend behavior requirements.
+- Confidence-band and policy-version wiring responsibilities remain backend-driven and consumed by frontend rendering.

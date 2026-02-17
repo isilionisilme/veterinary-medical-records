@@ -43,3 +43,7 @@ Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for i
 - `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/330_us-18-audit-trail-of-schema-governance-decisions.md`
 - `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/340_us-19-add-docx-end-to-end-support.md`
 - `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/350_us-20-add-images-end-to-end-support.md`
+
+## Propagated updates
+- Story status propagation requires `**Status**: Implemented (YYYY-MM-DD)` updates in the implementation plan when explicitly requested.
+- US-38 reviewed-toggle workflow and US-39 confidence-policy alignment are tracked as authoritative story-level contracts in this owner module family.
