@@ -24,9 +24,13 @@ Treat paraphrases and other languages as the same intent.
 2) Run the Normalization Pass for each changed doc: `20_normalize_rules.md`.
 3) Enforce doc/test sync using `docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json`:
    - If a changed doc matches a map rule, update at least one mapped test/guard file in the same change.
+   - If a changed doc matches a rule with `owner_any`, update at least one mapped owner module/file in the same change.
+   - `owner_any` rules must be source-specific (1:1 source doc -> owner path), not only family-level wildcard shortcuts.
+   - The map is fail-closed (`fail_on_unmapped_docs: true`): every changed doc must match at least one map rule.
    - If no mapped test/guard applies, record a propagation gap with reason.
 4) Enforce source-to-router parity using `docs/agent_router/01_WORKFLOW/DOC_UPDATES/router_parity_map.json`:
    - If a mapped `source_doc` changed, all required terms must be present in all mapped router modules.
+   - Parity is fail-closed for owner-backed source docs: changed docs matching `required_source_globs` must have an explicit parity rule.
    - Missing required terms are blocking parity failures.
 5) If git discovery/diff inspection is not possible, ask the user for file paths and a snippet/diff. Do not load large reference docs by default.
 6) Finish with the verification checklist: `30_checklist.md`.
@@ -76,6 +80,10 @@ Definition of a gap:
 - A Rule change where owner is ambiguous, OR
 - A changed doc with no inspected diff and no usable snippet, OR
 - Trigger A/B/C with no evidence inspected across local + unpushed + branch-vs-base sources.
+- A changed doc has no mapping rule coverage in `test_impact_map.json`, OR
+- A changed doc matched an `owner_any` rule but no owner file was updated.
+- A changed owner-backed source doc has no rule coverage in `router_parity_map.json`, OR
+- A changed mapped source doc is missing required terms in any mapped router module.
 
 If gaps exist, instruct the user:
 - “If you want, say: **show me the unpropagated changes**”

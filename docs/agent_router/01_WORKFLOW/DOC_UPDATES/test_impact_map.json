@@ -1,8 +1,18 @@
 {
+  "fail_on_unmapped_docs": true,
+  "required_doc_globs": [
+    "docs/project/*.md",
+    "docs/project/**/*.md",
+    "docs/shared/*.md",
+    "docs/shared/**/*.md"
+  ],
   "rules": [
     {
       "doc_glob": "docs/agent_router/*.md",
       "description": "Root router docs must keep router/doc-updates contract tests aligned.",
+      "owner_any": [
+        "docs/agent_router/*.md"
+      ],
       "required_any": [
         "backend/tests/unit/test_doc_router_contract.py",
         "backend/tests/unit/test_doc_updates_contract.py",
@@ -12,6 +22,9 @@
     {
       "doc_glob": "docs/agent_router/**/*.md",
       "description": "Router workflow changes must keep router/doc-updates contract tests aligned.",
+      "owner_any": [
+        "docs/agent_router/**/*.md"
+      ],
       "required_any": [
         "backend/tests/unit/test_doc_router_contract.py",
         "backend/tests/unit/test_doc_updates_contract.py",
@@ -20,16 +33,139 @@
     },
     {
       "doc_glob": "docs/shared/BRAND_GUIDELINES.md",
-      "description": "Brand guideline changes must keep brand guard checks aligned.",
+      "description": "Shared BRAND_GUIDELINES changes require propagation to its owner module and brand guard alignment.",
+      "owner_any": [
+        "docs/agent_router/03_SHARED/BRAND_GUIDELINES/*.md",
+        "docs/agent_router/03_SHARED/BRAND_GUIDELINES/**/*.md"
+      ],
       "required_any": [
-        "scripts/check_brand_compliance.py"
+        "scripts/check_brand_compliance.py",
+        "backend/tests/unit/test_doc_updates_contract.py",
+        "backend/tests/unit/test_doc_updates_e2e_contract.py"
       ]
     },
     {
-      "doc_glob": "docs/project/BRAND_GUIDELINES.md",
-      "description": "Project-level brand updates must keep brand guard checks aligned.",
+      "doc_glob": "docs/shared/ENGINEERING_PLAYBOOK.md",
+      "description": "Shared ENGINEERING_PLAYBOOK changes require propagation to its owner module.",
+      "owner_any": [
+        "docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/*.md",
+        "docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/**/*.md"
+      ],
       "required_any": [
-        "scripts/check_brand_compliance.py"
+        "backend/tests/unit/test_doc_router_contract.py",
+        "backend/tests/unit/test_doc_updates_contract.py",
+        "backend/tests/unit/test_doc_updates_e2e_contract.py"
+      ]
+    },
+    {
+      "doc_glob": "docs/shared/UX_GUIDELINES.md",
+      "description": "Shared UX_GUIDELINES changes require propagation to its owner module.",
+      "owner_any": [
+        "docs/agent_router/03_SHARED/UX_GUIDELINES/*.md",
+        "docs/agent_router/03_SHARED/UX_GUIDELINES/**/*.md"
+      ],
+      "required_any": [
+        "backend/tests/unit/test_doc_router_contract.py",
+        "backend/tests/unit/test_doc_updates_contract.py",
+        "backend/tests/unit/test_doc_updates_e2e_contract.py"
+      ]
+    },
+    {
+      "doc_glob": "docs/project/BACKEND_IMPLEMENTATION.md",
+      "description": "Project BACKEND_IMPLEMENTATION changes require propagation to its owner module.",
+      "owner_any": [
+        "docs/agent_router/04_PROJECT/BACKEND_IMPLEMENTATION/*.md",
+        "docs/agent_router/04_PROJECT/BACKEND_IMPLEMENTATION/**/*.md"
+      ],
+      "required_any": [
+        "backend/tests/unit/test_doc_router_contract.py",
+        "backend/tests/unit/test_doc_updates_contract.py",
+        "backend/tests/unit/test_doc_updates_e2e_contract.py",
+        "scripts/check_doc_router_parity.py"
+      ]
+    },
+    {
+      "doc_glob": "docs/project/DESIGN_SYSTEM.md",
+      "description": "Project DESIGN_SYSTEM changes require propagation to its owner module.",
+      "owner_any": [
+        "docs/agent_router/04_PROJECT/DESIGN_SYSTEM/*.md",
+        "docs/agent_router/04_PROJECT/DESIGN_SYSTEM/**/*.md"
+      ],
+      "required_any": [
+        "backend/tests/unit/test_doc_router_contract.py",
+        "backend/tests/unit/test_doc_updates_contract.py",
+        "backend/tests/unit/test_doc_updates_e2e_contract.py",
+        "scripts/check_doc_router_parity.py"
+      ]
+    },
+    {
+      "doc_glob": "docs/project/FRONTEND_IMPLEMENTATION.md",
+      "description": "Project FRONTEND_IMPLEMENTATION changes require propagation to its owner module.",
+      "owner_any": [
+        "docs/agent_router/04_PROJECT/FRONTEND_IMPLEMENTATION/*.md",
+        "docs/agent_router/04_PROJECT/FRONTEND_IMPLEMENTATION/**/*.md"
+      ],
+      "required_any": [
+        "backend/tests/unit/test_doc_router_contract.py",
+        "backend/tests/unit/test_doc_updates_contract.py",
+        "backend/tests/unit/test_doc_updates_e2e_contract.py",
+        "scripts/check_doc_router_parity.py"
+      ]
+    },
+    {
+      "doc_glob": "docs/project/IMPLEMENTATION_PLAN.md",
+      "description": "Project IMPLEMENTATION_PLAN changes require propagation to its owner module.",
+      "owner_any": [
+        "docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/*.md",
+        "docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/**/*.md"
+      ],
+      "required_any": [
+        "backend/tests/unit/test_doc_router_contract.py",
+        "backend/tests/unit/test_doc_updates_contract.py",
+        "backend/tests/unit/test_doc_updates_e2e_contract.py",
+        "scripts/check_doc_router_parity.py"
+      ]
+    },
+    {
+      "doc_glob": "docs/project/PRODUCT_DESIGN.md",
+      "description": "Project PRODUCT_DESIGN changes require propagation to its owner module.",
+      "owner_any": [
+        "docs/agent_router/04_PROJECT/PRODUCT_DESIGN/*.md",
+        "docs/agent_router/04_PROJECT/PRODUCT_DESIGN/**/*.md"
+      ],
+      "required_any": [
+        "backend/tests/unit/test_doc_router_contract.py",
+        "backend/tests/unit/test_doc_updates_contract.py",
+        "backend/tests/unit/test_doc_updates_e2e_contract.py",
+        "scripts/check_doc_router_parity.py"
+      ]
+    },
+    {
+      "doc_glob": "docs/project/TECHNICAL_DESIGN.md",
+      "description": "Project TECHNICAL_DESIGN changes require propagation to its owner module.",
+      "owner_any": [
+        "docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/*.md",
+        "docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/**/*.md"
+      ],
+      "required_any": [
+        "backend/tests/unit/test_doc_router_contract.py",
+        "backend/tests/unit/test_doc_updates_contract.py",
+        "backend/tests/unit/test_doc_updates_e2e_contract.py",
+        "scripts/check_doc_router_parity.py"
+      ]
+    },
+    {
+      "doc_glob": "docs/project/UX_DESIGN.md",
+      "description": "Project UX_DESIGN changes require propagation to its owner module.",
+      "owner_any": [
+        "docs/agent_router/04_PROJECT/UX_DESIGN/*.md",
+        "docs/agent_router/04_PROJECT/UX_DESIGN/**/*.md"
+      ],
+      "required_any": [
+        "backend/tests/unit/test_doc_router_contract.py",
+        "backend/tests/unit/test_doc_updates_contract.py",
+        "backend/tests/unit/test_doc_updates_e2e_contract.py",
+        "scripts/check_doc_router_parity.py"
       ]
     }
   ]

@@ -25,10 +25,14 @@ Apply this pass to each changed documentation file.
 6) Run verification: `30_checklist.md`.
 7) Validate doc/test sync impact:
    - Load `docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json`.
+   - The map is fail-closed (`fail_on_unmapped_docs: true`): every changed doc must match at least one rule.
+   - For owner propagation, rules must be source-specific (1:1 source doc -> owner module path), not family-level wildcard shortcuts.
    - For each changed doc matching a map rule, update at least one mapped test/guard file.
+   - For each changed doc matching a rule with `owner_any`, update at least one mapped owner module/file.
    - If no mapped file should change, record it as an explicit propagation gap with rationale.
 8) Validate source-to-router parity for mapped project docs:
    - Load `docs/agent_router/01_WORKFLOW/DOC_UPDATES/router_parity_map.json`.
+   - The parity map is fail-closed for owner-backed source docs via `required_source_globs`.
    - If a mapped `source_doc` changed, every mapped router module must contain all configured required terms.
    - Any missing required term is a blocking parity failure, not a soft gap.
 9) Emit required summary (`00_entry.md`):
@@ -37,6 +41,10 @@ Apply this pass to each changed documentation file.
    - include source-to-router parity status (`Pass` or `Fail`).
    - If an R change was detected but no owner module was updated and no blocker reason exists, treat it as failure.
    - If Trigger A/B/C ran without inspecting all three git evidence sources and no snippet fallback was used, treat it as failure.
+   - If any changed doc has no mapping coverage, treat it as failure.
+   - If any changed doc matched an `owner_any` rule but no owner file was updated, treat it as failure.
+   - If any changed owner-backed source doc has no parity rule coverage, treat it as failure.
+   - If any changed mapped source doc is missing parity required terms, treat it as failure.
    - if Rule change exists with no propagation and no blocker reason, treat as failure.
 
 ## Ambiguity handling

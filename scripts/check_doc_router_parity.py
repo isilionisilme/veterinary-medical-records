@@ -16,26 +16,43 @@ DEFAULT_MAP_PATH = Path(
 
 
 def _run_changed_files(base_ref: str) -> list[str]:
-    cmd = [
+    branch_cmd = [
         "git",
         "diff",
         "--name-only",
         "--diff-filter=ACMR",
         f"{base_ref}...HEAD",
     ]
-    result = subprocess.run(cmd, capture_output=True, text=True, check=False)
-    if result.returncode != 0:
+    branch_result = subprocess.run(branch_cmd, capture_output=True, text=True, check=False)
+    if branch_result.returncode != 0:
         print("Doc/router parity guard could not compute PR diff.", file=sys.stderr)
-        print(result.stderr.strip(), file=sys.stderr)
+        print(branch_result.stderr.strip(), file=sys.stderr)
         sys.exit(2)
-    return [
-        line.strip().replace("\\", "/")
-        for line in result.stdout.splitlines()
-        if line.strip()
-    ]
+
+    local_cmd = ["git", "diff", "--name-only", "--diff-filter=ACMR"]
+    local_result = subprocess.run(local_cmd, capture_output=True, text=True, check=False)
+    if local_result.returncode != 0:
+        print("Doc/router parity guard could not compute local unstaged diff.", file=sys.stderr)
+        print(local_result.stderr.strip(), file=sys.stderr)
+        sys.exit(2)
+
+    staged_cmd = ["git", "diff", "--cached", "--name-only", "--diff-filter=ACMR"]
+    staged_result = subprocess.run(staged_cmd, capture_output=True, text=True, check=False)
+    if staged_result.returncode != 0:
+        print("Doc/router parity guard could not compute local staged diff.", file=sys.stderr)
+        print(staged_result.stderr.strip(), file=sys.stderr)
+        sys.exit(2)
+
+    changed = set()
+    for output in (branch_result.stdout, local_result.stdout, staged_result.stdout):
+        for line in output.splitlines():
+            path = line.strip().replace("\\", "/")
+            if path:
+                changed.add(path)
+    return sorted(changed)
 
 
-def _load_rules(path: Path) -> list[dict[str, object]]:
+def _load_config(path: Path) -> dict[str, object]:
     if not path.exists():
         print(f"Doc/router parity map not found: {path}", file=sys.stderr)
         sys.exit(2)
@@ -45,17 +62,26 @@ def _load_rules(path: Path) -> list[dict[str, object]]:
         print(f"Invalid JSON in {path}: {exc}", file=sys.stderr)
         sys.exit(2)
 
+    if not isinstance(payload, dict):
+        print(f"Invalid config format in {path}: root must be an object", file=sys.stderr)
+        sys.exit(2)
+
     rules = payload.get("rules", [])
     if not isinstance(rules, list):
         print(f"Invalid rules list in {path}", file=sys.stderr)
         sys.exit(2)
-    return rules
+    return payload
 
 
 def evaluate_parity(
-    changed_files: list[str], rules: list[dict[str, object]], repo_root: Path
+    changed_files: list[str],
+    rules: list[dict[str, object]],
+    repo_root: Path,
+    fail_on_unmapped_sources: bool,
+    required_source_globs: list[str],
 ) -> list[str]:
     findings: list[str] = []
+    matched_sources: set[str] = set()
 
     for raw_rule in rules:
         source_doc = str(raw_rule.get("source_doc", "")).strip()
@@ -66,8 +92,12 @@ def evaluate_parity(
             findings.append(f"Invalid parity rule: {raw_rule}")
             continue
 
-        if not any(fnmatch.fnmatch(path, source_doc) for path in changed_files):
+        matching_changed_sources = [
+            path for path in changed_files if fnmatch.fnmatch(path, source_doc)
+        ]
+        if not matching_changed_sources:
             continue
+        matched_sources.update(matching_changed_sources)
 
         for module_rule in router_modules:
             module_path = str(module_rule.get("path", "")).strip()
@@ -104,6 +134,22 @@ def evaluate_parity(
                 f"`{module_path}` is missing required terms: {missing_terms_text}"
             )
 
+    if fail_on_unmapped_sources and required_source_globs:
+        required_sources_changed = [
+            path
+            for path in changed_files
+            if any(fnmatch.fnmatch(path, pattern) for pattern in required_source_globs)
+        ]
+        unmapped_sources = sorted(
+            source for source in required_sources_changed if source not in matched_sources
+        )
+        if unmapped_sources:
+            findings.append(
+                "Changed source docs missing Source→Router parity mapping: "
+                + ", ".join(unmapped_sources)
+                + ". Add rules in docs/agent_router/01_WORKFLOW/DOC_UPDATES/router_parity_map.json."
+            )
+
     return findings
 
 
@@ -121,8 +167,22 @@ def main() -> int:
 
     repo_root = Path(__file__).resolve().parents[1]
     changed_files = _run_changed_files(args.base_ref)
-    rules = _load_rules(Path(args.map_file))
-    findings = evaluate_parity(changed_files, rules, repo_root)
+    config = _load_config(Path(args.map_file))
+    rules = config.get("rules", [])
+    fail_on_unmapped_sources = bool(config.get("fail_on_unmapped_sources", False))
+    required_source_globs_raw = config.get("required_source_globs", [])
+    required_source_globs = (
+        [str(item).strip() for item in required_source_globs_raw if str(item).strip()]
+        if isinstance(required_source_globs_raw, list)
+        else []
+    )
+    findings = evaluate_parity(
+        changed_files,
+        rules,
+        repo_root,
+        fail_on_unmapped_sources,
+        required_source_globs,
+    )
 
     if findings:
         print("Doc/router parity guard failed.")
@@ -131,12 +191,12 @@ def main() -> int:
         return 1
 
     if any(
-        path.startswith("docs/project/") and path.endswith(".md")
+        any(fnmatch.fnmatch(path, str(rule.get("source_doc", "")).strip()) for rule in rules)
         for path in changed_files
     ):
         print("Doc/router parity guard passed.")
     else:
-        print("Doc/router parity guard: no project docs changed.")
+        print("Doc/router parity guard: no mapped source docs changed.")
     return 0
 
 

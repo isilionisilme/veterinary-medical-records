@@ -1,5 +1,106 @@
 {
+  "fail_on_unmapped_sources": true,
+  "required_source_globs": [
+    "docs/project/*.md",
+    "docs/shared/*.md"
+  ],
   "rules": [
+    {
+      "source_doc": "docs/shared/BRAND_GUIDELINES.md",
+      "description": "Shared BRAND_GUIDELINES must map to shared owner entry module.",
+      "router_modules": [
+        {
+          "path": "docs/agent_router/03_SHARED/BRAND_GUIDELINES/00_entry.md",
+          "required_terms": [
+            "BRAND_GUIDELINES — Modules"
+          ]
+        }
+      ]
+    },
+    {
+      "source_doc": "docs/shared/ENGINEERING_PLAYBOOK.md",
+      "description": "Shared ENGINEERING_PLAYBOOK must map to shared owner entry module.",
+      "router_modules": [
+        {
+          "path": "docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/00_entry.md",
+          "required_terms": [
+            "ENGINEERING_PLAYBOOK — Modules"
+          ]
+        }
+      ]
+    },
+    {
+      "source_doc": "docs/shared/UX_GUIDELINES.md",
+      "description": "Shared UX_GUIDELINES must map to shared owner entry module.",
+      "router_modules": [
+        {
+          "path": "docs/agent_router/03_SHARED/UX_GUIDELINES/00_entry.md",
+          "required_terms": [
+            "UX_GUIDELINES — Modules"
+          ]
+        }
+      ]
+    },
+    {
+      "source_doc": "docs/project/BACKEND_IMPLEMENTATION.md",
+      "description": "Project BACKEND_IMPLEMENTATION must map to project owner entry module.",
+      "router_modules": [
+        {
+          "path": "docs/agent_router/04_PROJECT/BACKEND_IMPLEMENTATION/00_entry.md",
+          "required_terms": [
+            "BACKEND_IMPLEMENTATION — Modules"
+          ]
+        }
+      ]
+    },
+    {
+      "source_doc": "docs/project/DESIGN_SYSTEM.md",
+      "description": "Project DESIGN_SYSTEM must map to project owner entry module.",
+      "router_modules": [
+        {
+          "path": "docs/agent_router/04_PROJECT/DESIGN_SYSTEM/00_entry.md",
+          "required_terms": [
+            "DESIGN_SYSTEM — Modules"
+          ]
+        }
+      ]
+    },
+    {
+      "source_doc": "docs/project/FRONTEND_IMPLEMENTATION.md",
+      "description": "Project FRONTEND_IMPLEMENTATION must map to project owner entry module.",
+      "router_modules": [
+        {
+          "path": "docs/agent_router/04_PROJECT/FRONTEND_IMPLEMENTATION/00_entry.md",
+          "required_terms": [
+            "FRONTEND_IMPLEMENTATION — Modules"
+          ]
+        }
+      ]
+    },
+    {
+      "source_doc": "docs/project/IMPLEMENTATION_PLAN.md",
+      "description": "Project IMPLEMENTATION_PLAN must map to project owner entry module.",
+      "router_modules": [
+        {
+          "path": "docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/00_entry.md",
+          "required_terms": [
+            "IMPLEMENTATION_PLAN — Modules"
+          ]
+        }
+      ]
+    },
+    {
+      "source_doc": "docs/project/PRODUCT_DESIGN.md",
+      "description": "Project PRODUCT_DESIGN must map to project owner entry module.",
+      "router_modules": [
+        {
+          "path": "docs/agent_router/04_PROJECT/PRODUCT_DESIGN/00_entry.md",
+          "required_terms": [
+            "PRODUCT_DESIGN — Modules"
+          ]
+        }
+      ]
+    },
     {
       "source_doc": "docs/project/PRODUCT_DESIGN.md",
       "description": "Conceptual model and confidence semantics in PRODUCT_DESIGN must remain synchronized with router module 76.",
@@ -14,7 +115,34 @@
             "Signals & Weighting (qualitative)",
             "Policy State (soft behavior)",
             "Confidence Propagation & Calibration",
-            "Global Schema v0 keys/order do not change automatically during this propagation"
+            "Global Schema v0 keys/order do not change automatically during this propagation",
+            "smoothing to avoid abrupt oscillations from isolated events",
+            "thresholds are met with hysteresis and minimum volume",
+            "captured as a structural signal"
+          ]
+        }
+      ]
+    },
+    {
+      "source_doc": "docs/project/TECHNICAL_DESIGN.md",
+      "description": "Project TECHNICAL_DESIGN must map to project owner entry module.",
+      "router_modules": [
+        {
+          "path": "docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/00_entry.md",
+          "required_terms": [
+            "TECHNICAL_DESIGN — Modules"
+          ]
+        }
+      ]
+    },
+    {
+      "source_doc": "docs/project/UX_DESIGN.md",
+      "description": "Project UX_DESIGN must map to project owner entry module.",
+      "router_modules": [
+        {
+          "path": "docs/agent_router/04_PROJECT/UX_DESIGN/00_entry.md",
+          "required_terms": [
+            "UX_DESIGN — Modules"
           ]
         }
       ]

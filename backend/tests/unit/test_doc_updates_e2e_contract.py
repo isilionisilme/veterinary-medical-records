@@ -140,14 +140,24 @@ def test_checklist_requires_outputs_and_anti_loop() -> None:
 
 def test_doc_updates_test_impact_map_covers_router_and_brand_docs() -> None:
     text = _read_text(DOC_UPDATES_TEST_IMPACT_MAP)
+    assert '"fail_on_unmapped_docs": true' in text
     assert "docs/agent_router/*.md" in text
     assert "docs/agent_router/**/*.md" in text
+    assert "docs/shared/ENGINEERING_PLAYBOOK.md" in text
+    assert "docs/project/UX_DESIGN.md" in text
+    assert "docs/project/TECHNICAL_DESIGN.md" in text
+    assert "owner_any" in text
     assert "docs/shared/BRAND_GUIDELINES.md" in text
 
 
 def test_router_parity_map_covers_product_design_module_76() -> None:
     text = _read_text(DOC_UPDATES_ROUTER_PARITY_MAP)
+    assert '"fail_on_unmapped_sources": true' in text
+    assert '"docs/project/*.md"' in text
+    assert '"docs/shared/*.md"' in text
     assert '"source_doc": "docs/project/PRODUCT_DESIGN.md"' in text
+    assert '"source_doc": "docs/project/TECHNICAL_DESIGN.md"' in text
+    assert '"source_doc": "docs/shared/ENGINEERING_PLAYBOOK.md"' in text
     assert (
         '"path": "docs/agent_router/04_PROJECT/PRODUCT_DESIGN/'
         '76_conceptual-model-local-schema-global-schema-and-mapping.md"'

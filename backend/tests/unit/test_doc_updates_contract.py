@@ -131,8 +131,13 @@ def test_checklist_enforces_discovery_and_anti_loop() -> None:
 
 def test_doc_test_sync_map_has_minimum_rules() -> None:
     text = _read_text(DOC_UPDATES_TEST_IMPACT_MAP)
+    assert '"fail_on_unmapped_docs": true' in text
     assert "\"doc_glob\": \"docs/agent_router/*.md\"" in text
     assert "\"doc_glob\": \"docs/agent_router/**/*.md\"" in text
+    assert "\"doc_glob\": \"docs/shared/ENGINEERING_PLAYBOOK.md\"" in text
+    assert "\"doc_glob\": \"docs/project/UX_DESIGN.md\"" in text
+    assert "\"doc_glob\": \"docs/project/TECHNICAL_DESIGN.md\"" in text
+    assert "\"owner_any\"" in text
     assert "\"doc_glob\": \"docs/shared/BRAND_GUIDELINES.md\"" in text
     assert "test_doc_updates_contract.py" in text
     assert "check_brand_compliance.py" in text
@@ -140,7 +145,13 @@ def test_doc_test_sync_map_has_minimum_rules() -> None:
 
 def test_router_parity_map_has_product_design_rule() -> None:
     text = _read_text(DOC_UPDATES_ROUTER_PARITY_MAP)
+    assert '"fail_on_unmapped_sources": true' in text
+    assert '"required_source_globs"' in text
+    assert '"docs/project/*.md"' in text
+    assert '"docs/shared/*.md"' in text
     assert '"source_doc": "docs/project/PRODUCT_DESIGN.md"' in text
+    assert '"source_doc": "docs/project/TECHNICAL_DESIGN.md"' in text
+    assert '"source_doc": "docs/shared/ENGINEERING_PLAYBOOK.md"' in text
     assert (
         '"path": "docs/agent_router/04_PROJECT/PRODUCT_DESIGN/'
         '76_conceptual-model-local-schema-global-schema-and-mapping.md"'
