@@ -11,6 +11,7 @@ Allow veterinarians to correct structured data naturally, while capturing append
 - Capture append-only correction signals (no behavior change)
 
 ## User Stories (in order)
+- US-36 — Lean design system (tokens + primitives)
 - US-08 — Edit structured data
 - US-09 — Capture correction signals
 
