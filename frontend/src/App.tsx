@@ -61,9 +61,12 @@ import {
 import { mapDocumentStatus } from "./lib/documentStatus";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const DEBUG_CONFIDENCE_POLICY = import.meta.env.VITE_DEBUG_CONFIDENCE === "true";
 const MAX_UPLOAD_SIZE_BYTES = 20 * 1024 * 1024;
 const MISSING_VALUE_PLACEHOLDER = "—";
 const EMPTY_LIST_PLACEHOLDER = "Sin elementos";
+const OTHER_EXTRACTED_FIELDS_SECTION_TITLE = "Other extracted fields";
+const OTHER_EXTRACTED_FIELDS_EMPTY_STATE = "No other extracted fields.";
 const REPORT_LAYOUT_STORAGE_KEY = "reportLayout";
 const DOCS_SIDEBAR_PIN_STORAGE_KEY = "docsSidebarPinned";
 const REVIEW_SPLIT_RATIO_STORAGE_KEY = "reviewSplitRatio";
@@ -1196,6 +1199,7 @@ export function App() {
   const lastConfidencePolicyDocIdRef = useRef<string | null>(null);
   const loggedExtractionDebugEventKeysRef = useRef<Set<string>>(new Set());
   const loggedConfidencePolicyDiagnosticsRef = useRef<Set<string>>(new Set());
+  const loggedConfidencePolicyDebugRef = useRef<Set<string>>(new Set());
   const viewerDragDepthRef = useRef(0);
   const sidebarUploadDragDepthRef = useRef(0);
   const suppressDocsSidebarHoverUntilRef = useRef(0);
@@ -2420,6 +2424,45 @@ export function App() {
     documentReview.data?.active_interpretation.data.document_id,
   ]);
 
+  useEffect(() => {
+    if (!DEBUG_CONFIDENCE_POLICY) {
+      return;
+    }
+
+    const interpretationData = documentReview.data?.active_interpretation.data;
+    const documentId = interpretationData?.document_id ?? null;
+    if (!documentId) {
+      return;
+    }
+
+    const eventKey = `${documentId}|${confidencePolicyDegradedReason ?? "valid"}`;
+    if (loggedConfidencePolicyDebugRef.current.has(eventKey)) {
+      return;
+    }
+    loggedConfidencePolicyDebugRef.current.add(eventKey);
+
+    const rawPolicy = interpretationData?.confidence_policy;
+    const sampleField =
+      interpretationData?.fields.find((field) => field.key === "pet_name") ??
+      interpretationData?.fields[0];
+    console.info("[confidence-policy][debug]", {
+      document_id: documentId,
+      has_confidence_policy: Boolean(rawPolicy),
+      degraded_reason: confidencePolicyDegradedReason,
+      policy_version: rawPolicy?.policy_version ?? null,
+      has_band_cutoffs: Boolean(rawPolicy?.band_cutoffs),
+      sample_mapping_confidence: sampleField
+        ? {
+            field_key: sampleField.key,
+            has_mapping_confidence: typeof sampleField.mapping_confidence === "number",
+          }
+        : null,
+    });
+  }, [
+    confidencePolicyDegradedReason,
+    documentReview.data?.active_interpretation.data,
+  ]);
+
   const validatedReviewFields = validationResult.acceptedFields;
 
   const buildSelectableField = (
@@ -2579,7 +2622,7 @@ export function App() {
                 id: `extra:${field.field_id}:${itemIndex}`,
                 key,
                 label,
-                section: "Otros campos extraídos",
+                section: OTHER_EXTRACTED_FIELDS_SECTION_TITLE,
                 order: index + 1,
                 valueType: field.value_type,
                 displayValue: formatFieldValue(field.value, field.value_type),
@@ -2595,7 +2638,7 @@ export function App() {
           id: `extra:${key}`,
           key,
           label,
-          section: "Otros campos extraídos",
+          section: OTHER_EXTRACTED_FIELDS_SECTION_TITLE,
           order: index + 1,
           isCritical: false,
           valueType: fields[0]?.value_type ?? "string",
@@ -2616,7 +2659,7 @@ export function App() {
           id: field ? `extra:${field.field_id}:0` : `extra:${key}:missing`,
           key,
           label,
-          section: "Otros campos extraídos",
+          section: OTHER_EXTRACTED_FIELDS_SECTION_TITLE,
           order: index + 1,
           valueType: field?.value_type ?? "string",
           displayValue,
@@ -2631,7 +2674,7 @@ export function App() {
         id: `extra:${key}`,
         key,
         label,
-        section: "Otros campos extraídos",
+        section: OTHER_EXTRACTED_FIELDS_SECTION_TITLE,
         order: index + 1,
         isCritical: false,
         valueType: field?.value_type ?? "string",
@@ -2718,7 +2761,7 @@ export function App() {
         ? [
             {
               id: "extra:section",
-              title: "Otros campos extraídos",
+              title: OTHER_EXTRACTED_FIELDS_SECTION_TITLE,
               fields: visibleOtherDisplayFields,
             },
           ]
@@ -3464,12 +3507,16 @@ export function App() {
     const shouldUseSingleColumn = isOwnerSection || isVisitSection;
 
     return (
-      <SectionBlock key={section.id} className="border border-borderSubtle/70 bg-surface">
+      <SectionBlock
+        key={section.id}
+        testId={isExtraSection ? "other-extracted-fields-section" : undefined}
+        className="border border-borderSubtle/70 bg-surface"
+      >
         <SectionHeader title={section.title} />
         <div className="mt-2">
           {isEmptyExtraSection && (
             <p className="rounded-xl bg-surface px-3 py-2 text-xs text-textSecondary">
-              No hay otros campos extraídos.
+              {OTHER_EXTRACTED_FIELDS_EMPTY_STATE}
             </p>
           )}
           {!isEmptyExtraSection && (
@@ -3501,12 +3548,16 @@ export function App() {
     const shouldUseSingleColumn = isOwnerSection || isVisitSection;
 
     return (
-      <SectionBlock key={section.id} className="border border-borderSubtle/70 bg-surface">
+      <SectionBlock
+        key={section.id}
+        testId={isExtraSection ? "other-extracted-fields-section" : undefined}
+        className="border border-borderSubtle/70 bg-surface"
+      >
         <SectionHeader title={section.title} />
         <div className={`mt-2 ${STRUCTURED_FIELD_STACK_CLASS}`}>
           {isEmptyExtraSection && (
             <p className="rounded-xl bg-surface px-3 py-2 text-xs text-muted">
-              No hay otros campos extraídos.
+              {OTHER_EXTRACTED_FIELDS_EMPTY_STATE}
             </p>
           )}
           {scalarFields.length > 0 && (

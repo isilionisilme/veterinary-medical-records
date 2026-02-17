@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  getConfidenceBucket,
   matchesStructuredDataFilters,
   type StructuredDataFilters,
   type StructuredFilterField,
@@ -25,6 +24,7 @@ function buildField(partial: Partial<StructuredFilterField>): StructuredFilterFi
       {
         displayValue: "ABC-123",
         confidence: 0.82,
+        confidenceBand: "high",
         isMissing: false,
       },
     ],
@@ -50,34 +50,50 @@ describe("structuredDataFilters", () => {
 
     expect(
       matchesStructuredDataFilters(
-        buildField({ items: [{ displayValue: "Pancreatitis", confidence: 0.6, isMissing: false }] }),
+        buildField({
+          items: [
+            {
+              displayValue: "Pancreatitis",
+              confidence: 0.6,
+              confidenceBand: "medium",
+              isMissing: false,
+            },
+          ],
+        }),
         { ...baseFilters, searchTerm: "pancrea" }
       )
     ).toBe(true);
   });
 
-  it("uses confidence buckets with the expected boundaries", () => {
-    expect(getConfidenceBucket(0.24)).toBe("low");
-    expect(getConfidenceBucket(0.25)).toBe("medium");
-    expect(getConfidenceBucket(0.74)).toBe("medium");
-    expect(getConfidenceBucket(0.75)).toBe("high");
-
+  it("filters by explicit confidence bands and ignores missing items", () => {
     expect(
-      matchesStructuredDataFilters(buildField({ items: [{ displayValue: "x", confidence: 0.24, isMissing: false }] }), {
-        ...baseFilters,
-        selectedConfidence: ["low"],
-      })
+      matchesStructuredDataFilters(
+        buildField({
+          items: [{ displayValue: "x", confidence: 0.24, confidenceBand: "low", isMissing: false }],
+        }),
+        {
+          ...baseFilters,
+          selectedConfidence: ["low"],
+        }
+      )
     ).toBe(true);
     expect(
-      matchesStructuredDataFilters(buildField({ items: [{ displayValue: "x", confidence: 0.75, isMissing: false }] }), {
-        ...baseFilters,
-        selectedConfidence: ["medium"],
-      })
+      matchesStructuredDataFilters(
+        buildField({
+          items: [{ displayValue: "x", confidence: 0.75, confidenceBand: "high", isMissing: false }],
+        }),
+        {
+          ...baseFilters,
+          selectedConfidence: ["medium"],
+        }
+      )
     ).toBe(false);
 
     expect(
       matchesStructuredDataFilters(
-        buildField({ items: [{ displayValue: "—", confidence: 0, isMissing: true }] }),
+        buildField({
+          items: [{ displayValue: "—", confidence: 0, confidenceBand: null, isMissing: true }],
+        }),
         {
           ...baseFilters,
           selectedConfidence: ["low"],
@@ -92,8 +108,8 @@ describe("structuredDataFilters", () => {
       label: "Medicación",
       repeatable: true,
       items: [
-        { displayValue: "Amoxicilina", confidence: 0.41, isMissing: false },
-        { displayValue: "Meloxicam", confidence: 0.9, isMissing: false },
+        { displayValue: "Amoxicilina", confidence: 0.41, confidenceBand: "low", isMissing: false },
+        { displayValue: "Meloxicam", confidence: 0.9, confidenceBand: "high", isMissing: false },
       ],
     });
 
@@ -130,11 +146,11 @@ describe("structuredDataFilters", () => {
   it("supports empty vs non-empty restrictions and treats both-on as unrestricted", () => {
     const nonEmptyField = buildField({
       repeatable: false,
-      items: [{ displayValue: "Luna", confidence: 0.8, isMissing: false }],
+      items: [{ displayValue: "Luna", confidence: 0.8, confidenceBand: "high", isMissing: false }],
     });
     const emptyField = buildField({
       repeatable: false,
-      items: [{ displayValue: "—", confidence: 0, isMissing: true }],
+      items: [{ displayValue: "—", confidence: 0, confidenceBand: null, isMissing: true }],
     });
 
     expect(

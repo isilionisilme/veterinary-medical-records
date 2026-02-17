@@ -39,11 +39,20 @@ def test_global_schema_v0_contract_version_and_order() -> None:
         "medication",
         "treatment_plan",
         "allergies",
+        "vaccinations",
+        "lab_result",
+        "imaging",
+        "invoice_total",
+        "covered_amount",
+        "non_covered_amount",
+        "line_item",
+        "notes",
+        "language",
     ]
 
     assert SCHEMA_VERSION_V0 == "v0"
     assert list(GLOBAL_SCHEMA_V0_KEYS) == expected_keys
-    assert len(GLOBAL_SCHEMA_V0_KEYS) == 25
+    assert len(GLOBAL_SCHEMA_V0_KEYS) == 34
 
 
 def test_global_schema_v0_contract_critical_subset() -> None:

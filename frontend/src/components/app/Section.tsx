@@ -5,12 +5,14 @@ import { cn } from "../../lib/utils";
 export function SectionBlock({
   children,
   className,
+  testId,
 }: {
   children: ReactNode;
   className?: string;
+  testId?: string;
 }) {
   return (
-    <section className={cn("rounded-xl bg-surface px-4 py-4", className)}>
+    <section data-testid={testId} className={cn("rounded-xl bg-surface px-4 py-4", className)}>
       {children}
     </section>
   );

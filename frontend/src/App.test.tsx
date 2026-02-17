@@ -1714,7 +1714,7 @@ describe("App upload and list flow", () => {
     expect(within(panel).getByText("ID de reclamacion")).toBeInTheDocument();
     expect(within(panel).getByText("Plan de tratamiento")).toBeInTheDocument();
     expect(within(panel).getAllByText("—").length).toBeGreaterThan(0);
-    expect(within(panel).getByText("Otros campos extraídos")).toBeInTheDocument();
+    expect(within(panel).getByText("Other extracted fields")).toBeInTheDocument();
     expect(within(panel).getByText("Custom tag")).toBeInTheDocument();
     expect(within(panel).getByText("Prioridad")).toBeInTheDocument();
   });
@@ -1722,11 +1722,12 @@ describe("App upload and list flow", () => {
   it("hides configured extracted fields from the extra section", async () => {
     renderApp();
     const panel = await openReadyDocumentAndGetPanel();
+    const extraSection = within(panel).getByTestId("other-extracted-fields-section");
 
-    expect(within(panel).queryByText("Document date")).toBeNull();
-    expect(within(panel).queryByText("Imagen")).toBeNull();
-    expect(within(panel).queryByText("Imagine")).toBeNull();
-    expect(within(panel).queryByText(/Imaging/i)).toBeNull();
+    expect(within(extraSection).queryByText("Document date")).toBeNull();
+    expect(within(extraSection).queryByText("Imagen")).toBeNull();
+    expect(within(extraSection).queryByText("Imagine")).toBeNull();
+    expect(within(extraSection).queryByText(/Imaging/i)).toBeNull();
   });
 
   it("uses structured owner/visit rows and long-text wrappers", async () => {
@@ -1937,6 +1938,15 @@ describe("App upload and list flow", () => {
         reason: "missing_policy_version",
       })
     );
+  });
+
+  it("does not show degraded confidence mode when policy config is valid", async () => {
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+    await waitForStructuredDataReady();
+
+    expect(screen.queryByTestId("confidence-policy-degraded")).toBeNull();
   });
 
   it("does not fallback to legacy confidence when mapping_confidence is missing", async () => {

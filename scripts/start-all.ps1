@@ -26,6 +26,12 @@ $powershellExe = Join-Path $env:WINDIR "System32\WindowsPowerShell\v1.0\powershe
 $backendWindowTitle = "US21 Backend Dev"
 $frontendWindowTitle = "US21 Frontend Dev"
 $scriptMutexName = "Global\US21StartAllMutex"
+$backendDotEnvFile = Join-Path $backendDir ".env"
+$confidencePolicyEnvKeys = @(
+    "VET_RECORDS_CONFIDENCE_POLICY_VERSION",
+    "VET_RECORDS_CONFIDENCE_LOW_MAX",
+    "VET_RECORDS_CONFIDENCE_MID_MAX"
+)
 
 $resizeWindowCommand = @'
 try {
@@ -247,6 +253,46 @@ function Start-DevConsole {
     )
 }
 
+function Read-DotEnvValues {
+    param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)][string[]]$Keys
+    )
+
+    $values = @{}
+    if (-not (Test-Path $Path)) {
+        return $values
+    }
+
+    foreach ($line in Get-Content -Path $Path) {
+        $trimmed = $line.Trim()
+        if ([string]::IsNullOrWhiteSpace($trimmed) -or $trimmed.StartsWith("#")) {
+            continue
+        }
+        $parts = $trimmed.Split("=", 2)
+        if ($parts.Count -ne 2) {
+            continue
+        }
+        $key = $parts[0].Trim()
+        if ($Keys -notcontains $key) {
+            continue
+        }
+        $value = $parts[1].Trim()
+        if (
+            $value.Length -ge 2 -and
+            (
+                ($value.StartsWith("'") -and $value.EndsWith("'")) -or
+                ($value.StartsWith('"') -and $value.EndsWith('"'))
+            )
+        ) {
+            $value = $value.Substring(1, $value.Length - 2)
+        }
+        $values[$key] = $value
+    }
+
+    return $values
+}
+
 $mutex = New-Object System.Threading.Mutex($false, $scriptMutexName)
 $hasLock = $false
 try {
@@ -263,7 +309,21 @@ try {
     Stop-PortProcess -Port 5173
     Ensure-BackendPrerequisites
     Ensure-FrontendPrerequisites
-    $backendCommand = "`$env:VET_RECORDS_EXTRACTION_OBS='1'; & '$venvPython' -m uvicorn backend.app.main:create_app --factory --reload"
+    $confidencePolicyValues = Read-DotEnvValues -Path $backendDotEnvFile -Keys $confidencePolicyEnvKeys
+    $backendEnvAssignments = @("`$env:VET_RECORDS_EXTRACTION_OBS='1'")
+    foreach ($key in $confidencePolicyEnvKeys) {
+        if (-not $confidencePolicyValues.ContainsKey($key)) {
+            continue
+        }
+        $rawValue = [string]$confidencePolicyValues[$key]
+        if ([string]::IsNullOrWhiteSpace($rawValue)) {
+            continue
+        }
+        $escapedValue = $rawValue.Replace("'", "''")
+        $backendEnvAssignments += "`$env:$key='$escapedValue'"
+    }
+    $backendEnvAssignments += "& '$venvPython' -m uvicorn backend.app.main:create_app --factory --reload"
+    $backendCommand = $backendEnvAssignments -join "; "
     $backendProcess = Start-DevConsole -WorkingDirectory $repoRoot -CommandToRun $backendCommand -WindowTitle $backendWindowTitle
     $frontendProcess = Start-DevConsole -WorkingDirectory $frontendDir -CommandToRun "npm run dev" -WindowTitle $frontendWindowTitle
 

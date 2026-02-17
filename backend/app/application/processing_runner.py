@@ -32,6 +32,7 @@ from backend.app.application.global_schema_v0 import (
 )
 from backend.app.config import (
     confidence_band_cutoffs_or_none,
+    confidence_policy_explicit_config_diagnostics,
     confidence_policy_version_or_none,
     extraction_observability_enabled,
 )
@@ -589,10 +590,19 @@ def _build_interpretation_artifact(
                 "mid_max": round(mid_max, 4),
             },
         }
+        logger.info(
+            "confidence_policy included in interpretation payload "
+            "policy_version=%s",
+            policy_version,
+        )
     else:
+        _, reason, missing_keys, invalid_keys = confidence_policy_explicit_config_diagnostics()
         logger.warning(
             "confidence_policy omitted from interpretation payload "
-            "due to missing/invalid configuration"
+            "reason=%s missing_keys=%s invalid_keys=%s",
+            reason,
+            missing_keys,
+            invalid_keys,
         )
     logger.info(
         "MVP coverage debug run_id=%s document_id=%s fields=%s",
