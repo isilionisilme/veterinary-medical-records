@@ -13,15 +13,20 @@ import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import cast
 
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.app.api.routes import MAX_UPLOAD_SIZE as ROUTE_MAX_UPLOAD_SIZE
 from backend.app.api.routes import router as api_router
 from backend.app.application.processing_runner import processing_scheduler
-from backend.app.config import processing_enabled
+from backend.app.config import (
+    confidence_policy_explicit_config_diagnostics,
+    processing_enabled,
+)
 from backend.app.infra import database
 from backend.app.infra.file_storage import LocalFileStorage
 from backend.app.infra.sqlite_document_repository import SqliteDocumentRepository
@@ -29,6 +34,45 @@ from backend.app.ports.document_repository import DocumentRepository
 from backend.app.ports.file_storage import FileStorage
 
 logger = logging.getLogger(__name__)
+startup_logger = logging.getLogger("uvicorn.error")
+_DEV_ENV_MARKERS = {"dev", "development", "local"}
+
+
+def _is_dev_runtime() -> bool:
+    env_name = (
+        os.environ.get("ENV")
+        or os.environ.get("APP_ENV")
+        or os.environ.get("VET_RECORDS_ENV")
+        or ""
+    ).strip().lower()
+    if env_name in _DEV_ENV_MARKERS:
+        return True
+    uvicorn_reload = os.environ.get("UVICORN_RELOAD", "").strip().lower()
+    if uvicorn_reload in {"1", "true", "yes", "on"}:
+        return True
+    return False
+
+
+def _load_backend_dotenv_for_dev(
+    *, dotenv_path: Path | None = None, dev_runtime: bool | None = None
+) -> bool:
+    target_path = dotenv_path or (Path(__file__).resolve().parents[1] / ".env")
+    is_dev = _is_dev_runtime() if dev_runtime is None else dev_runtime
+    if not is_dev:
+        startup_logger.debug(
+            "backend .env auto-load skipped (non-dev runtime) path=%s", target_path
+        )
+        return False
+    if not target_path.exists():
+        startup_logger.info("backend .env not found for dev auto-load path=%s", target_path)
+        return False
+    loaded = load_dotenv(dotenv_path=target_path, override=False)
+    startup_logger.info(
+        "backend .env auto-load path=%s loaded=%s",
+        target_path,
+        loaded,
+    )
+    return loaded
 
 
 def _now_iso() -> str:
@@ -58,6 +102,20 @@ def create_app() -> FastAPI:
         database.ensure_schema()
         repository = cast(DocumentRepository, app.state.document_repository)
         storage = cast(FileStorage, app.state.file_storage)
+        (
+            is_policy_configured,
+            policy_reason,
+            policy_missing_keys,
+            policy_invalid_keys,
+        ) = confidence_policy_explicit_config_diagnostics()
+        startup_logger.info(
+            "confidence_policy startup status configured=%s reason=%s "
+            "missing_keys=%s invalid_keys=%s",
+            is_policy_configured,
+            policy_reason,
+            policy_missing_keys,
+            policy_invalid_keys,
+        )
         recovered = repository.recover_orphaned_runs(completed_at=_now_iso())
         if recovered:
             logger.info("Recovered %s orphaned runs", recovered)
@@ -120,4 +178,5 @@ def _get_cors_origins() -> list[str]:
     return origins
 
 
+_load_backend_dotenv_for_dev()
 app = create_app()
