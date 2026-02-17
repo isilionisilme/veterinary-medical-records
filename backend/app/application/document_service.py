@@ -35,6 +35,12 @@ def _default_now_iso() -> str:
     return datetime.now(UTC).isoformat()
 
 
+def _to_utc_z(iso_timestamp: str) -> str:
+    if iso_timestamp.endswith("+00:00"):
+        return f"{iso_timestamp[:-6]}Z"
+    return iso_timestamp
+
+
 def _default_id() -> str:
     return str(uuid4())
 
@@ -438,6 +444,7 @@ def apply_interpretation_edits(
     updated_fields = [dict(field) for field in active_fields]
     field_change_logs: list[dict[str, object]] = []
     now_iso = now_provider()
+    occurred_at = _to_utc_z(now_iso)
 
     for index, change in enumerate(changes):
         op_raw = change.get("op")
@@ -471,15 +478,24 @@ def apply_interpretation_edits(
                 "is_critical": key in CRITICAL_KEYS_V0,
                 "origin": "human",
             }
+            new_field_key = new_field.get("key")
+            resolved_field_key = new_field_key if isinstance(new_field_key, str) else None
             updated_fields.append(new_field)
             field_change_logs.append(
                 _build_field_change_log(
+                    document_id=run.document_id,
+                    run_id=run_id,
                     interpretation_id="",  # Filled after new interpretation id is generated.
+                    base_version_number=base_version_number,
+                    new_version_number=active_version_number + 1,
                     field_id=new_field_id,
+                    field_key=resolved_field_key,
+                    value_type=value_type,
                     old_value=None,
                     new_value=change.get("value"),
                     change_type="ADD",
                     created_at=now_iso,
+                    occurred_at=occurred_at,
                 )
             )
             continue
@@ -504,17 +520,31 @@ def apply_interpretation_edits(
                 result=None, invalid_reason=f"changes[{index}].field_id_not_found"
             )
 
-        old_value = updated_fields[existing_index].get("value")
+        existing_field = updated_fields[existing_index]
+        old_value = existing_field.get("value")
+        field_key = existing_field.get("key")
+        resolved_field_key = str(field_key) if isinstance(field_key, str) else None
+        existing_value_type = existing_field.get("value_type")
+        resolved_value_type = (
+            str(existing_value_type) if isinstance(existing_value_type, str) else None
+        )
         if op == "DELETE":
             updated_fields.pop(existing_index)
             field_change_logs.append(
                 _build_field_change_log(
+                    document_id=run.document_id,
+                    run_id=run_id,
                     interpretation_id="",
+                    base_version_number=base_version_number,
+                    new_version_number=active_version_number + 1,
                     field_id=field_id,
+                    field_key=resolved_field_key,
+                    value_type=resolved_value_type,
                     old_value=old_value,
                     new_value=None,
                     change_type="DELETE",
                     created_at=now_iso,
+                    occurred_at=occurred_at,
                 )
             )
             continue
@@ -540,12 +570,19 @@ def apply_interpretation_edits(
         }
         field_change_logs.append(
             _build_field_change_log(
+                document_id=run.document_id,
+                run_id=run_id,
                 interpretation_id="",
+                base_version_number=base_version_number,
+                new_version_number=active_version_number + 1,
                 field_id=field_id,
+                field_key=resolved_field_key,
+                value_type=value_type,
                 old_value=old_value,
                 new_value=change.get("value"),
                 change_type="UPDATE",
                 created_at=now_iso,
+                occurred_at=occurred_at,
             )
         )
 
@@ -600,21 +637,41 @@ def _coerce_interpretation_fields(raw_fields: object) -> list[dict[str, object]]
 
 def _build_field_change_log(
     *,
+    document_id: str,
+    run_id: str,
     interpretation_id: str,
+    base_version_number: int,
+    new_version_number: int,
     field_id: str,
+    field_key: str | None,
+    value_type: str | None,
     old_value: object,
     new_value: object,
     change_type: str,
     created_at: str,
+    occurred_at: str,
 ) -> dict[str, object]:
     return {
+        "event_type": "field_corrected",
+        "source": "reviewer_edit",
+        "document_id": document_id,
+        "run_id": run_id,
         "change_id": str(uuid4()),
         "interpretation_id": interpretation_id,
+        "base_version_number": base_version_number,
+        "new_version_number": new_version_number,
+        "field_id": field_id,
+        "field_key": field_key,
         "field_path": f"fields.{field_id}.value",
+        "value_type": value_type,
         "old_value": old_value,
         "new_value": new_value,
         "change_type": change_type,
         "created_at": created_at,
+        "occurred_at": occurred_at,
+        "context_key": None,
+        "mapping_id": None,
+        "policy_version": None,
     }
 
 
