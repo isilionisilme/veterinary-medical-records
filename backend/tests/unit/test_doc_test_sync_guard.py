@@ -25,6 +25,7 @@ def test_evaluate_sync_passes_when_no_docs_changed() -> None:
                 "required_any": ["backend/tests/unit/test_doc_updates_contract.py"],
             }
         ],
+        fail_on_unmapped_docs=True,
     )
     assert findings == []
 
@@ -39,6 +40,7 @@ def test_evaluate_sync_fails_when_mapped_doc_changes_without_related_file() -> N
                 "required_any": ["scripts/check_brand_compliance.py"],
             }
         ],
+        fail_on_unmapped_docs=True,
     )
     assert len(findings) == 1
     assert "check_brand_compliance.py" in findings[0]
@@ -57,6 +59,7 @@ def test_evaluate_sync_passes_when_mapped_doc_and_related_file_change() -> None:
                 "required_any": ["backend/tests/unit/test_doc_updates_contract.py"],
             }
         ],
+        fail_on_unmapped_docs=True,
     )
     assert findings == []
 
@@ -71,6 +74,67 @@ def test_evaluate_sync_covers_root_router_docs() -> None:
                 "required_any": ["backend/tests/unit/test_doc_router_contract.py"],
             }
         ],
+        fail_on_unmapped_docs=True,
     )
     assert len(findings) == 1
     assert "test_doc_router_contract.py" in findings[0]
+
+
+def test_evaluate_sync_fails_on_unmapped_doc_when_fail_closed_enabled() -> None:
+    module = _load_guard_module()
+    findings = module.evaluate_sync(
+        changed_files=["docs/extraction/STRATEGY.md"],
+        rules=[
+            {
+                "doc_glob": "docs/agent_router/**/*.md",
+                "required_any": ["backend/tests/unit/test_doc_updates_contract.py"],
+            }
+        ],
+        fail_on_unmapped_docs=True,
+    )
+    assert len(findings) == 1
+    assert "no mapping coverage" in findings[0]
+
+
+def test_evaluate_sync_fails_when_owner_propagation_missing() -> None:
+    module = _load_guard_module()
+    findings = module.evaluate_sync(
+        changed_files=["docs/shared/ENGINEERING_PLAYBOOK.md"],
+        rules=[
+            {
+                "doc_glob": "docs/shared/*.md",
+                "owner_any": ["docs/agent_router/03_SHARED/**/*.md"],
+                "required_any": ["backend/tests/unit/test_doc_updates_contract.py"],
+            },
+            {
+                "doc_glob": "docs/agent_router/**/*.md",
+            }
+        ],
+        fail_on_unmapped_docs=True,
+    )
+    assert len(findings) == 2
+    assert any("related tests/guards" in finding for finding in findings)
+    assert any("owner propagation" in finding for finding in findings)
+
+
+def test_evaluate_sync_passes_when_owner_and_related_files_change() -> None:
+    module = _load_guard_module()
+    findings = module.evaluate_sync(
+        changed_files=[
+            "docs/shared/ENGINEERING_PLAYBOOK.md",
+            "docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/150_documentation-guidelines.md",
+            "backend/tests/unit/test_doc_updates_contract.py",
+        ],
+        rules=[
+            {
+                "doc_glob": "docs/shared/*.md",
+                "owner_any": ["docs/agent_router/03_SHARED/**/*.md"],
+                "required_any": ["backend/tests/unit/test_doc_updates_contract.py"],
+            },
+            {
+                "doc_glob": "docs/agent_router/**/*.md",
+            }
+        ],
+        fail_on_unmapped_docs=True,
+    )
+    assert findings == []
