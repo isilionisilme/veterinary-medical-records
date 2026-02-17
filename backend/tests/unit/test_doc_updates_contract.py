@@ -74,10 +74,14 @@ def test_doc_updates_entry_covers_triggers_and_summary_schema() -> None:
     assert "Use case E" in text
     assert "git status --porcelain" in text
     assert "git diff --name-status" in text
+    assert "git diff --cached --name-status" in text
+    assert "@{upstream}..HEAD" in text
+    assert "<base_ref>...HEAD" in text
     assert "git diff -- <path>" in text
     assert "test_impact_map.json" in text
     assert "router_parity_map.json" in text
     assert "Related tests/guards updated" in text
+    assert "Evidence source" in text
     assert "Source→Router parity" in text
     assert "DOC_UPDATES Summary" in text
     assert "Propagation gaps" in text
@@ -114,12 +118,15 @@ def test_checklist_enforces_discovery_and_anti_loop() -> None:
     text = _read_text(DOC_UPDATES_CHECKLIST)
     assert "git status --porcelain" in text
     assert "git diff --name-status" in text
+    assert "@{upstream}..HEAD" in text
+    assert "<base_ref>...HEAD" in text
     assert "Normaliz" in text and "no loop" in text.lower()
     assert "DOC_UPDATES Summary" in text
     assert "Propagation gaps" in text
     assert "related test/guard file was updated" in text
     assert "router_parity_map.json" in text
     assert "Source-to-router parity status" in text
+    assert "Evidence source per processed doc" in text
 
 
 def test_doc_test_sync_map_has_minimum_rules() -> None:

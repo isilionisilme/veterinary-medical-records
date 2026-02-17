@@ -61,10 +61,16 @@ def test_diff_first_flow_is_deterministic_and_ordered() -> None:
     text = _read_text(DOC_UPDATES_ENTRY)
     idx_discover = _index_or_fail(text, "git status --porcelain")
     idx_name_status = _index_or_fail(text, "git diff --name-status")
+    idx_cached = _index_or_fail(text, "git diff --cached --name-status")
+    idx_upstream = _index_or_fail(text, "@{upstream}..HEAD")
+    idx_branch_base = _index_or_fail(text, "<base_ref>...HEAD")
     idx_single_diff = _index_or_fail(text, "git diff -- <path>")
     idx_normalize = _index_or_fail(text, "Run the Normalization Pass")
     assert idx_discover < idx_normalize
     assert idx_name_status < idx_normalize
+    assert idx_cached < idx_normalize
+    assert idx_upstream < idx_normalize
+    assert idx_branch_base < idx_normalize
     assert idx_single_diff < idx_normalize
 
 
@@ -79,7 +85,8 @@ def test_fallback_and_rule_id_paths_are_enforced() -> None:
 def test_required_summary_output_contract_is_complete() -> None:
     text = _read_text(DOC_UPDATES_ENTRY)
     assert "DOC_UPDATES Summary" in text
-    assert "| Source doc (inspected) | Diff inspected | Classification |" in text
+    assert "| Source doc (inspected) | Diff inspected | Evidence source | Classification |" in text
+    assert "Evidence source" in text
     assert "Related tests/guards updated" in text
     assert "Source→Router parity" in text
     assert "Rule change / Clarification / Navigation" in text
@@ -124,6 +131,7 @@ def test_checklist_requires_outputs_and_anti_loop() -> None:
     assert "Normaliz" in text and "no loop" in text.lower()
     assert "DOC_UPDATES Summary" in text
     assert "Docs processed table" in text
+    assert "Evidence source per processed doc" in text
     assert "Propagation gaps" in text
     assert "test_impact_map.json" in text
     assert "router_parity_map.json" in text
