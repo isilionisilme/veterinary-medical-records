@@ -2973,17 +2973,6 @@ export function App() {
     closeFieldEditDialog();
   };
 
-  const renderModifiedBadge = (item: ReviewSelectableField) => {
-    if (item.rawField?.origin !== "human") {
-      return null;
-    }
-    return (
-      <span className="rounded-full border border-accent/35 bg-accentSoft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">
-        Modificado
-      </span>
-    );
-  };
-
   const buildFieldTooltip = (item: ReviewSelectableField, isCritical: boolean): string => {
     const confidence = item.confidence;
     const percentage = Math.round(clampConfidence(confidence) * 100);
@@ -3055,6 +3044,10 @@ export function App() {
           {field.items.map((item) => {
             const isSelected = selectedFieldId === item.id;
             const isLongText = shouldRenderLongTextValue(field.key, item.displayValue);
+            const isFieldModified = item.rawField?.origin === "human";
+            const modifiedValueClass = isFieldModified
+              ? "bg-amber-50 ring-1 ring-amber-300/70"
+              : "";
             return (
               <div
                 key={item.id}
@@ -3074,19 +3067,21 @@ export function App() {
                     <FieldRow
                       indicator={renderConfidenceIndicator(field, item)}
                       label={<p className={`${STRUCTURED_FIELD_LABEL_CLASS} text-text`}>{field.label}</p>}
-                      labelMeta={renderModifiedBadge(item)}
+                      labelMeta={null}
                       className={STRUCTURED_FIELD_ROW_CLASS}
                       valuePlacement={isLongText ? "below-label" : "inline"}
                       value={
-                        <div className="relative">
+                        <div className="relative rounded-control">
                           {isLongText ? (
                             renderLongTextValue({
                               value: item.displayValue,
                               isMissing: item.isMissing,
                               missingClassName: isDocumentReviewed
-                                ? "text-missing"
-                                : "text-missing pr-9",
-                              valueClassName: isDocumentReviewed ? "text-text" : "text-text pr-9",
+                                ? `text-missing ${modifiedValueClass}`
+                                : `text-missing pr-9 ${modifiedValueClass}`,
+                              valueClassName: isDocumentReviewed
+                                ? `text-text ${modifiedValueClass}`
+                                : `text-text pr-9 ${modifiedValueClass}`,
                             })
                           ) : (
                             <ValueSurface
@@ -3094,11 +3089,11 @@ export function App() {
                               className={
                                 item.isMissing
                                   ? isDocumentReviewed
-                                    ? "relative italic text-missing"
-                                    : "relative pr-9 italic text-missing"
+                                    ? `relative italic text-missing ${modifiedValueClass}`
+                                    : `relative pr-9 italic text-missing ${modifiedValueClass}`
                                   : isDocumentReviewed
-                                    ? "relative text-text"
-                                    : "relative pr-9 text-text"
+                                    ? `relative text-text ${modifiedValueClass}`
+                                    : `relative pr-9 text-text ${modifiedValueClass}`
                               }
                             >
                               {item.displayValue}
@@ -3142,6 +3137,10 @@ export function App() {
     const isSelected = selectedFieldId === item.id;
     const isExpanded = Boolean(expandedFieldValues[item.id]);
     const shouldUseLongText = shouldRenderLongTextValue(field.key, item.displayValue);
+    const isFieldModified = item.rawField?.origin === "human";
+    const modifiedValueClass = isFieldModified
+      ? "bg-amber-50 ring-1 ring-amber-300/70"
+      : "";
     const shouldSpanFullSectionWidth = shouldUseLongText;
     const valueText = shouldUseLongText
       ? item.displayValue
@@ -3175,21 +3174,22 @@ export function App() {
             indicator={renderConfidenceIndicator(field, item)}
             label={<p className={`${STRUCTURED_FIELD_LABEL_CLASS} text-text`}>{field.label}</p>}
             labelMeta={
-              <span className="inline-flex items-center gap-1.5">
-                {field.isCritical ? <CriticalBadge testId={`critical-indicator-${field.key}`} /> : null}
-                {renderModifiedBadge(item)}
-              </span>
+              field.isCritical ? <CriticalBadge testId={`critical-indicator-${field.key}`} /> : null
             }
             className={STRUCTURED_FIELD_ROW_CLASS}
             valuePlacement={shouldUseLongText ? "below-label" : "inline"}
             value={
-              <div className="relative">
+              <div className="relative rounded-control">
                 {shouldUseLongText ? (
                   renderLongTextValue({
                     value: valueText,
                     isMissing: item.isMissing,
-                    missingClassName: isDocumentReviewed ? "text-missing" : "text-missing pr-9",
-                    valueClassName: isDocumentReviewed ? "text-text" : "text-text pr-9",
+                    missingClassName: isDocumentReviewed
+                      ? `text-missing ${modifiedValueClass}`
+                      : `text-missing pr-9 ${modifiedValueClass}`,
+                    valueClassName: isDocumentReviewed
+                      ? `text-text ${modifiedValueClass}`
+                      : `text-text pr-9 ${modifiedValueClass}`,
                     testId: `field-value-${field.key}`,
                   })
                 ) : (
@@ -3199,11 +3199,11 @@ export function App() {
                     className={
                       item.isMissing
                         ? isDocumentReviewed
-                          ? "relative italic text-missing"
-                          : "relative pr-9 italic text-missing"
+                          ? `relative italic text-missing ${modifiedValueClass}`
+                          : `relative pr-9 italic text-missing ${modifiedValueClass}`
                         : isDocumentReviewed
-                          ? "relative text-text"
-                          : "relative pr-9 text-text"
+                          ? `relative text-text ${modifiedValueClass}`
+                          : `relative pr-9 text-text ${modifiedValueClass}`
                     }
                   >
                     {valueText}
