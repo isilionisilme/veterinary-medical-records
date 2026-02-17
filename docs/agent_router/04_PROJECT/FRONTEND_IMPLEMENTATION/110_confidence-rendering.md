@@ -19,8 +19,8 @@ No frontend logic may interpret confidence as correctness or validation.
 - Frontend renders backend-provided breakdown values only.
 - Frontend must not infer `extraction_reliability` from `candidate_confidence` and must not implement calibration math.
 - Edge cases:
-  - no history -> `Ajuste por historico de revisiones: 0%`
-  - missing extraction reliability -> `Fiabilidad de la extraccion de texto: No disponible`
+  - no history -> `Ajuste por histórico de revisiones: 0%`
+  - missing extraction reliability -> `Fiabilidad de la extracción de texto: No disponible`
 - Use existing semantic tokens/classes for positive/negative/neutral adjustment styling.
 - Keep veterinarian-facing copy free of governance terminology.
 

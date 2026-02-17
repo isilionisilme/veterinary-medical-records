@@ -261,8 +261,8 @@ def test_project_owner_modules_include_confidence_tooltip_breakdown_propagation(
         / "110_release-5-editing-learning-signals-human-corrections.md"
     )
 
-    assert "Confidence tooltip breakdown" in ux_module
-    assert "optional breakdown lines" in design_system_module
+    assert "Confidence tooltip breakdown (veterinarian UI)" in ux_module
+    assert "Propagation note:" in design_system_module
     assert "Tooltip breakdown visibility contract (MVP)" in technical_module
     assert "Tooltip breakdown data sourcing (MVP)" in backend_module
     assert "Confidence tooltip breakdown rendering (MVP)" in frontend_module
