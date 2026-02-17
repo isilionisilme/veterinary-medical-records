@@ -21,10 +21,13 @@ Treat paraphrases and other languages as the same intent.
 3) Enforce doc/test sync using `docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json`:
    - If a changed doc matches a map rule, update at least one mapped test/guard file in the same change.
    - If no mapped test/guard applies, record a propagation gap with reason.
-4) If git discovery/diff inspection is not possible, ask the user for file paths and a snippet/diff. Do not load large reference docs by default.
-5) Finish with the verification checklist: `30_checklist.md`.
-6) Propagation rule: for any R change, update the owner module before emitting the summary. Gaps are only allowed when the owner is ambiguous or the diff/snippet is unavailable.
-7) Anti-loop rule: run normalization once at task end; do not re-run for changes produced by normalization.
+4) Enforce source-to-router parity using `docs/agent_router/01_WORKFLOW/DOC_UPDATES/router_parity_map.json`:
+   - If a mapped `source_doc` changed, all required terms must be present in all mapped router modules.
+   - Missing required terms are blocking parity failures.
+5) If git discovery/diff inspection is not possible, ask the user for file paths and a snippet/diff. Do not load large reference docs by default.
+6) Finish with the verification checklist: `30_checklist.md`.
+7) Propagation rule: for any R change, update the owner module before emitting the summary. Gaps are only allowed when the owner is ambiguous or the diff/snippet is unavailable.
+8) Anti-loop rule: run normalization once at task end; do not re-run for changes produced by normalization.
 
 ## Use cases
 
@@ -46,9 +49,9 @@ After DOC_UPDATES completes (Triggers A/B/C/D/E), print:
 1) Header: `DOC_UPDATES Summary`
 2) Docs processed table:
 
-| Source doc (inspected) | Diff inspected | Classification | Owner module(s) updated | Related tests/guards updated | Files modified |
+| Source doc (inspected) | Diff inspected | Classification | Owner module(s) updated | Related tests/guards updated | Source→Router parity | Files modified |
 |---|---:|---|---|---|---|
-| docs/... | Yes/No | Rule change / Clarification / Navigation | docs/... (comma-separated) | path/to/test_or_guard.py (comma-separated) | docs/... (comma-separated) |
+| docs/... | Yes/No | Rule change / Clarification / Navigation | docs/... (comma-separated) | path/to/test_or_guard.py (comma-separated) | Pass/Fail/Not mapped | docs/... (comma-separated) |
 
 Rules:
 - `Diff inspected` must be `Yes` or `No` (`No` only when snippet was used instead of git diff).
