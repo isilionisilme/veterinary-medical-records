@@ -171,6 +171,36 @@ class ReviewStatusToggleResponse(BaseModel):
     )
 
 
+class InterpretationChangeRequest(BaseModel):
+    op: Literal["ADD", "UPDATE", "DELETE"] = Field(
+        ..., description="Change operation to apply."
+    )
+    field_id: str | None = Field(
+        None, description="Existing field identifier for UPDATE/DELETE."
+    )
+    key: str | None = Field(None, description="Field key for ADD operations.")
+    value: object | None = Field(None, description="Field value for ADD/UPDATE operations.")
+    value_type: str | None = Field(
+        None, description="Field value type for ADD/UPDATE operations."
+    )
+
+
+class InterpretationEditRequest(BaseModel):
+    base_version_number: int = Field(
+        ..., ge=1, description="Expected active interpretation version number."
+    )
+    changes: list[InterpretationChangeRequest] = Field(
+        ..., min_length=1, description="List of field-level changes to apply."
+    )
+
+
+class InterpretationEditResponse(BaseModel):
+    run_id: str = Field(..., description="Processing run identifier.")
+    interpretation_id: str = Field(..., description="New active interpretation identifier.")
+    version_number: int = Field(..., description="New active interpretation version number.")
+    data: dict[str, object] = Field(..., description="Updated structured interpretation payload.")
+
+
 class ExtractionFieldSnapshotRequest(BaseModel):
     status: Literal["missing", "rejected", "accepted"] = Field(
         ..., description="Field extraction status."

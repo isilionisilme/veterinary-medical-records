@@ -23,6 +23,8 @@ from backend.app.api.schemas import (
     ExtractionRunsListResponse,
     ExtractionRunSnapshotRequest,
     ExtractionRunTriageResponse,
+    InterpretationEditRequest,
+    InterpretationEditResponse,
     LatestCompletedRunReviewResponse,
     LatestRunResponse,
     ProcessingHistoryResponse,
@@ -34,6 +36,7 @@ from backend.app.api.schemas import (
     ReviewStatusToggleResponse,
 )
 from backend.app.application.document_service import (
+    apply_interpretation_edits,
     get_document,
     get_document_original_location,
     get_document_review,
@@ -739,6 +742,84 @@ def get_raw_text_artifact(
         artifact_type="RAW_TEXT",
         content_type="text/plain",
         text=text,
+    )
+
+
+@router.post(
+    "/runs/{run_id}/interpretations",
+    response_model=InterpretationEditResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a new interpretation version for a run",
+    description="Apply veterinarian edits by creating a new active interpretation version.",
+    responses={
+        400: {"description": "Invalid request payload (INVALID_REQUEST)."},
+        404: {"description": "Processing run not found (NOT_FOUND)."},
+        409: {"description": "Editing blocked by run/version constraints (CONFLICT)."},
+    },
+)
+def edit_run_interpretation(
+    request: Request,
+    run_id: str,
+    payload: InterpretationEditRequest,
+) -> InterpretationEditResponse | JSONResponse:
+    repository = cast(DocumentRepository, request.app.state.document_repository)
+    outcome = apply_interpretation_edits(
+        run_id=run_id,
+        base_version_number=payload.base_version_number,
+        changes=[change.model_dump() for change in payload.changes],
+        repository=repository,
+    )
+    if outcome is None:
+        return _error_response(
+            status_code=status.HTTP_404_NOT_FOUND,
+            error_code="NOT_FOUND",
+            message="Processing run not found.",
+        )
+
+    if outcome.invalid_reason is not None:
+        return _error_response(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            error_code="INVALID_REQUEST",
+            message="Interpretation edit payload is invalid.",
+            details={"reason": outcome.invalid_reason},
+        )
+
+    if outcome.conflict_reason is not None:
+        reason = outcome.conflict_reason
+        message = {
+            "REVIEW_BLOCKED_BY_ACTIVE_RUN": (
+                "Review and editing are blocked while a processing run is active."
+            ),
+            "INTERPRETATION_NOT_AVAILABLE": (
+                "Interpretation editing is only available for completed runs."
+            ),
+            "INTERPRETATION_MISSING": "Interpretation is not available for this run.",
+            "BASE_VERSION_MISMATCH": "Interpretation version conflict. Refresh and retry.",
+        }.get(reason, "Interpretation editing is not available.")
+        return _error_response(
+            status_code=status.HTTP_409_CONFLICT,
+            error_code="CONFLICT",
+            message=message,
+            details={"reason": reason},
+        )
+
+    if outcome.result is None:  # pragma: no cover - defensive
+        return _error_response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            error_code="INTERNAL_ERROR",
+            message="Unexpected error while editing interpretation.",
+        )
+
+    _log_event(
+        event_type="INTERPRETATION_EDITED",
+        document_id=None,
+        run_id=run_id,
+    )
+    return InterpretationEditResponse(
+        run_id=outcome.result.run_id,
+        interpretation_id=outcome.result.interpretation_id,
+        version_number=outcome.result.version_number,
+        data=outcome.result.data,
     )
 
 

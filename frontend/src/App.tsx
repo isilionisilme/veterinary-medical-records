@@ -618,6 +618,21 @@ type ReviewToggleResponse = {
   reviewed_by: string | null;
 };
 
+type InterpretationChangePayload = {
+  op: "ADD" | "UPDATE" | "DELETE";
+  field_id?: string;
+  key?: string;
+  value?: string | number | boolean | null;
+  value_type?: string;
+};
+
+type InterpretationEditResponse = {
+  run_id: string;
+  interpretation_id: string;
+  version_number: number;
+  data: StructuredInterpretationData;
+};
+
 async function markDocumentReviewed(documentId: string): Promise<ReviewToggleResponse> {
   let response: Response;
   try {
@@ -682,6 +697,61 @@ async function reopenDocumentReview(documentId: string): Promise<ReviewToggleRes
     throw new UiError(
       errorMessage,
       `HTTP ${response.status} calling ${API_BASE_URL}/documents/${documentId}/reviewed`
+    );
+  }
+
+  return response.json();
+}
+
+async function editRunInterpretation(
+  runId: string,
+  payload: {
+    base_version_number: number;
+    changes: InterpretationChangePayload[];
+  }
+): Promise<InterpretationEditResponse> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/runs/${runId}/interpretations`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch (error) {
+    if (isNetworkFetchError(error)) {
+      throw new UiError(
+        "No se pudo conectar con el servidor.",
+        `Network error calling ${API_BASE_URL}/runs/${runId}/interpretations`
+      );
+    }
+    throw error;
+  }
+
+  if (!response.ok) {
+    let errorMessage = "No se pudo guardar la edición.";
+    let errorCode: string | undefined;
+    let reason: string | undefined;
+    try {
+      const body = await response.json();
+      if (typeof body?.message === "string" && body.message.trim()) {
+        errorMessage = body.message;
+      }
+      if (typeof body?.error_code === "string") {
+        errorCode = body.error_code;
+      }
+      if (typeof body?.details?.reason === "string") {
+        reason = body.details.reason;
+      }
+    } catch {
+      // Ignore JSON parse errors for non-JSON responses.
+    }
+    throw new ApiResponseError(
+      errorMessage,
+      `HTTP ${response.status} calling ${API_BASE_URL}/runs/${runId}/interpretations`,
+      errorCode,
+      reason
     );
   }
 
@@ -1881,6 +1951,50 @@ export function App() {
     },
   });
 
+  const interpretationEditMutation = useMutation({
+    mutationFn: async (variables: {
+      docId: string;
+      runId: string;
+      baseVersionNumber: number;
+      changes: InterpretationChangePayload[];
+      successMessage: string;
+    }) =>
+      editRunInterpretation(variables.runId, {
+        base_version_number: variables.baseVersionNumber,
+        changes: variables.changes,
+      }),
+    onSuccess: (result, variables) => {
+      queryClient.setQueryData<DocumentReviewResponse | undefined>(
+        ["documents", "review", variables.docId],
+        (current) => {
+          if (!current) {
+            return current;
+          }
+          return {
+            ...current,
+            active_interpretation: {
+              interpretation_id: result.interpretation_id,
+              version_number: result.version_number,
+              data: result.data,
+            },
+          };
+        }
+      );
+      setActionFeedback({
+        kind: "success",
+        message: variables.successMessage,
+      });
+      queryClient.invalidateQueries({ queryKey: ["documents", "review", variables.docId] });
+    },
+    onError: (error) => {
+      setActionFeedback({
+        kind: "error",
+        message: getUserErrorMessage(error, "No se pudo guardar la edición."),
+        technicalDetails: getTechnicalDetails(error),
+      });
+    },
+  });
+
   const handleRefresh = () => {
     setShowRefreshFeedback(true);
     if (refreshFeedbackTimerRef.current) {
@@ -2756,6 +2870,106 @@ export function App() {
     </IconButton>
   ) : null;
 
+  const submitInterpretationChanges = (
+    changes: InterpretationChangePayload[],
+    successMessage: string
+  ) => {
+    const reviewPayload = documentReview.data;
+    if (!activeId || !reviewPayload) {
+      return;
+    }
+    interpretationEditMutation.mutate({
+      docId: activeId,
+      runId: reviewPayload.latest_completed_run.run_id,
+      baseVersionNumber: reviewPayload.active_interpretation.version_number,
+      changes,
+      successMessage,
+    });
+  };
+
+  const handleAddField = () => {
+    const keyInput = window.prompt("Clave del nuevo campo", "");
+    if (keyInput === null) {
+      return;
+    }
+    const key = keyInput.trim();
+    if (!key) {
+      setActionFeedback({
+        kind: "error",
+        message: "La clave del campo no puede estar vacía.",
+      });
+      return;
+    }
+    const valueInput = window.prompt(`Valor para "${key}"`, "");
+    if (valueInput === null) {
+      return;
+    }
+    const value = valueInput.trim();
+    submitInterpretationChanges(
+      [
+        {
+          op: "ADD",
+          key,
+          value: value.length > 0 ? value : null,
+          value_type: "string",
+        },
+      ],
+      "Campo añadido."
+    );
+  };
+
+  const handleEditField = (item: ReviewSelectableField) => {
+    const rawCurrentValue = item.rawField?.value;
+    const currentValue =
+      rawCurrentValue === null || rawCurrentValue === undefined
+        ? ""
+        : String(rawCurrentValue);
+    const nextValueInput = window.prompt(`Editar "${item.label}"`, currentValue);
+    if (nextValueInput === null) {
+      return;
+    }
+    const nextValue = nextValueInput.trim();
+    const valueType = item.rawField?.value_type ?? item.valueType ?? "string";
+
+    if (item.rawField) {
+      submitInterpretationChanges(
+        [
+          {
+            op: "UPDATE",
+            field_id: item.rawField.field_id,
+            value: nextValue.length > 0 ? nextValue : null,
+            value_type: valueType,
+          },
+        ],
+        "Campo actualizado."
+      );
+      return;
+    }
+
+    submitInterpretationChanges(
+      [
+        {
+          op: "ADD",
+          key: item.key,
+          value: nextValue.length > 0 ? nextValue : null,
+          value_type: valueType,
+        },
+      ],
+      "Campo actualizado."
+    );
+  };
+
+  const renderModifiedBadge = (item: ReviewSelectableField) => {
+    if (item.rawField?.origin !== "human") {
+      return null;
+    }
+    return (
+      <span className="rounded-full border border-accent/35 bg-accentSoft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">
+        Modificado
+      </span>
+    );
+  };
+
   const buildFieldTooltip = (item: ReviewSelectableField, isCritical: boolean): string => {
     const confidence = item.confidence;
     const percentage = Math.round(clampConfidence(confidence) * 100);
@@ -2846,7 +3060,7 @@ export function App() {
                     <FieldRow
                       indicator={renderConfidenceIndicator(field, item)}
                       label={<p className={`${STRUCTURED_FIELD_LABEL_CLASS} text-text`}>{field.label}</p>}
-                      labelMeta={null}
+                      labelMeta={renderModifiedBadge(item)}
                       className={STRUCTURED_FIELD_ROW_CLASS}
                       valuePlacement={isLongText ? "below-label" : "inline"}
                       value={
@@ -2868,6 +3082,20 @@ export function App() {
                       }
                     />
                 </button>
+                {!isDocumentReviewed && (
+                  <div className="mt-1 flex justify-end">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="border border-border bg-surface text-text hover:bg-surfaceMuted"
+                      disabled={interpretationEditMutation.isPending}
+                      onClick={() => handleEditField(item)}
+                    >
+                      Editar
+                    </Button>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -2916,7 +3144,12 @@ export function App() {
             valueWrapperTestId={shouldUseLongText ? `field-value-${field.key}-wrapper` : undefined}
             indicator={renderConfidenceIndicator(field, item)}
             label={<p className={`${STRUCTURED_FIELD_LABEL_CLASS} text-text`}>{field.label}</p>}
-            labelMeta={field.isCritical ? <CriticalBadge testId={`critical-indicator-${field.key}`} /> : null}
+            labelMeta={
+              <span className="inline-flex items-center gap-1.5">
+                {field.isCritical ? <CriticalBadge testId={`critical-indicator-${field.key}`} /> : null}
+                {renderModifiedBadge(item)}
+              </span>
+            }
             className={STRUCTURED_FIELD_ROW_CLASS}
             valuePlacement={shouldUseLongText ? "below-label" : "inline"}
             value={
@@ -2940,6 +3173,20 @@ export function App() {
             }
           />
         </button>
+        {!isDocumentReviewed && (
+          <div className="mt-1 flex justify-end">
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="border border-border bg-surface text-text hover:bg-surfaceMuted"
+              disabled={interpretationEditMutation.isPending}
+              onClick={() => handleEditField(item)}
+            >
+              Editar
+            </Button>
+          </div>
+        )}
         {canExpand && (
           <button
             type="button"
@@ -3243,6 +3490,20 @@ export function App() {
                             <div className="flex w-full items-center justify-between gap-2">
                               <h3 className="text-lg font-semibold text-textSecondary">Datos extraídos</h3>
                               <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="default"
+                                  className="border border-border bg-surface text-text hover:bg-surfaceMuted"
+                                  disabled={
+                                    reviewPanelState !== "ready" ||
+                                    isDocumentReviewed ||
+                                    interpretationEditMutation.isPending
+                                  }
+                                  onClick={handleAddField}
+                                >
+                                  Añadir campo
+                                </Button>
                                 <Button
                                   type="button"
                                   variant={isDocumentReviewed ? "ghost" : "primary"}
