@@ -1032,7 +1032,7 @@ function getConfidenceTone(
 
 function resolveMappingConfidence(field: ReviewField): number | null {
   const raw = field.mapping_confidence;
-  if (!Number.isFinite(raw)) {
+  if (typeof raw !== "number" || !Number.isFinite(raw)) {
     return null;
   }
   return clampConfidence(raw);
@@ -3315,10 +3315,16 @@ export function App() {
                 <div
                   role="button"
                   tabIndex={0}
+                  aria-disabled={isDocumentReviewed}
                   className={`w-full rounded-md px-1 py-0.5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
                     isDocumentReviewed ? "cursor-default" : "cursor-pointer hover:bg-black/[0.03]"
                   }`}
-                  onClick={() => handleSelectReviewItem(item)}
+                  onClick={() => {
+                    if (isDocumentReviewed) {
+                      return;
+                    }
+                    handleSelectReviewItem(item);
+                  }}
                   onMouseUp={handleReviewedEditAttempt}
                   onKeyDown={(event) => {
                     handleReviewedKeyboardEditAttempt(event);
@@ -3379,10 +3385,16 @@ export function App() {
         <div
           role="button"
           tabIndex={0}
+          aria-disabled={isDocumentReviewed}
           className={`w-full rounded-md px-1 py-0.5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
             isDocumentReviewed ? "cursor-default" : "cursor-pointer hover:bg-black/[0.03]"
           }`}
-          onClick={() => handleSelectReviewItem(item)}
+          onClick={() => {
+            if (isDocumentReviewed) {
+              return;
+            }
+            handleSelectReviewItem(item);
+          }}
           onMouseUp={handleReviewedEditAttempt}
           onKeyDown={(event) => {
             handleReviewedKeyboardEditAttempt(event);

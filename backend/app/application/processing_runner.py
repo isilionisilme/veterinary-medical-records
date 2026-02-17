@@ -31,8 +31,8 @@ from backend.app.application.global_schema_v0 import (
     validate_global_schema_v0_shape,
 )
 from backend.app.config import (
-    confidence_band_cutoffs,
-    confidence_policy_version,
+    confidence_band_cutoffs_or_none,
+    confidence_policy_version_or_none,
     extraction_observability_enabled,
 )
 from backend.app.domain.models import (
@@ -556,26 +556,20 @@ def _build_interpretation_artifact(
         )
     ]
     now_iso = _default_now_iso()
-    low_max, mid_max = confidence_band_cutoffs()
+    policy_version = confidence_policy_version_or_none()
+    band_cutoffs = confidence_band_cutoffs_or_none()
     mvp_coverage_debug = _build_mvp_coverage_debug_summary(
         raw_text=raw_text,
         normalized_values=normalized_values,
         candidate_bundle=candidate_bundle,
         evidence_map=canonical_evidence,
     )
-    data = {
+    data: dict[str, object] = {
         "schema_version": SCHEMA_VERSION_V0,
         "document_id": document_id,
         "processing_run_id": run_id,
         "created_at": now_iso,
         "fields": fields,
-        "confidence_policy": {
-            "policy_version": confidence_policy_version(),
-            "band_cutoffs": {
-                "low_max": round(low_max, 4),
-                "mid_max": round(mid_max, 4),
-            },
-        },
         "global_schema_v0": normalized_values,
         "summary": {
             "total_keys": len(GLOBAL_SCHEMA_V0_KEYS),
@@ -586,6 +580,20 @@ def _build_interpretation_artifact(
             "mvp_coverage_debug": mvp_coverage_debug,
         },
     }
+    if policy_version is not None and band_cutoffs is not None:
+        low_max, mid_max = band_cutoffs
+        data["confidence_policy"] = {
+            "policy_version": policy_version,
+            "band_cutoffs": {
+                "low_max": round(low_max, 4),
+                "mid_max": round(mid_max, 4),
+            },
+        }
+    else:
+        logger.warning(
+            "confidence_policy omitted from interpretation payload "
+            "due to missing/invalid configuration"
+        )
     logger.info(
         "MVP coverage debug run_id=%s document_id=%s fields=%s",
         run_id,
@@ -1572,6 +1580,8 @@ def _build_structured_field(
         "value": value,
         "value_type": value_type,
         "mapping_confidence": mapping_confidence,
+        # TODO(US-39-compat): remove legacy "confidence" after downstream migration;
+        # veterinarian-facing consumers must use "mapping_confidence".
         "confidence": mapping_confidence,
         "is_critical": key in CRITICAL_KEYS_V0,
         "origin": "machine",

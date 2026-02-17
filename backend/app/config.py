@@ -48,3 +48,28 @@ def confidence_band_cutoffs() -> tuple[float, float]:
     if low_max < 0 or mid_max > 1 or low_max >= mid_max:
         return DEFAULT_CONFIDENCE_LOW_MAX, DEFAULT_CONFIDENCE_MID_MAX
     return low_max, mid_max
+
+
+def confidence_policy_version_or_none() -> str | None:
+    """Return policy version when explicitly configured, else None."""
+
+    raw = os.environ.get("VET_RECORDS_CONFIDENCE_POLICY_VERSION", "").strip()
+    return raw or None
+
+
+def confidence_band_cutoffs_or_none() -> tuple[float, float] | None:
+    """Return (low_max, mid_max) only when both values are configured and valid."""
+
+    low_raw = os.environ.get("VET_RECORDS_CONFIDENCE_LOW_MAX")
+    mid_raw = os.environ.get("VET_RECORDS_CONFIDENCE_MID_MAX")
+    if low_raw is None or mid_raw is None:
+        return None
+    try:
+        low_max = float(low_raw)
+        mid_max = float(mid_raw)
+    except ValueError:
+        return None
+
+    if low_max < 0 or mid_max > 1 or low_max >= mid_max:
+        return None
+    return low_max, mid_max

@@ -1939,6 +1939,40 @@ describe("App upload and list flow", () => {
     );
   });
 
+  it("does not fallback to legacy confidence when mapping_confidence is missing", async () => {
+    const baseFetch = globalThis.fetch as typeof fetch;
+
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = input.toString();
+      const method = (init?.method ?? "GET").toUpperCase();
+      if (url.includes("/documents/doc-ready/review") && method === "GET") {
+        const response = await baseFetch(input, init);
+        const payload = await response.json();
+        const fields = payload.active_interpretation?.data?.fields;
+        if (Array.isArray(fields)) {
+          fields.forEach((field: Record<string, unknown>) => {
+            delete field.mapping_confidence;
+            field.confidence = 0.99;
+          });
+        }
+        return new Response(JSON.stringify(payload), { status: 200 });
+      }
+      return baseFetch(input, init);
+    }) as typeof fetch;
+
+    renderApp();
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+    await waitForStructuredDataReady();
+
+    expect(screen.queryByTestId("confidence-policy-degraded")).toBeNull();
+    const indicator = screen.getByTestId("confidence-indicator-core:pet_name");
+    expect(indicator.className).toContain("bg-missing");
+    expect(indicator).toHaveAttribute(
+      "aria-label",
+      expect.stringMatching(/Confianza de mapeo no disponible/i)
+    );
+  });
+
   it("does not post extraction snapshots from the UI", async () => {
     const baseFetch = globalThis.fetch as typeof fetch;
     let snapshotPostAttempts = 0;
@@ -2417,6 +2451,7 @@ describe("App upload and list flow", () => {
     fireEvent.click(screen.getByRole("button", { name: /Marcar como revisado/i }));
 
     await screen.findByRole("button", { name: /^Reabrir$/i });
+    expect(getPetNameFieldButton()).toHaveAttribute("aria-disabled", "true");
 
     fireEvent.mouseUp(getPetNameFieldButton(), { button: 0 });
 

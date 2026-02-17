@@ -281,7 +281,11 @@ def test_repeatable_fields_are_capped_to_three_candidates_in_global_schema() -> 
     assert len(diagnosis) == 3
 
 
-def test_interpretation_artifact_exposes_confidence_policy_cutoffs() -> None:
+def test_interpretation_artifact_exposes_confidence_policy_cutoffs(monkeypatch) -> None:
+    monkeypatch.setenv("VET_RECORDS_CONFIDENCE_POLICY_VERSION", "v1-test")
+    monkeypatch.setenv("VET_RECORDS_CONFIDENCE_LOW_MAX", "0.5")
+    monkeypatch.setenv("VET_RECORDS_CONFIDENCE_MID_MAX", "0.75")
+
     payload = _build_interpretation_artifact(
         document_id="doc-policy",
         run_id="run-policy",
@@ -289,8 +293,24 @@ def test_interpretation_artifact_exposes_confidence_policy_cutoffs() -> None:
     )
 
     confidence_policy = payload["data"]["confidence_policy"]
-    assert confidence_policy["policy_version"] == "v1"
+    assert confidence_policy["policy_version"] == "v1-test"
     assert confidence_policy["band_cutoffs"] == {"low_max": 0.5, "mid_max": 0.75}
+
+
+def test_interpretation_artifact_omits_confidence_policy_when_config_missing(
+    monkeypatch,
+) -> None:
+    monkeypatch.delenv("VET_RECORDS_CONFIDENCE_POLICY_VERSION", raising=False)
+    monkeypatch.delenv("VET_RECORDS_CONFIDENCE_LOW_MAX", raising=False)
+    monkeypatch.delenv("VET_RECORDS_CONFIDENCE_MID_MAX", raising=False)
+
+    payload = _build_interpretation_artifact(
+        document_id="doc-policy-missing",
+        run_id="run-policy-missing",
+        raw_text="Paciente: Luna",
+    )
+
+    assert "confidence_policy" not in payload["data"]
 
 
 def test_structured_fields_include_mapping_confidence_signal() -> None:
@@ -305,7 +325,10 @@ def test_structured_fields_include_mapping_confidence_signal() -> None:
         for field in payload["data"]["fields"]
         if isinstance(field, dict) and field.get("key") == "pet_name"
     )
+    assert "confidence" in pet_name_field
     assert "mapping_confidence" in pet_name_field
+    # Legacy compatibility path: keep deprecated "confidence" equal to canonical
+    # "mapping_confidence" until downstream consumers migrate.
     assert pet_name_field["mapping_confidence"] == pet_name_field["confidence"]
 
 
