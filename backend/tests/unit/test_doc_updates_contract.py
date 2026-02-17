@@ -38,6 +38,7 @@ DOC_UPDATES_ROUTER_PARITY_MAP = (
 )
 DOC_TEST_SYNC_GUARD = REPO_ROOT / "scripts" / "check_doc_test_sync.py"
 DOC_ROUTER_PARITY_GUARD = REPO_ROOT / "scripts" / "check_doc_router_parity.py"
+IMPLEMENTATION_PLAN = REPO_ROOT / "docs" / "project" / "IMPLEMENTATION_PLAN.md"
 
 
 def _read_text(path: Path) -> str:
@@ -169,6 +170,13 @@ def test_rules_index_contains_known_mapping_hints() -> None:
     assert "50_3-typography-exact-fonts-mandatory.md" in text
     assert "40_2-color-system-exact-values-mandatory.md" in text
     assert "04_PROJECT/UX_DESIGN/00_entry.md" in text
+
+
+def test_implementation_plan_tracks_us08_us09_as_implemented() -> None:
+    text = _read_text(IMPLEMENTATION_PLAN)
+    assert "## US-08 — Edit structured data" in text
+    assert "## US-09 — Capture correction signals" in text
+    assert text.count("**Status**: Implemented (2026-02-17)") >= 2
 
 
 def test_ci_does_not_ignore_markdown_only_changes() -> None:
