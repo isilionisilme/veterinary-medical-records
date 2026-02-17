@@ -206,3 +206,24 @@ def test_code_review_protocol_requires_pr_comment_urls_and_follow_up() -> None:
         "remediation workflow (do not wait for a separate user prompt)."
         in pr_commenting
     )
+
+
+def test_product_design_module_76_includes_confidence_context_contract_terms() -> None:
+    module_76 = _read_text(
+        ROUTER_ROOT
+        / "04_PROJECT"
+        / "PRODUCT_DESIGN"
+        / "76_conceptual-model-local-schema-global-schema-and-mapping.md"
+    )
+
+    for required_term in (
+        "candidate_confidence",
+        "mapping_confidence",
+        "Context v1 (Deterministic)",
+        "Learnable Unit (`mapping_id`)",
+        "Signals & Weighting (qualitative)",
+        "Policy State (soft behavior)",
+        "Confidence Propagation & Calibration",
+        "Global Schema v0 keys/order do not change automatically during this propagation",
+    ):
+        assert required_term in module_76

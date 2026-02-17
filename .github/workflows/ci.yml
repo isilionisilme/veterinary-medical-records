@@ -23,6 +23,9 @@ jobs:
       - name: Run doc/test sync guard
         run: |
           python scripts/check_doc_test_sync.py --base-ref "${{ github.event.pull_request.base.sha }}"
+      - name: Run doc/router parity guard
+        run: |
+          python scripts/check_doc_router_parity.py --base-ref "${{ github.event.pull_request.base.sha }}"
 
   brand_guard:
     if: github.event_name == 'pull_request'

@@ -28,7 +28,16 @@ DOC_UPDATES_TEST_IMPACT_MAP = (
     / "DOC_UPDATES"
     / "test_impact_map.json"
 )
+DOC_UPDATES_ROUTER_PARITY_MAP = (
+    REPO_ROOT
+    / "docs"
+    / "agent_router"
+    / "01_WORKFLOW"
+    / "DOC_UPDATES"
+    / "router_parity_map.json"
+)
 DOC_TEST_SYNC_GUARD = REPO_ROOT / "scripts" / "check_doc_test_sync.py"
+DOC_ROUTER_PARITY_GUARD = REPO_ROOT / "scripts" / "check_doc_router_parity.py"
 
 
 def _read_text(path: Path) -> str:
@@ -41,7 +50,9 @@ def test_doc_updates_core_files_exist() -> None:
     assert DOC_UPDATES_NORMALIZE.exists(), "Missing DOC_UPDATES normalization module."
     assert DOC_UPDATES_CHECKLIST.exists(), "Missing DOC_UPDATES checklist module."
     assert DOC_UPDATES_TEST_IMPACT_MAP.exists(), "Missing DOC_UPDATES test impact map."
+    assert DOC_UPDATES_ROUTER_PARITY_MAP.exists(), "Missing DOC_UPDATES router parity map."
     assert DOC_TEST_SYNC_GUARD.exists(), "Missing doc/test sync guard script."
+    assert DOC_ROUTER_PARITY_GUARD.exists(), "Missing doc/router parity guard script."
     assert RULES_INDEX.exists(), "Missing rules index."
 
 
@@ -63,9 +74,15 @@ def test_doc_updates_entry_covers_triggers_and_summary_schema() -> None:
     assert "Use case E" in text
     assert "git status --porcelain" in text
     assert "git diff --name-status" in text
+    assert "git diff --cached --name-status" in text
+    assert "@{upstream}..HEAD" in text
+    assert "<base_ref>...HEAD" in text
     assert "git diff -- <path>" in text
     assert "test_impact_map.json" in text
+    assert "router_parity_map.json" in text
     assert "Related tests/guards updated" in text
+    assert "Evidence source" in text
+    assert "Source→Router parity" in text
     assert "DOC_UPDATES Summary" in text
     assert "Propagation gaps" in text
     assert "show me the unpropagated changes" in lower
@@ -88,6 +105,7 @@ def test_normalization_rules_enforce_diff_first_and_owner_updates() -> None:
     assert "new rule id is introduced" in text
     assert "owner module changes" in text
     assert "routing/intent changes" in text
+    assert "source-to-router parity" in text.lower()
     assert (
         "if Rule change exists with no propagation and no blocker reason, treat as failure"
         in text
@@ -100,19 +118,46 @@ def test_checklist_enforces_discovery_and_anti_loop() -> None:
     text = _read_text(DOC_UPDATES_CHECKLIST)
     assert "git status --porcelain" in text
     assert "git diff --name-status" in text
+    assert "@{upstream}..HEAD" in text
+    assert "<base_ref>...HEAD" in text
     assert "Normaliz" in text and "no loop" in text.lower()
     assert "DOC_UPDATES Summary" in text
     assert "Propagation gaps" in text
     assert "related test/guard file was updated" in text
+    assert "router_parity_map.json" in text
+    assert "Source-to-router parity status" in text
+    assert "Evidence source per processed doc" in text
 
 
 def test_doc_test_sync_map_has_minimum_rules() -> None:
     text = _read_text(DOC_UPDATES_TEST_IMPACT_MAP)
+    assert '"fail_on_unmapped_docs": true' in text
     assert "\"doc_glob\": \"docs/agent_router/*.md\"" in text
     assert "\"doc_glob\": \"docs/agent_router/**/*.md\"" in text
+    assert "\"doc_glob\": \"docs/shared/ENGINEERING_PLAYBOOK.md\"" in text
+    assert "\"doc_glob\": \"docs/project/UX_DESIGN.md\"" in text
+    assert "\"doc_glob\": \"docs/project/TECHNICAL_DESIGN.md\"" in text
+    assert "\"owner_any\"" in text
     assert "\"doc_glob\": \"docs/shared/BRAND_GUIDELINES.md\"" in text
     assert "test_doc_updates_contract.py" in text
     assert "check_brand_compliance.py" in text
+
+
+def test_router_parity_map_has_product_design_rule() -> None:
+    text = _read_text(DOC_UPDATES_ROUTER_PARITY_MAP)
+    assert '"fail_on_unmapped_sources": true' in text
+    assert '"required_source_globs"' in text
+    assert '"docs/project/*.md"' in text
+    assert '"docs/shared/*.md"' in text
+    assert '"source_doc": "docs/project/PRODUCT_DESIGN.md"' in text
+    assert '"source_doc": "docs/project/TECHNICAL_DESIGN.md"' in text
+    assert '"source_doc": "docs/shared/ENGINEERING_PLAYBOOK.md"' in text
+    assert (
+        '"path": "docs/agent_router/04_PROJECT/PRODUCT_DESIGN/'
+        '76_conceptual-model-local-schema-global-schema-and-mapping.md"'
+        in text
+    )
+    assert '"required_terms"' in text
 
 
 def test_rules_index_contains_known_mapping_hints() -> None:
@@ -127,3 +172,4 @@ def test_ci_does_not_ignore_markdown_only_changes() -> None:
     text = _read_text(CI_WORKFLOW)
     assert "paths-ignore" not in text
     assert "check_doc_test_sync.py" in text
+    assert "check_doc_router_parity.py" in text
