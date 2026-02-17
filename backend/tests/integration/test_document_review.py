@@ -291,3 +291,182 @@ def test_reviewed_toggle_returns_not_found_for_unknown_document(test_client):
     reopen_response = test_client.delete("/documents/does-not-exist/reviewed")
     assert reopen_response.status_code == 404
     assert reopen_response.json()["error_code"] == "NOT_FOUND"
+
+
+def test_interpretation_edit_creates_new_version_and_change_logs(test_client):
+    document_id = _upload_sample_document(test_client)
+    run_id = "run-review-edit-1"
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(run_id=run_id)
+
+    response = test_client.post(
+        f"/runs/{run_id}/interpretations",
+        json={
+            "base_version_number": 1,
+            "changes": [
+                {
+                    "op": "UPDATE",
+                    "field_id": "field-1",
+                    "value": "Nala",
+                    "value_type": "string",
+                },
+                {
+                    "op": "ADD",
+                    "key": "new_custom_key",
+                    "value": "new-value",
+                    "value_type": "string",
+                },
+            ],
+        },
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["run_id"] == run_id
+    assert payload["version_number"] == 2
+    edited_fields = payload["data"]["fields"]
+    assert any(
+        field["field_id"] == "field-1"
+        and field["value"] == "Nala"
+        and field["origin"] == "human"
+        for field in edited_fields
+    )
+    assert any(
+        field["key"] == "new_custom_key"
+        and field["value"] == "new-value"
+        and field["origin"] == "human"
+        for field in edited_fields
+    )
+
+    with database.get_connection() as conn:
+        interpretation_rows = conn.execute(
+            """
+            SELECT payload
+            FROM artifacts
+            WHERE run_id = ? AND artifact_type = 'STRUCTURED_INTERPRETATION'
+            ORDER BY created_at ASC
+            """,
+            (run_id,),
+        ).fetchall()
+        change_log_rows = conn.execute(
+            """
+            SELECT payload
+            FROM artifacts
+            WHERE run_id = ? AND artifact_type = 'FIELD_CHANGE_LOG'
+            ORDER BY created_at ASC
+            """,
+            (run_id,),
+        ).fetchall()
+
+    assert len(interpretation_rows) == 2
+    assert len(change_log_rows) == 2
+    parsed_logs = [json.loads(row["payload"]) for row in change_log_rows]
+    assert {entry["change_type"] for entry in parsed_logs} == {"ADD", "UPDATE"}
+    assert all(str(entry["field_path"]).startswith("fields.") for entry in parsed_logs)
+
+
+def test_interpretation_edit_returns_conflict_when_active_run_exists(test_client):
+    document_id = _upload_sample_document(test_client)
+    completed_run_id = "run-review-edit-completed"
+    running_run_id = "run-review-edit-running"
+    _insert_run(
+        document_id=document_id,
+        run_id=completed_run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(run_id=completed_run_id)
+    _insert_run(
+        document_id=document_id,
+        run_id=running_run_id,
+        state=app_models.ProcessingRunState.RUNNING,
+        failure_type=None,
+    )
+
+    response = test_client.post(
+        f"/runs/{completed_run_id}/interpretations",
+        json={
+            "base_version_number": 1,
+            "changes": [
+                {
+                    "op": "UPDATE",
+                    "field_id": "field-1",
+                    "value": "Nala",
+                    "value_type": "string",
+                }
+            ],
+        },
+    )
+
+    assert response.status_code == 409
+    payload = response.json()
+    assert payload["error_code"] == "CONFLICT"
+    assert payload["details"]["reason"] == "REVIEW_BLOCKED_BY_ACTIVE_RUN"
+
+
+def test_interpretation_edit_returns_conflict_when_base_version_mismatches(test_client):
+    document_id = _upload_sample_document(test_client)
+    run_id = "run-review-edit-version-mismatch"
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(run_id=run_id)
+
+    response = test_client.post(
+        f"/runs/{run_id}/interpretations",
+        json={
+            "base_version_number": 2,
+            "changes": [
+                {
+                    "op": "UPDATE",
+                    "field_id": "field-1",
+                    "value": "Nala",
+                    "value_type": "string",
+                }
+            ],
+        },
+    )
+
+    assert response.status_code == 409
+    payload = response.json()
+    assert payload["error_code"] == "CONFLICT"
+    assert payload["details"]["reason"] == "BASE_VERSION_MISMATCH"
+
+
+def test_interpretation_edit_returns_conflict_when_interpretation_is_missing(test_client):
+    document_id = _upload_sample_document(test_client)
+    run_id = "run-review-edit-missing-interpretation"
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+
+    response = test_client.post(
+        f"/runs/{run_id}/interpretations",
+        json={
+            "base_version_number": 1,
+            "changes": [
+                {
+                    "op": "UPDATE",
+                    "field_id": "field-1",
+                    "value": "Nala",
+                    "value_type": "string",
+                }
+            ],
+        },
+    )
+
+    assert response.status_code == 409
+    payload = response.json()
+    assert payload["error_code"] == "CONFLICT"
+    assert payload["details"]["reason"] == "INTERPRETATION_MISSING"

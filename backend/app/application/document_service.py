@@ -6,13 +6,21 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 from uuid import uuid4
 
 from backend.app.application.field_normalizers import normalize_microchip_digits_only
+from backend.app.application.global_schema_v0 import (
+    CRITICAL_KEYS_V0,
+    REPEATABLE_KEYS_V0,
+    VALUE_TYPE_BY_KEY_V0,
+    normalize_global_schema_v0,
+)
 from backend.app.domain.models import (
     Document,
     DocumentWithLatestRun,
     ProcessingRunDetail,
+    ProcessingRunState,
     ProcessingRunSummary,
     ProcessingStatus,
     ReviewStatus,
@@ -250,6 +258,25 @@ class DocumentReviewLookupResult:
     unavailable_reason: str | None
 
 
+@dataclass(frozen=True, slots=True)
+class InterpretationEditResult:
+    """Successful interpretation edit result."""
+
+    run_id: str
+    interpretation_id: str
+    version_number: int
+    data: dict[str, object]
+
+
+@dataclass(frozen=True, slots=True)
+class InterpretationEditOutcome:
+    """Outcome for interpretation edit attempts."""
+
+    result: InterpretationEditResult | None
+    conflict_reason: str | None = None
+    invalid_reason: str | None = None
+
+
 def get_processing_history(
     *, document_id: str, repository: DocumentRepository
 ) -> ProcessingHistory | None:
@@ -358,6 +385,270 @@ def _normalize_review_interpretation_data(data: dict[str, object]) -> dict[str, 
     normalized_global_schema["microchip_id"] = normalized_microchip
     normalized_data["global_schema_v0"] = normalized_global_schema
     return normalized_data
+
+
+def apply_interpretation_edits(
+    *,
+    run_id: str,
+    base_version_number: int,
+    changes: list[dict[str, object]],
+    repository: DocumentRepository,
+    now_provider: Callable[[], str] = _default_now_iso,
+) -> InterpretationEditOutcome | None:
+    """Apply veterinarian edits and append a new active interpretation version."""
+
+    run = repository.get_run(run_id)
+    if run is None:
+        return None
+
+    if any(
+        row.state == ProcessingRunState.RUNNING
+        for row in repository.list_processing_runs(document_id=run.document_id)
+    ):
+        return InterpretationEditOutcome(
+            result=None,
+            conflict_reason="REVIEW_BLOCKED_BY_ACTIVE_RUN",
+        )
+
+    if run.state != ProcessingRunState.COMPLETED:
+        return InterpretationEditOutcome(
+            result=None,
+            conflict_reason="INTERPRETATION_NOT_AVAILABLE",
+        )
+
+    active_payload = repository.get_latest_artifact_payload(
+        run_id=run_id,
+        artifact_type="STRUCTURED_INTERPRETATION",
+    )
+    if active_payload is None:
+        return InterpretationEditOutcome(result=None, conflict_reason="INTERPRETATION_MISSING")
+
+    active_version_raw = active_payload.get("version_number", 1)
+    active_version_number = active_version_raw if isinstance(active_version_raw, int) else 1
+    if base_version_number != active_version_number:
+        return InterpretationEditOutcome(
+            result=None,
+            conflict_reason="BASE_VERSION_MISMATCH",
+        )
+
+    active_data_raw = active_payload.get("data")
+    active_data = dict(active_data_raw) if isinstance(active_data_raw, dict) else {}
+    active_fields = _coerce_interpretation_fields(active_data.get("fields"))
+
+    updated_fields = [dict(field) for field in active_fields]
+    field_change_logs: list[dict[str, object]] = []
+    now_iso = now_provider()
+
+    for index, change in enumerate(changes):
+        op_raw = change.get("op")
+        op = str(op_raw).upper() if isinstance(op_raw, str) else ""
+        if op not in {"ADD", "UPDATE", "DELETE"}:
+            return InterpretationEditOutcome(result=None, invalid_reason=f"changes[{index}].op")
+
+        if op == "ADD":
+            key = str(change.get("key", "")).strip()
+            if not key:
+                return InterpretationEditOutcome(
+                    result=None,
+                    invalid_reason=f"changes[{index}].key",
+                )
+            value_type = str(change.get("value_type", "")).strip() or VALUE_TYPE_BY_KEY_V0.get(
+                key, "string"
+            )
+            if "value" not in change:
+                return InterpretationEditOutcome(
+                    result=None,
+                    invalid_reason=f"changes[{index}].value",
+                )
+
+            new_field_id = str(uuid4())
+            new_field = {
+                "field_id": new_field_id,
+                "key": key,
+                "value": change.get("value"),
+                "value_type": value_type,
+                "confidence": 1.0,
+                "is_critical": key in CRITICAL_KEYS_V0,
+                "origin": "human",
+            }
+            updated_fields.append(new_field)
+            field_change_logs.append(
+                _build_field_change_log(
+                    interpretation_id="",  # Filled after new interpretation id is generated.
+                    field_id=new_field_id,
+                    old_value=None,
+                    new_value=change.get("value"),
+                    change_type="ADD",
+                    created_at=now_iso,
+                )
+            )
+            continue
+
+        field_id = str(change.get("field_id", "")).strip()
+        if not field_id:
+            return InterpretationEditOutcome(
+                result=None,
+                invalid_reason=f"changes[{index}].field_id",
+            )
+
+        existing_index = next(
+            (
+                row_index
+                for row_index, row in enumerate(updated_fields)
+                if row.get("field_id") == field_id
+            ),
+            None,
+        )
+        if existing_index is None:
+            return InterpretationEditOutcome(
+                result=None, invalid_reason=f"changes[{index}].field_id_not_found"
+            )
+
+        old_value = updated_fields[existing_index].get("value")
+        if op == "DELETE":
+            updated_fields.pop(existing_index)
+            field_change_logs.append(
+                _build_field_change_log(
+                    interpretation_id="",
+                    field_id=field_id,
+                    old_value=old_value,
+                    new_value=None,
+                    change_type="DELETE",
+                    created_at=now_iso,
+                )
+            )
+            continue
+
+        if "value" not in change:
+            return InterpretationEditOutcome(
+                result=None,
+                invalid_reason=f"changes[{index}].value",
+            )
+        value_type = str(change.get("value_type", "")).strip()
+        if not value_type:
+            return InterpretationEditOutcome(
+                result=None,
+                invalid_reason=f"changes[{index}].value_type",
+            )
+
+        updated_fields[existing_index] = {
+            **updated_fields[existing_index],
+            "value": change.get("value"),
+            "value_type": value_type,
+            "origin": "human",
+            "confidence": 1.0,
+        }
+        field_change_logs.append(
+            _build_field_change_log(
+                interpretation_id="",
+                field_id=field_id,
+                old_value=old_value,
+                new_value=change.get("value"),
+                change_type="UPDATE",
+                created_at=now_iso,
+            )
+        )
+
+    new_interpretation_id = str(uuid4())
+    for log in field_change_logs:
+        log["interpretation_id"] = new_interpretation_id
+
+    new_data: dict[str, object] = dict(active_data)
+    new_data["created_at"] = now_iso
+    new_data["processing_run_id"] = run_id
+    new_data["fields"] = updated_fields
+    new_data["global_schema_v0"] = _build_global_schema_from_fields(updated_fields)
+
+    new_payload = {
+        "interpretation_id": new_interpretation_id,
+        "version_number": active_version_number + 1,
+        "data": new_data,
+    }
+    repository.append_artifact(
+        run_id=run_id,
+        artifact_type="STRUCTURED_INTERPRETATION",
+        payload=new_payload,
+        created_at=now_iso,
+    )
+    for change_log in field_change_logs:
+        repository.append_artifact(
+            run_id=run_id,
+            artifact_type="FIELD_CHANGE_LOG",
+            payload=change_log,
+            created_at=now_iso,
+        )
+
+    return InterpretationEditOutcome(
+        result=InterpretationEditResult(
+            run_id=run_id,
+            interpretation_id=new_interpretation_id,
+            version_number=active_version_number + 1,
+            data=_normalize_review_interpretation_data(new_data),
+        )
+    )
+
+
+def _coerce_interpretation_fields(raw_fields: object) -> list[dict[str, object]]:
+    if not isinstance(raw_fields, list):
+        return []
+    fields: list[dict[str, object]] = []
+    for item in raw_fields:
+        if isinstance(item, dict):
+            fields.append(dict(item))
+    return fields
+
+
+def _build_field_change_log(
+    *,
+    interpretation_id: str,
+    field_id: str,
+    old_value: object,
+    new_value: object,
+    change_type: str,
+    created_at: str,
+) -> dict[str, object]:
+    return {
+        "change_id": str(uuid4()),
+        "interpretation_id": interpretation_id,
+        "field_path": f"fields.{field_id}.value",
+        "old_value": old_value,
+        "new_value": new_value,
+        "change_type": change_type,
+        "created_at": created_at,
+    }
+
+
+def _build_global_schema_from_fields(fields: list[dict[str, object]]) -> dict[str, object]:
+    schema_accumulator: dict[str, object] = {}
+    for field in fields:
+        key = str(field.get("key", "")).strip()
+        if not key:
+            continue
+        value = field.get("value")
+        if key in REPEATABLE_KEYS_V0:
+            if is_field_value_empty(value):
+                continue
+            bucket = schema_accumulator.get(key)
+            if not isinstance(bucket, list):
+                bucket = []
+                schema_accumulator[key] = bucket
+            bucket.append(value)
+            continue
+
+        if key not in schema_accumulator and not is_field_value_empty(value):
+            schema_accumulator[key] = value
+
+    return normalize_global_schema_v0(schema_accumulator)
+
+
+def is_field_value_empty(value: Any) -> bool:
+    if value is None:
+        return True
+    if isinstance(value, str):
+        return value.strip() == ""
+    if isinstance(value, list):
+        return len(value) == 0
+    return False
 
 
 def _to_processing_run_history(

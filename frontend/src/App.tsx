@@ -10,7 +10,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { AlignLeft, Check, Download, FileText, Info, RefreshCw, Search, X } from "lucide-react";
+import { AlignLeft, Check, Download, FileText, Info, Pencil, RefreshCw, Search, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { ConfidenceDot } from "./components/app/ConfidenceDot";
@@ -21,6 +21,8 @@ import { SectionBlock, SectionHeader } from "./components/app/Section";
 import { DocumentsSidebar } from "./components/DocumentsSidebar";
 import { PdfViewer } from "./components/PdfViewer";
 import { SourcePanel } from "./components/SourcePanel";
+import { AddFieldDialog } from "./components/structured/AddFieldDialog";
+import { FieldEditDialog } from "./components/structured/FieldEditDialog";
 import { UploadDropzone } from "./components/UploadDropzone";
 import { ToastHost } from "./components/toast/ToastHost";
 import {
@@ -618,6 +620,21 @@ type ReviewToggleResponse = {
   reviewed_by: string | null;
 };
 
+type InterpretationChangePayload = {
+  op: "ADD" | "UPDATE" | "DELETE";
+  field_id?: string;
+  key?: string;
+  value?: string | number | boolean | null;
+  value_type?: string;
+};
+
+type InterpretationEditResponse = {
+  run_id: string;
+  interpretation_id: string;
+  version_number: number;
+  data: StructuredInterpretationData;
+};
+
 async function markDocumentReviewed(documentId: string): Promise<ReviewToggleResponse> {
   let response: Response;
   try {
@@ -682,6 +699,61 @@ async function reopenDocumentReview(documentId: string): Promise<ReviewToggleRes
     throw new UiError(
       errorMessage,
       `HTTP ${response.status} calling ${API_BASE_URL}/documents/${documentId}/reviewed`
+    );
+  }
+
+  return response.json();
+}
+
+async function editRunInterpretation(
+  runId: string,
+  payload: {
+    base_version_number: number;
+    changes: InterpretationChangePayload[];
+  }
+): Promise<InterpretationEditResponse> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/runs/${runId}/interpretations`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch (error) {
+    if (isNetworkFetchError(error)) {
+      throw new UiError(
+        "No se pudo conectar con el servidor.",
+        `Network error calling ${API_BASE_URL}/runs/${runId}/interpretations`
+      );
+    }
+    throw error;
+  }
+
+  if (!response.ok) {
+    let errorMessage = "No se pudo guardar la edición.";
+    let errorCode: string | undefined;
+    let reason: string | undefined;
+    try {
+      const body = await response.json();
+      if (typeof body?.message === "string" && body.message.trim()) {
+        errorMessage = body.message;
+      }
+      if (typeof body?.error_code === "string") {
+        errorCode = body.error_code;
+      }
+      if (typeof body?.details?.reason === "string") {
+        reason = body.details.reason;
+      }
+    } catch {
+      // Ignore JSON parse errors for non-JSON responses.
+    }
+    throw new ApiResponseError(
+      errorMessage,
+      `HTTP ${response.status} calling ${API_BASE_URL}/runs/${runId}/interpretations`,
+      errorCode,
+      reason
     );
   }
 
@@ -980,6 +1052,11 @@ export function App() {
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
   const [isCopyingRawText, setIsCopyingRawText] = useState(false);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
+  const [editingField, setEditingField] = useState<ReviewSelectableField | null>(null);
+  const [editingFieldDraftValue, setEditingFieldDraftValue] = useState("");
+  const [isAddFieldDialogOpen, setIsAddFieldDialogOpen] = useState(false);
+  const [addFieldKeyDraft, setAddFieldKeyDraft] = useState("");
+  const [addFieldValueDraft, setAddFieldValueDraft] = useState("");
   const [evidenceNotice, setEvidenceNotice] = useState<string | null>(null);
   const [expandedFieldValues, setExpandedFieldValues] = useState<Record<string, boolean>>({});
   const [reviewLoadingDocId, setReviewLoadingDocId] = useState<string | null>(null);
@@ -1881,6 +1958,50 @@ export function App() {
     },
   });
 
+  const interpretationEditMutation = useMutation({
+    mutationFn: async (variables: {
+      docId: string;
+      runId: string;
+      baseVersionNumber: number;
+      changes: InterpretationChangePayload[];
+      successMessage: string;
+    }) =>
+      editRunInterpretation(variables.runId, {
+        base_version_number: variables.baseVersionNumber,
+        changes: variables.changes,
+      }),
+    onSuccess: (result, variables) => {
+      queryClient.setQueryData<DocumentReviewResponse | undefined>(
+        ["documents", "review", variables.docId],
+        (current) => {
+          if (!current) {
+            return current;
+          }
+          return {
+            ...current,
+            active_interpretation: {
+              interpretation_id: result.interpretation_id,
+              version_number: result.version_number,
+              data: result.data,
+            },
+          };
+        }
+      );
+      setActionFeedback({
+        kind: "success",
+        message: variables.successMessage,
+      });
+      queryClient.invalidateQueries({ queryKey: ["documents", "review", variables.docId] });
+    },
+    onError: (error) => {
+      setActionFeedback({
+        kind: "error",
+        message: getUserErrorMessage(error, "No se pudo guardar la edición."),
+        technicalDetails: getTechnicalDetails(error),
+      });
+    },
+  });
+
   const handleRefresh = () => {
     setShowRefreshFeedback(true);
     if (refreshFeedbackTimerRef.current) {
@@ -2756,6 +2877,111 @@ export function App() {
     </IconButton>
   ) : null;
 
+  const submitInterpretationChanges = (
+    changes: InterpretationChangePayload[],
+    successMessage: string
+  ) => {
+    const reviewPayload = documentReview.data;
+    if (!activeId || !reviewPayload) {
+      return;
+    }
+    interpretationEditMutation.mutate({
+      docId: activeId,
+      runId: reviewPayload.latest_completed_run.run_id,
+      baseVersionNumber: reviewPayload.active_interpretation.version_number,
+      changes,
+      successMessage,
+    });
+  };
+
+  const handleAddField = () => {
+    setAddFieldKeyDraft("");
+    setAddFieldValueDraft("");
+    setIsAddFieldDialogOpen(true);
+  };
+
+  const closeAddFieldDialog = () => {
+    setIsAddFieldDialogOpen(false);
+    setAddFieldKeyDraft("");
+    setAddFieldValueDraft("");
+  };
+
+  const saveAddFieldDialog = () => {
+    const key = addFieldKeyDraft.trim();
+    if (!key) {
+      setActionFeedback({
+        kind: "error",
+        message: "La clave del campo no puede estar vacía.",
+      });
+      return;
+    }
+    const value = addFieldValueDraft.trim();
+    submitInterpretationChanges(
+      [
+        {
+          op: "ADD",
+          key,
+          value: value.length > 0 ? value : null,
+          value_type: "string",
+        },
+      ],
+      "Campo añadido."
+    );
+    closeAddFieldDialog();
+  };
+
+  const openFieldEditDialog = (item: ReviewSelectableField) => {
+    const rawCurrentValue = item.rawField?.value;
+    const currentValue =
+      rawCurrentValue === null || rawCurrentValue === undefined
+        ? ""
+        : String(rawCurrentValue);
+    setEditingField(item);
+    setEditingFieldDraftValue(currentValue);
+  };
+
+  const closeFieldEditDialog = () => {
+    setEditingField(null);
+    setEditingFieldDraftValue("");
+  };
+
+  const saveFieldEditDialog = () => {
+    if (!editingField) {
+      return;
+    }
+    const nextValue = editingFieldDraftValue.trim();
+    const valueType = editingField.rawField?.value_type ?? editingField.valueType ?? "string";
+
+    if (editingField.rawField) {
+      submitInterpretationChanges(
+        [
+          {
+            op: "UPDATE",
+            field_id: editingField.rawField.field_id,
+            value: nextValue.length > 0 ? nextValue : null,
+            value_type: valueType,
+          },
+        ],
+        "Campo actualizado."
+      );
+      closeFieldEditDialog();
+      return;
+    }
+
+    submitInterpretationChanges(
+      [
+        {
+          op: "ADD",
+          key: editingField.key,
+          value: nextValue.length > 0 ? nextValue : null,
+          value_type: valueType,
+        },
+      ],
+      "Campo actualizado."
+    );
+    closeFieldEditDialog();
+  };
+
   const buildFieldTooltip = (item: ReviewSelectableField, isCritical: boolean): string => {
     const confidence = item.confidence;
     const percentage = Math.round(clampConfidence(confidence) * 100);
@@ -2800,6 +3026,70 @@ export function App() {
           testId={`confidence-indicator-${item.id}`}
         />
       </span>
+    );
+  };
+
+  const renderEditableFieldValue = (options: {
+    item: ReviewSelectableField;
+    value: string;
+    isLongText: boolean;
+    longTextTestId?: string;
+    shortTextTestId?: string;
+  }) => {
+    const { item, value, isLongText, longTextTestId, shortTextTestId } = options;
+    const isFieldModified = item.rawField?.origin === "human";
+    const modifiedValueClass = isFieldModified
+      ? "bg-amber-50 ring-1 ring-amber-300/70"
+      : "";
+
+    return (
+      <div className="relative rounded-control">
+        {isLongText ? (
+          renderLongTextValue({
+            value,
+            isMissing: item.isMissing,
+            missingClassName: isDocumentReviewed
+              ? `text-missing ${modifiedValueClass}`
+              : `text-missing pr-9 ${modifiedValueClass}`,
+            valueClassName: isDocumentReviewed
+              ? `text-text ${modifiedValueClass}`
+              : `text-text pr-9 ${modifiedValueClass}`,
+            testId: longTextTestId,
+          })
+        ) : (
+          <ValueSurface
+            testId={shortTextTestId}
+            variant="short"
+            className={
+              item.isMissing
+                ? isDocumentReviewed
+                  ? `relative italic text-missing ${modifiedValueClass}`
+                  : `relative pr-9 italic text-missing ${modifiedValueClass}`
+                : isDocumentReviewed
+                  ? `relative text-text ${modifiedValueClass}`
+                  : `relative pr-9 text-text ${modifiedValueClass}`
+            }
+          >
+            {value}
+          </ValueSurface>
+        )}
+        {!isDocumentReviewed && (
+          <IconButton
+            label="Editar"
+            tooltip="Editar"
+            type="button"
+            className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 rounded-md border-0 bg-transparent p-0 text-text opacity-55 hover:bg-surfaceMuted hover:opacity-100 focus-visible:opacity-100"
+            disabled={interpretationEditMutation.isPending}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              openFieldEditDialog(item);
+            }}
+          >
+            <Pencil className="h-4 w-4" aria-hidden="true" />
+          </IconButton>
+        )}
+      </div>
     );
   };
 
@@ -2849,23 +3139,11 @@ export function App() {
                       labelMeta={null}
                       className={STRUCTURED_FIELD_ROW_CLASS}
                       valuePlacement={isLongText ? "below-label" : "inline"}
-                      value={
-                        isLongText ? (
-                          renderLongTextValue({
-                            value: item.displayValue,
-                            isMissing: item.isMissing,
-                            missingClassName: "text-missing",
-                            valueClassName: "text-text",
-                          })
-                        ) : (
-                          <ValueSurface
-                            variant="short"
-                            className={item.isMissing ? "italic text-missing" : "text-text"}
-                          >
-                            {item.displayValue}
-                          </ValueSurface>
-                        )
-                      }
+                      value={renderEditableFieldValue({
+                        item,
+                        value: item.displayValue,
+                        isLongText,
+                      })}
                     />
                 </button>
               </div>
@@ -2916,28 +3194,18 @@ export function App() {
             valueWrapperTestId={shouldUseLongText ? `field-value-${field.key}-wrapper` : undefined}
             indicator={renderConfidenceIndicator(field, item)}
             label={<p className={`${STRUCTURED_FIELD_LABEL_CLASS} text-text`}>{field.label}</p>}
-            labelMeta={field.isCritical ? <CriticalBadge testId={`critical-indicator-${field.key}`} /> : null}
+            labelMeta={
+              field.isCritical ? <CriticalBadge testId={`critical-indicator-${field.key}`} /> : null
+            }
             className={STRUCTURED_FIELD_ROW_CLASS}
             valuePlacement={shouldUseLongText ? "below-label" : "inline"}
-            value={
-              shouldUseLongText ? (
-                renderLongTextValue({
-                  value: valueText,
-                  isMissing: item.isMissing,
-                  missingClassName: "text-missing",
-                  valueClassName: "text-text",
-                  testId: `field-value-${field.key}`,
-                })
-              ) : (
-                <ValueSurface
-                  testId={`${styledPrefix}-value-${field.key}`}
-                  variant="short"
-                  className={item.isMissing ? "italic text-missing" : "text-text"}
-                >
-                  {valueText}
-                </ValueSurface>
-              )
-            }
+            value={renderEditableFieldValue({
+              item,
+              value: valueText,
+              isLongText: shouldUseLongText,
+              longTextTestId: `field-value-${field.key}`,
+              shortTextTestId: `${styledPrefix}-value-${field.key}`,
+            })}
           />
         </button>
         {canExpand && (
@@ -3071,6 +3339,33 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-page px-4 py-3 md:px-6 lg:px-8 xl:px-10">
+      <AddFieldDialog
+        open={isAddFieldDialogOpen}
+        isSaving={interpretationEditMutation.isPending}
+        fieldKey={addFieldKeyDraft}
+        fieldValue={addFieldValueDraft}
+        onFieldKeyChange={setAddFieldKeyDraft}
+        onFieldValueChange={setAddFieldValueDraft}
+        onOpenChange={(open) => {
+          if (!open) {
+            closeAddFieldDialog();
+          }
+        }}
+        onSave={saveAddFieldDialog}
+      />
+      <FieldEditDialog
+        open={editingField !== null}
+        fieldLabel={editingField?.label ?? ""}
+        value={editingFieldDraftValue}
+        isSaving={interpretationEditMutation.isPending}
+        onValueChange={setEditingFieldDraftValue}
+        onOpenChange={(open) => {
+          if (!open) {
+            closeFieldEditDialog();
+          }
+        }}
+        onSave={saveFieldEditDialog}
+      />
       <div
         className="mx-auto w-full max-w-[1640px] rounded-frame bg-canvas p-[var(--canvas-gap)]"
         data-testid="canvas-wrapper"
@@ -3243,6 +3538,20 @@ export function App() {
                             <div className="flex w-full items-center justify-between gap-2">
                               <h3 className="text-lg font-semibold text-textSecondary">Datos extraídos</h3>
                               <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="default"
+                                  className="border border-border bg-surface text-text hover:bg-surfaceMuted"
+                                  disabled={
+                                    reviewPanelState !== "ready" ||
+                                    isDocumentReviewed ||
+                                    interpretationEditMutation.isPending
+                                  }
+                                  onClick={handleAddField}
+                                >
+                                  Añadir campo
+                                </Button>
                                 <Button
                                   type="button"
                                   variant={isDocumentReviewed ? "ghost" : "primary"}
