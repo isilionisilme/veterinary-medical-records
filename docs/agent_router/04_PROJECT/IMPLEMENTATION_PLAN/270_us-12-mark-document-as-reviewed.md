@@ -1,7 +1,5 @@
 # US-12 — Mark document as reviewed
 
-**Status**: Implemented (2026-02-17)
-
 **User Story**
 As a veterinarian, I want to mark a document as reviewed so that I can explicitly close out my work.
 

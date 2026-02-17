@@ -3100,13 +3100,11 @@ export function App() {
                             </ValueSurface>
                           )}
                           {!isDocumentReviewed && (
-                            <Button
+                            <IconButton
+                              label="Editar"
+                              tooltip="Editar"
                               type="button"
-                              size="icon"
-                              variant="ghost"
-                              className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 p-0 rounded-md text-text opacity-55 hover:opacity-100 focus-visible:opacity-100 hover:bg-surfaceMuted"
-                              aria-label="Editar"
-                              title="Editar"
+                              className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 rounded-md border-0 bg-transparent p-0 text-text opacity-55 hover:bg-surfaceMuted hover:opacity-100 focus-visible:opacity-100"
                               disabled={interpretationEditMutation.isPending}
                               onClick={(event) => {
                                 event.preventDefault();
@@ -3115,7 +3113,7 @@ export function App() {
                               }}
                             >
                               <Pencil className="h-4 w-4" aria-hidden="true" />
-                            </Button>
+                            </IconButton>
                           )}
                         </div>
                       }
@@ -3210,13 +3208,11 @@ export function App() {
                   </ValueSurface>
                 )}
                 {!isDocumentReviewed && (
-                  <Button
+                  <IconButton
+                    label="Editar"
+                    tooltip="Editar"
                     type="button"
-                    size="icon"
-                    variant="ghost"
-                    className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 p-0 rounded-md text-text opacity-55 hover:opacity-100 focus-visible:opacity-100 hover:bg-surfaceMuted"
-                    aria-label="Editar"
-                    title="Editar"
+                    className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 rounded-md border-0 bg-transparent p-0 text-text opacity-55 hover:bg-surfaceMuted hover:opacity-100 focus-visible:opacity-100"
                     disabled={interpretationEditMutation.isPending}
                     onClick={(event) => {
                       event.preventDefault();
@@ -3225,7 +3221,7 @@ export function App() {
                     }}
                   >
                     <Pencil className="h-4 w-4" aria-hidden="true" />
-                  </Button>
+                  </IconButton>
                 )}
               </div>
             }
