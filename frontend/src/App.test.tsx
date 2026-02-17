@@ -1714,7 +1714,7 @@ describe("App upload and list flow", () => {
     expect(within(panel).getByText("ID de reclamacion")).toBeInTheDocument();
     expect(within(panel).getByText("Plan de tratamiento")).toBeInTheDocument();
     expect(within(panel).getAllByText("—").length).toBeGreaterThan(0);
-    expect(within(panel).getByText("Otros campos extraídos")).toBeInTheDocument();
+    expect(within(panel).getByText("Other extracted fields")).toBeInTheDocument();
     expect(within(panel).getByText("Custom tag")).toBeInTheDocument();
     expect(within(panel).getByText("Prioridad")).toBeInTheDocument();
   });
@@ -1722,11 +1722,12 @@ describe("App upload and list flow", () => {
   it("hides configured extracted fields from the extra section", async () => {
     renderApp();
     const panel = await openReadyDocumentAndGetPanel();
+    const extraSection = within(panel).getByTestId("other-extracted-fields-section");
 
-    expect(within(panel).queryByText("Document date")).toBeNull();
-    expect(within(panel).queryByText("Imagen")).toBeNull();
-    expect(within(panel).queryByText("Imagine")).toBeNull();
-    expect(within(panel).queryByText(/Imaging/i)).toBeNull();
+    expect(within(extraSection).queryByText("Document date")).toBeNull();
+    expect(within(extraSection).queryByText("Imagen")).toBeNull();
+    expect(within(extraSection).queryByText("Imagine")).toBeNull();
+    expect(within(extraSection).queryByText(/Imaging/i)).toBeNull();
   });
 
   it("uses structured owner/visit rows and long-text wrappers", async () => {

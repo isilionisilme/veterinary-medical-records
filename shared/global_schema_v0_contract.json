@@ -225,6 +225,87 @@
       "repeatable": false,
       "critical": false,
       "optional": false
+    },
+    {
+      "key": "vaccinations",
+      "label": "Vacunaciones",
+      "section": "Clinico",
+      "value_type": "string",
+      "repeatable": true,
+      "critical": false,
+      "optional": false
+    },
+    {
+      "key": "lab_result",
+      "label": "Resultado de laboratorio",
+      "section": "Clinico",
+      "value_type": "string",
+      "repeatable": true,
+      "critical": false,
+      "optional": false
+    },
+    {
+      "key": "imaging",
+      "label": "Imagen",
+      "section": "Clinico",
+      "value_type": "string",
+      "repeatable": true,
+      "critical": false,
+      "optional": false
+    },
+    {
+      "key": "invoice_total",
+      "label": "Importe total",
+      "section": "Costes / facturacion",
+      "value_type": "string",
+      "repeatable": false,
+      "critical": false,
+      "optional": false
+    },
+    {
+      "key": "covered_amount",
+      "label": "Importe cubierto",
+      "section": "Costes / facturacion",
+      "value_type": "string",
+      "repeatable": false,
+      "critical": false,
+      "optional": true
+    },
+    {
+      "key": "non_covered_amount",
+      "label": "Importe no cubierto",
+      "section": "Costes / facturacion",
+      "value_type": "string",
+      "repeatable": false,
+      "critical": false,
+      "optional": true
+    },
+    {
+      "key": "line_item",
+      "label": "Linea de factura",
+      "section": "Costes / facturacion",
+      "value_type": "string",
+      "repeatable": true,
+      "critical": false,
+      "optional": false
+    },
+    {
+      "key": "notes",
+      "label": "Notas",
+      "section": "Metadatos / revision",
+      "value_type": "string",
+      "repeatable": false,
+      "critical": false,
+      "optional": false
+    },
+    {
+      "key": "language",
+      "label": "Idioma",
+      "section": "Metadatos / revision",
+      "value_type": "string",
+      "repeatable": false,
+      "critical": false,
+      "optional": true
     }
   ]
 }
