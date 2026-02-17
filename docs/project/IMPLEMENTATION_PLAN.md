@@ -832,6 +832,8 @@ Introduce a minimal, consistent UI foundation to prevent ad-hoc styling and enab
 
 ## US-08 — Edit structured data
 
+**Status**: Implemented (2026-02-17)
+
 **User Story**
 As a veterinarian, I want to edit structured information extracted from a document so that it accurately reflects the original document.
 
@@ -868,6 +870,8 @@ As a veterinarian, I want to edit structured information extracted from a docume
 ---
 
 ## US-09 — Capture correction signals
+
+**Status**: Implemented (2026-02-17)
 
 **User Story**
 As a veterinarian, I want the system to record my normal corrections as append-only signals so the system can improve later, without asking me for feedback.

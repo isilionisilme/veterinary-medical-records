@@ -1,5 +1,7 @@
 # US-08 — Edit structured data
 
+**Status**: Implemented (2026-02-17)
+
 **User Story**
 As a veterinarian, I want to edit structured information extracted from a document so that it accurately reflects the original document.
 

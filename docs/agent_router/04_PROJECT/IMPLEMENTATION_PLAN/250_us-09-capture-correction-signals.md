@@ -1,5 +1,7 @@
 # US-09 — Capture correction signals
 
+**Status**: Implemented (2026-02-17)
+
 **User Story**
 As a veterinarian, I want the system to record my normal corrections as append-only signals so the system can improve later, without asking me for feedback.
 
