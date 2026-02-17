@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import importlib.util
+import os
+import time
 from pathlib import Path
 from uuid import uuid4
 
@@ -61,7 +63,13 @@ def test_evaluate_parity_reports_missing_terms_when_source_changes() -> None:
         assert "missing required terms" in findings[0]
     finally:
         if fixture.exists():
-            fixture.unlink()
+            for _ in range(5):
+                try:
+                    fixture.unlink()
+                    break
+                except PermissionError:
+                    os.chmod(fixture, 0o666)
+                    time.sleep(0.02)
 
 
 def test_evaluate_parity_skips_when_source_not_changed() -> None:
