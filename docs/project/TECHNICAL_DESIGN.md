@@ -270,8 +270,12 @@ Minimum field-level payload for calibration-aware review must support:
 
 - `mapping_confidence` remains the primary veterinarian-facing confidence signal.
 - Tooltip-only breakdown components are optional diagnostics:
-  - `extraction_reliability` (0–1, nullable): per-run/per-document diagnostic tied to text-extraction quality; this is **not** `candidate_confidence`.
-  - `review_history_adjustment` (signed percentage points): explanatory cross-document/system-level delta derived from calibration aggregates.
+  - `extraction_reliability` (`number|null`): per-run/per-document diagnostic tied to text-extraction quality; this is **not** `candidate_confidence`.
+    - Unit/scale: ratio in `[0,1]` when present.
+  - `review_history_adjustment` (`number`): explanatory cross-document/system-level delta derived from calibration aggregates.
+    - Unit: signed percentage points.
+    - Example: `+7` -> `+7%`, `-4` -> `-4%`, `0` -> `0%`.
+    - Frontend contract: render-only presentation; no recomputation/recalibration in UI.
 - UI invariant:
   - the confidence dot/band uses `mapping_confidence`,
   - tooltip breakdown is explanatory only,

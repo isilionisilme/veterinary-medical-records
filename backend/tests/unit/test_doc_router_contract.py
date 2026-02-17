@@ -264,6 +264,8 @@ def test_project_owner_modules_include_confidence_tooltip_breakdown_propagation(
     assert "Confidence tooltip breakdown (veterinarian UI)" in ux_module
     assert "Propagation note:" in design_system_module
     assert "Tooltip breakdown visibility contract (MVP)" in technical_module
+    assert "Unit/scale: ratio in `[0,1]` when present." in technical_module
+    assert "Unit: signed percentage points" in technical_module
     assert "Tooltip breakdown data sourcing (MVP)" in backend_module
     assert "Confidence tooltip breakdown rendering (MVP)" in frontend_module
     assert (

@@ -293,6 +293,48 @@ def test_document_review_keeps_canonical_microchip_digits_unchanged(test_client)
     )
 
 
+def test_document_review_sanitizes_confidence_breakdown_payload_values(test_client):
+    document_id = _upload_sample_document(test_client)
+    run_id = "run-review-breakdown-sanitize"
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(
+        run_id=run_id,
+        data={
+            "schema_version": "v0",
+            "document_id": document_id,
+            "processing_run_id": run_id,
+            "created_at": "2026-02-10T10:00:05+00:00",
+            "fields": [
+                {
+                    "field_id": "field-1",
+                    "key": "pet_name",
+                    "value": "Luna",
+                    "value_type": "string",
+                    "mapping_confidence": 0.82,
+                    "confidence": 0.82,
+                    "extraction_reliability": 1.7,
+                    "review_history_adjustment": "invalid",
+                    "is_critical": False,
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Paciente: Luna"},
+                }
+            ],
+        },
+    )
+
+    response = test_client.get(f"/documents/{document_id}/review")
+    assert response.status_code == 200
+    payload = response.json()
+    field = payload["active_interpretation"]["data"]["fields"][0]
+    assert field["extraction_reliability"] is None
+    assert field["review_history_adjustment"] == 0
+
+
 def test_mark_document_reviewed_is_idempotent(test_client):
     document_id = _upload_sample_document(test_client)
 

@@ -377,6 +377,8 @@ describe("App upload and list flow", () => {
                     value: "Luna",
                     value_type: "string",
                     mapping_confidence: 0.82,
+                    extraction_reliability: 0.65,
+                    review_history_adjustment: 7,
                     is_critical: false,
                     origin: "machine",
                     evidence: { page: 1, snippet: "Paciente: Luna" },
@@ -387,6 +389,8 @@ describe("App upload and list flow", () => {
                     value: "Gastroenteritis",
                     value_type: "string",
                     mapping_confidence: 0.62,
+                    extraction_reliability: 0.71,
+                    review_history_adjustment: -4,
                     is_critical: false,
                     origin: "machine",
                     evidence: { page: 2, snippet: "Diagnostico: Gastroenteritis" },
@@ -435,6 +439,8 @@ describe("App upload and list flow", () => {
                     value: "BEATRIZ ABARCA",
                     value_type: "string",
                     mapping_confidence: 0.84,
+                    extraction_reliability: null,
+                    review_history_adjustment: 0,
                     is_critical: false,
                     origin: "machine",
                   },
@@ -444,6 +450,8 @@ describe("App upload and list flow", () => {
                     value: "Calle Mayor 10, Madrid",
                     value_type: "string",
                     mapping_confidence: 0.77,
+                    extraction_reliability: 0.77,
+                    review_history_adjustment: -4,
                     is_critical: false,
                     origin: "machine",
                   },
@@ -1856,7 +1864,16 @@ describe("App upload and list flow", () => {
       "confidence-indicator-core:pet_name"
     );
     expect(petNameConfidence).toHaveAttribute("aria-label", expect.stringMatching(/Confianza:\s*\d+%/i));
+    expect(petNameConfidence).toHaveAttribute("aria-label", expect.stringMatching(/\(Alta\)/i));
     expect(petNameConfidence).toHaveAttribute("aria-label", expect.stringMatching(/CRÍTICO/i));
+    expect(petNameConfidence).toHaveAttribute(
+      "aria-label",
+      expect.stringMatching(/Fiabilidad de la extracción de texto:\s*65%/i)
+    );
+    expect(petNameConfidence).toHaveAttribute(
+      "aria-label",
+      expect.stringMatching(/Ajuste por histórico de revisiones:\s*\+7%/i)
+    );
 
     const clinicalRecordCard = within(panel).getByText("ID de reclamacion").closest("article");
     expect(clinicalRecordCard).not.toBeNull();
@@ -2344,6 +2361,10 @@ describe("App upload and list flow", () => {
     const confidenceIndicator = screen.getByTestId("confidence-indicator-core:pet_name");
     expect(confidenceIndicator).toHaveAttribute("aria-label", expect.stringMatching(/Página 1/i));
     expect(confidenceIndicator).toHaveAttribute("aria-label", expect.stringMatching(/Paciente: Luna/i));
+    expect(confidenceIndicator).toHaveAttribute(
+      "aria-label",
+      expect.stringMatching(/Ajuste por histórico de revisiones:\s*\+7%/i)
+    );
 
     clickPetNameField();
     const viewer = screen.getAllByTestId("pdf-viewer")[0];
@@ -2366,10 +2387,82 @@ describe("App upload and list flow", () => {
     const withEvidence = screen.getByTestId("confidence-indicator-core:pet_name");
     expect(withEvidence).toHaveAttribute("aria-label", expect.stringMatching(/Página 1/i));
     expect(withEvidence).toHaveAttribute("aria-label", expect.stringMatching(/Paciente: Luna/i));
+    expect(withEvidence).toHaveAttribute(
+      "aria-label",
+      expect.stringMatching(/Fiabilidad de la extracción de texto:\s*65%/i)
+    );
 
-    const withoutEvidence = screen.getByTestId("confidence-indicator-core:species");
+    const withoutEvidence = screen.getByTestId("confidence-indicator-core:owner_name");
     expect(withoutEvidence).toHaveAttribute("aria-label", expect.not.stringMatching(/Página/i));
+    expect(withoutEvidence).toHaveAttribute(
+      "aria-label",
+      expect.stringMatching(/Ajuste por histórico de revisiones:\s*0%/i)
+    );
+    expect(withoutEvidence).toHaveAttribute(
+      "aria-label",
+      expect.stringMatching(/Fiabilidad de la extracción de texto:\s*No disponible/i)
+    );
     expect(screen.queryByTestId("source-drawer")).toBeNull();
+  });
+
+  it("applies semantic styling for positive, negative and neutral adjustment values in tooltip", async () => {
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+    await waitForStructuredDataReady();
+    const findAdjustmentLine = async (pattern: RegExp): Promise<HTMLElement> => {
+      let line: HTMLElement | undefined;
+      await waitFor(() => {
+        line = Array.from(document.body.querySelectorAll("p")).find((node) =>
+          pattern.test(node.textContent ?? "")
+        ) as HTMLElement | undefined;
+        expect(line).toBeDefined();
+      });
+      return line!;
+    };
+
+    const positive = screen.getByTestId("confidence-indicator-core:pet_name");
+    expect(positive).toHaveAttribute(
+      "aria-label",
+      expect.stringMatching(/Ajuste por histórico de revisiones:\s*\+7%/i)
+    );
+    fireEvent.focus(positive);
+    const positiveLine = await findAdjustmentLine(
+      /Ajuste por histórico de revisiones:\s*\+7%/i
+    );
+    expect(positiveLine).toHaveClass("text-[var(--status-success)]");
+    fireEvent.blur(positive);
+
+    const negative = screen
+      .getAllByTestId(/confidence-indicator-/)
+      .find((element) =>
+        element.getAttribute("aria-label")?.includes("Ajuste por histórico de revisiones: -4%")
+      );
+    expect(negative).toBeDefined();
+    if (!negative) {
+      throw new Error("Expected negative adjustment indicator to exist.");
+    }
+    expect(negative).toHaveAttribute(
+      "aria-label",
+      expect.stringMatching(/Ajuste por histórico de revisiones:\s*-4%/i)
+    );
+    fireEvent.focus(negative);
+    const negativeLine = await findAdjustmentLine(
+      /Ajuste por histórico de revisiones:\s*-4%/i
+    );
+    expect(negativeLine).toHaveClass("text-[var(--status-error)]");
+    fireEvent.blur(negative);
+
+    const neutral = screen.getByTestId("confidence-indicator-core:owner_name");
+    expect(neutral).toHaveAttribute(
+      "aria-label",
+      expect.stringMatching(/Ajuste por histórico de revisiones:\s*0%/i)
+    );
+    fireEvent.focus(neutral);
+    const neutralLine = await findAdjustmentLine(
+      /Ajuste por histórico de revisiones:\s*0%/i
+    );
+    expect(neutralLine).toHaveClass("text-muted");
   });
 
   it("toggles report layout in DEV with Shift+L and persists selection", async () => {

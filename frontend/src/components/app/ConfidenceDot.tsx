@@ -1,8 +1,10 @@
 import { Tooltip } from "../ui/tooltip";
+import type { ReactNode } from "react";
 
 type ConfidenceDotProps = {
   tone: "low" | "med" | "high";
-  tooltip: string;
+  tooltip: ReactNode;
+  ariaLabel: string;
   testId?: string;
 };
 
@@ -16,13 +18,13 @@ function toneClass(tone: ConfidenceDotProps["tone"]): string {
   return "bg-confidenceLow";
 }
 
-export function ConfidenceDot({ tone, tooltip, testId }: ConfidenceDotProps) {
+export function ConfidenceDot({ tone, tooltip, ariaLabel, testId }: ConfidenceDotProps) {
   return (
     <Tooltip content={tooltip}>
       <span
         data-testid={testId}
         tabIndex={0}
-        aria-label={tooltip}
+        aria-label={ariaLabel}
         className={`inline-block h-2.5 w-2.5 rounded-full ${toneClass(tone)}`}
       />
     </Tooltip>

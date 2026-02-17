@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import math
 import os
 import re
 import time
@@ -1584,12 +1585,16 @@ def _build_structured_field(
     if len(normalized_snippet) > 180:
         normalized_snippet = normalized_snippet[:177].rstrip() + "..."
     mapping_confidence = round(min(max(confidence, 0.0), 1.0), 2)
+    extraction_reliability = _sanitize_extraction_reliability(None)
+    review_history_adjustment = _sanitize_review_history_adjustment(0)
     return {
         "field_id": str(uuid4()),
         "key": key,
         "value": value,
         "value_type": value_type,
         "mapping_confidence": mapping_confidence,
+        "extraction_reliability": extraction_reliability,
+        "review_history_adjustment": review_history_adjustment,
         # TODO(US-39-compat): remove legacy "confidence" after downstream migration;
         # veterinarian-facing consumers must use "mapping_confidence".
         "confidence": mapping_confidence,
@@ -1600,6 +1605,26 @@ def _build_structured_field(
             "snippet": normalized_snippet,
         },
     }
+
+
+def _sanitize_extraction_reliability(value: object) -> float | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int | float):
+        numeric = float(value)
+        if math.isfinite(numeric) and 0.0 <= numeric <= 1.0:
+            return numeric
+    return None
+
+
+def _sanitize_review_history_adjustment(value: object) -> float:
+    if isinstance(value, bool):
+        return 0.0
+    if isinstance(value, int | float):
+        numeric = float(value)
+        if math.isfinite(numeric):
+            return numeric
+    return 0.0
 
 
 def _append_step_status(

@@ -293,6 +293,8 @@ type ReviewField = {
   value_type: string;
   confidence?: number;
   mapping_confidence?: number;
+  extraction_reliability?: number | null;
+  review_history_adjustment?: number;
   is_critical: boolean;
   origin: "machine" | "human";
   evidence?: ReviewEvidence;
@@ -1018,6 +1020,29 @@ function clampConfidence(value: number): number {
 }
 
 type ConfidenceTone = "low" | "med" | "high";
+
+function getConfidenceBandLabel(tone: ConfidenceTone): string {
+  if (tone === "low") {
+    return "Baja";
+  }
+  if (tone === "med") {
+    return "Media";
+  }
+  return "Alta";
+}
+
+function formatSignedPercent(value: number): string {
+  const rounded = Math.round(value * 10) / 10;
+  const isInteger = Number.isInteger(rounded);
+  const absText = isInteger ? Math.abs(rounded).toFixed(0) : Math.abs(rounded).toFixed(1);
+  if (rounded > 0) {
+    return `+${absText}%`;
+  }
+  if (rounded < 0) {
+    return `-${absText}%`;
+  }
+  return "0%";
+}
 
 function getConfidenceTone(
   confidence: number,
@@ -3196,25 +3221,74 @@ export function App() {
     closeFieldEditDialog();
   };
 
-  const buildFieldTooltip = (item: ReviewSelectableField, isCritical: boolean): string => {
+  const buildFieldTooltip = (
+    item: ReviewSelectableField,
+    isCritical: boolean
+  ): { content: ReactNode; ariaLabel: string } => {
     if (!activeConfidencePolicy) {
-      return "Configuración de confianza no disponible.";
+      return {
+        content: "Configuración de confianza no disponible.",
+        ariaLabel: "Configuración de confianza no disponible.",
+      };
     }
     if (!item.hasMappingConfidence) {
-      return "Confianza de mapeo no disponible.";
+      return {
+        content: "Confianza de mapeo no disponible.",
+        ariaLabel: "Confianza de mapeo no disponible.",
+      };
     }
     const confidence = item.confidence;
     const percentage = Math.round(clampConfidence(confidence) * 100);
-    const base = isCritical
-      ? `Confianza: ${percentage}% · CRÍTICO`
-      : `Confianza: ${percentage}%`;
-    if (!item.evidence?.page) {
-      return base;
-    }
-    if (!item.evidence.snippet) {
-      return `${base} · Página ${item.evidence.page}`;
-    }
-    return `${base} · Página ${item.evidence.page} · ${truncateText(item.evidence.snippet, 72)}`;
+    const tone = getConfidenceTone(confidence, activeConfidencePolicy.band_cutoffs);
+    const band = getConfidenceBandLabel(tone);
+    const extractionReliability = item.rawField?.extraction_reliability;
+    const extractionReliabilityText =
+      typeof extractionReliability === "number" && Number.isFinite(extractionReliability)
+        ? `${Math.round(clampConfidence(extractionReliability) * 100)}%`
+        : "No disponible";
+    const reviewHistoryAdjustmentRaw = item.rawField?.review_history_adjustment;
+    const reviewHistoryAdjustment =
+      typeof reviewHistoryAdjustmentRaw === "number" && Number.isFinite(reviewHistoryAdjustmentRaw)
+        ? reviewHistoryAdjustmentRaw
+        : 0;
+    const reviewHistoryAdjustmentText = formatSignedPercent(reviewHistoryAdjustment);
+    const reviewHistoryAdjustmentClass =
+      reviewHistoryAdjustment > 0
+        ? "text-[var(--status-success)]"
+        : reviewHistoryAdjustment < 0
+          ? "text-[var(--status-error)]"
+          : "text-muted";
+    const header = isCritical
+      ? `Confianza: ${percentage}% (${band}) · CRÍTICO`
+      : `Confianza: ${percentage}% (${band})`;
+    const evidenceLine = item.evidence?.page
+      ? item.evidence.snippet
+        ? `Página ${item.evidence.page} · ${truncateText(item.evidence.snippet, 72)}`
+        : `Página ${item.evidence.page}`
+      : null;
+    const ariaLabelParts = [
+      header,
+      "Indica qué tan fiable es el valor extraído automáticamente.",
+      "Desglose:",
+      `Fiabilidad de la extracción de texto: ${extractionReliabilityText}`,
+      `Ajuste por histórico de revisiones: ${reviewHistoryAdjustmentText}`,
+      evidenceLine,
+    ].filter((part): part is string => Boolean(part));
+    return {
+      ariaLabel: ariaLabelParts.join(" · "),
+      content: (
+        <div className="space-y-1">
+          <p>{header}</p>
+          <p>Indica qué tan fiable es el valor extraído automáticamente.</p>
+          <p className="font-semibold">Desglose:</p>
+          <p>Fiabilidad de la extracción de texto: {extractionReliabilityText}</p>
+          <p className={reviewHistoryAdjustmentClass}>
+            Ajuste por histórico de revisiones: {reviewHistoryAdjustmentText}
+          </p>
+          {evidenceLine ? <p>{evidenceLine}</p> : null}
+        </div>
+      ),
+    };
   };
 
   const renderConfidenceIndicator = (field: ReviewDisplayField, item: ReviewSelectableField) => {
@@ -3253,7 +3327,8 @@ export function App() {
       <span data-testid={`badge-group-${item.id}`} className="inline-flex shrink-0 items-center">
         <ConfidenceDot
           tone={tone}
-          tooltip={tooltip}
+          tooltip={tooltip.content}
+          ariaLabel={tooltip.ariaLabel}
           testId={`confidence-indicator-${item.id}`}
         />
       </span>
@@ -3868,15 +3943,15 @@ export function App() {
                                   </span>
                                   <span>(</span>
                                   <span className="inline-flex items-center gap-1">
-                                    <ConfidenceDot tone="low" tooltip="Low" />
+                                    <ConfidenceDot tone="low" tooltip="Low" ariaLabel="Low" />
                                     <span className="tabular-nums">{detectedFieldsSummary.low}</span>
                                   </span>
                                   <span className="inline-flex items-center gap-1">
-                                    <ConfidenceDot tone="med" tooltip="Medium" />
+                                    <ConfidenceDot tone="med" tooltip="Medium" ariaLabel="Medium" />
                                     <span className="tabular-nums">{detectedFieldsSummary.medium}</span>
                                   </span>
                                   <span className="inline-flex items-center gap-1">
-                                    <ConfidenceDot tone="high" tooltip="High" />
+                                    <ConfidenceDot tone="high" tooltip="High" ariaLabel="High" />
                                     <span className="tabular-nums">{detectedFieldsSummary.high}</span>
                                   </span>
                                   <span>)</span>

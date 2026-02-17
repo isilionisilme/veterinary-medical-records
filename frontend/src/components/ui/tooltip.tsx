@@ -11,7 +11,7 @@ import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import { cn } from "../../lib/utils";
 
 type TooltipProps = {
-  content: string;
+  content: ReactNode;
   children: ReactNode;
   disabled?: boolean;
   offset?: number;

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -377,16 +378,32 @@ def get_document_review(
 
 
 def _normalize_review_interpretation_data(data: dict[str, object]) -> dict[str, object]:
-    global_schema = data.get("global_schema_v0")
+    normalized_data = dict(data)
+    changed = False
+
+    raw_fields = normalized_data.get("fields")
+    if isinstance(raw_fields, list):
+        normalized_fields: list[object] = []
+        for item in raw_fields:
+            if not isinstance(item, dict):
+                normalized_fields.append(item)
+                continue
+            normalized_field = _sanitize_confidence_breakdown(item)
+            normalized_fields.append(normalized_field)
+            if normalized_field != item:
+                changed = True
+        if changed:
+            normalized_data["fields"] = normalized_fields
+
+    global_schema = normalized_data.get("global_schema_v0")
     if not isinstance(global_schema, dict):
-        return data
+        return normalized_data if changed else data
 
     raw_microchip = global_schema.get("microchip_id")
     normalized_microchip = normalize_microchip_digits_only(raw_microchip)
     if normalized_microchip == raw_microchip:
-        return data
+        return normalized_data if changed else data
 
-    normalized_data = dict(data)
     normalized_global_schema = dict(global_schema)
     normalized_global_schema["microchip_id"] = normalized_microchip
     normalized_data["global_schema_v0"] = normalized_global_schema
@@ -475,6 +492,8 @@ def apply_interpretation_edits(
                 "value": change.get("value"),
                 "value_type": value_type,
                 "mapping_confidence": 1.0,
+                "extraction_reliability": _sanitize_extraction_reliability(None),
+                "review_history_adjustment": _sanitize_review_history_adjustment(0),
                 "confidence": 1.0,
                 "is_critical": key in CRITICAL_KEYS_V0,
                 "origin": "human",
@@ -568,6 +587,8 @@ def apply_interpretation_edits(
             "value_type": value_type,
             "origin": "human",
             "mapping_confidence": 1.0,
+            "extraction_reliability": _sanitize_extraction_reliability(None),
+            "review_history_adjustment": _sanitize_review_history_adjustment(0),
             "confidence": 1.0,
         }
         field_change_logs.append(
@@ -595,7 +616,7 @@ def apply_interpretation_edits(
     new_data: dict[str, object] = dict(active_data)
     new_data["created_at"] = now_iso
     new_data["processing_run_id"] = run_id
-    new_data["fields"] = updated_fields
+    new_data["fields"] = [_sanitize_confidence_breakdown(field) for field in updated_fields]
     new_data["global_schema_v0"] = _build_global_schema_from_fields(updated_fields)
 
     new_payload = {
@@ -635,6 +656,37 @@ def _coerce_interpretation_fields(raw_fields: object) -> list[dict[str, object]]
         if isinstance(item, dict):
             fields.append(dict(item))
     return fields
+
+
+def _sanitize_extraction_reliability(value: object) -> float | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int | float):
+        numeric = float(value)
+        if math.isfinite(numeric) and 0.0 <= numeric <= 1.0:
+            return numeric
+    return None
+
+
+def _sanitize_review_history_adjustment(value: object) -> float:
+    if isinstance(value, bool):
+        return 0.0
+    if isinstance(value, int | float):
+        numeric = float(value)
+        if math.isfinite(numeric):
+            return numeric
+    return 0.0
+
+
+def _sanitize_confidence_breakdown(field: dict[str, object]) -> dict[str, object]:
+    sanitized = dict(field)
+    sanitized["extraction_reliability"] = _sanitize_extraction_reliability(
+        sanitized.get("extraction_reliability")
+    )
+    sanitized["review_history_adjustment"] = _sanitize_review_history_adjustment(
+        sanitized.get("review_history_adjustment")
+    )
+    return sanitized
 
 
 def _build_field_change_log(
