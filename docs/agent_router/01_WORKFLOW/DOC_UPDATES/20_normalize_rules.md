@@ -4,8 +4,9 @@ Apply this pass to each changed documentation file.
 
 ## Steps
 1) Inspect change evidence first:
-   - Prefer `git diff -- <path>`.
-   - If unavailable, use a user-provided snippet with file path and section context.
+   - Must inspect local working tree (staged + unstaged), unpushed commits (`@{upstream}..HEAD`), and branch-vs-base diff (`<base_ref>...HEAD`).
+   - For file-level inspection, evaluate each target doc across those same three evidence sources.
+   - If git evidence is unavailable, use a user-provided snippet with file path and section context.
 2) Classify each change:
    - R = rule change (affects behavior or process)
    - C = clarification (no behavior change)
@@ -32,8 +33,10 @@ Apply this pass to each changed documentation file.
    - Any missing required term is a blocking parity failure, not a soft gap.
 9) Emit required summary (`00_entry.md`):
    - include docs table and propagation gaps.
+   - include evidence source used per processed doc (`local|unpushed|branch-vs-base|mixed|snippet`).
    - include source-to-router parity status (`Pass` or `Fail`).
    - If an R change was detected but no owner module was updated and no blocker reason exists, treat it as failure.
+   - If Trigger A/B/C ran without inspecting all three git evidence sources and no snippet fallback was used, treat it as failure.
    - if Rule change exists with no propagation and no blocker reason, treat as failure.
 
 ## Ambiguity handling
