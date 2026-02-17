@@ -142,6 +142,50 @@ def test_document_review_returns_latest_completed_run_context(test_client):
     assert payload["reviewed_at"] is None
 
 
+def test_document_review_omits_confidence_policy_when_config_missing(
+    test_client: TestClient, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.delenv("VET_RECORDS_CONFIDENCE_POLICY_VERSION", raising=False)
+    monkeypatch.delenv("VET_RECORDS_CONFIDENCE_LOW_MAX", raising=False)
+    monkeypatch.delenv("VET_RECORDS_CONFIDENCE_MID_MAX", raising=False)
+
+    document_id = _upload_sample_document(test_client)
+    run_id = "run-review-policy-missing"
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(
+        run_id=run_id,
+        data={
+            "schema_version": "v0",
+            "document_id": document_id,
+            "processing_run_id": run_id,
+            "created_at": "2026-02-10T10:00:05+00:00",
+            "fields": [
+                {
+                    "field_id": "field-1",
+                    "key": "pet_name",
+                    "value": "Luna",
+                    "value_type": "string",
+                    "mapping_confidence": 0.82,
+                    "confidence": 0.82,
+                    "is_critical": False,
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Paciente: Luna"},
+                }
+            ],
+        },
+    )
+
+    response = test_client.get(f"/documents/{document_id}/review")
+    assert response.status_code == 200
+    payload = response.json()
+    assert "confidence_policy" not in payload["active_interpretation"]["data"]
+
+
 def test_document_review_returns_conflict_when_no_completed_run(test_client):
     document_id = _upload_sample_document(test_client)
     _insert_run(

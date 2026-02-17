@@ -474,6 +474,7 @@ def apply_interpretation_edits(
                 "key": key,
                 "value": change.get("value"),
                 "value_type": value_type,
+                "mapping_confidence": 1.0,
                 "confidence": 1.0,
                 "is_critical": key in CRITICAL_KEYS_V0,
                 "origin": "human",
@@ -566,6 +567,7 @@ def apply_interpretation_edits(
             "value": change.get("value"),
             "value_type": value_type,
             "origin": "human",
+            "mapping_confidence": 1.0,
             "confidence": 1.0,
         }
         field_change_logs.append(

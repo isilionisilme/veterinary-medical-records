@@ -46,18 +46,25 @@ function createDataTransfer(file: File): DataTransfer {
   } as unknown as DataTransfer;
 }
 
+async function waitForStructuredDataReady() {
+  await waitFor(() => {
+    expect(screen.queryByTestId("review-core-skeleton")).toBeNull();
+  });
+}
+
 function clickPetNameField() {
   const indicator = screen.getByTestId("confidence-indicator-core:pet_name");
   const fieldCard = indicator.closest("article");
   expect(fieldCard).not.toBeNull();
-  const button = (fieldCard as HTMLElement).querySelector("button");
-  expect(button).not.toBeNull();
-  fireEvent.click(button as HTMLButtonElement);
+  const trigger = (fieldCard as HTMLElement).querySelector('[role="button"]');
+  expect(trigger).not.toBeNull();
+  fireEvent.click(trigger as HTMLElement);
 }
 
 async function openReadyDocumentAndGetPanel() {
   fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-  await screen.findByText("Datos de la clínica");
+  await screen.findByRole("heading", { name: /Datos extraídos/i });
+  await waitForStructuredDataReady();
   return screen.getByTestId("right-panel-scroll");
 }
 
@@ -179,7 +186,7 @@ function installReviewedModeFetchMock() {
                   key: "pet_name",
                   value: "Luna",
                   value_type: "string",
-                  confidence: 0.82,
+                  mapping_confidence: 0.82,
                   is_critical: false,
                   origin: "machine",
                   evidence: { page: 1, snippet: "Paciente: Luna" },
@@ -189,11 +196,15 @@ function installReviewedModeFetchMock() {
                   key: "species",
                   value: "Canina",
                   value_type: "string",
-                  confidence: 0.9,
+                  mapping_confidence: 0.9,
                   is_critical: false,
                   origin: "machine",
                 },
               ],
+              confidence_policy: {
+                policy_version: "v1",
+                band_cutoffs: { low_max: 0.5, mid_max: 0.75 },
+              },
             },
           },
           raw_text_artifact: {
@@ -225,9 +236,9 @@ function getPetNameFieldButton() {
   const indicator = screen.getByTestId("confidence-indicator-core:pet_name");
   const fieldCard = indicator.closest("article");
   expect(fieldCard).not.toBeNull();
-  const button = (fieldCard as HTMLElement).querySelector("button");
-  expect(button).not.toBeNull();
-  return button as HTMLButtonElement;
+  const trigger = (fieldCard as HTMLElement).querySelector('[role="button"]');
+  expect(trigger).not.toBeNull();
+  return trigger as HTMLElement;
 }
 
 describe("App upload and list flow", () => {
@@ -347,7 +358,7 @@ describe("App upload and list flow", () => {
                     key: "document_date",
                     value: null,
                     value_type: "date",
-                    confidence: 0.32,
+                    mapping_confidence: 0.32,
                     is_critical: false,
                     origin: "machine",
                   },
@@ -356,7 +367,7 @@ describe("App upload and list flow", () => {
                     key: "visit_date",
                     value: "2026-02-11T00:00:00Z",
                     value_type: "date",
-                    confidence: 0.74,
+                    mapping_confidence: 0.74,
                     is_critical: true,
                     origin: "machine",
                   },
@@ -365,7 +376,7 @@ describe("App upload and list flow", () => {
                     key: "pet_name",
                     value: "Luna",
                     value_type: "string",
-                    confidence: 0.82,
+                    mapping_confidence: 0.82,
                     is_critical: false,
                     origin: "machine",
                     evidence: { page: 1, snippet: "Paciente: Luna" },
@@ -375,7 +386,7 @@ describe("App upload and list flow", () => {
                     key: "diagnosis",
                     value: "Gastroenteritis",
                     value_type: "string",
-                    confidence: 0.62,
+                    mapping_confidence: 0.62,
                     is_critical: false,
                     origin: "machine",
                     evidence: { page: 2, snippet: "Diagnostico: Gastroenteritis" },
@@ -386,7 +397,7 @@ describe("App upload and list flow", () => {
                     value:
                       "Reposo relativo durante 7 días.\nDieta blanda en 3 tomas al día y control de hidratación.",
                     value_type: "string",
-                    confidence: 0.72,
+                    mapping_confidence: 0.72,
                     is_critical: false,
                     origin: "machine",
                   },
@@ -395,7 +406,7 @@ describe("App upload and list flow", () => {
                     key: "custom_tag",
                     value: "Prioridad",
                     value_type: "string",
-                    confidence: 0.88,
+                    mapping_confidence: 0.88,
                     is_critical: false,
                     origin: "machine",
                     evidence: { page: 1, snippet: "Prioridad: Alta" },
@@ -405,7 +416,7 @@ describe("App upload and list flow", () => {
                     key: "imagen",
                     value: "Rx abdomen",
                     value_type: "string",
-                    confidence: 0.61,
+                    mapping_confidence: 0.61,
                     is_critical: false,
                     origin: "machine",
                   },
@@ -414,7 +425,7 @@ describe("App upload and list flow", () => {
                     key: "imagine",
                     value: "Eco",
                     value_type: "string",
-                    confidence: 0.58,
+                    mapping_confidence: 0.58,
                     is_critical: false,
                     origin: "machine",
                   },
@@ -423,7 +434,7 @@ describe("App upload and list flow", () => {
                     key: "owner_name",
                     value: "BEATRIZ ABARCA",
                     value_type: "string",
-                    confidence: 0.84,
+                    mapping_confidence: 0.84,
                     is_critical: false,
                     origin: "machine",
                   },
@@ -432,7 +443,7 @@ describe("App upload and list flow", () => {
                     key: "owner_address",
                     value: "Calle Mayor 10, Madrid",
                     value_type: "string",
-                    confidence: 0.77,
+                    mapping_confidence: 0.77,
                     is_critical: false,
                     origin: "machine",
                   },
@@ -441,11 +452,15 @@ describe("App upload and list flow", () => {
                     key: "IMAGING:",
                     value: "Radiografia lateral",
                     value_type: "string",
-                    confidence: 0.57,
+                    mapping_confidence: 0.57,
                     is_critical: false,
                     origin: "machine",
                   },
                 ],
+                confidence_policy: {
+                  policy_version: "v1",
+                  band_cutoffs: { low_max: 0.5, mid_max: 0.75 },
+                },
               },
             },
             raw_text_artifact: {
@@ -788,7 +803,7 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Datos de la clínica");
+    await waitForStructuredDataReady();
 
     expect(screen.getByTestId("canvas-wrapper")).toHaveClass("p-[var(--canvas-gap)]");
     expect(screen.getByTestId("main-canvas-layout")).toHaveClass("gap-[var(--canvas-gap)]");
@@ -864,7 +879,7 @@ describe("App upload and list flow", () => {
       expect(sidebar).toHaveAttribute("data-expanded", "true");
 
       fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-      await screen.findByText("Datos de la clínica");
+      await waitForStructuredDataReady();
 
       expect(sidebar).toHaveAttribute("data-expanded", "false");
       expect(sidebar.className).toContain("w-16");
@@ -934,7 +949,7 @@ describe("App upload and list flow", () => {
       const sidebar = await screen.findByTestId("documents-sidebar");
 
       fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-      await screen.findByText("Datos de la clínica");
+      await waitForStructuredDataReady();
       expect(sidebar).toHaveAttribute("data-expanded", "false");
 
       const dropzoneContainer = screen.getByTestId("sidebar-collapsed-dropzone");
@@ -983,7 +998,7 @@ describe("App upload and list flow", () => {
       const sidebar = await screen.findByTestId("documents-sidebar");
 
       fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-      await screen.findByText("Datos de la clínica");
+      await waitForStructuredDataReady();
       expect(sidebar).toHaveAttribute("data-expanded", "false");
 
       fireEvent.mouseEnter(sidebar);
@@ -1011,7 +1026,7 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Datos de la clínica");
+    await waitForStructuredDataReady();
 
     const activeViewerTool = screen.getByRole("button", { name: /^Documento$/i });
     expect(activeViewerTool).toHaveAttribute("aria-pressed", "true");
@@ -1027,7 +1042,7 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Datos de la clínica");
+    await waitForStructuredDataReady();
 
     const searchInput = screen.getByRole("textbox", { name: /Buscar en datos extraídos/i });
     expect(screen.queryByRole("button", { name: /Limpiar búsqueda/i })).toBeNull();
@@ -1109,6 +1124,10 @@ describe("App upload and list flow", () => {
                 processing_run_id: "run-doc-ready",
                 created_at: "2026-02-10T10:00:00Z",
                 fields: [],
+                confidence_policy: {
+                  policy_version: "v1",
+                  band_cutoffs: { low_max: 0.5, mid_max: 0.75 },
+                },
               },
             },
             raw_text_artifact: {
@@ -1692,15 +1711,8 @@ describe("App upload and list flow", () => {
     GLOBAL_SCHEMA_V0.forEach((field) => {
       expect(within(panel).getAllByText(field.label).length).toBeGreaterThan(0);
     });
-    expect(within(panel).getByText("NHC")).toBeInTheDocument();
-    expect(within(panel).getAllByText("Nombre").length).toBeGreaterThanOrEqual(2);
-    expect(within(panel).getByText("Nacimiento")).toBeInTheDocument();
-    expect(within(panel).getAllByText("Dirección").length).toBeGreaterThan(0);
-    expect(within(panel).getByText("Tratamiento")).toBeInTheDocument();
-    expect(within(panel).getByText("Visita")).toBeInTheDocument();
-    expect(within(panel).getByText("Capa")).toBeInTheDocument();
-    expect(within(panel).getByText("Pelo")).toBeInTheDocument();
-    expect(within(panel).getByText("Estado reproductivo")).toBeInTheDocument();
+    expect(within(panel).getByText("ID de reclamacion")).toBeInTheDocument();
+    expect(within(panel).getByText("Plan de tratamiento")).toBeInTheDocument();
     expect(within(panel).getAllByText("—").length).toBeGreaterThan(0);
     expect(within(panel).getByText("Otros campos extraídos")).toBeInTheDocument();
     expect(within(panel).getByText("Custom tag")).toBeInTheDocument();
@@ -1724,7 +1736,7 @@ describe("App upload and list flow", () => {
     const ownerSectionTitle = within(panel).getByText("Propietario");
     const ownerSection = ownerSectionTitle.closest("section");
     expect(ownerSection).not.toBeNull();
-    const caseSectionTitle = within(panel).getByText("Datos de la clínica");
+    const caseSectionTitle = within(panel).getByText("Identificacion del caso");
     const caseSection = caseSectionTitle.closest("section");
     expect(caseSection).not.toBeNull();
     const clinicRow = within(caseSection as HTMLElement).getByTestId("core-row-clinic_name");
@@ -1775,17 +1787,18 @@ describe("App upload and list flow", () => {
     expect(ownerNameValue).toHaveClass("w-full");
     expect(ownerNameValue).toHaveClass("min-w-0");
 
-    const ownerAddressValue = within(ownerSection as HTMLElement).getByTestId("owner-value-owner_address");
-    expect(ownerAddressValue).toHaveClass("w-full");
-    expect(ownerAddressValue).toHaveClass("bg-surfaceMuted");
+    const ownerIdValue =
+      within(ownerSection as HTMLElement).queryByTestId("owner-value-owner_id") ??
+      within(ownerSection as HTMLElement).getByTestId("core-value-owner_id");
+    expect(ownerIdValue).toHaveClass("w-full");
+    expect(ownerIdValue).toHaveClass("bg-surfaceMuted");
 
-    const visitSectionTitle = within(panel).getByText("Visita");
+    const visitSectionTitle = within(panel).getByText("Visita / episodio");
     const visitSection = visitSectionTitle.closest("section");
     expect(visitSection).not.toBeNull();
     const visitGrid = (visitSection as HTMLElement).querySelector("div.grid");
     expect(visitGrid).not.toBeNull();
-    expect(visitGrid).toHaveClass("grid-cols-1");
-    expect(visitGrid).not.toHaveClass("lg:grid-cols-2");
+    expect(visitGrid).toHaveClass("lg:grid-cols-2");
 
     const visitDateRow = within(visitSection as HTMLElement).getByTestId("visit-row-visit_date");
     const visitReasonRow = within(visitSection as HTMLElement).getByTestId("visit-row-reason_for_visit");
@@ -1816,7 +1829,7 @@ describe("App upload and list flow", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
 
-    await screen.findByText("Datos de la clínica");
+    await waitForStructuredDataReady();
 
     const panel = screen.getByTestId("right-panel-scroll");
     const criticalFields = GLOBAL_SCHEMA_V0.filter((field) => field.critical);
@@ -1844,14 +1857,14 @@ describe("App upload and list flow", () => {
     expect(petNameConfidence).toHaveAttribute("aria-label", expect.stringMatching(/Confianza:\s*\d+%/i));
     expect(petNameConfidence).toHaveAttribute("aria-label", expect.stringMatching(/CRÍTICO/i));
 
-    const clinicalRecordCard = within(panel).getByText("NHC").closest("article");
+    const clinicalRecordCard = within(panel).getByText("ID de reclamacion").closest("article");
     expect(clinicalRecordCard).not.toBeNull();
     const clinicalRecordConfidence = within(clinicalRecordCard as HTMLElement).getByTestId(
-      "confidence-indicator-core:clinical_record_number"
+      "confidence-indicator-core:claim_id"
     );
     expect(clinicalRecordConfidence).toHaveAttribute(
       "aria-label",
-      expect.stringMatching(/No encontrado en documento/i)
+      expect.stringMatching(/no disponible/i)
     );
     expect(clinicalRecordConfidence).toHaveAttribute("aria-label", expect.not.stringMatching(/CRÍTICO/i));
 
@@ -1863,7 +1876,7 @@ describe("App upload and list flow", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
 
-    await screen.findByText("Datos de la clínica");
+    await waitForStructuredDataReady();
 
     const panel = screen.getByTestId("right-panel-scroll");
     const medicationCard = within(panel).getByText("Medicacion").closest("article");
@@ -1876,22 +1889,88 @@ describe("App upload and list flow", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
 
-    await screen.findByText("Datos de la clínica");
+    await waitForStructuredDataReady();
 
     const panel = screen.getByTestId("right-panel-scroll");
-    const missingIndicator = within(panel).getByTestId("confidence-indicator-core:clinical_record_number");
+    const missingIndicator = within(panel).getByTestId("confidence-indicator-core:claim_id");
     expect(missingIndicator).toHaveAttribute(
       "aria-label",
-      expect.stringMatching(/No encontrado en documento/i)
+      expect.stringMatching(/no disponible/i)
     );
     expect(missingIndicator.className).toContain("bg-missing");
 
     fireEvent.click(screen.getByRole("button", { name: "Baja" }));
-    expect(within(screen.getByTestId("right-panel-scroll")).queryByText("NHC")).toBeNull();
+    expect(within(screen.getByTestId("right-panel-scroll")).queryByText("ID de reclamacion")).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "Baja" }));
     fireEvent.click(screen.getByRole("button", { name: "Mostrar solo campos vacíos" }));
-    expect(within(screen.getByTestId("right-panel-scroll")).getByText("NHC")).toBeInTheDocument();
+    expect(within(screen.getByTestId("right-panel-scroll")).getByText("ID de reclamacion")).toBeInTheDocument();
+  });
+
+  it("shows degraded confidence mode and emits a diagnostic event when policy config is missing", async () => {
+    const baseFetch = globalThis.fetch as typeof fetch;
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = input.toString();
+      const method = (init?.method ?? "GET").toUpperCase();
+      if (url.includes("/documents/doc-ready/review") && method === "GET") {
+        const response = await baseFetch(input, init);
+        const payload = await response.json();
+        delete payload.active_interpretation?.data?.confidence_policy;
+        return new Response(JSON.stringify(payload), { status: 200 });
+      }
+      return baseFetch(input, init);
+    }) as typeof fetch;
+
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+    await screen.findByTestId("confidence-policy-degraded");
+
+    const indicator = screen.getByTestId("confidence-indicator-core:pet_name");
+    expect(indicator.className).toContain("bg-missing");
+    expect(warnSpy).toHaveBeenCalledWith(
+      "[confidence-policy]",
+      expect.objectContaining({
+        event_type: "CONFIDENCE_POLICY_CONFIG_MISSING",
+        reason: "missing_policy_version",
+      })
+    );
+  });
+
+  it("does not fallback to legacy confidence when mapping_confidence is missing", async () => {
+    const baseFetch = globalThis.fetch as typeof fetch;
+
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = input.toString();
+      const method = (init?.method ?? "GET").toUpperCase();
+      if (url.includes("/documents/doc-ready/review") && method === "GET") {
+        const response = await baseFetch(input, init);
+        const payload = await response.json();
+        const fields = payload.active_interpretation?.data?.fields;
+        if (Array.isArray(fields)) {
+          fields.forEach((field: Record<string, unknown>) => {
+            delete field.mapping_confidence;
+            field.confidence = 0.99;
+          });
+        }
+        return new Response(JSON.stringify(payload), { status: 200 });
+      }
+      return baseFetch(input, init);
+    }) as typeof fetch;
+
+    renderApp();
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+    await waitForStructuredDataReady();
+
+    expect(screen.queryByTestId("confidence-policy-degraded")).toBeNull();
+    const indicator = screen.getByTestId("confidence-indicator-core:pet_name");
+    expect(indicator.className).toContain("bg-missing");
+    expect(indicator).toHaveAttribute(
+      "aria-label",
+      expect.stringMatching(/Confianza de mapeo no disponible/i)
+    );
   });
 
   it("does not post extraction snapshots from the UI", async () => {
@@ -1910,10 +1989,10 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Datos de la clínica");
+    await waitForStructuredDataReady();
 
     fireEvent.click(screen.getByRole("button", { name: /Actualizar/i }));
-    await screen.findByText("Datos de la clínica");
+    await waitForStructuredDataReady();
 
     await waitFor(() => {
       expect(snapshotPostAttempts).toBe(0);
@@ -1925,7 +2004,7 @@ describe("App upload and list flow", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
 
-    await screen.findByText("Datos de la clínica");
+    await waitForStructuredDataReady();
 
     const panel = screen.getByTestId("right-panel-scroll");
     const expectedDate = new Date("2026-02-11T00:00:00Z").toLocaleDateString("es-ES");
@@ -1965,7 +2044,7 @@ describe("App upload and list flow", () => {
     expect(typeof releaseReviewRequest).toBe("function");
     releaseReviewRequest();
 
-    expect(await screen.findByText("Datos de la clínica")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /Datos extraídos/i })).toBeInTheDocument();
   });
 
   it("shows centered interpretation empty state, retries with loading button, and recovers on success", async () => {
@@ -2049,12 +2128,16 @@ describe("App upload and list flow", () => {
                           key: "pet_name",
                           value: "Luna",
                           value_type: "string",
-                          confidence: 0.82,
+                          mapping_confidence: 0.82,
                           is_critical: false,
                           origin: "machine",
                           evidence: { page: 1, snippet: "Paciente: Luna" },
                         },
                       ],
+                      confidence_policy: {
+                        policy_version: "v1",
+                        band_cutoffs: { low_max: 0.5, mid_max: 0.75 },
+                      },
                     },
                   },
                   raw_text_artifact: {
@@ -2108,7 +2191,7 @@ describe("App upload and list flow", () => {
 
     expect(typeof resolveRetryReview).toBe("function");
     resolveRetryReview();
-    expect(await screen.findByText("Datos de la clínica")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /Datos extraídos/i })).toBeInTheDocument();
     expect(screen.getByText(/No se pudo conectar con el servidor\./i)).toBeInTheDocument();
     expect(screen.queryByText(/Sin conexión/i)).toBeNull();
   });
@@ -2117,7 +2200,7 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Datos de la clínica");
+    await waitForStructuredDataReady();
 
     expect(screen.getByTestId("documents-sidebar")).toBeInTheDocument();
     expect(screen.getByTestId("left-panel-scroll")).toBeInTheDocument();
@@ -2129,7 +2212,7 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Datos de la clínica");
+    await waitForStructuredDataReady();
 
     const layoutGrid = screen.getByTestId("document-layout-grid");
     expect(layoutGrid).toBeInTheDocument();
@@ -2144,7 +2227,7 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Datos de la clínica");
+    await waitForStructuredDataReady();
 
     const splitGrid = screen.getByTestId("review-split-grid") as HTMLDivElement;
     vi.spyOn(splitGrid, "getBoundingClientRect").mockReturnValue({
@@ -2177,7 +2260,7 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Datos de la clínica");
+    await waitForStructuredDataReady();
 
     const splitGrid = screen.getByTestId("review-split-grid") as HTMLDivElement;
     vi.spyOn(splitGrid, "getBoundingClientRect").mockReturnValue({
@@ -2206,7 +2289,7 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Datos de la clínica");
+    await waitForStructuredDataReady();
 
     const hasInlinePdf = Boolean(screen.queryByTestId("center-panel-scroll"));
     clickPetNameField();
@@ -2224,7 +2307,7 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Datos de la clínica");
+    await waitForStructuredDataReady();
 
     const leftPanelScroll = screen.getByTestId("left-panel-scroll");
     const centerPanelScroll = screen.getByTestId("center-panel-scroll");
@@ -2246,7 +2329,7 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Datos de la clínica");
+    await waitForStructuredDataReady();
 
     const confidenceIndicator = screen.getByTestId("confidence-indicator-core:pet_name");
     expect(confidenceIndicator).toHaveAttribute("aria-label", expect.stringMatching(/Página 1/i));
@@ -2267,7 +2350,7 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Datos de la clínica");
+    await waitForStructuredDataReady();
 
     expect(screen.queryByText(/^Fuente:/i)).toBeNull();
     const withEvidence = screen.getByTestId("confidence-indicator-core:pet_name");
@@ -2283,7 +2366,7 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Datos de la clínica");
+    await waitForStructuredDataReady();
 
     expect(screen.queryByRole("button", { name: /\+\s*Añadir/i })).toBeNull();
     expect(window.localStorage.getItem("reportLayout")).toBe("2");
@@ -2309,7 +2392,7 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Datos de la clínica");
+    await waitForStructuredDataReady();
     expect(screen.queryByRole("button", { name: /\+\s*Añadir/i })).toBeNull();
     expect(window.localStorage.getItem("reportLayout")).toBe("1");
   });
@@ -2319,7 +2402,7 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Datos de la clínica");
+    await waitForStructuredDataReady();
     expect(screen.queryByRole("button", { name: /\+\s*Añadir/i })).toBeNull();
     expect(window.localStorage.getItem("reportLayout")).toBe("1");
   });
@@ -2328,7 +2411,7 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Datos de la clínica");
+    await waitForStructuredDataReady();
 
     fireEvent.click(screen.getByRole("button", { name: /Gastroenteritis/i }));
     let viewer = screen.getByTestId("pdf-viewer");
@@ -2354,7 +2437,7 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await screen.findByText("Datos de la clínica");
+    await waitForStructuredDataReady();
 
     clickPetNameField();
     expect(screen.queryByTestId("source-drawer")).toBeNull();
@@ -2368,6 +2451,7 @@ describe("App upload and list flow", () => {
     fireEvent.click(screen.getByRole("button", { name: /Marcar como revisado/i }));
 
     await screen.findByRole("button", { name: /^Reabrir$/i });
+    expect(getPetNameFieldButton()).toHaveAttribute("aria-disabled", "true");
 
     fireEvent.mouseUp(getPetNameFieldButton(), { button: 0 });
 

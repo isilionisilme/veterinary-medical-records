@@ -127,6 +127,18 @@ const HIDDEN_EXTRACTED_FIELDS = new Set([
   "imagen",
 ]);
 
+type ConfidencePolicyDiagnosticEvent = {
+  event_type: "CONFIDENCE_POLICY_CONFIG_MISSING";
+  document_id: string | null;
+  reason: "missing_policy_version" | "missing_band_cutoffs" | "invalid_band_cutoffs";
+};
+
+declare global {
+  interface Window {
+    __confidencePolicyDiagnostics?: ConfidencePolicyDiagnosticEvent[];
+  }
+}
+
 function clampNumber(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
@@ -261,12 +273,23 @@ type ReviewEvidence = {
   snippet: string;
 };
 
+type ConfidenceBandCutoffs = {
+  low_max: number;
+  mid_max: number;
+};
+
+type ConfidencePolicyConfig = {
+  policy_version: string;
+  band_cutoffs: ConfidenceBandCutoffs;
+};
+
 type ReviewField = {
   field_id: string;
   key: string;
   value: string | number | boolean | null;
   value_type: string;
-  confidence: number;
+  confidence?: number;
+  mapping_confidence?: number;
   is_critical: boolean;
   origin: "machine" | "human";
   evidence?: ReviewEvidence;
@@ -278,6 +301,7 @@ type StructuredInterpretationData = {
   processing_run_id: string;
   created_at: string;
   fields: ReviewField[];
+  confidence_policy?: ConfidencePolicyConfig;
 };
 
 type ReviewSelectableField = {
@@ -289,7 +313,9 @@ type ReviewSelectableField = {
   valueType: string;
   displayValue: string;
   isMissing: boolean;
+  hasMappingConfidence: boolean;
   confidence: number;
+  confidenceBand: ConfidenceBucket | null;
   source: "core" | "extracted";
   evidence?: ReviewEvidence;
   rawField?: ReviewField;
@@ -990,15 +1016,77 @@ function clampConfidence(value: number): number {
 
 type ConfidenceTone = "low" | "med" | "high";
 
-function getConfidenceTone(confidence: number): ConfidenceTone {
+function getConfidenceTone(
+  confidence: number,
+  cutoffs: ConfidenceBandCutoffs
+): ConfidenceTone {
   const value = clampConfidence(confidence);
-  if (value < 0.4) {
+  if (value < cutoffs.low_max) {
     return "low";
   }
-  if (value < 0.75) {
+  if (value < cutoffs.mid_max) {
     return "med";
   }
   return "high";
+}
+
+function resolveMappingConfidence(field: ReviewField): number | null {
+  const raw = field.mapping_confidence;
+  if (typeof raw !== "number" || !Number.isFinite(raw)) {
+    return null;
+  }
+  return clampConfidence(raw);
+}
+
+function resolveConfidencePolicy(
+  policy: StructuredInterpretationData["confidence_policy"] | undefined
+):
+  | {
+      value: ConfidencePolicyConfig | null;
+      degradedReason: ConfidencePolicyDiagnosticEvent["reason"] | null;
+    }
+  | null {
+  if (!policy) {
+    return { value: null, degradedReason: "missing_policy_version" };
+  }
+  const policyVersion = policy.policy_version?.trim();
+  if (!policyVersion) {
+    return { value: null, degradedReason: "missing_policy_version" };
+  }
+  const cutoffs = policy.band_cutoffs;
+  if (!cutoffs) {
+    return { value: null, degradedReason: "missing_band_cutoffs" };
+  }
+  const lowMax = cutoffs.low_max;
+  const midMax = cutoffs.mid_max;
+  if (
+    !Number.isFinite(lowMax) ||
+    !Number.isFinite(midMax) ||
+    lowMax < 0 ||
+    midMax > 1 ||
+    lowMax >= midMax
+  ) {
+    return { value: null, degradedReason: "invalid_band_cutoffs" };
+  }
+  return {
+    value: {
+      policy_version: policyVersion,
+      band_cutoffs: {
+        low_max: lowMax,
+        mid_max: midMax,
+      },
+    },
+    degradedReason: null,
+  };
+}
+
+function emitConfidencePolicyDiagnosticEvent(event: ConfidencePolicyDiagnosticEvent): void {
+  if (typeof window !== "undefined") {
+    const store = window.__confidencePolicyDiagnostics ?? [];
+    store.push(event);
+    window.__confidencePolicyDiagnostics = store;
+  }
+  console.warn("[confidence-policy]", event);
 }
 
 function isFieldValueEmpty(value: unknown): boolean {
@@ -1105,7 +1193,9 @@ export function App() {
   } | null>(null);
   const reviewSplitRatioRef = useRef(reviewSplitRatio);
   const lastExtractionDebugDocIdRef = useRef<string | null>(null);
+  const lastConfidencePolicyDocIdRef = useRef<string | null>(null);
   const loggedExtractionDebugEventKeysRef = useRef<Set<string>>(new Set());
+  const loggedConfidencePolicyDiagnosticsRef = useRef<Set<string>>(new Set());
   const viewerDragDepthRef = useRef(0);
   const sidebarUploadDragDepthRef = useRef(0);
   const suppressDocsSidebarHoverUntilRef = useRef(0);
@@ -2211,6 +2301,12 @@ export function App() {
     () => documentReview.data?.active_interpretation.data.fields ?? [],
     [documentReview.data?.active_interpretation.data.fields]
   );
+  const documentConfidencePolicy = useMemo(
+    () => resolveConfidencePolicy(documentReview.data?.active_interpretation.data.confidence_policy),
+    [documentReview.data?.active_interpretation.data.confidence_policy]
+  );
+  const activeConfidencePolicy = documentConfidencePolicy?.value ?? null;
+  const confidencePolicyDegradedReason = documentConfidencePolicy?.degradedReason ?? null;
 
   const validationResult = useMemo(() => {
     const fieldsByKey = new Map<string, number>();
@@ -2297,7 +2393,58 @@ export function App() {
     });
   }, [documentReview.data?.active_interpretation.data.document_id, validationResult.debugEvents]);
 
+  useEffect(() => {
+    const documentId = documentReview.data?.active_interpretation.data.document_id ?? null;
+    if (documentId === null) {
+      return;
+    }
+    if (lastConfidencePolicyDocIdRef.current !== documentId) {
+      loggedConfidencePolicyDiagnosticsRef.current.clear();
+      lastConfidencePolicyDocIdRef.current = documentId;
+    }
+    if (!confidencePolicyDegradedReason) {
+      return;
+    }
+    const eventKey = `${documentId ?? ""}|${confidencePolicyDegradedReason}`;
+    if (loggedConfidencePolicyDiagnosticsRef.current.has(eventKey)) {
+      return;
+    }
+    loggedConfidencePolicyDiagnosticsRef.current.add(eventKey);
+    emitConfidencePolicyDiagnosticEvent({
+      event_type: "CONFIDENCE_POLICY_CONFIG_MISSING",
+      document_id: documentId,
+      reason: confidencePolicyDegradedReason,
+    });
+  }, [
+    confidencePolicyDegradedReason,
+    documentReview.data?.active_interpretation.data.document_id,
+  ]);
+
   const validatedReviewFields = validationResult.acceptedFields;
+
+  const buildSelectableField = (
+    base: Omit<
+      ReviewSelectableField,
+      "hasMappingConfidence" | "confidence" | "confidenceBand" | "isMissing" | "rawField"
+    >,
+    rawField: ReviewField | undefined,
+    isMissing: boolean
+  ): ReviewSelectableField => {
+    const mappingConfidence = rawField ? resolveMappingConfidence(rawField) : null;
+    let confidenceBand: ConfidenceBucket | null = null;
+    if (mappingConfidence !== null && activeConfidencePolicy) {
+      const tone = getConfidenceTone(mappingConfidence, activeConfidencePolicy.band_cutoffs);
+      confidenceBand = tone === "med" ? "medium" : tone;
+    }
+    return {
+      ...base,
+      isMissing,
+      hasMappingConfidence: mappingConfidence !== null,
+      confidence: mappingConfidence ?? 0,
+      confidenceBand,
+      rawField,
+    };
+  };
 
   const matchesByKey = useMemo(() => {
     const matches = new Map<string, ReviewField[]>();
@@ -2325,21 +2472,24 @@ export function App() {
       if (definition.repeatable) {
         const items = candidates
           .filter((candidate) => !isFieldValueEmpty(candidate.value))
-          .map((candidate, index): ReviewSelectableField => ({
-            id: `core:${definition.key}:${candidate.field_id}:${index}`,
-            key: definition.key,
-            label: definition.label,
-            section: definition.section,
-            order: definition.order,
-            valueType: candidate.value_type,
-            displayValue: formatFieldValue(candidate.value, candidate.value_type),
-            isMissing: false,
-            confidence: clampConfidence(candidate.confidence),
-            source: "core",
-            evidence: candidate.evidence,
-            rawField: candidate,
-            repeatable: true,
-          }));
+          .map((candidate, index): ReviewSelectableField =>
+            buildSelectableField(
+              {
+                id: `core:${definition.key}:${candidate.field_id}:${index}`,
+                key: definition.key,
+                label: definition.label,
+                section: definition.section,
+                order: definition.order,
+                valueType: candidate.value_type,
+                displayValue: formatFieldValue(candidate.value, candidate.value_type),
+                source: "core",
+                evidence: candidate.evidence,
+                repeatable: true,
+              },
+              candidate,
+              false
+            )
+          );
 
         return {
           id: `core:${definition.key}`,
@@ -2358,25 +2508,30 @@ export function App() {
 
       const bestCandidate = candidates
         .filter((candidate) => !isFieldValueEmpty(candidate.value))
-        .sort((a, b) => clampConfidence(b.confidence) - clampConfidence(a.confidence))[0];
+        .sort(
+          (a, b) =>
+            clampConfidence(resolveMappingConfidence(b) ?? -1) -
+            clampConfidence(resolveMappingConfidence(a) ?? -1)
+        )[0];
       const displayValue = bestCandidate
         ? formatFieldValue(bestCandidate.value, bestCandidate.value_type)
         : MISSING_VALUE_PLACEHOLDER;
-      const item: ReviewSelectableField = {
-        id: `core:${definition.key}`,
-        key: definition.key,
-        label: definition.label,
-        section: definition.section,
-        order: definition.order,
-        valueType: bestCandidate?.value_type ?? definition.value_type,
-        displayValue,
-        isMissing: !bestCandidate,
-        confidence: bestCandidate ? clampConfidence(bestCandidate.confidence) : 0,
-        source: "core",
-        evidence: bestCandidate?.evidence,
-        rawField: bestCandidate,
-        repeatable: false,
-      };
+      const item: ReviewSelectableField = buildSelectableField(
+        {
+          id: `core:${definition.key}`,
+          key: definition.key,
+          label: definition.label,
+          section: definition.section,
+          order: definition.order,
+          valueType: bestCandidate?.value_type ?? definition.value_type,
+          displayValue,
+          source: "core",
+          evidence: bestCandidate?.evidence,
+          repeatable: false,
+        },
+        bestCandidate,
+        !bestCandidate
+      );
       return {
         id: `core:${definition.key}`,
         key: definition.key,
@@ -2418,21 +2573,24 @@ export function App() {
       if (fields.length > 1) {
         const items = fields
           .filter((field) => !isFieldValueEmpty(field.value))
-          .map((field, itemIndex): ReviewSelectableField => ({
-            id: `extra:${field.field_id}:${itemIndex}`,
-            key,
-            label,
-            section: "Otros campos extraídos",
-            order: index + 1,
-            valueType: field.value_type,
-            displayValue: formatFieldValue(field.value, field.value_type),
-            isMissing: false,
-            confidence: clampConfidence(field.confidence),
-            source: "extracted",
-            evidence: field.evidence,
-            rawField: field,
-            repeatable: true,
-          }));
+          .map((field, itemIndex): ReviewSelectableField =>
+            buildSelectableField(
+              {
+                id: `extra:${field.field_id}:${itemIndex}`,
+                key,
+                label,
+                section: "Otros campos extraídos",
+                order: index + 1,
+                valueType: field.value_type,
+                displayValue: formatFieldValue(field.value, field.value_type),
+                source: "extracted",
+                evidence: field.evidence,
+                repeatable: true,
+              },
+              field,
+              false
+            )
+          );
         return {
           id: `extra:${key}`,
           key,
@@ -2453,21 +2611,22 @@ export function App() {
       const displayValue = hasValue
         ? formatFieldValue(field.value, field.value_type)
         : MISSING_VALUE_PLACEHOLDER;
-      const item: ReviewSelectableField = {
-        id: field ? `extra:${field.field_id}:0` : `extra:${key}:missing`,
-        key,
-        label,
-        section: "Otros campos extraídos",
-        order: index + 1,
-        valueType: field?.value_type ?? "string",
-        displayValue,
-        isMissing: !hasValue,
-        confidence: field ? clampConfidence(field.confidence) : 0,
-        source: "extracted",
-        evidence: field?.evidence,
-        rawField: field,
-        repeatable: false,
-      };
+      const item: ReviewSelectableField = buildSelectableField(
+        {
+          id: field ? `extra:${field.field_id}:0` : `extra:${key}:missing`,
+          key,
+          label,
+          section: "Otros campos extraídos",
+          order: index + 1,
+          valueType: field?.value_type ?? "string",
+          displayValue,
+          source: "extracted",
+          evidence: field?.evidence,
+          repeatable: false,
+        },
+        field,
+        !hasValue
+      );
       return {
         id: `extra:${key}`,
         key,
@@ -2482,7 +2641,7 @@ export function App() {
         source: "extracted",
       };
     });
-  }, [validatedReviewFields]);
+  }, [activeConfidencePolicy, validatedReviewFields]);
 
   const groupedCoreFields = useMemo(() => {
     const groups = new Map<string, ReviewDisplayField[]>();
@@ -2513,6 +2672,13 @@ export function App() {
       structuredSearchTerm,
     ]
   );
+
+  useEffect(() => {
+    if (activeConfidencePolicy || selectedConfidenceBuckets.length === 0) {
+      return;
+    }
+    setSelectedConfidenceBuckets([]);
+  }, [activeConfidencePolicy, selectedConfidenceBuckets]);
 
   const hasValueRestriction = showOnlyWithValue !== showOnlyEmpty;
 
@@ -2641,24 +2807,29 @@ export function App() {
     let medium = 0;
     let high = 0;
 
+    if (!activeConfidencePolicy) {
+      return {
+        detected,
+        total: GLOBAL_SCHEMA_V0.length,
+        low,
+        medium,
+        high,
+      };
+    }
+
     coreDisplayFields.forEach((field) => {
       const presentItems = field.items.filter(
-        (item) => !item.isMissing && Number.isFinite(item.confidence)
+        (item) => !item.isMissing && item.confidenceBand !== null
       );
       if (presentItems.length === 0) {
         return;
       }
-
-      const topConfidence = Math.max(
-        ...presentItems.map((item) => clampConfidence(item.confidence))
-      );
       detected += 1;
-      const tone = getConfidenceTone(topConfidence);
-      if (tone === "low") {
+      if (presentItems.some((item) => item.confidenceBand === "low")) {
         low += 1;
         return;
       }
-      if (tone === "med") {
+      if (presentItems.some((item) => item.confidenceBand === "medium")) {
         medium += 1;
         return;
       }
@@ -2672,7 +2843,7 @@ export function App() {
       medium,
       high,
     };
-  }, [coreDisplayFields]);
+  }, [activeConfidencePolicy, coreDisplayFields]);
   const shouldShowLoadPdfErrorBanner =
     loadPdf.isError && !isConnectivityOrServerError(loadPdf.error);
   const isPinnedSourcePanelVisible =
@@ -2693,7 +2864,7 @@ export function App() {
     setFieldNavigationRequestId((current) => current + 1);
   };
 
-  const handleReviewedEditAttempt = (event: ReactMouseEvent<HTMLButtonElement>) => {
+  const handleReviewedEditAttempt = (event: ReactMouseEvent<HTMLElement>) => {
     if (!isDocumentReviewed || event.button !== 0) {
       return;
     }
@@ -2708,7 +2879,7 @@ export function App() {
   };
 
   const handleReviewedKeyboardEditAttempt = (
-    event: ReactKeyboardEvent<HTMLButtonElement>
+    event: ReactKeyboardEvent<HTMLElement>
   ) => {
     if (!isDocumentReviewed) {
       return;
@@ -2983,6 +3154,12 @@ export function App() {
   };
 
   const buildFieldTooltip = (item: ReviewSelectableField, isCritical: boolean): string => {
+    if (!activeConfidencePolicy) {
+      return "Configuración de confianza no disponible.";
+    }
+    if (!item.hasMappingConfidence) {
+      return "Confianza de mapeo no disponible.";
+    }
     const confidence = item.confidence;
     const percentage = Math.round(clampConfidence(confidence) * 100);
     const base = isCritical
@@ -2998,10 +3175,18 @@ export function App() {
   };
 
   const renderConfidenceIndicator = (field: ReviewDisplayField, item: ReviewSelectableField) => {
-    if (item.isMissing) {
+    if (item.isMissing || !activeConfidencePolicy || !item.hasMappingConfidence) {
       const emptyTooltip = field.isCritical
-        ? "No encontrado en documento · CRÍTICO"
-        : "No encontrado en documento";
+        ? activeConfidencePolicy
+          ? !item.hasMappingConfidence
+            ? "Confianza de mapeo no disponible · CRÍTICO"
+            : "No encontrado en documento · CRÍTICO"
+          : "Configuración de confianza no disponible · CRÍTICO"
+        : activeConfidencePolicy
+          ? !item.hasMappingConfidence
+            ? "Confianza de mapeo no disponible"
+            : "No encontrado en documento"
+          : "Configuración de confianza no disponible";
       return (
         <span data-testid={`badge-group-${item.id}`} className="inline-flex shrink-0 items-center">
           <Tooltip content={emptyTooltip}>
@@ -3016,7 +3201,10 @@ export function App() {
       );
     }
 
-    const tone = getConfidenceTone(item.confidence);
+    const tone = item.confidenceBand === "medium" ? "med" : item.confidenceBand;
+    if (!tone) {
+      return null;
+    }
     const tooltip = buildFieldTooltip(item, field.isCritical);
     return (
       <span data-testid={`badge-group-${item.id}`} className="inline-flex shrink-0 items-center">
@@ -3124,14 +3312,30 @@ export function App() {
                   isSelected ? "rounded-md bg-accentSoft/50" : ""
                 }`}
               >
-                <button
-                  type="button"
+                <div
+                  role="button"
+                  tabIndex={0}
+                  aria-disabled={isDocumentReviewed}
                   className={`w-full rounded-md px-1 py-0.5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
                     isDocumentReviewed ? "cursor-default" : "cursor-pointer hover:bg-black/[0.03]"
                   }`}
-                  onClick={() => handleSelectReviewItem(item)}
+                  onClick={() => {
+                    if (isDocumentReviewed) {
+                      return;
+                    }
+                    handleSelectReviewItem(item);
+                  }}
                   onMouseUp={handleReviewedEditAttempt}
-                  onKeyDown={handleReviewedKeyboardEditAttempt}
+                  onKeyDown={(event) => {
+                    handleReviewedKeyboardEditAttempt(event);
+                    if (isDocumentReviewed) {
+                      return;
+                    }
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      handleSelectReviewItem(item);
+                    }
+                  }}
                 >
                     <FieldRow
                       indicator={renderConfidenceIndicator(field, item)}
@@ -3145,7 +3349,7 @@ export function App() {
                         isLongText,
                       })}
                     />
-                </button>
+                </div>
               </div>
             );
           })}
@@ -3178,14 +3382,30 @@ export function App() {
           isSelected ? "bg-accentSoft/50" : ""
         }`}
       >
-        <button
-          type="button"
+        <div
+          role="button"
+          tabIndex={0}
+          aria-disabled={isDocumentReviewed}
           className={`w-full rounded-md px-1 py-0.5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
             isDocumentReviewed ? "cursor-default" : "cursor-pointer hover:bg-black/[0.03]"
           }`}
-          onClick={() => handleSelectReviewItem(item)}
+          onClick={() => {
+            if (isDocumentReviewed) {
+              return;
+            }
+            handleSelectReviewItem(item);
+          }}
           onMouseUp={handleReviewedEditAttempt}
-          onKeyDown={handleReviewedKeyboardEditAttempt}
+          onKeyDown={(event) => {
+            handleReviewedKeyboardEditAttempt(event);
+            if (isDocumentReviewed) {
+              return;
+            }
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              handleSelectReviewItem(item);
+            }
+          }}
         >
           <FieldRow
             leftTestId={`${styledPrefix}-row-${field.key}`}
@@ -3207,7 +3427,7 @@ export function App() {
               shortTextTestId: `${styledPrefix}-value-${field.key}`,
             })}
           />
-        </button>
+        </div>
         {canExpand && (
           <button
             type="button"
@@ -3614,6 +3834,16 @@ export function App() {
                               </div>
                             </div>
 
+                            {reviewPanelState === "ready" && !activeConfidencePolicy && (
+                              <p
+                                data-testid="confidence-policy-degraded"
+                                className="rounded-control border border-border bg-surface px-3 py-2 text-xs text-textSecondary"
+                              >
+                                Configuración de confianza no disponible para este documento. La
+                                señal visual de confianza está en modo degradado.
+                              </p>
+                            )}
+
                             <div className="rounded-control bg-surface px-3 py-2">
                               <div className="flex flex-wrap items-center gap-2">
                                 <label className="relative min-w-[220px] flex-1">
@@ -3653,7 +3883,7 @@ export function App() {
                                 <ToggleGroup
                                   type="multiple"
                                   value={selectedConfidenceBuckets}
-                                  disabled={reviewPanelState !== "ready"}
+                                  disabled={reviewPanelState !== "ready" || !activeConfidencePolicy}
                                   onValueChange={(values) =>
                                     setSelectedConfidenceBuckets(
                                       values.filter(
