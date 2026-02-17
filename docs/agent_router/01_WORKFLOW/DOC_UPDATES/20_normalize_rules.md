@@ -26,8 +26,13 @@ Apply this pass to each changed documentation file.
    - Load `docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json`.
    - For each changed doc matching a map rule, update at least one mapped test/guard file.
    - If no mapped file should change, record it as an explicit propagation gap with rationale.
-8) Emit required summary (`00_entry.md`):
+8) Validate source-to-router parity for mapped project docs:
+   - Load `docs/agent_router/01_WORKFLOW/DOC_UPDATES/router_parity_map.json`.
+   - If a mapped `source_doc` changed, every mapped router module must contain all configured required terms.
+   - Any missing required term is a blocking parity failure, not a soft gap.
+9) Emit required summary (`00_entry.md`):
    - include docs table and propagation gaps.
+   - include source-to-router parity status (`Pass` or `Fail`).
    - If an R change was detected but no owner module was updated and no blocker reason exists, treat it as failure.
    - if Rule change exists with no propagation and no blocker reason, treat as failure.
 

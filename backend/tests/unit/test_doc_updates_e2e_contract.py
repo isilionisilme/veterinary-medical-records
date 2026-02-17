@@ -26,6 +26,14 @@ DOC_UPDATES_TEST_IMPACT_MAP = (
     / "DOC_UPDATES"
     / "test_impact_map.json"
 )
+DOC_UPDATES_ROUTER_PARITY_MAP = (
+    REPO_ROOT
+    / "docs"
+    / "agent_router"
+    / "01_WORKFLOW"
+    / "DOC_UPDATES"
+    / "router_parity_map.json"
+)
 RULES_INDEX = REPO_ROOT / "docs" / "agent_router" / "00_RULES_INDEX.md"
 SCENARIOS = REPO_ROOT / "metrics" / "llm_benchmarks" / "SCENARIOS.md"
 
@@ -73,6 +81,7 @@ def test_required_summary_output_contract_is_complete() -> None:
     assert "DOC_UPDATES Summary" in text
     assert "| Source doc (inspected) | Diff inspected | Classification |" in text
     assert "Related tests/guards updated" in text
+    assert "Source→Router parity" in text
     assert "Rule change / Clarification / Navigation" in text
     assert "Propagation gaps" in text
     assert "show me the unpropagated changes" in text.lower()
@@ -117,6 +126,8 @@ def test_checklist_requires_outputs_and_anti_loop() -> None:
     assert "Docs processed table" in text
     assert "Propagation gaps" in text
     assert "test_impact_map.json" in text
+    assert "router_parity_map.json" in text
+    assert "Source-to-router parity status" in text
 
 
 def test_doc_updates_test_impact_map_covers_router_and_brand_docs() -> None:
@@ -124,6 +135,16 @@ def test_doc_updates_test_impact_map_covers_router_and_brand_docs() -> None:
     assert "docs/agent_router/*.md" in text
     assert "docs/agent_router/**/*.md" in text
     assert "docs/shared/BRAND_GUIDELINES.md" in text
+
+
+def test_router_parity_map_covers_product_design_module_76() -> None:
+    text = _read_text(DOC_UPDATES_ROUTER_PARITY_MAP)
+    assert '"source_doc": "docs/project/PRODUCT_DESIGN.md"' in text
+    assert (
+        '"path": "docs/agent_router/04_PROJECT/PRODUCT_DESIGN/'
+        '76_conceptual-model-local-schema-global-schema-and-mapping.md"'
+        in text
+    )
 
 
 def test_benchmark_scenarios_cover_doc_updates_edge_cases() -> None:
