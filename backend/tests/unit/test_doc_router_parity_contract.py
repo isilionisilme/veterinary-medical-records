@@ -63,13 +63,16 @@ def test_evaluate_parity_reports_missing_terms_when_source_changes() -> None:
         assert "missing required terms" in findings[0]
     finally:
         if fixture.exists():
+            # Windows can keep a transient lock on freshly written temp files.
             for _ in range(5):
                 try:
                     fixture.unlink()
                     break
                 except PermissionError:
                     os.chmod(fixture, 0o666)
-                    time.sleep(0.02)
+                    time.sleep(0.2)
+            if fixture.exists():
+                print(f"WARNING: could not remove parity fixture file: {fixture}")
 
 
 def test_evaluate_parity_skips_when_source_not_changed() -> None:
