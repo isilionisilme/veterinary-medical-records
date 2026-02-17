@@ -10,7 +10,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { AlignLeft, Check, Download, FileText, Info, Search, X } from "lucide-react";
+import { AlignLeft, Check, Download, FileText, Info, RefreshCw, Search, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { ConfidenceDot } from "./components/app/ConfidenceDot";
@@ -2582,6 +2582,20 @@ export function App() {
     setFieldNavigationRequestId((current) => current + 1);
   };
 
+  const handleReviewedEditAttempt = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    if (!isDocumentReviewed || event.button !== 0) {
+      return;
+    }
+    const selectedText = window.getSelection?.()?.toString().trim() ?? "";
+    if (selectedText.length > 0) {
+      return;
+    }
+    setActionFeedback({
+      kind: "error",
+      message: "Documento revisado: usa Reabrir para habilitar edición.",
+    });
+  };
+
   const resetReviewSplitRatio = () => {
     const containerWidth = Math.max(
       reviewSplitGridRef.current?.getBoundingClientRect().width ?? 0,
@@ -2820,15 +2834,7 @@ export function App() {
                     isDocumentReviewed ? "cursor-default" : "cursor-pointer hover:bg-black/[0.03]"
                   }`}
                   onClick={() => handleSelectReviewItem(item)}
-                  onDoubleClick={() => {
-                    if (!isDocumentReviewed) {
-                      return;
-                    }
-                    setActionFeedback({
-                      kind: "info",
-                      message: "Documento revisado: usa Reabrir para habilitar edición.",
-                    });
-                  }}
+                  onMouseUp={handleReviewedEditAttempt}
                 >
                     <FieldRow
                       indicator={renderConfidenceIndicator(field, item)}
@@ -2893,15 +2899,7 @@ export function App() {
             isDocumentReviewed ? "cursor-default" : "cursor-pointer hover:bg-black/[0.03]"
           }`}
           onClick={() => handleSelectReviewItem(item)}
-          onDoubleClick={() => {
-            if (!isDocumentReviewed) {
-              return;
-            }
-            setActionFeedback({
-              kind: "info",
-              message: "Documento revisado: usa Reabrir para habilitar edición.",
-            });
-          }}
+          onMouseUp={handleReviewedEditAttempt}
         >
           <FieldRow
             leftTestId={`${styledPrefix}-row-${field.key}`}
@@ -3240,10 +3238,10 @@ export function App() {
                                 <Button
                                   type="button"
                                   variant={isDocumentReviewed ? "ghost" : "primary"}
-                                  size={isDocumentReviewed ? "sm" : "default"}
+                                  size="default"
                                   className={
                                     isDocumentReviewed
-                                      ? "border border-borderSubtle bg-surface text-text font-medium hover:bg-surfaceMuted"
+                                      ? "border border-border bg-surface text-text font-medium hover:bg-surfaceMuted"
                                       : undefined
                                   }
                                   disabled={
@@ -3266,7 +3264,12 @@ export function App() {
                                       ? "Reabriendo..."
                                       : "Marcando..."
                                     : isDocumentReviewed
-                                      ? "Reabrir"
+                                      ? (
+                                        <>
+                                          <RefreshCw size={14} aria-hidden="true" />
+                                          Reabrir
+                                        </>
+                                      )
                                       : "Marcar como revisado"}
                                 </Button>
                                 <div className="flex items-center justify-end gap-1 text-xs leading-tight text-textSecondary">
@@ -3569,7 +3572,7 @@ export function App() {
                                 >
                                   <div className="space-y-3">
                                     {isDocumentReviewed && (
-                                      <p className="rounded-control bg-blue-50 px-3 py-2 text-xs text-blue-700">
+                                      <p className="rounded-control border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
                                         Documento marcado como revisado. Los datos están en modo de solo lectura.
                                         Usa Reabrir para editar.
                                       </p>
@@ -3987,8 +3990,6 @@ export function App() {
                   className={`rounded-2xl px-5 py-4 text-base ${
                     actionFeedback.kind === "success"
                       ? "bg-emerald-50 text-emerald-700"
-                      : actionFeedback.kind === "info"
-                      ? "bg-blue-50 text-blue-700"
                       : "bg-red-50 text-red-700"
                   }`}
                   role="status"
