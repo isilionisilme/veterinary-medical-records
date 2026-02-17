@@ -281,7 +281,10 @@ def test_repeatable_fields_are_capped_to_three_candidates_in_global_schema() -> 
     assert len(diagnosis) == 3
 
 
-def test_interpretation_artifact_exposes_confidence_policy_cutoffs(monkeypatch) -> None:
+def test_interpretation_artifact_exposes_confidence_policy_cutoffs(
+    monkeypatch, caplog
+) -> None:
+    caplog.set_level("INFO")
     monkeypatch.setenv("VET_RECORDS_CONFIDENCE_POLICY_VERSION", "v1-test")
     monkeypatch.setenv("VET_RECORDS_CONFIDENCE_LOW_MAX", "0.5")
     monkeypatch.setenv("VET_RECORDS_CONFIDENCE_MID_MAX", "0.75")
@@ -295,11 +298,17 @@ def test_interpretation_artifact_exposes_confidence_policy_cutoffs(monkeypatch) 
     confidence_policy = payload["data"]["confidence_policy"]
     assert confidence_policy["policy_version"] == "v1-test"
     assert confidence_policy["band_cutoffs"] == {"low_max": 0.5, "mid_max": 0.75}
+    assert any(
+        "confidence_policy included in interpretation payload" in record.message
+        for record in caplog.records
+    )
 
 
 def test_interpretation_artifact_omits_confidence_policy_when_config_missing(
     monkeypatch,
+    caplog,
 ) -> None:
+    caplog.set_level("WARNING")
     monkeypatch.delenv("VET_RECORDS_CONFIDENCE_POLICY_VERSION", raising=False)
     monkeypatch.delenv("VET_RECORDS_CONFIDENCE_LOW_MAX", raising=False)
     monkeypatch.delenv("VET_RECORDS_CONFIDENCE_MID_MAX", raising=False)
@@ -311,6 +320,33 @@ def test_interpretation_artifact_omits_confidence_policy_when_config_missing(
     )
 
     assert "confidence_policy" not in payload["data"]
+    assert any(
+        "confidence_policy omitted from interpretation payload "
+        "reason=policy_not_configured" in record.message
+        for record in caplog.records
+    )
+
+
+def test_interpretation_artifact_omits_confidence_policy_when_config_invalid(
+    monkeypatch, caplog
+) -> None:
+    caplog.set_level("WARNING")
+    monkeypatch.setenv("VET_RECORDS_CONFIDENCE_POLICY_VERSION", "v1-test")
+    monkeypatch.setenv("VET_RECORDS_CONFIDENCE_LOW_MAX", "0.9")
+    monkeypatch.setenv("VET_RECORDS_CONFIDENCE_MID_MAX", "0.7")
+
+    payload = _build_interpretation_artifact(
+        document_id="doc-policy-invalid",
+        run_id="run-policy-invalid",
+        raw_text="Paciente: Luna",
+    )
+
+    assert "confidence_policy" not in payload["data"]
+    assert any(
+        "confidence_policy omitted from interpretation payload "
+        "reason=policy_invalid" in record.message
+        for record in caplog.records
+    )
 
 
 def test_structured_fields_include_mapping_confidence_signal() -> None:

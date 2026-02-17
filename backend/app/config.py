@@ -7,6 +7,9 @@ import os
 DEFAULT_CONFIDENCE_POLICY_VERSION = "v1"
 DEFAULT_CONFIDENCE_LOW_MAX = 0.50
 DEFAULT_CONFIDENCE_MID_MAX = 0.75
+CONFIDENCE_POLICY_VERSION_ENV = "VET_RECORDS_CONFIDENCE_POLICY_VERSION"
+CONFIDENCE_LOW_MAX_ENV = "VET_RECORDS_CONFIDENCE_LOW_MAX"
+CONFIDENCE_MID_MAX_ENV = "VET_RECORDS_CONFIDENCE_MID_MAX"
 
 
 def processing_enabled() -> bool:
@@ -53,15 +56,15 @@ def confidence_band_cutoffs() -> tuple[float, float]:
 def confidence_policy_version_or_none() -> str | None:
     """Return policy version when explicitly configured, else None."""
 
-    raw = os.environ.get("VET_RECORDS_CONFIDENCE_POLICY_VERSION", "").strip()
+    raw = os.environ.get(CONFIDENCE_POLICY_VERSION_ENV, "").strip()
     return raw or None
 
 
 def confidence_band_cutoffs_or_none() -> tuple[float, float] | None:
     """Return (low_max, mid_max) only when both values are configured and valid."""
 
-    low_raw = os.environ.get("VET_RECORDS_CONFIDENCE_LOW_MAX")
-    mid_raw = os.environ.get("VET_RECORDS_CONFIDENCE_MID_MAX")
+    low_raw = os.environ.get(CONFIDENCE_LOW_MAX_ENV)
+    mid_raw = os.environ.get(CONFIDENCE_MID_MAX_ENV)
     if low_raw is None or mid_raw is None:
         return None
     try:
@@ -73,3 +76,48 @@ def confidence_band_cutoffs_or_none() -> tuple[float, float] | None:
     if low_max < 0 or mid_max > 1 or low_max >= mid_max:
         return None
     return low_max, mid_max
+
+
+def confidence_policy_explicit_config_diagnostics() -> tuple[bool, str, list[str], list[str]]:
+    """Return explicit confidence-policy config status for diagnostics and logs."""
+
+    missing_keys: list[str] = []
+    invalid_keys: list[str] = []
+
+    version_raw = os.environ.get(CONFIDENCE_POLICY_VERSION_ENV)
+    low_raw = os.environ.get(CONFIDENCE_LOW_MAX_ENV)
+    mid_raw = os.environ.get(CONFIDENCE_MID_MAX_ENV)
+
+    if version_raw is None or not version_raw.strip():
+        missing_keys.append(CONFIDENCE_POLICY_VERSION_ENV)
+    if low_raw is None:
+        missing_keys.append(CONFIDENCE_LOW_MAX_ENV)
+    if mid_raw is None:
+        missing_keys.append(CONFIDENCE_MID_MAX_ENV)
+
+    low_value: float | None = None
+    mid_value: float | None = None
+    if low_raw is not None:
+        try:
+            low_value = float(low_raw)
+        except ValueError:
+            invalid_keys.append(CONFIDENCE_LOW_MAX_ENV)
+    if mid_raw is not None:
+        try:
+            mid_value = float(mid_raw)
+        except ValueError:
+            invalid_keys.append(CONFIDENCE_MID_MAX_ENV)
+
+    if low_value is not None and not (0 <= low_value <= 1):
+        invalid_keys.append(CONFIDENCE_LOW_MAX_ENV)
+    if mid_value is not None and not (0 <= mid_value <= 1):
+        invalid_keys.append(CONFIDENCE_MID_MAX_ENV)
+    if low_value is not None and mid_value is not None and low_value >= mid_value:
+        invalid_keys.extend([CONFIDENCE_LOW_MAX_ENV, CONFIDENCE_MID_MAX_ENV])
+
+    missing_keys = sorted(missing_keys)
+    invalid_keys = sorted(set(invalid_keys))
+    if missing_keys or invalid_keys:
+        reason = "policy_invalid" if invalid_keys else "policy_not_configured"
+        return False, reason, missing_keys, invalid_keys
+    return True, "policy_configured", [], []

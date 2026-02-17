@@ -100,6 +100,7 @@ Backend (Windows PowerShell):
 - `.\.venv\Scripts\activate`
 - `pip install -r requirements-dev.txt`
 - `uvicorn backend.app.main:create_app --factory --reload`
+- In local dev/reload mode, backend auto-loads `backend/.env` if present.
 
 Frontend (new shell):
 - `cd frontend`
@@ -108,7 +109,7 @@ Frontend (new shell):
 
 Local one-command startup (Windows PowerShell):
 - `./scripts/start-all.ps1`
-- This script starts backend + frontend and sets `VET_RECORDS_EXTRACTION_OBS=1` for the backend process.
+- This script starts backend + frontend, sets `VET_RECORDS_EXTRACTION_OBS=1`, and loads confidence-policy env vars from `backend/.env` when present.
 
 OpenAPI and API docs:
 - `http://localhost:8000/docs`
@@ -135,6 +136,14 @@ Environment variables:
 - `VET_RECORDS_DB_PATH`: override the SQLite database location.
 - `VET_RECORDS_STORAGE_PATH`: override the filesystem root for stored documents.
 - `VET_RECORDS_CORS_ORIGINS`: comma-separated list of allowed frontend origins.
+- Confidence policy (required to avoid degraded confidence mode in veterinarian UI):
+  - `VET_RECORDS_CONFIDENCE_POLICY_VERSION`
+  - `VET_RECORDS_CONFIDENCE_LOW_MAX`
+  - `VET_RECORDS_CONFIDENCE_MID_MAX`
+  - Local setup:
+    1. Copy `backend/.env.example` to `backend/.env`.
+    2. Start backend in dev/reload mode (`uvicorn ... --reload` or `./scripts/start-all.ps1`).
+    3. Backend auto-loads `backend/.env` in dev/reload mode only; production/non-dev runtime does not auto-load this file.
 
 ---
 
