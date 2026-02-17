@@ -172,11 +172,12 @@ def test_rules_index_contains_known_mapping_hints() -> None:
     assert "04_PROJECT/UX_DESIGN/00_entry.md" in text
 
 
-def test_implementation_plan_tracks_us08_us09_as_implemented() -> None:
+def test_implementation_plan_tracks_us08_us09_us39_as_implemented() -> None:
     text = _read_text(IMPLEMENTATION_PLAN)
     assert "## US-08 — Edit structured data" in text
     assert "## US-09 — Capture correction signals" in text
-    assert text.count("**Status**: Implemented (2026-02-17)") >= 2
+    assert "## US-39 — Align veterinarian confidence signal with mapping confidence policy" in text
+    assert text.count("**Status**: Implemented (2026-02-17)") >= 3
 
 
 def test_ci_does_not_ignore_markdown_only_changes() -> None:
