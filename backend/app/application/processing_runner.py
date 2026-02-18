@@ -151,6 +151,7 @@ _VET_OR_CLINIC_CONTEXT_PATTERN = re.compile(
     r"(?i)\b(?:veterinari[oa]|vet\b|doctor(?:a)?\b|dra\.?\b|dr\.?\b|cl[ií]nica|hospital|centro\s+veterinario)\b"
 )
 _CLINICAL_RECORD_GUARD_PATTERN = re.compile(r"(?i)\b(?:\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4})\b")
+NUMERIC_TYPES = (int, float)
 
 
 def _default_now_iso() -> str:
@@ -1632,7 +1633,7 @@ def _sanitize_field_review_history_adjustment(value: object) -> float:
 def _sanitize_field_candidate_confidence(value: object) -> float:
     if isinstance(value, bool):
         return 0.0
-    if isinstance(value, int | float):
+    if isinstance(value, NUMERIC_TYPES):
         numeric = float(value)
         if math.isfinite(numeric):
             return min(max(numeric, 0.0), 1.0)

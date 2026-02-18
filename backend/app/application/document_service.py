@@ -31,6 +31,8 @@ from backend.app.domain.status import DocumentStatusView, derive_document_status
 from backend.app.ports.document_repository import DocumentRepository
 from backend.app.ports.file_storage import FileStorage
 
+NUMERIC_TYPES = (int, float)
+
 
 def _default_now_iso() -> str:
     return datetime.now(UTC).isoformat()
@@ -681,7 +683,7 @@ def _sanitize_field_review_history_adjustment(value: object) -> float:
 def _sanitize_field_candidate_confidence(value: object) -> float | None:
     if isinstance(value, bool):
         return None
-    if isinstance(value, int | float):
+    if isinstance(value, NUMERIC_TYPES):
         numeric = float(value)
         if math.isfinite(numeric):
             return min(max(numeric, 0.0), 1.0)
@@ -691,7 +693,7 @@ def _sanitize_field_candidate_confidence(value: object) -> float | None:
 def _sanitize_field_mapping_confidence(value: object) -> float | None:
     if isinstance(value, bool):
         return None
-    if isinstance(value, int | float):
+    if isinstance(value, NUMERIC_TYPES):
         numeric = float(value)
         if math.isfinite(numeric):
             return min(max(numeric, 0.0), 1.0)
