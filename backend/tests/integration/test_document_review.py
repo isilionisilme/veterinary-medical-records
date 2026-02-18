@@ -704,6 +704,145 @@ def test_interpretation_edit_creates_new_version_and_change_logs(test_client):
     assert all(str(entry["field_path"]).startswith("fields.") for entry in parsed_logs)
 
 
+def test_interpretation_edit_noop_update_keeps_origin_and_skips_change_log(test_client):
+    document_id = _upload_sample_document(test_client)
+    run_id = "run-review-edit-noop-same-value"
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(run_id=run_id)
+
+    response = test_client.post(
+        f"/runs/{run_id}/interpretations",
+        json={
+            "base_version_number": 1,
+            "changes": [
+                {
+                    "op": "UPDATE",
+                    "field_id": "field-1",
+                    "value": "Luna",
+                    "value_type": "string",
+                }
+            ],
+        },
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    field = next(item for item in payload["data"]["fields"] if item["field_id"] == "field-1")
+    assert field["value"] == "Luna"
+    assert field["origin"] == "machine"
+
+    with database.get_connection() as conn:
+        change_log_rows = conn.execute(
+            """
+            SELECT payload
+            FROM artifacts
+            WHERE run_id = ? AND artifact_type = 'FIELD_CHANGE_LOG'
+            ORDER BY created_at ASC
+            """,
+            (run_id,),
+        ).fetchall()
+    assert len(change_log_rows) == 0
+
+
+def test_interpretation_edit_whitespace_only_update_is_noop_for_strings(test_client):
+    document_id = _upload_sample_document(test_client)
+    run_id = "run-review-edit-noop-whitespace"
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(run_id=run_id)
+
+    response = test_client.post(
+        f"/runs/{run_id}/interpretations",
+        json={
+            "base_version_number": 1,
+            "changes": [
+                {
+                    "op": "UPDATE",
+                    "field_id": "field-1",
+                    "value": "   Luna   ",
+                    "value_type": "string",
+                }
+            ],
+        },
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    field = next(item for item in payload["data"]["fields"] if item["field_id"] == "field-1")
+    assert field["value"] == "Luna"
+    assert field["origin"] == "machine"
+
+    with database.get_connection() as conn:
+        change_log_rows = conn.execute(
+            """
+            SELECT payload
+            FROM artifacts
+            WHERE run_id = ? AND artifact_type = 'FIELD_CHANGE_LOG'
+            ORDER BY created_at ASC
+            """,
+            (run_id,),
+        ).fetchall()
+    assert len(change_log_rows) == 0
+
+
+def test_interpretation_edit_real_update_still_marks_human_and_logs_change(test_client):
+    document_id = _upload_sample_document(test_client)
+    run_id = "run-review-edit-real-change"
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(run_id=run_id)
+
+    response = test_client.post(
+        f"/runs/{run_id}/interpretations",
+        json={
+            "base_version_number": 1,
+            "changes": [
+                {
+                    "op": "UPDATE",
+                    "field_id": "field-1",
+                    "value": "Nala",
+                    "value_type": "string",
+                }
+            ],
+        },
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    field = next(item for item in payload["data"]["fields"] if item["field_id"] == "field-1")
+    assert field["value"] == "Nala"
+    assert field["origin"] == "human"
+
+    with database.get_connection() as conn:
+        change_log_rows = conn.execute(
+            """
+            SELECT payload
+            FROM artifacts
+            WHERE run_id = ? AND artifact_type = 'FIELD_CHANGE_LOG'
+            ORDER BY created_at ASC
+            """,
+            (run_id,),
+        ).fetchall()
+    assert len(change_log_rows) == 1
+    change_log = json.loads(change_log_rows[0]["payload"])
+    assert change_log["change_type"] == "UPDATE"
+    assert change_log["old_value"] == "Luna"
+    assert change_log["new_value"] == "Nala"
+
+
 def test_interpretation_edit_returns_conflict_when_active_run_exists(test_client):
     document_id = _upload_sample_document(test_client)
     completed_run_id = "run-review-edit-completed"

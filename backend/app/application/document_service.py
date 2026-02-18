@@ -604,6 +604,13 @@ def apply_interpretation_edits(
                 result=None,
                 invalid_reason=f"changes[{index}].value_type",
             )
+        if _is_noop_update(
+            old_value=old_value,
+            new_value=change.get("value"),
+            existing_value_type=resolved_value_type,
+            incoming_value_type=value_type,
+        ):
+            continue
 
         mapping_id = normalize_mapping_id(existing_field.get("mapping_id"))
         updated_fields[existing_index] = {
@@ -687,6 +694,71 @@ def _coerce_interpretation_fields(raw_fields: object) -> list[dict[str, object]]
         if isinstance(item, dict):
             fields.append(dict(item))
     return fields
+
+
+def _normalize_string_for_noop(value: str) -> str:
+    return " ".join(value.split())
+
+
+def _normalize_value_for_noop(*, value: object, value_type: str) -> object:
+    normalized_type = value_type.strip().lower()
+    if normalized_type in {"string", "text", "date"}:
+        if isinstance(value, str):
+            return _normalize_string_for_noop(value)
+        return value
+
+    if normalized_type in {"integer", "int", "number", "float", "decimal"}:
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, NUMERIC_TYPES):
+            numeric = float(value)
+            if math.isfinite(numeric):
+                return numeric
+            return value
+        if isinstance(value, str):
+            candidate = value.strip()
+            if not candidate:
+                return candidate
+            try:
+                numeric = float(candidate)
+            except ValueError:
+                return candidate
+            if math.isfinite(numeric):
+                return numeric
+            return candidate
+        return value
+
+    if normalized_type in {"boolean", "bool"}:
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str):
+            candidate = value.strip().lower()
+            if candidate in {"true", "1"}:
+                return True
+            if candidate in {"false", "0"}:
+                return False
+            return candidate
+        return value
+
+    if isinstance(value, str):
+        return value.strip()
+    return value
+
+
+def _is_noop_update(
+    *,
+    old_value: object,
+    new_value: object,
+    existing_value_type: str | None,
+    incoming_value_type: str,
+) -> bool:
+    if existing_value_type is None:
+        return False
+    if existing_value_type != incoming_value_type:
+        return False
+    return _normalize_value_for_noop(value=old_value, value_type=incoming_value_type) == (
+        _normalize_value_for_noop(value=new_value, value_type=incoming_value_type)
+    )
 
 
 def _sanitize_text_extraction_reliability(value: object) -> float | None:
