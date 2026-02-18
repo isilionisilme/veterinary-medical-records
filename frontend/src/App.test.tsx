@@ -2428,24 +2428,29 @@ describe("App upload and list flow", () => {
       Array.from(document.body.querySelectorAll("p")).some((node) =>
         /Fiabilidad del candidato:/i.test(node.textContent ?? "")
       );
+    const hasCriticalTooltip = () =>
+      Array.from(document.body.querySelectorAll('[role="tooltip"]')).some((node) =>
+        /CRÍTICO/i.test(node.textContent ?? "")
+      );
 
     fireEvent.mouseEnter(fieldTrigger);
     await waitFor(() => {
       expect(hasFieldTooltipContent()).toBe(true);
     });
-    expect(screen.queryByText("CRÍTICO")).toBeNull();
+    expect(hasCriticalTooltip()).toBe(false);
 
     fireEvent.mouseEnter(criticalIndicator);
     await waitFor(() => {
-      expect(screen.getByText("CRÍTICO")).toBeInTheDocument();
+      expect(hasCriticalTooltip()).toBe(true);
     });
     expect(hasFieldTooltipContent()).toBe(false);
 
     fireEvent.mouseLeave(criticalIndicator);
+    fireEvent.mouseEnter(fieldTrigger);
     await waitFor(() => {
       expect(hasFieldTooltipContent()).toBe(true);
     });
-    expect(screen.queryByText("CRÍTICO")).toBeNull();
+    expect(hasCriticalTooltip()).toBe(false);
 
     fireEvent.mouseLeave(fieldTrigger);
     await waitFor(() => {
