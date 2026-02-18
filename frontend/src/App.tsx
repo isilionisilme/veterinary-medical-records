@@ -3323,7 +3323,7 @@ export function App() {
     const { item, value, isLongText, longTextTestId, shortTextTestId } = options;
     const isFieldModified = item.rawField?.origin === "human";
     const modifiedValueClass = isFieldModified
-      ? "bg-amber-50 ring-1 ring-amber-300/70"
+      ? "!bg-amber-50 ring-1 ring-amber-300/70"
       : "";
 
     return (
