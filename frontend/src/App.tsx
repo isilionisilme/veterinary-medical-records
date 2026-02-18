@@ -3224,6 +3224,21 @@ export function App() {
     const validation = validateFieldValue("sex", editingFieldDraftValue);
     return !validation.ok;
   }, [isEditingSexField, editingFieldDraftValue]);
+  const isEditingAgeField = editingField?.key === "age";
+  const isEditingAgeInvalid = useMemo(() => {
+    if (!isEditingAgeField) {
+      return false;
+    }
+    const validation = validateFieldValue("age", editingFieldDraftValue);
+    return !validation.ok;
+  }, [isEditingAgeField, editingFieldDraftValue]);
+  const isEditingSpeciesField = editingField?.key === "species";
+  const isEditingSpeciesInvalid = useMemo(() => {
+    if (!isEditingSpeciesField) {
+      return false;
+    }
+    return editingFieldDraftValue.trim().length === 0;
+  }, [isEditingSpeciesField, editingFieldDraftValue]);
 
   const saveFieldEditDialog = () => {
     if (!editingField) {
@@ -3260,6 +3275,17 @@ export function App() {
       }
       const validation = validateFieldValue("sex", editingFieldDraftValue);
       if (!validation.ok) {
+        return;
+      }
+    }
+    if (editingField.key === "age") {
+      const validation = validateFieldValue("age", editingFieldDraftValue);
+      if (!validation.ok) {
+        return;
+      }
+    }
+    if (editingField.key === "species") {
+      if (editingFieldDraftValue.trim().length === 0) {
         return;
       }
     }
@@ -3864,7 +3890,12 @@ export function App() {
         value={editingFieldDraftValue}
         isSaving={interpretationEditMutation.isPending}
         isSaveDisabled={
-          isEditingMicrochipInvalid || isEditingWeightInvalid || isEditingDateInvalid || isEditingSexInvalid
+          isEditingMicrochipInvalid ||
+          isEditingWeightInvalid ||
+          isEditingDateInvalid ||
+          isEditingSexInvalid ||
+          isEditingAgeInvalid ||
+          isEditingSpeciesInvalid
         }
         microchipErrorMessage={
           isEditingMicrochipField && isEditingMicrochipInvalid
@@ -3886,6 +3917,12 @@ export function App() {
             ? "Valor no válido. Usa “macho” o “hembra”."
             : null
         }
+        ageErrorMessage={
+          isEditingAgeField && isEditingAgeInvalid
+            ? "Introduce una edad válida (p. ej. “5 años”)."
+            : null
+        }
+        speciesErrorMessage={null}
         onValueChange={setEditingFieldDraftValue}
         onOpenChange={(open) => {
           if (!open) {
