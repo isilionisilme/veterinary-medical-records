@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "../ui/dialog";
 import { Input } from "../ui/input";
+import { CANONICAL_SPECIES_OPTIONS } from "../../extraction/fieldValidators";
 
 type FieldEditDialogProps = {
   open: boolean;
@@ -22,6 +23,7 @@ type FieldEditDialogProps = {
   weightErrorMessage?: string | null;
   dateErrorMessage?: string | null;
   sexErrorMessage?: string | null;
+  speciesErrorMessage?: string | null;
   onValueChange: (value: string) => void;
   onOpenChange: (open: boolean) => void;
   onSave: () => void;
@@ -38,6 +40,7 @@ export function FieldEditDialog({
   weightErrorMessage = null,
   dateErrorMessage = null,
   sexErrorMessage = null,
+  speciesErrorMessage = null,
   onValueChange,
   onOpenChange,
   onSave,
@@ -46,9 +49,10 @@ export function FieldEditDialog({
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const selectRef = useRef<HTMLSelectElement | null>(null);
   const isSexField = fieldKey === "sex";
+  const isSpeciesField = fieldKey === "species";
   const shouldUseTextarea = useMemo(
-    () => !isSexField && (value.includes("\n") || value.length > 60),
-    [isSexField, value]
+    () => !isSexField && !isSpeciesField && (value.includes("\n") || value.length > 60),
+    [isSexField, isSpeciesField, value]
   );
 
   useEffect(() => {
@@ -56,7 +60,7 @@ export function FieldEditDialog({
       return;
     }
     const focusTimer = window.setTimeout(() => {
-      if (isSexField) {
+      if (isSexField || isSpeciesField) {
         selectRef.current?.focus();
         return;
       }
@@ -68,7 +72,7 @@ export function FieldEditDialog({
     }, 0);
 
     return () => window.clearTimeout(focusTimer);
-  }, [isSexField, open, shouldUseTextarea]);
+  }, [isSexField, isSpeciesField, open, shouldUseTextarea]);
 
   const handleSingleLineEnter = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key !== "Enter") {
@@ -101,9 +105,14 @@ export function FieldEditDialog({
   const weightHintText = "Ej.: 12,5 kg (0,5–120).";
   const dateHintText = "Formatos: dd/mm/aaaa o aaaa-mm-dd.";
   const sexHintText = "Selecciona macho o hembra.";
+  const speciesHintText = "Selecciona canino o felino.";
   const normalizedSexValue = value.trim().toLowerCase();
   const isKnownSexValue = normalizedSexValue === "macho" || normalizedSexValue === "hembra";
   const hasLegacySexValue = isSexField && value.trim().length > 0 && !isKnownSexValue;
+  const normalizedSpeciesValue = value.trim().toLowerCase();
+  const isKnownSpeciesValue = CANONICAL_SPECIES_OPTIONS.some(
+    (option) => option.value === normalizedSpeciesValue
+  );
   const handleValueChange = (nextValue: string) => {
     if (isMicrochipField) {
       const sanitized = nextValue.replace(/\D/g, "");
@@ -124,13 +133,18 @@ export function FieldEditDialog({
       onValueChange(nextValue);
       return;
     }
+    if (isSpeciesField) {
+      onValueChange(nextValue);
+      return;
+    }
     onValueChange(nextValue);
   };
   const shouldHighlightError =
     (isMicrochipField && microchipErrorMessage) ||
     (isWeightField && weightErrorMessage) ||
     (isDateField && dateErrorMessage) ||
-    (isSexField && sexErrorMessage);
+    (isSexField && sexErrorMessage) ||
+    (isSpeciesField && speciesErrorMessage);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -167,6 +181,24 @@ export function FieldEditDialog({
             <option value="macho">Macho</option>
             <option value="hembra">Hembra</option>
             {hasLegacySexValue ? <option value={value}>{value}</option> : null}
+          </select>
+        ) : isSpeciesField ? (
+          <select
+            ref={selectRef}
+            value={isKnownSpeciesValue ? normalizedSpeciesValue : ""}
+            onChange={(event) => handleValueChange(event.target.value)}
+            className={`w-full rounded-control border bg-surface px-3 py-2 text-sm text-text outline-none transition focus-visible:bg-surfaceMuted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
+              shouldHighlightError
+                ? "border-[var(--status-error)] focus-visible:outline-[var(--status-error)]"
+                : "border-borderSubtle focus-visible:outline-accent"
+            }`}
+          >
+            <option value="">Selecciona una opción</option>
+            {CANONICAL_SPECIES_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </select>
         ) : shouldUseTextarea ? (
           <textarea
@@ -219,6 +251,12 @@ export function FieldEditDialog({
           <div className="mt-1 space-y-1">
             <p className={sexErrorMessage ? "text-xs text-[var(--status-error)]" : "text-xs text-muted"}>
               {sexErrorMessage ?? sexHintText}
+            </p>
+          </div>
+        ) : isSpeciesField ? (
+          <div className="mt-1 space-y-1">
+            <p className={speciesErrorMessage ? "text-xs text-[var(--status-error)]" : "text-xs text-muted"}>
+              {speciesErrorMessage ?? speciesHintText}
             </p>
           </div>
         ) : null}

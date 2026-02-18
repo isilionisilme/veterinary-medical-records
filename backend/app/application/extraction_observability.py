@@ -10,6 +10,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
+from backend.app.application.field_normalizers import CANONICAL_SPECIES
 from backend.app.application.global_schema_v0 import (
     GLOBAL_SCHEMA_V0_KEYS,
     REPEATABLE_KEYS_V0,
@@ -298,7 +299,7 @@ def _suspicious_accepted_flags(field_key: str, value: str | None) -> list[str]:
 
     if normalized_key == "species":
         normalized_species = _normalize_text(normalized_value)
-        if normalized_species not in {"canino", "felino"}:
+        if normalized_species not in CANONICAL_SPECIES:
             flags.append("species_outside_allowed_set")
 
     if normalized_key == "sex":

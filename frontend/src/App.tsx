@@ -3224,6 +3224,14 @@ export function App() {
     const validation = validateFieldValue("sex", editingFieldDraftValue);
     return !validation.ok;
   }, [isEditingSexField, editingFieldDraftValue]);
+  const isEditingSpeciesField = editingField?.key === "species";
+  const isEditingSpeciesInvalid = useMemo(() => {
+    if (!isEditingSpeciesField) {
+      return false;
+    }
+    const validation = validateFieldValue("species", editingFieldDraftValue);
+    return !validation.ok;
+  }, [isEditingSpeciesField, editingFieldDraftValue]);
 
   const saveFieldEditDialog = () => {
     if (!editingField) {
@@ -3259,6 +3267,12 @@ export function App() {
         return;
       }
       const validation = validateFieldValue("sex", editingFieldDraftValue);
+      if (!validation.ok) {
+        return;
+      }
+    }
+    if (editingField.key === "species") {
+      const validation = validateFieldValue("species", editingFieldDraftValue);
       if (!validation.ok) {
         return;
       }
@@ -3864,7 +3878,11 @@ export function App() {
         value={editingFieldDraftValue}
         isSaving={interpretationEditMutation.isPending}
         isSaveDisabled={
-          isEditingMicrochipInvalid || isEditingWeightInvalid || isEditingDateInvalid || isEditingSexInvalid
+          isEditingMicrochipInvalid ||
+          isEditingWeightInvalid ||
+          isEditingDateInvalid ||
+          isEditingSexInvalid ||
+          isEditingSpeciesInvalid
         }
         microchipErrorMessage={
           isEditingMicrochipField && isEditingMicrochipInvalid
@@ -3884,6 +3902,11 @@ export function App() {
         sexErrorMessage={
           isEditingSexField && editingFieldDraftValue.trim().length > 0 && isEditingSexInvalid
             ? "Valor no válido. Usa “macho” o “hembra”."
+            : null
+        }
+        speciesErrorMessage={
+          isEditingSpeciesField && editingFieldDraftValue.trim().length > 0 && isEditingSpeciesInvalid
+            ? "Valor no válido. Usa “canino” o “felino”."
             : null
         }
         onValueChange={setEditingFieldDraftValue}

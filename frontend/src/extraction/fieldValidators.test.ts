@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { validateFieldValue } from "./fieldValidators";
+import { CANONICAL_SPECIES_OPTIONS, validateFieldValue } from "./fieldValidators";
 
 describe("validateFieldValue", () => {
   it("accepts and normalizes a numeric microchip", () => {
@@ -63,6 +63,14 @@ describe("validateFieldValue", () => {
   it("normalizes controlled vocab fields", () => {
     expect(validateFieldValue("sex", "female")).toEqual({ ok: true, normalized: "hembra" });
     expect(validateFieldValue("species", "gato")).toEqual({ ok: true, normalized: "felino" });
+  });
+
+  it("keeps species UI options aligned with validator canonical outputs", () => {
+    const optionValues = CANONICAL_SPECIES_OPTIONS.map((option) => option.value);
+    expect(optionValues).toEqual(["canino", "felino"]);
+    for (const value of optionValues) {
+      expect(validateFieldValue("species", value)).toEqual({ ok: true, normalized: value });
+    }
   });
 
   it("normalizes age values", () => {

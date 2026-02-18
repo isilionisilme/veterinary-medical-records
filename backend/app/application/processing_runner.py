@@ -27,7 +27,10 @@ from backend.app.application.extraction_observability import (
     persist_extraction_run_snapshot,
 )
 from backend.app.application.extraction_quality import evaluate_extracted_text_quality
-from backend.app.application.field_normalizers import normalize_canonical_fields
+from backend.app.application.field_normalizers import (
+    SPECIES_TOKEN_TO_CANONICAL,
+    normalize_canonical_fields,
+)
 from backend.app.application.global_schema_v0 import (
     CRITICAL_KEYS_V0,
     GLOBAL_SCHEMA_V0_KEYS,
@@ -1097,14 +1100,7 @@ def _mine_interpretation_candidates(
         )
 
     lines = [line.strip() for line in raw_text.splitlines() if line.strip()]
-    species_keywords = {
-        "canino": "canino",
-        "canina": "canino",
-        "perro": "canino",
-        "felino": "felino",
-        "felina": "felino",
-        "gato": "felino",
-    }
+    species_keywords = SPECIES_TOKEN_TO_CANONICAL
     breed_keywords = (
         "labrador",
         "retriever",
