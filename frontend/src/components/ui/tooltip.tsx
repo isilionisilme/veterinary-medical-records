@@ -14,8 +14,11 @@ type TooltipProps = {
   content: ReactNode;
   children: ReactNode;
   disabled?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   offset?: number;
   side?: "top" | "right" | "bottom" | "left";
+  disableHoverableContent?: boolean;
   triggerClassName?: string;
 };
 
@@ -31,11 +34,23 @@ export function Tooltip({
   content,
   children,
   disabled = false,
+  open: controlledOpen,
+  onOpenChange,
   offset = 8,
   side = "top",
+  disableHoverableContent = true,
   triggerClassName = "inline-flex",
 }: TooltipProps) {
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const isControlled = typeof controlledOpen === "boolean";
+  const open = isControlled ? controlledOpen : uncontrolledOpen;
+
+  const setOpen = (nextOpen: boolean) => {
+    if (!isControlled) {
+      setUncontrolledOpen(nextOpen);
+    }
+    onOpenChange?.(nextOpen);
+  };
 
   if (disabled) {
     return <span className={triggerClassName}>{children}</span>;
@@ -68,7 +83,11 @@ export function Tooltip({
 
   return (
     <TooltipPrimitive.Provider delayDuration={0} skipDelayDuration={0}>
-      <TooltipPrimitive.Root open={open} onOpenChange={setOpen}>
+      <TooltipPrimitive.Root
+        open={open}
+        onOpenChange={setOpen}
+        disableHoverableContent={disableHoverableContent}
+      >
         <TooltipPrimitive.Trigger asChild>
           {triggerContent}
         </TooltipPrimitive.Trigger>

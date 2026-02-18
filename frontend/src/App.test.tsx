@@ -2416,6 +2416,43 @@ describe("App upload and list flow", () => {
     expect(screen.queryByTestId("source-drawer")).toBeNull();
   });
 
+  it("hands off tooltip visibility between field row and critical badge hover", async () => {
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+    await waitForStructuredDataReady();
+
+    const fieldTrigger = screen.getByTestId("field-trigger-core:pet_name");
+    const criticalIndicator = screen.getByTestId("critical-indicator-pet_name");
+    const hasFieldTooltipContent = () =>
+      Array.from(document.body.querySelectorAll("p")).some((node) =>
+        /Fiabilidad del candidato:/i.test(node.textContent ?? "")
+      );
+
+    fireEvent.mouseEnter(fieldTrigger);
+    await waitFor(() => {
+      expect(hasFieldTooltipContent()).toBe(true);
+    });
+    expect(screen.queryByText("CRÍTICO")).toBeNull();
+
+    fireEvent.mouseEnter(criticalIndicator);
+    await waitFor(() => {
+      expect(screen.getByText("CRÍTICO")).toBeInTheDocument();
+    });
+    expect(hasFieldTooltipContent()).toBe(false);
+
+    fireEvent.mouseLeave(criticalIndicator);
+    await waitFor(() => {
+      expect(hasFieldTooltipContent()).toBe(true);
+    });
+    expect(screen.queryByText("CRÍTICO")).toBeNull();
+
+    fireEvent.mouseLeave(fieldTrigger);
+    await waitFor(() => {
+      expect(hasFieldTooltipContent()).toBe(false);
+    });
+  });
+
   it("applies semantic styling for positive, negative and neutral adjustment values in tooltip", async () => {
     renderApp();
 

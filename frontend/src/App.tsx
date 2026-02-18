@@ -1175,6 +1175,8 @@ export function App() {
   const [showOnlyCritical, setShowOnlyCritical] = useState(false);
   const [showOnlyWithValue, setShowOnlyWithValue] = useState(false);
   const [showOnlyEmpty, setShowOnlyEmpty] = useState(false);
+  const [hoveredFieldTriggerId, setHoveredFieldTriggerId] = useState<string | null>(null);
+  const [hoveredCriticalTriggerId, setHoveredCriticalTriggerId] = useState<string | null>(null);
   const [reviewSplitRatio, setReviewSplitRatio] = useState(() => {
     if (typeof window === "undefined") {
       return DEFAULT_REVIEW_SPLIT_RATIO;
@@ -3410,7 +3412,13 @@ export function App() {
                   isSelected ? "rounded-md bg-accentSoft/50" : ""
                 }`}
               >
-                <Tooltip content={tooltip.content}>
+                <Tooltip
+                  content={tooltip.content}
+                  open={
+                    hoveredFieldTriggerId === item.id &&
+                    hoveredCriticalTriggerId !== item.id
+                  }
+                >
                   <div
                     role="button"
                     tabIndex={0}
@@ -3425,7 +3433,24 @@ export function App() {
                       }
                       handleSelectReviewItem(item);
                     }}
+                    onMouseEnter={() => {
+                      setHoveredFieldTriggerId(item.id);
+                    }}
+                    onMouseLeave={() => {
+                      setHoveredFieldTriggerId((current) => (current === item.id ? null : current));
+                      setHoveredCriticalTriggerId((current) => (current === item.id ? null : current));
+                    }}
                     onMouseUp={handleReviewedEditAttempt}
+                    onFocus={() => {
+                      setHoveredFieldTriggerId(item.id);
+                    }}
+                    onBlur={(event) => {
+                      if (event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                        return;
+                      }
+                      setHoveredFieldTriggerId((current) => (current === item.id ? null : current));
+                      setHoveredCriticalTriggerId((current) => (current === item.id ? null : current));
+                    }}
                     onKeyDown={(event) => {
                       handleReviewedKeyboardEditAttempt(event);
                       if (isDocumentReviewed) {
@@ -3476,6 +3501,10 @@ export function App() {
         : truncateText(item.displayValue, 140);
     const canExpand = !shouldUseLongText && item.displayValue.length > 140;
     const styledPrefix = getStructuredFieldPrefix(field.key);
+    const isFieldHovered = hoveredFieldTriggerId === item.id;
+    const isCriticalHovered = hoveredCriticalTriggerId === item.id;
+    const isFieldTooltipOpen = isFieldHovered && !isCriticalHovered;
+    const isCriticalTooltipOpen = isCriticalHovered;
 
     return (
       <FieldBlock
@@ -3484,7 +3513,7 @@ export function App() {
           isSelected ? "bg-accentSoft/50" : ""
         }`}
       >
-        <Tooltip content={tooltip.content}>
+        <Tooltip content={tooltip.content} open={isFieldTooltipOpen}>
           <div
             role="button"
             tabIndex={0}
@@ -3499,7 +3528,24 @@ export function App() {
               }
               handleSelectReviewItem(item);
             }}
+            onMouseEnter={() => {
+              setHoveredFieldTriggerId(item.id);
+            }}
+            onMouseLeave={() => {
+              setHoveredFieldTriggerId((current) => (current === item.id ? null : current));
+              setHoveredCriticalTriggerId((current) => (current === item.id ? null : current));
+            }}
             onMouseUp={handleReviewedEditAttempt}
+            onFocus={() => {
+              setHoveredFieldTriggerId(item.id);
+            }}
+            onBlur={(event) => {
+              if (event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                return;
+              }
+              setHoveredFieldTriggerId((current) => (current === item.id ? null : current));
+              setHoveredCriticalTriggerId((current) => (current === item.id ? null : current));
+            }}
             onKeyDown={(event) => {
               handleReviewedKeyboardEditAttempt(event);
               if (isDocumentReviewed) {
@@ -3519,7 +3565,18 @@ export function App() {
               indicator={renderConfidenceIndicator(item, tooltip.ariaLabel)}
               label={<p className={`${STRUCTURED_FIELD_LABEL_CLASS} text-text`}>{field.label}</p>}
               labelMeta={
-                field.isCritical ? <CriticalBadge testId={`critical-indicator-${field.key}`} /> : null
+                field.isCritical ? (
+                  <CriticalBadge
+                    testId={`critical-indicator-${field.key}`}
+                    tooltipOpen={isCriticalTooltipOpen}
+                    onMouseEnter={() => {
+                      setHoveredCriticalTriggerId(item.id);
+                    }}
+                    onMouseLeave={() => {
+                      setHoveredCriticalTriggerId((current) => (current === item.id ? null : current));
+                    }}
+                  />
+                ) : null
               }
               className={STRUCTURED_FIELD_ROW_CLASS}
               valuePlacement={shouldUseLongText ? "below-label" : "inline"}

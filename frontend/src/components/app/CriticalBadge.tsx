@@ -1,3 +1,5 @@
+import type { MouseEvent as ReactMouseEvent } from "react";
+
 import { Tooltip } from "../ui/tooltip";
 
 type CriticalIconProps = {
@@ -18,10 +20,17 @@ export function CriticalIcon({ testId, compact = false }: CriticalIconProps) {
   );
 }
 
-export function CriticalBadge({ testId }: { testId?: string }) {
+type CriticalBadgeProps = {
+  testId?: string;
+  tooltipOpen?: boolean;
+  onMouseEnter?: (event: ReactMouseEvent<HTMLSpanElement>) => void;
+  onMouseLeave?: (event: ReactMouseEvent<HTMLSpanElement>) => void;
+};
+
+export function CriticalBadge({ testId, tooltipOpen, onMouseEnter, onMouseLeave }: CriticalBadgeProps) {
   return (
-    <Tooltip content="CRÍTICO">
-      <span>
+    <Tooltip content="CRÍTICO" open={tooltipOpen}>
+      <span onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
         <CriticalIcon testId={testId} />
       </span>
     </Tooltip>
