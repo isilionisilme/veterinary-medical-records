@@ -3176,9 +3176,106 @@ export function App() {
     setEditingFieldDraftValue("");
   };
 
+  const isEditingMicrochipField = editingField?.key === "microchip_id";
+  const isEditingMicrochipInvalid = useMemo(() => {
+    if (!isEditingMicrochipField) {
+      return false;
+    }
+    const validation = validateFieldValue("microchip_id", editingFieldDraftValue);
+    return !validation.ok;
+  }, [isEditingMicrochipField, editingFieldDraftValue]);
+  const isEditingWeightField = editingField?.key === "weight";
+  const isEditingWeightInvalid = useMemo(() => {
+    if (!isEditingWeightField) {
+      return false;
+    }
+    const validation = validateFieldValue("weight", editingFieldDraftValue);
+    return !validation.ok;
+  }, [isEditingWeightField, editingFieldDraftValue]);
+  const isEditingDateField = useMemo(() => {
+    const fieldKey = editingField?.key;
+    if (!fieldKey) {
+      return false;
+    }
+    return (
+      fieldKey === "document_date" ||
+      fieldKey === "visit_date" ||
+      fieldKey === "admission_date" ||
+      fieldKey === "discharge_date" ||
+      fieldKey === "dob" ||
+      fieldKey.startsWith("fecha_")
+    );
+  }, [editingField?.key]);
+  const isEditingDateInvalid = useMemo(() => {
+    if (!isEditingDateField || !editingField?.key) {
+      return false;
+    }
+    const validation = validateFieldValue(editingField.key, editingFieldDraftValue);
+    return !validation.ok;
+  }, [isEditingDateField, editingField?.key, editingFieldDraftValue]);
+  const isEditingSexField = editingField?.key === "sex";
+  const isEditingSexInvalid = useMemo(() => {
+    if (!isEditingSexField) {
+      return false;
+    }
+    if (editingFieldDraftValue.trim().length === 0) {
+      return true;
+    }
+    const validation = validateFieldValue("sex", editingFieldDraftValue);
+    return !validation.ok;
+  }, [isEditingSexField, editingFieldDraftValue]);
+  const isEditingSpeciesField = editingField?.key === "species";
+  const isEditingSpeciesInvalid = useMemo(() => {
+    if (!isEditingSpeciesField) {
+      return false;
+    }
+    const validation = validateFieldValue("species", editingFieldDraftValue);
+    return !validation.ok;
+  }, [isEditingSpeciesField, editingFieldDraftValue]);
+
   const saveFieldEditDialog = () => {
     if (!editingField) {
       return;
+    }
+    if (editingField.key === "microchip_id") {
+      const validation = validateFieldValue("microchip_id", editingFieldDraftValue);
+      if (!validation.ok) {
+        return;
+      }
+    }
+    if (editingField.key === "weight") {
+      const validation = validateFieldValue("weight", editingFieldDraftValue);
+      if (!validation.ok) {
+        return;
+      }
+    }
+    if (
+      editingField.key === "document_date" ||
+      editingField.key === "visit_date" ||
+      editingField.key === "admission_date" ||
+      editingField.key === "discharge_date" ||
+      editingField.key === "dob" ||
+      editingField.key.startsWith("fecha_")
+    ) {
+      const validation = validateFieldValue(editingField.key, editingFieldDraftValue);
+      if (!validation.ok) {
+        return;
+      }
+    }
+    if (editingField.key === "sex") {
+      if (editingFieldDraftValue.trim().length === 0) {
+        return;
+      }
+      const validation = validateFieldValue("sex", editingFieldDraftValue);
+      if (!validation.ok) {
+        return;
+      }
+    }
+    if (editingField.key === "species") {
+      const validation = validateFieldValue("species", editingFieldDraftValue);
+      if (!validation.ok) {
+        return;
+      }
     }
     const nextValue = editingFieldDraftValue.trim();
     const nextPayloadValue = nextValue.length > 0 ? nextValue : null;
@@ -3776,9 +3873,42 @@ export function App() {
       />
       <FieldEditDialog
         open={editingField !== null}
+        fieldKey={editingField?.key ?? null}
         fieldLabel={editingField?.label ?? ""}
         value={editingFieldDraftValue}
         isSaving={interpretationEditMutation.isPending}
+        isSaveDisabled={
+          isEditingMicrochipInvalid ||
+          isEditingWeightInvalid ||
+          isEditingDateInvalid ||
+          isEditingSexInvalid ||
+          isEditingSpeciesInvalid
+        }
+        microchipErrorMessage={
+          isEditingMicrochipField && isEditingMicrochipInvalid
+            ? "Introduce entre 9 y 15 dígitos."
+            : null
+        }
+        weightErrorMessage={
+          isEditingWeightField && isEditingWeightInvalid
+            ? "Introduce un peso entre 0,5 y 120 kg."
+            : null
+        }
+        dateErrorMessage={
+          isEditingDateField && isEditingDateInvalid
+            ? "Formato no válido. Usa dd/mm/aaaa o aaaa-mm-dd."
+            : null
+        }
+        sexErrorMessage={
+          isEditingSexField && editingFieldDraftValue.trim().length > 0 && isEditingSexInvalid
+            ? "Valor no válido. Usa “macho” o “hembra”."
+            : null
+        }
+        speciesErrorMessage={
+          isEditingSpeciesField && editingFieldDraftValue.trim().length > 0 && isEditingSpeciesInvalid
+            ? "Valor no válido. Usa “canino” o “felino”."
+            : null
+        }
         onValueChange={setEditingFieldDraftValue}
         onOpenChange={(open) => {
           if (!open) {

@@ -12,7 +12,9 @@ _DATE_PATTERN = re.compile(
 )
 _MICROCHIP_DIGITS_PATTERN = re.compile(r"(?<!\d)(\d{9,15})(?!\d)")
 
-_SPECIES_TOKEN_TO_CANONICAL: dict[str, str] = {
+CANONICAL_SPECIES: frozenset[str] = frozenset({"canino", "felino"})
+
+SPECIES_TOKEN_TO_CANONICAL: dict[str, str] = {
     "canina": "canino",
     "canino": "canino",
     "perro": "canino",
@@ -94,10 +96,10 @@ def _normalize_species_value(value: object) -> str | None:
         return None
 
     lower_cleaned = cleaned.casefold()
-    for token, canonical in _SPECIES_TOKEN_TO_CANONICAL.items():
+    for token, canonical in SPECIES_TOKEN_TO_CANONICAL.items():
         if re.search(rf"\b{re.escape(token)}\b", lower_cleaned):
             return canonical
-    return cleaned
+    return None
 
 
 def _pretty_breed_case(value: str) -> str:
@@ -107,7 +109,7 @@ def _pretty_breed_case(value: str) -> str:
 
 def _remove_species_tokens(value: str) -> str:
     cleaned = value
-    for token in _SPECIES_TOKEN_TO_CANONICAL:
+    for token in SPECIES_TOKEN_TO_CANONICAL:
         cleaned = re.sub(rf"(?i)\b{re.escape(token)}\b", " ", cleaned)
     cleaned = re.sub(r"[\-_/|]+", " ", cleaned)
     return _normalize_whitespace(cleaned)
@@ -127,7 +129,7 @@ def _normalize_species_and_breed_pair(
         matched_token = next(
             (
                 token
-                for token in _SPECIES_TOKEN_TO_CANONICAL
+                for token in SPECIES_TOKEN_TO_CANONICAL
                 if re.search(rf"\b{re.escape(token)}\b", lower_source)
             ),
             None,
@@ -135,7 +137,7 @@ def _normalize_species_and_breed_pair(
         if matched_token is None:
             continue
 
-        canonical_species = _SPECIES_TOKEN_TO_CANONICAL[matched_token]
+        canonical_species = SPECIES_TOKEN_TO_CANONICAL[matched_token]
         if not species:
             species = canonical_species
 

@@ -4,6 +4,11 @@ export type FieldValidationResult = {
   reason?: string;
 };
 
+export const CANONICAL_SPECIES_OPTIONS = [
+  { value: "canino", label: "Canino" },
+  { value: "felino", label: "Felino" },
+] as const;
+
 const DATE_FIELD_KEYS = new Set([
   "document_date",
   "visit_date",
