@@ -20,6 +20,8 @@ type FieldEditDialogProps = {
   isSaveDisabled?: boolean;
   microchipErrorMessage?: string | null;
   weightErrorMessage?: string | null;
+  dateErrorMessage?: string | null;
+  sexErrorMessage?: string | null;
   onValueChange: (value: string) => void;
   onOpenChange: (open: boolean) => void;
   onSave: () => void;
@@ -34,15 +36,19 @@ export function FieldEditDialog({
   isSaveDisabled = false,
   microchipErrorMessage = null,
   weightErrorMessage = null,
+  dateErrorMessage = null,
+  sexErrorMessage = null,
   onValueChange,
   onOpenChange,
   onSave,
 }: FieldEditDialogProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const selectRef = useRef<HTMLSelectElement | null>(null);
+  const isSexField = fieldKey === "sex";
   const shouldUseTextarea = useMemo(
-    () => value.includes("\n") || value.length > 60,
-    [value]
+    () => !isSexField && (value.includes("\n") || value.length > 60),
+    [isSexField, value]
   );
 
   useEffect(() => {
@@ -50,6 +56,10 @@ export function FieldEditDialog({
       return;
     }
     const focusTimer = window.setTimeout(() => {
+      if (isSexField) {
+        selectRef.current?.focus();
+        return;
+      }
       if (shouldUseTextarea) {
         textareaRef.current?.focus();
         return;
@@ -58,7 +68,7 @@ export function FieldEditDialog({
     }, 0);
 
     return () => window.clearTimeout(focusTimer);
-  }, [open, shouldUseTextarea]);
+  }, [isSexField, open, shouldUseTextarea]);
 
   const handleSingleLineEnter = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key !== "Enter") {
@@ -80,8 +90,20 @@ export function FieldEditDialog({
   const titleText = fieldLabel.trim().length > 0 ? `Editar "${fieldLabel}"` : "Editar campo";
   const isMicrochipField = fieldKey === "microchip_id";
   const isWeightField = fieldKey === "weight";
+  const isDateField =
+    fieldKey === "document_date" ||
+    fieldKey === "visit_date" ||
+    fieldKey === "admission_date" ||
+    fieldKey === "discharge_date" ||
+    fieldKey === "dob" ||
+    Boolean(fieldKey?.startsWith("fecha_"));
   const microchipHintText = "Solo números (9–15 dígitos).";
   const weightHintText = "Ej.: 12,5 kg (0,5–120).";
+  const dateHintText = "Formatos: dd/mm/aaaa o aaaa-mm-dd.";
+  const sexHintText = "Selecciona macho o hembra.";
+  const normalizedSexValue = value.trim().toLowerCase();
+  const isKnownSexValue = normalizedSexValue === "macho" || normalizedSexValue === "hembra";
+  const hasLegacySexValue = isSexField && value.trim().length > 0 && !isKnownSexValue;
   const handleValueChange = (nextValue: string) => {
     if (isMicrochipField) {
       const sanitized = nextValue.replace(/\D/g, "");
@@ -93,10 +115,22 @@ export function FieldEditDialog({
       onValueChange(sanitized);
       return;
     }
+    if (isDateField) {
+      const sanitized = nextValue.replace(/[^0-9/-]/g, "");
+      onValueChange(sanitized);
+      return;
+    }
+    if (isSexField) {
+      onValueChange(nextValue);
+      return;
+    }
     onValueChange(nextValue);
   };
   const shouldHighlightError =
-    (isMicrochipField && microchipErrorMessage) || (isWeightField && weightErrorMessage);
+    (isMicrochipField && microchipErrorMessage) ||
+    (isWeightField && weightErrorMessage) ||
+    (isDateField && dateErrorMessage) ||
+    (isSexField && sexErrorMessage);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -118,7 +152,23 @@ export function FieldEditDialog({
           <DialogTitle>{titleText}</DialogTitle>
         </DialogHeader>
 
-        {shouldUseTextarea ? (
+        {isSexField ? (
+          <select
+            ref={selectRef}
+            value={hasLegacySexValue ? value : isKnownSexValue ? normalizedSexValue : ""}
+            onChange={(event) => handleValueChange(event.target.value)}
+            className={`w-full rounded-control border bg-surface px-3 py-2 text-sm text-text outline-none transition focus-visible:bg-surfaceMuted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
+              shouldHighlightError
+                ? "border-[var(--status-error)] focus-visible:outline-[var(--status-error)]"
+                : "border-borderSubtle focus-visible:outline-accent"
+            }`}
+          >
+            <option value="">Selecciona una opción</option>
+            <option value="macho">Macho</option>
+            <option value="hembra">Hembra</option>
+            {hasLegacySexValue ? <option value={value}>{value}</option> : null}
+          </select>
+        ) : shouldUseTextarea ? (
           <textarea
             ref={textareaRef}
             value={value}
@@ -137,7 +187,7 @@ export function FieldEditDialog({
             onChange={(event) => handleValueChange(event.target.value)}
             onKeyDown={handleSingleLineEnter}
             className={
-              isMicrochipField || isWeightField
+              isMicrochipField || isWeightField || isDateField
                 ? `rounded-control border bg-surface px-3 py-1 text-sm text-text ${
                     shouldHighlightError
                       ? "border-[var(--status-error)] focus-visible:outline-[var(--status-error)]"
@@ -157,6 +207,18 @@ export function FieldEditDialog({
           <div className="mt-1 space-y-1">
             <p className={weightErrorMessage ? "text-xs text-[var(--status-error)]" : "text-xs text-muted"}>
               {weightErrorMessage ?? weightHintText}
+            </p>
+          </div>
+        ) : isDateField ? (
+          <div className="mt-1 space-y-1">
+            <p className={dateErrorMessage ? "text-xs text-[var(--status-error)]" : "text-xs text-muted"}>
+              {dateErrorMessage ?? dateHintText}
+            </p>
+          </div>
+        ) : isSexField ? (
+          <div className="mt-1 space-y-1">
+            <p className={sexErrorMessage ? "text-xs text-[var(--status-error)]" : "text-xs text-muted"}>
+              {sexErrorMessage ?? sexHintText}
             </p>
           </div>
         ) : null}

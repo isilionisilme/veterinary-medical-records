@@ -3192,6 +3192,38 @@ export function App() {
     const validation = validateFieldValue("weight", editingFieldDraftValue);
     return !validation.ok;
   }, [isEditingWeightField, editingFieldDraftValue]);
+  const isEditingDateField = useMemo(() => {
+    const fieldKey = editingField?.key;
+    if (!fieldKey) {
+      return false;
+    }
+    return (
+      fieldKey === "document_date" ||
+      fieldKey === "visit_date" ||
+      fieldKey === "admission_date" ||
+      fieldKey === "discharge_date" ||
+      fieldKey === "dob" ||
+      fieldKey.startsWith("fecha_")
+    );
+  }, [editingField?.key]);
+  const isEditingDateInvalid = useMemo(() => {
+    if (!isEditingDateField || !editingField?.key) {
+      return false;
+    }
+    const validation = validateFieldValue(editingField.key, editingFieldDraftValue);
+    return !validation.ok;
+  }, [isEditingDateField, editingField?.key, editingFieldDraftValue]);
+  const isEditingSexField = editingField?.key === "sex";
+  const isEditingSexInvalid = useMemo(() => {
+    if (!isEditingSexField) {
+      return false;
+    }
+    if (editingFieldDraftValue.trim().length === 0) {
+      return true;
+    }
+    const validation = validateFieldValue("sex", editingFieldDraftValue);
+    return !validation.ok;
+  }, [isEditingSexField, editingFieldDraftValue]);
 
   const saveFieldEditDialog = () => {
     if (!editingField) {
@@ -3205,6 +3237,28 @@ export function App() {
     }
     if (editingField.key === "weight") {
       const validation = validateFieldValue("weight", editingFieldDraftValue);
+      if (!validation.ok) {
+        return;
+      }
+    }
+    if (
+      editingField.key === "document_date" ||
+      editingField.key === "visit_date" ||
+      editingField.key === "admission_date" ||
+      editingField.key === "discharge_date" ||
+      editingField.key === "dob" ||
+      editingField.key.startsWith("fecha_")
+    ) {
+      const validation = validateFieldValue(editingField.key, editingFieldDraftValue);
+      if (!validation.ok) {
+        return;
+      }
+    }
+    if (editingField.key === "sex") {
+      if (editingFieldDraftValue.trim().length === 0) {
+        return;
+      }
+      const validation = validateFieldValue("sex", editingFieldDraftValue);
       if (!validation.ok) {
         return;
       }
@@ -3809,7 +3863,9 @@ export function App() {
         fieldLabel={editingField?.label ?? ""}
         value={editingFieldDraftValue}
         isSaving={interpretationEditMutation.isPending}
-        isSaveDisabled={isEditingMicrochipInvalid || isEditingWeightInvalid}
+        isSaveDisabled={
+          isEditingMicrochipInvalid || isEditingWeightInvalid || isEditingDateInvalid || isEditingSexInvalid
+        }
         microchipErrorMessage={
           isEditingMicrochipField && isEditingMicrochipInvalid
             ? "Introduce entre 9 y 15 dígitos."
@@ -3818,6 +3874,16 @@ export function App() {
         weightErrorMessage={
           isEditingWeightField && isEditingWeightInvalid
             ? "Introduce un peso entre 0,5 y 120 kg."
+            : null
+        }
+        dateErrorMessage={
+          isEditingDateField && isEditingDateInvalid
+            ? "Formato no válido. Usa dd/mm/aaaa o aaaa-mm-dd."
+            : null
+        }
+        sexErrorMessage={
+          isEditingSexField && editingFieldDraftValue.trim().length > 0 && isEditingSexInvalid
+            ? "Valor no válido. Usa “macho” o “hembra”."
             : null
         }
         onValueChange={setEditingFieldDraftValue}
