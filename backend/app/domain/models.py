@@ -63,6 +63,7 @@ class Document:
     review_status: ReviewStatus
     reviewed_at: str | None = None
     reviewed_by: str | None = None
+    reviewed_run_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

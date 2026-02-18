@@ -617,6 +617,87 @@ def test_reopen_review_reverts_reviewed_calibration_deltas_and_allows_reapply(te
     ) == (1, 0)
 
 
+def test_reopen_review_reverts_snapshot_from_reviewed_run_even_with_newer_completed_run(
+    test_client,
+):
+    repository = test_client.app.state.document_repository
+    baseline = _build_interpretation_artifact(
+        document_id="doc-reviewed-run-baseline",
+        run_id="run-reviewed-run-baseline",
+        raw_text="Paciente: Luna",
+        repository=repository,
+    )
+    baseline_pet_name = next(
+        field for field in baseline["data"]["fields"] if field["key"] == "pet_name"
+    )
+    context_key = str(baseline_pet_name["context_key"])
+    mapping_id = baseline_pet_name.get("mapping_id")
+    policy_version = str(baseline_pet_name["policy_version"])
+
+    document_id = _upload_sample_document(test_client)
+    reviewed_run_id = "run-reviewed-revert-target"
+    _insert_run(
+        document_id=document_id,
+        run_id=reviewed_run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(
+        run_id=reviewed_run_id,
+        data={
+            "schema_version": "v0",
+            "document_id": document_id,
+            "processing_run_id": reviewed_run_id,
+            "created_at": "2026-02-10T10:00:05+00:00",
+            "global_schema_v0": baseline["data"]["global_schema_v0"],
+            "fields": [
+                {
+                    "field_id": "field-1",
+                    "key": "pet_name",
+                    "value": "Luna",
+                    "value_type": "string",
+                    "field_candidate_confidence": 0.66,
+                    "field_mapping_confidence": 0.66,
+                    "field_review_history_adjustment": 0.0,
+                    "mapping_id": mapping_id,
+                    "context_key": context_key,
+                    "policy_version": policy_version,
+                    "is_critical": True,
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Paciente: Luna"},
+                }
+            ],
+        },
+    )
+
+    marked = test_client.post(f"/documents/{document_id}/reviewed")
+    assert marked.status_code == 200
+    assert _get_calibration_counts(
+        context_key=context_key,
+        field_key="pet_name",
+        mapping_id=mapping_id,
+        policy_version=policy_version,
+    ) == (1, 0)
+
+    newer_run_id = "run-reviewed-revert-newer"
+    _insert_run(
+        document_id=document_id,
+        run_id=newer_run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(run_id=newer_run_id)
+
+    reopened = test_client.delete(f"/documents/{document_id}/reviewed")
+    assert reopened.status_code == 200
+    assert _get_calibration_counts(
+        context_key=context_key,
+        field_key="pet_name",
+        mapping_id=mapping_id,
+        policy_version=policy_version,
+    ) == (0, 0)
+
+
 def test_reviewed_toggle_returns_not_found_for_unknown_document(test_client):
     response = test_client.post("/documents/does-not-exist/reviewed")
     assert response.status_code == 404

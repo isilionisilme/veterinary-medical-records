@@ -54,9 +54,10 @@ class SqliteDocumentRepository:
                     updated_at,
                     review_status,
                     reviewed_at,
-                    reviewed_by
+                    reviewed_by,
+                    reviewed_run_id
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     document.document_id,
@@ -69,6 +70,7 @@ class SqliteDocumentRepository:
                     document.review_status.value,
                     document.reviewed_at,
                     document.reviewed_by,
+                    document.reviewed_run_id,
                 ),
             )
             conn.execute(
@@ -103,7 +105,8 @@ class SqliteDocumentRepository:
                     updated_at,
                     review_status,
                     reviewed_at,
-                    reviewed_by
+                    reviewed_by,
+                    reviewed_run_id
                 FROM documents
                 WHERE document_id = ?
                 """,
@@ -124,6 +127,7 @@ class SqliteDocumentRepository:
             review_status=ReviewStatus(row["review_status"]),
             reviewed_at=row["reviewed_at"],
             reviewed_by=row["reviewed_by"],
+            reviewed_run_id=row["reviewed_run_id"],
         )
 
     def get_latest_run(self, document_id: str) -> ProcessingRunSummary | None:
@@ -362,6 +366,7 @@ class SqliteDocumentRepository:
                     d.review_status,
                     d.reviewed_at,
                     d.reviewed_by,
+                    d.reviewed_run_id,
                     r.run_id AS latest_run_id,
                     r.state AS latest_run_state,
                     r.failure_type AS latest_run_failure_type
@@ -393,6 +398,7 @@ class SqliteDocumentRepository:
                 review_status=ReviewStatus(row["review_status"]),
                 reviewed_at=row["reviewed_at"],
                 reviewed_by=row["reviewed_by"],
+                reviewed_run_id=row["reviewed_run_id"],
             )
             latest_run = None
             if row["latest_run_id"] is not None:
@@ -532,6 +538,7 @@ class SqliteDocumentRepository:
         updated_at: str,
         reviewed_at: str | None,
         reviewed_by: str | None,
+        reviewed_run_id: str | None,
     ) -> Document | None:
         """Update document review metadata and return the updated record."""
 
@@ -551,6 +558,10 @@ class SqliteDocumentRepository:
                     reviewed_by = CASE
                         WHEN review_status = ? THEN reviewed_by
                         ELSE ?
+                    END,
+                    reviewed_run_id = CASE
+                        WHEN review_status = ? THEN reviewed_run_id
+                        ELSE ?
                     END
                 WHERE document_id = ?
             """
@@ -562,6 +573,8 @@ class SqliteDocumentRepository:
                 reviewed_at,
                 ReviewStatus.REVIEWED.value,
                 reviewed_by,
+                ReviewStatus.REVIEWED.value,
+                reviewed_run_id,
                 document_id,
             )
         elif review_status == ReviewStatus.IN_REVIEW.value:
@@ -574,7 +587,8 @@ class SqliteDocumentRepository:
                         ELSE ?
                     END,
                     reviewed_at = NULL,
-                    reviewed_by = NULL
+                    reviewed_by = NULL,
+                    reviewed_run_id = NULL
                 WHERE document_id = ?
             """
             params = (
@@ -586,7 +600,11 @@ class SqliteDocumentRepository:
         else:
             query = """
                 UPDATE documents
-                SET review_status = ?, updated_at = ?, reviewed_at = ?, reviewed_by = ?
+                SET review_status = ?,
+                    updated_at = ?,
+                    reviewed_at = ?,
+                    reviewed_by = ?,
+                    reviewed_run_id = ?
                 WHERE document_id = ?
             """
             params = (
@@ -594,6 +612,7 @@ class SqliteDocumentRepository:
                 updated_at,
                 reviewed_at,
                 reviewed_by,
+                reviewed_run_id,
                 document_id,
             )
 
@@ -702,4 +721,31 @@ class SqliteDocumentRepository:
         if row is None:
             return None
         return int(row["accept_count"]), int(row["edit_count"])
+
+    def get_latest_applied_calibration_snapshot(
+        self,
+        *,
+        document_id: str,
+    ) -> tuple[str, dict[str, object]] | None:
+        with database.get_connection() as conn:
+            rows = conn.execute(
+                """
+                SELECT a.run_id, a.payload
+                FROM artifacts a
+                INNER JOIN processing_runs pr ON pr.run_id = a.run_id
+                WHERE pr.document_id = ?
+                  AND a.artifact_type = 'CALIBRATION_REVIEW_SNAPSHOT'
+                ORDER BY a.created_at DESC
+                """,
+                (document_id,),
+            ).fetchall()
+
+        for row in rows:
+            payload = json.loads(row["payload"])
+            if not isinstance(payload, dict):
+                continue
+            if payload.get("status") != "applied":
+                continue
+            return str(row["run_id"]), payload
+        return None
 

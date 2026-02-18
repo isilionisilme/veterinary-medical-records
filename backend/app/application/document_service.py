@@ -914,14 +914,14 @@ def _resolve_context_key_for_edit_scopes(
 def _apply_reviewed_document_calibration(
     *,
     document_id: str,
+    reviewed_run_id: str | None,
     repository: DocumentRepository,
     created_at: str,
 ) -> None:
-    latest_completed_run = repository.get_latest_completed_run(document_id)
-    if latest_completed_run is None:
+    if reviewed_run_id is None:
         return
     payload = repository.get_latest_artifact_payload(
-        run_id=latest_completed_run.run_id,
+        run_id=reviewed_run_id,
         artifact_type="STRUCTURED_INTERPRETATION",
     )
     if not isinstance(payload, dict):
@@ -932,7 +932,7 @@ def _apply_reviewed_document_calibration(
 
     signal_events = _build_review_calibration_deltas(
         document_id=document_id,
-        run_id=latest_completed_run.run_id,
+        run_id=reviewed_run_id,
         interpretation_data=interpretation_data,
     )
     for event in signal_events:
@@ -951,7 +951,7 @@ def _apply_reviewed_document_calibration(
             else CALIBRATION_SIGNAL_EDITED
         )
         repository.append_artifact(
-            run_id=latest_completed_run.run_id,
+            run_id=reviewed_run_id,
             artifact_type="CALIBRATION_SIGNAL",
             payload={
                 **event,
@@ -965,13 +965,13 @@ def _apply_reviewed_document_calibration(
         "event_type": "calibration_review_snapshot",
         "source": "mark_reviewed",
         "document_id": document_id,
-        "run_id": latest_completed_run.run_id,
+        "run_id": reviewed_run_id,
         "status": "applied",
         "created_at": created_at,
         "deltas": signal_events,
     }
     repository.append_artifact(
-        run_id=latest_completed_run.run_id,
+        run_id=reviewed_run_id,
         artifact_type="CALIBRATION_REVIEW_SNAPSHOT",
         payload=snapshot_payload,
         created_at=created_at,
@@ -981,33 +981,46 @@ def _apply_reviewed_document_calibration(
 def _revert_reviewed_document_calibration(
     *,
     document_id: str,
+    reviewed_run_id: str | None,
     repository: DocumentRepository,
     created_at: str,
 ) -> None:
-    latest_completed_run = repository.get_latest_completed_run(document_id)
-    if latest_completed_run is None:
-        return
+    snapshot_run_id = reviewed_run_id
+    snapshot: dict[str, object] | None = None
 
-    snapshot = repository.get_latest_artifact_payload(
-        run_id=latest_completed_run.run_id,
-        artifact_type="CALIBRATION_REVIEW_SNAPSHOT",
-    )
-    if not isinstance(snapshot, dict):
-        logger.warning(
-            "Calibration snapshot missing while reopening document_id=%s run_id=%s",
-            document_id,
-            latest_completed_run.run_id,
+    if reviewed_run_id is not None:
+        candidate_snapshot = repository.get_latest_artifact_payload(
+            run_id=reviewed_run_id,
+            artifact_type="CALIBRATION_REVIEW_SNAPSHOT",
         )
-        return
-    if snapshot.get("status") == "reverted":
-        return
+        if isinstance(candidate_snapshot, dict):
+            if candidate_snapshot.get("status") == "reverted":
+                return
+            snapshot = candidate_snapshot
+        else:
+            logger.warning(
+                "Calibration snapshot missing while reopening document_id=%s run_id=%s",
+                document_id,
+                reviewed_run_id,
+            )
+
+    if snapshot is None:
+        fallback = repository.get_latest_applied_calibration_snapshot(document_id=document_id)
+        if fallback is None:
+            logger.warning(
+                "Calibration snapshot missing while reopening document_id=%s reviewed_run_id=%s",
+                document_id,
+                reviewed_run_id,
+            )
+            return
+        snapshot_run_id, snapshot = fallback
 
     raw_deltas = snapshot.get("deltas")
     if not isinstance(raw_deltas, list):
         logger.warning(
             "Calibration snapshot malformed while reopening document_id=%s run_id=%s",
             document_id,
-            latest_completed_run.run_id,
+            snapshot_run_id,
         )
         return
 
@@ -1052,13 +1065,13 @@ def _revert_reviewed_document_calibration(
         )
 
     repository.append_artifact(
-        run_id=latest_completed_run.run_id,
+        run_id=snapshot_run_id,
         artifact_type="CALIBRATION_REVIEW_REVERTED",
         payload={
             "event_type": "calibration_review_reverted",
             "source": "reopen_reviewed_document",
             "document_id": document_id,
-            "run_id": latest_completed_run.run_id,
+            "run_id": snapshot_run_id,
             "reverted_from_snapshot_created_at": snapshot.get("created_at"),
             "created_at": created_at,
             "deltas": reverted_deltas,
@@ -1066,7 +1079,7 @@ def _revert_reviewed_document_calibration(
         created_at=created_at,
     )
     repository.append_artifact(
-        run_id=latest_completed_run.run_id,
+        run_id=snapshot_run_id,
         artifact_type="CALIBRATION_REVIEW_SNAPSHOT",
         payload={
             **snapshot,
@@ -1275,18 +1288,22 @@ def mark_document_reviewed(
         )
 
     reviewed_at = now_provider()
+    latest_completed_run = repository.get_latest_completed_run(document_id)
+    reviewed_run_id = latest_completed_run.run_id if latest_completed_run is not None else None
     updated = repository.update_review_status(
         document_id=document_id,
         review_status=ReviewStatus.REVIEWED.value,
         updated_at=reviewed_at,
         reviewed_at=reviewed_at,
         reviewed_by=reviewed_by,
+        reviewed_run_id=reviewed_run_id,
     )
     if updated is None:
         return None
 
     _apply_reviewed_document_calibration(
         document_id=document_id,
+        reviewed_run_id=reviewed_run_id,
         repository=repository,
         created_at=reviewed_at,
     )
@@ -1326,12 +1343,14 @@ def reopen_document_review(
         updated_at=reopened_at,
         reviewed_at=None,
         reviewed_by=None,
+        reviewed_run_id=None,
     )
     if updated is None:
         return None
 
     _revert_reviewed_document_calibration(
         document_id=document_id,
+        reviewed_run_id=document.reviewed_run_id,
         repository=repository,
         created_at=reopened_at,
     )

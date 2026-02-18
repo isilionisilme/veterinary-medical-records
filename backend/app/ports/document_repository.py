@@ -115,8 +115,14 @@ class DocumentRepository(Protocol):
         updated_at: str,
         reviewed_at: str | None,
         reviewed_by: str | None,
+        reviewed_run_id: str | None,
     ) -> Document | None:
         """Update review metadata and return the updated document."""
+
+    def get_latest_applied_calibration_snapshot(
+        self, *, document_id: str
+    ) -> tuple[str, dict[str, object]] | None:
+        """Return (run_id, snapshot_payload) for the latest applied calibration snapshot."""
 
     def increment_calibration_signal(
         self,

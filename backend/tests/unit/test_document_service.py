@@ -76,6 +76,11 @@ class FakeDocumentRepository:
     ) -> None:
         return None
 
+    def get_latest_applied_calibration_snapshot(
+        self, *, document_id: str
+    ) -> tuple[str, dict[str, object]] | None:
+        return None
+
 
 class FakeFileStorage:
     def save(self, *, document_id: str, content: bytes) -> StoredFile:
@@ -296,6 +301,7 @@ def test_mark_document_reviewed_updates_review_metadata() -> None:
             updated_at: str,
             reviewed_at: str | None,
             reviewed_by: str | None,
+            reviewed_run_id: str | None,
         ) -> Document | None:
             if document_id != self.document.document_id:
                 return None
@@ -310,6 +316,7 @@ def test_mark_document_reviewed_updates_review_metadata() -> None:
                 review_status=ReviewStatus(review_status),
                 reviewed_at=reviewed_at,
                 reviewed_by=reviewed_by,
+                reviewed_run_id=reviewed_run_id,
             )
             return self.document
 
@@ -357,6 +364,7 @@ def test_reopen_document_review_clears_review_metadata() -> None:
             updated_at: str,
             reviewed_at: str | None,
             reviewed_by: str | None,
+            reviewed_run_id: str | None,
         ) -> Document | None:
             if document_id != self.document.document_id:
                 return None
@@ -371,6 +379,7 @@ def test_reopen_document_review_clears_review_metadata() -> None:
                 review_status=ReviewStatus(review_status),
                 reviewed_at=reviewed_at,
                 reviewed_by=reviewed_by,
+                reviewed_run_id=reviewed_run_id,
             )
             return self.document
 
