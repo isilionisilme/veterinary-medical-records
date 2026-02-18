@@ -618,10 +618,30 @@ class SqliteDocumentRepository:
         signal_type: Literal["edited", "accepted_unchanged"],
         updated_at: str,
     ) -> None:
-        mapping_scope_key = mapping_id if mapping_id is not None else "__null__"
         accept_inc = 1 if signal_type == "accepted_unchanged" else 0
         edit_inc = 1 if signal_type == "edited" else 0
+        self.apply_calibration_deltas(
+            context_key=context_key,
+            field_key=field_key,
+            mapping_id=mapping_id,
+            policy_version=policy_version,
+            accept_delta=accept_inc,
+            edit_delta=edit_inc,
+            updated_at=updated_at,
+        )
 
+    def apply_calibration_deltas(
+        self,
+        *,
+        context_key: str,
+        field_key: str,
+        mapping_id: str | None,
+        policy_version: str,
+        accept_delta: int,
+        edit_delta: int,
+        updated_at: str,
+    ) -> None:
+        mapping_scope_key = mapping_id if mapping_id is not None else "__null__"
         with database.get_connection() as conn:
             conn.execute(
                 """
@@ -638,8 +658,8 @@ class SqliteDocumentRepository:
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(context_key, field_key, mapping_id_scope_key, policy_version)
                 DO UPDATE SET
-                    accept_count = calibration_aggregates.accept_count + excluded.accept_count,
-                    edit_count = calibration_aggregates.edit_count + excluded.edit_count,
+                    accept_count = MAX(0, calibration_aggregates.accept_count + ?),
+                    edit_count = MAX(0, calibration_aggregates.edit_count + ?),
                     updated_at = excluded.updated_at
                 """,
                 (
@@ -648,9 +668,11 @@ class SqliteDocumentRepository:
                     mapping_id,
                     mapping_scope_key,
                     policy_version,
-                    accept_inc,
-                    edit_inc,
+                    max(accept_delta, 0),
+                    max(edit_delta, 0),
                     updated_at,
+                    accept_delta,
+                    edit_delta,
                 ),
             )
             conn.commit()

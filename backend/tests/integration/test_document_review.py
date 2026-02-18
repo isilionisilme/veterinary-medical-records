@@ -105,7 +105,7 @@ def _insert_structured_interpretation(
             VALUES (?, ?, ?, ?, ?)
             """,
             (
-                "artifact-review-1",
+                f"artifact-review-{run_id}",
                 run_id,
                 "STRUCTURED_INTERPRETATION",
                 json.dumps(payload, separators=(",", ":")),
@@ -113,6 +113,31 @@ def _insert_structured_interpretation(
             ),
         )
         conn.commit()
+
+
+def _get_calibration_counts(
+    *,
+    context_key: str,
+    field_key: str,
+    mapping_id: str | None,
+    policy_version: str,
+) -> tuple[int, int]:
+    mapping_scope_key = mapping_id if mapping_id is not None else "__null__"
+    with database.get_connection() as conn:
+        row = conn.execute(
+            """
+            SELECT accept_count, edit_count
+            FROM calibration_aggregates
+            WHERE context_key = ?
+              AND field_key = ?
+              AND mapping_id_scope_key = ?
+              AND policy_version = ?
+            """,
+            (context_key, field_key, mapping_scope_key, policy_version),
+        ).fetchone()
+    if row is None:
+        return (0, 0)
+    return (int(row["accept_count"]), int(row["edit_count"]))
 
 
 def test_document_review_returns_latest_completed_run_context(test_client):
@@ -402,47 +427,47 @@ def test_cross_document_learning_applies_negative_adjustment_after_edit_signal(t
     baseline_pet_name = next(field for field in baseline_fields if field["key"] == "pet_name")
     assert baseline_pet_name["field_review_history_adjustment"] == 0
 
-    document_id = _upload_sample_document(test_client)
-    run_id = "run-calibration-edit-signal"
-    _insert_run(
-        document_id=document_id,
-        run_id=run_id,
-        state=app_models.ProcessingRunState.COMPLETED,
-        failure_type=None,
-    )
-    _insert_structured_interpretation(
-        run_id=run_id,
-        data={
-            "schema_version": "v0",
-            "document_id": document_id,
-            "processing_run_id": run_id,
-            "created_at": "2026-02-10T10:00:05+00:00",
-            "global_schema_v0": baseline["data"]["global_schema_v0"],
-            "fields": [
-                {
-                    "field_id": "field-1",
-                    "key": "pet_name",
-                    "value": "Luna",
-                    "value_type": "string",
-                    "field_candidate_confidence": 0.66,
-                    "field_mapping_confidence": 0.66,
-                    "field_review_history_adjustment": 0.0,
-                    "mapping_id": baseline_pet_name.get("mapping_id"),
-                    "context_key": baseline_pet_name["context_key"],
-                    "policy_version": baseline_pet_name["policy_version"],
-                    "is_critical": True,
-                    "origin": "machine",
-                    "evidence": {"page": 1, "snippet": "Paciente: Luna"},
-                }
-            ],
-        },
-    )
+    for index, value in enumerate(["Kira", "Nala", "Mika"], start=1):
+        document_id = _upload_sample_document(test_client)
+        run_id = f"run-calibration-edit-signal-{index}"
+        _insert_run(
+            document_id=document_id,
+            run_id=run_id,
+            state=app_models.ProcessingRunState.COMPLETED,
+            failure_type=None,
+        )
+        _insert_structured_interpretation(
+            run_id=run_id,
+            data={
+                "schema_version": "v0",
+                "document_id": document_id,
+                "processing_run_id": run_id,
+                "created_at": "2026-02-10T10:00:05+00:00",
+                "global_schema_v0": baseline["data"]["global_schema_v0"],
+                "fields": [
+                    {
+                        "field_id": "field-1",
+                        "key": "pet_name",
+                        "value": "Luna",
+                        "value_type": "string",
+                        "field_candidate_confidence": 0.66,
+                        "field_mapping_confidence": 0.66,
+                        "field_review_history_adjustment": 0.0,
+                        "mapping_id": baseline_pet_name.get("mapping_id"),
+                        "context_key": baseline_pet_name["context_key"],
+                        "policy_version": baseline_pet_name["policy_version"],
+                        "is_critical": True,
+                        "origin": "machine",
+                        "evidence": {"page": 1, "snippet": "Paciente: Luna"},
+                    }
+                ],
+            },
+        )
 
-    for base_version, value in [(1, "Kira"), (2, "Nala"), (3, "Mika")]:
         edit_response = test_client.post(
             f"/runs/{run_id}/interpretations",
             json={
-                "base_version_number": base_version,
+                "base_version_number": 1,
                 "changes": [
                     {
                         "op": "UPDATE",
@@ -454,6 +479,9 @@ def test_cross_document_learning_applies_negative_adjustment_after_edit_signal(t
             },
         )
         assert edit_response.status_code == 201
+
+        reviewed_response = test_client.post(f"/documents/{document_id}/reviewed")
+        assert reviewed_response.status_code == 200
 
     calibrated = _build_interpretation_artifact(
         document_id="doc-after-edit",
@@ -499,6 +527,94 @@ def test_reopen_document_review_is_idempotent(test_client):
     reopened_again_payload = reopened_again.json()
     assert reopened_again_payload["review_status"] == "IN_REVIEW"
     assert reopened_again_payload["reviewed_at"] is None
+
+
+def test_reopen_review_reverts_reviewed_calibration_deltas_and_allows_reapply(test_client):
+    repository = test_client.app.state.document_repository
+    baseline = _build_interpretation_artifact(
+        document_id="doc-snapshot-baseline",
+        run_id="run-snapshot-baseline",
+        raw_text="Paciente: Luna",
+        repository=repository,
+    )
+    baseline_pet_name = next(
+        field for field in baseline["data"]["fields"] if field["key"] == "pet_name"
+    )
+    context_key = str(baseline_pet_name["context_key"])
+    mapping_id = baseline_pet_name.get("mapping_id")
+    policy_version = str(baseline_pet_name["policy_version"])
+
+    document_id = _upload_sample_document(test_client)
+    run_id = "run-reviewed-reopen-revert"
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(
+        run_id=run_id,
+        data={
+            "schema_version": "v0",
+            "document_id": document_id,
+            "processing_run_id": run_id,
+            "created_at": "2026-02-10T10:00:05+00:00",
+            "global_schema_v0": baseline["data"]["global_schema_v0"],
+            "fields": [
+                {
+                    "field_id": "field-1",
+                    "key": "pet_name",
+                    "value": "Luna",
+                    "value_type": "string",
+                    "field_candidate_confidence": 0.66,
+                    "field_mapping_confidence": 0.66,
+                    "field_review_history_adjustment": 0.0,
+                    "mapping_id": mapping_id,
+                    "context_key": context_key,
+                    "policy_version": policy_version,
+                    "is_critical": True,
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Paciente: Luna"},
+                }
+            ],
+        },
+    )
+
+    marked = test_client.post(f"/documents/{document_id}/reviewed")
+    assert marked.status_code == 200
+    assert _get_calibration_counts(
+        context_key=context_key,
+        field_key="pet_name",
+        mapping_id=mapping_id,
+        policy_version=policy_version,
+    ) == (1, 0)
+
+    reopened = test_client.delete(f"/documents/{document_id}/reviewed")
+    assert reopened.status_code == 200
+    assert _get_calibration_counts(
+        context_key=context_key,
+        field_key="pet_name",
+        mapping_id=mapping_id,
+        policy_version=policy_version,
+    ) == (0, 0)
+
+    reopened_again = test_client.delete(f"/documents/{document_id}/reviewed")
+    assert reopened_again.status_code == 200
+    assert _get_calibration_counts(
+        context_key=context_key,
+        field_key="pet_name",
+        mapping_id=mapping_id,
+        policy_version=policy_version,
+    ) == (0, 0)
+
+    reviewed_again = test_client.post(f"/documents/{document_id}/reviewed")
+    assert reviewed_again.status_code == 200
+    assert _get_calibration_counts(
+        context_key=context_key,
+        field_key="pet_name",
+        mapping_id=mapping_id,
+        policy_version=policy_version,
+    ) == (1, 0)
 
 
 def test_reviewed_toggle_returns_not_found_for_unknown_document(test_client):

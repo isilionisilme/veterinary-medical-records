@@ -130,6 +130,19 @@ class DocumentRepository(Protocol):
     ) -> None:
         """Increment deterministic calibration counters for a scoped signal."""
 
+    def apply_calibration_deltas(
+        self,
+        *,
+        context_key: str,
+        field_key: str,
+        mapping_id: str | None,
+        policy_version: str,
+        accept_delta: int,
+        edit_delta: int,
+        updated_at: str,
+    ) -> None:
+        """Apply deterministic signed deltas to calibration counters for a scope."""
+
     def get_calibration_counts(
         self,
         *,

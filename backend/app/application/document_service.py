@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import math
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -40,6 +41,7 @@ from backend.app.ports.document_repository import DocumentRepository
 from backend.app.ports.file_storage import FileStorage
 
 NUMERIC_TYPES = (int, float)
+logger = logging.getLogger(__name__)
 
 
 def _default_now_iso() -> str:
@@ -604,14 +606,6 @@ def apply_interpretation_edits(
             )
 
         mapping_id = normalize_mapping_id(existing_field.get("mapping_id"))
-        _record_calibration_signal_for_edit(
-            repository=repository,
-            context_key=context_key,
-            field_key=resolved_field_key,
-            mapping_id=mapping_id,
-            policy_version=calibration_policy_version,
-            updated_at=now_iso,
-        )
         updated_fields[existing_index] = {
             **updated_fields[existing_index],
             "value": change.get("value"),
@@ -767,25 +761,71 @@ def _sanitize_confidence_breakdown(field: dict[str, object]) -> dict[str, object
     return sanitized
 
 
-def _record_calibration_signal_for_edit(
+def _build_review_calibration_deltas(
     *,
-    repository: DocumentRepository,
-    context_key: str,
-    field_key: str | None,
-    mapping_id: str | None,
-    policy_version: str,
-    updated_at: str,
-) -> None:
-    if not field_key:
-        return
-    repository.increment_calibration_signal(
-        context_key=context_key,
-        field_key=field_key,
-        mapping_id=mapping_id,
-        policy_version=policy_version,
-        signal_type=CALIBRATION_SIGNAL_EDITED,
-        updated_at=updated_at,
+    document_id: str,
+    run_id: str,
+    interpretation_data: dict[str, object],
+) -> list[dict[str, object]]:
+    fields = _coerce_interpretation_fields(interpretation_data.get("fields"))
+    context_key = _resolve_context_key_for_edit_scopes(interpretation_data, fields)
+    policy_version = next(
+        (
+            str(field_policy_version).strip()
+            for field in fields
+            if isinstance((field_policy_version := field.get("policy_version")), str)
+            and str(field_policy_version).strip()
+        ),
+        resolve_calibration_policy_version(),
     )
+    scoped_deltas: dict[tuple[str, str | None], dict[str, object]] = {}
+    for field in fields:
+        field_key = field.get("key")
+        if not isinstance(field_key, str) or not field_key.strip():
+            continue
+        if is_empty_value(field.get("value")):
+            continue
+
+        mapping_id = normalize_mapping_id(field.get("mapping_id"))
+        scope = (field_key, mapping_id)
+        entry = scoped_deltas.setdefault(
+            scope,
+            {
+                "context_key": context_key,
+                "field_key": field_key,
+                "mapping_id": mapping_id,
+                "policy_version": policy_version,
+                "accept_delta": 0,
+                "edit_delta": 0,
+            },
+        )
+
+        origin = field.get("origin")
+        if origin == "human":
+            entry["edit_delta"] = 1
+        elif origin == "machine" and bool(field.get("is_critical", False)):
+            entry["accept_delta"] = 1
+
+    return [
+        {
+            "event_type": (
+                "field_accepted_unchanged"
+                if delta["accept_delta"] == 1
+                else "field_edited_confirmed"
+            ),
+            "source": "mark_reviewed",
+            "document_id": document_id,
+            "run_id": run_id,
+            "field_key": delta["field_key"],
+            "mapping_id": delta["mapping_id"],
+            "context_key": delta["context_key"],
+            "policy_version": delta["policy_version"],
+            "accept_delta": delta["accept_delta"],
+            "edit_delta": delta["edit_delta"],
+        }
+        for delta in scoped_deltas.values()
+        if delta["accept_delta"] != 0 or delta["edit_delta"] != 0
+    ]
 
 
 def _resolve_context_key_for_edit_scopes(
@@ -799,7 +839,7 @@ def _resolve_context_key_for_edit_scopes(
     return build_context_key_from_interpretation_data(interpretation_data)
 
 
-def _emit_acceptance_signals_for_reviewed_document(
+def _apply_reviewed_document_calibration(
     *,
     document_id: str,
     repository: DocumentRepository,
@@ -818,56 +858,151 @@ def _emit_acceptance_signals_for_reviewed_document(
     if not isinstance(interpretation_data, dict):
         return
 
-    context_key = build_context_key_from_interpretation_data(interpretation_data)
-    policy_version = resolve_calibration_policy_version()
-    fields = _coerce_interpretation_fields(interpretation_data.get("fields"))
-    emitted_scopes: set[tuple[str, str | None]] = set()
-    signal_events: list[dict[str, object]] = []
-    for field in fields:
-        origin = field.get("origin")
-        if origin != "machine":
+    signal_events = _build_review_calibration_deltas(
+        document_id=document_id,
+        run_id=latest_completed_run.run_id,
+        interpretation_data=interpretation_data,
+    )
+    for event in signal_events:
+        repository.apply_calibration_deltas(
+            context_key=str(event["context_key"]),
+            field_key=str(event["field_key"]),
+            mapping_id=normalize_mapping_id(event.get("mapping_id")),
+            policy_version=str(event["policy_version"]),
+            accept_delta=int(event["accept_delta"]),
+            edit_delta=int(event["edit_delta"]),
+            updated_at=created_at,
+        )
+        signal_type = (
+            CALIBRATION_SIGNAL_ACCEPTED_UNCHANGED
+            if int(event["accept_delta"]) == 1
+            else CALIBRATION_SIGNAL_EDITED
+        )
+        repository.append_artifact(
+            run_id=latest_completed_run.run_id,
+            artifact_type="CALIBRATION_SIGNAL",
+            payload={
+                **event,
+                "signal_type": signal_type,
+                "created_at": created_at,
+            },
+            created_at=created_at,
+        )
+
+    snapshot_payload = {
+        "event_type": "calibration_review_snapshot",
+        "source": "mark_reviewed",
+        "document_id": document_id,
+        "run_id": latest_completed_run.run_id,
+        "status": "applied",
+        "created_at": created_at,
+        "deltas": signal_events,
+    }
+    repository.append_artifact(
+        run_id=latest_completed_run.run_id,
+        artifact_type="CALIBRATION_REVIEW_SNAPSHOT",
+        payload=snapshot_payload,
+        created_at=created_at,
+    )
+
+
+def _revert_reviewed_document_calibration(
+    *,
+    document_id: str,
+    repository: DocumentRepository,
+    created_at: str,
+) -> None:
+    latest_completed_run = repository.get_latest_completed_run(document_id)
+    if latest_completed_run is None:
+        return
+
+    snapshot = repository.get_latest_artifact_payload(
+        run_id=latest_completed_run.run_id,
+        artifact_type="CALIBRATION_REVIEW_SNAPSHOT",
+    )
+    if not isinstance(snapshot, dict):
+        logger.warning(
+            "Calibration snapshot missing while reopening document_id=%s run_id=%s",
+            document_id,
+            latest_completed_run.run_id,
+        )
+        return
+    if snapshot.get("status") == "reverted":
+        return
+
+    raw_deltas = snapshot.get("deltas")
+    if not isinstance(raw_deltas, list):
+        logger.warning(
+            "Calibration snapshot malformed while reopening document_id=%s run_id=%s",
+            document_id,
+            latest_completed_run.run_id,
+        )
+        return
+
+    reverted_deltas: list[dict[str, object]] = []
+    for raw_delta in raw_deltas:
+        if not isinstance(raw_delta, dict):
             continue
-        if not bool(field.get("is_critical", False)):
+        context_key = raw_delta.get("context_key")
+        field_key = raw_delta.get("field_key")
+        policy_version = raw_delta.get("policy_version")
+        if not isinstance(context_key, str) or not context_key.strip():
             continue
-        field_key = field.get("key")
         if not isinstance(field_key, str) or not field_key.strip():
             continue
-        if is_empty_value(field.get("value")):
+        if not isinstance(policy_version, str) or not policy_version.strip():
             continue
-        mapping_id = normalize_mapping_id(field.get("mapping_id"))
-        scope = (field_key, mapping_id)
-        if scope in emitted_scopes:
+
+        accept_delta = int(raw_delta.get("accept_delta", 0))
+        edit_delta = int(raw_delta.get("edit_delta", 0))
+        if accept_delta == 0 and edit_delta == 0:
             continue
-        emitted_scopes.add(scope)
-        repository.increment_calibration_signal(
+
+        mapping_id = normalize_mapping_id(raw_delta.get("mapping_id"))
+        repository.apply_calibration_deltas(
             context_key=context_key,
             field_key=field_key,
             mapping_id=mapping_id,
             policy_version=policy_version,
-            signal_type=CALIBRATION_SIGNAL_ACCEPTED_UNCHANGED,
+            accept_delta=-accept_delta,
+            edit_delta=-edit_delta,
             updated_at=created_at,
         )
-        signal_events.append(
+        reverted_deltas.append(
             {
-                "event_type": "field_accepted_unchanged",
-                "source": "mark_reviewed",
-                "document_id": document_id,
-                "run_id": latest_completed_run.run_id,
+                "context_key": context_key,
                 "field_key": field_key,
                 "mapping_id": mapping_id,
-                "context_key": context_key,
                 "policy_version": policy_version,
-                "created_at": created_at,
+                "accept_delta": -accept_delta,
+                "edit_delta": -edit_delta,
             }
         )
 
-    for event in signal_events:
-        repository.append_artifact(
-            run_id=latest_completed_run.run_id,
-            artifact_type="CALIBRATION_SIGNAL",
-            payload=event,
-            created_at=created_at,
-        )
+    repository.append_artifact(
+        run_id=latest_completed_run.run_id,
+        artifact_type="CALIBRATION_REVIEW_REVERTED",
+        payload={
+            "event_type": "calibration_review_reverted",
+            "source": "reopen_reviewed_document",
+            "document_id": document_id,
+            "run_id": latest_completed_run.run_id,
+            "reverted_from_snapshot_created_at": snapshot.get("created_at"),
+            "created_at": created_at,
+            "deltas": reverted_deltas,
+        },
+        created_at=created_at,
+    )
+    repository.append_artifact(
+        run_id=latest_completed_run.run_id,
+        artifact_type="CALIBRATION_REVIEW_SNAPSHOT",
+        payload={
+            **snapshot,
+            "status": "reverted",
+            "reverted_at": created_at,
+        },
+        created_at=created_at,
+    )
 
 
 def _build_field_change_log(
@@ -1078,7 +1213,7 @@ def mark_document_reviewed(
     if updated is None:
         return None
 
-    _emit_acceptance_signals_for_reviewed_document(
+    _apply_reviewed_document_calibration(
         document_id=document_id,
         repository=repository,
         created_at=reviewed_at,
@@ -1112,15 +1247,22 @@ def reopen_document_review(
             reviewed_by=document.reviewed_by,
         )
 
+    reopened_at = now_provider()
     updated = repository.update_review_status(
         document_id=document_id,
         review_status=ReviewStatus.IN_REVIEW.value,
-        updated_at=now_provider(),
+        updated_at=reopened_at,
         reviewed_at=None,
         reviewed_by=None,
     )
     if updated is None:
         return None
+
+    _revert_reviewed_document_calibration(
+        document_id=document_id,
+        repository=repository,
+        created_at=reopened_at,
+    )
 
     return ReviewToggleResult(
         document_id=updated.document_id,
