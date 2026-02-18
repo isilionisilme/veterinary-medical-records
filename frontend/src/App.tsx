@@ -3306,8 +3306,9 @@ export function App() {
           </div>
           <div className="space-y-0.5 pl-1 text-[12px] text-white/90">
             <p>- Fiabilidad del candidato: {candidateConfidenceText}</p>
-            <p className={reviewHistoryAdjustmentClass}>
-              - Ajuste por histórico de revisiones: {reviewHistoryAdjustmentText}
+            <p>
+              - Ajuste por histórico de revisiones:{" "}
+              <span className={reviewHistoryAdjustmentClass}>{reviewHistoryAdjustmentText}</span>
             </p>
           </div>
           <p className="text-[11px] leading-4 text-white/75">
