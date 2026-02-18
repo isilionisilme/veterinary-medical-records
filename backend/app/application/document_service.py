@@ -491,10 +491,9 @@ def apply_interpretation_edits(
                 "key": key,
                 "value": change.get("value"),
                 "value_type": value_type,
-                "mapping_confidence": 1.0,
-                "extraction_reliability": _sanitize_extraction_reliability(None),
-                "review_history_adjustment": _sanitize_review_history_adjustment(0),
-                "confidence": 1.0,
+                "field_mapping_confidence": 1.0,
+                "text_extraction_reliability": _sanitize_text_extraction_reliability(None),
+                "field_review_history_adjustment": _sanitize_field_review_history_adjustment(0),
                 "is_critical": key in CRITICAL_KEYS_V0,
                 "origin": "human",
             }
@@ -586,10 +585,9 @@ def apply_interpretation_edits(
             "value": change.get("value"),
             "value_type": value_type,
             "origin": "human",
-            "mapping_confidence": 1.0,
-            "extraction_reliability": _sanitize_extraction_reliability(None),
-            "review_history_adjustment": _sanitize_review_history_adjustment(0),
-            "confidence": 1.0,
+            "field_mapping_confidence": 1.0,
+            "text_extraction_reliability": _sanitize_text_extraction_reliability(None),
+            "field_review_history_adjustment": _sanitize_field_review_history_adjustment(0),
         }
         field_change_logs.append(
             _build_field_change_log(
@@ -658,7 +656,7 @@ def _coerce_interpretation_fields(raw_fields: object) -> list[dict[str, object]]
     return fields
 
 
-def _sanitize_extraction_reliability(value: object) -> float | None:
+def _sanitize_text_extraction_reliability(value: object) -> float | None:
     if isinstance(value, bool):
         return None
     if isinstance(value, int | float):
@@ -668,7 +666,7 @@ def _sanitize_extraction_reliability(value: object) -> float | None:
     return None
 
 
-def _sanitize_review_history_adjustment(value: object) -> float:
+def _sanitize_field_review_history_adjustment(value: object) -> float:
     if isinstance(value, bool):
         return 0.0
     if isinstance(value, int | float):
@@ -680,11 +678,12 @@ def _sanitize_review_history_adjustment(value: object) -> float:
 
 def _sanitize_confidence_breakdown(field: dict[str, object]) -> dict[str, object]:
     sanitized = dict(field)
-    sanitized["extraction_reliability"] = _sanitize_extraction_reliability(
-        sanitized.get("extraction_reliability")
+    sanitized.pop("confidence", None)
+    sanitized["text_extraction_reliability"] = _sanitize_text_extraction_reliability(
+        sanitized.get("text_extraction_reliability")
     )
-    sanitized["review_history_adjustment"] = _sanitize_review_history_adjustment(
-        sanitized.get("review_history_adjustment")
+    sanitized["field_review_history_adjustment"] = _sanitize_field_review_history_adjustment(
+        sanitized.get("field_review_history_adjustment")
     )
     return sanitized
 

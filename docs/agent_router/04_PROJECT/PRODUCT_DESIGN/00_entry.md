@@ -20,5 +20,5 @@ Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for i
 - `docs/agent_router/04_PROJECT/PRODUCT_DESIGN/100_7-final-product-rule.md`
 
 ## Propagated updates
-- Conceptual-model ownership includes explicit separation of `candidate_confidence` (diagnostic) and `mapping_confidence` (context stability).
+- Conceptual-model ownership includes explicit separation of `candidate_confidence` (diagnostic) and `field_mapping_confidence` (context stability).
 - Context v1, learnable-unit (`mapping_id`), and confidence-propagation calibration semantics are maintained in this module set.

@@ -986,7 +986,7 @@ As a veterinarian, I want the review view to always use the full Global Schema v
 As a veterinarian, I want confidence dots/colors in the review UI to reflect mapping confidence policy so that the signal is consistent, explainable, and reliable for triage.
 
 **Acceptance Criteria**
-- Existing confidence dots/colors in veterinarian UI represent `mapping_confidence` (not candidate/legacy confidence).
+- Existing confidence dots/colors in veterinarian UI represent `field_mapping_confidence` (not candidate/legacy confidence).
 - Low/medium/high confidence bands are derived from backend-provided `policy_version` + confidence band cutoffs.
 - The UI does not use hardcoded confidence thresholds.
 - If `policy_version` or confidence band cutoffs are missing, UI does not crash, explicitly indicates missing policy configuration (degraded mode), and emits a diagnostic/telemetry event without inventing fallback thresholds.
@@ -1003,7 +1003,7 @@ As a veterinarian, I want confidence dots/colors in the review UI to reflect map
 - Frontend context: Confidence rendering implementation points: [`docs/project/FRONTEND_IMPLEMENTATION.md`](FRONTEND_IMPLEMENTATION.md).
 
 **Test Expectations**
-- Confidence dot/color mapping uses `mapping_confidence` with backend-provided confidence band cutoffs.
+- Confidence dot/color mapping uses `field_mapping_confidence` with backend-provided confidence band cutoffs.
 - Missing policy configuration triggers explicit degraded-mode UI behavior and a diagnostic/telemetry event without app crash.
 
 **Definition of Done (DoD)**
@@ -1025,21 +1025,21 @@ As a veterinarian, I want to understand why a field confidence looks the way it 
 - Tooltip shows overall confidence percentage + band, explanatory copy, and breakdown lines for extraction reliability and review history adjustment.
 - Adjustment semantic styling follows positive/negative/zero rules using existing tokens/classes.
 - Edge cases are rendered deterministically: no history shows adjustment `0`; missing extraction reliability shows `No disponible`.
-- Dot/band behavior remains unchanged and continues to use `mapping_confidence` as the primary visible signal.
+- Dot/band behavior remains unchanged and continues to use `field_mapping_confidence` as the primary visible signal.
 - Confidence computation/propagation behavior is unchanged.
 - Tooltip copy and structure align with [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) section **4.3 Confidence Tooltip Breakdown (Veterinarian UI)**.
 
 **Scope Clarification**
 - Implements the confidence tooltip pattern defined in UX + Design System for veterinarian review fields.
-- `mapping_confidence` remains the primary visible signal (dot + band); tooltip is explanatory.
+- `field_mapping_confidence` remains the primary visible signal (dot + band); tooltip is explanatory.
 - Frontend consumes backend-provided breakdown values as render-only input.
 - This story does not change confidence computation or propagation.
 - This story does not add analytics/chart views, document-level confidence policy UI, recalibration mechanics, field reordering, layout shifts, or governance terminology in veterinarian-facing copy.
 
 **Data Assumptions / Dependencies**
-- Review payload includes field-level `mapping_confidence` (0–1).
-- Review payload may include `extraction_reliability` (0–1, nullable); it must not be inferred from `candidate_confidence`.
-- Review payload includes deterministic `review_history_adjustment` (signed percentage points), with `0` when no history is available.
+- Review payload includes field-level `field_mapping_confidence` (0–1).
+- Review payload may include `text_extraction_reliability` (0–1, nullable); it must not be inferred from `candidate_confidence`.
+- Review payload includes deterministic `field_review_history_adjustment` (signed percentage points), with `0` when no history is available.
 - Exact payload shape and sourcing are governed by the authoritative technical docs referenced below.
 
 **Out of Scope**

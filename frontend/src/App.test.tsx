@@ -186,7 +186,7 @@ function installReviewedModeFetchMock() {
                   key: "pet_name",
                   value: "Luna",
                   value_type: "string",
-                  mapping_confidence: 0.82,
+                  field_mapping_confidence: 0.82,
                   is_critical: false,
                   origin: "machine",
                   evidence: { page: 1, snippet: "Paciente: Luna" },
@@ -196,7 +196,7 @@ function installReviewedModeFetchMock() {
                   key: "species",
                   value: "Canina",
                   value_type: "string",
-                  mapping_confidence: 0.9,
+                  field_mapping_confidence: 0.9,
                   is_critical: false,
                   origin: "machine",
                 },
@@ -358,7 +358,7 @@ describe("App upload and list flow", () => {
                     key: "document_date",
                     value: null,
                     value_type: "date",
-                    mapping_confidence: 0.32,
+                    field_mapping_confidence: 0.32,
                     is_critical: false,
                     origin: "machine",
                   },
@@ -367,7 +367,7 @@ describe("App upload and list flow", () => {
                     key: "visit_date",
                     value: "2026-02-11T00:00:00Z",
                     value_type: "date",
-                    mapping_confidence: 0.74,
+                    field_mapping_confidence: 0.74,
                     is_critical: true,
                     origin: "machine",
                   },
@@ -376,9 +376,9 @@ describe("App upload and list flow", () => {
                     key: "pet_name",
                     value: "Luna",
                     value_type: "string",
-                    mapping_confidence: 0.82,
-                    extraction_reliability: 0.65,
-                    review_history_adjustment: 7,
+                    field_mapping_confidence: 0.82,
+                    text_extraction_reliability: 0.65,
+                    field_review_history_adjustment: 7,
                     is_critical: false,
                     origin: "machine",
                     evidence: { page: 1, snippet: "Paciente: Luna" },
@@ -388,9 +388,9 @@ describe("App upload and list flow", () => {
                     key: "diagnosis",
                     value: "Gastroenteritis",
                     value_type: "string",
-                    mapping_confidence: 0.62,
-                    extraction_reliability: 0.71,
-                    review_history_adjustment: -4,
+                    field_mapping_confidence: 0.62,
+                    text_extraction_reliability: 0.71,
+                    field_review_history_adjustment: -4,
                     is_critical: false,
                     origin: "machine",
                     evidence: { page: 2, snippet: "Diagnostico: Gastroenteritis" },
@@ -401,7 +401,7 @@ describe("App upload and list flow", () => {
                     value:
                       "Reposo relativo durante 7 días.\nDieta blanda en 3 tomas al día y control de hidratación.",
                     value_type: "string",
-                    mapping_confidence: 0.72,
+                    field_mapping_confidence: 0.72,
                     is_critical: false,
                     origin: "machine",
                   },
@@ -410,7 +410,7 @@ describe("App upload and list flow", () => {
                     key: "custom_tag",
                     value: "Prioridad",
                     value_type: "string",
-                    mapping_confidence: 0.88,
+                    field_mapping_confidence: 0.88,
                     is_critical: false,
                     origin: "machine",
                     evidence: { page: 1, snippet: "Prioridad: Alta" },
@@ -420,7 +420,7 @@ describe("App upload and list flow", () => {
                     key: "imagen",
                     value: "Rx abdomen",
                     value_type: "string",
-                    mapping_confidence: 0.61,
+                    field_mapping_confidence: 0.61,
                     is_critical: false,
                     origin: "machine",
                   },
@@ -429,7 +429,7 @@ describe("App upload and list flow", () => {
                     key: "imagine",
                     value: "Eco",
                     value_type: "string",
-                    mapping_confidence: 0.58,
+                    field_mapping_confidence: 0.58,
                     is_critical: false,
                     origin: "machine",
                   },
@@ -438,9 +438,9 @@ describe("App upload and list flow", () => {
                     key: "owner_name",
                     value: "BEATRIZ ABARCA",
                     value_type: "string",
-                    mapping_confidence: 0.84,
-                    extraction_reliability: null,
-                    review_history_adjustment: 0,
+                    field_mapping_confidence: 0.84,
+                    text_extraction_reliability: null,
+                    field_review_history_adjustment: 0,
                     is_critical: false,
                     origin: "machine",
                   },
@@ -449,9 +449,9 @@ describe("App upload and list flow", () => {
                     key: "owner_address",
                     value: "Calle Mayor 10, Madrid",
                     value_type: "string",
-                    mapping_confidence: 0.77,
-                    extraction_reliability: 0.77,
-                    review_history_adjustment: -4,
+                    field_mapping_confidence: 0.77,
+                    text_extraction_reliability: 0.77,
+                    field_review_history_adjustment: -4,
                     is_critical: false,
                     origin: "machine",
                   },
@@ -460,7 +460,7 @@ describe("App upload and list flow", () => {
                     key: "IMAGING:",
                     value: "Radiografia lateral",
                     value_type: "string",
-                    mapping_confidence: 0.57,
+                    field_mapping_confidence: 0.57,
                     is_critical: false,
                     origin: "machine",
                   },
@@ -1966,7 +1966,7 @@ describe("App upload and list flow", () => {
     expect(screen.queryByTestId("confidence-policy-degraded")).toBeNull();
   });
 
-  it("does not fallback to legacy confidence when mapping_confidence is missing", async () => {
+  it("does not fallback to legacy confidence when field_mapping_confidence is missing", async () => {
     const baseFetch = globalThis.fetch as typeof fetch;
 
     globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -1978,7 +1978,7 @@ describe("App upload and list flow", () => {
         const fields = payload.active_interpretation?.data?.fields;
         if (Array.isArray(fields)) {
           fields.forEach((field: Record<string, unknown>) => {
-            delete field.mapping_confidence;
+            delete field.field_mapping_confidence;
             field.confidence = 0.99;
           });
         }
@@ -2155,7 +2155,7 @@ describe("App upload and list flow", () => {
                           key: "pet_name",
                           value: "Luna",
                           value_type: "string",
-                          mapping_confidence: 0.82,
+                          field_mapping_confidence: 0.82,
                           is_critical: false,
                           origin: "machine",
                           evidence: { page: 1, snippet: "Paciente: Luna" },

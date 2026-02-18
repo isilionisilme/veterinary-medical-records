@@ -109,7 +109,7 @@
           "path": "docs/agent_router/04_PROJECT/PRODUCT_DESIGN/76_conceptual-model-local-schema-global-schema-and-mapping.md",
           "required_terms": [
             "candidate_confidence",
-            "mapping_confidence",
+            "field_mapping_confidence",
             "Context v1 (Deterministic)",
             "Learnable Unit (`mapping_id`)",
             "Signals & Weighting (qualitative)",

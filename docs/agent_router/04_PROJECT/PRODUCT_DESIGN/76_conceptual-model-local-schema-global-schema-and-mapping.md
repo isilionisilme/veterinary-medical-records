@@ -17,13 +17,13 @@ It does not prescribe storage tables or transport contracts.
 ## Confidence Semantics (Stability, not Truth)
 
 - `candidate_confidence` is an extractor diagnostic for a local candidate in one run; it indicates extraction certainty, not cross-document stability.
-- `mapping_confidence` is assigned to a mapping in context; it is a proxy for operational stability, not medical truth.
+- `field_mapping_confidence` is assigned to a mapping in context; it is a proxy for operational stability, not medical truth.
 - Confidence guides attention and defaults over time, but must never block veterinary workflow.
-- Safety asymmetry applies: `mapping_confidence` decreases fast on contradiction, increases slowly on repeated consistency, and remains reversible.
+- Safety asymmetry applies: `field_mapping_confidence` decreases fast on contradiction, increases slowly on repeated consistency, and remains reversible.
 
 ## Context v1 (Deterministic)
 
-- Purpose: deterministic aggregation key for correction/review signals and `mapping_confidence` propagation.
+- Purpose: deterministic aggregation key for correction/review signals and `field_mapping_confidence` propagation.
 - Context v1 fields: `doc_family`/`document_type`, `language`, `country`, `layout_fingerprint`, `extractor_version`, `schema_version`.
 - Context v1 is computed per document/run and persisted alongside review/correction signals; it is deterministic system metadata, not LLM-defined.
 - `veterinarian_id` is explicitly excluded from Context v1.
@@ -53,12 +53,12 @@ It does not prescribe storage tables or transport contracts.
 
 ## Confidence Propagation & Calibration
 
-- `mapping_confidence` propagates continuously as new reviewed documents arrive, using smoothing to avoid abrupt oscillations from isolated events.
+- `field_mapping_confidence` propagates continuously as new reviewed documents arrive, using smoothing to avoid abrupt oscillations from isolated events.
 - Product policy actions (for example default suggestion promotion/demotion or review prioritization) are triggered only when thresholds are met with hysteresis and minimum volume.
 - Policy actions adjust default ranking/selection behavior and do not add/remove Global Schema keys.
-- `candidate_confidence` can influence extraction diagnostics, but governance and policy actions use `mapping_confidence` in context.
+- `candidate_confidence` can influence extraction diagnostics, but governance and policy actions use `field_mapping_confidence` in context.
 - By default, we do not require explicit per-field confirmation: implicit review is used as a weak positive signal when a veterinarian marks the document as reviewed and a field remains unchanged.
-- Global Schema v0 keys/order do not change automatically during this propagation; only `mapping_confidence` and policy state may change.
+- Global Schema v0 keys/order do not change automatically during this propagation; only `field_mapping_confidence` and policy state may change.
 
 ### Future Improvements
 

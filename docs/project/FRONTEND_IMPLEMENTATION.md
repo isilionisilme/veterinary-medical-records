@@ -1,4 +1,4 @@
-﻿# Frontend Implementation Notes
+# Frontend Implementation Notes
 
 ## Purpose
 
@@ -203,8 +203,8 @@ No frontend logic may interpret confidence as correctness or validation.
 
 ### Confidence rendering rules (UX contract)
 
-- Show `mapping_confidence` by default in veterinarian UI; `candidate_confidence` is diagnostic-only and must never be rendered in veterinarian UI unless explicit debug mode is enabled.
-- Derive low/mid/high confidence bands from `mapping_confidence` using cutoffs from the active policy version (temporary hardcoded cutoffs are acceptable only until policy config wiring is complete).
+- Show `field_mapping_confidence` by default in veterinarian UI; `candidate_confidence` is diagnostic-only and must never be rendered in veterinarian UI unless explicit debug mode is enabled.
+- Derive low/mid/high confidence bands from `field_mapping_confidence` using cutoffs from the active policy version (temporary hardcoded cutoffs are acceptable only until policy config wiring is complete).
 - When backend provides `policy_version` + cutoffs, frontend must consume those values instead of hardcoding band thresholds.
 - Avoid visual churn on confidence updates: do not animate rapid oscillations; treat updates as stable presentation changes.
 - Smoothing/calibration mechanics are backend responsibilities and must not be reimplemented in frontend.
@@ -212,9 +212,9 @@ No frontend logic may interpret confidence as correctness or validation.
 
 ### Confidence tooltip breakdown rendering (MVP)
 
-- Tooltip may show numeric `mapping_confidence` and breakdown components, but `mapping_confidence` remains the primary visual signal.
+- Tooltip may show numeric `field_mapping_confidence` and breakdown components, but `field_mapping_confidence` remains the primary visual signal.
 - Frontend must render only values provided by backend.
-- Frontend must not infer `extraction_reliability` from `candidate_confidence` and must not implement calibration math.
+- Frontend must not infer `text_extraction_reliability` from `candidate_confidence` and must not implement calibration math.
 - Edge cases:
   - no history: show `Ajuste por histórico de revisiones: 0%`.
   - missing extraction reliability: show `Fiabilidad de la extracción de texto: No disponible`.

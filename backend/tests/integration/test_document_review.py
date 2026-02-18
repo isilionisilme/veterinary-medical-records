@@ -84,7 +84,6 @@ def _insert_structured_interpretation(
                 "key": "pet_name",
                 "value": "Luna",
                 "value_type": "string",
-                "confidence": 0.82,
                 "is_critical": False,
                 "origin": "machine",
                 "evidence": {"page": 1, "snippet": "Paciente: Luna"},
@@ -170,8 +169,7 @@ def test_document_review_omits_confidence_policy_when_config_missing(
                     "key": "pet_name",
                     "value": "Luna",
                     "value_type": "string",
-                    "mapping_confidence": 0.82,
-                    "confidence": 0.82,
+                    "field_mapping_confidence": 0.82,
                     "is_critical": False,
                     "origin": "machine",
                     "evidence": {"page": 1, "snippet": "Paciente: Luna"},
@@ -315,10 +313,9 @@ def test_document_review_sanitizes_confidence_breakdown_payload_values(test_clie
                     "key": "pet_name",
                     "value": "Luna",
                     "value_type": "string",
-                    "mapping_confidence": 0.82,
-                    "confidence": 0.82,
-                    "extraction_reliability": 1.7,
-                    "review_history_adjustment": "invalid",
+                    "field_mapping_confidence": 0.82,
+                    "text_extraction_reliability": 1.7,
+                    "field_review_history_adjustment": "invalid",
                     "is_critical": False,
                     "origin": "machine",
                     "evidence": {"page": 1, "snippet": "Paciente: Luna"},
@@ -331,8 +328,8 @@ def test_document_review_sanitizes_confidence_breakdown_payload_values(test_clie
     assert response.status_code == 200
     payload = response.json()
     field = payload["active_interpretation"]["data"]["fields"][0]
-    assert field["extraction_reliability"] is None
-    assert field["review_history_adjustment"] == 0
+    assert field["text_extraction_reliability"] is None
+    assert field["field_review_history_adjustment"] == 0
 
 
 def test_mark_document_reviewed_is_idempotent(test_client):

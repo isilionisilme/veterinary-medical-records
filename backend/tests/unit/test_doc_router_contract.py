@@ -218,7 +218,7 @@ def test_product_design_module_76_includes_confidence_context_contract_terms() -
 
     for required_term in (
         "candidate_confidence",
-        "mapping_confidence",
+        "field_mapping_confidence",
         "Context v1 (Deterministic)",
         "Learnable Unit (`mapping_id`)",
         "Signals & Weighting (qualitative)",

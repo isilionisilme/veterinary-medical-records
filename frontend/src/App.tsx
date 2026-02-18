@@ -291,10 +291,9 @@ type ReviewField = {
   key: string;
   value: string | number | boolean | null;
   value_type: string;
-  confidence?: number;
-  mapping_confidence?: number;
-  extraction_reliability?: number | null;
-  review_history_adjustment?: number;
+  field_mapping_confidence?: number;
+  text_extraction_reliability?: number | null;
+  field_review_history_adjustment?: number;
   is_critical: boolean;
   origin: "machine" | "human";
   evidence?: ReviewEvidence;
@@ -1049,7 +1048,7 @@ function getConfidenceTone(
 }
 
 function resolveMappingConfidence(field: ReviewField): number | null {
-  const raw = field.mapping_confidence;
+  const raw = field.field_mapping_confidence;
   if (typeof raw !== "number" || !Number.isFinite(raw)) {
     return null;
   }
@@ -2466,10 +2465,10 @@ export function App() {
       degraded_reason: confidencePolicyDegradedReason,
       policy_version: rawPolicy?.policy_version ?? null,
       has_band_cutoffs: Boolean(rawPolicy?.band_cutoffs),
-      sample_mapping_confidence: sampleField
+      sample_field_mapping_confidence: sampleField
         ? {
             field_key: sampleField.key,
-            has_mapping_confidence: typeof sampleField.mapping_confidence === "number",
+            has_field_mapping_confidence: typeof sampleField.field_mapping_confidence === "number",
           }
         : null,
     });
@@ -3229,12 +3228,12 @@ export function App() {
     const confidence = item.confidence;
     const percentage = Math.round(clampConfidence(confidence) * 100);
     const tone = getConfidenceTone(confidence, activeConfidencePolicy.band_cutoffs);
-    const extractionReliability = item.rawField?.extraction_reliability;
+    const extractionReliability = item.rawField?.text_extraction_reliability;
     const extractionReliabilityText =
       typeof extractionReliability === "number" && Number.isFinite(extractionReliability)
         ? `${Math.round(clampConfidence(extractionReliability) * 100)}%`
         : "No disponible";
-    const reviewHistoryAdjustmentRaw = item.rawField?.review_history_adjustment;
+    const reviewHistoryAdjustmentRaw = item.rawField?.field_review_history_adjustment;
     const reviewHistoryAdjustment =
       typeof reviewHistoryAdjustmentRaw === "number" && Number.isFinite(reviewHistoryAdjustmentRaw)
         ? reviewHistoryAdjustmentRaw
