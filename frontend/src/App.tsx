@@ -3181,7 +3181,32 @@ export function App() {
       return;
     }
     const nextValue = editingFieldDraftValue.trim();
+    const nextPayloadValue = nextValue.length > 0 ? nextValue : null;
+    const previousRawValue = editingField.rawField?.value;
+    const previousValue =
+      previousRawValue === null || previousRawValue === undefined
+        ? null
+        : String(previousRawValue).trim();
+    const previousPayloadValue = previousValue && previousValue.length > 0 ? previousValue : null;
     const valueType = editingField.rawField?.value_type ?? editingField.valueType ?? "string";
+
+    if (editingField.rawField && previousPayloadValue === nextPayloadValue) {
+      setActionFeedback({
+        kind: "info",
+        message: "No se han realizado cambios.",
+      });
+      closeFieldEditDialog();
+      return;
+    }
+
+    if (!editingField.rawField && nextPayloadValue === null) {
+      setActionFeedback({
+        kind: "info",
+        message: "No se han realizado cambios.",
+      });
+      closeFieldEditDialog();
+      return;
+    }
 
     if (editingField.rawField) {
       submitInterpretationChanges(
@@ -3189,11 +3214,11 @@ export function App() {
           {
             op: "UPDATE",
             field_id: editingField.rawField.field_id,
-            value: nextValue.length > 0 ? nextValue : null,
+            value: nextPayloadValue,
             value_type: valueType,
           },
         ],
-        "Campo actualizado."
+        "Valor actualizado correctamente."
       );
       closeFieldEditDialog();
       return;
@@ -3204,11 +3229,11 @@ export function App() {
         {
           op: "ADD",
           key: editingField.key,
-          value: nextValue.length > 0 ? nextValue : null,
+          value: nextPayloadValue,
           value_type: valueType,
         },
       ],
-      "Campo actualizado."
+      "Valor actualizado correctamente."
     );
     closeFieldEditDialog();
   };
