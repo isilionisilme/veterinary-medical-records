@@ -1864,8 +1864,10 @@ describe("App upload and list flow", () => {
       "confidence-indicator-core:pet_name"
     );
     expect(petNameConfidence).toHaveAttribute("aria-label", expect.stringMatching(/Confianza:\s*\d+%/i));
-    expect(petNameConfidence).toHaveAttribute("aria-label", expect.stringMatching(/\(Alta\)/i));
-    expect(petNameConfidence).toHaveAttribute("aria-label", expect.stringMatching(/CRÍTICO/i));
+    expect(petNameConfidence).toHaveAttribute(
+      "aria-label",
+      expect.not.stringMatching(/\((Alta|Media|Baja)\)/i)
+    );
     expect(petNameConfidence).toHaveAttribute(
       "aria-label",
       expect.stringMatching(/Fiabilidad de la extracción del texto:\s*65%/i)
@@ -1884,8 +1886,6 @@ describe("App upload and list flow", () => {
       "aria-label",
       expect.stringMatching(/no disponible/i)
     );
-    expect(clinicalRecordConfidence).toHaveAttribute("aria-label", expect.not.stringMatching(/CRÍTICO/i));
-
     expect(within(panel).queryByTestId("critical-indicator-diagnosis")).toBeInTheDocument();
   });
 
@@ -2360,7 +2360,6 @@ describe("App upload and list flow", () => {
 
     const confidenceIndicator = screen.getByTestId("confidence-indicator-core:pet_name");
     expect(confidenceIndicator).toHaveAttribute("aria-label", expect.stringMatching(/Página 1/i));
-    expect(confidenceIndicator).toHaveAttribute("aria-label", expect.stringMatching(/Paciente: Luna/i));
     expect(confidenceIndicator).toHaveAttribute(
       "aria-label",
       expect.stringMatching(/Ajuste por histórico de revisiones:\s*\+7%/i)
@@ -2386,7 +2385,6 @@ describe("App upload and list flow", () => {
     expect(screen.queryByText(/^Fuente:/i)).toBeNull();
     const withEvidence = screen.getByTestId("confidence-indicator-core:pet_name");
     expect(withEvidence).toHaveAttribute("aria-label", expect.stringMatching(/Página 1/i));
-    expect(withEvidence).toHaveAttribute("aria-label", expect.stringMatching(/Paciente: Luna/i));
     expect(withEvidence).toHaveAttribute(
       "aria-label",
       expect.stringMatching(/Fiabilidad de la extracción del texto:\s*65%/i)

@@ -1021,16 +1021,6 @@ function clampConfidence(value: number): number {
 
 type ConfidenceTone = "low" | "med" | "high";
 
-function getConfidenceBandLabel(tone: ConfidenceTone): string {
-  if (tone === "low") {
-    return "Baja";
-  }
-  if (tone === "med") {
-    return "Media";
-  }
-  return "Alta";
-}
-
 function formatSignedPercent(value: number): string {
   const rounded = Math.round(value * 10) / 10;
   const isInteger = Number.isInteger(rounded);
@@ -3222,8 +3212,7 @@ export function App() {
   };
 
   const buildFieldTooltip = (
-    item: ReviewSelectableField,
-    isCritical: boolean
+    item: ReviewSelectableField
   ): { content: ReactNode; ariaLabel: string } => {
     if (!activeConfidencePolicy) {
       return {
@@ -3240,7 +3229,6 @@ export function App() {
     const confidence = item.confidence;
     const percentage = Math.round(clampConfidence(confidence) * 100);
     const tone = getConfidenceTone(confidence, activeConfidencePolicy.band_cutoffs);
-    const band = getConfidenceBandLabel(tone);
     const extractionReliability = item.rawField?.extraction_reliability;
     const extractionReliabilityText =
       typeof extractionReliability === "number" && Number.isFinite(extractionReliability)
@@ -3258,41 +3246,44 @@ export function App() {
         : reviewHistoryAdjustment < 0
           ? "text-[var(--status-error)]"
           : "text-muted";
-    const header = isCritical
-      ? `Confianza: ${percentage}% (${band}) · CRÍTICO`
-      : `Confianza: ${percentage}% (${band})`;
+    const header = `Confianza: ${percentage}%`;
+    const toneDotClass =
+      tone === "high" ? "bg-confidenceHigh" : tone === "med" ? "bg-confidenceMed" : "bg-confidenceLow";
+    const toneValueClass =
+      tone === "high"
+        ? "text-confidenceHigh"
+        : tone === "med"
+          ? "text-confidenceMed"
+          : "text-confidenceLow";
     const evidencePageLabel = item.evidence?.page ? `Página ${item.evidence.page}` : null;
-    const evidenceSnippet = item.evidence?.snippet
-      ? truncateText(item.evidence.snippet, 72)
-      : null;
     const ariaLabelParts = [
       header,
       evidencePageLabel,
       `Fiabilidad de la extracción del texto: ${extractionReliabilityText}`,
       `Ajuste por histórico de revisiones: ${reviewHistoryAdjustmentText}`,
-      evidenceSnippet,
       "Indica la fiabilidad del valor extraído automáticamente.",
     ].filter((part): part is string => Boolean(part));
     return {
       ariaLabel: ariaLabelParts.join(" · "),
       content: (
-        <div className="min-w-[260px] space-y-2">
+        <div className="min-w-[260px] space-y-2 text-[12px] leading-4 text-white">
           <div className="flex items-start justify-between gap-3">
-            <p className="font-semibold">{header}</p>
+            <p className="flex items-center gap-1.5 text-[14px] font-semibold leading-5 text-white">
+              <span>Confianza:</span>
+              <span className={toneValueClass}>{percentage}%</span>
+              <span className={`inline-block h-2 w-2 rounded-full ring-1 ring-white/40 ${toneDotClass}`} aria-hidden="true" />
+            </p>
             {evidencePageLabel ? (
-              <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
-                {evidencePageLabel}
-              </span>
+              <span className="text-[12px] font-semibold text-white/90">{evidencePageLabel}</span>
             ) : null}
           </div>
-          <div className="space-y-0.5 pl-1">
+          <div className="space-y-0.5 pl-1 text-[12px] text-white/90">
             <p>- Fiabilidad de la extracción del texto: {extractionReliabilityText}</p>
             <p className={reviewHistoryAdjustmentClass}>
               - Ajuste por histórico de revisiones: {reviewHistoryAdjustmentText}
             </p>
           </div>
-          {evidenceSnippet ? <p className="text-[10px] text-white/70">{evidenceSnippet}</p> : null}
-          <p className="text-[11px] text-white/75">
+          <p className="text-[11px] leading-4 text-white/75">
             Indica la fiabilidad del valor extraído automáticamente.
           </p>
         </div>
@@ -3331,7 +3322,7 @@ export function App() {
     if (!tone) {
       return null;
     }
-    const tooltip = buildFieldTooltip(item, field.isCritical);
+    const tooltip = buildFieldTooltip(item);
     return (
       <span data-testid={`badge-group-${item.id}`} className="inline-flex shrink-0 items-center">
         <ConfidenceDot
