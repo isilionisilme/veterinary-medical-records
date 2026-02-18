@@ -2400,6 +2400,16 @@ describe("App upload and list flow", () => {
       "aria-label",
       expect.stringMatching(/Fiabilidad de la extracción del texto:\s*No disponible/i)
     );
+    const fieldTrigger = screen.getByTestId("field-trigger-core:pet_name");
+    fireEvent.focus(fieldTrigger);
+    await waitFor(() => {
+      expect(
+        Array.from(document.body.querySelectorAll("p")).some((node) =>
+          /Fiabilidad de la extracción del texto:\s*65%/i.test(node.textContent ?? "")
+        )
+      ).toBe(true);
+    });
+    fireEvent.blur(fieldTrigger);
     expect(screen.queryByTestId("source-drawer")).toBeNull();
   });
 
@@ -2418,12 +2428,20 @@ describe("App upload and list flow", () => {
       });
       return line!;
     };
+    const resolveTriggerFromIndicator = (indicator: HTMLElement): HTMLElement => {
+      const fieldCard = indicator.closest("article");
+      expect(fieldCard).not.toBeNull();
+      const trigger = (fieldCard as HTMLElement).querySelector('[role="button"]');
+      expect(trigger).not.toBeNull();
+      return trigger as HTMLElement;
+    };
 
-    const positive = screen.getByTestId("confidence-indicator-core:pet_name");
-    expect(positive).toHaveAttribute(
+    const positiveIndicator = screen.getByTestId("confidence-indicator-core:pet_name");
+    expect(positiveIndicator).toHaveAttribute(
       "aria-label",
       expect.stringMatching(/Ajuste por histórico de revisiones:\s*\+7%/i)
     );
+    const positive = resolveTriggerFromIndicator(positiveIndicator);
     fireEvent.focus(positive);
     const positiveLine = await findAdjustmentLine(
       /Ajuste por histórico de revisiones:\s*\+7%/i
@@ -2431,19 +2449,20 @@ describe("App upload and list flow", () => {
     expect(positiveLine).toHaveClass("text-[var(--status-success)]");
     fireEvent.blur(positive);
 
-    const negative = screen
+    const negativeIndicator = screen
       .getAllByTestId(/confidence-indicator-/)
       .find((element) =>
         element.getAttribute("aria-label")?.includes("Ajuste por histórico de revisiones: -4%")
       );
-    expect(negative).toBeDefined();
-    if (!negative) {
+    expect(negativeIndicator).toBeDefined();
+    if (!negativeIndicator) {
       throw new Error("Expected negative adjustment indicator to exist.");
     }
-    expect(negative).toHaveAttribute(
+    expect(negativeIndicator).toHaveAttribute(
       "aria-label",
       expect.stringMatching(/Ajuste por histórico de revisiones:\s*-4%/i)
     );
+    const negative = resolveTriggerFromIndicator(negativeIndicator);
     fireEvent.focus(negative);
     const negativeLine = await findAdjustmentLine(
       /Ajuste por histórico de revisiones:\s*-4%/i
@@ -2451,11 +2470,12 @@ describe("App upload and list flow", () => {
     expect(negativeLine).toHaveClass("text-[var(--status-error)]");
     fireEvent.blur(negative);
 
-    const neutral = screen.getByTestId("confidence-indicator-core:owner_name");
-    expect(neutral).toHaveAttribute(
+    const neutralIndicator = screen.getByTestId("confidence-indicator-core:owner_name");
+    expect(neutralIndicator).toHaveAttribute(
       "aria-label",
       expect.stringMatching(/Ajuste por histórico de revisiones:\s*0%/i)
     );
+    const neutral = resolveTriggerFromIndicator(neutralIndicator);
     fireEvent.focus(neutral);
     const neutralLine = await findAdjustmentLine(
       /Ajuste por histórico de revisiones:\s*0%/i
