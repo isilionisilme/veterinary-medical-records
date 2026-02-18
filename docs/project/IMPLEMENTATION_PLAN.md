@@ -1022,7 +1022,7 @@ As a veterinarian, I want to understand why a field confidence looks the way it 
 **Acceptance Criteria**
 - Tooltip renders consistently for all fields that expose confidence dot/band.
 - Tooltip is implemented with the shared wrapper and is keyboard accessible on focus/hover.
-- Tooltip shows overall confidence percentage + band, explanatory copy, and breakdown lines for extraction reliability and review history adjustment.
+- Tooltip shows overall confidence percentage, explanatory copy, and breakdown lines for candidate confidence and review history adjustment.
 - Adjustment semantic styling follows positive/negative/zero rules using existing tokens/classes.
 - Edge cases are rendered deterministically: no history shows adjustment `0`; missing extraction reliability shows `No disponible`.
 - Dot/band behavior remains unchanged and continues to use `field_mapping_confidence` as the primary visible signal.
