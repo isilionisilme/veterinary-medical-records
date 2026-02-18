@@ -3286,14 +3286,15 @@ export function App() {
     const ariaLabelParts = [
       header,
       evidencePageLabel,
+      "Indica la fiabilidad del valor detectado automáticamente.",
+      "Desglose:",
       `Fiabilidad del candidato: ${candidateConfidenceText}`,
       `Ajuste por histórico de revisiones: ${reviewHistoryAdjustmentText}`,
-      "Indica la fiabilidad del valor extraído automáticamente.",
     ].filter((part): part is string => Boolean(part));
     return {
       ariaLabel: ariaLabelParts.join(" · "),
       content: (
-        <div className="min-w-[260px] space-y-2 text-[12px] leading-4 text-white">
+        <div className="min-w-[260px] space-y-1 text-[12px] leading-4">
           <div className="flex items-start justify-between gap-3">
             <p className="flex items-center gap-1.5 text-[14px] font-semibold leading-5 text-white">
               <span>Confianza:</span>
@@ -3301,19 +3302,23 @@ export function App() {
               <span className={`inline-block h-2 w-2 rounded-full ring-1 ring-white/40 ${toneDotClass}`} aria-hidden="true" />
             </p>
             {evidencePageLabel ? (
-              <span className="text-[12px] font-semibold text-white/90">{evidencePageLabel}</span>
+              <span className="text-[11px] font-normal text-white/70">{evidencePageLabel}</span>
             ) : null}
           </div>
-          <div className="space-y-0.5 pl-1 text-[12px] text-white/90">
-            <p>- Fiabilidad del candidato: {candidateConfidenceText}</p>
-            <p>
+          <p className="text-[11px] leading-4 text-white/60">
+            Indica la fiabilidad del valor detectado automáticamente.
+          </p>
+          <div className="!mt-4 space-y-0.5 text-[12px]">
+            <p className="font-medium text-white/80">Desglose:</p>
+            <p className="pl-3 text-white/70">
+              - Fiabilidad del candidato:{" "}
+              <span className={toneValueClass}>{candidateConfidenceText}</span>
+            </p>
+            <p className="pl-3 text-white/70">
               - Ajuste por histórico de revisiones:{" "}
               <span className={reviewHistoryAdjustmentClass}>{reviewHistoryAdjustmentText}</span>
             </p>
           </div>
-          <p className="text-[11px] leading-4 text-white/75">
-            Indica la fiabilidad del valor extraído automáticamente.
-          </p>
         </div>
       ),
     };
