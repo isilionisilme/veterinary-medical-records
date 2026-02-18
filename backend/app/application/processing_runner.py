@@ -16,6 +16,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
+from backend.app.application.confidence_calibration import (
+    build_context_key,
+    compute_review_history_adjustment,
+    normalize_mapping_id,
+    resolve_calibration_policy_version,
+)
 from backend.app.application.extraction_observability import (
     build_extraction_snapshot_from_interpretation,
     persist_extraction_run_snapshot,
@@ -465,6 +471,7 @@ async def _process_document(
             document_id=document_id,
             run_id=run_id,
             raw_text=raw_text,
+            repository=repository,
         )
         repository.append_artifact(
             run_id=run_id,
@@ -513,7 +520,11 @@ async def _process_document(
 
 
 def _build_interpretation_artifact(
-    *, document_id: str, run_id: str, raw_text: str
+    *,
+    document_id: str,
+    run_id: str,
+    raw_text: str,
+    repository: DocumentRepository | None = None,
 ) -> dict[str, object]:
     compact_text = _WHITESPACE_PATTERN.sub(" ", raw_text).strip()
     warning_codes: list[str] = []
@@ -537,14 +548,30 @@ def _build_interpretation_artifact(
                 details={"errors": validation_errors},
             )
 
+        calibration_context_key = build_context_key(
+            schema_version=SCHEMA_VERSION_V0,
+            document_type="veterinary_record",
+            language=normalized_values.get("language")
+            if isinstance(normalized_values.get("language"), str)
+            else None,
+        )
+        calibration_policy_version = resolve_calibration_policy_version()
         fields = _build_structured_fields_from_global_schema(
             normalized_values=normalized_values,
             evidence_map=canonical_evidence,
+            context_key=calibration_context_key,
+            policy_version=calibration_policy_version,
+            repository=repository,
         )
     else:
         normalized_values = normalize_global_schema_v0(None)
         fields = []
         warning_codes.append("EMPTY_RAW_TEXT")
+        calibration_context_key = build_context_key(
+            schema_version=SCHEMA_VERSION_V0,
+            document_type="veterinary_record",
+            language=None,
+        )
 
     populated_keys = [
         key
@@ -582,6 +609,7 @@ def _build_interpretation_artifact(
             "date_selection": _build_date_selection_debug(canonical_evidence),
             "mvp_coverage_debug": mvp_coverage_debug,
         },
+        "context_key": calibration_context_key,
     }
     if policy_version is not None and band_cutoffs is not None:
         low_max, mid_max = band_cutoffs
@@ -1508,6 +1536,9 @@ def _build_structured_fields_from_global_schema(
     *,
     normalized_values: Mapping[str, object],
     evidence_map: Mapping[str, list[dict[str, object]]],
+    context_key: str,
+    policy_version: str,
+    repository: DocumentRepository | None,
 ) -> list[dict[str, object]]:
     fields: list[dict[str, object]] = []
 
@@ -1530,6 +1561,7 @@ def _build_structured_fields_from_global_schema(
                     if isinstance(candidate, dict)
                     else 0.65
                 )
+                mapping_id = _derive_mapping_id(key=key, candidate=candidate)
                 fields.append(
                     _build_structured_field(
                         key=key,
@@ -1544,6 +1576,10 @@ def _build_structured_fields_from_global_schema(
                         page=(
                             evidence.get("page") if isinstance(evidence, dict) else None
                         ),
+                        mapping_id=mapping_id,
+                        context_key=context_key,
+                        policy_version=policy_version,
+                        repository=repository,
                     )
                 )
             continue
@@ -1557,6 +1593,7 @@ def _build_structured_fields_from_global_schema(
             if isinstance(candidate, dict)
             else 0.65
         )
+        mapping_id = _derive_mapping_id(key=key, candidate=candidate)
         fields.append(
             _build_structured_field(
                 key=key,
@@ -1567,6 +1604,10 @@ def _build_structured_fields_from_global_schema(
                 ),
                 value_type=VALUE_TYPE_BY_KEY_V0.get(key, "string"),
                 page=(evidence.get("page") if isinstance(evidence, dict) else None),
+                mapping_id=mapping_id,
+                context_key=context_key,
+                policy_version=policy_version,
+                repository=repository,
             )
         )
 
@@ -1581,13 +1622,23 @@ def _build_structured_field(
     snippet: str,
     value_type: str,
     page: int | None,
+    mapping_id: str | None,
+    context_key: str,
+    policy_version: str,
+    repository: DocumentRepository | None,
 ) -> dict[str, object]:
     normalized_snippet = snippet.strip()
     if len(normalized_snippet) > 180:
         normalized_snippet = normalized_snippet[:177].rstrip() + "..."
     field_candidate_confidence = _sanitize_field_candidate_confidence(confidence)
     text_extraction_reliability = _sanitize_text_extraction_reliability(None)
-    field_review_history_adjustment = _sanitize_field_review_history_adjustment(0)
+    field_review_history_adjustment = _resolve_review_history_adjustment(
+        repository=repository,
+        context_key=context_key,
+        field_key=key,
+        mapping_id=mapping_id,
+        policy_version=policy_version,
+    )
     field_mapping_confidence = _compose_field_mapping_confidence(
         candidate_confidence=field_candidate_confidence,
         review_history_adjustment=field_review_history_adjustment,
@@ -1601,6 +1652,9 @@ def _build_structured_field(
         "field_mapping_confidence": field_mapping_confidence,
         "text_extraction_reliability": text_extraction_reliability,
         "field_review_history_adjustment": field_review_history_adjustment,
+        "context_key": context_key,
+        "mapping_id": mapping_id,
+        "policy_version": policy_version,
         "is_critical": key in CRITICAL_KEYS_V0,
         "origin": "machine",
         "evidence": {
@@ -1638,6 +1692,53 @@ def _sanitize_field_candidate_confidence(value: object) -> float:
         if math.isfinite(numeric):
             return min(max(numeric, 0.0), 1.0)
     return 0.0
+
+
+def _derive_mapping_id(*, key: str, candidate: dict[str, object] | None) -> str | None:
+    if not isinstance(candidate, dict):
+        return None
+
+    explicit = normalize_mapping_id(candidate.get("mapping_id"))
+    if explicit is not None:
+        return explicit
+
+    anchor = candidate.get("anchor")
+    if isinstance(anchor, str) and anchor.strip():
+        return f"anchor::{anchor.strip().lower()}"
+
+    reason = candidate.get("target_reason")
+    if isinstance(reason, str) and reason.startswith("fallback"):
+        return f"fallback::{key}"
+    return None
+
+
+def _resolve_review_history_adjustment(
+    *,
+    repository: DocumentRepository | None,
+    context_key: str,
+    field_key: str,
+    mapping_id: str | None,
+    policy_version: str,
+) -> float:
+    if repository is None:
+        return 0.0
+
+    counts = repository.get_calibration_counts(
+        context_key=context_key,
+        field_key=field_key,
+        mapping_id=mapping_id,
+        policy_version=policy_version,
+    )
+    if counts is None:
+        return 0.0
+
+    accept_count, edit_count = counts
+    return _sanitize_field_review_history_adjustment(
+        compute_review_history_adjustment(
+            accept_count=accept_count,
+            edit_count=edit_count,
+        )
+    )
 
 
 def _compose_field_mapping_confidence(

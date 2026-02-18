@@ -9,6 +9,7 @@ from datetime import datetime
 import pytest
 from fastapi.testclient import TestClient
 
+from backend.app.application.processing_runner import _build_interpretation_artifact
 from backend.app.domain import models as app_models
 from backend.app.infra import database
 from backend.app.infra.file_storage import get_storage_root
@@ -389,6 +390,82 @@ def test_document_review_composes_mapping_confidence_from_candidate_and_adjustme
     assert by_key["species"]["field_mapping_confidence"] == pytest.approx(1.0, abs=1e-9)
 
 
+def test_cross_document_learning_applies_negative_adjustment_after_edit_signal(test_client):
+    repository = test_client.app.state.document_repository
+    baseline = _build_interpretation_artifact(
+        document_id="doc-baseline",
+        run_id="run-baseline",
+        raw_text="Paciente: Luna",
+        repository=repository,
+    )
+    baseline_fields = baseline["data"]["fields"]
+    baseline_pet_name = next(field for field in baseline_fields if field["key"] == "pet_name")
+    assert baseline_pet_name["field_review_history_adjustment"] == 0
+
+    document_id = _upload_sample_document(test_client)
+    run_id = "run-calibration-edit-signal"
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(
+        run_id=run_id,
+        data={
+            "schema_version": "v0",
+            "document_id": document_id,
+            "processing_run_id": run_id,
+            "created_at": "2026-02-10T10:00:05+00:00",
+            "global_schema_v0": baseline["data"]["global_schema_v0"],
+            "fields": [
+                {
+                    "field_id": "field-1",
+                    "key": "pet_name",
+                    "value": "Luna",
+                    "value_type": "string",
+                    "field_candidate_confidence": 0.66,
+                    "field_mapping_confidence": 0.66,
+                    "field_review_history_adjustment": 0.0,
+                    "mapping_id": baseline_pet_name.get("mapping_id"),
+                    "context_key": baseline_pet_name["context_key"],
+                    "policy_version": baseline_pet_name["policy_version"],
+                    "is_critical": True,
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Paciente: Luna"},
+                }
+            ],
+        },
+    )
+
+    for base_version, value in [(1, "Kira"), (2, "Nala"), (3, "Mika")]:
+        edit_response = test_client.post(
+            f"/runs/{run_id}/interpretations",
+            json={
+                "base_version_number": base_version,
+                "changes": [
+                    {
+                        "op": "UPDATE",
+                        "field_id": "field-1",
+                        "value": value,
+                        "value_type": "string",
+                    }
+                ],
+            },
+        )
+        assert edit_response.status_code == 201
+
+    calibrated = _build_interpretation_artifact(
+        document_id="doc-after-edit",
+        run_id="run-after-edit",
+        raw_text="Paciente: Luna",
+        repository=repository,
+    )
+    calibrated_fields = calibrated["data"]["fields"]
+    calibrated_pet_name = next(field for field in calibrated_fields if field["key"] == "pet_name")
+    assert calibrated_pet_name["field_review_history_adjustment"] < 0
+
+
 def test_mark_document_reviewed_is_idempotent(test_client):
     document_id = _upload_sample_document(test_client)
 
@@ -709,6 +786,13 @@ def test_interpretation_edits_append_correction_signals_without_changing_review_
         assert "context_key" in entry
         assert "mapping_id" in entry
         assert "policy_version" in entry
+        assert isinstance(entry["context_key"], str)
+        assert entry["context_key"].strip() != ""
+        assert isinstance(entry["policy_version"], str)
+        assert entry["policy_version"].strip() != ""
+        assert entry["mapping_id"] is None or (
+            isinstance(entry["mapping_id"], str) and entry["mapping_id"].strip() != ""
+        )
     assert parsed_logs[0]["base_version_number"] == 1
     assert parsed_logs[0]["new_version_number"] == 2
     assert parsed_logs[1]["base_version_number"] == 2

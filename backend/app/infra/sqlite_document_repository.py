@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from typing import Literal
 from uuid import uuid4
 
 from backend.app.domain.models import (
@@ -606,4 +607,77 @@ class SqliteDocumentRepository:
         if cursor.rowcount != 1:
             return None
         return self.get(document_id)
+
+    def increment_calibration_signal(
+        self,
+        *,
+        context_key: str,
+        field_key: str,
+        mapping_id: str | None,
+        policy_version: str,
+        signal_type: Literal["edited", "accepted_unchanged"],
+        updated_at: str,
+    ) -> None:
+        mapping_scope_key = mapping_id if mapping_id is not None else "__null__"
+        accept_inc = 1 if signal_type == "accepted_unchanged" else 0
+        edit_inc = 1 if signal_type == "edited" else 0
+
+        with database.get_connection() as conn:
+            conn.execute(
+                """
+                INSERT INTO calibration_aggregates (
+                    context_key,
+                    field_key,
+                    mapping_id,
+                    mapping_id_scope_key,
+                    policy_version,
+                    accept_count,
+                    edit_count,
+                    updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(context_key, field_key, mapping_id_scope_key, policy_version)
+                DO UPDATE SET
+                    accept_count = calibration_aggregates.accept_count + excluded.accept_count,
+                    edit_count = calibration_aggregates.edit_count + excluded.edit_count,
+                    updated_at = excluded.updated_at
+                """,
+                (
+                    context_key,
+                    field_key,
+                    mapping_id,
+                    mapping_scope_key,
+                    policy_version,
+                    accept_inc,
+                    edit_inc,
+                    updated_at,
+                ),
+            )
+            conn.commit()
+
+    def get_calibration_counts(
+        self,
+        *,
+        context_key: str,
+        field_key: str,
+        mapping_id: str | None,
+        policy_version: str,
+    ) -> tuple[int, int] | None:
+        mapping_scope_key = mapping_id if mapping_id is not None else "__null__"
+        with database.get_connection() as conn:
+            row = conn.execute(
+                """
+                SELECT accept_count, edit_count
+                FROM calibration_aggregates
+                WHERE context_key = ?
+                  AND field_key = ?
+                  AND mapping_id_scope_key = ?
+                  AND policy_version = ?
+                """,
+                (context_key, field_key, mapping_scope_key, policy_version),
+            ).fetchone()
+
+        if row is None:
+            return None
+        return int(row["accept_count"]), int(row["edit_count"])
 

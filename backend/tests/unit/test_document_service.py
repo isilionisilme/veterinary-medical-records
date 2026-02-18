@@ -11,6 +11,7 @@ from backend.app.application.document_service import (
 )
 from backend.app.domain.models import (
     Document,
+    ProcessingRunDetails,
     ProcessingRunState,
     ProcessingRunSummary,
     ProcessingStatus,
@@ -30,6 +31,36 @@ class FakeDocumentRepository:
         return None
 
     def get_latest_run(self, document_id: str) -> ProcessingRunSummary | None:
+        return None
+
+    def get_latest_completed_run(self, document_id: str) -> ProcessingRunDetails | None:
+        return None
+
+    def get_latest_artifact_payload(
+        self, *, run_id: str, artifact_type: str
+    ) -> dict[str, object] | None:
+        return None
+
+    def append_artifact(
+        self,
+        *,
+        run_id: str,
+        artifact_type: str,
+        payload: dict[str, object],
+        created_at: str,
+    ) -> None:
+        return None
+
+    def increment_calibration_signal(
+        self,
+        *,
+        context_key: str,
+        field_key: str,
+        mapping_id: str | None,
+        policy_version: str,
+        signal_type: str,
+        updated_at: str,
+    ) -> None:
         return None
 
 

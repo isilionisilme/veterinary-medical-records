@@ -10,6 +10,14 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
+from backend.app.application.confidence_calibration import (
+    CALIBRATION_SIGNAL_ACCEPTED_UNCHANGED,
+    CALIBRATION_SIGNAL_EDITED,
+    build_context_key_from_interpretation_data,
+    is_empty_value,
+    normalize_mapping_id,
+    resolve_calibration_policy_version,
+)
 from backend.app.application.field_normalizers import normalize_microchip_digits_only
 from backend.app.application.global_schema_v0 import (
     CRITICAL_KEYS_V0,
@@ -459,6 +467,8 @@ def apply_interpretation_edits(
     active_data_raw = active_payload.get("data")
     active_data = dict(active_data_raw) if isinstance(active_data_raw, dict) else {}
     active_fields = _coerce_interpretation_fields(active_data.get("fields"))
+    context_key = _resolve_context_key_for_edit_scopes(active_data, active_fields)
+    calibration_policy_version = resolve_calibration_policy_version()
 
     updated_fields = [dict(field) for field in active_fields]
     field_change_logs: list[dict[str, object]] = []
@@ -497,6 +507,9 @@ def apply_interpretation_edits(
                 "field_mapping_confidence": 1.0,
                 "text_extraction_reliability": _sanitize_text_extraction_reliability(None),
                 "field_review_history_adjustment": _sanitize_field_review_history_adjustment(0),
+                "context_key": context_key,
+                "mapping_id": None,
+                "policy_version": calibration_policy_version,
                 "is_critical": key in CRITICAL_KEYS_V0,
                 "origin": "human",
             }
@@ -518,6 +531,9 @@ def apply_interpretation_edits(
                     change_type="ADD",
                     created_at=now_iso,
                     occurred_at=occurred_at,
+                    context_key=context_key,
+                    mapping_id=None,
+                    policy_version=calibration_policy_version,
                 )
             )
             continue
@@ -551,6 +567,7 @@ def apply_interpretation_edits(
             str(existing_value_type) if isinstance(existing_value_type, str) else None
         )
         if op == "DELETE":
+            mapping_id = normalize_mapping_id(existing_field.get("mapping_id"))
             updated_fields.pop(existing_index)
             field_change_logs.append(
                 _build_field_change_log(
@@ -567,6 +584,9 @@ def apply_interpretation_edits(
                     change_type="DELETE",
                     created_at=now_iso,
                     occurred_at=occurred_at,
+                    context_key=context_key,
+                    mapping_id=mapping_id,
+                    policy_version=calibration_policy_version,
                 )
             )
             continue
@@ -583,6 +603,15 @@ def apply_interpretation_edits(
                 invalid_reason=f"changes[{index}].value_type",
             )
 
+        mapping_id = normalize_mapping_id(existing_field.get("mapping_id"))
+        _record_calibration_signal_for_edit(
+            repository=repository,
+            context_key=context_key,
+            field_key=resolved_field_key,
+            mapping_id=mapping_id,
+            policy_version=calibration_policy_version,
+            updated_at=now_iso,
+        )
         updated_fields[existing_index] = {
             **updated_fields[existing_index],
             "value": change.get("value"),
@@ -592,6 +621,9 @@ def apply_interpretation_edits(
             "field_mapping_confidence": 1.0,
             "text_extraction_reliability": _sanitize_text_extraction_reliability(None),
             "field_review_history_adjustment": _sanitize_field_review_history_adjustment(0),
+            "context_key": context_key,
+            "mapping_id": mapping_id,
+            "policy_version": calibration_policy_version,
         }
         field_change_logs.append(
             _build_field_change_log(
@@ -608,6 +640,9 @@ def apply_interpretation_edits(
                 change_type="UPDATE",
                 created_at=now_iso,
                 occurred_at=occurred_at,
+                context_key=context_key,
+                mapping_id=mapping_id,
+                policy_version=calibration_policy_version,
             )
         )
 
@@ -732,6 +767,109 @@ def _sanitize_confidence_breakdown(field: dict[str, object]) -> dict[str, object
     return sanitized
 
 
+def _record_calibration_signal_for_edit(
+    *,
+    repository: DocumentRepository,
+    context_key: str,
+    field_key: str | None,
+    mapping_id: str | None,
+    policy_version: str,
+    updated_at: str,
+) -> None:
+    if not field_key:
+        return
+    repository.increment_calibration_signal(
+        context_key=context_key,
+        field_key=field_key,
+        mapping_id=mapping_id,
+        policy_version=policy_version,
+        signal_type=CALIBRATION_SIGNAL_EDITED,
+        updated_at=updated_at,
+    )
+
+
+def _resolve_context_key_for_edit_scopes(
+    interpretation_data: dict[str, object],
+    fields: list[dict[str, object]],
+) -> str:
+    for field in fields:
+        context_key = field.get("context_key")
+        if isinstance(context_key, str) and context_key.strip():
+            return context_key
+    return build_context_key_from_interpretation_data(interpretation_data)
+
+
+def _emit_acceptance_signals_for_reviewed_document(
+    *,
+    document_id: str,
+    repository: DocumentRepository,
+    created_at: str,
+) -> None:
+    latest_completed_run = repository.get_latest_completed_run(document_id)
+    if latest_completed_run is None:
+        return
+    payload = repository.get_latest_artifact_payload(
+        run_id=latest_completed_run.run_id,
+        artifact_type="STRUCTURED_INTERPRETATION",
+    )
+    if not isinstance(payload, dict):
+        return
+    interpretation_data = payload.get("data")
+    if not isinstance(interpretation_data, dict):
+        return
+
+    context_key = build_context_key_from_interpretation_data(interpretation_data)
+    policy_version = resolve_calibration_policy_version()
+    fields = _coerce_interpretation_fields(interpretation_data.get("fields"))
+    emitted_scopes: set[tuple[str, str | None]] = set()
+    signal_events: list[dict[str, object]] = []
+    for field in fields:
+        origin = field.get("origin")
+        if origin != "machine":
+            continue
+        if not bool(field.get("is_critical", False)):
+            continue
+        field_key = field.get("key")
+        if not isinstance(field_key, str) or not field_key.strip():
+            continue
+        if is_empty_value(field.get("value")):
+            continue
+        mapping_id = normalize_mapping_id(field.get("mapping_id"))
+        scope = (field_key, mapping_id)
+        if scope in emitted_scopes:
+            continue
+        emitted_scopes.add(scope)
+        repository.increment_calibration_signal(
+            context_key=context_key,
+            field_key=field_key,
+            mapping_id=mapping_id,
+            policy_version=policy_version,
+            signal_type=CALIBRATION_SIGNAL_ACCEPTED_UNCHANGED,
+            updated_at=created_at,
+        )
+        signal_events.append(
+            {
+                "event_type": "field_accepted_unchanged",
+                "source": "mark_reviewed",
+                "document_id": document_id,
+                "run_id": latest_completed_run.run_id,
+                "field_key": field_key,
+                "mapping_id": mapping_id,
+                "context_key": context_key,
+                "policy_version": policy_version,
+                "created_at": created_at,
+            }
+        )
+
+    for event in signal_events:
+        repository.append_artifact(
+            run_id=latest_completed_run.run_id,
+            artifact_type="CALIBRATION_SIGNAL",
+            payload=event,
+            created_at=created_at,
+        )
+
+
 def _build_field_change_log(
     *,
     document_id: str,
@@ -747,6 +885,9 @@ def _build_field_change_log(
     change_type: str,
     created_at: str,
     occurred_at: str,
+    context_key: str,
+    mapping_id: str | None,
+    policy_version: str,
 ) -> dict[str, object]:
     return {
         "event_type": "field_corrected",
@@ -766,9 +907,9 @@ def _build_field_change_log(
         "change_type": change_type,
         "created_at": created_at,
         "occurred_at": occurred_at,
-        "context_key": None,
-        "mapping_id": None,
-        "policy_version": None,
+        "context_key": context_key,
+        "mapping_id": mapping_id,
+        "policy_version": policy_version,
     }
 
 
@@ -936,6 +1077,12 @@ def mark_document_reviewed(
     )
     if updated is None:
         return None
+
+    _emit_acceptance_signals_for_reviewed_document(
+        document_id=document_id,
+        repository=repository,
+        created_at=reviewed_at,
+    )
 
     return ReviewToggleResult(
         document_id=updated.document_id,
