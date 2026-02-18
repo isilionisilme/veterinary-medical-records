@@ -13,9 +13,12 @@ import { Input } from "../ui/input";
 
 type FieldEditDialogProps = {
   open: boolean;
+  fieldKey: string | null;
   fieldLabel: string;
   value: string;
   isSaving: boolean;
+  isSaveDisabled?: boolean;
+  microchipErrorMessage?: string | null;
   onValueChange: (value: string) => void;
   onOpenChange: (open: boolean) => void;
   onSave: () => void;
@@ -23,9 +26,12 @@ type FieldEditDialogProps = {
 
 export function FieldEditDialog({
   open,
+  fieldKey,
   fieldLabel,
   value,
   isSaving,
+  isSaveDisabled = false,
+  microchipErrorMessage = null,
   onValueChange,
   onOpenChange,
   onSave,
@@ -57,7 +63,7 @@ export function FieldEditDialog({
       return;
     }
     event.preventDefault();
-    if (!isSaving) {
+    if (!isSaving && !isSaveDisabled) {
       onSave();
     }
   };
@@ -70,6 +76,16 @@ export function FieldEditDialog({
   };
 
   const titleText = fieldLabel.trim().length > 0 ? `Editar "${fieldLabel}"` : "Editar campo";
+  const isMicrochipField = fieldKey === "microchip_id";
+  const microchipHintText = "Solo números (9–15 dígitos).";
+  const handleValueChange = (nextValue: string) => {
+    if (isMicrochipField) {
+      const sanitized = nextValue.replace(/\D/g, "");
+      onValueChange(sanitized);
+      return;
+    }
+    onValueChange(nextValue);
+  };
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -95,18 +111,38 @@ export function FieldEditDialog({
           <textarea
             ref={textareaRef}
             value={value}
-            onChange={(event) => onValueChange(event.target.value)}
+            onChange={(event) => handleValueChange(event.target.value)}
             rows={6}
-            className="min-h-28 w-full resize-y rounded-control border border-borderSubtle bg-surface px-3 py-2 text-sm text-text outline-none transition focus-visible:bg-surfaceMuted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            className={`min-h-28 w-full resize-y rounded-control border bg-surface px-3 py-2 text-sm text-text outline-none transition focus-visible:bg-surfaceMuted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
+              isMicrochipField && microchipErrorMessage
+                ? "border-[var(--status-error)] focus-visible:outline-[var(--status-error)]"
+                : "border-borderSubtle focus-visible:outline-accent"
+            }`}
           />
         ) : (
           <Input
             ref={inputRef}
             value={value}
-            onChange={(event) => onValueChange(event.target.value)}
+            onChange={(event) => handleValueChange(event.target.value)}
             onKeyDown={handleSingleLineEnter}
+            className={
+              isMicrochipField
+                ? `rounded-control border bg-surface px-3 py-1 text-sm text-text ${
+                    microchipErrorMessage
+                      ? "border-[var(--status-error)] focus-visible:outline-[var(--status-error)]"
+                      : "border-borderSubtle focus-visible:outline-accent"
+                  }`
+                : undefined
+            }
           />
         )}
+        {isMicrochipField ? (
+          <div className="mt-1 space-y-1">
+            <p className={microchipErrorMessage ? "text-xs text-[var(--status-error)]" : "text-xs text-muted"}>
+              {microchipErrorMessage ?? microchipHintText}
+            </p>
+          </div>
+        ) : null}
 
         <DialogFooter>
           <DialogClose asChild>
@@ -119,7 +155,7 @@ export function FieldEditDialog({
               Cancelar
             </Button>
           </DialogClose>
-          <Button type="button" onClick={onSave} disabled={isSaving}>
+          <Button type="button" onClick={onSave} disabled={isSaving || isSaveDisabled}>
             Guardar
           </Button>
         </DialogFooter>

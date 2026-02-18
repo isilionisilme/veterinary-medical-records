@@ -3176,9 +3176,24 @@ export function App() {
     setEditingFieldDraftValue("");
   };
 
+  const isEditingMicrochipField = editingField?.key === "microchip_id";
+  const isEditingMicrochipInvalid = useMemo(() => {
+    if (!isEditingMicrochipField) {
+      return false;
+    }
+    const validation = validateFieldValue("microchip_id", editingFieldDraftValue);
+    return !validation.ok;
+  }, [isEditingMicrochipField, editingFieldDraftValue]);
+
   const saveFieldEditDialog = () => {
     if (!editingField) {
       return;
+    }
+    if (editingField.key === "microchip_id") {
+      const validation = validateFieldValue("microchip_id", editingFieldDraftValue);
+      if (!validation.ok) {
+        return;
+      }
     }
     const nextValue = editingFieldDraftValue.trim();
     const nextPayloadValue = nextValue.length > 0 ? nextValue : null;
@@ -3776,9 +3791,16 @@ export function App() {
       />
       <FieldEditDialog
         open={editingField !== null}
+        fieldKey={editingField?.key ?? null}
         fieldLabel={editingField?.label ?? ""}
         value={editingFieldDraftValue}
         isSaving={interpretationEditMutation.isPending}
+        isSaveDisabled={isEditingMicrochipInvalid}
+        microchipErrorMessage={
+          isEditingMicrochipField && isEditingMicrochipInvalid
+            ? "Introduce entre 9 y 15 dígitos."
+            : null
+        }
         onValueChange={setEditingFieldDraftValue}
         onOpenChange={(open) => {
           if (!open) {
