@@ -6,11 +6,13 @@
 
 ## Tooltip breakdown visibility contract (MVP)
 
-- `mapping_confidence` remains the primary veterinarian-facing confidence signal.
+- `field_mapping_confidence` remains the primary veterinarian-facing confidence signal.
 - Optional tooltip diagnostics:
-  - `extraction_reliability` (0–1, nullable) for per-run/per-document extraction quality.
-  - `review_history_adjustment` (signed percentage points) for cross-document/system-level explanatory adjustment.
-- `extraction_reliability` is not `candidate_confidence`.
+  - `text_extraction_reliability` (`number|null`) for per-run/per-document extraction quality.
+    - Unit/scale: ratio in `[0,1]` when present.
+  - `field_review_history_adjustment` (`number`) for cross-document/system-level explanatory adjustment.
+    - Unit: signed percentage points (`+7` -> `+7%`, `-4` -> `-4%`, `0` -> `0%`).
+- `text_extraction_reliability` is not `candidate_confidence`.
 - Tooltip breakdown is explanatory only; no document-level policy UI is exposed.
 
 ---

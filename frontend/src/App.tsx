@@ -291,8 +291,10 @@ type ReviewField = {
   key: string;
   value: string | number | boolean | null;
   value_type: string;
-  confidence?: number;
-  mapping_confidence?: number;
+  field_candidate_confidence?: number | null;
+  field_mapping_confidence?: number;
+  text_extraction_reliability?: number | null;
+  field_review_history_adjustment?: number;
   is_critical: boolean;
   origin: "machine" | "human";
   evidence?: ReviewEvidence;
@@ -1019,6 +1021,19 @@ function clampConfidence(value: number): number {
 
 type ConfidenceTone = "low" | "med" | "high";
 
+function formatSignedPercent(value: number): string {
+  const rounded = Math.round(value * 10) / 10;
+  const isInteger = Number.isInteger(rounded);
+  const absText = isInteger ? Math.abs(rounded).toFixed(0) : Math.abs(rounded).toFixed(1);
+  if (rounded > 0) {
+    return `+${absText}%`;
+  }
+  if (rounded < 0) {
+    return `-${absText}%`;
+  }
+  return "0%";
+}
+
 function getConfidenceTone(
   confidence: number,
   cutoffs: ConfidenceBandCutoffs
@@ -1034,7 +1049,7 @@ function getConfidenceTone(
 }
 
 function resolveMappingConfidence(field: ReviewField): number | null {
-  const raw = field.mapping_confidence;
+  const raw = field.field_mapping_confidence;
   if (typeof raw !== "number" || !Number.isFinite(raw)) {
     return null;
   }
@@ -1160,6 +1175,8 @@ export function App() {
   const [showOnlyCritical, setShowOnlyCritical] = useState(false);
   const [showOnlyWithValue, setShowOnlyWithValue] = useState(false);
   const [showOnlyEmpty, setShowOnlyEmpty] = useState(false);
+  const [hoveredFieldTriggerId, setHoveredFieldTriggerId] = useState<string | null>(null);
+  const [hoveredCriticalTriggerId, setHoveredCriticalTriggerId] = useState<string | null>(null);
   const [reviewSplitRatio, setReviewSplitRatio] = useState(() => {
     if (typeof window === "undefined") {
       return DEFAULT_REVIEW_SPLIT_RATIO;
@@ -2451,10 +2468,10 @@ export function App() {
       degraded_reason: confidencePolicyDegradedReason,
       policy_version: rawPolicy?.policy_version ?? null,
       has_band_cutoffs: Boolean(rawPolicy?.band_cutoffs),
-      sample_mapping_confidence: sampleField
+      sample_field_mapping_confidence: sampleField
         ? {
             field_key: sampleField.key,
-            has_mapping_confidence: typeof sampleField.mapping_confidence === "number",
+            has_field_mapping_confidence: typeof sampleField.field_mapping_confidence === "number",
           }
         : null,
     });
@@ -3164,7 +3181,32 @@ export function App() {
       return;
     }
     const nextValue = editingFieldDraftValue.trim();
+    const nextPayloadValue = nextValue.length > 0 ? nextValue : null;
+    const previousRawValue = editingField.rawField?.value;
+    const previousValue =
+      previousRawValue === null || previousRawValue === undefined
+        ? null
+        : String(previousRawValue).trim();
+    const previousPayloadValue = previousValue && previousValue.length > 0 ? previousValue : null;
     const valueType = editingField.rawField?.value_type ?? editingField.valueType ?? "string";
+
+    if (editingField.rawField && previousPayloadValue === nextPayloadValue) {
+      setActionFeedback({
+        kind: "info",
+        message: "No se han realizado cambios.",
+      });
+      closeFieldEditDialog();
+      return;
+    }
+
+    if (!editingField.rawField && nextPayloadValue === null) {
+      setActionFeedback({
+        kind: "info",
+        message: "No se han realizado cambios.",
+      });
+      closeFieldEditDialog();
+      return;
+    }
 
     if (editingField.rawField) {
       submitInterpretationChanges(
@@ -3172,11 +3214,11 @@ export function App() {
           {
             op: "UPDATE",
             field_id: editingField.rawField.field_id,
-            value: nextValue.length > 0 ? nextValue : null,
+            value: nextPayloadValue,
             value_type: valueType,
           },
         ],
-        "Campo actualizado."
+        "Valor actualizado correctamente."
       );
       closeFieldEditDialog();
       return;
@@ -3187,75 +3229,120 @@ export function App() {
         {
           op: "ADD",
           key: editingField.key,
-          value: nextValue.length > 0 ? nextValue : null,
+          value: nextPayloadValue,
           value_type: valueType,
         },
       ],
-      "Campo actualizado."
+      "Valor actualizado correctamente."
     );
     closeFieldEditDialog();
   };
 
-  const buildFieldTooltip = (item: ReviewSelectableField, isCritical: boolean): string => {
+  const buildFieldTooltip = (
+    item: ReviewSelectableField
+  ): { content: ReactNode; ariaLabel: string } => {
     if (!activeConfidencePolicy) {
-      return "Configuración de confianza no disponible.";
+      return {
+        content: "Configuración de confianza no disponible.",
+        ariaLabel: "Configuración de confianza no disponible.",
+      };
     }
     if (!item.hasMappingConfidence) {
-      return "Confianza de mapeo no disponible.";
+      return {
+        content: "Confianza de mapeo no disponible.",
+        ariaLabel: "Confianza de mapeo no disponible.",
+      };
     }
     const confidence = item.confidence;
     const percentage = Math.round(clampConfidence(confidence) * 100);
-    const base = isCritical
-      ? `Confianza: ${percentage}% · CRÍTICO`
-      : `Confianza: ${percentage}%`;
-    if (!item.evidence?.page) {
-      return base;
-    }
-    if (!item.evidence.snippet) {
-      return `${base} · Página ${item.evidence.page}`;
-    }
-    return `${base} · Página ${item.evidence.page} · ${truncateText(item.evidence.snippet, 72)}`;
+    const tone = getConfidenceTone(confidence, activeConfidencePolicy.band_cutoffs);
+    const candidateConfidence = item.rawField?.field_candidate_confidence;
+    const candidateConfidenceText =
+      typeof candidateConfidence === "number" && Number.isFinite(candidateConfidence)
+        ? `${Math.round(clampConfidence(candidateConfidence) * 100)}%`
+        : "No disponible";
+    const reviewHistoryAdjustmentRaw = item.rawField?.field_review_history_adjustment;
+    const reviewHistoryAdjustment =
+      typeof reviewHistoryAdjustmentRaw === "number" && Number.isFinite(reviewHistoryAdjustmentRaw)
+        ? reviewHistoryAdjustmentRaw
+        : 0;
+    const reviewHistoryAdjustmentText = formatSignedPercent(reviewHistoryAdjustment);
+    const reviewHistoryAdjustmentClass =
+      reviewHistoryAdjustment > 0
+        ? "text-[var(--status-success)]"
+        : reviewHistoryAdjustment < 0
+          ? "text-[var(--status-error)]"
+          : "text-muted";
+    const header = `Confianza: ${percentage}%`;
+    const toneDotClass =
+      tone === "high" ? "bg-confidenceHigh" : tone === "med" ? "bg-confidenceMed" : "bg-confidenceLow";
+    const toneValueClass =
+      tone === "high"
+        ? "text-confidenceHigh"
+        : tone === "med"
+          ? "text-confidenceMed"
+          : "text-confidenceLow";
+    const evidencePageLabel = item.evidence?.page ? `Página ${item.evidence.page}` : null;
+    const ariaLabelParts = [
+      header,
+      evidencePageLabel,
+      "Indica la fiabilidad del valor detectado automáticamente.",
+      "Desglose:",
+      `Fiabilidad del candidato: ${candidateConfidenceText}`,
+      `Ajuste por histórico de revisiones: ${reviewHistoryAdjustmentText}`,
+    ].filter((part): part is string => Boolean(part));
+    return {
+      ariaLabel: ariaLabelParts.join(" · "),
+      content: (
+        <div className="min-w-[260px] space-y-1 text-[12px] leading-4">
+          <div className="flex items-start justify-between gap-3">
+            <p className="flex items-center gap-1.5 text-[14px] font-semibold leading-5 text-white">
+              <span>Confianza:</span>
+              <span className={toneValueClass}>{percentage}%</span>
+              <span className={`inline-block h-2 w-2 rounded-full ring-1 ring-white/40 ${toneDotClass}`} aria-hidden="true" />
+            </p>
+            {evidencePageLabel ? (
+              <span className="text-[11px] font-normal text-white/70">{evidencePageLabel}</span>
+            ) : null}
+          </div>
+          <p className="text-[11px] leading-4 text-white/60">
+            Indica la fiabilidad del valor detectado automáticamente.
+          </p>
+          <div className="!mt-4 space-y-0.5 text-[12px]">
+            <p className="font-medium text-white/80">Desglose:</p>
+            <p className="pl-3 text-white/70">
+              - Fiabilidad del candidato:{" "}
+              <span className={toneValueClass}>{candidateConfidenceText}</span>
+            </p>
+            <p className="pl-3 text-white/70">
+              - Ajuste por histórico de revisiones:{" "}
+              <span className={reviewHistoryAdjustmentClass}>{reviewHistoryAdjustmentText}</span>
+            </p>
+          </div>
+        </div>
+      ),
+    };
   };
 
-  const renderConfidenceIndicator = (field: ReviewDisplayField, item: ReviewSelectableField) => {
-    if (item.isMissing || !activeConfidencePolicy || !item.hasMappingConfidence) {
-      const emptyTooltip = field.isCritical
-        ? activeConfidencePolicy
-          ? !item.hasMappingConfidence
-            ? "Confianza de mapeo no disponible · CRÍTICO"
-            : "No encontrado en documento · CRÍTICO"
-          : "Configuración de confianza no disponible · CRÍTICO"
-        : activeConfidencePolicy
-          ? !item.hasMappingConfidence
-            ? "Confianza de mapeo no disponible"
-            : "No encontrado en documento"
-          : "Configuración de confianza no disponible";
-      return (
-        <span data-testid={`badge-group-${item.id}`} className="inline-flex shrink-0 items-center">
-          <Tooltip content={emptyTooltip}>
-            <span
-              data-testid={`confidence-indicator-${item.id}`}
-              tabIndex={0}
-              aria-label={emptyTooltip}
-              className="inline-block h-2.5 w-2.5 rounded-full bg-missing"
-            />
-          </Tooltip>
-        </span>
-      );
-    }
-
+  const renderConfidenceIndicator = (item: ReviewSelectableField, ariaLabel: string) => {
     const tone = item.confidenceBand === "medium" ? "med" : item.confidenceBand;
-    if (!tone) {
-      return null;
-    }
-    const tooltip = buildFieldTooltip(item, field.isCritical);
     return (
       <span data-testid={`badge-group-${item.id}`} className="inline-flex shrink-0 items-center">
-        <ConfidenceDot
-          tone={tone}
-          tooltip={tooltip}
-          testId={`confidence-indicator-${item.id}`}
-        />
+        {tone ? (
+          <span
+            data-testid={`confidence-indicator-${item.id}`}
+            aria-label={ariaLabel}
+            className={`inline-block h-2.5 w-2.5 rounded-full ${
+              tone === "high" ? "bg-confidenceHigh" : tone === "med" ? "bg-confidenceMed" : "bg-confidenceLow"
+            }`}
+          />
+        ) : (
+          <span
+            data-testid={`confidence-indicator-${item.id}`}
+            aria-label={ariaLabel}
+            className="inline-block h-2.5 w-2.5 rounded-full bg-missing"
+          />
+        )}
       </span>
     );
   };
@@ -3270,7 +3357,7 @@ export function App() {
     const { item, value, isLongText, longTextTestId, shortTextTestId } = options;
     const isFieldModified = item.rawField?.origin === "human";
     const modifiedValueClass = isFieldModified
-      ? "bg-amber-50 ring-1 ring-amber-300/70"
+      ? "!bg-amber-50 ring-1 ring-amber-300/70"
       : "";
 
     return (
@@ -3348,6 +3435,7 @@ export function App() {
           {field.items.map((item) => {
             const isSelected = selectedFieldId === item.id;
             const isLongText = shouldRenderLongTextValue(field.key, item.displayValue);
+            const tooltip = buildFieldTooltip(item);
             return (
               <div
                 key={item.id}
@@ -3355,33 +3443,58 @@ export function App() {
                   isSelected ? "rounded-md bg-accentSoft/50" : ""
                 }`}
               >
-                <div
-                  role="button"
-                  tabIndex={0}
-                  aria-disabled={isDocumentReviewed}
-                  className={`w-full rounded-md px-1 py-0.5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
-                    isDocumentReviewed ? "cursor-default" : "cursor-pointer hover:bg-black/[0.03]"
-                  }`}
-                  onClick={() => {
-                    if (isDocumentReviewed) {
-                      return;
-                    }
-                    handleSelectReviewItem(item);
-                  }}
-                  onMouseUp={handleReviewedEditAttempt}
-                  onKeyDown={(event) => {
-                    handleReviewedKeyboardEditAttempt(event);
-                    if (isDocumentReviewed) {
-                      return;
-                    }
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      handleSelectReviewItem(item);
-                    }
-                  }}
+                <Tooltip
+                  content={tooltip.content}
+                  open={
+                    hoveredFieldTriggerId === item.id &&
+                    hoveredCriticalTriggerId !== item.id
+                  }
                 >
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    data-testid={`field-trigger-${item.id}`}
+                    aria-disabled={isDocumentReviewed}
+                    className={`w-full rounded-md px-1 py-0.5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+                      isDocumentReviewed ? "cursor-default" : "cursor-pointer hover:bg-black/[0.03]"
+                    }`}
+                    onClick={() => {
+                      if (isDocumentReviewed) {
+                        return;
+                      }
+                      handleSelectReviewItem(item);
+                    }}
+                    onMouseEnter={() => {
+                      setHoveredFieldTriggerId(item.id);
+                    }}
+                    onMouseLeave={() => {
+                      setHoveredFieldTriggerId((current) => (current === item.id ? null : current));
+                      setHoveredCriticalTriggerId((current) => (current === item.id ? null : current));
+                    }}
+                    onMouseUp={handleReviewedEditAttempt}
+                    onFocus={() => {
+                      setHoveredFieldTriggerId(item.id);
+                    }}
+                    onBlur={(event) => {
+                      if (event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                        return;
+                      }
+                      setHoveredFieldTriggerId((current) => (current === item.id ? null : current));
+                      setHoveredCriticalTriggerId((current) => (current === item.id ? null : current));
+                    }}
+                    onKeyDown={(event) => {
+                      handleReviewedKeyboardEditAttempt(event);
+                      if (isDocumentReviewed) {
+                        return;
+                      }
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        handleSelectReviewItem(item);
+                      }
+                    }}
+                  >
                     <FieldRow
-                      indicator={renderConfidenceIndicator(field, item)}
+                      indicator={renderConfidenceIndicator(item, tooltip.ariaLabel)}
                       label={<p className={`${STRUCTURED_FIELD_LABEL_CLASS} text-text`}>{field.label}</p>}
                       labelMeta={null}
                       className={STRUCTURED_FIELD_ROW_CLASS}
@@ -3392,7 +3505,8 @@ export function App() {
                         isLongText,
                       })}
                     />
-                </div>
+                  </div>
+                </Tooltip>
               </div>
             );
           })}
@@ -3409,6 +3523,7 @@ export function App() {
     const isSelected = selectedFieldId === item.id;
     const isExpanded = Boolean(expandedFieldValues[item.id]);
     const shouldUseLongText = shouldRenderLongTextValue(field.key, item.displayValue);
+    const tooltip = buildFieldTooltip(item);
     const shouldSpanFullSectionWidth = shouldUseLongText;
     const valueText = shouldUseLongText
       ? item.displayValue
@@ -3417,6 +3532,10 @@ export function App() {
         : truncateText(item.displayValue, 140);
     const canExpand = !shouldUseLongText && item.displayValue.length > 140;
     const styledPrefix = getStructuredFieldPrefix(field.key);
+    const isFieldHovered = hoveredFieldTriggerId === item.id;
+    const isCriticalHovered = hoveredCriticalTriggerId === item.id;
+    const isFieldTooltipOpen = isFieldHovered && !isCriticalHovered;
+    const isCriticalTooltipOpen = isCriticalHovered;
 
     return (
       <FieldBlock
@@ -3425,52 +3544,83 @@ export function App() {
           isSelected ? "bg-accentSoft/50" : ""
         }`}
       >
-        <div
-          role="button"
-          tabIndex={0}
-          aria-disabled={isDocumentReviewed}
-          className={`w-full rounded-md px-1 py-0.5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
-            isDocumentReviewed ? "cursor-default" : "cursor-pointer hover:bg-black/[0.03]"
-          }`}
-          onClick={() => {
-            if (isDocumentReviewed) {
-              return;
-            }
-            handleSelectReviewItem(item);
-          }}
-          onMouseUp={handleReviewedEditAttempt}
-          onKeyDown={(event) => {
-            handleReviewedKeyboardEditAttempt(event);
-            if (isDocumentReviewed) {
-              return;
-            }
-            if (event.key === "Enter" || event.key === " ") {
-              event.preventDefault();
+        <Tooltip content={tooltip.content} open={isFieldTooltipOpen}>
+          <div
+            role="button"
+            tabIndex={0}
+            data-testid={`field-trigger-${item.id}`}
+            aria-disabled={isDocumentReviewed}
+            className={`w-full rounded-md px-1 py-0.5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+              isDocumentReviewed ? "cursor-default" : "cursor-pointer hover:bg-black/[0.03]"
+            }`}
+            onClick={() => {
+              if (isDocumentReviewed) {
+                return;
+              }
               handleSelectReviewItem(item);
-            }
-          }}
-        >
-          <FieldRow
-            leftTestId={`${styledPrefix}-row-${field.key}`}
-            labelTestId={`${styledPrefix}-label-${field.key}`}
-            indicatorTestId={`${styledPrefix}-dot-${field.key}`}
-            valueWrapperTestId={shouldUseLongText ? `field-value-${field.key}-wrapper` : undefined}
-            indicator={renderConfidenceIndicator(field, item)}
-            label={<p className={`${STRUCTURED_FIELD_LABEL_CLASS} text-text`}>{field.label}</p>}
-            labelMeta={
-              field.isCritical ? <CriticalBadge testId={`critical-indicator-${field.key}`} /> : null
-            }
-            className={STRUCTURED_FIELD_ROW_CLASS}
-            valuePlacement={shouldUseLongText ? "below-label" : "inline"}
-            value={renderEditableFieldValue({
-              item,
-              value: valueText,
-              isLongText: shouldUseLongText,
-              longTextTestId: `field-value-${field.key}`,
-              shortTextTestId: `${styledPrefix}-value-${field.key}`,
-            })}
-          />
-        </div>
+            }}
+            onMouseEnter={() => {
+              setHoveredFieldTriggerId(item.id);
+            }}
+            onMouseLeave={() => {
+              setHoveredFieldTriggerId((current) => (current === item.id ? null : current));
+              setHoveredCriticalTriggerId((current) => (current === item.id ? null : current));
+            }}
+            onMouseUp={handleReviewedEditAttempt}
+            onFocus={() => {
+              setHoveredFieldTriggerId(item.id);
+            }}
+            onBlur={(event) => {
+              if (event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                return;
+              }
+              setHoveredFieldTriggerId((current) => (current === item.id ? null : current));
+              setHoveredCriticalTriggerId((current) => (current === item.id ? null : current));
+            }}
+            onKeyDown={(event) => {
+              handleReviewedKeyboardEditAttempt(event);
+              if (isDocumentReviewed) {
+                return;
+              }
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                handleSelectReviewItem(item);
+              }
+            }}
+          >
+            <FieldRow
+              leftTestId={`${styledPrefix}-row-${field.key}`}
+              labelTestId={`${styledPrefix}-label-${field.key}`}
+              indicatorTestId={`${styledPrefix}-dot-${field.key}`}
+              valueWrapperTestId={shouldUseLongText ? `field-value-${field.key}-wrapper` : undefined}
+              indicator={renderConfidenceIndicator(item, tooltip.ariaLabel)}
+              label={<p className={`${STRUCTURED_FIELD_LABEL_CLASS} text-text`}>{field.label}</p>}
+              labelMeta={
+                field.isCritical ? (
+                  <CriticalBadge
+                    testId={`critical-indicator-${field.key}`}
+                    tooltipOpen={isCriticalTooltipOpen}
+                    onMouseEnter={() => {
+                      setHoveredCriticalTriggerId(item.id);
+                    }}
+                    onMouseLeave={() => {
+                      setHoveredCriticalTriggerId((current) => (current === item.id ? null : current));
+                    }}
+                  />
+                ) : null
+              }
+              className={STRUCTURED_FIELD_ROW_CLASS}
+              valuePlacement={shouldUseLongText ? "below-label" : "inline"}
+              value={renderEditableFieldValue({
+                item,
+                value: valueText,
+                isLongText: shouldUseLongText,
+                longTextTestId: `field-value-${field.key}`,
+                shortTextTestId: `${styledPrefix}-value-${field.key}`,
+              })}
+            />
+          </div>
+        </Tooltip>
         {canExpand && (
           <button
             type="button"
@@ -3868,15 +4018,15 @@ export function App() {
                                   </span>
                                   <span>(</span>
                                   <span className="inline-flex items-center gap-1">
-                                    <ConfidenceDot tone="low" tooltip="Low" />
+                                    <ConfidenceDot tone="low" tooltip="Low" ariaLabel="Low" />
                                     <span className="tabular-nums">{detectedFieldsSummary.low}</span>
                                   </span>
                                   <span className="inline-flex items-center gap-1">
-                                    <ConfidenceDot tone="med" tooltip="Medium" />
+                                    <ConfidenceDot tone="med" tooltip="Medium" ariaLabel="Medium" />
                                     <span className="tabular-nums">{detectedFieldsSummary.medium}</span>
                                   </span>
                                   <span className="inline-flex items-center gap-1">
-                                    <ConfidenceDot tone="high" tooltip="High" />
+                                    <ConfidenceDot tone="high" tooltip="High" ariaLabel="High" />
                                     <span className="tabular-nums">{detectedFieldsSummary.high}</span>
                                   </span>
                                   <span>)</span>

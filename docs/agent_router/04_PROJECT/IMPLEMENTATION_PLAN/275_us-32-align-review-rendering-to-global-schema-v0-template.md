@@ -18,6 +18,7 @@ As a veterinarian, I want the review view to always use the full Global Schema v
 - This story does not change persistence schema.
 - This story does not redefine error codes.
 - This story does not change run semantics; it defines review rendering behavior only.
+- Confidence payload naming follows the hard-rename contract: `field_mapping_confidence`, `text_extraction_reliability`, and `field_review_history_adjustment`.
 
 **Authoritative References**
 - Product: Global schema authority and field list: [`docs/project/PRODUCT_DESIGN.md`](../PRODUCT_DESIGN/00_entry.md) section **Global Schema v0 (Canonical Field List)**.

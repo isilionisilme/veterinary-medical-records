@@ -66,7 +66,7 @@ UX rules:
 - Confidence guides **attention**, not decisions.
 - Confidence never blocks actions.
 - Confidence never overrides human judgment.
-- `candidate_confidence` and `mapping_confidence` are distinct and must not be conflated in UX copy.
+- `candidate_confidence` and `field_mapping_confidence` are distinct and must not be conflated in UX copy.
 
 ---
 
@@ -166,7 +166,7 @@ Normative behavior:
 1) Always render the full Global Schema v0 template
 - The UI MUST render the complete Global Schema v0 in fixed order and by sections, regardless of how many fields the extractor produced.
 - Extracted keys outside Global Schema v0 MUST appear in a separate section: **Other extracted fields**.
-- Global Schema v0 keys/order do not change automatically; only mapping_confidence/policy may change.
+- Global Schema v0 keys/order do not change automatically; only field_mapping_confidence/policy may change.
 
 2) Missing vs loading (deterministic)
 - While structured data is loading, show a clear loading state (skeleton/spinner) and do not show missing placeholders yet.
@@ -186,17 +186,17 @@ Normative behavior:
 ## 4.2 Confidence Propagation & Calibration (UX Contract)
 
 - `candidate_confidence` is an extraction-time diagnostic signal for a local candidate.
-- `mapping_confidence` is a context stability signal used over time for the same semantic mapping.
-- `mapping_confidence` is the primary UX signal; `candidate_confidence` is diagnostic and should not be shown by default.
-- Veterinarian-facing review UI shows only `mapping_confidence` by default.
-- `mapping_confidence` propagates continuously with smoothing; UI state should remain stable and avoid abrupt visual churn.
+- `field_mapping_confidence` is a context stability signal used over time for the same semantic mapping.
+- `field_mapping_confidence` is the primary UX signal; `candidate_confidence` is diagnostic and should not be shown by default.
+- Veterinarian-facing review UI shows only `field_mapping_confidence` by default.
+- `field_mapping_confidence` propagates continuously with smoothing; UI state should remain stable and avoid abrupt visual churn.
 - Product policy actions (for example default suggestion or demotion) occur only via thresholds + hysteresis + minimum volume; UX should reflect outcomes, not expose calibration mechanics.
 
 ## 4.3 Confidence Tooltip Breakdown (Veterinarian UI)
 
-- The veterinarian UI must show `mapping_confidence` as the default confidence signal.
+- The veterinarian UI must show `field_mapping_confidence` as the default confidence signal.
 - Numeric confidence values are secondary and may appear only inside tooltip details.
-- `candidate_confidence` and `mapping_confidence` must not be conflated in UI copy or semantics.
+- `candidate_confidence` and `field_mapping_confidence` must not be conflated in UI copy or semantics.
 
 Tooltip structure (Spanish, standard copy):
 - First line: `Confianza: 72% (Media)`

@@ -186,7 +186,8 @@ function installReviewedModeFetchMock() {
                   key: "pet_name",
                   value: "Luna",
                   value_type: "string",
-                  mapping_confidence: 0.82,
+                  field_candidate_confidence: 0.82,
+                  field_mapping_confidence: 0.82,
                   is_critical: false,
                   origin: "machine",
                   evidence: { page: 1, snippet: "Paciente: Luna" },
@@ -196,7 +197,8 @@ function installReviewedModeFetchMock() {
                   key: "species",
                   value: "Canina",
                   value_type: "string",
-                  mapping_confidence: 0.9,
+                  field_candidate_confidence: 0.9,
+                  field_mapping_confidence: 0.9,
                   is_critical: false,
                   origin: "machine",
                 },
@@ -358,7 +360,7 @@ describe("App upload and list flow", () => {
                     key: "document_date",
                     value: null,
                     value_type: "date",
-                    mapping_confidence: 0.32,
+                    field_mapping_confidence: 0.32,
                     is_critical: false,
                     origin: "machine",
                   },
@@ -367,7 +369,7 @@ describe("App upload and list flow", () => {
                     key: "visit_date",
                     value: "2026-02-11T00:00:00Z",
                     value_type: "date",
-                    mapping_confidence: 0.74,
+                    field_mapping_confidence: 0.74,
                     is_critical: true,
                     origin: "machine",
                   },
@@ -376,7 +378,9 @@ describe("App upload and list flow", () => {
                     key: "pet_name",
                     value: "Luna",
                     value_type: "string",
-                    mapping_confidence: 0.82,
+                    field_mapping_confidence: 0.82,
+                    field_candidate_confidence: 0.65,
+                    field_review_history_adjustment: 7,
                     is_critical: false,
                     origin: "machine",
                     evidence: { page: 1, snippet: "Paciente: Luna" },
@@ -386,7 +390,9 @@ describe("App upload and list flow", () => {
                     key: "diagnosis",
                     value: "Gastroenteritis",
                     value_type: "string",
-                    mapping_confidence: 0.62,
+                    field_mapping_confidence: 0.62,
+                    field_candidate_confidence: 0.71,
+                    field_review_history_adjustment: -4,
                     is_critical: false,
                     origin: "machine",
                     evidence: { page: 2, snippet: "Diagnostico: Gastroenteritis" },
@@ -397,7 +403,7 @@ describe("App upload and list flow", () => {
                     value:
                       "Reposo relativo durante 7 días.\nDieta blanda en 3 tomas al día y control de hidratación.",
                     value_type: "string",
-                    mapping_confidence: 0.72,
+                    field_mapping_confidence: 0.72,
                     is_critical: false,
                     origin: "machine",
                   },
@@ -406,7 +412,7 @@ describe("App upload and list flow", () => {
                     key: "custom_tag",
                     value: "Prioridad",
                     value_type: "string",
-                    mapping_confidence: 0.88,
+                    field_mapping_confidence: 0.88,
                     is_critical: false,
                     origin: "machine",
                     evidence: { page: 1, snippet: "Prioridad: Alta" },
@@ -416,7 +422,7 @@ describe("App upload and list flow", () => {
                     key: "imagen",
                     value: "Rx abdomen",
                     value_type: "string",
-                    mapping_confidence: 0.61,
+                    field_mapping_confidence: 0.61,
                     is_critical: false,
                     origin: "machine",
                   },
@@ -425,7 +431,7 @@ describe("App upload and list flow", () => {
                     key: "imagine",
                     value: "Eco",
                     value_type: "string",
-                    mapping_confidence: 0.58,
+                    field_mapping_confidence: 0.58,
                     is_critical: false,
                     origin: "machine",
                   },
@@ -434,7 +440,9 @@ describe("App upload and list flow", () => {
                     key: "owner_name",
                     value: "BEATRIZ ABARCA",
                     value_type: "string",
-                    mapping_confidence: 0.84,
+                    field_mapping_confidence: 0.84,
+                    field_candidate_confidence: null,
+                    field_review_history_adjustment: 0,
                     is_critical: false,
                     origin: "machine",
                   },
@@ -443,7 +451,9 @@ describe("App upload and list flow", () => {
                     key: "owner_address",
                     value: "Calle Mayor 10, Madrid",
                     value_type: "string",
-                    mapping_confidence: 0.77,
+                    field_mapping_confidence: 0.77,
+                    field_candidate_confidence: 0.77,
+                    field_review_history_adjustment: -4,
                     is_critical: false,
                     origin: "machine",
                   },
@@ -452,7 +462,7 @@ describe("App upload and list flow", () => {
                     key: "IMAGING:",
                     value: "Radiografia lateral",
                     value_type: "string",
-                    mapping_confidence: 0.57,
+                    field_mapping_confidence: 0.57,
                     is_critical: false,
                     origin: "machine",
                   },
@@ -1856,7 +1866,18 @@ describe("App upload and list flow", () => {
       "confidence-indicator-core:pet_name"
     );
     expect(petNameConfidence).toHaveAttribute("aria-label", expect.stringMatching(/Confianza:\s*\d+%/i));
-    expect(petNameConfidence).toHaveAttribute("aria-label", expect.stringMatching(/CRÍTICO/i));
+    expect(petNameConfidence).toHaveAttribute(
+      "aria-label",
+      expect.not.stringMatching(/\((Alta|Media|Baja)\)/i)
+    );
+    expect(petNameConfidence).toHaveAttribute(
+      "aria-label",
+      expect.stringMatching(/Fiabilidad del candidato:\s*65%/i)
+    );
+    expect(petNameConfidence).toHaveAttribute(
+      "aria-label",
+      expect.stringMatching(/Ajuste por histórico de revisiones:\s*\+7%/i)
+    );
 
     const clinicalRecordCard = within(panel).getByText("ID de reclamacion").closest("article");
     expect(clinicalRecordCard).not.toBeNull();
@@ -1867,8 +1888,6 @@ describe("App upload and list flow", () => {
       "aria-label",
       expect.stringMatching(/no disponible/i)
     );
-    expect(clinicalRecordConfidence).toHaveAttribute("aria-label", expect.not.stringMatching(/CRÍTICO/i));
-
     expect(within(panel).queryByTestId("critical-indicator-diagnosis")).toBeInTheDocument();
   });
 
@@ -1949,7 +1968,7 @@ describe("App upload and list flow", () => {
     expect(screen.queryByTestId("confidence-policy-degraded")).toBeNull();
   });
 
-  it("does not fallback to legacy confidence when mapping_confidence is missing", async () => {
+  it("does not fallback to legacy confidence when field_mapping_confidence is missing", async () => {
     const baseFetch = globalThis.fetch as typeof fetch;
 
     globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -1961,7 +1980,7 @@ describe("App upload and list flow", () => {
         const fields = payload.active_interpretation?.data?.fields;
         if (Array.isArray(fields)) {
           fields.forEach((field: Record<string, unknown>) => {
-            delete field.mapping_confidence;
+            delete field.field_mapping_confidence;
             field.confidence = 0.99;
           });
         }
@@ -2138,7 +2157,8 @@ describe("App upload and list flow", () => {
                           key: "pet_name",
                           value: "Luna",
                           value_type: "string",
-                          mapping_confidence: 0.82,
+                          field_candidate_confidence: 0.82,
+                          field_mapping_confidence: 0.82,
                           is_critical: false,
                           origin: "machine",
                           evidence: { page: 1, snippet: "Paciente: Luna" },
@@ -2343,7 +2363,10 @@ describe("App upload and list flow", () => {
 
     const confidenceIndicator = screen.getByTestId("confidence-indicator-core:pet_name");
     expect(confidenceIndicator).toHaveAttribute("aria-label", expect.stringMatching(/Página 1/i));
-    expect(confidenceIndicator).toHaveAttribute("aria-label", expect.stringMatching(/Paciente: Luna/i));
+    expect(confidenceIndicator).toHaveAttribute(
+      "aria-label",
+      expect.stringMatching(/Ajuste por histórico de revisiones:\s*\+7%/i)
+    );
 
     clickPetNameField();
     const viewer = screen.getAllByTestId("pdf-viewer")[0];
@@ -2365,11 +2388,144 @@ describe("App upload and list flow", () => {
     expect(screen.queryByText(/^Fuente:/i)).toBeNull();
     const withEvidence = screen.getByTestId("confidence-indicator-core:pet_name");
     expect(withEvidence).toHaveAttribute("aria-label", expect.stringMatching(/Página 1/i));
-    expect(withEvidence).toHaveAttribute("aria-label", expect.stringMatching(/Paciente: Luna/i));
+    expect(withEvidence).toHaveAttribute(
+      "aria-label",
+      expect.stringMatching(/Fiabilidad del candidato:\s*65%/i)
+    );
 
-    const withoutEvidence = screen.getByTestId("confidence-indicator-core:species");
+    const withoutEvidence = screen.getByTestId("confidence-indicator-core:owner_name");
     expect(withoutEvidence).toHaveAttribute("aria-label", expect.not.stringMatching(/Página/i));
+    expect(withoutEvidence).toHaveAttribute(
+      "aria-label",
+      expect.stringMatching(/Ajuste por histórico de revisiones:\s*0%/i)
+    );
+    expect(withoutEvidence).toHaveAttribute(
+      "aria-label",
+      expect.stringMatching(/Fiabilidad del candidato:\s*No disponible/i)
+    );
+    const fieldTrigger = screen.getByTestId("field-trigger-core:pet_name");
+    fireEvent.focus(fieldTrigger);
+    await waitFor(() => {
+      expect(
+        Array.from(document.body.querySelectorAll("p")).some((node) =>
+          /Fiabilidad del candidato:\s*65%/i.test(node.textContent ?? "")
+        )
+      ).toBe(true);
+    });
+    fireEvent.blur(fieldTrigger);
     expect(screen.queryByTestId("source-drawer")).toBeNull();
+  });
+
+  it("hands off tooltip visibility between field row and critical badge hover", async () => {
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+    await waitForStructuredDataReady();
+
+    const fieldTrigger = screen.getByTestId("field-trigger-core:pet_name");
+    const criticalIndicator = screen.getByTestId("critical-indicator-pet_name");
+    const hasFieldTooltipContent = () =>
+      Array.from(document.body.querySelectorAll("p")).some((node) =>
+        /Fiabilidad del candidato:/i.test(node.textContent ?? "")
+      );
+    const hasCriticalTooltip = () =>
+      Array.from(document.body.querySelectorAll('[role="tooltip"]')).some((node) =>
+        /CRÍTICO/i.test(node.textContent ?? "")
+      );
+
+    fireEvent.mouseEnter(fieldTrigger);
+    await waitFor(() => {
+      expect(hasFieldTooltipContent()).toBe(true);
+    });
+    expect(hasCriticalTooltip()).toBe(false);
+
+    fireEvent.mouseEnter(criticalIndicator);
+    await waitFor(() => {
+      expect(hasCriticalTooltip()).toBe(true);
+    });
+    expect(hasFieldTooltipContent()).toBe(false);
+
+    fireEvent.mouseLeave(criticalIndicator);
+    fireEvent.mouseEnter(fieldTrigger);
+    await waitFor(() => {
+      expect(hasFieldTooltipContent()).toBe(true);
+    });
+    expect(hasCriticalTooltip()).toBe(false);
+
+    fireEvent.mouseLeave(fieldTrigger);
+    await waitFor(() => {
+      expect(hasFieldTooltipContent()).toBe(false);
+    });
+  });
+
+  it("applies semantic styling for positive, negative and neutral adjustment values in tooltip", async () => {
+    renderApp();
+
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+    await waitForStructuredDataReady();
+    const findAdjustmentLine = async (pattern: RegExp): Promise<HTMLElement> => {
+      let line: HTMLElement | undefined;
+      await waitFor(() => {
+        line = Array.from(document.body.querySelectorAll("p")).find((node) =>
+          pattern.test(node.textContent ?? "")
+        ) as HTMLElement | undefined;
+        expect(line).toBeDefined();
+      });
+      return line!;
+    };
+    const resolveTriggerFromIndicator = (indicator: HTMLElement): HTMLElement => {
+      const fieldCard = indicator.closest("article");
+      expect(fieldCard).not.toBeNull();
+      const trigger = (fieldCard as HTMLElement).querySelector('[role="button"]');
+      expect(trigger).not.toBeNull();
+      return trigger as HTMLElement;
+    };
+
+    const positiveIndicator = screen.getByTestId("confidence-indicator-core:pet_name");
+    expect(positiveIndicator).toHaveAttribute(
+      "aria-label",
+      expect.stringMatching(/Ajuste por histórico de revisiones:\s*\+7%/i)
+    );
+    const positive = resolveTriggerFromIndicator(positiveIndicator);
+    fireEvent.focus(positive);
+    const positiveLine = await findAdjustmentLine(
+      /Ajuste por histórico de revisiones:\s*\+7%/i
+    );
+    expect(positiveLine).toHaveClass("text-[var(--status-success)]");
+    fireEvent.blur(positive);
+
+    const negativeIndicator = screen
+      .getAllByTestId(/confidence-indicator-/)
+      .find((element) =>
+        element.getAttribute("aria-label")?.includes("Ajuste por histórico de revisiones: -4%")
+      );
+    expect(negativeIndicator).toBeDefined();
+    if (!negativeIndicator) {
+      throw new Error("Expected negative adjustment indicator to exist.");
+    }
+    expect(negativeIndicator).toHaveAttribute(
+      "aria-label",
+      expect.stringMatching(/Ajuste por histórico de revisiones:\s*-4%/i)
+    );
+    const negative = resolveTriggerFromIndicator(negativeIndicator);
+    fireEvent.focus(negative);
+    const negativeLine = await findAdjustmentLine(
+      /Ajuste por histórico de revisiones:\s*-4%/i
+    );
+    expect(negativeLine).toHaveClass("text-[var(--status-error)]");
+    fireEvent.blur(negative);
+
+    const neutralIndicator = screen.getByTestId("confidence-indicator-core:owner_name");
+    expect(neutralIndicator).toHaveAttribute(
+      "aria-label",
+      expect.stringMatching(/Ajuste por histórico de revisiones:\s*0%/i)
+    );
+    const neutral = resolveTriggerFromIndicator(neutralIndicator);
+    fireEvent.focus(neutral);
+    const neutralLine = await findAdjustmentLine(
+      /Ajuste por histórico de revisiones:\s*0%/i
+    );
+    expect(neutralLine).toHaveClass("text-muted");
   });
 
   it("toggles report layout in DEV with Shift+L and persists selection", async () => {

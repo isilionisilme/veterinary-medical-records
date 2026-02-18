@@ -239,7 +239,7 @@ If a client attempts to edit/review while a `RUNNING` run exists, the API MUST r
 
 ### Context v1 (Deterministic)
 
-- Purpose: deterministic aggregation key for signals and `mapping_confidence`.
+- Purpose: deterministic aggregation key for signals and `field_mapping_confidence`.
 - Context v1 fields: `doc_family`/`document_type`, `language`, `country`, `layout_fingerprint`, `extractor_version`, `schema_version`.
 - Context v1 is serialized into a stable canonical representation and/or hash key for storage and aggregation.
 - Exclusions: do not include `veterinarian_id`; avoid `clinic_id` as a first-class key (use `layout_fingerprint`).
@@ -253,14 +253,14 @@ If a client attempts to edit/review while a `RUNNING` run exists, the API MUST r
 ### Policy Thresholds & Hysteresis
 
 - Thresholds and hysteresis parameters MUST live in a versioned config file (for example `config/confidence_policy.yaml`) and include a policy version field.
-- UX confidence bands are derived from `mapping_confidence` (low/mid/high; exact numeric cutoffs may be configured per policy version).
+- UX confidence bands are derived from `field_mapping_confidence` (low/mid/high; exact numeric cutoffs may be configured per policy version).
 - Hysteresis uses separate enter/exit thresholds for policy-state transitions.
 - Minimum volume is required before policy-state transitions are applied.
 
 ### MVP payload & storage implications
 
 Minimum field-level payload for calibration-aware review must support:
-- `mapping_confidence` (0–1), the primary veterinarian-facing confidence signal.
+- `field_mapping_confidence` (0–1), the primary veterinarian-facing confidence signal.
 - `policy_state` (`neutral|boosted|demoted|suppressed`).
 - `mapping_id` (stable strategy identifier).
 - `context_key` (derived from Context v1).
@@ -268,20 +268,25 @@ Minimum field-level payload for calibration-aware review must support:
 
 ### Confidence breakdown for veterinarian tooltip (MVP visibility contract)
 
-- `mapping_confidence` remains the primary veterinarian-facing confidence signal.
-- Tooltip-only breakdown components are optional diagnostics:
-  - `extraction_reliability` (0–1, nullable): per-run/per-document diagnostic tied to text-extraction quality; this is **not** `candidate_confidence`.
-  - `review_history_adjustment` (signed percentage points): explanatory cross-document/system-level delta derived from calibration aggregates.
+- `field_mapping_confidence` remains the primary veterinarian-facing confidence signal.
+- Tooltip-only breakdown components (MVP):
+  - `field_candidate_confidence` (`number` in `[0,1]`): candidate-level reliability signal shown as percentage.
+  - `field_review_history_adjustment` (`number`): explanatory cross-document/system-level delta derived from calibration aggregates.
+    - Unit: signed percentage points.
+    - Example: `+7` -> `+7%`, `-4` -> `-4%`, `0` -> `0%`.
+    - Frontend contract: render-only presentation; no recomputation/recalibration in UI.
+- Mapping composition invariant (MVP):
+  - `field_mapping_confidence = clamp01(field_candidate_confidence + field_review_history_adjustment / 100)`.
 - UI invariant:
-  - the confidence dot/band uses `mapping_confidence`,
+  - the confidence dot/band uses `field_mapping_confidence`,
   - tooltip breakdown is explanatory only,
   - no document-level policy UI is exposed.
 - Missingness behavior:
-  - `extraction_reliability` may be `null` (UI shows `No disponible`).
-  - `review_history_adjustment` must be present and deterministic; use `0` when no review history is available.
+  - `field_candidate_confidence` should be present for fields with value.
+  - `field_review_history_adjustment` must be present and deterministic; use `0` when no review history is available.
 - Terminology clarification:
-  - `candidate_confidence` = diagnostic pre-mapping score (hidden by default).
-  - `extraction_reliability` != `candidate_confidence`.
+  - `field_candidate_confidence` = diagnostic pre-mapping score shown in tooltip.
+  - `text_extraction_reliability` is not part of the tooltip MVP contract.
 
 ### `confidence_policy.yaml` (minimum spec)
 
@@ -299,7 +304,7 @@ Deterministic policy-state selection rules:
 - If `thresholds.suppressed` is absent, `suppressed` is never entered.
 
 Band mapping rule:
-- `low` if `mapping_confidence < low_max`; `mid` if `mapping_confidence < mid_max`; otherwise `high`.
+- `low` if `field_mapping_confidence < low_max`; `mid` if `field_mapping_confidence < mid_max`; otherwise `high`.
 
 Compact example:
 
@@ -349,7 +354,7 @@ Each log entry must include:
 - `timestamp`
 - `error_code` (if any)
 - `context_key`, `field_key`, and `mapping_id` for mapping-confidence events
-- old/new `mapping_confidence` and any policy-state transition (`neutral|boosted|demoted|suppressed`)
+- old/new `field_mapping_confidence` and any policy-state transition (`neutral|boosted|demoted|suppressed`)
 
 Observability requirement for confidence calibration:
 - The system must provide enough traceability to explain why a field is low/high confidence in a given context.

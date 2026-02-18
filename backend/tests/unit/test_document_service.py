@@ -11,6 +11,7 @@ from backend.app.application.document_service import (
 )
 from backend.app.domain.models import (
     Document,
+    ProcessingRunDetails,
     ProcessingRunState,
     ProcessingRunSummary,
     ProcessingStatus,
@@ -30,6 +31,54 @@ class FakeDocumentRepository:
         return None
 
     def get_latest_run(self, document_id: str) -> ProcessingRunSummary | None:
+        return None
+
+    def get_latest_completed_run(self, document_id: str) -> ProcessingRunDetails | None:
+        return None
+
+    def get_latest_artifact_payload(
+        self, *, run_id: str, artifact_type: str
+    ) -> dict[str, object] | None:
+        return None
+
+    def append_artifact(
+        self,
+        *,
+        run_id: str,
+        artifact_type: str,
+        payload: dict[str, object],
+        created_at: str,
+    ) -> None:
+        return None
+
+    def increment_calibration_signal(
+        self,
+        *,
+        context_key: str,
+        field_key: str,
+        mapping_id: str | None,
+        policy_version: str,
+        signal_type: str,
+        updated_at: str,
+    ) -> None:
+        return None
+
+    def apply_calibration_deltas(
+        self,
+        *,
+        context_key: str,
+        field_key: str,
+        mapping_id: str | None,
+        policy_version: str,
+        accept_delta: int,
+        edit_delta: int,
+        updated_at: str,
+    ) -> None:
+        return None
+
+    def get_latest_applied_calibration_snapshot(
+        self, *, document_id: str
+    ) -> tuple[str, dict[str, object]] | None:
         return None
 
 
@@ -252,6 +301,7 @@ def test_mark_document_reviewed_updates_review_metadata() -> None:
             updated_at: str,
             reviewed_at: str | None,
             reviewed_by: str | None,
+            reviewed_run_id: str | None,
         ) -> Document | None:
             if document_id != self.document.document_id:
                 return None
@@ -266,6 +316,7 @@ def test_mark_document_reviewed_updates_review_metadata() -> None:
                 review_status=ReviewStatus(review_status),
                 reviewed_at=reviewed_at,
                 reviewed_by=reviewed_by,
+                reviewed_run_id=reviewed_run_id,
             )
             return self.document
 
@@ -313,6 +364,7 @@ def test_reopen_document_review_clears_review_metadata() -> None:
             updated_at: str,
             reviewed_at: str | None,
             reviewed_by: str | None,
+            reviewed_run_id: str | None,
         ) -> Document | None:
             if document_id != self.document.document_id:
                 return None
@@ -327,6 +379,7 @@ def test_reopen_document_review_clears_review_metadata() -> None:
                 review_status=ReviewStatus(review_status),
                 reviewed_at=reviewed_at,
                 reviewed_by=reviewed_by,
+                reviewed_run_id=reviewed_run_id,
             )
             return self.document
 

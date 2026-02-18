@@ -67,6 +67,7 @@ def ensure_schema() -> None:
         _ensure_status_history_schema(conn)
         _ensure_processing_runs_schema(conn)
         _ensure_artifacts_schema(conn)
+        _ensure_calibration_aggregates_schema(conn)
         conn.commit()
 
 
@@ -90,7 +91,8 @@ def _ensure_documents_schema(conn: sqlite3.Connection) -> None:
                 updated_at TEXT NOT NULL,
                 review_status TEXT NOT NULL,
                 reviewed_at TEXT,
-                reviewed_by TEXT
+                reviewed_by TEXT,
+                reviewed_run_id TEXT
             );
             """
         )
@@ -100,6 +102,8 @@ def _ensure_documents_schema(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE documents ADD COLUMN reviewed_at TEXT;")
     if "reviewed_by" not in columns:
         conn.execute("ALTER TABLE documents ADD COLUMN reviewed_by TEXT;")
+    if "reviewed_run_id" not in columns:
+        conn.execute("ALTER TABLE documents ADD COLUMN reviewed_run_id TEXT;")
 
     if "original_filename" in columns and "storage_path" in columns:
         return
@@ -116,7 +120,8 @@ def _ensure_documents_schema(conn: sqlite3.Connection) -> None:
             updated_at TEXT NOT NULL,
             review_status TEXT NOT NULL,
             reviewed_at TEXT,
-            reviewed_by TEXT
+            reviewed_by TEXT,
+            reviewed_run_id TEXT
         );
         """
     )
@@ -132,7 +137,8 @@ def _ensure_documents_schema(conn: sqlite3.Connection) -> None:
             updated_at,
             review_status,
             reviewed_at,
-            reviewed_by
+            reviewed_by,
+            reviewed_run_id
         )
         SELECT
             document_id,
@@ -143,6 +149,7 @@ def _ensure_documents_schema(conn: sqlite3.Connection) -> None:
             created_at,
             created_at,
             'IN_REVIEW',
+            NULL,
             NULL,
             NULL
         FROM documents;
@@ -315,3 +322,97 @@ def _ensure_artifacts_schema(conn: sqlite3.Connection) -> None:
     )
     conn.execute("DROP TABLE artifacts;")
     conn.execute("ALTER TABLE artifacts_new RENAME TO artifacts;")
+
+
+def _ensure_calibration_aggregates_schema(conn: sqlite3.Connection) -> None:
+    columns = _table_columns(conn, "calibration_aggregates")
+    if not columns:
+        conn.execute(
+            """
+            CREATE TABLE calibration_aggregates (
+                context_key TEXT NOT NULL,
+                field_key TEXT NOT NULL,
+                mapping_id TEXT,
+                mapping_id_scope_key TEXT NOT NULL,
+                policy_version TEXT NOT NULL,
+                accept_count INTEGER NOT NULL DEFAULT 0,
+                edit_count INTEGER NOT NULL DEFAULT 0,
+                updated_at TEXT NOT NULL,
+                PRIMARY KEY (context_key, field_key, mapping_id_scope_key, policy_version)
+            );
+            """
+        )
+        conn.execute(
+            """
+            CREATE INDEX idx_calibration_aggregates_lookup
+            ON calibration_aggregates (
+                context_key,
+                field_key,
+                mapping_id_scope_key,
+                policy_version
+            );
+            """
+        )
+        return
+
+    required_columns = {
+        "context_key",
+        "field_key",
+        "mapping_id",
+        "mapping_id_scope_key",
+        "policy_version",
+        "accept_count",
+        "edit_count",
+        "updated_at",
+    }
+    if required_columns.issubset(columns):
+        return
+
+    conn.executescript(
+        """
+        CREATE TABLE calibration_aggregates_new (
+            context_key TEXT NOT NULL,
+            field_key TEXT NOT NULL,
+            mapping_id TEXT,
+            mapping_id_scope_key TEXT NOT NULL,
+            policy_version TEXT NOT NULL,
+            accept_count INTEGER NOT NULL DEFAULT 0,
+            edit_count INTEGER NOT NULL DEFAULT 0,
+            updated_at TEXT NOT NULL,
+            PRIMARY KEY (context_key, field_key, mapping_id_scope_key, policy_version)
+        );
+        """
+    )
+    if columns:
+        conn.execute(
+            """
+            INSERT INTO calibration_aggregates_new (
+                context_key,
+                field_key,
+                mapping_id,
+                mapping_id_scope_key,
+                policy_version,
+                accept_count,
+                edit_count,
+                updated_at
+            )
+            SELECT
+                context_key,
+                field_key,
+                mapping_id,
+                COALESCE(mapping_id_scope_key, '__null__'),
+                policy_version,
+                accept_count,
+                edit_count,
+                updated_at
+            FROM calibration_aggregates;
+            """
+        )
+    conn.execute("DROP TABLE calibration_aggregates;")
+    conn.execute("ALTER TABLE calibration_aggregates_new RENAME TO calibration_aggregates;")
+    conn.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_calibration_aggregates_lookup
+        ON calibration_aggregates (context_key, field_key, mapping_id_scope_key, policy_version);
+        """
+    )

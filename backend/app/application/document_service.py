@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+import math
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -9,6 +11,14 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
+from backend.app.application.confidence_calibration import (
+    CALIBRATION_SIGNAL_ACCEPTED_UNCHANGED,
+    CALIBRATION_SIGNAL_EDITED,
+    build_context_key_from_interpretation_data,
+    is_empty_value,
+    normalize_mapping_id,
+    resolve_calibration_policy_version,
+)
 from backend.app.application.field_normalizers import normalize_microchip_digits_only
 from backend.app.application.global_schema_v0 import (
     CRITICAL_KEYS_V0,
@@ -29,6 +39,9 @@ from backend.app.domain.models import (
 from backend.app.domain.status import DocumentStatusView, derive_document_status, map_status_label
 from backend.app.ports.document_repository import DocumentRepository
 from backend.app.ports.file_storage import FileStorage
+
+NUMERIC_TYPES = (int, float)
+logger = logging.getLogger(__name__)
 
 
 def _default_now_iso() -> str:
@@ -377,16 +390,32 @@ def get_document_review(
 
 
 def _normalize_review_interpretation_data(data: dict[str, object]) -> dict[str, object]:
-    global_schema = data.get("global_schema_v0")
+    normalized_data = dict(data)
+    changed = False
+
+    raw_fields = normalized_data.get("fields")
+    if isinstance(raw_fields, list):
+        normalized_fields: list[object] = []
+        for item in raw_fields:
+            if not isinstance(item, dict):
+                normalized_fields.append(item)
+                continue
+            normalized_field = _sanitize_confidence_breakdown(item)
+            normalized_fields.append(normalized_field)
+            if normalized_field != item:
+                changed = True
+        if changed:
+            normalized_data["fields"] = normalized_fields
+
+    global_schema = normalized_data.get("global_schema_v0")
     if not isinstance(global_schema, dict):
-        return data
+        return normalized_data if changed else data
 
     raw_microchip = global_schema.get("microchip_id")
     normalized_microchip = normalize_microchip_digits_only(raw_microchip)
     if normalized_microchip == raw_microchip:
-        return data
+        return normalized_data if changed else data
 
-    normalized_data = dict(data)
     normalized_global_schema = dict(global_schema)
     normalized_global_schema["microchip_id"] = normalized_microchip
     normalized_data["global_schema_v0"] = normalized_global_schema
@@ -440,6 +469,8 @@ def apply_interpretation_edits(
     active_data_raw = active_payload.get("data")
     active_data = dict(active_data_raw) if isinstance(active_data_raw, dict) else {}
     active_fields = _coerce_interpretation_fields(active_data.get("fields"))
+    context_key = _resolve_context_key_for_edit_scopes(active_data, active_fields)
+    calibration_policy_version = resolve_calibration_policy_version()
 
     updated_fields = [dict(field) for field in active_fields]
     field_change_logs: list[dict[str, object]] = []
@@ -474,8 +505,13 @@ def apply_interpretation_edits(
                 "key": key,
                 "value": change.get("value"),
                 "value_type": value_type,
-                "mapping_confidence": 1.0,
-                "confidence": 1.0,
+                "field_candidate_confidence": 1.0,
+                "field_mapping_confidence": 1.0,
+                "text_extraction_reliability": _sanitize_text_extraction_reliability(None),
+                "field_review_history_adjustment": _sanitize_field_review_history_adjustment(0),
+                "context_key": context_key,
+                "mapping_id": None,
+                "policy_version": calibration_policy_version,
                 "is_critical": key in CRITICAL_KEYS_V0,
                 "origin": "human",
             }
@@ -497,6 +533,9 @@ def apply_interpretation_edits(
                     change_type="ADD",
                     created_at=now_iso,
                     occurred_at=occurred_at,
+                    context_key=context_key,
+                    mapping_id=None,
+                    policy_version=calibration_policy_version,
                 )
             )
             continue
@@ -530,6 +569,7 @@ def apply_interpretation_edits(
             str(existing_value_type) if isinstance(existing_value_type, str) else None
         )
         if op == "DELETE":
+            mapping_id = normalize_mapping_id(existing_field.get("mapping_id"))
             updated_fields.pop(existing_index)
             field_change_logs.append(
                 _build_field_change_log(
@@ -546,6 +586,9 @@ def apply_interpretation_edits(
                     change_type="DELETE",
                     created_at=now_iso,
                     occurred_at=occurred_at,
+                    context_key=context_key,
+                    mapping_id=mapping_id,
+                    policy_version=calibration_policy_version,
                 )
             )
             continue
@@ -561,14 +604,27 @@ def apply_interpretation_edits(
                 result=None,
                 invalid_reason=f"changes[{index}].value_type",
             )
+        if _is_noop_update(
+            old_value=old_value,
+            new_value=change.get("value"),
+            existing_value_type=resolved_value_type,
+            incoming_value_type=value_type,
+        ):
+            continue
 
+        mapping_id = normalize_mapping_id(existing_field.get("mapping_id"))
         updated_fields[existing_index] = {
             **updated_fields[existing_index],
             "value": change.get("value"),
             "value_type": value_type,
             "origin": "human",
-            "mapping_confidence": 1.0,
-            "confidence": 1.0,
+            "field_candidate_confidence": 1.0,
+            "field_mapping_confidence": 1.0,
+            "text_extraction_reliability": _sanitize_text_extraction_reliability(None),
+            "field_review_history_adjustment": _sanitize_field_review_history_adjustment(0),
+            "context_key": context_key,
+            "mapping_id": mapping_id,
+            "policy_version": calibration_policy_version,
         }
         field_change_logs.append(
             _build_field_change_log(
@@ -585,6 +641,9 @@ def apply_interpretation_edits(
                 change_type="UPDATE",
                 created_at=now_iso,
                 occurred_at=occurred_at,
+                context_key=context_key,
+                mapping_id=mapping_id,
+                policy_version=calibration_policy_version,
             )
         )
 
@@ -595,7 +654,7 @@ def apply_interpretation_edits(
     new_data: dict[str, object] = dict(active_data)
     new_data["created_at"] = now_iso
     new_data["processing_run_id"] = run_id
-    new_data["fields"] = updated_fields
+    new_data["fields"] = [_sanitize_confidence_breakdown(field) for field in updated_fields]
     new_data["global_schema_v0"] = _build_global_schema_from_fields(updated_fields)
 
     new_payload = {
@@ -637,6 +696,400 @@ def _coerce_interpretation_fields(raw_fields: object) -> list[dict[str, object]]
     return fields
 
 
+def _normalize_string_for_noop(value: str) -> str:
+    return " ".join(value.split())
+
+
+def _normalize_value_for_noop(*, value: object, value_type: str) -> object:
+    normalized_type = value_type.strip().lower()
+    if normalized_type in {"string", "text", "date"}:
+        if isinstance(value, str):
+            return _normalize_string_for_noop(value)
+        return value
+
+    if normalized_type in {"integer", "int", "number", "float", "decimal"}:
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, NUMERIC_TYPES):
+            numeric = float(value)
+            if math.isfinite(numeric):
+                return numeric
+            return value
+        if isinstance(value, str):
+            candidate = value.strip()
+            if not candidate:
+                return candidate
+            try:
+                numeric = float(candidate)
+            except ValueError:
+                return candidate
+            if math.isfinite(numeric):
+                return numeric
+            return candidate
+        return value
+
+    if normalized_type in {"boolean", "bool"}:
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str):
+            candidate = value.strip().lower()
+            if candidate in {"true", "1"}:
+                return True
+            if candidate in {"false", "0"}:
+                return False
+            return candidate
+        return value
+
+    if isinstance(value, str):
+        return value.strip()
+    return value
+
+
+def _is_noop_update(
+    *,
+    old_value: object,
+    new_value: object,
+    existing_value_type: str | None,
+    incoming_value_type: str,
+) -> bool:
+    if existing_value_type is None:
+        return False
+    if existing_value_type != incoming_value_type:
+        return False
+    return _normalize_value_for_noop(value=old_value, value_type=incoming_value_type) == (
+        _normalize_value_for_noop(value=new_value, value_type=incoming_value_type)
+    )
+
+
+def _sanitize_text_extraction_reliability(value: object) -> float | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int | float):
+        numeric = float(value)
+        if math.isfinite(numeric) and 0.0 <= numeric <= 1.0:
+            return numeric
+    return None
+
+
+def _sanitize_field_review_history_adjustment(value: object) -> float:
+    if isinstance(value, bool):
+        return 0.0
+    if isinstance(value, int | float):
+        numeric = float(value)
+        if math.isfinite(numeric):
+            return numeric
+    return 0.0
+
+
+def _sanitize_field_candidate_confidence(value: object) -> float | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, NUMERIC_TYPES):
+        numeric = float(value)
+        if math.isfinite(numeric):
+            return min(max(numeric, 0.0), 1.0)
+    return None
+
+
+def _sanitize_field_mapping_confidence(value: object) -> float | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, NUMERIC_TYPES):
+        numeric = float(value)
+        if math.isfinite(numeric):
+            return min(max(numeric, 0.0), 1.0)
+    return None
+
+
+def _compose_field_mapping_confidence(
+    *, candidate_confidence: float, review_history_adjustment: float
+) -> float:
+    composed = candidate_confidence + (review_history_adjustment / 100.0)
+    return min(max(composed, 0.0), 1.0)
+
+
+def _sanitize_confidence_breakdown(field: dict[str, object]) -> dict[str, object]:
+    sanitized = dict(field)
+    sanitized.pop("confidence", None)
+    sanitized["text_extraction_reliability"] = _sanitize_text_extraction_reliability(
+        sanitized.get("text_extraction_reliability")
+    )
+    sanitized["field_review_history_adjustment"] = _sanitize_field_review_history_adjustment(
+        sanitized.get("field_review_history_adjustment")
+    )
+    candidate_confidence = _sanitize_field_candidate_confidence(
+        sanitized.get("field_candidate_confidence")
+    )
+    if candidate_confidence is None:
+        mapping_confidence = _sanitize_field_mapping_confidence(
+            sanitized.get("field_mapping_confidence")
+        )
+        candidate_confidence = mapping_confidence if mapping_confidence is not None else 0.0
+    sanitized["field_candidate_confidence"] = candidate_confidence
+    sanitized["field_mapping_confidence"] = _compose_field_mapping_confidence(
+        candidate_confidence=candidate_confidence,
+        review_history_adjustment=sanitized["field_review_history_adjustment"],
+    )
+    return sanitized
+
+
+def _build_review_calibration_deltas(
+    *,
+    document_id: str,
+    run_id: str,
+    interpretation_data: dict[str, object],
+) -> list[dict[str, object]]:
+    fields = _coerce_interpretation_fields(interpretation_data.get("fields"))
+    context_key = _resolve_context_key_for_edit_scopes(interpretation_data, fields)
+    policy_version = next(
+        (
+            str(field_policy_version).strip()
+            for field in fields
+            if isinstance((field_policy_version := field.get("policy_version")), str)
+            and str(field_policy_version).strip()
+        ),
+        resolve_calibration_policy_version(),
+    )
+    scoped_deltas: dict[tuple[str, str | None], dict[str, object]] = {}
+    for field in fields:
+        field_key = field.get("key")
+        if not isinstance(field_key, str) or not field_key.strip():
+            continue
+        if is_empty_value(field.get("value")):
+            continue
+
+        mapping_id = normalize_mapping_id(field.get("mapping_id"))
+        scope = (field_key, mapping_id)
+        entry = scoped_deltas.setdefault(
+            scope,
+            {
+                "context_key": context_key,
+                "field_key": field_key,
+                "mapping_id": mapping_id,
+                "policy_version": policy_version,
+                "accept_delta": 0,
+                "edit_delta": 0,
+            },
+        )
+
+        origin = field.get("origin")
+        if origin == "human":
+            entry["edit_delta"] = 1
+        elif origin == "machine" and bool(field.get("is_critical", False)):
+            entry["accept_delta"] = 1
+
+    return [
+        {
+            "event_type": (
+                "field_accepted_unchanged"
+                if delta["accept_delta"] == 1
+                else "field_edited_confirmed"
+            ),
+            "source": "mark_reviewed",
+            "document_id": document_id,
+            "run_id": run_id,
+            "field_key": delta["field_key"],
+            "mapping_id": delta["mapping_id"],
+            "context_key": delta["context_key"],
+            "policy_version": delta["policy_version"],
+            "accept_delta": delta["accept_delta"],
+            "edit_delta": delta["edit_delta"],
+        }
+        for delta in scoped_deltas.values()
+        if delta["accept_delta"] != 0 or delta["edit_delta"] != 0
+    ]
+
+
+def _resolve_context_key_for_edit_scopes(
+    interpretation_data: dict[str, object],
+    fields: list[dict[str, object]],
+) -> str:
+    for field in fields:
+        context_key = field.get("context_key")
+        if isinstance(context_key, str) and context_key.strip():
+            return context_key
+    return build_context_key_from_interpretation_data(interpretation_data)
+
+
+def _apply_reviewed_document_calibration(
+    *,
+    document_id: str,
+    reviewed_run_id: str | None,
+    repository: DocumentRepository,
+    created_at: str,
+) -> None:
+    if reviewed_run_id is None:
+        return
+    payload = repository.get_latest_artifact_payload(
+        run_id=reviewed_run_id,
+        artifact_type="STRUCTURED_INTERPRETATION",
+    )
+    if not isinstance(payload, dict):
+        return
+    interpretation_data = payload.get("data")
+    if not isinstance(interpretation_data, dict):
+        return
+
+    signal_events = _build_review_calibration_deltas(
+        document_id=document_id,
+        run_id=reviewed_run_id,
+        interpretation_data=interpretation_data,
+    )
+    for event in signal_events:
+        repository.apply_calibration_deltas(
+            context_key=str(event["context_key"]),
+            field_key=str(event["field_key"]),
+            mapping_id=normalize_mapping_id(event.get("mapping_id")),
+            policy_version=str(event["policy_version"]),
+            accept_delta=int(event["accept_delta"]),
+            edit_delta=int(event["edit_delta"]),
+            updated_at=created_at,
+        )
+        signal_type = (
+            CALIBRATION_SIGNAL_ACCEPTED_UNCHANGED
+            if int(event["accept_delta"]) == 1
+            else CALIBRATION_SIGNAL_EDITED
+        )
+        repository.append_artifact(
+            run_id=reviewed_run_id,
+            artifact_type="CALIBRATION_SIGNAL",
+            payload={
+                **event,
+                "signal_type": signal_type,
+                "created_at": created_at,
+            },
+            created_at=created_at,
+        )
+
+    snapshot_payload = {
+        "event_type": "calibration_review_snapshot",
+        "source": "mark_reviewed",
+        "document_id": document_id,
+        "run_id": reviewed_run_id,
+        "status": "applied",
+        "created_at": created_at,
+        "deltas": signal_events,
+    }
+    repository.append_artifact(
+        run_id=reviewed_run_id,
+        artifact_type="CALIBRATION_REVIEW_SNAPSHOT",
+        payload=snapshot_payload,
+        created_at=created_at,
+    )
+
+
+def _revert_reviewed_document_calibration(
+    *,
+    document_id: str,
+    reviewed_run_id: str | None,
+    repository: DocumentRepository,
+    created_at: str,
+) -> None:
+    snapshot_run_id = reviewed_run_id
+    snapshot: dict[str, object] | None = None
+
+    if reviewed_run_id is not None:
+        candidate_snapshot = repository.get_latest_artifact_payload(
+            run_id=reviewed_run_id,
+            artifact_type="CALIBRATION_REVIEW_SNAPSHOT",
+        )
+        if isinstance(candidate_snapshot, dict):
+            if candidate_snapshot.get("status") == "reverted":
+                return
+            snapshot = candidate_snapshot
+        else:
+            logger.warning(
+                "Calibration snapshot missing while reopening document_id=%s run_id=%s",
+                document_id,
+                reviewed_run_id,
+            )
+
+    if snapshot is None:
+        fallback = repository.get_latest_applied_calibration_snapshot(document_id=document_id)
+        if fallback is None:
+            logger.warning(
+                "Calibration snapshot missing while reopening document_id=%s reviewed_run_id=%s",
+                document_id,
+                reviewed_run_id,
+            )
+            return
+        snapshot_run_id, snapshot = fallback
+
+    raw_deltas = snapshot.get("deltas")
+    if not isinstance(raw_deltas, list):
+        logger.warning(
+            "Calibration snapshot malformed while reopening document_id=%s run_id=%s",
+            document_id,
+            snapshot_run_id,
+        )
+        return
+
+    reverted_deltas: list[dict[str, object]] = []
+    for raw_delta in raw_deltas:
+        if not isinstance(raw_delta, dict):
+            continue
+        context_key = raw_delta.get("context_key")
+        field_key = raw_delta.get("field_key")
+        policy_version = raw_delta.get("policy_version")
+        if not isinstance(context_key, str) or not context_key.strip():
+            continue
+        if not isinstance(field_key, str) or not field_key.strip():
+            continue
+        if not isinstance(policy_version, str) or not policy_version.strip():
+            continue
+
+        accept_delta = int(raw_delta.get("accept_delta", 0))
+        edit_delta = int(raw_delta.get("edit_delta", 0))
+        if accept_delta == 0 and edit_delta == 0:
+            continue
+
+        mapping_id = normalize_mapping_id(raw_delta.get("mapping_id"))
+        repository.apply_calibration_deltas(
+            context_key=context_key,
+            field_key=field_key,
+            mapping_id=mapping_id,
+            policy_version=policy_version,
+            accept_delta=-accept_delta,
+            edit_delta=-edit_delta,
+            updated_at=created_at,
+        )
+        reverted_deltas.append(
+            {
+                "context_key": context_key,
+                "field_key": field_key,
+                "mapping_id": mapping_id,
+                "policy_version": policy_version,
+                "accept_delta": -accept_delta,
+                "edit_delta": -edit_delta,
+            }
+        )
+
+    repository.append_artifact(
+        run_id=snapshot_run_id,
+        artifact_type="CALIBRATION_REVIEW_REVERTED",
+        payload={
+            "event_type": "calibration_review_reverted",
+            "source": "reopen_reviewed_document",
+            "document_id": document_id,
+            "run_id": snapshot_run_id,
+            "reverted_from_snapshot_created_at": snapshot.get("created_at"),
+            "created_at": created_at,
+            "deltas": reverted_deltas,
+        },
+        created_at=created_at,
+    )
+    repository.append_artifact(
+        run_id=snapshot_run_id,
+        artifact_type="CALIBRATION_REVIEW_SNAPSHOT",
+        payload={
+            **snapshot,
+            "status": "reverted",
+            "reverted_at": created_at,
+        },
+        created_at=created_at,
+    )
+
+
 def _build_field_change_log(
     *,
     document_id: str,
@@ -652,6 +1105,9 @@ def _build_field_change_log(
     change_type: str,
     created_at: str,
     occurred_at: str,
+    context_key: str,
+    mapping_id: str | None,
+    policy_version: str,
 ) -> dict[str, object]:
     return {
         "event_type": "field_corrected",
@@ -671,9 +1127,9 @@ def _build_field_change_log(
         "change_type": change_type,
         "created_at": created_at,
         "occurred_at": occurred_at,
-        "context_key": None,
-        "mapping_id": None,
-        "policy_version": None,
+        "context_key": context_key,
+        "mapping_id": mapping_id,
+        "policy_version": policy_version,
     }
 
 
@@ -832,15 +1288,25 @@ def mark_document_reviewed(
         )
 
     reviewed_at = now_provider()
+    latest_completed_run = repository.get_latest_completed_run(document_id)
+    reviewed_run_id = latest_completed_run.run_id if latest_completed_run is not None else None
     updated = repository.update_review_status(
         document_id=document_id,
         review_status=ReviewStatus.REVIEWED.value,
         updated_at=reviewed_at,
         reviewed_at=reviewed_at,
         reviewed_by=reviewed_by,
+        reviewed_run_id=reviewed_run_id,
     )
     if updated is None:
         return None
+
+    _apply_reviewed_document_calibration(
+        document_id=document_id,
+        reviewed_run_id=reviewed_run_id,
+        repository=repository,
+        created_at=reviewed_at,
+    )
 
     return ReviewToggleResult(
         document_id=updated.document_id,
@@ -870,15 +1336,24 @@ def reopen_document_review(
             reviewed_by=document.reviewed_by,
         )
 
+    reopened_at = now_provider()
     updated = repository.update_review_status(
         document_id=document_id,
         review_status=ReviewStatus.IN_REVIEW.value,
-        updated_at=now_provider(),
+        updated_at=reopened_at,
         reviewed_at=None,
         reviewed_by=None,
+        reviewed_run_id=None,
     )
     if updated is None:
         return None
+
+    _revert_reviewed_document_calibration(
+        document_id=document_id,
+        reviewed_run_id=document.reviewed_run_id,
+        repository=repository,
+        created_at=reopened_at,
+    )
 
     return ReviewToggleResult(
         document_id=updated.document_id,

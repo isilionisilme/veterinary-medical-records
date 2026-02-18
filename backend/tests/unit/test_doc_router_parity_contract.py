@@ -87,7 +87,7 @@ def test_evaluate_parity_skips_when_source_not_changed() -> None:
                         "docs/agent_router/04_PROJECT/PRODUCT_DESIGN/"
                         "76_conceptual-model-local-schema-global-schema-and-mapping.md"
                     ),
-                    "required_terms": ["mapping_confidence"],
+                    "required_terms": ["field_mapping_confidence"],
                 }
             ],
         }

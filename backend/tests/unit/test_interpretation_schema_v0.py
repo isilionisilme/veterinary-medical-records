@@ -349,7 +349,7 @@ def test_interpretation_artifact_omits_confidence_policy_when_config_invalid(
     )
 
 
-def test_structured_fields_include_mapping_confidence_signal() -> None:
+def test_structured_fields_include_field_mapping_confidence_signal() -> None:
     payload = _build_interpretation_artifact(
         document_id="doc-mapping-confidence",
         run_id="run-mapping-confidence",
@@ -361,11 +361,20 @@ def test_structured_fields_include_mapping_confidence_signal() -> None:
         for field in payload["data"]["fields"]
         if isinstance(field, dict) and field.get("key") == "pet_name"
     )
-    assert "confidence" in pet_name_field
-    assert "mapping_confidence" in pet_name_field
-    # Legacy compatibility path: keep deprecated "confidence" equal to canonical
-    # "mapping_confidence" until downstream consumers migrate.
-    assert pet_name_field["mapping_confidence"] == pet_name_field["confidence"]
+    assert "field_candidate_confidence" in pet_name_field
+    assert "field_mapping_confidence" in pet_name_field
+    assert "text_extraction_reliability" in pet_name_field
+    assert "field_review_history_adjustment" in pet_name_field
+    assert "confidence" not in pet_name_field
+    assert isinstance(pet_name_field["field_candidate_confidence"], float)
+    assert 0.0 <= pet_name_field["field_candidate_confidence"] <= 1.0
+    expected_mapping = pet_name_field["field_candidate_confidence"] + (
+        pet_name_field["field_review_history_adjustment"] / 100.0
+    )
+    expected_mapping = min(max(expected_mapping, 0.0), 1.0)
+    assert pet_name_field["field_mapping_confidence"] == expected_mapping
+    assert pet_name_field["text_extraction_reliability"] is None
+    assert pet_name_field["field_review_history_adjustment"] == 0
 
 
 def test_mvp_coverage_debug_includes_line_number_for_accepted_value() -> None:

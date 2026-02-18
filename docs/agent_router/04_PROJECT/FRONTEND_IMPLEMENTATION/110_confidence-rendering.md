@@ -15,9 +15,9 @@ No frontend logic may interpret confidence as correctness or validation.
 
 ## Confidence tooltip breakdown rendering (MVP)
 
-- `mapping_confidence` remains the primary visible signal; tooltip values are secondary explanatory details.
+- `field_mapping_confidence` remains the primary visible signal; tooltip values are secondary explanatory details.
 - Frontend renders backend-provided breakdown values only.
-- Frontend must not infer `extraction_reliability` from `candidate_confidence` and must not implement calibration math.
+- Frontend must not infer `text_extraction_reliability` from `candidate_confidence` and must not implement calibration math.
 - Edge cases:
   - no history -> `Ajuste por histórico de revisiones: 0%`
   - missing extraction reliability -> `Fiabilidad de la extracción de texto: No disponible`

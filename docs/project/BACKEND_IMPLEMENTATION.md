@@ -233,7 +233,7 @@ Event handling rules:
 ### Calibration Store (contract)
 
 Persist calibration state keyed by (`context_key`, `field_key`, `mapping_id`):
-- `mapping_confidence`
+- `field_mapping_confidence`
 - `policy_state` (`neutral|boosted|demoted|suppressed`)
 - supporting counters/metadata required by the active policy version
 
@@ -252,16 +252,17 @@ Update behavior:
   - field edits/corrections: persisted via existing edit/override flow as negative signals
   - field reassignment signal: optional/future where reassignment detection is not yet emitted in all paths
 - Persist aggregates by (`context_key`, `field_key`, `mapping_id`):
-  - `mapping_confidence`
+  - `field_mapping_confidence`
   - `policy_state` derived via thresholds/hysteresis/min_volume
 - Load thresholds from versioned `config/confidence_policy.yaml` and persist/emit the active policy version with calibration updates.
-- Structured logs for calibration updates must include: `document_id`, `run_id`, `context_key`, `field_key`, `mapping_id`, old/new `mapping_confidence`, and policy-state transitions.
+- Structured logs for calibration updates must include: `document_id`, `run_id`, `context_key`, `field_key`, `mapping_id`, old/new `field_mapping_confidence`, and policy-state transitions.
 
 ### Tooltip breakdown data sourcing (MVP)
 
 - Backend is responsible for deriving/providing tooltip breakdown values when available.
-- `extraction_reliability` is sourced from run/extraction diagnostics artifacts/metrics; when unavailable, expose `null`.
-- `review_history_adjustment` is sourced from calibration aggregates for (`context_key`, `field_key`, `mapping_id`) under the active `policy_version`; when no history exists, expose deterministic `0`.
+- `field_candidate_confidence` is required for fields with value and must be in `[0,1]`.
+- `field_review_history_adjustment` is sourced from calibration aggregates for (`context_key`, `field_key`, `mapping_id`) under the active `policy_version`; when no history exists, expose deterministic `0`.
+- `field_mapping_confidence` must be composed as `clamp01(field_candidate_confidence + field_review_history_adjustment / 100)`.
 - Frontend must not compute these values.
 
 ### Reviewed toggle persistence (MVP contract)
