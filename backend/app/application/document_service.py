@@ -491,6 +491,7 @@ def apply_interpretation_edits(
                 "key": key,
                 "value": change.get("value"),
                 "value_type": value_type,
+                "field_candidate_confidence": 1.0,
                 "field_mapping_confidence": 1.0,
                 "text_extraction_reliability": _sanitize_text_extraction_reliability(None),
                 "field_review_history_adjustment": _sanitize_field_review_history_adjustment(0),
@@ -585,6 +586,7 @@ def apply_interpretation_edits(
             "value": change.get("value"),
             "value_type": value_type,
             "origin": "human",
+            "field_candidate_confidence": 1.0,
             "field_mapping_confidence": 1.0,
             "text_extraction_reliability": _sanitize_text_extraction_reliability(None),
             "field_review_history_adjustment": _sanitize_field_review_history_adjustment(0),
@@ -676,6 +678,33 @@ def _sanitize_field_review_history_adjustment(value: object) -> float:
     return 0.0
 
 
+def _sanitize_field_candidate_confidence(value: object) -> float | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int | float):
+        numeric = float(value)
+        if math.isfinite(numeric):
+            return min(max(numeric, 0.0), 1.0)
+    return None
+
+
+def _sanitize_field_mapping_confidence(value: object) -> float | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int | float):
+        numeric = float(value)
+        if math.isfinite(numeric):
+            return min(max(numeric, 0.0), 1.0)
+    return None
+
+
+def _compose_field_mapping_confidence(
+    *, candidate_confidence: float, review_history_adjustment: float
+) -> float:
+    composed = candidate_confidence + (review_history_adjustment / 100.0)
+    return min(max(composed, 0.0), 1.0)
+
+
 def _sanitize_confidence_breakdown(field: dict[str, object]) -> dict[str, object]:
     sanitized = dict(field)
     sanitized.pop("confidence", None)
@@ -684,6 +713,19 @@ def _sanitize_confidence_breakdown(field: dict[str, object]) -> dict[str, object
     )
     sanitized["field_review_history_adjustment"] = _sanitize_field_review_history_adjustment(
         sanitized.get("field_review_history_adjustment")
+    )
+    candidate_confidence = _sanitize_field_candidate_confidence(
+        sanitized.get("field_candidate_confidence")
+    )
+    if candidate_confidence is None:
+        mapping_confidence = _sanitize_field_mapping_confidence(
+            sanitized.get("field_mapping_confidence")
+        )
+        candidate_confidence = mapping_confidence if mapping_confidence is not None else 0.0
+    sanitized["field_candidate_confidence"] = candidate_confidence
+    sanitized["field_mapping_confidence"] = _compose_field_mapping_confidence(
+        candidate_confidence=candidate_confidence,
+        review_history_adjustment=sanitized["field_review_history_adjustment"],
     )
     return sanitized
 

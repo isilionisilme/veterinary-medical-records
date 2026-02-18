@@ -186,6 +186,7 @@ function installReviewedModeFetchMock() {
                   key: "pet_name",
                   value: "Luna",
                   value_type: "string",
+                  field_candidate_confidence: 0.82,
                   field_mapping_confidence: 0.82,
                   is_critical: false,
                   origin: "machine",
@@ -196,6 +197,7 @@ function installReviewedModeFetchMock() {
                   key: "species",
                   value: "Canina",
                   value_type: "string",
+                  field_candidate_confidence: 0.9,
                   field_mapping_confidence: 0.9,
                   is_critical: false,
                   origin: "machine",
@@ -377,7 +379,7 @@ describe("App upload and list flow", () => {
                     value: "Luna",
                     value_type: "string",
                     field_mapping_confidence: 0.82,
-                    text_extraction_reliability: 0.65,
+                    field_candidate_confidence: 0.65,
                     field_review_history_adjustment: 7,
                     is_critical: false,
                     origin: "machine",
@@ -389,7 +391,7 @@ describe("App upload and list flow", () => {
                     value: "Gastroenteritis",
                     value_type: "string",
                     field_mapping_confidence: 0.62,
-                    text_extraction_reliability: 0.71,
+                    field_candidate_confidence: 0.71,
                     field_review_history_adjustment: -4,
                     is_critical: false,
                     origin: "machine",
@@ -439,7 +441,7 @@ describe("App upload and list flow", () => {
                     value: "BEATRIZ ABARCA",
                     value_type: "string",
                     field_mapping_confidence: 0.84,
-                    text_extraction_reliability: null,
+                    field_candidate_confidence: null,
                     field_review_history_adjustment: 0,
                     is_critical: false,
                     origin: "machine",
@@ -450,7 +452,7 @@ describe("App upload and list flow", () => {
                     value: "Calle Mayor 10, Madrid",
                     value_type: "string",
                     field_mapping_confidence: 0.77,
-                    text_extraction_reliability: 0.77,
+                    field_candidate_confidence: 0.77,
                     field_review_history_adjustment: -4,
                     is_critical: false,
                     origin: "machine",
@@ -1870,7 +1872,7 @@ describe("App upload and list flow", () => {
     );
     expect(petNameConfidence).toHaveAttribute(
       "aria-label",
-      expect.stringMatching(/Fiabilidad de la extracción del texto:\s*65%/i)
+      expect.stringMatching(/Fiabilidad del candidato:\s*65%/i)
     );
     expect(petNameConfidence).toHaveAttribute(
       "aria-label",
@@ -2155,6 +2157,7 @@ describe("App upload and list flow", () => {
                           key: "pet_name",
                           value: "Luna",
                           value_type: "string",
+                          field_candidate_confidence: 0.82,
                           field_mapping_confidence: 0.82,
                           is_critical: false,
                           origin: "machine",
@@ -2387,7 +2390,7 @@ describe("App upload and list flow", () => {
     expect(withEvidence).toHaveAttribute("aria-label", expect.stringMatching(/Página 1/i));
     expect(withEvidence).toHaveAttribute(
       "aria-label",
-      expect.stringMatching(/Fiabilidad de la extracción del texto:\s*65%/i)
+      expect.stringMatching(/Fiabilidad del candidato:\s*65%/i)
     );
 
     const withoutEvidence = screen.getByTestId("confidence-indicator-core:owner_name");
@@ -2398,14 +2401,14 @@ describe("App upload and list flow", () => {
     );
     expect(withoutEvidence).toHaveAttribute(
       "aria-label",
-      expect.stringMatching(/Fiabilidad de la extracción del texto:\s*No disponible/i)
+      expect.stringMatching(/Fiabilidad del candidato:\s*No disponible/i)
     );
     const fieldTrigger = screen.getByTestId("field-trigger-core:pet_name");
     fireEvent.focus(fieldTrigger);
     await waitFor(() => {
       expect(
         Array.from(document.body.querySelectorAll("p")).some((node) =>
-          /Fiabilidad de la extracción del texto:\s*65%/i.test(node.textContent ?? "")
+          /Fiabilidad del candidato:\s*65%/i.test(node.textContent ?? "")
         )
       ).toBe(true);
     });

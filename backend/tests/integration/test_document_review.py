@@ -314,6 +314,7 @@ def test_document_review_sanitizes_confidence_breakdown_payload_values(test_clie
                     "value": "Luna",
                     "value_type": "string",
                     "field_mapping_confidence": 0.82,
+                    "field_candidate_confidence": 0.82,
                     "text_extraction_reliability": 1.7,
                     "field_review_history_adjustment": "invalid",
                     "is_critical": False,
@@ -330,6 +331,62 @@ def test_document_review_sanitizes_confidence_breakdown_payload_values(test_clie
     field = payload["active_interpretation"]["data"]["fields"][0]
     assert field["text_extraction_reliability"] is None
     assert field["field_review_history_adjustment"] == 0
+    assert field["field_candidate_confidence"] == 0.82
+    assert field["field_mapping_confidence"] == 0.82
+
+
+def test_document_review_composes_mapping_confidence_from_candidate_and_adjustment(test_client):
+    document_id = _upload_sample_document(test_client)
+    run_id = "run-review-mapping-composition"
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(
+        run_id=run_id,
+        data={
+            "schema_version": "v0",
+            "document_id": document_id,
+            "processing_run_id": run_id,
+            "created_at": "2026-02-10T10:00:05+00:00",
+            "fields": [
+                {
+                    "field_id": "field-1",
+                    "key": "pet_name",
+                    "value": "Luna",
+                    "value_type": "string",
+                    "field_candidate_confidence": 0.66,
+                    "field_review_history_adjustment": -10,
+                    "field_mapping_confidence": 0.9,
+                    "is_critical": False,
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Paciente: Luna"},
+                },
+                {
+                    "field_id": "field-2",
+                    "key": "species",
+                    "value": "Canino",
+                    "value_type": "string",
+                    "field_candidate_confidence": 0.95,
+                    "field_review_history_adjustment": 10,
+                    "field_mapping_confidence": 0.2,
+                    "is_critical": False,
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Canino"},
+                },
+            ],
+        },
+    )
+
+    response = test_client.get(f"/documents/{document_id}/review")
+    assert response.status_code == 200
+    payload = response.json()
+    fields = payload["active_interpretation"]["data"]["fields"]
+    by_key = {field["key"]: field for field in fields}
+    assert by_key["pet_name"]["field_mapping_confidence"] == pytest.approx(0.56, abs=1e-9)
+    assert by_key["species"]["field_mapping_confidence"] == pytest.approx(1.0, abs=1e-9)
 
 
 def test_mark_document_reviewed_is_idempotent(test_client):

@@ -269,23 +269,24 @@ Minimum field-level payload for calibration-aware review must support:
 ### Confidence breakdown for veterinarian tooltip (MVP visibility contract)
 
 - `field_mapping_confidence` remains the primary veterinarian-facing confidence signal.
-- Tooltip-only breakdown components are optional diagnostics:
-  - `text_extraction_reliability` (`number|null`): per-run/per-document diagnostic tied to text-extraction quality; this is **not** `candidate_confidence`.
-    - Unit/scale: ratio in `[0,1]` when present.
+- Tooltip-only breakdown components (MVP):
+  - `field_candidate_confidence` (`number` in `[0,1]`): candidate-level reliability signal shown as percentage.
   - `field_review_history_adjustment` (`number`): explanatory cross-document/system-level delta derived from calibration aggregates.
     - Unit: signed percentage points.
     - Example: `+7` -> `+7%`, `-4` -> `-4%`, `0` -> `0%`.
     - Frontend contract: render-only presentation; no recomputation/recalibration in UI.
+- Mapping composition invariant (MVP):
+  - `field_mapping_confidence = clamp01(field_candidate_confidence + field_review_history_adjustment / 100)`.
 - UI invariant:
   - the confidence dot/band uses `field_mapping_confidence`,
   - tooltip breakdown is explanatory only,
   - no document-level policy UI is exposed.
 - Missingness behavior:
-  - `text_extraction_reliability` may be `null` (UI shows `No disponible`).
+  - `field_candidate_confidence` should be present for fields with value.
   - `field_review_history_adjustment` must be present and deterministic; use `0` when no review history is available.
 - Terminology clarification:
-  - `candidate_confidence` = diagnostic pre-mapping score (hidden by default).
-  - `text_extraction_reliability` != `candidate_confidence`.
+  - `field_candidate_confidence` = diagnostic pre-mapping score shown in tooltip.
+  - `text_extraction_reliability` is not part of the tooltip MVP contract.
 
 ### `confidence_policy.yaml` (minimum spec)
 

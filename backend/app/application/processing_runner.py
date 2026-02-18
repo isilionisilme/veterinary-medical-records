@@ -1584,14 +1584,19 @@ def _build_structured_field(
     normalized_snippet = snippet.strip()
     if len(normalized_snippet) > 180:
         normalized_snippet = normalized_snippet[:177].rstrip() + "..."
-    field_mapping_confidence = round(min(max(confidence, 0.0), 1.0), 2)
+    field_candidate_confidence = _sanitize_field_candidate_confidence(confidence)
     text_extraction_reliability = _sanitize_text_extraction_reliability(None)
     field_review_history_adjustment = _sanitize_field_review_history_adjustment(0)
+    field_mapping_confidence = _compose_field_mapping_confidence(
+        candidate_confidence=field_candidate_confidence,
+        review_history_adjustment=field_review_history_adjustment,
+    )
     return {
         "field_id": str(uuid4()),
         "key": key,
         "value": value,
         "value_type": value_type,
+        "field_candidate_confidence": field_candidate_confidence,
         "field_mapping_confidence": field_mapping_confidence,
         "text_extraction_reliability": text_extraction_reliability,
         "field_review_history_adjustment": field_review_history_adjustment,
@@ -1622,6 +1627,23 @@ def _sanitize_field_review_history_adjustment(value: object) -> float:
         if math.isfinite(numeric):
             return numeric
     return 0.0
+
+
+def _sanitize_field_candidate_confidence(value: object) -> float:
+    if isinstance(value, bool):
+        return 0.0
+    if isinstance(value, int | float):
+        numeric = float(value)
+        if math.isfinite(numeric):
+            return min(max(numeric, 0.0), 1.0)
+    return 0.0
+
+
+def _compose_field_mapping_confidence(
+    *, candidate_confidence: float, review_history_adjustment: float
+) -> float:
+    composed = candidate_confidence + (review_history_adjustment / 100.0)
+    return min(max(composed, 0.0), 1.0)
 
 
 def _append_step_status(

@@ -214,10 +214,10 @@ No frontend logic may interpret confidence as correctness or validation.
 
 - Tooltip may show numeric `field_mapping_confidence` and breakdown components, but `field_mapping_confidence` remains the primary visual signal.
 - Frontend must render only values provided by backend.
-- Frontend must not infer `text_extraction_reliability` from `candidate_confidence` and must not implement calibration math.
+- Frontend must not implement confidence composition math; backend provides composed `field_mapping_confidence`.
 - Edge cases:
   - no history: show `Ajuste por histórico de revisiones: 0%`.
-  - missing extraction reliability: show `Fiabilidad de la extracción de texto: No disponible`.
+  - missing candidate confidence: show `Fiabilidad del candidato: No disponible`.
 - Positive/negative/neutral adjustment styling must use existing semantic tokens/classes; do not introduce new colors.
 - Keep veterinarian copy free of governance terminology.
 

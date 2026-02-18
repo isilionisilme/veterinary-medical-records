@@ -291,6 +291,7 @@ type ReviewField = {
   key: string;
   value: string | number | boolean | null;
   value_type: string;
+  field_candidate_confidence?: number | null;
   field_mapping_confidence?: number;
   text_extraction_reliability?: number | null;
   field_review_history_adjustment?: number;
@@ -3228,10 +3229,10 @@ export function App() {
     const confidence = item.confidence;
     const percentage = Math.round(clampConfidence(confidence) * 100);
     const tone = getConfidenceTone(confidence, activeConfidencePolicy.band_cutoffs);
-    const extractionReliability = item.rawField?.text_extraction_reliability;
-    const extractionReliabilityText =
-      typeof extractionReliability === "number" && Number.isFinite(extractionReliability)
-        ? `${Math.round(clampConfidence(extractionReliability) * 100)}%`
+    const candidateConfidence = item.rawField?.field_candidate_confidence;
+    const candidateConfidenceText =
+      typeof candidateConfidence === "number" && Number.isFinite(candidateConfidence)
+        ? `${Math.round(clampConfidence(candidateConfidence) * 100)}%`
         : "No disponible";
     const reviewHistoryAdjustmentRaw = item.rawField?.field_review_history_adjustment;
     const reviewHistoryAdjustment =
@@ -3258,7 +3259,7 @@ export function App() {
     const ariaLabelParts = [
       header,
       evidencePageLabel,
-      `Fiabilidad de la extracción del texto: ${extractionReliabilityText}`,
+      `Fiabilidad del candidato: ${candidateConfidenceText}`,
       `Ajuste por histórico de revisiones: ${reviewHistoryAdjustmentText}`,
       "Indica la fiabilidad del valor extraído automáticamente.",
     ].filter((part): part is string => Boolean(part));
@@ -3277,7 +3278,7 @@ export function App() {
             ) : null}
           </div>
           <div className="space-y-0.5 pl-1 text-[12px] text-white/90">
-            <p>- Fiabilidad de la extracción del texto: {extractionReliabilityText}</p>
+            <p>- Fiabilidad del candidato: {candidateConfidenceText}</p>
             <p className={reviewHistoryAdjustmentClass}>
               - Ajuste por histórico de revisiones: {reviewHistoryAdjustmentText}
             </p>

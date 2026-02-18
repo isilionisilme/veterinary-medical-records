@@ -260,8 +260,9 @@ Update behavior:
 ### Tooltip breakdown data sourcing (MVP)
 
 - Backend is responsible for deriving/providing tooltip breakdown values when available.
-- `text_extraction_reliability` is sourced from run/extraction diagnostics artifacts/metrics; when unavailable, expose `null`.
+- `field_candidate_confidence` is required for fields with value and must be in `[0,1]`.
 - `field_review_history_adjustment` is sourced from calibration aggregates for (`context_key`, `field_key`, `mapping_id`) under the active `policy_version`; when no history exists, expose deterministic `0`.
+- `field_mapping_confidence` must be composed as `clamp01(field_candidate_confidence + field_review_history_adjustment / 100)`.
 - Frontend must not compute these values.
 
 ### Reviewed toggle persistence (MVP contract)
