@@ -2,6 +2,18 @@ import { describe, expect, it } from "vitest";
 
 import { CANONICAL_SPECIES_OPTIONS, validateFieldValue } from "./fieldValidators";
 
+const SPECIES_VALID_VECTORS: Array<[string, string]> = [
+  ["canino", "canino"],
+  ["canina", "canino"],
+  ["perro", "canino"],
+  ["perra", "canino"],
+  ["felino", "felino"],
+  ["felina", "felino"],
+  ["gato", "felino"],
+  ["gata", "felino"],
+];
+const SPECIES_INVALID_VECTORS = ["equino", "lagarto"];
+
 describe("validateFieldValue", () => {
   it("accepts and normalizes a numeric microchip", () => {
     const result = validateFieldValue("microchip_id", "985 141-000 123 456");
@@ -63,6 +75,19 @@ describe("validateFieldValue", () => {
   it("normalizes controlled vocab fields", () => {
     expect(validateFieldValue("sex", "female")).toEqual({ ok: true, normalized: "hembra" });
     expect(validateFieldValue("species", "gato")).toEqual({ ok: true, normalized: "felino" });
+  });
+
+  it("normalizes species values using parity vectors", () => {
+    for (const [rawValue, expected] of SPECIES_VALID_VECTORS) {
+      expect(validateFieldValue("species", rawValue)).toEqual({ ok: true, normalized: expected });
+    }
+  });
+
+  it("rejects unknown species values using parity vectors", () => {
+    for (const rawValue of SPECIES_INVALID_VECTORS) {
+      const result = validateFieldValue("species", rawValue);
+      expect(result.ok).toBe(false);
+    }
   });
 
   it("keeps species UI options aligned with validator canonical outputs", () => {
