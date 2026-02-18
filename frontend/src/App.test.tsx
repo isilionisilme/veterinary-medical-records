@@ -1868,7 +1868,7 @@ describe("App upload and list flow", () => {
     expect(petNameConfidence).toHaveAttribute("aria-label", expect.stringMatching(/CRÍTICO/i));
     expect(petNameConfidence).toHaveAttribute(
       "aria-label",
-      expect.stringMatching(/Fiabilidad de la extracción de texto:\s*65%/i)
+      expect.stringMatching(/Fiabilidad de la extracción del texto:\s*65%/i)
     );
     expect(petNameConfidence).toHaveAttribute(
       "aria-label",
@@ -2389,7 +2389,7 @@ describe("App upload and list flow", () => {
     expect(withEvidence).toHaveAttribute("aria-label", expect.stringMatching(/Paciente: Luna/i));
     expect(withEvidence).toHaveAttribute(
       "aria-label",
-      expect.stringMatching(/Fiabilidad de la extracción de texto:\s*65%/i)
+      expect.stringMatching(/Fiabilidad de la extracción del texto:\s*65%/i)
     );
 
     const withoutEvidence = screen.getByTestId("confidence-indicator-core:owner_name");
@@ -2400,7 +2400,7 @@ describe("App upload and list flow", () => {
     );
     expect(withoutEvidence).toHaveAttribute(
       "aria-label",
-      expect.stringMatching(/Fiabilidad de la extracción de texto:\s*No disponible/i)
+      expect.stringMatching(/Fiabilidad de la extracción del texto:\s*No disponible/i)
     );
     expect(screen.queryByTestId("source-drawer")).toBeNull();
   });

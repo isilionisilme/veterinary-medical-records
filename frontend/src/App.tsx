@@ -3261,31 +3261,40 @@ export function App() {
     const header = isCritical
       ? `Confianza: ${percentage}% (${band}) · CRÍTICO`
       : `Confianza: ${percentage}% (${band})`;
-    const evidenceLine = item.evidence?.page
-      ? item.evidence.snippet
-        ? `Página ${item.evidence.page} · ${truncateText(item.evidence.snippet, 72)}`
-        : `Página ${item.evidence.page}`
+    const evidencePageLabel = item.evidence?.page ? `Página ${item.evidence.page}` : null;
+    const evidenceSnippet = item.evidence?.snippet
+      ? truncateText(item.evidence.snippet, 72)
       : null;
     const ariaLabelParts = [
       header,
-      "Indica qué tan fiable es el valor extraído automáticamente.",
-      "Desglose:",
-      `Fiabilidad de la extracción de texto: ${extractionReliabilityText}`,
+      evidencePageLabel,
+      `Fiabilidad de la extracción del texto: ${extractionReliabilityText}`,
       `Ajuste por histórico de revisiones: ${reviewHistoryAdjustmentText}`,
-      evidenceLine,
+      evidenceSnippet,
+      "Indica la fiabilidad del valor extraído automáticamente.",
     ].filter((part): part is string => Boolean(part));
     return {
       ariaLabel: ariaLabelParts.join(" · "),
       content: (
-        <div className="space-y-1">
-          <p>{header}</p>
-          <p>Indica qué tan fiable es el valor extraído automáticamente.</p>
-          <p className="font-semibold">Desglose:</p>
-          <p>Fiabilidad de la extracción de texto: {extractionReliabilityText}</p>
-          <p className={reviewHistoryAdjustmentClass}>
-            Ajuste por histórico de revisiones: {reviewHistoryAdjustmentText}
+        <div className="min-w-[260px] space-y-2">
+          <div className="flex items-start justify-between gap-3">
+            <p className="font-semibold">{header}</p>
+            {evidencePageLabel ? (
+              <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
+                {evidencePageLabel}
+              </span>
+            ) : null}
+          </div>
+          <div className="space-y-0.5 pl-1">
+            <p>- Fiabilidad de la extracción del texto: {extractionReliabilityText}</p>
+            <p className={reviewHistoryAdjustmentClass}>
+              - Ajuste por histórico de revisiones: {reviewHistoryAdjustmentText}
+            </p>
+          </div>
+          {evidenceSnippet ? <p className="text-[10px] text-white/70">{evidenceSnippet}</p> : null}
+          <p className="text-[11px] text-white/75">
+            Indica la fiabilidad del valor extraído automáticamente.
           </p>
-          {evidenceLine ? <p>{evidenceLine}</p> : null}
         </div>
       ),
     };
