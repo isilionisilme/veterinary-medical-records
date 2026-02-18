@@ -3184,6 +3184,14 @@ export function App() {
     const validation = validateFieldValue("microchip_id", editingFieldDraftValue);
     return !validation.ok;
   }, [isEditingMicrochipField, editingFieldDraftValue]);
+  const isEditingWeightField = editingField?.key === "weight";
+  const isEditingWeightInvalid = useMemo(() => {
+    if (!isEditingWeightField) {
+      return false;
+    }
+    const validation = validateFieldValue("weight", editingFieldDraftValue);
+    return !validation.ok;
+  }, [isEditingWeightField, editingFieldDraftValue]);
 
   const saveFieldEditDialog = () => {
     if (!editingField) {
@@ -3191,6 +3199,12 @@ export function App() {
     }
     if (editingField.key === "microchip_id") {
       const validation = validateFieldValue("microchip_id", editingFieldDraftValue);
+      if (!validation.ok) {
+        return;
+      }
+    }
+    if (editingField.key === "weight") {
+      const validation = validateFieldValue("weight", editingFieldDraftValue);
       if (!validation.ok) {
         return;
       }
@@ -3795,10 +3809,15 @@ export function App() {
         fieldLabel={editingField?.label ?? ""}
         value={editingFieldDraftValue}
         isSaving={interpretationEditMutation.isPending}
-        isSaveDisabled={isEditingMicrochipInvalid}
+        isSaveDisabled={isEditingMicrochipInvalid || isEditingWeightInvalid}
         microchipErrorMessage={
           isEditingMicrochipField && isEditingMicrochipInvalid
             ? "Introduce entre 9 y 15 dígitos."
+            : null
+        }
+        weightErrorMessage={
+          isEditingWeightField && isEditingWeightInvalid
+            ? "Introduce un peso entre 0,5 y 120 kg."
             : null
         }
         onValueChange={setEditingFieldDraftValue}

@@ -19,6 +19,7 @@ type FieldEditDialogProps = {
   isSaving: boolean;
   isSaveDisabled?: boolean;
   microchipErrorMessage?: string | null;
+  weightErrorMessage?: string | null;
   onValueChange: (value: string) => void;
   onOpenChange: (open: boolean) => void;
   onSave: () => void;
@@ -32,6 +33,7 @@ export function FieldEditDialog({
   isSaving,
   isSaveDisabled = false,
   microchipErrorMessage = null,
+  weightErrorMessage = null,
   onValueChange,
   onOpenChange,
   onSave,
@@ -77,15 +79,24 @@ export function FieldEditDialog({
 
   const titleText = fieldLabel.trim().length > 0 ? `Editar "${fieldLabel}"` : "Editar campo";
   const isMicrochipField = fieldKey === "microchip_id";
+  const isWeightField = fieldKey === "weight";
   const microchipHintText = "Solo números (9–15 dígitos).";
+  const weightHintText = "Ej.: 12,5 kg (0,5–120).";
   const handleValueChange = (nextValue: string) => {
     if (isMicrochipField) {
       const sanitized = nextValue.replace(/\D/g, "");
       onValueChange(sanitized);
       return;
     }
+    if (isWeightField) {
+      const sanitized = nextValue.replace(/[^0-9,.\skg]/gi, "");
+      onValueChange(sanitized);
+      return;
+    }
     onValueChange(nextValue);
   };
+  const shouldHighlightError =
+    (isMicrochipField && microchipErrorMessage) || (isWeightField && weightErrorMessage);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -114,7 +125,7 @@ export function FieldEditDialog({
             onChange={(event) => handleValueChange(event.target.value)}
             rows={6}
             className={`min-h-28 w-full resize-y rounded-control border bg-surface px-3 py-2 text-sm text-text outline-none transition focus-visible:bg-surfaceMuted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
-              isMicrochipField && microchipErrorMessage
+              shouldHighlightError
                 ? "border-[var(--status-error)] focus-visible:outline-[var(--status-error)]"
                 : "border-borderSubtle focus-visible:outline-accent"
             }`}
@@ -126,9 +137,9 @@ export function FieldEditDialog({
             onChange={(event) => handleValueChange(event.target.value)}
             onKeyDown={handleSingleLineEnter}
             className={
-              isMicrochipField
+              isMicrochipField || isWeightField
                 ? `rounded-control border bg-surface px-3 py-1 text-sm text-text ${
-                    microchipErrorMessage
+                    shouldHighlightError
                       ? "border-[var(--status-error)] focus-visible:outline-[var(--status-error)]"
                       : "border-borderSubtle focus-visible:outline-accent"
                   }`
@@ -140,6 +151,12 @@ export function FieldEditDialog({
           <div className="mt-1 space-y-1">
             <p className={microchipErrorMessage ? "text-xs text-[var(--status-error)]" : "text-xs text-muted"}>
               {microchipErrorMessage ?? microchipHintText}
+            </p>
+          </div>
+        ) : isWeightField ? (
+          <div className="mt-1 space-y-1">
+            <p className={weightErrorMessage ? "text-xs text-[var(--status-error)]" : "text-xs text-muted"}>
+              {weightErrorMessage ?? weightHintText}
             </p>
           </div>
         ) : null}
