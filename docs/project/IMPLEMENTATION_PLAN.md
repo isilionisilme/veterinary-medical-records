@@ -178,7 +178,7 @@ Allow veterinarians to correct structured data naturally, while capturing append
 - US-08 — Edit structured data
 - US-09 — Capture correction signals
 - US-39 — Align veterinarian confidence signal with mapping confidence policy
-- US-40 — Implement field-level confidence tooltip breakdown
+- US-40 — Implement field-level confidence tooltip breakdown (Implemented 2026-02-18)
 - US-32 — Align review rendering to Global Schema v0 template (Implemented 2026-02-17)
 
 ---
@@ -1015,6 +1015,8 @@ As a veterinarian, I want confidence dots/colors in the review UI to reflect map
 ---
 
 ## US-40 — Implement field-level confidence tooltip breakdown
+
+**Status**: Implemented (2026-02-18)
 
 **User Story**
 As a veterinarian, I want to understand why a field confidence looks the way it does so I can triage and review faster.
