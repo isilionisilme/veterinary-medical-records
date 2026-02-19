@@ -8,6 +8,7 @@ function renderSpeciesDialog(options?: {
   isSaveDisabled?: boolean;
   speciesErrorMessage?: string | null;
   candidateSuggestions?: Array<{ value: string; confidence: number }>;
+  detectedCandidates?: Array<{ value: string; confidence?: number }>;
 }) {
   const onValueChange = vi.fn();
   const onOpenChange = vi.fn();
@@ -20,6 +21,7 @@ function renderSpeciesDialog(options?: {
       fieldLabel="Especie"
       value={options?.value ?? ""}
       candidateSuggestions={options?.candidateSuggestions}
+      detectedCandidates={options?.detectedCandidates}
       isSaving={false}
       isSaveDisabled={options?.isSaveDisabled ?? false}
       speciesErrorMessage={options?.speciesErrorMessage ?? null}
@@ -32,8 +34,39 @@ function renderSpeciesDialog(options?: {
   return { onValueChange, onOpenChange, onSave };
 }
 
+function renderSexDialog(options?: {
+  value?: string;
+  isSaveDisabled?: boolean;
+  sexErrorMessage?: string | null;
+  candidateSuggestions?: Array<{ value: string; confidence: number }>;
+  detectedCandidates?: Array<{ value: string; confidence?: number }>;
+}) {
+  const onValueChange = vi.fn();
+  const onOpenChange = vi.fn();
+  const onSave = vi.fn();
+
+  render(
+    <FieldEditDialog
+      open
+      fieldKey="sex"
+      fieldLabel="Sexo"
+      value={options?.value ?? ""}
+      candidateSuggestions={options?.candidateSuggestions}
+      detectedCandidates={options?.detectedCandidates}
+      isSaving={false}
+      isSaveDisabled={options?.isSaveDisabled ?? false}
+      sexErrorMessage={options?.sexErrorMessage ?? null}
+      onValueChange={onValueChange}
+      onOpenChange={onOpenChange}
+      onSave={onSave}
+    />
+  );
+
+  return { onValueChange, onOpenChange, onSave };
+}
+
 describe("FieldEditDialog species", () => {
-  it("shows placeholder and error when species value is legacy invalid", () => {
+  it("shows current invalid value as disabled detected option and keeps save blocked", () => {
     const { onSave } = renderSpeciesDialog({
       value: "equino",
       isSaveDisabled: true,
@@ -41,7 +74,11 @@ describe("FieldEditDialog species", () => {
     });
 
     const select = screen.getByRole("combobox");
-    expect(select).toHaveValue("");
+    expect(select).toHaveValue("equino");
+    const detectedOption = screen.getByRole("option", {
+      name: "Valor detectado (no coincide con las opciones): equino",
+    });
+    expect(detectedOption).toBeDisabled();
     expect(screen.getByText("Valor no valido. Usa canino o felino.")).toBeInTheDocument();
     expect(screen.queryByText("Selecciona canino o felino.")).toBeNull();
 
@@ -66,17 +103,19 @@ describe("FieldEditDialog species", () => {
     expect(onValueChange).toHaveBeenCalledWith("felino");
   });
 
-  it("renders suggestion list and copies clicked value into input", () => {
+  it("shows only valid candidates in sugerencias and keeps click behavior", () => {
     const { onValueChange } = renderSpeciesDialog({
       value: "canino",
-      candidateSuggestions: [
-        { value: "canino", confidence: 0.93 },
-        { value: "felino", confidence: 0.87 },
-      ],
+      candidateSuggestions: [{ value: "felino", confidence: 0.87 }],
+      detectedCandidates: [{ value: "lagarto", confidence: 0.4 }],
     });
 
-    expect(screen.getByText("Sugerencias (2)")).toBeInTheDocument();
+    expect(screen.getByText("Sugerencias (1)")).toBeInTheDocument();
     expect(screen.getByText("Sugerido")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /felino/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /lagarto/i })).toBeNull();
+    expect(screen.getByText("Detectado en el documento")).toBeInTheDocument();
+    expect(screen.getByText("lagarto")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /felino/i }));
     expect(onValueChange).toHaveBeenCalledWith("felino");
@@ -89,5 +128,39 @@ describe("FieldEditDialog species", () => {
     });
 
     expect(screen.queryByText(/Sugerencias/i)).toBeNull();
+  });
+});
+
+describe("FieldEditDialog sex", () => {
+  it("shows current invalid value as disabled detected option", () => {
+    renderSexDialog({
+      value: "desconocido",
+      isSaveDisabled: true,
+      sexErrorMessage: "Valor no válido. Usa “macho” o “hembra”.",
+    });
+
+    const select = screen.getByRole("combobox");
+    expect(select).toHaveValue("desconocido");
+    const detectedOption = screen.getByRole("option", {
+      name: "Valor detectado (no coincide con las opciones): desconocido",
+    });
+    expect(detectedOption).toBeDisabled();
+    expect(screen.getByRole("option", { name: "Macho" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Hembra" })).toBeInTheDocument();
+  });
+
+  it("renders non-applicable candidates in detected block as non-clickable rows", () => {
+    renderSexDialog({
+      value: "",
+      candidateSuggestions: [{ value: "hembra", confidence: 0.8 }],
+      detectedCandidates: [{ value: "sexo incierto", confidence: 0.4 }],
+    });
+
+    expect(screen.getByText("Detectado en el documento")).toBeInTheDocument();
+    expect(screen.getByText("sexo incierto")).toBeInTheDocument();
+    expect(
+      screen.getByText("No coincide con las opciones de este campo")
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /sexo incierto/i })).toBeNull();
   });
 });

@@ -41,6 +41,10 @@ import {
   logExtractionDebugEvent,
   type ExtractionDebugEvent,
 } from "./extraction/extractionDebug";
+import {
+  resolveCandidateSuggestionSections,
+  type CandidateSuggestion,
+} from "./extraction/candidateSuggestions";
 import { validateFieldValue } from "./extraction/fieldValidators";
 import { groupProcessingSteps } from "./lib/processingHistory";
 import {
@@ -274,17 +278,6 @@ type RawTextArtifactResponse = {
 type ReviewEvidence = {
   page: number;
   snippet: string;
-};
-
-type CandidateSuggestionEvidence = {
-  page?: number;
-  snippet?: string;
-};
-
-type CandidateSuggestion = {
-  value: string;
-  confidence: number;
-  evidence?: CandidateSuggestionEvidence;
 };
 
 type ConfidenceBandCutoffs = {
@@ -3244,19 +3237,18 @@ export function App() {
     const validation = validateFieldValue("species", editingFieldDraftValue);
     return !validation.ok;
   }, [isEditingSpeciesField, editingFieldDraftValue]);
-  const editingFieldCandidateSuggestions = useMemo(() => {
-    const rawSuggestions = editingField?.rawField?.candidate_suggestions;
-    if (!Array.isArray(rawSuggestions)) {
-      return [];
+  const editingFieldCandidateSections = useMemo(() => {
+    if (!editingField?.key) {
+      return {
+        applicableSuggestions: [],
+        detectedCandidates: [],
+      };
     }
-
-    return rawSuggestions
-      .filter(
-        (item): item is CandidateSuggestion =>
-          typeof item?.value === "string" && typeof item?.confidence === "number"
-      )
-      .slice(0, 5);
-  }, [editingField?.rawField?.candidate_suggestions]);
+    return resolveCandidateSuggestionSections(
+      editingField.key,
+      editingField.rawField?.candidate_suggestions
+    );
+  }, [editingField?.key, editingField?.rawField?.candidate_suggestions]);
 
   const saveFieldEditDialog = () => {
     if (!editingField) {
@@ -3901,7 +3893,8 @@ export function App() {
         fieldKey={editingField?.key ?? null}
         fieldLabel={editingField?.label ?? ""}
         value={editingFieldDraftValue}
-        candidateSuggestions={editingFieldCandidateSuggestions}
+        candidateSuggestions={editingFieldCandidateSections.applicableSuggestions}
+        detectedCandidates={editingFieldCandidateSections.detectedCandidates}
         isSaving={interpretationEditMutation.isPending}
         isSaveDisabled={
           isEditingMicrochipInvalid ||

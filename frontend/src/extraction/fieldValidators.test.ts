@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { CANONICAL_SPECIES_OPTIONS, validateFieldValue } from "./fieldValidators";
+import {
+  CANONICAL_SPECIES_OPTIONS,
+  isControlledVocabField,
+  normalizeControlledVocabValue,
+  validateFieldValue,
+} from "./fieldValidators";
 
 const SPECIES_VALID_VECTORS: Array<[string, string]> = [
   ["canino", "canino"],
@@ -106,5 +111,18 @@ describe("validateFieldValue", () => {
   it("keeps unsupported keys as non-empty passthrough", () => {
     const result = validateFieldValue("owner_name", " Maria Perez ");
     expect(result).toEqual({ ok: true, normalized: "Maria Perez" });
+  });
+
+  it("identifies controlled vocab fields", () => {
+    expect(isControlledVocabField("sex")).toBe(true);
+    expect(isControlledVocabField("species")).toBe(true);
+    expect(isControlledVocabField("owner_name")).toBe(false);
+  });
+
+  it("normalizes controlled vocab values only when valid", () => {
+    expect(normalizeControlledVocabValue("sex", "female")).toBe("hembra");
+    expect(normalizeControlledVocabValue("species", "canina")).toBe("canino");
+    expect(normalizeControlledVocabValue("species", "lagarto")).toBeNull();
+    expect(normalizeControlledVocabValue("owner_name", "Maria Perez")).toBeNull();
   });
 });
