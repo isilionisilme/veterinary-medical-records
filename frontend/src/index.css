@@ -20,8 +20,8 @@
   --card-bg: #ffffff;
   --app-frame: var(--canvas-bg);
   --surface: var(--card-bg);
-  --surface-muted: #eef2f6;
-  --border-subtle: #dfe5ec;
+  --surface-muted: #eef1f4;
+  --border-subtle: #eef1f4;
   --shadow-soft: none;
 
   --radius-frame: 14px;
@@ -34,11 +34,11 @@
   --color-surface-muted: var(--surface-muted);
   --color-text: #1f2933;
   --color-text-secondary: #6b7280;
-  --color-text-muted: #8f98a6;
+  --color-text-muted: #9ca3af;
   --text-title: var(--color-text);
   --text-body: var(--color-text);
   --text-muted: var(--color-text-secondary);
-  --color-border: #d9e0e8;
+  --color-border: #e5e7eb;
   --color-border-subtle: var(--border-subtle);
   --color-accent: #fc4e1b;
   --color-accent-foreground: #ffffff;
