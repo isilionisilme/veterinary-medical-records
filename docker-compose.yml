@@ -34,7 +34,7 @@ services:
     ports:
       - "${FRONTEND_PORT:-5173}:5173"
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:5173/"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5173/', (r) => process.exit(r.statusCode >= 200 && r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1));"]
       interval: 10s
       timeout: 5s
       retries: 8
