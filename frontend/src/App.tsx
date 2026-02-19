@@ -276,6 +276,17 @@ type ReviewEvidence = {
   snippet: string;
 };
 
+type CandidateSuggestionEvidence = {
+  page?: number;
+  snippet?: string;
+};
+
+type CandidateSuggestion = {
+  value: string;
+  confidence: number;
+  evidence?: CandidateSuggestionEvidence;
+};
+
 type ConfidenceBandCutoffs = {
   low_max: number;
   mid_max: number;
@@ -291,6 +302,7 @@ type ReviewField = {
   key: string;
   value: string | number | boolean | null;
   value_type: string;
+  candidate_suggestions?: CandidateSuggestion[];
   field_candidate_confidence?: number | null;
   field_mapping_confidence?: number;
   text_extraction_reliability?: number | null;
@@ -3232,6 +3244,19 @@ export function App() {
     const validation = validateFieldValue("species", editingFieldDraftValue);
     return !validation.ok;
   }, [isEditingSpeciesField, editingFieldDraftValue]);
+  const editingFieldCandidateSuggestions = useMemo(() => {
+    const rawSuggestions = editingField?.rawField?.candidate_suggestions;
+    if (!Array.isArray(rawSuggestions)) {
+      return [];
+    }
+
+    return rawSuggestions
+      .filter(
+        (item): item is CandidateSuggestion =>
+          typeof item?.value === "string" && typeof item?.confidence === "number"
+      )
+      .slice(0, 5);
+  }, [editingField?.rawField?.candidate_suggestions]);
 
   const saveFieldEditDialog = () => {
     if (!editingField) {
@@ -3876,6 +3901,7 @@ export function App() {
         fieldKey={editingField?.key ?? null}
         fieldLabel={editingField?.label ?? ""}
         value={editingFieldDraftValue}
+        candidateSuggestions={editingFieldCandidateSuggestions}
         isSaving={interpretationEditMutation.isPending}
         isSaveDisabled={
           isEditingMicrochipInvalid ||

@@ -12,11 +12,17 @@ import {
 import { Input } from "../ui/input";
 import { CANONICAL_SPECIES_OPTIONS } from "../../extraction/fieldValidators";
 
+type CandidateSuggestion = {
+  value: string;
+  confidence: number;
+};
+
 type FieldEditDialogProps = {
   open: boolean;
   fieldKey: string | null;
   fieldLabel: string;
   value: string;
+  candidateSuggestions?: CandidateSuggestion[];
   isSaving: boolean;
   isSaveDisabled?: boolean;
   microchipErrorMessage?: string | null;
@@ -34,6 +40,7 @@ export function FieldEditDialog({
   fieldKey,
   fieldLabel,
   value,
+  candidateSuggestions = [],
   isSaving,
   isSaveDisabled = false,
   microchipErrorMessage = null,
@@ -113,6 +120,16 @@ export function FieldEditDialog({
   const isKnownSpeciesValue = CANONICAL_SPECIES_OPTIONS.some(
     (option) => option.value === normalizedSpeciesValue
   );
+  const visibleCandidateSuggestions = useMemo(() => {
+    const normalizedCurrentValue = value.trim();
+    const normalizedSuggestions = candidateSuggestions
+      .filter((suggestion) => suggestion.value.trim().length > 0)
+      .slice(0, 5);
+    const hasAlternative = normalizedSuggestions.some(
+      (suggestion) => suggestion.value.trim() !== normalizedCurrentValue
+    );
+    return hasAlternative ? normalizedSuggestions : [];
+  }, [candidateSuggestions, value]);
   const handleValueChange = (nextValue: string) => {
     if (isMicrochipField) {
       const sanitized = nextValue.replace(/\D/g, "");
@@ -229,6 +246,33 @@ export function FieldEditDialog({
             }
           />
         )}
+        {visibleCandidateSuggestions.length > 0 ? (
+          <div className="mt-2 space-y-1.5 rounded-control border border-borderSubtle bg-surface px-3 py-2">
+            <p className="text-xs font-semibold text-text">
+              Sugerencias ({visibleCandidateSuggestions.length})
+            </p>
+            <p className="text-xs text-muted">
+              Selecciona una sugerencia o escribe tu propia corrección.
+            </p>
+            <div className="space-y-1">
+              {visibleCandidateSuggestions.map((suggestion, index) => (
+                <button
+                  key={`${suggestion.value}-${index}`}
+                  type="button"
+                  className="flex w-full items-center justify-between rounded-control border border-borderSubtle bg-surface px-2 py-1 text-left text-xs text-text transition hover:bg-surfaceMuted"
+                  onClick={() => handleValueChange(suggestion.value)}
+                >
+                  <span className="truncate">{suggestion.value}</span>
+                  {index === 0 ? (
+                    <span className="ml-2 shrink-0 rounded-full bg-accent/15 px-1.5 py-0.5 text-[10px] font-semibold text-accent">
+                      Sugerido
+                    </span>
+                  ) : null}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
         {isMicrochipField ? (
           <div className="mt-1 space-y-1">
             <p className={microchipErrorMessage ? "text-xs text-[var(--status-error)]" : "text-xs text-muted"}>

@@ -96,6 +96,62 @@ def test_candidate_bundle_is_persisted_when_debug_flag_enabled(monkeypatch) -> N
     assert isinstance(candidate_bundle, dict)
 
 
+def test_candidate_suggestions_are_ordered_and_capped_to_top_five(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "backend.app.application.processing_runner._mine_interpretation_candidates",
+        lambda _raw_text: {
+            "pet_name": [
+                {"value": "Milo", "confidence": 0.72, "evidence": {"page": 1, "snippet": "Milo"}},
+                {"value": "Luna", "confidence": 0.91, "evidence": {"page": 1, "snippet": "Luna"}},
+                {"value": "Nala", "confidence": 0.84, "evidence": {"page": 2, "snippet": "Nala"}},
+                {"value": "Kira", "confidence": 0.84, "evidence": {"page": 2, "snippet": "Kira"}},
+                {"value": "Mika", "confidence": 0.63, "evidence": {"page": 3, "snippet": "Mika"}},
+                {"value": "Duna", "confidence": 0.51, "evidence": {"page": 3, "snippet": "Duna"}},
+            ]
+        },
+    )
+
+    payload = _build_interpretation_artifact(
+        document_id="doc-candidate-suggestions",
+        run_id="run-candidate-suggestions",
+        raw_text="Paciente: Luna",
+    )
+
+    pet_name_field = next(
+        field
+        for field in payload["data"]["fields"]
+        if isinstance(field, dict) and field.get("key") == "pet_name"
+    )
+    suggestions = pet_name_field.get("candidate_suggestions")
+    assert isinstance(suggestions, list)
+    assert [item["value"] for item in suggestions] == ["Luna", "Kira", "Nala", "Milo", "Mika"]
+    assert len(suggestions) == 5
+
+
+def test_candidate_suggestions_are_omitted_when_field_has_no_candidates(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "backend.app.application.processing_runner._mine_interpretation_candidates",
+        lambda _raw_text: {},
+    )
+    monkeypatch.setattr(
+        "backend.app.application.processing_runner._map_candidates_to_global_schema",
+        lambda _bundle: ({"pet_name": "Luna"}, {"pet_name": []}),
+    )
+
+    payload = _build_interpretation_artifact(
+        document_id="doc-candidate-suggestions-omitted",
+        run_id="run-candidate-suggestions-omitted",
+        raw_text="Paciente: Luna",
+    )
+
+    pet_name_field = next(
+        field
+        for field in payload["data"]["fields"]
+        if isinstance(field, dict) and field.get("key") == "pet_name"
+    )
+    assert "candidate_suggestions" not in pet_name_field
+
+
 def test_microchip_heuristic_extracts_digits_from_keyworded_line() -> None:
     candidates = _mine_interpretation_candidates(
         "Microchip: 00023035139 NHC\nPaciente: Luna"

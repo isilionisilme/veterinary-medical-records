@@ -7,6 +7,7 @@ function renderSpeciesDialog(options?: {
   value?: string;
   isSaveDisabled?: boolean;
   speciesErrorMessage?: string | null;
+  candidateSuggestions?: Array<{ value: string; confidence: number }>;
 }) {
   const onValueChange = vi.fn();
   const onOpenChange = vi.fn();
@@ -18,6 +19,7 @@ function renderSpeciesDialog(options?: {
       fieldKey="species"
       fieldLabel="Especie"
       value={options?.value ?? ""}
+      candidateSuggestions={options?.candidateSuggestions}
       isSaving={false}
       isSaveDisabled={options?.isSaveDisabled ?? false}
       speciesErrorMessage={options?.speciesErrorMessage ?? null}
@@ -62,5 +64,30 @@ describe("FieldEditDialog species", () => {
     fireEvent.change(screen.getByRole("combobox"), { target: { value: "felino" } });
 
     expect(onValueChange).toHaveBeenCalledWith("felino");
+  });
+
+  it("renders suggestion list and copies clicked value into input", () => {
+    const { onValueChange } = renderSpeciesDialog({
+      value: "canino",
+      candidateSuggestions: [
+        { value: "canino", confidence: 0.93 },
+        { value: "felino", confidence: 0.87 },
+      ],
+    });
+
+    expect(screen.getByText("Sugerencias (2)")).toBeInTheDocument();
+    expect(screen.getByText("Sugerido")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /felino/i }));
+    expect(onValueChange).toHaveBeenCalledWith("felino");
+  });
+
+  it("does not render suggestions when only current value is present", () => {
+    renderSpeciesDialog({
+      value: "canino",
+      candidateSuggestions: [{ value: "canino", confidence: 0.93 }],
+    });
+
+    expect(screen.queryByText(/Sugerencias/i)).toBeNull();
   });
 });
