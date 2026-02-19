@@ -2623,7 +2623,9 @@ describe("App upload and list flow", () => {
     const positiveLine = await findAdjustmentLine(
       /Ajuste por histórico de revisiones:\s*\+7%/i
     );
-    expect(positiveLine).toHaveClass("text-[var(--status-success)]");
+    const positiveValue = positiveLine.querySelector("span");
+    expect(positiveValue).not.toBeNull();
+    expect(positiveValue).toHaveClass("text-[var(--status-success)]");
     fireEvent.blur(positive);
 
     const negativeIndicator = screen
@@ -2644,7 +2646,9 @@ describe("App upload and list flow", () => {
     const negativeLine = await findAdjustmentLine(
       /Ajuste por histórico de revisiones:\s*-4%/i
     );
-    expect(negativeLine).toHaveClass("text-[var(--status-error)]");
+    const negativeValue = negativeLine.querySelector("span");
+    expect(negativeValue).not.toBeNull();
+    expect(negativeValue).toHaveClass("text-[var(--status-error)]");
     fireEvent.blur(negative);
 
     const neutralIndicator = screen.getByTestId("confidence-indicator-core:owner_name");
@@ -2657,7 +2661,9 @@ describe("App upload and list flow", () => {
     const neutralLine = await findAdjustmentLine(
       /Ajuste por histórico de revisiones:\s*0%/i
     );
-    expect(neutralLine).toHaveClass("text-muted");
+    const neutralValue = neutralLine.querySelector("span");
+    expect(neutralValue).not.toBeNull();
+    expect(neutralValue).toHaveClass("text-muted");
   });
 
   it("toggles report layout in DEV with Shift+L and persists selection", async () => {
