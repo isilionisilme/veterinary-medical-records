@@ -1,17 +1,15 @@
 # Release 6 — Explicit overrides & workflow closure
 
 ## Goal
-Give veterinarians explicit control over processing context and a clear way to close work on a document.
+Focus this release on manual language override and reprocessing with the updated language context.
 
 ## Scope
 - Manual language override
-- Reprocessing with new language context
-- Explicit “reviewed” status
-- Automatic reopening on edits
+- Reprocess with updated language context
+- Evaluator-friendly installation and execution packaging/runbook
 
 ## User Stories (in order)
 - US-10 — Change document language and reprocess
-- US-12 — Mark document as reviewed
-- US-32 — Align review rendering to Global Schema v0 template (Implemented 2026-02-17)
+- US-42 — Provide evaluator-friendly installation & execution (Docker-first)
 
 ---

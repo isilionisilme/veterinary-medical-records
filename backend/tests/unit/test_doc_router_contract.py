@@ -142,18 +142,18 @@ def test_project_split_entry_includes_implementation_plan_us32_module() -> None:
     plan_entry = _read_text(
         ROUTER_ROOT / "04_PROJECT" / "IMPLEMENTATION_PLAN" / "00_entry.md"
     )
-    release6 = _read_text(
+    release5 = _read_text(
         ROUTER_ROOT
         / "04_PROJECT"
         / "IMPLEMENTATION_PLAN"
-        / "120_release-6-explicit-overrides-workflow-closure.md"
+        / "110_release-5-editing-learning-signals-human-corrections.md"
     )
 
     assert (
         "docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/275_us-32-align-review-rendering-to-global-schema-v0-template.md"
         in plan_entry
     )
-    assert "US-32 — Align review rendering to Global Schema v0 template" in release6
+    assert "US-32 — Align review rendering to Global Schema v0 template" in release5
 
 
 def test_project_split_entry_includes_implementation_plan_us35_module() -> None:
@@ -191,6 +191,25 @@ def test_project_split_entry_includes_implementation_plan_us41_module() -> None:
         in plan_entry
     )
     assert "US-41 — Show Top-5 Candidate Suggestions in Field Edit Modal" in release5
+
+
+def test_project_split_entry_includes_implementation_plan_us42_module() -> None:
+    plan_entry = _read_text(
+        ROUTER_ROOT / "04_PROJECT" / "IMPLEMENTATION_PLAN" / "00_entry.md"
+    )
+    release6 = _read_text(
+        ROUTER_ROOT
+        / "04_PROJECT"
+        / "IMPLEMENTATION_PLAN"
+        / "120_release-6-explicit-overrides-workflow-closure.md"
+    )
+
+    assert (
+        "docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/"
+        "278_us-42-provide-evaluator-friendly-installation-execution-docker-first.md"
+        in plan_entry
+    )
+    assert "US-42 — Provide evaluator-friendly installation & execution (Docker-first)" in release6
 
 
 def test_user_visible_entry_includes_design_system_module() -> None:
