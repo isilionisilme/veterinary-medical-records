@@ -3898,7 +3898,7 @@ export function App() {
         <SectionHeader title={section.title} />
         <div className="mt-2">
           {isEmptyExtraSection && (
-            <p className="rounded-xl bg-surface px-3 py-2 text-xs text-textSecondary">
+            <p className="rounded-control bg-surface px-3 py-2 text-xs text-textSecondary">
               {OTHER_EXTRACTED_FIELDS_EMPTY_STATE}
             </p>
           )}
@@ -3938,7 +3938,7 @@ export function App() {
         <SectionHeader title={section.title} />
         <div className={`mt-2 ${STRUCTURED_FIELD_STACK_CLASS}`}>
           {isEmptyExtraSection && (
-            <p className="rounded-xl bg-surface px-3 py-2 text-xs text-muted">
+            <p className="rounded-control bg-surface px-3 py-2 text-xs text-muted">
               {OTHER_EXTRACTED_FIELDS_EMPTY_STATE}
             </p>
           )}
@@ -4097,7 +4097,7 @@ export function App() {
           />
           <section className={`flex min-w-0 flex-1 flex-col ${panelHeightClass}`}>
             {shouldShowLoadPdfErrorBanner && (
-              <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div className="rounded-card border border-statusError bg-surface px-4 py-3 text-sm text-text">
                 {getUserErrorMessage(loadPdf.error, "No se pudo cargar la vista previa del documento.")}
               </div>
             )}
@@ -4210,11 +4210,11 @@ export function App() {
                               onMouseDown={startReviewSplitDragging}
                               onDoubleClick={resetReviewSplitRatio}
                               onKeyDown={handleReviewSplitKeyboard}
-                              className="group flex h-full w-full cursor-col-resize items-center justify-center rounded-full bg-transparent transition hover:bg-black/[0.05] focus-visible:bg-black/[0.05] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-accent"
+                              className="group flex h-full w-full cursor-col-resize items-center justify-center rounded-full bg-transparent transition hover:bg-surfaceMuted focus-visible:bg-surfaceMuted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-accent"
                             >
                               <span
                                 aria-hidden="true"
-                                className="h-24 w-[2px] rounded-full bg-black/15 transition group-hover:bg-black/35"
+                                className="h-24 w-[2px] rounded-full bg-borderSubtle transition group-hover:bg-border"
                               />
                             </button>
                           </div>
@@ -4452,7 +4452,7 @@ export function App() {
                                   aria-live="polite"
                                   className="h-full min-h-0 overflow-y-auto pr-1 space-y-2"
                                 >
-                                  <p className="rounded-xl bg-blue-50 px-3 py-2 text-xs text-blue-700">
+                                  <p className="rounded-control border border-borderSubtle bg-surfaceMuted px-3 py-2 text-xs text-textSecondary">
                                     {reviewPanelMessage}
                                   </p>
                                   <div data-testid="review-core-skeleton" className="space-y-2">
@@ -4461,9 +4461,9 @@ export function App() {
                                         key={`review-skeleton-${index}`}
                                         className="animate-pulse rounded-card bg-surface p-3"
                                       >
-                                        <div className="h-3 w-1/2 rounded bg-black/10" />
-                                        <div className="mt-2 h-2.5 w-5/6 rounded bg-black/10" />
-                                        <div className="mt-3 h-2 w-1/3 rounded bg-black/10" />
+                                        <div className="h-3 w-1/2 rounded bg-borderSubtle" />
+                                        <div className="mt-2 h-2.5 w-5/6 rounded bg-borderSubtle" />
+                                        <div className="mt-3 h-2 w-1/3 rounded bg-borderSubtle" />
                                       </div>
                                     ))}
                                   </div>
@@ -4523,7 +4523,7 @@ export function App() {
                                 >
                                   <div className="space-y-3">
                                     {isDocumentReviewed && (
-                                      <p className="rounded-control border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                                      <p className="rounded-control border border-statusWarn bg-surface px-3 py-2 text-xs text-text">
                                         Documento marcado como revisado. Los datos están en modo de solo lectura.
                                       </p>
                                     )}
@@ -4567,7 +4567,7 @@ export function App() {
                     <button
                       type="button"
                       data-testid="source-drawer-backdrop"
-                      className="fixed inset-0 z-40 bg-black/30"
+                      className="fixed inset-0 z-40 bg-text/20"
                       aria-label="Cerrar fuente"
                       onClick={sourcePanel.closeOverlay}
                     />
@@ -4658,7 +4658,7 @@ export function App() {
                       <p className="mt-2 text-xs text-muted">Cargando texto extraido...</p>
                     )}
                     {rawTextErrorMessage && (
-                      <p className="mt-2 text-xs text-red-600">
+                      <p className="mt-2 text-xs text-statusError">
                         {rawTextErrorMessage}
                       </p>
                     )}
@@ -4704,7 +4704,7 @@ export function App() {
                       <p className="mt-2 text-xs text-muted">Cargando historial...</p>
                     )}
                     {activeId && processingHistory.isError && (
-                      <p className="mt-2 text-xs text-red-600">
+                      <p className="mt-2 text-xs text-statusError">
                         {getUserErrorMessage(
                           processingHistory.error,
                           "No se pudo cargar el historial de procesamiento."
@@ -4731,7 +4731,7 @@ export function App() {
                                 {formatRunHeader(run)}
                               </div>
                               {run.failure_type && (
-                                <p className="mt-1 text-xs text-red-600">
+                                <p className="mt-1 text-xs text-statusError">
                                   {explainFailure(run.failure_type)}
                                 </p>
                               )}
@@ -4760,10 +4760,10 @@ export function App() {
                                           <span
                                             className={
                                               step.status === "FAILED"
-                                                ? "text-red-600"
+                                                ? "text-statusError"
                                                 : step.status === "COMPLETED"
-                                                ? "text-green-600"
-                                                : "text-amber-600"
+                                                ? "text-statusSuccess"
+                                                : "text-statusWarn"
                                             }
                                           >
                                             {statusIcon(step.status)}
@@ -4776,7 +4776,7 @@ export function App() {
                                           {duration && <span>{duration}</span>}
                                         </div>
                                         {step.status === "FAILED" && (
-                                          <p className="mt-1 text-xs text-red-600">
+                                          <p className="mt-1 text-xs text-statusError">
                                             {explainFailure(
                                               step.raw_events.find(
                                                 (event) => event.step_status === "FAILED"
@@ -4818,7 +4818,7 @@ export function App() {
                                                     : ""}
                                                 </span>
                                                 {event.error_code && (
-                                                  <span className="text-red-600">
+                                                  <span className="text-statusError">
                                                     {` · ${explainFailure(event.error_code)}`}
                                                   </span>
                                                 )}

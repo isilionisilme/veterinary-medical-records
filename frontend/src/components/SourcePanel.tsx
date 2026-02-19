@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { X } from "lucide-react";
 
 import { IconButton } from "./app/IconButton";
 import { Button } from "./ui/button";
@@ -34,17 +35,17 @@ export function SourcePanel({
         </div>
         <div className="flex items-center gap-2">
           <Button type="button" variant="ghost" onClick={onTogglePin} disabled={!isDesktopForPin}>
-            {isSourcePinned ? "Desfijar" : "📌 Fijar"}
+            {isSourcePinned ? "Desfijar" : "Fijar"}
           </Button>
           <IconButton label="Cerrar panel de fuente" onClick={onClose}>
-            ✕
+            <X size={14} aria-hidden="true" />
           </IconButton>
         </div>
       </div>
       <ScrollArea data-testid="source-panel-scroll" className="mt-3 min-h-0 flex-1">
         {content}
       </ScrollArea>
-      <div className="mt-3 rounded-xl border border-border bg-surface px-3 py-2 text-xs text-textSecondary">
+      <div className="mt-3 rounded-control border border-border bg-surface px-3 py-2 text-xs text-textSecondary">
         <p className="font-semibold text-text">Evidencia</p>
         <p className="mt-1">{sourceSnippet ?? "Sin evidencia disponible"}</p>
       </div>

@@ -2794,7 +2794,7 @@ describe("App upload and list flow", () => {
     const bannerText = await screen.findByText(/Los datos están en modo de solo lectura\./i);
     const banner = bannerText.closest("p");
     expect(banner).not.toBeNull();
-    expect(banner).toHaveClass("border", "border-amber-200", "bg-amber-50", "text-amber-900");
+    expect(banner).toHaveClass("border", "border-statusWarn", "bg-surface", "text-text");
   });
 
   it("toggles reviewed action visual state and supports keyboard blocked-edit feedback", async () => {
