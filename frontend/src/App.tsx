@@ -11,7 +11,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { AlignLeft, Check, Download, FileText, Info, Pencil, RefreshCw, Search, X } from "lucide-react";
+import { AlignLeft, Download, FileText, Info, Pencil, RefreshCw, Search, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { ConfidenceDot } from "./components/app/ConfidenceDot";
@@ -37,6 +37,15 @@ import { ScrollArea } from "./components/ui/scroll-area";
 import { Separator } from "./components/ui/separator";
 import { ToggleGroup, ToggleGroupItem } from "./components/ui/toggle-group";
 import { Tooltip } from "./components/ui/tooltip";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "./components/ui/dialog";
 import { useSourcePanelState } from "./hooks/useSourcePanelState";
 import {
   logExtractionDebugEvent,
@@ -135,6 +144,22 @@ const HIDDEN_EXTRACTED_FIELDS = new Set([
   "imagine",
   "imagen",
 ]);
+
+const SECTION_LABELS: Record<string, string> = {
+  "Identificacion del caso": "Datos de la clínica",
+  "Visita / episodio": "Visitas",
+};
+
+const FIELD_LABELS: Record<string, string> = {
+  clinic_name: "Nombre",
+  clinic_address: "Dirección",
+  pet_name: "Nombre",
+  dob: "Nacimiento",
+  owner_name: "Nombre",
+  owner_id: "Dirección",
+};
+
+const HIDDEN_REVIEW_FIELDS = new Set(["document_date", "claim_id"]);
 
 type ConfidencePolicyDiagnosticEvent = {
   event_type: "CONFIDENCE_POLICY_CONFIG_MISSING";
@@ -2610,17 +2635,11 @@ export function App() {
   }, [validatedReviewFields]);
 
   const coreDisplayFields = useMemo(() => {
-    return GLOBAL_SCHEMA_V0.map((definition): ReviewDisplayField => {
+    return GLOBAL_SCHEMA_V0.filter((definition) => !HIDDEN_REVIEW_FIELDS.has(definition.key)).map(
+      (definition): ReviewDisplayField => {
+      const uiSection = SECTION_LABELS[definition.section] ?? definition.section;
+      const uiLabel = FIELD_LABELS[definition.key] ?? definition.label;
       let candidates = matchesByKey.get(definition.key) ?? [];
-      if (definition.key === "document_date") {
-        const hasDocumentDate = candidates.some(
-          (candidate) => !isFieldValueEmpty(candidate.value)
-        );
-        if (!hasDocumentDate) {
-          // Document date falls back to visit date for scanability and deterministic dates.
-          candidates = matchesByKey.get("visit_date") ?? [];
-        }
-      }
 
       if (definition.repeatable) {
         const items = candidates
@@ -2630,8 +2649,8 @@ export function App() {
               {
                 id: `core:${definition.key}:${candidate.field_id}:${index}`,
                 key: definition.key,
-                label: definition.label,
-                section: definition.section,
+                label: uiLabel,
+                section: uiSection,
                 order: definition.order,
                 valueType: candidate.value_type,
                 displayValue: formatFieldValue(candidate.value, candidate.value_type),
@@ -2647,8 +2666,8 @@ export function App() {
         return {
           id: `core:${definition.key}`,
           key: definition.key,
-          label: definition.label,
-          section: definition.section,
+          label: uiLabel,
+          section: uiSection,
           order: definition.order,
           isCritical: definition.critical,
           valueType: definition.value_type,
@@ -2673,8 +2692,8 @@ export function App() {
         {
           id: `core:${definition.key}`,
           key: definition.key,
-          label: definition.label,
-          section: definition.section,
+          label: uiLabel,
+          section: uiSection,
           order: definition.order,
           valueType: bestCandidate?.value_type ?? definition.value_type,
           displayValue,
@@ -2688,8 +2707,8 @@ export function App() {
       return {
         id: `core:${definition.key}`,
         key: definition.key,
-        label: definition.label,
-        section: definition.section,
+        label: uiLabel,
+        section: uiSection,
         order: definition.order,
         isCritical: definition.critical,
         valueType: definition.value_type,
@@ -2803,7 +2822,10 @@ export function App() {
       current.push(field);
       groups.set(field.section, current);
     });
-    return GLOBAL_SCHEMA_SECTION_ORDER.map((section) => ({
+    const orderedSections = [
+      ...new Set(GLOBAL_SCHEMA_SECTION_ORDER.map((section) => SECTION_LABELS[section] ?? section)),
+    ];
+    return orderedSections.map((section) => ({
       section,
       fields: (groups.get(section) ?? []).sort((a, b) => a.order - b.order),
     }));
@@ -3878,8 +3900,7 @@ export function App() {
     const isExtraSection = section.id === "extra:section";
     const isEmptyExtraSection = isExtraSection && section.fields.length === 0;
     const isOwnerSection = section.title === "Propietario";
-    const isVisitSection = section.title === "Visita";
-    const shouldUseSingleColumn = isOwnerSection || isVisitSection;
+    const shouldUseSingleColumn = isOwnerSection;
 
     return (
       <SectionBlock
@@ -3889,7 +3910,7 @@ export function App() {
         <SectionHeader title={section.title} />
         <div className="mt-2">
           {isEmptyExtraSection && (
-            <p className="rounded-xl bg-surface px-3 py-2 text-xs text-textSecondary">
+            <p className="rounded-control bg-surface px-3 py-2 text-xs text-textSecondary">
               {OTHER_EXTRACTED_FIELDS_EMPTY_STATE}
             </p>
           )}
@@ -3918,8 +3939,7 @@ export function App() {
     const isExtraSection = section.id === "extra:section";
     const isEmptyExtraSection = isExtraSection && section.fields.length === 0;
     const isOwnerSection = section.title === "Propietario";
-    const isVisitSection = section.title === "Visita";
-    const shouldUseSingleColumn = isOwnerSection || isVisitSection;
+    const shouldUseSingleColumn = isOwnerSection;
 
     return (
       <SectionBlock
@@ -3929,7 +3949,7 @@ export function App() {
         <SectionHeader title={section.title} />
         <div className={`mt-2 ${STRUCTURED_FIELD_STACK_CLASS}`}>
           {isEmptyExtraSection && (
-            <p className="rounded-xl bg-surface px-3 py-2 text-xs text-muted">
+            <p className="rounded-control bg-surface px-3 py-2 text-xs text-muted">
               {OTHER_EXTRACTED_FIELDS_EMPTY_STATE}
             </p>
           )}
@@ -4088,7 +4108,7 @@ export function App() {
           />
           <section className={`flex min-w-0 flex-1 flex-col ${panelHeightClass}`}>
             {shouldShowLoadPdfErrorBanner && (
-              <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div className="rounded-card border border-statusError bg-surface px-4 py-3 text-sm text-text">
                 {getUserErrorMessage(loadPdf.error, "No se pudo cargar la vista previa del documento.")}
               </div>
             )}
@@ -4201,11 +4221,11 @@ export function App() {
                               onMouseDown={startReviewSplitDragging}
                               onDoubleClick={resetReviewSplitRatio}
                               onKeyDown={handleReviewSplitKeyboard}
-                              className="group flex h-full w-full cursor-col-resize items-center justify-center rounded-full bg-transparent transition hover:bg-black/[0.05] focus-visible:bg-black/[0.05] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-accent"
+                              className="group flex h-full w-full cursor-col-resize items-center justify-center rounded-full bg-transparent transition hover:bg-surfaceMuted focus-visible:bg-surfaceMuted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-accent"
                             >
                               <span
                                 aria-hidden="true"
-                                className="h-24 w-[2px] rounded-full bg-black/15 transition group-hover:bg-black/35"
+                                className="h-24 w-[2px] rounded-full bg-borderSubtle transition group-hover:bg-border"
                               />
                             </button>
                           </div>
@@ -4359,15 +4379,10 @@ export function App() {
                                           : ""
                                       }`}
                                     >
-                                      <span className="relative inline-flex h-3.5 w-3.5 items-center justify-center">
-                                        <span
-                                          aria-hidden="true"
-                                          className="h-3 w-3 rounded-full bg-confidenceLow ring-1 ring-white/70"
-                                        />
-                                        {selectedConfidenceBuckets.includes("low") && (
-                                          <Check size={10} className="absolute text-white" aria-hidden="true" />
-                                        )}
-                                      </span>
+                                      <span
+                                        aria-hidden="true"
+                                        className="inline-block h-3 w-3 shrink-0 rounded-full bg-confidenceLow"
+                                      />
                                     </ToggleGroupItem>
                                   </Tooltip>
                                   <Tooltip content="Media">
@@ -4380,15 +4395,10 @@ export function App() {
                                           : ""
                                       }`}
                                     >
-                                      <span className="relative inline-flex h-3.5 w-3.5 items-center justify-center">
-                                        <span
-                                          aria-hidden="true"
-                                          className="h-3 w-3 rounded-full bg-confidenceMed ring-1 ring-white/70"
-                                        />
-                                        {selectedConfidenceBuckets.includes("medium") && (
-                                          <Check size={10} className="absolute text-white" aria-hidden="true" />
-                                        )}
-                                      </span>
+                                      <span
+                                        aria-hidden="true"
+                                        className="inline-block h-3 w-3 shrink-0 rounded-full bg-confidenceMed"
+                                      />
                                     </ToggleGroupItem>
                                   </Tooltip>
                                   <Tooltip content="Alta">
@@ -4401,20 +4411,15 @@ export function App() {
                                           : ""
                                       }`}
                                     >
-                                      <span className="relative inline-flex h-3.5 w-3.5 items-center justify-center">
-                                        <span
-                                          aria-hidden="true"
-                                          className="h-3 w-3 rounded-full bg-confidenceHigh ring-1 ring-white/70"
-                                        />
-                                        {selectedConfidenceBuckets.includes("high") && (
-                                          <Check size={10} className="absolute text-white" aria-hidden="true" />
-                                        )}
-                                      </span>
+                                      <span
+                                        aria-hidden="true"
+                                        className="inline-block h-3 w-3 shrink-0 rounded-full bg-confidenceHigh"
+                                      />
                                     </ToggleGroupItem>
                                   </Tooltip>
                                 </ToggleGroup>
 
-                                <span aria-hidden="true" className="mx-1 h-6 w-px bg-black/20" />
+                                <span aria-hidden="true" className="mx-1 h-6 w-px bg-borderSubtle" />
 
                                 <ToggleGroup
                                   type="multiple"
@@ -4441,12 +4446,7 @@ export function App() {
                                           : ""
                                       }`}
                                     >
-                                      <span className="relative inline-flex h-3.5 w-3.5 items-center justify-center">
-                                        <CriticalIcon compact />
-                                        {showOnlyCritical && (
-                                          <Check size={10} className="absolute text-white" aria-hidden="true" />
-                                        )}
-                                      </span>
+                                      <CriticalIcon compact />
                                     </ToggleGroupItem>
                                   </Tooltip>
                                   <Tooltip content="No vacíos: muestra solo campos con valor.">
@@ -4459,15 +4459,10 @@ export function App() {
                                           : ""
                                       }`}
                                     >
-                                      <span className="relative inline-flex h-3.5 w-3.5 items-center justify-center">
-                                        <span
-                                          aria-hidden="true"
-                                          className="h-3 w-3 rounded-full bg-black ring-1 ring-black/20"
-                                        />
-                                        {showOnlyWithValue && (
-                                          <Check size={10} className="absolute text-white" aria-hidden="true" />
-                                        )}
-                                      </span>
+                                      <span
+                                        aria-hidden="true"
+                                        className="inline-block h-3 w-3 shrink-0 rounded-full bg-text"
+                                      />
                                     </ToggleGroupItem>
                                   </Tooltip>
                                   <Tooltip content="Vacíos: muestra solo campos sin dato.">
@@ -4480,15 +4475,10 @@ export function App() {
                                           : ""
                                       }`}
                                     >
-                                      <span className="relative inline-flex h-3.5 w-3.5 items-center justify-center">
-                                        <span
-                                          aria-hidden="true"
-                                          className="h-3 w-3 rounded-full border border-black/40 bg-white"
-                                        />
-                                        {showOnlyEmpty && (
-                                          <Check size={10} className="absolute text-text" aria-hidden="true" />
-                                        )}
-                                      </span>
+                                      <span
+                                        aria-hidden="true"
+                                        className="inline-block h-3 w-3 shrink-0 rounded-full border border-muted bg-surface"
+                                      />
                                     </ToggleGroupItem>
                                   </Tooltip>
                                 </ToggleGroup>
@@ -4503,7 +4493,7 @@ export function App() {
                                   aria-live="polite"
                                   className="h-full min-h-0 overflow-y-auto pr-1 space-y-2"
                                 >
-                                  <p className="rounded-xl bg-blue-50 px-3 py-2 text-xs text-blue-700">
+                                  <p className="rounded-control border border-borderSubtle bg-surfaceMuted px-3 py-2 text-xs text-textSecondary">
                                     {reviewPanelMessage}
                                   </p>
                                   <div data-testid="review-core-skeleton" className="space-y-2">
@@ -4512,9 +4502,9 @@ export function App() {
                                         key={`review-skeleton-${index}`}
                                         className="animate-pulse rounded-card bg-surface p-3"
                                       >
-                                        <div className="h-3 w-1/2 rounded bg-black/10" />
-                                        <div className="mt-2 h-2.5 w-5/6 rounded bg-black/10" />
-                                        <div className="mt-3 h-2 w-1/3 rounded bg-black/10" />
+                                        <div className="h-3 w-1/2 rounded bg-borderSubtle" />
+                                        <div className="mt-2 h-2.5 w-5/6 rounded bg-borderSubtle" />
+                                        <div className="mt-3 h-2 w-1/3 rounded bg-borderSubtle" />
                                       </div>
                                     ))}
                                   </div>
@@ -4574,7 +4564,7 @@ export function App() {
                                 >
                                   <div className="space-y-3">
                                     {isDocumentReviewed && (
-                                      <p className="rounded-control border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                                      <p className="rounded-control border border-statusWarn bg-surface px-3 py-2 text-xs text-text">
                                         Documento marcado como revisado. Los datos están en modo de solo lectura.
                                       </p>
                                     )}
@@ -4618,7 +4608,7 @@ export function App() {
                     <button
                       type="button"
                       data-testid="source-drawer-backdrop"
-                      className="fixed inset-0 z-40 bg-black/30"
+                      className="fixed inset-0 z-40 bg-text/20"
                       aria-label="Cerrar fuente"
                       onClick={sourcePanel.closeOverlay}
                     />
@@ -4709,7 +4699,7 @@ export function App() {
                       <p className="mt-2 text-xs text-muted">Cargando texto extraido...</p>
                     )}
                     {rawTextErrorMessage && (
-                      <p className="mt-2 text-xs text-red-600">
+                      <p className="mt-2 text-xs text-statusError">
                         {rawTextErrorMessage}
                       </p>
                     )}
@@ -4755,7 +4745,7 @@ export function App() {
                       <p className="mt-2 text-xs text-muted">Cargando historial...</p>
                     )}
                     {activeId && processingHistory.isError && (
-                      <p className="mt-2 text-xs text-red-600">
+                      <p className="mt-2 text-xs text-statusError">
                         {getUserErrorMessage(
                           processingHistory.error,
                           "No se pudo cargar el historial de procesamiento."
@@ -4782,7 +4772,7 @@ export function App() {
                                 {formatRunHeader(run)}
                               </div>
                               {run.failure_type && (
-                                <p className="mt-1 text-xs text-red-600">
+                                <p className="mt-1 text-xs text-statusError">
                                   {explainFailure(run.failure_type)}
                                 </p>
                               )}
@@ -4811,10 +4801,10 @@ export function App() {
                                           <span
                                             className={
                                               step.status === "FAILED"
-                                                ? "text-red-600"
+                                                ? "text-statusError"
                                                 : step.status === "COMPLETED"
-                                                ? "text-green-600"
-                                                : "text-amber-600"
+                                                ? "text-statusSuccess"
+                                                : "text-statusWarn"
                                             }
                                           >
                                             {statusIcon(step.status)}
@@ -4827,7 +4817,7 @@ export function App() {
                                           {duration && <span>{duration}</span>}
                                         </div>
                                         {step.status === "FAILED" && (
-                                          <p className="mt-1 text-xs text-red-600">
+                                          <p className="mt-1 text-xs text-statusError">
                                             {explainFailure(
                                               step.raw_events.find(
                                                 (event) => event.step_status === "FAILED"
@@ -4869,7 +4859,7 @@ export function App() {
                                                     : ""}
                                                 </span>
                                                 {event.error_code && (
-                                                  <span className="text-red-600">
+                                                  <span className="text-statusError">
                                                     {` · ${explainFailure(event.error_code)}`}
                                                   </span>
                                                 )}
@@ -4892,24 +4882,30 @@ export function App() {
           </section>
         </div>
       </main>
-      {showRetryModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-6">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-4">
-            <p className="text-sm font-semibold text-ink">Reprocesar documento</p>
-            <p className="mt-2 text-xs text-muted">
+      <Dialog open={showRetryModal} onOpenChange={setShowRetryModal}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Reprocesar documento</DialogTitle>
+            <DialogDescription className="text-xs">
               Esto volvera a ejecutar extraccion e interpretacion y puede cambiar los resultados.
-            </p>
-            <div className="mt-4 flex items-center justify-end gap-2">
-              <Button type="button" variant="ghost" onClick={() => setShowRetryModal(false)}>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="ghost" disabled={reprocessMutation.isPending}>
                 Cancelar
               </Button>
-              <Button type="button" onClick={handleConfirmRetry}>
-                Reprocesar
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+            </DialogClose>
+            <Button
+              type="button"
+              onClick={handleConfirmRetry}
+              disabled={reprocessMutation.isPending}
+            >
+              {reprocessMutation.isPending ? "Reprocesando..." : "Reprocesar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <ToastHost
         connectivityToast={connectivityToast}
         uploadFeedback={uploadFeedback}

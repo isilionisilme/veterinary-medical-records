@@ -5,6 +5,7 @@ import {
   Dialog,
   DialogClose,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -213,6 +214,9 @@ export function FieldEditDialog({
       >
         <DialogHeader>
           <DialogTitle>{titleText}</DialogTitle>
+          <DialogDescription className="text-xs">
+            Revisa el valor sugerido, corrígelo si hace falta y guarda los cambios.
+          </DialogDescription>
         </DialogHeader>
 
         {isSexField ? (
@@ -223,7 +227,7 @@ export function FieldEditDialog({
             className={`w-full rounded-control border bg-surface px-3 py-2 text-sm text-text outline-none transition focus-visible:bg-surfaceMuted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
               shouldHighlightError
                 ? "border-[var(--status-error)] focus-visible:outline-[var(--status-error)]"
-                : "border-borderSubtle focus-visible:outline-accent"
+                : "border-borderSubtle focus-visible:border-borderSubtle focus-visible:outline-none"
             }`}
           >
             <option value="">Selecciona una opción</option>
@@ -246,7 +250,7 @@ export function FieldEditDialog({
             className={`w-full rounded-control border bg-surface px-3 py-2 text-sm text-text outline-none transition focus-visible:bg-surfaceMuted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
               shouldHighlightError
                 ? "border-[var(--status-error)] focus-visible:outline-[var(--status-error)]"
-                : "border-borderSubtle focus-visible:outline-accent"
+                : "border-borderSubtle focus-visible:border-borderSubtle focus-visible:outline-none"
             }`}
           >
             <option value="">Selecciona una opción</option>
@@ -270,7 +274,7 @@ export function FieldEditDialog({
             className={`min-h-28 w-full resize-y rounded-control border bg-surface px-3 py-2 text-sm text-text outline-none transition focus-visible:bg-surfaceMuted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
               shouldHighlightError
                 ? "border-[var(--status-error)] focus-visible:outline-[var(--status-error)]"
-                : "border-borderSubtle focus-visible:outline-accent"
+                : "border-borderSubtle focus-visible:border-borderSubtle focus-visible:outline-none"
             }`}
           />
         ) : (
@@ -284,7 +288,7 @@ export function FieldEditDialog({
                 ? `rounded-control border bg-surface px-3 py-1 text-sm text-text ${
                     shouldHighlightError
                       ? "border-[var(--status-error)] focus-visible:outline-[var(--status-error)]"
-                      : "border-borderSubtle focus-visible:outline-accent"
+                      : "border-borderSubtle focus-visible:border-borderSubtle focus-visible:outline-none"
                   }`
                 : undefined
             }

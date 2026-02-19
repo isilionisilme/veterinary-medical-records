@@ -864,7 +864,7 @@ export function PdfViewer({
             </div>
           )}
           {error && (
-            <div className="flex h-72 items-center justify-center text-sm text-red-600">
+            <div className="flex h-72 items-center justify-center text-sm text-statusError">
               {error}
             </div>
           )}
@@ -885,7 +885,7 @@ export function PdfViewer({
                 data-testid="pdf-page"
                 className={`mb-6 last:mb-0 ${
                   focusPage === page && isSnippetLocated
-                    ? "rounded-xl bg-accent/10 p-1"
+                    ? "rounded-card bg-accent/10 p-1"
                     : ""
                 }`}
               >
@@ -893,7 +893,7 @@ export function PdfViewer({
                     ref={(node) => {
                       canvasRefs.current[page - 1] = node;
                     }}
-                    className="mx-auto rounded-xl bg-white"
+                    className="mx-auto rounded-card bg-surface"
                   />
               </div>
             ))}

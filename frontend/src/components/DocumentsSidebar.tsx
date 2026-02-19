@@ -226,8 +226,8 @@ export function DocumentsSidebar({
                     key={`skeleton-initial-${index}`}
                     className="animate-pulse rounded-card bg-surfaceMuted p-[var(--canvas-gap)]"
                   >
-                    <div className="h-3 w-2/3 rounded bg-black/10" />
-                    <div className="mt-2 h-2.5 w-1/2 rounded bg-black/10" />
+                    <div className="h-3 w-2/3 rounded bg-borderSubtle" />
+                    <div className="mt-2 h-2.5 w-1/2 rounded bg-borderSubtle" />
                   </div>
                 ))}
               </div>
@@ -247,8 +247,8 @@ export function DocumentsSidebar({
                       key={`skeleton-refresh-${index}`}
                       className="animate-pulse rounded-card bg-surfaceMuted p-[var(--canvas-gap)]"
                     >
-                      <div className="h-3 w-2/3 rounded bg-black/10" />
-                      <div className="mt-2 h-2.5 w-1/2 rounded bg-black/10" />
+                      <div className="h-3 w-2/3 rounded bg-borderSubtle" />
+                      <div className="mt-2 h-2.5 w-1/2 rounded bg-borderSubtle" />
                     </div>
                   ))}
                 </div>
@@ -332,7 +332,7 @@ export function DocumentsSidebar({
                             <p className="mt-2 text-xs text-muted">Tardando mas de lo esperado</p>
                           )}
                           {isDocsSidebarExpanded && item.failure_type && (
-                            <p className="mt-2 text-xs text-red-600">Error: {item.failure_type}</p>
+                            <p className="mt-2 text-xs text-statusError">Error: {item.failure_type}</p>
                           )}
                         </button>
                       );

@@ -1446,7 +1446,8 @@ describe("App upload and list flow", () => {
     await screen.findByText(oldText);
 
     fireEvent.click(screen.getByRole("button", { name: /^Reprocesar$/i }));
-    fireEvent.click((await screen.findAllByRole("button", { name: /^Reprocesar$/i }))[1]);
+    const reprocessDialog = await screen.findByRole("dialog", { name: /Reprocesar documento/i });
+    fireEvent.click(within(reprocessDialog).getByRole("button", { name: /^Reprocesar$/i }));
 
     expect(await screen.findByText(/Reprocesamiento iniciado\./i)).toBeInTheDocument();
     expect(screen.queryByText(/Procesamiento reiniciado/i)).not.toBeInTheDocument();
@@ -1532,7 +1533,8 @@ describe("App upload and list flow", () => {
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
     fireEvent.click(screen.getByRole("button", { name: /Texto extraido/i }));
     fireEvent.click(screen.getByRole("button", { name: /^Reprocesar$/i }));
-    fireEvent.click((await screen.findAllByRole("button", { name: /^Reprocesar$/i }))[1]);
+    const reprocessDialog = await screen.findByRole("dialog", { name: /Reprocesar documento/i });
+    fireEvent.click(within(reprocessDialog).getByRole("button", { name: /^Reprocesar$/i }));
 
     expect((await screen.findAllByText(/reprocess failed/i)).length).toBeGreaterThan(0);
     await waitFor(() => {
@@ -1697,10 +1699,22 @@ describe("App upload and list flow", () => {
     renderApp();
     const panel = await openReadyDocumentAndGetPanel();
 
-    GLOBAL_SCHEMA_V0.forEach((field) => {
-      expect(within(panel).getAllByText(field.label).length).toBeGreaterThan(0);
+    const hiddenCoreKeys = new Set(["claim_id", "document_date"]);
+    const uiLabelOverrides: Record<string, string> = {
+      clinic_name: "Nombre",
+      clinic_address: "Dirección",
+      pet_name: "Nombre",
+      dob: "Nacimiento",
+      owner_name: "Nombre",
+      owner_id: "Dirección",
+    };
+
+    GLOBAL_SCHEMA_V0.filter((field) => !hiddenCoreKeys.has(field.key)).forEach((field) => {
+      const expectedLabel = uiLabelOverrides[field.key] ?? field.label;
+      expect(within(panel).getAllByText(expectedLabel).length).toBeGreaterThan(0);
     });
-    expect(within(panel).getByText("ID de reclamacion")).toBeInTheDocument();
+    expect(within(panel).queryByText("ID de reclamacion")).toBeNull();
+    expect(within(panel).queryByText("Fecha del documento")).toBeNull();
     expect(within(panel).getByText("Plan de tratamiento")).toBeInTheDocument();
     expect(within(panel).getAllByText("—").length).toBeGreaterThan(0);
     expect(within(panel).getByText("Other extracted fields")).toBeInTheDocument();
@@ -1726,7 +1740,7 @@ describe("App upload and list flow", () => {
     const ownerSectionTitle = within(panel).getByText("Propietario");
     const ownerSection = ownerSectionTitle.closest("section");
     expect(ownerSection).not.toBeNull();
-    const caseSectionTitle = within(panel).getByText("Identificacion del caso");
+    const caseSectionTitle = within(panel).getByText("Datos de la clínica");
     const caseSection = caseSectionTitle.closest("section");
     expect(caseSection).not.toBeNull();
     const clinicRow = within(caseSection as HTMLElement).getByTestId("core-row-clinic_name");
@@ -1787,7 +1801,7 @@ describe("App upload and list flow", () => {
     expect(ownerIdValue).toHaveClass("w-full");
     expect(ownerIdValue).toHaveClass("bg-surfaceMuted");
 
-    const visitSectionTitle = within(panel).getByText("Visita / episodio");
+    const visitSectionTitle = within(panel).getByText("Visitas");
     const visitSection = visitSectionTitle.closest("section");
     expect(visitSection).not.toBeNull();
     const visitGrid = (visitSection as HTMLElement).querySelector("div.grid");
@@ -1868,10 +1882,10 @@ describe("App upload and list flow", () => {
       expect.stringMatching(/Ajuste por histórico de revisiones:\s*\+7%/i)
     );
 
-    const clinicalRecordCard = within(panel).getByText("ID de reclamacion").closest("article");
+    const clinicalRecordCard = within(panel).getByTestId("core-row-clinic_name").closest("article");
     expect(clinicalRecordCard).not.toBeNull();
     const clinicalRecordConfidence = within(clinicalRecordCard as HTMLElement).getByTestId(
-      "confidence-indicator-core:claim_id"
+      "confidence-indicator-core:clinic_name"
     );
     expect(clinicalRecordConfidence).toHaveAttribute(
       "aria-label",
@@ -1901,7 +1915,7 @@ describe("App upload and list flow", () => {
     await waitForStructuredDataReady();
 
     const panel = screen.getByTestId("right-panel-scroll");
-    const missingIndicator = within(panel).getByTestId("confidence-indicator-core:claim_id");
+    const missingIndicator = within(panel).getByTestId("confidence-indicator-core:clinic_name");
     expect(missingIndicator).toHaveAttribute(
       "aria-label",
       expect.stringMatching(/no disponible/i)
@@ -1909,11 +1923,11 @@ describe("App upload and list flow", () => {
     expect(missingIndicator.className).toContain("bg-missing");
 
     fireEvent.click(screen.getByRole("button", { name: "Baja" }));
-    expect(within(screen.getByTestId("right-panel-scroll")).queryByText("ID de reclamacion")).toBeNull();
+    expect(within(screen.getByTestId("right-panel-scroll")).queryByTestId("field-trigger-core:clinic_name")).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "Baja" }));
     fireEvent.click(screen.getByRole("button", { name: "Mostrar solo campos vacíos" }));
-    expect(within(screen.getByTestId("right-panel-scroll")).getByText("ID de reclamacion")).toBeInTheDocument();
+    expect(within(screen.getByTestId("right-panel-scroll")).getByTestId("field-trigger-core:clinic_name")).toBeInTheDocument();
   });
 
   it("shows degraded confidence mode and emits a diagnostic event when policy config is missing", async () => {
@@ -2760,7 +2774,7 @@ describe("App upload and list flow", () => {
 
     const status = await screen.findByRole("status");
     expect(status).toHaveTextContent("Documento revisado: edición bloqueada.");
-    expect(status).toHaveClass("bg-red-50", "text-red-700");
+    expect(status).toHaveClass("border-red-300", "bg-red-50", "text-red-700");
   });
 
   it("does not show blocked-edit toast while selecting text in reviewed mode", async () => {
@@ -2792,7 +2806,7 @@ describe("App upload and list flow", () => {
     const bannerText = await screen.findByText(/Los datos están en modo de solo lectura\./i);
     const banner = bannerText.closest("p");
     expect(banner).not.toBeNull();
-    expect(banner).toHaveClass("border", "border-amber-200", "bg-amber-50", "text-amber-900");
+    expect(banner).toHaveClass("border", "border-statusWarn", "bg-surface", "text-text");
   });
 
   it("toggles reviewed action visual state and supports keyboard blocked-edit feedback", async () => {
