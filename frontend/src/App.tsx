@@ -145,6 +145,22 @@ const HIDDEN_EXTRACTED_FIELDS = new Set([
   "imagen",
 ]);
 
+const SECTION_LABELS: Record<string, string> = {
+  "Identificacion del caso": "Datos de la clínica",
+  "Visita / episodio": "Visitas",
+};
+
+const FIELD_LABELS: Record<string, string> = {
+  clinic_name: "Nombre",
+  clinic_address: "Dirección",
+  pet_name: "Nombre",
+  dob: "Nacimiento",
+  owner_name: "Nombre",
+  owner_id: "Dirección",
+};
+
+const HIDDEN_REVIEW_FIELDS = new Set(["document_date", "claim_id"]);
+
 type ConfidencePolicyDiagnosticEvent = {
   event_type: "CONFIDENCE_POLICY_CONFIG_MISSING";
   document_id: string | null;
@@ -2619,17 +2635,11 @@ export function App() {
   }, [validatedReviewFields]);
 
   const coreDisplayFields = useMemo(() => {
-    return GLOBAL_SCHEMA_V0.map((definition): ReviewDisplayField => {
+    return GLOBAL_SCHEMA_V0.filter((definition) => !HIDDEN_REVIEW_FIELDS.has(definition.key)).map(
+      (definition): ReviewDisplayField => {
+      const uiSection = SECTION_LABELS[definition.section] ?? definition.section;
+      const uiLabel = FIELD_LABELS[definition.key] ?? definition.label;
       let candidates = matchesByKey.get(definition.key) ?? [];
-      if (definition.key === "document_date") {
-        const hasDocumentDate = candidates.some(
-          (candidate) => !isFieldValueEmpty(candidate.value)
-        );
-        if (!hasDocumentDate) {
-          // Document date falls back to visit date for scanability and deterministic dates.
-          candidates = matchesByKey.get("visit_date") ?? [];
-        }
-      }
 
       if (definition.repeatable) {
         const items = candidates
@@ -2639,8 +2649,8 @@ export function App() {
               {
                 id: `core:${definition.key}:${candidate.field_id}:${index}`,
                 key: definition.key,
-                label: definition.label,
-                section: definition.section,
+                label: uiLabel,
+                section: uiSection,
                 order: definition.order,
                 valueType: candidate.value_type,
                 displayValue: formatFieldValue(candidate.value, candidate.value_type),
@@ -2656,8 +2666,8 @@ export function App() {
         return {
           id: `core:${definition.key}`,
           key: definition.key,
-          label: definition.label,
-          section: definition.section,
+          label: uiLabel,
+          section: uiSection,
           order: definition.order,
           isCritical: definition.critical,
           valueType: definition.value_type,
@@ -2682,8 +2692,8 @@ export function App() {
         {
           id: `core:${definition.key}`,
           key: definition.key,
-          label: definition.label,
-          section: definition.section,
+          label: uiLabel,
+          section: uiSection,
           order: definition.order,
           valueType: bestCandidate?.value_type ?? definition.value_type,
           displayValue,
@@ -2697,8 +2707,8 @@ export function App() {
       return {
         id: `core:${definition.key}`,
         key: definition.key,
-        label: definition.label,
-        section: definition.section,
+        label: uiLabel,
+        section: uiSection,
         order: definition.order,
         isCritical: definition.critical,
         valueType: definition.value_type,
@@ -2812,7 +2822,10 @@ export function App() {
       current.push(field);
       groups.set(field.section, current);
     });
-    return GLOBAL_SCHEMA_SECTION_ORDER.map((section) => ({
+    const orderedSections = [
+      ...new Set(GLOBAL_SCHEMA_SECTION_ORDER.map((section) => SECTION_LABELS[section] ?? section)),
+    ];
+    return orderedSections.map((section) => ({
       section,
       fields: (groups.get(section) ?? []).sort((a, b) => a.order - b.order),
     }));
@@ -3887,7 +3900,7 @@ export function App() {
     const isExtraSection = section.id === "extra:section";
     const isEmptyExtraSection = isExtraSection && section.fields.length === 0;
     const isOwnerSection = section.title === "Propietario";
-    const isVisitSection = section.title === "Visita";
+    const isVisitSection = section.title === "Visitas";
     const shouldUseSingleColumn = isOwnerSection || isVisitSection;
 
     return (
@@ -3927,7 +3940,7 @@ export function App() {
     const isExtraSection = section.id === "extra:section";
     const isEmptyExtraSection = isExtraSection && section.fields.length === 0;
     const isOwnerSection = section.title === "Propietario";
-    const isVisitSection = section.title === "Visita";
+    const isVisitSection = section.title === "Visitas";
     const shouldUseSingleColumn = isOwnerSection || isVisitSection;
 
     return (
