@@ -212,6 +212,19 @@ def test_project_split_entry_includes_implementation_plan_us42_module() -> None:
     assert "US-42 — Provide evaluator-friendly installation & execution (Docker-first)" in release6
 
 
+def test_implementation_plan_us42_status_is_propagated() -> None:
+    source_plan = _read_text(REPO_ROOT / "docs" / "project" / "IMPLEMENTATION_PLAN.md")
+    owner_module = _read_text(
+        ROUTER_ROOT
+        / "04_PROJECT"
+        / "IMPLEMENTATION_PLAN"
+        / "278_us-42-provide-evaluator-friendly-installation-execution-docker-first.md"
+    )
+
+    assert "**Status**: Implemented (2026-02-19)" in source_plan
+    assert "**Status**: Implemented (2026-02-19)" in owner_module
+
+
 def test_user_visible_entry_includes_design_system_module() -> None:
     user_visible_entry = _read_text(
         ROUTER_ROOT / "02_PRODUCT" / "USER_VISIBLE" / "00_entry.md"
