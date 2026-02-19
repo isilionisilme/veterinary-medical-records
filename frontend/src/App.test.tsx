@@ -43,6 +43,34 @@ function renderApp() {
   );
 }
 
+async function withDesktopHoverMatchMedia(run: () => Promise<void> | void) {
+  const originalMatchMedia = window.matchMedia;
+  Object.defineProperty(window, "matchMedia", {
+    configurable: true,
+    writable: true,
+    value: vi.fn((query: string) => ({
+      matches: query.includes("(min-width: 1024px)") || query.includes("(hover: hover)"),
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  });
+
+  try {
+    await run();
+  } finally {
+    Object.defineProperty(window, "matchMedia", {
+      configurable: true,
+      writable: true,
+      value: originalMatchMedia,
+    });
+  }
+}
+
 function createDataTransfer(file: File): DataTransfer {
   return {
     files: [file],
@@ -871,23 +899,7 @@ describe("App upload and list flow", () => {
   });
 
   it("auto-collapses docs sidebar on desktop after selecting a document and expands on hover", async () => {
-    const originalMatchMedia = window.matchMedia;
-    try {
-      Object.defineProperty(window, "matchMedia", {
-        configurable: true,
-        writable: true,
-        value: vi.fn((query: string) => ({
-          matches: query.includes("(min-width: 1024px)") || query.includes("(hover: hover)"),
-          media: query,
-          onchange: null,
-          addListener: vi.fn(),
-          removeListener: vi.fn(),
-          addEventListener: vi.fn(),
-          removeEventListener: vi.fn(),
-          dispatchEvent: vi.fn(),
-        })),
-      });
-
+    await withDesktopHoverMatchMedia(async () => {
       renderApp();
 
       const sidebar = await screen.findByTestId("documents-sidebar");
@@ -933,33 +945,11 @@ describe("App upload and list flow", () => {
 
       fireEvent.click(collapsedReadyItem);
       expect(screen.getByTestId("pdf-viewer")).toHaveAttribute("data-focus-page", "");
-    } finally {
-      Object.defineProperty(window, "matchMedia", {
-        configurable: true,
-        writable: true,
-        value: originalMatchMedia,
-      });
-    }
+    });
   });
 
   it("uploads from collapsed sidebar dropzone without auto-expanding", async () => {
-    const originalMatchMedia = window.matchMedia;
-    try {
-      Object.defineProperty(window, "matchMedia", {
-        configurable: true,
-        writable: true,
-        value: vi.fn((query: string) => ({
-          matches: query.includes("(min-width: 1024px)") || query.includes("(hover: hover)"),
-          media: query,
-          onchange: null,
-          addListener: vi.fn(),
-          removeListener: vi.fn(),
-          addEventListener: vi.fn(),
-          removeEventListener: vi.fn(),
-          dispatchEvent: vi.fn(),
-        })),
-      });
-
+    await withDesktopHoverMatchMedia(async () => {
       renderApp();
       const sidebar = await screen.findByTestId("documents-sidebar");
 
@@ -982,33 +972,11 @@ describe("App upload and list flow", () => {
         const calls = (globalThis.fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls;
         expect(calls.some(([url]) => String(url).includes("/documents/upload"))).toBe(true);
       });
-    } finally {
-      Object.defineProperty(window, "matchMedia", {
-        configurable: true,
-        writable: true,
-        value: originalMatchMedia,
-      });
-    }
+    });
   });
 
   it("keeps sidebar open on mouse leave when pinned, and collapses again after unpin", async () => {
-    const originalMatchMedia = window.matchMedia;
-    try {
-      Object.defineProperty(window, "matchMedia", {
-        configurable: true,
-        writable: true,
-        value: vi.fn((query: string) => ({
-          matches: query.includes("(min-width: 1024px)") || query.includes("(hover: hover)"),
-          media: query,
-          onchange: null,
-          addListener: vi.fn(),
-          removeListener: vi.fn(),
-          addEventListener: vi.fn(),
-          removeEventListener: vi.fn(),
-          dispatchEvent: vi.fn(),
-        })),
-      });
-
+    await withDesktopHoverMatchMedia(async () => {
       renderApp();
       const sidebar = await screen.findByTestId("documents-sidebar");
 
@@ -1028,13 +996,7 @@ describe("App upload and list flow", () => {
       expect(sidebar).toHaveAttribute("data-expanded", "true");
       fireEvent.mouseLeave(sidebar);
       expect(sidebar).toHaveAttribute("data-expanded", "false");
-    } finally {
-      Object.defineProperty(window, "matchMedia", {
-        configurable: true,
-        writable: true,
-        value: originalMatchMedia,
-      });
-    }
+    });
   });
 
   it("uses polished structured header actions without Documento original button", async () => {
@@ -2291,26 +2253,9 @@ describe("App upload and list flow", () => {
   });
 
   it("clamps split drag to current container width when sidebar is collapsed", async () => {
-    const originalMatchMedia = window.matchMedia;
     const INITIAL_GRID_WIDTH_PX = 1380;
     const NARROW_GRID_WIDTH_PX = 1030;
-    try {
-      // Hover-collapsed sidebar behavior is desktop-only, so this override is required for this scenario.
-      Object.defineProperty(window, "matchMedia", {
-        configurable: true,
-        writable: true,
-        value: vi.fn((query: string) => ({
-          matches: query.includes("(min-width: 1024px)") || query.includes("(hover: hover)"),
-          media: query,
-          onchange: null,
-          addListener: vi.fn(),
-          removeListener: vi.fn(),
-          addEventListener: vi.fn(),
-          removeEventListener: vi.fn(),
-          dispatchEvent: vi.fn(),
-        })),
-      });
-
+    await withDesktopHoverMatchMedia(async () => {
       renderApp();
 
       const sidebar = await screen.findByTestId("documents-sidebar");
@@ -2350,36 +2295,13 @@ describe("App upload and list flow", () => {
         const storedRatio = Number(window.localStorage.getItem("reviewSplitRatio"));
         expect(storedRatio).toBeGreaterThanOrEqual(expectedMinRatio - 0.001);
       });
-    } finally {
-      Object.defineProperty(window, "matchMedia", {
-        configurable: true,
-        writable: true,
-        value: originalMatchMedia,
-      });
-    }
+    });
   });
 
   it("re-clamps split ratio after expanding sidebar when splitter was dragged to minimum", async () => {
-    const originalMatchMedia = window.matchMedia;
     const COLLAPSED_GRID_WIDTH_PX = 1380;
     const EXPANDED_GRID_WIDTH_PX = 1030;
-    try {
-      // Hover-collapsed sidebar behavior is desktop-only, so this override is required for this scenario.
-      Object.defineProperty(window, "matchMedia", {
-        configurable: true,
-        writable: true,
-        value: vi.fn((query: string) => ({
-          matches: query.includes("(min-width: 1024px)") || query.includes("(hover: hover)"),
-          media: query,
-          onchange: null,
-          addListener: vi.fn(),
-          removeListener: vi.fn(),
-          addEventListener: vi.fn(),
-          removeEventListener: vi.fn(),
-          dispatchEvent: vi.fn(),
-        })),
-      });
-
+    await withDesktopHoverMatchMedia(async () => {
       renderApp();
 
       const sidebar = await screen.findByTestId("documents-sidebar");
@@ -2419,35 +2341,13 @@ describe("App upload and list flow", () => {
         const storedRatio = Number(window.localStorage.getItem("reviewSplitRatio"));
         expect(storedRatio).toBeGreaterThanOrEqual(expectedExpandedMinRatio - 0.001);
       });
-    } finally {
-      Object.defineProperty(window, "matchMedia", {
-        configurable: true,
-        writable: true,
-        value: originalMatchMedia,
-      });
-    }
+    });
   });
 
   it("keeps stable split bounds when expanded width is narrower than the split min width", async () => {
-    const originalMatchMedia = window.matchMedia;
     const COLLAPSED_GRID_WIDTH_PX = 1380;
     const EXPANDED_GRID_WIDTH_PX = 900;
-    try {
-      Object.defineProperty(window, "matchMedia", {
-        configurable: true,
-        writable: true,
-        value: vi.fn((query: string) => ({
-          matches: query.includes("(min-width: 1024px)") || query.includes("(hover: hover)"),
-          media: query,
-          onchange: null,
-          addListener: vi.fn(),
-          removeListener: vi.fn(),
-          addEventListener: vi.fn(),
-          removeEventListener: vi.fn(),
-          dispatchEvent: vi.fn(),
-        })),
-      });
-
+    await withDesktopHoverMatchMedia(async () => {
       renderApp();
 
       const sidebar = await screen.findByTestId("documents-sidebar");
@@ -2492,13 +2392,7 @@ describe("App upload and list flow", () => {
         expect(storedRatio).toBeGreaterThanOrEqual(expectedMinRatio - 0.001);
       });
       expect(splitGrid.style.minWidth).toBe(`${REVIEW_SPLIT_MIN_WIDTH_PX}px`);
-    } finally {
-      Object.defineProperty(window, "matchMedia", {
-        configurable: true,
-        writable: true,
-        value: originalMatchMedia,
-      });
-    }
+    });
   });
 
   it("restores default split ratio on handle double-click", async () => {
