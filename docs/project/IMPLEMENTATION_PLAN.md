@@ -909,6 +909,8 @@ As a veterinarian, I want the system to record my normal corrections as append-o
 
 ## US-41 — Show Top-5 Candidate Suggestions in Field Edit Modal
 
+**Status**: Implemented (2026-02-19)
+
 **User Story**
 As a veterinarian reviewer, I want to see a small list of alternative extracted candidates when editing a field, so that I can correct values faster by selecting a suggestion while still being able to type any manual correction.
 

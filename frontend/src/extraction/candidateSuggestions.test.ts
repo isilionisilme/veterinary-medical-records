@@ -81,6 +81,7 @@ describe("resolveCandidateSuggestionSections", () => {
 
     expect(sections.applicableSuggestions).toEqual([
       { value: "Maria Perez", confidence: 0.8, evidence: undefined },
+      { value: "Maria Perez", confidence: 0.7, evidence: undefined },
       { value: "Ana", confidence: 0.6, evidence: undefined },
     ]);
     expect(sections.detectedCandidates).toEqual([]);

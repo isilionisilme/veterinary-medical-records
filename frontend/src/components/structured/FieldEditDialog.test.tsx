@@ -121,6 +121,25 @@ describe("FieldEditDialog species", () => {
     expect(onValueChange).toHaveBeenCalledWith("felino");
   });
 
+  it("shows legacy normalized species value as disabled detected option", () => {
+    const { onSave } = renderSpeciesDialog({
+      value: "canina",
+      isSaveDisabled: true,
+      speciesErrorMessage: "Valor no valido. Usa canino o felino.",
+    });
+
+    const select = screen.getByRole("combobox");
+    expect(select).toHaveValue("canina");
+    expect(
+      screen.getByRole("option", {
+        name: "Valor detectado (no coincide con las opciones): canina",
+      })
+    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Guardar" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Guardar" }));
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
   it("does not render suggestions when only current value is present", () => {
     renderSpeciesDialog({
       value: "canino",
@@ -147,6 +166,25 @@ describe("FieldEditDialog sex", () => {
     expect(detectedOption).toBeDisabled();
     expect(screen.getByRole("option", { name: "Macho" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Hembra" })).toBeInTheDocument();
+  });
+
+  it("shows legacy normalized sex value as disabled detected option", () => {
+    const { onSave } = renderSexDialog({
+      value: "female",
+      isSaveDisabled: true,
+      sexErrorMessage: "Valor no válido. Usa “macho” o “hembra”.",
+    });
+
+    const select = screen.getByRole("combobox");
+    expect(select).toHaveValue("female");
+    expect(
+      screen.getByRole("option", {
+        name: "Valor detectado (no coincide con las opciones): female",
+      })
+    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Guardar" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Guardar" }));
+    expect(onSave).not.toHaveBeenCalled();
   });
 
   it("renders non-applicable candidates in detected block as non-clickable rows", () => {

@@ -45,7 +45,7 @@ import {
   resolveCandidateSuggestionSections,
   type CandidateSuggestion,
 } from "./extraction/candidateSuggestions";
-import { validateFieldValue } from "./extraction/fieldValidators";
+import { getControlledVocabOptionValues, validateFieldValue } from "./extraction/fieldValidators";
 import { groupProcessingSteps } from "./lib/processingHistory";
 import {
   GLOBAL_SCHEMA_SECTION_ORDER,
@@ -3219,24 +3219,35 @@ export function App() {
     return !validation.ok;
   }, [isEditingDateField, editingField?.key, editingFieldDraftValue]);
   const isEditingSexField = editingField?.key === "sex";
+  const canonicalSexOptions = useMemo(
+    () => new Set(getControlledVocabOptionValues("sex").map((value) => value.toLowerCase())),
+    []
+  );
   const isEditingSexInvalid = useMemo(() => {
     if (!isEditingSexField) {
       return false;
     }
-    if (editingFieldDraftValue.trim().length === 0) {
+    const trimmedValue = editingFieldDraftValue.trim().toLowerCase();
+    if (!trimmedValue) {
       return true;
     }
-    const validation = validateFieldValue("sex", editingFieldDraftValue);
-    return !validation.ok;
-  }, [isEditingSexField, editingFieldDraftValue]);
+    return !canonicalSexOptions.has(trimmedValue);
+  }, [canonicalSexOptions, isEditingSexField, editingFieldDraftValue]);
   const isEditingSpeciesField = editingField?.key === "species";
+  const canonicalSpeciesOptions = useMemo(
+    () => new Set(getControlledVocabOptionValues("species").map((value) => value.toLowerCase())),
+    []
+  );
   const isEditingSpeciesInvalid = useMemo(() => {
     if (!isEditingSpeciesField) {
       return false;
     }
-    const validation = validateFieldValue("species", editingFieldDraftValue);
-    return !validation.ok;
-  }, [isEditingSpeciesField, editingFieldDraftValue]);
+    const trimmedValue = editingFieldDraftValue.trim().toLowerCase();
+    if (!trimmedValue) {
+      return true;
+    }
+    return !canonicalSpeciesOptions.has(trimmedValue);
+  }, [canonicalSpeciesOptions, isEditingSpeciesField, editingFieldDraftValue]);
   const editingFieldCandidateSections = useMemo(() => {
     if (!editingField?.key) {
       return {

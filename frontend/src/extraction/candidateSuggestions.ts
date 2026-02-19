@@ -174,7 +174,6 @@ export function resolveCandidateSuggestionSections(
   const controlledVocabField = isControlledVocabField(fieldKey);
   if (!controlledVocabField) {
     const suggestions: CandidateSuggestion[] = [];
-    const seenValues = new Set<string>();
 
     for (const candidate of parsedCandidates) {
       if (suggestions.length >= maxSuggestions) {
@@ -183,12 +182,6 @@ export function resolveCandidateSuggestionSections(
       if (candidate.confidence === null) {
         continue;
       }
-
-      const dedupeKey = candidate.rawValue.toLowerCase();
-      if (seenValues.has(dedupeKey)) {
-        continue;
-      }
-      seenValues.add(dedupeKey);
 
       suggestions.push({
         value: candidate.rawValue,
