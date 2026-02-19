@@ -5,6 +5,7 @@ import {
   Dialog,
   DialogClose,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -70,6 +71,9 @@ export function AddFieldDialog({
       >
         <DialogHeader>
           <DialogTitle>Añadir campo</DialogTitle>
+          <DialogDescription className="text-xs">
+            Define una clave nueva y su valor inicial para este documento.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">

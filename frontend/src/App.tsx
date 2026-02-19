@@ -3591,7 +3591,7 @@ export function App() {
     const { item, value, isLongText, longTextTestId, shortTextTestId } = options;
     const isFieldModified = item.rawField?.origin === "human";
     const modifiedValueClass = isFieldModified
-      ? "!bg-amber-50 ring-1 ring-amber-300/70"
+      ? "!bg-surfaceMuted ring-1 ring-statusWarn/60"
       : "";
 
     return (
@@ -4362,30 +4362,48 @@ export function App() {
                                     <ToggleGroupItem
                                       value="low"
                                       aria-label="Baja"
-                                      className="h-7 gap-1.5 px-2"
+                                      className={`h-7 w-7 rounded-full border-0 bg-transparent p-0 data-[state=on]:border-0 ${
+                                        selectedConfidenceBuckets.includes("low")
+                                          ? "bg-accentSoft/35"
+                                          : ""
+                                      }`}
                                     >
-                                      <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-confidenceLow" />
-                                      <span>Baja</span>
+                                      <span
+                                        aria-hidden="true"
+                                        className="inline-block h-3 w-3 shrink-0 rounded-full bg-confidenceLow"
+                                      />
                                     </ToggleGroupItem>
                                   </Tooltip>
                                   <Tooltip content="Media">
                                     <ToggleGroupItem
                                       value="medium"
                                       aria-label="Media"
-                                      className="h-7 gap-1.5 px-2"
+                                      className={`h-7 w-7 rounded-full border-0 bg-transparent p-0 data-[state=on]:border-0 ${
+                                        selectedConfidenceBuckets.includes("medium")
+                                          ? "bg-accentSoft/35"
+                                          : ""
+                                      }`}
                                     >
-                                      <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-confidenceMed" />
-                                      <span>Media</span>
+                                      <span
+                                        aria-hidden="true"
+                                        className="inline-block h-3 w-3 shrink-0 rounded-full bg-confidenceMed"
+                                      />
                                     </ToggleGroupItem>
                                   </Tooltip>
                                   <Tooltip content="Alta">
                                     <ToggleGroupItem
                                       value="high"
                                       aria-label="Alta"
-                                      className="h-7 gap-1.5 px-2"
+                                      className={`h-7 w-7 rounded-full border-0 bg-transparent p-0 data-[state=on]:border-0 ${
+                                        selectedConfidenceBuckets.includes("high")
+                                          ? "bg-accentSoft/35"
+                                          : ""
+                                      }`}
                                     >
-                                      <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-confidenceHigh" />
-                                      <span>Alta</span>
+                                      <span
+                                        aria-hidden="true"
+                                        className="inline-block h-3 w-3 shrink-0 rounded-full bg-confidenceHigh"
+                                      />
                                     </ToggleGroupItem>
                                   </Tooltip>
                                 </ToggleGroup>
@@ -4411,33 +4429,45 @@ export function App() {
                                     <ToggleGroupItem
                                       value="critical"
                                       aria-label="Mostrar solo campos críticos"
-                                      className="h-7 gap-1.5 px-2"
+                                      className={`h-7 w-7 rounded-full border-0 bg-transparent p-0 data-[state=on]:border-0 ${
+                                        showOnlyCritical
+                                          ? "bg-accentSoft/35"
+                                          : ""
+                                      }`}
                                     >
                                       <CriticalIcon compact />
-                                      <span>Críticos</span>
                                     </ToggleGroupItem>
                                   </Tooltip>
                                   <Tooltip content="No vacíos: muestra solo campos con valor.">
                                     <ToggleGroupItem
                                       value="nonEmpty"
                                       aria-label="Mostrar solo campos no vacíos"
-                                      className="h-7 gap-1.5 px-2"
+                                      className={`h-7 w-7 rounded-full border-0 bg-transparent p-0 data-[state=on]:border-0 ${
+                                        showOnlyWithValue
+                                          ? "bg-accentSoft/35"
+                                          : ""
+                                      }`}
                                     >
-                                      <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-text" />
-                                      <span>Con dato</span>
+                                      <span
+                                        aria-hidden="true"
+                                        className="inline-block h-3 w-3 shrink-0 rounded-full bg-text"
+                                      />
                                     </ToggleGroupItem>
                                   </Tooltip>
                                   <Tooltip content="Vacíos: muestra solo campos sin dato.">
                                     <ToggleGroupItem
                                       value="empty"
                                       aria-label="Mostrar solo campos vacíos"
-                                      className="h-7 gap-1.5 px-2"
+                                      className={`h-7 w-7 rounded-full border-0 bg-transparent p-0 data-[state=on]:border-0 ${
+                                        showOnlyEmpty
+                                          ? "bg-accentSoft/35"
+                                          : ""
+                                      }`}
                                     >
                                       <span
                                         aria-hidden="true"
-                                        className="h-2.5 w-2.5 rounded-full border border-borderSubtle bg-surface"
+                                        className="inline-block h-3 w-3 shrink-0 rounded-full border border-muted bg-surface"
                                       />
-                                      <span>Sin dato</span>
                                     </ToggleGroupItem>
                                   </Tooltip>
                                 </ToggleGroup>
