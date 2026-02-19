@@ -4,6 +4,16 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .panel-shell {
+    @apply rounded-card border border-borderSubtle bg-surface;
+  }
+
+  .panel-shell-muted {
+    @apply rounded-card border border-borderSubtle bg-surfaceMuted;
+  }
+}
+
 :root {
   --app-bg: #ebf5ff;
   --canvas-bg: #ffffff;

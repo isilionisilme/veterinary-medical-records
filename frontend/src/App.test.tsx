@@ -860,13 +860,20 @@ describe("App upload and list flow", () => {
     expect(leftScroll).toBeInTheDocument();
     expect(screen.getByTestId("center-panel-scroll")).toBeInTheDocument();
     expect(screen.getByTestId("right-panel-scroll")).toBeInTheDocument();
-    expect(screen.getByTestId("documents-sidebar").firstElementChild).toHaveClass("bg-surfaceMuted");
-    expect(screen.getByTestId("center-panel-scroll")).toHaveClass("bg-surfaceMuted");
+    expect(screen.getByTestId("documents-sidebar").firstElementChild).toHaveClass("panel-shell-muted");
+    expect(screen.getByTestId("center-panel-scroll")).toHaveClass("panel-shell-muted");
     expect(screen.getByRole("heading", { name: /Datos extraídos/i }).closest("aside")).toHaveClass(
-      "bg-surfaceMuted"
+      "panel-shell-muted"
     );
-    const firstDocumentRow = within(leftScroll).getAllByRole("button", { name: /\.pdf/i })[0];
+    expect(screen.getByTestId("structured-search-shell")).toHaveClass("panel-shell");
+    const firstDocumentRow = screen.getByTestId("doc-row-doc-ready");
     expect(firstDocumentRow).toHaveClass("bg-surface");
+    expect(firstDocumentRow).toHaveClass("border");
+    expect(firstDocumentRow).toHaveClass("border-transparent");
+    expect(firstDocumentRow).toHaveClass("ring-1");
+    expect(firstDocumentRow).toHaveClass("ring-borderSubtle");
+    const hoverableDocumentRow = screen.getByTestId("doc-row-doc-processing");
+    expect(hoverableDocumentRow).toHaveClass("hover:border-borderSubtle");
     const searchInput = screen.getByRole("textbox", { name: /Buscar en datos extraídos/i });
     expect(searchInput).toHaveClass("border");
     expect(searchInput).toHaveClass("bg-surface");
@@ -932,6 +939,7 @@ describe("App upload and list flow", () => {
         name: /ready\.pdf\s*\(Listo\)/i,
       });
       expect(collapsedReadyItem).toBeInTheDocument();
+      expect(collapsedReadyItem).toHaveAttribute("data-testid", "doc-row-doc-ready");
       const collapsedSelectedItem = screen
         .getAllByRole("button", { name: /\.pdf/i })
         .find((button) => button.getAttribute("aria-pressed") === "true");
@@ -939,6 +947,10 @@ describe("App upload and list flow", () => {
       const collapsedIcon = collapsedSelectedItem?.querySelector("svg");
       expect(collapsedIcon?.parentElement).toHaveClass("rounded-full");
       expect(collapsedIcon?.parentElement).toHaveClass("bg-surface");
+      expect(collapsedIcon?.parentElement).toHaveClass("border");
+      expect(collapsedIcon?.parentElement).toHaveClass("border-transparent");
+      expect(collapsedIcon?.parentElement).toHaveClass("ring-1");
+      expect(collapsedIcon?.parentElement).toHaveClass("ring-borderSubtle");
       const statusDot = collapsedReadyItem.querySelector('span[aria-hidden="true"]');
       expect(statusDot).toBeTruthy();
       expect(statusDot?.className).toContain("ring-2");
@@ -1724,6 +1736,8 @@ describe("App upload and list flow", () => {
     const clinicValue = within(caseSection as HTMLElement).getByTestId("core-value-clinic_name");
     expect(clinicValue).toHaveClass("w-full");
     expect(clinicValue).toHaveClass("bg-surfaceMuted");
+    expect(clinicValue).toHaveClass("border");
+    expect(clinicValue).toHaveClass("border-borderSubtle");
     const treatmentValueCandidates = within(panel).getAllByTestId("field-value-treatment_plan");
     const treatmentValue =
       treatmentValueCandidates.find((node) => node.textContent?.includes("Reposo relativo")) ??
@@ -1764,6 +1778,8 @@ describe("App upload and list flow", () => {
     expect(ownerNameValue).toHaveClass("rounded-md");
     expect(ownerNameValue).toHaveClass("w-full");
     expect(ownerNameValue).toHaveClass("min-w-0");
+    expect(ownerNameValue).toHaveClass("border");
+    expect(ownerNameValue).toHaveClass("border-borderSubtle");
 
     const ownerIdValue =
       within(ownerSection as HTMLElement).queryByTestId("owner-value-owner_id") ??
@@ -1800,6 +1816,12 @@ describe("App upload and list flow", () => {
     expect(visitReasonValue).toHaveClass("min-h-[var(--long-text-min-height)]");
     expect(visitDateValue).toHaveClass("bg-surfaceMuted");
     expect(visitReasonValue).toHaveClass("bg-surfaceMuted");
+    expect(visitDateValue).toHaveClass("border");
+    expect(visitReasonValue).toHaveClass("border");
+
+    const editButtons = within(panel).getAllByRole("button", { name: /Editar/i });
+    expect(editButtons[0]).toHaveClass("border");
+    expect(editButtons[0]).toHaveClass("hover:border-borderSubtle");
   });
 
   it("shows subtle CRÍTICO marker and confidence tooltip for core fields", async () => {

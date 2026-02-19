@@ -74,6 +74,7 @@ describe("PdfViewer", () => {
     render(<PdfViewer fileUrl="blob://sample" filename="record.pdf" />);
 
     const pages = await screen.findAllByTestId("pdf-page");
+    expect(screen.getByTestId("pdf-toolbar-shell")).toHaveClass("panel-shell");
     expect(pages).toHaveLength(3);
     await waitFor(() => {
       expect(mockDoc.getPage).toHaveBeenCalledWith(2);

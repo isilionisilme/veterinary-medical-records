@@ -12,7 +12,7 @@ export function SectionBlock({
   testId?: string;
 }) {
   return (
-    <section data-testid={testId} className={cn("rounded-xl bg-surface px-4 py-4", className)}>
+    <section data-testid={testId} className={cn("panel-shell px-4 py-4", className)}>
       {children}
     </section>
   );
