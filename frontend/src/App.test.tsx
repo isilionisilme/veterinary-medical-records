@@ -1446,7 +1446,8 @@ describe("App upload and list flow", () => {
     await screen.findByText(oldText);
 
     fireEvent.click(screen.getByRole("button", { name: /^Reprocesar$/i }));
-    fireEvent.click((await screen.findAllByRole("button", { name: /^Reprocesar$/i }))[1]);
+    const reprocessDialog = await screen.findByRole("dialog", { name: /Reprocesar documento/i });
+    fireEvent.click(within(reprocessDialog).getByRole("button", { name: /^Reprocesar$/i }));
 
     expect(await screen.findByText(/Reprocesamiento iniciado\./i)).toBeInTheDocument();
     expect(screen.queryByText(/Procesamiento reiniciado/i)).not.toBeInTheDocument();
@@ -1532,7 +1533,8 @@ describe("App upload and list flow", () => {
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
     fireEvent.click(screen.getByRole("button", { name: /Texto extraido/i }));
     fireEvent.click(screen.getByRole("button", { name: /^Reprocesar$/i }));
-    fireEvent.click((await screen.findAllByRole("button", { name: /^Reprocesar$/i }))[1]);
+    const reprocessDialog = await screen.findByRole("dialog", { name: /Reprocesar documento/i });
+    fireEvent.click(within(reprocessDialog).getByRole("button", { name: /^Reprocesar$/i }));
 
     expect((await screen.findAllByText(/reprocess failed/i)).length).toBeGreaterThan(0);
     await waitFor(() => {
@@ -2760,7 +2762,7 @@ describe("App upload and list flow", () => {
 
     const status = await screen.findByRole("status");
     expect(status).toHaveTextContent("Documento revisado: edición bloqueada.");
-    expect(status).toHaveClass("bg-red-50", "text-red-700");
+    expect(status).toHaveClass("border-statusError", "bg-surface", "text-text");
   });
 
   it("does not show blocked-edit toast while selecting text in reviewed mode", async () => {

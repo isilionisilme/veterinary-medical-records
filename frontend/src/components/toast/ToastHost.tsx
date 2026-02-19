@@ -1,4 +1,5 @@
 import { IconButton } from "../app/IconButton";
+import { Button } from "../ui/button";
 import type { ActionFeedback, ConnectivityToast, UploadFeedback } from "./toast-types";
 
 type ToastHostProps = {
@@ -13,6 +14,7 @@ type ToastHostProps = {
 
 const TOAST_CONTAINER_BASE_CLASS =
   "fixed left-1/2 z-[60] w-full max-w-lg -translate-x-1/2 px-4 sm:w-[32rem]";
+const TOAST_CARD_BASE_CLASS = "rounded-card border px-5 py-4";
 
 function getUploadToastTopClass(hasConnectivityToast: boolean): string {
   return hasConnectivityToast ? "top-28" : "top-10";
@@ -36,11 +38,16 @@ export function ToastHost({
       {connectivityToast && (
         <div className="fixed left-1/2 top-10 z-[65] w-full max-w-lg -translate-x-1/2 px-4 sm:w-[32rem]">
           <div
-            className="rounded-2xl border border-red-300 bg-red-50 px-5 py-4 text-red-700"
+            className={`${TOAST_CARD_BASE_CLASS} border-statusError bg-surface text-text`}
             role="status"
           >
             <div className="flex items-start justify-between gap-3">
-              <p className="text-sm">No se pudo conectar con el servidor.</p>
+              <div className="space-y-1">
+                <span className="inline-flex rounded-control bg-statusError px-2 py-0.5 text-[11px] font-semibold text-white">
+                  Error
+                </span>
+                <p className="text-sm">No se pudo conectar con el servidor.</p>
+              </div>
               <IconButton
                 label="Cerrar aviso de conexión"
                 onClick={onCloseConnectivityToast}
@@ -57,15 +64,24 @@ export function ToastHost({
           className={`${TOAST_CONTAINER_BASE_CLASS} ${getUploadToastTopClass(Boolean(connectivityToast))}`}
         >
           <div
-            className={`rounded-2xl border px-5 py-4 text-base ${
+            className={`${TOAST_CARD_BASE_CLASS} text-sm ${
               uploadFeedback.kind === "success"
-                ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-                : "border-red-300 bg-red-50 text-red-700"
+                ? "border-statusSuccess bg-surface text-text"
+                : "border-statusError bg-surface text-text"
             }`}
             role="status"
           >
             <div className="flex items-center justify-between gap-3">
-              <span>{uploadFeedback.message}</span>
+              <div className="space-y-1">
+                <span
+                  className={`inline-flex rounded-control px-2 py-0.5 text-[11px] font-semibold text-white ${
+                    uploadFeedback.kind === "success" ? "bg-statusSuccess" : "bg-statusError"
+                  }`}
+                >
+                  {uploadFeedback.kind === "success" ? "Éxito" : "Error"}
+                </span>
+                <span>{uploadFeedback.message}</span>
+              </div>
               <IconButton
                 label="Cerrar notificacion"
                 onClick={onCloseUploadFeedback}
@@ -77,13 +93,15 @@ export function ToastHost({
             {uploadFeedback.kind === "success" &&
               uploadFeedback.documentId &&
               uploadFeedback.showOpenAction && (
-                <button
+                <Button
                   type="button"
-                  className="mt-2 text-xs font-semibold text-ink underline"
+                  variant="ghost"
+                  size="sm"
+                  className="mt-2"
                   onClick={() => onOpenUploadedDocument(uploadFeedback.documentId!)}
                 >
                   Ver documento
-                </button>
+                </Button>
               )}
             {uploadFeedback.kind === "error" && (
               <div className="mt-2 flex items-center gap-3">
@@ -103,17 +121,34 @@ export function ToastHost({
           className={`${TOAST_CONTAINER_BASE_CLASS} ${getActionToastTopClass(Boolean(connectivityToast))}`}
         >
           <div
-            className={`rounded-2xl border px-5 py-4 text-base ${
+            className={`${TOAST_CARD_BASE_CLASS} text-sm ${
               actionFeedback.kind === "success"
-                ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                ? "border-statusSuccess bg-surface text-text"
                 : actionFeedback.kind === "info"
-                  ? "border-blue-300 bg-blue-50 text-blue-700"
-                  : "border-red-300 bg-red-50 text-red-700"
+                  ? "border-borderSubtle bg-surfaceMuted text-text"
+                  : "border-statusError bg-surface text-text"
             }`}
             role="status"
           >
             <div className="flex items-center justify-between gap-3">
-              <span>{actionFeedback.message}</span>
+              <div className="space-y-1">
+                <span
+                  className={`inline-flex rounded-control px-2 py-0.5 text-[11px] font-semibold text-white ${
+                    actionFeedback.kind === "success"
+                      ? "bg-statusSuccess"
+                      : actionFeedback.kind === "info"
+                        ? "bg-textSecondary"
+                        : "bg-statusError"
+                  }`}
+                >
+                  {actionFeedback.kind === "success"
+                    ? "Éxito"
+                    : actionFeedback.kind === "info"
+                      ? "Info"
+                      : "Error"}
+                </span>
+                <span>{actionFeedback.message}</span>
+              </div>
               <IconButton
                 label="Cerrar notificacion de accion"
                 onClick={onCloseActionFeedback}

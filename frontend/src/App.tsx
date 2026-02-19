@@ -11,7 +11,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { AlignLeft, Check, Download, FileText, Info, Pencil, RefreshCw, Search, X } from "lucide-react";
+import { AlignLeft, Download, FileText, Info, Pencil, RefreshCw, Search, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { ConfidenceDot } from "./components/app/ConfidenceDot";
@@ -37,6 +37,15 @@ import { ScrollArea } from "./components/ui/scroll-area";
 import { Separator } from "./components/ui/separator";
 import { ToggleGroup, ToggleGroupItem } from "./components/ui/toggle-group";
 import { Tooltip } from "./components/ui/tooltip";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "./components/ui/dialog";
 import { useSourcePanelState } from "./hooks/useSourcePanelState";
 import {
   logExtractionDebugEvent,
@@ -4353,68 +4362,35 @@ export function App() {
                                     <ToggleGroupItem
                                       value="low"
                                       aria-label="Baja"
-                                      className={`h-7 w-7 rounded-full border-0 bg-transparent p-0 data-[state=on]:border-0 ${
-                                        selectedConfidenceBuckets.includes("low")
-                                          ? "bg-accentSoft/35"
-                                          : ""
-                                      }`}
+                                      className="h-7 gap-1.5 px-2"
                                     >
-                                      <span className="relative inline-flex h-3.5 w-3.5 items-center justify-center">
-                                        <span
-                                          aria-hidden="true"
-                                          className="h-3 w-3 rounded-full bg-confidenceLow ring-1 ring-white/70"
-                                        />
-                                        {selectedConfidenceBuckets.includes("low") && (
-                                          <Check size={10} className="absolute text-white" aria-hidden="true" />
-                                        )}
-                                      </span>
+                                      <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-confidenceLow" />
+                                      <span>Baja</span>
                                     </ToggleGroupItem>
                                   </Tooltip>
                                   <Tooltip content="Media">
                                     <ToggleGroupItem
                                       value="medium"
                                       aria-label="Media"
-                                      className={`h-7 w-7 rounded-full border-0 bg-transparent p-0 data-[state=on]:border-0 ${
-                                        selectedConfidenceBuckets.includes("medium")
-                                          ? "bg-accentSoft/35"
-                                          : ""
-                                      }`}
+                                      className="h-7 gap-1.5 px-2"
                                     >
-                                      <span className="relative inline-flex h-3.5 w-3.5 items-center justify-center">
-                                        <span
-                                          aria-hidden="true"
-                                          className="h-3 w-3 rounded-full bg-confidenceMed ring-1 ring-white/70"
-                                        />
-                                        {selectedConfidenceBuckets.includes("medium") && (
-                                          <Check size={10} className="absolute text-white" aria-hidden="true" />
-                                        )}
-                                      </span>
+                                      <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-confidenceMed" />
+                                      <span>Media</span>
                                     </ToggleGroupItem>
                                   </Tooltip>
                                   <Tooltip content="Alta">
                                     <ToggleGroupItem
                                       value="high"
                                       aria-label="Alta"
-                                      className={`h-7 w-7 rounded-full border-0 bg-transparent p-0 data-[state=on]:border-0 ${
-                                        selectedConfidenceBuckets.includes("high")
-                                          ? "bg-accentSoft/35"
-                                          : ""
-                                      }`}
+                                      className="h-7 gap-1.5 px-2"
                                     >
-                                      <span className="relative inline-flex h-3.5 w-3.5 items-center justify-center">
-                                        <span
-                                          aria-hidden="true"
-                                          className="h-3 w-3 rounded-full bg-confidenceHigh ring-1 ring-white/70"
-                                        />
-                                        {selectedConfidenceBuckets.includes("high") && (
-                                          <Check size={10} className="absolute text-white" aria-hidden="true" />
-                                        )}
-                                      </span>
+                                      <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-confidenceHigh" />
+                                      <span>Alta</span>
                                     </ToggleGroupItem>
                                   </Tooltip>
                                 </ToggleGroup>
 
-                                <span aria-hidden="true" className="mx-1 h-6 w-px bg-black/20" />
+                                <span aria-hidden="true" className="mx-1 h-6 w-px bg-borderSubtle" />
 
                                 <ToggleGroup
                                   type="multiple"
@@ -4435,60 +4411,33 @@ export function App() {
                                     <ToggleGroupItem
                                       value="critical"
                                       aria-label="Mostrar solo campos críticos"
-                                      className={`h-7 w-7 rounded-full border-0 bg-transparent p-0 data-[state=on]:border-0 ${
-                                        showOnlyCritical
-                                          ? "bg-accentSoft/35"
-                                          : ""
-                                      }`}
+                                      className="h-7 gap-1.5 px-2"
                                     >
-                                      <span className="relative inline-flex h-3.5 w-3.5 items-center justify-center">
-                                        <CriticalIcon compact />
-                                        {showOnlyCritical && (
-                                          <Check size={10} className="absolute text-white" aria-hidden="true" />
-                                        )}
-                                      </span>
+                                      <CriticalIcon compact />
+                                      <span>Críticos</span>
                                     </ToggleGroupItem>
                                   </Tooltip>
                                   <Tooltip content="No vacíos: muestra solo campos con valor.">
                                     <ToggleGroupItem
                                       value="nonEmpty"
                                       aria-label="Mostrar solo campos no vacíos"
-                                      className={`h-7 w-7 rounded-full border-0 bg-transparent p-0 data-[state=on]:border-0 ${
-                                        showOnlyWithValue
-                                          ? "bg-accentSoft/35"
-                                          : ""
-                                      }`}
+                                      className="h-7 gap-1.5 px-2"
                                     >
-                                      <span className="relative inline-flex h-3.5 w-3.5 items-center justify-center">
-                                        <span
-                                          aria-hidden="true"
-                                          className="h-3 w-3 rounded-full bg-black ring-1 ring-black/20"
-                                        />
-                                        {showOnlyWithValue && (
-                                          <Check size={10} className="absolute text-white" aria-hidden="true" />
-                                        )}
-                                      </span>
+                                      <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full bg-text" />
+                                      <span>Con dato</span>
                                     </ToggleGroupItem>
                                   </Tooltip>
                                   <Tooltip content="Vacíos: muestra solo campos sin dato.">
                                     <ToggleGroupItem
                                       value="empty"
                                       aria-label="Mostrar solo campos vacíos"
-                                      className={`h-7 w-7 rounded-full border-0 bg-transparent p-0 data-[state=on]:border-0 ${
-                                        showOnlyEmpty
-                                          ? "bg-accentSoft/35"
-                                          : ""
-                                      }`}
+                                      className="h-7 gap-1.5 px-2"
                                     >
-                                      <span className="relative inline-flex h-3.5 w-3.5 items-center justify-center">
-                                        <span
-                                          aria-hidden="true"
-                                          className="h-3 w-3 rounded-full border border-black/40 bg-white"
-                                        />
-                                        {showOnlyEmpty && (
-                                          <Check size={10} className="absolute text-text" aria-hidden="true" />
-                                        )}
-                                      </span>
+                                      <span
+                                        aria-hidden="true"
+                                        className="h-2.5 w-2.5 rounded-full border border-borderSubtle bg-surface"
+                                      />
+                                      <span>Sin dato</span>
                                     </ToggleGroupItem>
                                   </Tooltip>
                                 </ToggleGroup>
@@ -4892,24 +4841,30 @@ export function App() {
           </section>
         </div>
       </main>
-      {showRetryModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-6">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-4">
-            <p className="text-sm font-semibold text-ink">Reprocesar documento</p>
-            <p className="mt-2 text-xs text-muted">
+      <Dialog open={showRetryModal} onOpenChange={setShowRetryModal}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Reprocesar documento</DialogTitle>
+            <DialogDescription className="text-xs">
               Esto volvera a ejecutar extraccion e interpretacion y puede cambiar los resultados.
-            </p>
-            <div className="mt-4 flex items-center justify-end gap-2">
-              <Button type="button" variant="ghost" onClick={() => setShowRetryModal(false)}>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="ghost" disabled={reprocessMutation.isPending}>
                 Cancelar
               </Button>
-              <Button type="button" onClick={handleConfirmRetry}>
-                Reprocesar
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+            </DialogClose>
+            <Button
+              type="button"
+              onClick={handleConfirmRetry}
+              disabled={reprocessMutation.isPending}
+            >
+              {reprocessMutation.isPending ? "Reprocesando..." : "Reprocesar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <ToastHost
         connectivityToast={connectivityToast}
         uploadFeedback={uploadFeedback}
