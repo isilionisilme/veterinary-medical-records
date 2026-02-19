@@ -121,8 +121,8 @@ export function DocumentsSidebar({
               </div>
               <div className="flex items-center gap-2" data-testid="sidebar-actions-cluster">
                 <IconButton
-                  label={isDocsSidebarPinned ? "Desfijar barra" : "Fijar barra"}
-                  tooltip={isDocsSidebarPinned ? "Desfijar barra" : "Fijar barra"}
+                  label={isDocsSidebarPinned ? "Fijada" : "Fijar"}
+                  tooltip={isDocsSidebarPinned ? "Fijada" : "Fijar"}
                   pressed={isDocsSidebarPinned}
                   onClick={onTogglePin}
                 >

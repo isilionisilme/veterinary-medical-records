@@ -3027,7 +3027,7 @@ export function App() {
     }
     setActionFeedback({
       kind: "error",
-      message: "Documento revisado: usa Reabrir para habilitar edición.",
+      message: "Documento revisado: edición bloqueada.",
     });
   };
 
@@ -3043,7 +3043,7 @@ export function App() {
     event.preventDefault();
     setActionFeedback({
       kind: "error",
-      message: "Documento revisado: usa Reabrir para habilitar edición.",
+      message: "Documento revisado: edición bloqueada.",
     });
   };
 
@@ -4219,9 +4219,8 @@ export function App() {
                               <div className="flex items-center justify-end gap-2">
                                 <Button
                                   type="button"
-                                  variant="ghost"
-                                  size="default"
-                                  className="border border-border bg-surface text-text hover:bg-surfaceMuted"
+                                  variant="outline"
+                                  size="toolbar"
                                   disabled={
                                     reviewPanelState !== "ready" ||
                                     isDocumentReviewed ||
@@ -4233,16 +4232,14 @@ export function App() {
                                 </Button>
                                 <Button
                                   type="button"
-                                  variant={isDocumentReviewed ? "ghost" : "primary"}
-                                  size="default"
-                                  className={
-                                    isDocumentReviewed
-                                      ? "border border-border bg-surface text-text font-medium hover:bg-surfaceMuted"
-                                      : undefined
-                                  }
+                                  variant={isDocumentReviewed ? "outline" : "primary"}
+                                  size="toolbar"
+                                  className="min-w-[168px]"
+                                  title={isDocumentReviewed ? "Documento marcado como revisado" : undefined}
                                   disabled={
                                     !activeId ||
                                     isActiveDocumentProcessing ||
+                                    isDocumentReviewed ||
                                     reviewToggleMutation.isPending
                                   }
                                   onClick={() => {
@@ -4251,22 +4248,23 @@ export function App() {
                                     }
                                     reviewToggleMutation.mutate({
                                       docId: activeId,
-                                      target: isDocumentReviewed ? "in_review" : "reviewed",
+                                      target: "reviewed",
                                     });
                                   }}
                                 >
-                                  {reviewToggleMutation.isPending
-                                    ? isDocumentReviewed
-                                      ? "Reabriendo..."
-                                      : "Marcando..."
-                                    : isDocumentReviewed
-                                      ? (
-                                        <>
-                                          <RefreshCw size={14} aria-hidden="true" />
-                                          Reabrir
-                                        </>
-                                      )
-                                      : "Marcar como revisado"}
+                                  {reviewToggleMutation.isPending ? (
+                                    <>
+                                      <RefreshCw size={14} className="animate-spin" aria-hidden="true" />
+                                      Marcando...
+                                    </>
+                                  ) : isDocumentReviewed ? (
+                                    <>
+                                      <Check size={14} aria-hidden="true" />
+                                      Revisado
+                                    </>
+                                  ) : (
+                                    "Marcar revisado"
+                                  )}
                                 </Button>
                                 <div className="flex items-center justify-end gap-1 text-xs leading-tight text-textSecondary">
                                 <span className="text-muted">Campos detectados:</span>
@@ -4580,7 +4578,6 @@ export function App() {
                                     {isDocumentReviewed && (
                                       <p className="rounded-control border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
                                         Documento marcado como revisado. Los datos están en modo de solo lectura.
-                                        Usa Reabrir para editar.
                                       </p>
                                     )}
                                     {hasNoStructuredFilterResults && (

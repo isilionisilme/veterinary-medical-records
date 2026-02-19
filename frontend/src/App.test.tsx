@@ -898,7 +898,7 @@ describe("App upload and list flow", () => {
     expect(refreshButton).toHaveClass("border");
     expect(refreshButton).toHaveClass("bg-surface");
     const pinButton = within(actionsCluster).getByRole("button", {
-      name: /(Fijar barra|Desfijar barra)/i,
+      name: /(Fijar|Fijada)/i,
     });
     expect(pinButton).toBeInTheDocument();
     expect(pinButton).toHaveClass("border");
@@ -999,12 +999,12 @@ describe("App upload and list flow", () => {
       fireEvent.mouseEnter(sidebar);
       expect(sidebar).toHaveAttribute("data-expanded", "true");
 
-      fireEvent.click(screen.getByRole("button", { name: /Fijar barra/i }));
+      fireEvent.click(screen.getByRole("button", { name: /Fijar/i }));
       fireEvent.mouseLeave(sidebar);
       expect(sidebar).toHaveAttribute("data-expanded", "true");
 
       fireEvent.mouseEnter(sidebar);
-      fireEvent.click(screen.getByRole("button", { name: /Desfijar barra/i }));
+      fireEvent.click(screen.getByRole("button", { name: /Fijada/i }));
       expect(sidebar).toHaveAttribute("data-expanded", "true");
       fireEvent.mouseLeave(sidebar);
       expect(sidebar).toHaveAttribute("data-expanded", "false");
@@ -2752,15 +2752,14 @@ describe("App upload and list flow", () => {
     renderApp();
 
     await openReviewedDocument();
-    fireEvent.click(screen.getByRole("button", { name: /Marcar como revisado/i }));
-
-    await screen.findByRole("button", { name: /^Reabrir$/i });
+    fireEvent.click(screen.getByRole("button", { name: /Marcar revisado/i }));
+    await screen.findByRole("button", { name: /^Revisado$/i });
     expect(getPetNameFieldButton()).toHaveAttribute("aria-disabled", "true");
 
     fireEvent.mouseUp(getPetNameFieldButton(), { button: 0 });
 
     const status = await screen.findByRole("status");
-    expect(status).toHaveTextContent("Documento revisado: usa Reabrir para habilitar edición.");
+    expect(status).toHaveTextContent("Documento revisado: edición bloqueada.");
     expect(status).toHaveClass("bg-red-50", "text-red-700");
   });
 
@@ -2773,13 +2772,13 @@ describe("App upload and list flow", () => {
     renderApp();
     await openReviewedDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: /Marcar como revisado/i }));
-    await screen.findByRole("button", { name: /^Reabrir$/i });
+    fireEvent.click(screen.getByRole("button", { name: /Marcar revisado/i }));
+    await screen.findByRole("button", { name: /^Revisado$/i });
     fireEvent.click(screen.getByLabelText(/Cerrar notificacion de accion/i));
 
     fireEvent.mouseUp(getPetNameFieldButton(), { button: 0 });
 
-    expect(screen.queryByText(/Documento revisado: usa Reabrir para habilitar edición\./i)).toBeNull();
+    expect(screen.queryByText(/Documento revisado: edición bloqueada\./i)).toBeNull();
     getSelectionSpy.mockRestore();
   });
 
@@ -2788,7 +2787,7 @@ describe("App upload and list flow", () => {
     renderApp();
 
     await openReviewedDocument();
-    fireEvent.click(screen.getByRole("button", { name: /Marcar como revisado/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Marcar revisado/i }));
 
     const bannerText = await screen.findByText(/Los datos están en modo de solo lectura\./i);
     const banner = bannerText.closest("p");
@@ -2802,18 +2801,16 @@ describe("App upload and list flow", () => {
 
     await openReviewedDocument();
 
-    const markButton = screen.getByRole("button", { name: /Marcar como revisado/i });
+    const markButton = screen.getByRole("button", { name: /Marcar revisado/i });
     expect(markButton).toHaveClass("bg-accent", "text-accentForeground");
     fireEvent.click(markButton);
 
-    const reopenButton = await screen.findByRole("button", { name: /^Reabrir$/i });
-    expect(reopenButton).toHaveClass("border", "bg-surface", "text-text");
+    const reviewedButton = await screen.findByRole("button", { name: /^Revisado$/i });
+    expect(reviewedButton).toHaveClass("border", "bg-surface", "text-text");
+    expect(reviewedButton).toBeDisabled();
 
     fireEvent.keyDown(getPetNameFieldButton(), { key: "Enter" });
-    await screen.findByText(/Documento revisado: usa Reabrir para habilitar edición\./i);
-
-    fireEvent.click(reopenButton);
-    await screen.findByRole("button", { name: /Marcar como revisado/i });
+    await screen.findByText(/Documento revisado: edición bloqueada\./i);
   });
 });
 
