@@ -860,13 +860,20 @@ describe("App upload and list flow", () => {
     expect(leftScroll).toBeInTheDocument();
     expect(screen.getByTestId("center-panel-scroll")).toBeInTheDocument();
     expect(screen.getByTestId("right-panel-scroll")).toBeInTheDocument();
-    expect(screen.getByTestId("documents-sidebar").firstElementChild).toHaveClass("bg-surfaceMuted");
-    expect(screen.getByTestId("center-panel-scroll")).toHaveClass("bg-surfaceMuted");
+    expect(screen.getByTestId("documents-sidebar").firstElementChild).toHaveClass("panel-shell-muted");
+    expect(screen.getByTestId("center-panel-scroll")).toHaveClass("panel-shell-muted");
     expect(screen.getByRole("heading", { name: /Datos extraídos/i }).closest("aside")).toHaveClass(
-      "bg-surfaceMuted"
+      "panel-shell-muted"
     );
-    const firstDocumentRow = within(leftScroll).getAllByRole("button", { name: /\.pdf/i })[0];
+    expect(screen.getByTestId("structured-search-shell")).toHaveClass("panel-shell");
+    const firstDocumentRow = screen.getByTestId("doc-row-doc-ready");
     expect(firstDocumentRow).toHaveClass("bg-surface");
+    expect(firstDocumentRow).toHaveClass("border");
+    expect(firstDocumentRow).toHaveClass("border-transparent");
+    expect(firstDocumentRow).toHaveClass("ring-1");
+    expect(firstDocumentRow).toHaveClass("ring-borderSubtle");
+    const hoverableDocumentRow = screen.getByTestId("doc-row-doc-processing");
+    expect(hoverableDocumentRow).toHaveClass("hover:border-borderSubtle");
     const searchInput = screen.getByRole("textbox", { name: /Buscar en datos extraídos/i });
     expect(searchInput).toHaveClass("border");
     expect(searchInput).toHaveClass("bg-surface");
@@ -891,7 +898,7 @@ describe("App upload and list flow", () => {
     expect(refreshButton).toHaveClass("border");
     expect(refreshButton).toHaveClass("bg-surface");
     const pinButton = within(actionsCluster).getByRole("button", {
-      name: /(Fijar barra|Desfijar barra)/i,
+      name: /(Fijar|Fijada)/i,
     });
     expect(pinButton).toBeInTheDocument();
     expect(pinButton).toHaveClass("border");
@@ -932,6 +939,7 @@ describe("App upload and list flow", () => {
         name: /ready\.pdf\s*\(Listo\)/i,
       });
       expect(collapsedReadyItem).toBeInTheDocument();
+      expect(collapsedReadyItem).toHaveAttribute("data-testid", "doc-row-doc-ready");
       const collapsedSelectedItem = screen
         .getAllByRole("button", { name: /\.pdf/i })
         .find((button) => button.getAttribute("aria-pressed") === "true");
@@ -939,6 +947,10 @@ describe("App upload and list flow", () => {
       const collapsedIcon = collapsedSelectedItem?.querySelector("svg");
       expect(collapsedIcon?.parentElement).toHaveClass("rounded-full");
       expect(collapsedIcon?.parentElement).toHaveClass("bg-surface");
+      expect(collapsedIcon?.parentElement).toHaveClass("border");
+      expect(collapsedIcon?.parentElement).toHaveClass("border-transparent");
+      expect(collapsedIcon?.parentElement).toHaveClass("ring-1");
+      expect(collapsedIcon?.parentElement).toHaveClass("ring-borderSubtle");
       const statusDot = collapsedReadyItem.querySelector('span[aria-hidden="true"]');
       expect(statusDot).toBeTruthy();
       expect(statusDot?.className).toContain("ring-2");
@@ -987,12 +999,12 @@ describe("App upload and list flow", () => {
       fireEvent.mouseEnter(sidebar);
       expect(sidebar).toHaveAttribute("data-expanded", "true");
 
-      fireEvent.click(screen.getByRole("button", { name: /Fijar barra/i }));
+      fireEvent.click(screen.getByRole("button", { name: /Fijar/i }));
       fireEvent.mouseLeave(sidebar);
       expect(sidebar).toHaveAttribute("data-expanded", "true");
 
       fireEvent.mouseEnter(sidebar);
-      fireEvent.click(screen.getByRole("button", { name: /Desfijar barra/i }));
+      fireEvent.click(screen.getByRole("button", { name: /Fijada/i }));
       expect(sidebar).toHaveAttribute("data-expanded", "true");
       fireEvent.mouseLeave(sidebar);
       expect(sidebar).toHaveAttribute("data-expanded", "false");
@@ -1724,6 +1736,8 @@ describe("App upload and list flow", () => {
     const clinicValue = within(caseSection as HTMLElement).getByTestId("core-value-clinic_name");
     expect(clinicValue).toHaveClass("w-full");
     expect(clinicValue).toHaveClass("bg-surfaceMuted");
+    expect(clinicValue).toHaveClass("border");
+    expect(clinicValue).toHaveClass("border-borderSubtle");
     const treatmentValueCandidates = within(panel).getAllByTestId("field-value-treatment_plan");
     const treatmentValue =
       treatmentValueCandidates.find((node) => node.textContent?.includes("Reposo relativo")) ??
@@ -1764,6 +1778,8 @@ describe("App upload and list flow", () => {
     expect(ownerNameValue).toHaveClass("rounded-md");
     expect(ownerNameValue).toHaveClass("w-full");
     expect(ownerNameValue).toHaveClass("min-w-0");
+    expect(ownerNameValue).toHaveClass("border");
+    expect(ownerNameValue).toHaveClass("border-borderSubtle");
 
     const ownerIdValue =
       within(ownerSection as HTMLElement).queryByTestId("owner-value-owner_id") ??
@@ -1800,6 +1816,12 @@ describe("App upload and list flow", () => {
     expect(visitReasonValue).toHaveClass("min-h-[var(--long-text-min-height)]");
     expect(visitDateValue).toHaveClass("bg-surfaceMuted");
     expect(visitReasonValue).toHaveClass("bg-surfaceMuted");
+    expect(visitDateValue).toHaveClass("border");
+    expect(visitReasonValue).toHaveClass("border");
+
+    const editButtons = within(panel).getAllByRole("button", { name: /Editar/i });
+    expect(editButtons[0]).toHaveClass("border");
+    expect(editButtons[0]).toHaveClass("hover:border-borderSubtle");
   });
 
   it("shows subtle CRÍTICO marker and confidence tooltip for core fields", async () => {
@@ -2601,7 +2623,9 @@ describe("App upload and list flow", () => {
     const positiveLine = await findAdjustmentLine(
       /Ajuste por histórico de revisiones:\s*\+7%/i
     );
-    expect(positiveLine).toHaveClass("text-[var(--status-success)]");
+    const positiveValue = positiveLine.querySelector("span");
+    expect(positiveValue).not.toBeNull();
+    expect(positiveValue).toHaveClass("text-[var(--status-success)]");
     fireEvent.blur(positive);
 
     const negativeIndicator = screen
@@ -2622,7 +2646,9 @@ describe("App upload and list flow", () => {
     const negativeLine = await findAdjustmentLine(
       /Ajuste por histórico de revisiones:\s*-4%/i
     );
-    expect(negativeLine).toHaveClass("text-[var(--status-error)]");
+    const negativeValue = negativeLine.querySelector("span");
+    expect(negativeValue).not.toBeNull();
+    expect(negativeValue).toHaveClass("text-[var(--status-error)]");
     fireEvent.blur(negative);
 
     const neutralIndicator = screen.getByTestId("confidence-indicator-core:owner_name");
@@ -2635,7 +2661,9 @@ describe("App upload and list flow", () => {
     const neutralLine = await findAdjustmentLine(
       /Ajuste por histórico de revisiones:\s*0%/i
     );
-    expect(neutralLine).toHaveClass("text-muted");
+    const neutralValue = neutralLine.querySelector("span");
+    expect(neutralValue).not.toBeNull();
+    expect(neutralValue).toHaveClass("text-muted");
   });
 
   it("toggles report layout in DEV with Shift+L and persists selection", async () => {
@@ -2724,15 +2752,14 @@ describe("App upload and list flow", () => {
     renderApp();
 
     await openReviewedDocument();
-    fireEvent.click(screen.getByRole("button", { name: /Marcar como revisado/i }));
-
+    fireEvent.click(screen.getByRole("button", { name: /Marcar revisado/i }));
     await screen.findByRole("button", { name: /^Reabrir$/i });
     expect(getPetNameFieldButton()).toHaveAttribute("aria-disabled", "true");
 
     fireEvent.mouseUp(getPetNameFieldButton(), { button: 0 });
 
     const status = await screen.findByRole("status");
-    expect(status).toHaveTextContent("Documento revisado: usa Reabrir para habilitar edición.");
+    expect(status).toHaveTextContent("Documento revisado: edición bloqueada.");
     expect(status).toHaveClass("bg-red-50", "text-red-700");
   });
 
@@ -2745,13 +2772,13 @@ describe("App upload and list flow", () => {
     renderApp();
     await openReviewedDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: /Marcar como revisado/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Marcar revisado/i }));
     await screen.findByRole("button", { name: /^Reabrir$/i });
     fireEvent.click(screen.getByLabelText(/Cerrar notificacion de accion/i));
 
     fireEvent.mouseUp(getPetNameFieldButton(), { button: 0 });
 
-    expect(screen.queryByText(/Documento revisado: usa Reabrir para habilitar edición\./i)).toBeNull();
+    expect(screen.queryByText(/Documento revisado: edición bloqueada\./i)).toBeNull();
     getSelectionSpy.mockRestore();
   });
 
@@ -2760,7 +2787,7 @@ describe("App upload and list flow", () => {
     renderApp();
 
     await openReviewedDocument();
-    fireEvent.click(screen.getByRole("button", { name: /Marcar como revisado/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Marcar revisado/i }));
 
     const bannerText = await screen.findByText(/Los datos están en modo de solo lectura\./i);
     const banner = bannerText.closest("p");
@@ -2774,7 +2801,7 @@ describe("App upload and list flow", () => {
 
     await openReviewedDocument();
 
-    const markButton = screen.getByRole("button", { name: /Marcar como revisado/i });
+    const markButton = screen.getByRole("button", { name: /Marcar revisado/i });
     expect(markButton).toHaveClass("bg-accent", "text-accentForeground");
     fireEvent.click(markButton);
 
@@ -2782,10 +2809,10 @@ describe("App upload and list flow", () => {
     expect(reopenButton).toHaveClass("border", "bg-surface", "text-text");
 
     fireEvent.keyDown(getPetNameFieldButton(), { key: "Enter" });
-    await screen.findByText(/Documento revisado: usa Reabrir para habilitar edición\./i);
+    await screen.findByText(/Documento revisado: edición bloqueada\./i);
 
     fireEvent.click(reopenButton);
-    await screen.findByRole("button", { name: /Marcar como revisado/i });
+    await screen.findByRole("button", { name: /Marcar revisado/i });
   });
 });
 

@@ -775,7 +775,10 @@ export function PdfViewer({
       data-pdf-debug={debugFlags.enabled ? "on" : "off"}
     >
       {showPageNavigation && (
-        <div className="relative z-20 flex items-center justify-between gap-4 rounded-control bg-surface px-2 py-2">
+        <div
+          data-testid="pdf-toolbar-shell"
+          className="panel-shell relative z-20 flex items-center justify-between gap-4 px-2 py-2"
+        >
           <div className="flex min-w-0 items-center gap-1">{toolbarLeftContent}</div>
 
           <div className="flex items-center gap-1">
@@ -852,7 +855,7 @@ export function PdfViewer({
         <div
           ref={scrollRef}
           data-testid="pdf-scroll-container"
-          className="h-full min-h-0 overflow-y-auto rounded-card bg-surface p-[var(--canvas-gap)]"
+          className="panel-shell h-full min-h-0 overflow-y-auto p-[var(--canvas-gap)]"
         >
         <div ref={contentRef} className="mx-auto w-full">
           {loading && (

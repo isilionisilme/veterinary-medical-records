@@ -23,7 +23,7 @@ export function ValueSurface({
     <div
       data-testid={testId}
       className={cn(
-        "w-full min-w-0 rounded-md bg-surfaceMuted text-left text-sm break-words",
+        "w-full min-w-0 rounded-md border border-borderSubtle bg-surfaceMuted text-left text-sm break-words",
         variant === "long"
           ? "px-[var(--value-padding-long-x)] py-[var(--value-padding-long-y)] leading-6 whitespace-pre-wrap min-h-[var(--long-text-min-height)] max-h-[var(--long-text-max-height)] overflow-auto"
           : "px-[var(--value-padding-short-x)] py-[var(--value-padding-short-y)]",

@@ -10,12 +10,14 @@ const buttonVariants = cva(
     variants: {
       variant: {
         primary: "bg-accent text-accentForeground hover:opacity-95",
+        outline: "border border-border bg-surface text-text hover:bg-surfaceMuted",
         ghost: "bg-transparent text-text hover:bg-surfaceMuted",
         icon: "h-9 w-9 bg-transparent text-text hover:bg-surfaceMuted",
       },
       size: {
         default: "h-9 px-4 py-2",
         sm: "h-8 px-3 text-xs",
+        toolbar: "h-9 px-3.5",
         icon: "h-9 w-9 p-0",
       },
     },

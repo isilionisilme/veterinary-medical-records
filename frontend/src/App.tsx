@@ -3027,7 +3027,7 @@ export function App() {
     }
     setActionFeedback({
       kind: "error",
-      message: "Documento revisado: usa Reabrir para habilitar edición.",
+      message: "Documento revisado: edición bloqueada.",
     });
   };
 
@@ -3043,7 +3043,7 @@ export function App() {
     event.preventDefault();
     setActionFeedback({
       kind: "error",
-      message: "Documento revisado: usa Reabrir para habilitar edición.",
+      message: "Documento revisado: edición bloqueada.",
     });
   };
 
@@ -3621,7 +3621,7 @@ export function App() {
             label="Editar"
             tooltip="Editar"
             type="button"
-            className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 rounded-md border-0 bg-transparent p-0 text-text opacity-55 hover:bg-surfaceMuted hover:opacity-100 focus-visible:opacity-100"
+            className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 rounded-md border border-transparent bg-transparent p-0 text-text opacity-55 hover:border-borderSubtle hover:bg-surface hover:opacity-100 focus-visible:border-borderSubtle focus-visible:opacity-100"
             disabled={interpretationEditMutation.isPending}
             onClick={(event) => {
               event.preventDefault();
@@ -3680,8 +3680,8 @@ export function App() {
                     tabIndex={0}
                     data-testid={`field-trigger-${item.id}`}
                     aria-disabled={isDocumentReviewed}
-                    className={`w-full rounded-md px-1 py-0.5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
-                      isDocumentReviewed ? "cursor-default" : "cursor-pointer hover:bg-black/[0.03]"
+                    className={`w-full rounded-md border border-transparent px-1 py-0.5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+                      isDocumentReviewed ? "cursor-default" : "cursor-pointer hover:border-borderSubtle hover:bg-surface"
                     }`}
                     onClick={() => {
                       if (isDocumentReviewed) {
@@ -3775,8 +3775,8 @@ export function App() {
             tabIndex={0}
             data-testid={`field-trigger-${item.id}`}
             aria-disabled={isDocumentReviewed}
-            className={`w-full rounded-md px-1 py-0.5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
-              isDocumentReviewed ? "cursor-default" : "cursor-pointer hover:bg-black/[0.03]"
+            className={`w-full rounded-md border border-transparent px-1 py-0.5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+              isDocumentReviewed ? "cursor-default" : "cursor-pointer hover:border-borderSubtle hover:bg-surface"
             }`}
             onClick={() => {
               if (isDocumentReviewed) {
@@ -3885,7 +3885,6 @@ export function App() {
       <SectionBlock
         key={section.id}
         testId={isExtraSection ? "other-extracted-fields-section" : undefined}
-        className="border border-borderSubtle/70 bg-surface"
       >
         <SectionHeader title={section.title} />
         <div className="mt-2">
@@ -3926,7 +3925,6 @@ export function App() {
       <SectionBlock
         key={section.id}
         testId={isExtraSection ? "other-extracted-fields-section" : undefined}
-        className="border border-borderSubtle/70 bg-surface"
       >
         <SectionHeader title={section.title} />
         <div className={`mt-2 ${STRUCTURED_FIELD_STACK_CLASS}`}>
@@ -4163,7 +4161,7 @@ export function App() {
                         >
                           <aside
                             data-testid="center-panel-scroll"
-                            className="flex h-full min-h-0 min-w-[560px] flex-col gap-[var(--canvas-gap)] rounded-card bg-surfaceMuted p-[var(--canvas-gap)]"
+                            className="panel-shell-muted flex h-full min-h-0 min-w-[560px] flex-col gap-[var(--canvas-gap)] p-[var(--canvas-gap)]"
                           >
                             <div>
                               <h3 className="text-lg font-semibold text-textSecondary">Informe</h3>
@@ -4214,16 +4212,15 @@ export function App() {
 
                           <aside
                             data-testid="structured-column-stack"
-                            className="flex h-full w-full min-h-0 min-w-[420px] flex-1 flex-col gap-[var(--canvas-gap)] rounded-card bg-surfaceMuted p-[var(--canvas-gap)]"
+                            className="panel-shell-muted flex h-full w-full min-h-0 min-w-[420px] flex-1 flex-col gap-[var(--canvas-gap)] p-[var(--canvas-gap)]"
                           >
                             <div className="flex w-full items-center justify-between gap-2">
                               <h3 className="text-lg font-semibold text-textSecondary">Datos extraídos</h3>
                               <div className="flex items-center justify-end gap-2">
                                 <Button
                                   type="button"
-                                  variant="ghost"
-                                  size="default"
-                                  className="border border-border bg-surface text-text hover:bg-surfaceMuted"
+                                  variant="outline"
+                                  size="toolbar"
                                   disabled={
                                     reviewPanelState !== "ready" ||
                                     isDocumentReviewed ||
@@ -4235,13 +4232,9 @@ export function App() {
                                 </Button>
                                 <Button
                                   type="button"
-                                  variant={isDocumentReviewed ? "ghost" : "primary"}
-                                  size="default"
-                                  className={
-                                    isDocumentReviewed
-                                      ? "border border-border bg-surface text-text font-medium hover:bg-surfaceMuted"
-                                      : undefined
-                                  }
+                                  variant={isDocumentReviewed ? "outline" : "primary"}
+                                  size="toolbar"
+                                  className="min-w-[168px]"
                                   disabled={
                                     !activeId ||
                                     isActiveDocumentProcessing ||
@@ -4257,18 +4250,19 @@ export function App() {
                                     });
                                   }}
                                 >
-                                  {reviewToggleMutation.isPending
-                                    ? isDocumentReviewed
-                                      ? "Reabriendo..."
-                                      : "Marcando..."
-                                    : isDocumentReviewed
-                                      ? (
-                                        <>
-                                          <RefreshCw size={14} aria-hidden="true" />
-                                          Reabrir
-                                        </>
-                                      )
-                                      : "Marcar como revisado"}
+                                  {reviewToggleMutation.isPending ? (
+                                    <>
+                                      <RefreshCw size={14} className="animate-spin" aria-hidden="true" />
+                                      {isDocumentReviewed ? "Reabriendo..." : "Marcando..."}
+                                    </>
+                                  ) : isDocumentReviewed ? (
+                                    <>
+                                      <RefreshCw size={14} aria-hidden="true" />
+                                      Reabrir
+                                    </>
+                                  ) : (
+                                    "Marcar revisado"
+                                  )}
                                 </Button>
                                 <div className="flex items-center justify-end gap-1 text-xs leading-tight text-textSecondary">
                                 <span className="text-muted">Campos detectados:</span>
@@ -4305,7 +4299,7 @@ export function App() {
                               </p>
                             )}
 
-                            <div className="rounded-control bg-surface px-3 py-2">
+                            <div data-testid="structured-search-shell" className="panel-shell px-3 py-2">
                               <div className="flex flex-wrap items-center gap-2">
                                 <label className="relative min-w-[220px] flex-1">
                                   <Search
@@ -4582,7 +4576,6 @@ export function App() {
                                     {isDocumentReviewed && (
                                       <p className="rounded-control border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
                                         Documento marcado como revisado. Los datos están en modo de solo lectura.
-                                        Usa Reabrir para editar.
                                       </p>
                                     )}
                                     {hasNoStructuredFilterResults && (

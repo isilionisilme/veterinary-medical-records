@@ -24,7 +24,7 @@ export function SourcePanel({
   content,
 }: SourcePanelProps) {
   return (
-    <div className="flex h-full min-h-0 flex-col rounded-2xl border border-border bg-surface p-4 shadow-subtle">
+    <div className="panel-shell flex h-full min-h-0 flex-col p-4 shadow-subtle">
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-textSecondary">Fuente</p>

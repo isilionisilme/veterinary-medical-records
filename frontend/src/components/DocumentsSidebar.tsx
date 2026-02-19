@@ -100,7 +100,7 @@ export function DocumentsSidebar({
       onMouseEnter={onSidebarMouseEnter}
       onMouseLeave={onSidebarMouseLeave}
     >
-      <div className="overflow-hidden rounded-card bg-surfaceMuted">
+      <div className="panel-shell-muted overflow-hidden">
         <section
           data-testid="docs-column-stack"
           className={`flex flex-col gap-[var(--canvas-gap)] p-[var(--canvas-gap)] ${panelHeightClass}`}
@@ -121,8 +121,8 @@ export function DocumentsSidebar({
               </div>
               <div className="flex items-center gap-2" data-testid="sidebar-actions-cluster">
                 <IconButton
-                  label={isDocsSidebarPinned ? "Desfijar barra" : "Fijar barra"}
-                  tooltip={isDocsSidebarPinned ? "Desfijar barra" : "Fijar barra"}
+                  label={isDocsSidebarPinned ? "Fijada" : "Fijar"}
+                  tooltip={isDocsSidebarPinned ? "Fijada" : "Fijar"}
                   pressed={isDocsSidebarPinned}
                   onClick={onTogglePin}
                 >
@@ -153,7 +153,7 @@ export function DocumentsSidebar({
             {isDocsSidebarExpanded ? (
               <div
                 ref={uploadPanelRef}
-                className="w-full rounded-card bg-surface p-[var(--canvas-gap)] transition-opacity duration-150 ease-in-out"
+                className="panel-shell w-full p-[var(--canvas-gap)] transition-opacity duration-150 ease-in-out"
               >
                 <div className="flex items-center gap-[var(--canvas-gap)]">
                   <h3 className="text-base font-semibold text-ink">Cargar documento</h3>
@@ -220,11 +220,11 @@ export function DocumentsSidebar({
             }`}
           >
             {isDocumentListLoading && (
-              <div className="flex flex-col gap-[var(--canvas-gap)] rounded-card bg-surface p-[var(--canvas-gap)]">
+              <div className="panel-shell flex flex-col gap-[var(--canvas-gap)] p-[var(--canvas-gap)]">
                 {Array.from({ length: 4 }).map((_, index) => (
                   <div
                     key={`skeleton-initial-${index}`}
-                    className="animate-pulse rounded-card bg-surface p-[var(--canvas-gap)]"
+                    className="animate-pulse rounded-card bg-surfaceMuted p-[var(--canvas-gap)]"
                   >
                     <div className="h-3 w-2/3 rounded bg-black/10" />
                     <div className="mt-2 h-2.5 w-1/2 rounded bg-black/10" />
@@ -234,18 +234,18 @@ export function DocumentsSidebar({
             )}
 
             {isDocumentListError && documentListErrorMessage && (
-              <div className="rounded-card bg-surface p-[var(--canvas-gap)] text-sm text-ink">
+              <div className="panel-shell p-[var(--canvas-gap)] text-sm text-ink">
                 <p>{documentListErrorMessage}</p>
               </div>
             )}
 
             {!isDocumentListLoading && !isDocumentListError &&
               (isListRefreshing ? (
-                <div className="flex flex-col gap-[var(--canvas-gap)] rounded-card bg-surface p-[var(--canvas-gap)]">
+                <div className="panel-shell flex flex-col gap-[var(--canvas-gap)] p-[var(--canvas-gap)]">
                   {Array.from({ length: 6 }).map((_, index) => (
                     <div
                       key={`skeleton-refresh-${index}`}
-                      className="animate-pulse rounded-card bg-surface p-[var(--canvas-gap)]"
+                      className="animate-pulse rounded-card bg-surfaceMuted p-[var(--canvas-gap)]"
                     >
                       <div className="h-3 w-2/3 rounded bg-black/10" />
                       <div className="mt-2 h-2.5 w-1/2 rounded bg-black/10" />
@@ -253,7 +253,7 @@ export function DocumentsSidebar({
                   ))}
                 </div>
               ) : (
-                <div className={`flex flex-col gap-[var(--canvas-gap)] ${isDocsSidebarExpanded ? "pr-3" : ""}`}>
+                <div className={`panel-shell flex flex-col gap-[var(--canvas-gap)] p-[var(--canvas-gap)] ${isDocsSidebarExpanded ? "pr-3" : ""}`}>
                   {documents.length === 0 ? (
                     isDocsSidebarExpanded ? (
                       <p className="px-1 py-2 text-sm text-muted">Aun no hay documentos cargados.</p>
@@ -267,21 +267,31 @@ export function DocumentsSidebar({
                       const sectionItems = group.items.map((item) => {
                       const isActive = activeId === item.document_id;
                       const status = mapDocumentStatus(item);
+                      const expandedRowClass = isActive
+                        ? "rounded-card border border-transparent bg-surface text-ink ring-1 ring-borderSubtle shadow-subtle"
+                        : `rounded-card border border-transparent bg-surface text-ink hover:border-borderSubtle hover:bg-surfaceMuted ${group.reviewed ? "opacity-70" : ""}`;
+                      const collapsedRowClass = isActive
+                        ? "rounded-lg border border-transparent bg-transparent text-ink"
+                        : `rounded-lg border border-transparent bg-transparent text-ink hover:border-borderSubtle hover:bg-surface ${
+                            group.reviewed ? "opacity-70" : ""
+                          }`;
+                      const collapsedIconClass = isActive
+                        ? "relative flex h-10 w-10 items-center justify-center rounded-full border border-transparent bg-surface text-ink ring-1 ring-borderSubtle transition"
+                        : "relative flex h-10 w-10 items-center justify-center rounded-full border border-transparent bg-transparent transition hover:border-borderSubtle hover:bg-surface";
                       const button = (
                         <button
                           key={item.document_id}
+                          data-testid={`doc-row-${item.document_id}`}
                           type="button"
                           onClick={() => onSelectDocument(item.document_id)}
                           aria-pressed={isActive}
                           aria-label={`${item.original_filename} (${status.label})`}
                           className={`w-full overflow-visible text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
                             isDocsSidebarExpanded
-                              ? isActive
-                                ? `rounded-card bg-surface text-ink ${group.reviewed ? "opacity-75" : ""}`
-                                : `rounded-card bg-surface text-ink hover:bg-surfaceMuted ${group.reviewed ? "opacity-70" : ""}`
-                                : "rounded-lg bg-transparent text-ink"
+                              ? expandedRowClass
+                              : collapsedRowClass
                           } ${isDocsSidebarExpanded ? "px-3 py-2" : "px-0 py-1"} ${
-                            !isDocsSidebarExpanded && group.reviewed ? "opacity-70" : ""
+                            !isDocsSidebarExpanded ? "shadow-none" : ""
                           }`}
                         >
                           <div
@@ -295,11 +305,7 @@ export function DocumentsSidebar({
                               className={
                                 isDocsSidebarExpanded
                                   ? "min-w-0"
-                                  : `relative flex h-10 w-10 items-center justify-center rounded-full transition ${
-                                      isActive
-                                        ? "bg-surface text-ink"
-                                        : "bg-transparent hover:bg-surface"
-                                    }`
+                                  : collapsedIconClass
                               }
                             >
                               {isDocsSidebarExpanded ? (
