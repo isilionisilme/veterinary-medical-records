@@ -41,7 +41,11 @@ import {
   logExtractionDebugEvent,
   type ExtractionDebugEvent,
 } from "./extraction/extractionDebug";
-import { validateFieldValue } from "./extraction/fieldValidators";
+import {
+  resolveCandidateSuggestionSections,
+  type CandidateSuggestion,
+} from "./extraction/candidateSuggestions";
+import { getControlledVocabOptionValues, validateFieldValue } from "./extraction/fieldValidators";
 import { groupProcessingSteps } from "./lib/processingHistory";
 import {
   GLOBAL_SCHEMA_SECTION_ORDER,
@@ -291,6 +295,7 @@ type ReviewField = {
   key: string;
   value: string | number | boolean | null;
   value_type: string;
+  candidate_suggestions?: CandidateSuggestion[];
   field_candidate_confidence?: number | null;
   field_mapping_confidence?: number;
   text_extraction_reliability?: number | null;
@@ -3214,24 +3219,47 @@ export function App() {
     return !validation.ok;
   }, [isEditingDateField, editingField?.key, editingFieldDraftValue]);
   const isEditingSexField = editingField?.key === "sex";
+  const canonicalSexOptions = useMemo(
+    () => new Set(getControlledVocabOptionValues("sex").map((value) => value.toLowerCase())),
+    []
+  );
   const isEditingSexInvalid = useMemo(() => {
     if (!isEditingSexField) {
       return false;
     }
-    if (editingFieldDraftValue.trim().length === 0) {
+    const trimmedValue = editingFieldDraftValue.trim().toLowerCase();
+    if (!trimmedValue) {
       return true;
     }
-    const validation = validateFieldValue("sex", editingFieldDraftValue);
-    return !validation.ok;
-  }, [isEditingSexField, editingFieldDraftValue]);
+    return !canonicalSexOptions.has(trimmedValue);
+  }, [canonicalSexOptions, isEditingSexField, editingFieldDraftValue]);
   const isEditingSpeciesField = editingField?.key === "species";
+  const canonicalSpeciesOptions = useMemo(
+    () => new Set(getControlledVocabOptionValues("species").map((value) => value.toLowerCase())),
+    []
+  );
   const isEditingSpeciesInvalid = useMemo(() => {
     if (!isEditingSpeciesField) {
       return false;
     }
-    const validation = validateFieldValue("species", editingFieldDraftValue);
-    return !validation.ok;
-  }, [isEditingSpeciesField, editingFieldDraftValue]);
+    const trimmedValue = editingFieldDraftValue.trim().toLowerCase();
+    if (!trimmedValue) {
+      return true;
+    }
+    return !canonicalSpeciesOptions.has(trimmedValue);
+  }, [canonicalSpeciesOptions, isEditingSpeciesField, editingFieldDraftValue]);
+  const editingFieldCandidateSections = useMemo(() => {
+    if (!editingField?.key) {
+      return {
+        applicableSuggestions: [],
+        detectedCandidates: [],
+      };
+    }
+    return resolveCandidateSuggestionSections(
+      editingField.key,
+      editingField.rawField?.candidate_suggestions
+    );
+  }, [editingField?.key, editingField?.rawField?.candidate_suggestions]);
 
   const saveFieldEditDialog = () => {
     if (!editingField) {
@@ -3876,6 +3904,8 @@ export function App() {
         fieldKey={editingField?.key ?? null}
         fieldLabel={editingField?.label ?? ""}
         value={editingFieldDraftValue}
+        candidateSuggestions={editingFieldCandidateSections.applicableSuggestions}
+        detectedCandidates={editingFieldCandidateSections.detectedCandidates}
         isSaving={interpretationEditMutation.isPending}
         isSaveDisabled={
           isEditingMicrochipInvalid ||

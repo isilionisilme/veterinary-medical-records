@@ -174,6 +174,25 @@ def test_project_split_entry_includes_implementation_plan_us35_module() -> None:
     assert "US-35 — Resizable splitter between PDF Viewer and Structured Data panel" in release4
 
 
+def test_project_split_entry_includes_implementation_plan_us41_module() -> None:
+    plan_entry = _read_text(
+        ROUTER_ROOT / "04_PROJECT" / "IMPLEMENTATION_PLAN" / "00_entry.md"
+    )
+    release5 = _read_text(
+        ROUTER_ROOT
+        / "04_PROJECT"
+        / "IMPLEMENTATION_PLAN"
+        / "110_release-5-editing-learning-signals-human-corrections.md"
+    )
+
+    assert (
+        "docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/"
+        "277_us-41-show-top-5-candidate-suggestions-in-field-edit-modal.md"
+        in plan_entry
+    )
+    assert "US-41 — Show Top-5 Candidate Suggestions in Field Edit Modal" in release5
+
+
 def test_user_visible_entry_includes_design_system_module() -> None:
     user_visible_entry = _read_text(
         ROUTER_ROOT / "02_PRODUCT" / "USER_VISIBLE" / "00_entry.md"
@@ -260,6 +279,12 @@ def test_project_owner_modules_include_confidence_tooltip_breakdown_propagation(
         / "IMPLEMENTATION_PLAN"
         / "110_release-5-editing-learning-signals-human-corrections.md"
     )
+    technical_b3 = _read_text(
+        ROUTER_ROOT
+        / "04_PROJECT"
+        / "TECHNICAL_DESIGN"
+        / "320_b3-minimal-api-endpoint-map-authoritative.md"
+    )
 
     assert "Confidence tooltip breakdown (veterinarian UI)" in ux_module
     assert "Propagation note:" in design_system_module
@@ -280,3 +305,8 @@ def test_project_owner_modules_include_confidence_tooltip_breakdown_propagation(
         "US-32 — Align review rendering to Global Schema v0 template"
         in implementation_plan_release
     )
+    assert (
+        "US-41 — Show Top-5 Candidate Suggestions in Field Edit Modal"
+        in implementation_plan_release
+    )
+    assert "Field Candidate Suggestions (standard review payload)" in technical_b3

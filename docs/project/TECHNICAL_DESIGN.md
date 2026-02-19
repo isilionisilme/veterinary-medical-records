@@ -1090,6 +1090,31 @@ Rule:
 - `active_interpretation`: { `interpretation_id`, `version_number`, `data` }
 - `raw_text_artifact`: { `run_id`, `available`: boolean }  (do not inline raw text here)
 
+#### Field Candidate Suggestions (standard review payload)
+- Contract location:
+  - Candidate suggestions are included inside `active_interpretation.data.fields[]` entries in the standard review payload.
+  - The field is optional for backward compatibility.
+
+- Field-level shape (normative):
+  - Each `StructuredField` MAY include `candidate_suggestions`.
+  - `candidate_suggestions` is an array with max length `5`.
+  - Items are ordered by `confidence` descending; tie-breaking MUST be deterministic.
+  - Candidate item shape:
+    - `value` (string)
+    - `confidence` (number in `[0,1]`)
+    - `evidence` (optional object)
+      - `page` (optional integer)
+      - `snippet` (optional string)
+
+- Behavior:
+  - `candidate_suggestions` is part of the standard payload and is not debug-only.
+  - Clients MAY ignore `candidate_suggestions`.
+  - If no candidates exist for a field, `candidate_suggestions` SHOULD be omitted.
+
+- Constraints:
+  - This extension does not change confidence composition or semantics.
+  - This extension does not require frontend-side confidence computation changes.
+
 ---
 
 ### Processing history endpoint (minimum, normative)

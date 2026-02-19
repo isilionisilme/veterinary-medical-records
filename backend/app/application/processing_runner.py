@@ -562,6 +562,7 @@ def _build_interpretation_artifact(
         fields = _build_structured_fields_from_global_schema(
             normalized_values=normalized_values,
             evidence_map=canonical_evidence,
+            candidate_bundle=candidate_bundle,
             context_key=calibration_context_key,
             policy_version=calibration_policy_version,
             repository=repository,
@@ -1532,15 +1533,21 @@ def _build_structured_fields_from_global_schema(
     *,
     normalized_values: Mapping[str, object],
     evidence_map: Mapping[str, list[dict[str, object]]],
+    candidate_bundle: Mapping[str, list[dict[str, object]]],
     context_key: str,
     policy_version: str,
     repository: DocumentRepository | None,
 ) -> list[dict[str, object]]:
     fields: list[dict[str, object]] = []
+    candidate_suggestions_by_key = {
+        key: _build_field_candidate_suggestions(key=key, candidate_bundle=candidate_bundle)
+        for key in GLOBAL_SCHEMA_V0_KEYS
+    }
 
     for key in GLOBAL_SCHEMA_V0_KEYS:
         value = normalized_values.get(key)
         key_evidence = evidence_map.get(key, [])
+        candidate_suggestions = candidate_suggestions_by_key.get(key)
 
         if key in REPEATABLE_KEYS_V0:
             if not isinstance(value, list):
@@ -1576,6 +1583,7 @@ def _build_structured_fields_from_global_schema(
                         context_key=context_key,
                         policy_version=policy_version,
                         repository=repository,
+                        candidate_suggestions=candidate_suggestions,
                     )
                 )
             continue
@@ -1604,10 +1612,76 @@ def _build_structured_fields_from_global_schema(
                 context_key=context_key,
                 policy_version=policy_version,
                 repository=repository,
+                candidate_suggestions=candidate_suggestions,
             )
         )
 
     return fields
+
+
+def _build_field_candidate_suggestions(
+    *, key: str, candidate_bundle: Mapping[str, list[dict[str, object]]]
+) -> list[dict[str, object]]:
+    ranked_candidates = sorted(
+        candidate_bundle.get(key, []),
+        key=_candidate_suggestion_sort_key,
+    )
+
+    suggestions: list[dict[str, object]] = []
+    seen_values: set[str] = set()
+
+    for candidate in ranked_candidates:
+        value = str(candidate.get("value", "")).strip()
+        if not value:
+            continue
+        normalized_value = value.casefold()
+        if normalized_value in seen_values:
+            continue
+        seen_values.add(normalized_value)
+
+        confidence = _sanitize_field_candidate_confidence(candidate.get("confidence"))
+        suggestion: dict[str, object] = {
+            "value": value,
+            "confidence": confidence,
+        }
+
+        raw_evidence = candidate.get("evidence")
+        if isinstance(raw_evidence, dict):
+            evidence_payload: dict[str, object] = {}
+            page = raw_evidence.get("page")
+            if isinstance(page, int):
+                evidence_payload["page"] = page
+            snippet = raw_evidence.get("snippet")
+            if isinstance(snippet, str) and snippet.strip():
+                evidence_payload["snippet"] = snippet.strip()
+            if evidence_payload:
+                suggestion["evidence"] = evidence_payload
+
+        suggestions.append(suggestion)
+        if len(suggestions) >= 5:
+            break
+
+    return suggestions
+
+
+def _candidate_suggestion_sort_key(item: dict[str, object]) -> tuple[float, str, str, int]:
+    raw_evidence = item.get("evidence")
+    evidence_snippet = ""
+    evidence_page = 0
+    if isinstance(raw_evidence, dict):
+        snippet = raw_evidence.get("snippet")
+        if isinstance(snippet, str):
+            evidence_snippet = snippet.strip().casefold()
+        page = raw_evidence.get("page")
+        if isinstance(page, int):
+            evidence_page = page
+
+    return (
+        -_sanitize_field_candidate_confidence(item.get("confidence")),
+        str(item.get("value", "")).strip().casefold(),
+        evidence_snippet,
+        evidence_page,
+    )
 
 
 def _build_structured_field(
@@ -1622,6 +1696,7 @@ def _build_structured_field(
     context_key: str,
     policy_version: str,
     repository: DocumentRepository | None,
+    candidate_suggestions: list[dict[str, object]] | None,
 ) -> dict[str, object]:
     normalized_snippet = snippet.strip()
     if len(normalized_snippet) > 180:
@@ -1639,7 +1714,7 @@ def _build_structured_field(
         candidate_confidence=field_candidate_confidence,
         review_history_adjustment=field_review_history_adjustment,
     )
-    return {
+    payload: dict[str, object] = {
         "field_id": str(uuid4()),
         "key": key,
         "value": value,
@@ -1658,6 +1733,9 @@ def _build_structured_field(
             "snippet": normalized_snippet,
         },
     }
+    if candidate_suggestions:
+        payload["candidate_suggestions"] = candidate_suggestions
+    return payload
 
 
 def _sanitize_text_extraction_reliability(value: object) -> float | None:

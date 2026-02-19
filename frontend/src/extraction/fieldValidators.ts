@@ -9,6 +9,12 @@ export const CANONICAL_SPECIES_OPTIONS = [
   { value: "felino", label: "Felino" },
 ] as const;
 
+export const CANONICAL_SEX_OPTIONS = [
+  { value: "macho", label: "Macho" },
+  { value: "hembra", label: "Hembra" },
+] as const;
+
+const CONTROLLED_VOCAB_FIELD_KEYS = new Set(["sex", "species"]);
 const DATE_FIELD_KEYS = new Set([
   "document_date",
   "visit_date",
@@ -35,6 +41,32 @@ function canonicalizeFieldKey(fieldKey: string): string {
     return "species";
   }
   return normalized;
+}
+
+export function isControlledVocabField(fieldKey: string): boolean {
+  return CONTROLLED_VOCAB_FIELD_KEYS.has(canonicalizeFieldKey(fieldKey));
+}
+
+export function getControlledVocabOptionValues(fieldKey: string): string[] {
+  const key = canonicalizeFieldKey(fieldKey);
+  if (key === "sex") {
+    return CANONICAL_SEX_OPTIONS.map((option) => option.value);
+  }
+  if (key === "species") {
+    return CANONICAL_SPECIES_OPTIONS.map((option) => option.value);
+  }
+  return [];
+}
+
+export function normalizeControlledVocabValue(fieldKey: string, value: string): string | null {
+  if (!isControlledVocabField(fieldKey)) {
+    return null;
+  }
+  const validation = validateFieldValue(fieldKey, value);
+  if (!validation.ok || typeof validation.normalized !== "string") {
+    return null;
+  }
+  return validation.normalized;
 }
 
 function validateMicrochip(value: string): FieldValidationResult {

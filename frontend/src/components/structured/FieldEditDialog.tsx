@@ -10,13 +10,28 @@ import {
   DialogTitle,
 } from "../ui/dialog";
 import { Input } from "../ui/input";
-import { CANONICAL_SPECIES_OPTIONS } from "../../extraction/fieldValidators";
+import {
+  CANONICAL_SEX_OPTIONS,
+  CANONICAL_SPECIES_OPTIONS,
+} from "../../extraction/fieldValidators";
+
+type CandidateSuggestion = {
+  value: string;
+  confidence: number;
+};
+
+type DetectedCandidate = {
+  value: string;
+  confidence?: number;
+};
 
 type FieldEditDialogProps = {
   open: boolean;
   fieldKey: string | null;
   fieldLabel: string;
   value: string;
+  candidateSuggestions?: CandidateSuggestion[];
+  detectedCandidates?: DetectedCandidate[];
   isSaving: boolean;
   isSaveDisabled?: boolean;
   microchipErrorMessage?: string | null;
@@ -34,6 +49,8 @@ export function FieldEditDialog({
   fieldKey,
   fieldLabel,
   value,
+  candidateSuggestions = [],
+  detectedCandidates = [],
   isSaving,
   isSaveDisabled = false,
   microchipErrorMessage = null,
@@ -108,11 +125,43 @@ export function FieldEditDialog({
   const speciesHintText = "Selecciona canino o felino.";
   const normalizedSexValue = value.trim().toLowerCase();
   const isKnownSexValue = normalizedSexValue === "macho" || normalizedSexValue === "hembra";
-  const hasLegacySexValue = isSexField && value.trim().length > 0 && !isKnownSexValue;
   const normalizedSpeciesValue = value.trim().toLowerCase();
   const isKnownSpeciesValue = CANONICAL_SPECIES_OPTIONS.some(
     (option) => option.value === normalizedSpeciesValue
   );
+  const visibleCandidateSuggestions = useMemo(() => {
+    const normalizedCurrentValue = value.trim();
+    const normalizedSuggestions = candidateSuggestions
+      .filter((suggestion) => suggestion.value.trim().length > 0)
+      .slice(0, 5);
+    const hasAlternative = normalizedSuggestions.some(
+      (suggestion) => suggestion.value.trim() !== normalizedCurrentValue
+    );
+    return hasAlternative ? normalizedSuggestions : [];
+  }, [candidateSuggestions, value]);
+  const visibleDetectedCandidates = useMemo(
+    () =>
+      detectedCandidates
+        .filter((candidate) => candidate.value.trim().length > 0)
+        .slice(0, 3),
+    [detectedCandidates]
+  );
+  const invalidCurrentControlledValue = useMemo(() => {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return null;
+    }
+    if (isSexField && !isKnownSexValue) {
+      return trimmed;
+    }
+    if (isSpeciesField && !isKnownSpeciesValue) {
+      return trimmed;
+    }
+    return null;
+  }, [isKnownSexValue, isKnownSpeciesValue, isSexField, isSpeciesField, value]);
+  const controlledSelectValue =
+    invalidCurrentControlledValue ??
+    (isSexField ? (isKnownSexValue ? normalizedSexValue : "") : isKnownSpeciesValue ? normalizedSpeciesValue : "");
   const handleValueChange = (nextValue: string) => {
     if (isMicrochipField) {
       const sanitized = nextValue.replace(/\D/g, "");
@@ -169,7 +218,7 @@ export function FieldEditDialog({
         {isSexField ? (
           <select
             ref={selectRef}
-            value={hasLegacySexValue ? value : isKnownSexValue ? normalizedSexValue : ""}
+            value={controlledSelectValue}
             onChange={(event) => handleValueChange(event.target.value)}
             className={`w-full rounded-control border bg-surface px-3 py-2 text-sm text-text outline-none transition focus-visible:bg-surfaceMuted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
               shouldHighlightError
@@ -178,14 +227,21 @@ export function FieldEditDialog({
             }`}
           >
             <option value="">Selecciona una opción</option>
-            <option value="macho">Macho</option>
-            <option value="hembra">Hembra</option>
-            {hasLegacySexValue ? <option value={value}>{value}</option> : null}
+            {CANONICAL_SEX_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+            {invalidCurrentControlledValue ? (
+              <option value={invalidCurrentControlledValue} disabled>
+                {`Valor detectado (no coincide con las opciones): ${invalidCurrentControlledValue}`}
+              </option>
+            ) : null}
           </select>
         ) : isSpeciesField ? (
           <select
             ref={selectRef}
-            value={isKnownSpeciesValue ? normalizedSpeciesValue : ""}
+            value={controlledSelectValue}
             onChange={(event) => handleValueChange(event.target.value)}
             className={`w-full rounded-control border bg-surface px-3 py-2 text-sm text-text outline-none transition focus-visible:bg-surfaceMuted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
               shouldHighlightError
@@ -199,6 +255,11 @@ export function FieldEditDialog({
                 {option.label}
               </option>
             ))}
+            {invalidCurrentControlledValue ? (
+              <option value={invalidCurrentControlledValue} disabled>
+                {`Valor detectado (no coincide con las opciones): ${invalidCurrentControlledValue}`}
+              </option>
+            ) : null}
           </select>
         ) : shouldUseTextarea ? (
           <textarea
@@ -229,6 +290,49 @@ export function FieldEditDialog({
             }
           />
         )}
+        {visibleCandidateSuggestions.length > 0 ? (
+          <div className="mt-2 space-y-1.5 rounded-control border border-borderSubtle bg-surface px-3 py-2">
+            <p className="text-xs font-semibold text-text">
+              Sugerencias ({visibleCandidateSuggestions.length})
+            </p>
+            <p className="text-xs text-muted">
+              Selecciona una sugerencia o escribe tu propia corrección.
+            </p>
+            <div className="space-y-1">
+              {visibleCandidateSuggestions.map((suggestion, index) => (
+                <button
+                  key={`${suggestion.value}-${index}`}
+                  type="button"
+                  className="flex w-full items-center justify-between rounded-control border border-borderSubtle bg-surface px-2 py-1 text-left text-xs text-text transition hover:bg-surfaceMuted"
+                  onClick={() => handleValueChange(suggestion.value)}
+                >
+                  <span className="truncate">{suggestion.value}</span>
+                  {index === 0 ? (
+                    <span className="ml-2 shrink-0 rounded-full bg-accent/15 px-1.5 py-0.5 text-[10px] font-semibold text-accent">
+                      Sugerido
+                    </span>
+                  ) : null}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+        {visibleDetectedCandidates.length > 0 ? (
+          <div className="mt-2 space-y-1.5 rounded-control border border-borderSubtle bg-surface px-3 py-2">
+            <p className="text-xs font-semibold text-text">Detectado en el documento</p>
+            <div className="space-y-1">
+              {visibleDetectedCandidates.map((candidate, index) => (
+                <div
+                  key={`${candidate.value}-${index}`}
+                  className="rounded-control border border-borderSubtle bg-surface px-2 py-1 text-xs"
+                >
+                  <p className="truncate text-text">{candidate.value}</p>
+                  <p className="text-muted">No coincide con las opciones de este campo</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
         {isMicrochipField ? (
           <div className="mt-1 space-y-1">
             <p className={microchipErrorMessage ? "text-xs text-[var(--status-error)]" : "text-xs text-muted"}>
