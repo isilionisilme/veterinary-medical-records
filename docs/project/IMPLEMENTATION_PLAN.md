@@ -196,7 +196,7 @@ Focus this release on manual language override and reprocessing with the updated
 
 ### User Stories (in order)
 - US-10 — Change document language and reprocess
-- US-42 — Provide evaluator-friendly installation & execution (Docker-first)
+- US-42 — Provide evaluator-friendly installation & execution (Docker-first) (Implemented 2026-02-19)
 
 ---
 
@@ -1740,6 +1740,8 @@ As a veterinarian reviewer, I want to zoom in/out the PDF viewer so I can read s
 ---
 
 ## US-42 — Provide evaluator-friendly installation & execution (Docker-first)
+
+**Status**: Implemented (2026-02-19)
 
 **User Story**
 As an evaluator,

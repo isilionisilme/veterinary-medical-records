@@ -93,26 +93,88 @@ Shared UX principles referenced by project UX design.
 
 ## Quickstart (Evaluator)
 
-Prereqs: Python 3.11 and Node.js 18+.
+Preferred target: Docker Compose (evaluation mode by default).
 
-Backend (Windows PowerShell):
-- `python -m venv .venv`
-- `.\.venv\Scripts\activate`
-- `pip install -r requirements-dev.txt`
-- `uvicorn backend.app.main:create_app --factory --reload`
-- In local dev/reload mode, backend auto-loads `backend/.env` if present.
+### Prerequisites
 
-Frontend (new shell):
-- `cd frontend`
-- `npm install`
-- `npm run dev`
+- Docker Desktop with Docker Compose v2 (`docker compose`)
+- On Windows, Docker Desktop uses WSL2. Ensure virtualization is enabled in firmware (BIOS/UEFI).
+- Optional local env file:
+  - `cp .env.example .env` (Linux/macOS)
+  - `Copy-Item .env.example .env` (PowerShell)
 
-Local one-command startup (Windows PowerShell):
-- `./scripts/start-all.ps1`
-- This script starts backend + frontend, sets `VET_RECORDS_EXTRACTION_OBS=1`, and loads confidence-policy env vars from `backend/.env` when present.
+### Evaluation mode (default, stable)
 
-OpenAPI and API docs:
-- `http://localhost:8000/docs`
+Evaluation mode is production-like for local validation:
+- no source-code bind mounts,
+- deterministic image builds,
+- local persistence for SQLite/files via mounted data/storage paths.
+
+Commands:
+- Build and run:
+  - `docker compose up --build`
+- Stop:
+  - `docker compose down`
+
+### URLs / ports
+
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:8000`
+- OpenAPI docs: `http://localhost:8000/docs`
+
+### Minimal manual smoke test
+
+1. Open `http://localhost:5173`.
+2. Upload a PDF document.
+3. Verify the document appears in list/status views.
+4. Open review view and preview/download the source PDF.
+5. Open structured data and edit at least one field.
+6. If available in your current MVP build, toggle "mark reviewed" and verify state updates.
+
+### Dev mode (hot reload, no local toolchain install)
+
+Dev mode is explicit and keeps evaluation mode untouched.
+It mounts `backend/`, `frontend/`, and `shared/` into containers for live code reload.
+
+Commands:
+- Start dev mode:
+  - `docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build`
+- Stop dev mode:
+  - `docker compose -f docker-compose.yml -f docker-compose.dev.yml down`
+
+Notes:
+- Backend runs with `uvicorn --reload`.
+- Frontend runs with Vite dev server and polling watchers for Windows/WSL2 friendliness.
+- Code changes do not require image rebuild in dev mode (except dependency or Dockerfile changes).
+
+### Automated tests (Compose profile)
+
+- Backend tests:
+  - `docker compose --profile test run --rm backend-tests`
+- Frontend tests:
+  - `docker compose --profile test run --rm frontend-tests`
+
+### Rebuild guidance after changes
+
+- If you changed code only and are in dev mode: no rebuild needed.
+- If you changed code and are in evaluation mode:
+  - `docker compose up --build`
+- If you changed dependencies or Dockerfiles:
+  - `docker compose build --no-cache`
+  - `docker compose up`
+
+### Troubleshooting
+
+- `Global Schema v0 contract file not found` or frontend import errors for `global_schema_v0_contract.json`:
+  - Both images now copy `shared/` to `/app/shared` during build.
+  - Rebuild without cache to rule out stale images:
+    - `docker compose build --no-cache backend frontend`
+    - `docker compose up`
+
+- Docker Desktop starts but containers fail unexpectedly:
+  - Confirm daemon health: `docker info`
+  - Validate compose config: `docker compose config`
+  - Tail logs: `docker compose logs -f backend frontend`
 
 ## Backend implementation
 

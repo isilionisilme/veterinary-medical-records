@@ -10,6 +10,6 @@ Focus this release on manual language override and reprocessing with the updated
 
 ## User Stories (in order)
 - US-10 — Change document language and reprocess
-- US-42 — Provide evaluator-friendly installation & execution (Docker-first)
+- US-42 — Provide evaluator-friendly installation & execution (Docker-first) (Implemented 2026-02-19)
 
 ---

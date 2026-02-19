@@ -1,5 +1,7 @@
 # US-42 — Provide evaluator-friendly installation & execution (Docker-first)
 
+**Status**: Implemented (2026-02-19)
+
 **User Story**
 As an evaluator,
 I want to install and run the full application locally with minimal setup (Docker-first),
