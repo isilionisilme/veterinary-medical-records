@@ -1801,7 +1801,7 @@ describe("App upload and list flow", () => {
     expect(ownerIdValue).toHaveClass("w-full");
     expect(ownerIdValue).toHaveClass("bg-surfaceMuted");
 
-    const visitSectionTitle = within(panel).getByText("Visita / episodio");
+    const visitSectionTitle = within(panel).getByText("Visitas");
     const visitSection = visitSectionTitle.closest("section");
     expect(visitSection).not.toBeNull();
     const visitGrid = (visitSection as HTMLElement).querySelector("div.grid");

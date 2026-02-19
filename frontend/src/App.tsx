@@ -3900,8 +3900,7 @@ export function App() {
     const isExtraSection = section.id === "extra:section";
     const isEmptyExtraSection = isExtraSection && section.fields.length === 0;
     const isOwnerSection = section.title === "Propietario";
-    const isVisitSection = section.title === "Visitas";
-    const shouldUseSingleColumn = isOwnerSection || isVisitSection;
+    const shouldUseSingleColumn = isOwnerSection;
 
     return (
       <SectionBlock
@@ -3940,8 +3939,7 @@ export function App() {
     const isExtraSection = section.id === "extra:section";
     const isEmptyExtraSection = isExtraSection && section.fields.length === 0;
     const isOwnerSection = section.title === "Propietario";
-    const isVisitSection = section.title === "Visitas";
-    const shouldUseSingleColumn = isOwnerSection || isVisitSection;
+    const shouldUseSingleColumn = isOwnerSection;
 
     return (
       <SectionBlock
