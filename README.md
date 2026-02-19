@@ -6,6 +6,27 @@ The purpose of the exercise is to demonstrate **product thinking, architectural 
 
 ---
 
+## TL;DR / Evaluator Quickstart
+
+Prerequisites:
+- Docker Desktop with Docker Compose v2 (`docker compose`)
+
+Run evaluation mode:
+- `docker compose up --build`
+
+Open:
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:8000`
+- OpenAPI docs: `http://localhost:8000/docs`
+
+Stop:
+- `docker compose down`
+
+Scope and sequencing source of truth:
+- [`docs/project/IMPLEMENTATION_PLAN.md`](docs/project/IMPLEMENTATION_PLAN.md)
+
+---
+
 ## Problem context
 
 Barkibu processes veterinary insurance claims based on **heterogeneous, unstructured medical documents**, typically PDFs originating from different clinics, countries, and formats.
@@ -122,6 +143,22 @@ Commands:
 - Backend API: `http://localhost:8000`
 - OpenAPI docs: `http://localhost:8000/docs`
 
+### Reset / persistence
+
+By default, evaluation mode persists local state in:
+- `backend/data`
+- `backend/storage`
+
+To fully reset local persisted state:
+- stop services: `docker compose down`
+- delete those directories (`backend/data` and `backend/storage`)
+
+### Windows / WSL2 notes (minimal)
+
+- On Windows, prefer running this repo from WSL2 for more reliable local filesystem behavior.
+- Dev-mode file watcher polling is enabled in `docker-compose.dev.yml` (`CHOKIDAR_USEPOLLING=true`, `WATCHPACK_POLLING=true`).
+- If ports are busy, change `.env` values for `FRONTEND_PORT` and `BACKEND_PORT`.
+
 ### Minimal manual smoke test
 
 1. Open `http://localhost:5173`.
@@ -218,9 +255,3 @@ This exercise is intentionally structured to show:
 - and how a system can scale safely in a sensitive, regulated context.
 
 The focus is on **clarity, judgment, and maintainability**, rather than feature completeness.
-
-## Implementation status
-
-The current code covers Release 1 user stories (US-01 through US-04). Later releases are defined in [`docs/project/IMPLEMENTATION_PLAN.md`](docs/project/IMPLEMENTATION_PLAN.md) for sequencing and acceptance criteria.
-
----
