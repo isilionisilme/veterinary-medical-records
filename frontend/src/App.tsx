@@ -4235,11 +4235,9 @@ export function App() {
                                   variant={isDocumentReviewed ? "outline" : "primary"}
                                   size="toolbar"
                                   className="min-w-[168px]"
-                                  title={isDocumentReviewed ? "Documento marcado como revisado" : undefined}
                                   disabled={
                                     !activeId ||
                                     isActiveDocumentProcessing ||
-                                    isDocumentReviewed ||
                                     reviewToggleMutation.isPending
                                   }
                                   onClick={() => {
@@ -4248,19 +4246,19 @@ export function App() {
                                     }
                                     reviewToggleMutation.mutate({
                                       docId: activeId,
-                                      target: "reviewed",
+                                      target: isDocumentReviewed ? "in_review" : "reviewed",
                                     });
                                   }}
                                 >
                                   {reviewToggleMutation.isPending ? (
                                     <>
                                       <RefreshCw size={14} className="animate-spin" aria-hidden="true" />
-                                      Marcando...
+                                      {isDocumentReviewed ? "Reabriendo..." : "Marcando..."}
                                     </>
                                   ) : isDocumentReviewed ? (
                                     <>
-                                      <Check size={14} aria-hidden="true" />
-                                      Revisado
+                                      <RefreshCw size={14} aria-hidden="true" />
+                                      Reabrir
                                     </>
                                   ) : (
                                     "Marcar revisado"

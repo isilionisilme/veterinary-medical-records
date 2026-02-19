@@ -2753,7 +2753,7 @@ describe("App upload and list flow", () => {
 
     await openReviewedDocument();
     fireEvent.click(screen.getByRole("button", { name: /Marcar revisado/i }));
-    await screen.findByRole("button", { name: /^Revisado$/i });
+    await screen.findByRole("button", { name: /^Reabrir$/i });
     expect(getPetNameFieldButton()).toHaveAttribute("aria-disabled", "true");
 
     fireEvent.mouseUp(getPetNameFieldButton(), { button: 0 });
@@ -2773,7 +2773,7 @@ describe("App upload and list flow", () => {
     await openReviewedDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /Marcar revisado/i }));
-    await screen.findByRole("button", { name: /^Revisado$/i });
+    await screen.findByRole("button", { name: /^Reabrir$/i });
     fireEvent.click(screen.getByLabelText(/Cerrar notificacion de accion/i));
 
     fireEvent.mouseUp(getPetNameFieldButton(), { button: 0 });
@@ -2805,12 +2805,14 @@ describe("App upload and list flow", () => {
     expect(markButton).toHaveClass("bg-accent", "text-accentForeground");
     fireEvent.click(markButton);
 
-    const reviewedButton = await screen.findByRole("button", { name: /^Revisado$/i });
-    expect(reviewedButton).toHaveClass("border", "bg-surface", "text-text");
-    expect(reviewedButton).toBeDisabled();
+    const reopenButton = await screen.findByRole("button", { name: /^Reabrir$/i });
+    expect(reopenButton).toHaveClass("border", "bg-surface", "text-text");
 
     fireEvent.keyDown(getPetNameFieldButton(), { key: "Enter" });
     await screen.findByText(/Documento revisado: edición bloqueada\./i);
+
+    fireEvent.click(reopenButton);
+    await screen.findByRole("button", { name: /Marcar revisado/i });
   });
 });
 
