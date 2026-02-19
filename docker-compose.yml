@@ -12,6 +12,12 @@ services:
       VET_RECORDS_CONFIDENCE_MID_MAX: ${VET_RECORDS_CONFIDENCE_MID_MAX:-0.75}
     ports:
       - "${BACKEND_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/docs', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+      start_period: 10s
     volumes:
       - ${BACKEND_DATA_DIR:-./backend/data}:/app/backend/data
       - ${BACKEND_STORAGE_DIR:-./backend/storage}:/app/backend/storage
@@ -21,11 +27,18 @@ services:
       context: .
       dockerfile: Dockerfile.frontend
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     environment:
       VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
     ports:
       - "${FRONTEND_PORT:-5173}:5173"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:5173/"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+      start_period: 10s
 
   backend-tests:
     build:

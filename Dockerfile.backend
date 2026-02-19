@@ -10,6 +10,7 @@ RUN pip install --no-cache-dir -r /app/backend/requirements.txt \
     && pip install --no-cache-dir pytest==7.4.1
 
 COPY backend /app/backend
+COPY shared /app/shared
 
 EXPOSE 8000
 

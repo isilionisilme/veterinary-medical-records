@@ -93,19 +93,28 @@ Shared UX principles referenced by project UX design.
 
 ## Quickstart (Evaluator)
 
-Preferred target: Docker Compose.
+Preferred target: Docker Compose (evaluation mode by default).
 
 ### Prerequisites
 
-- Docker Desktop (or Docker Engine) with Docker Compose v2 (`docker compose`)
+- Docker Desktop with Docker Compose v2 (`docker compose`)
+- On Windows, Docker Desktop uses WSL2. Ensure virtualization is enabled in firmware (BIOS/UEFI).
+- Optional local env file:
+  - `cp .env.example .env` (Linux/macOS)
+  - `Copy-Item .env.example .env` (PowerShell)
 
-### One-command run (Docker-first)
+### Evaluation mode (default, stable)
 
-1. Optional: copy defaults to local env file:
-   - `cp .env.example .env` (Linux/macOS)
-   - `Copy-Item .env.example .env` (PowerShell)
-2. Start the full app:
-   - `docker compose up --build`
+Evaluation mode is production-like for local validation:
+- no source-code bind mounts,
+- deterministic image builds,
+- local persistence for SQLite/files via mounted data/storage paths.
+
+Commands:
+- Build and run:
+  - `docker compose up --build`
+- Stop:
+  - `docker compose down`
 
 ### URLs / ports
 
@@ -113,51 +122,59 @@ Preferred target: Docker Compose.
 - Backend API: `http://localhost:8000`
 - OpenAPI docs: `http://localhost:8000/docs`
 
-### Automated tests
+### Minimal manual smoke test
+
+1. Open `http://localhost:5173`.
+2. Upload a PDF document.
+3. Verify the document appears in list/status views.
+4. Open review view and preview/download the source PDF.
+5. Open structured data and edit at least one field.
+6. If available in your current MVP build, toggle "mark reviewed" and verify state updates.
+
+### Dev mode (hot reload, no local toolchain install)
+
+Dev mode is explicit and keeps evaluation mode untouched.
+It mounts `backend/`, `frontend/`, and `shared/` into containers for live code reload.
+
+Commands:
+- Start dev mode:
+  - `docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build`
+- Stop dev mode:
+  - `docker compose -f docker-compose.yml -f docker-compose.dev.yml down`
+
+Notes:
+- Backend runs with `uvicorn --reload`.
+- Frontend runs with Vite dev server and polling watchers for Windows/WSL2 friendliness.
+- Code changes do not require image rebuild in dev mode (except dependency or Dockerfile changes).
+
+### Automated tests (Compose profile)
 
 - Backend tests:
   - `docker compose --profile test run --rm backend-tests`
 - Frontend tests:
   - `docker compose --profile test run --rm frontend-tests`
 
-### Minimal manual smoke test
+### Rebuild guidance after changes
 
-1. Open `http://localhost:5173`.
-2. Upload a PDF document.
-3. Verify it appears in the list with status updates.
-4. Open the document detail/review view.
-5. Preview/download the original PDF.
-6. Open structured data and edit at least one field.
-7. If available in your current MVP build, toggle "mark reviewed" and verify the state updates.
+- If you changed code only and are in dev mode: no rebuild needed.
+- If you changed code and are in evaluation mode:
+  - `docker compose up --build`
+- If you changed dependencies or Dockerfiles:
+  - `docker compose build --no-cache`
+  - `docker compose up`
 
-### Known limitations / assumptions
+### Troubleshooting
 
-- Docker-first flow is designed for local evaluation only.
-- Persistence is local filesystem + SQLite via mounted paths:
-  - `./backend/data`
-  - `./backend/storage`
-- No external services are required.
-- Confidence policy defaults are non-secret and provided in `.env.example`.
+- `Global Schema v0 contract file not found` or frontend import errors for `global_schema_v0_contract.json`:
+  - Both images now copy `shared/` to `/app/shared` during build.
+  - Rebuild without cache to rule out stale images:
+    - `docker compose build --no-cache backend frontend`
+    - `docker compose up`
 
-### Fallback: local non-Docker run
-
-Prereqs: Python 3.11 and Node.js 18+.
-
-Backend (Windows PowerShell):
-- `python -m venv .venv`
-- `.\.venv\Scripts\activate`
-- `pip install -r requirements-dev.txt`
-- `uvicorn backend.app.main:create_app --factory --reload`
-- In local dev/reload mode, backend auto-loads `backend/.env` if present.
-
-Frontend (new shell):
-- `cd frontend`
-- `npm install`
-- `npm run dev`
-
-Local one-command startup (Windows PowerShell):
-- `./scripts/start-all.ps1`
-- This script starts backend + frontend, sets `VET_RECORDS_EXTRACTION_OBS=1`, and loads confidence-policy env vars from `backend/.env` when present.
+- Docker Desktop starts but containers fail unexpectedly:
+  - Confirm daemon health: `docker info`
+  - Validate compose config: `docker compose config`
+  - Tail logs: `docker compose logs -f backend frontend`
 
 ## Backend implementation
 

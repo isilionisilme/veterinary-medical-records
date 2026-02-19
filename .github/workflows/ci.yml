@@ -75,3 +75,27 @@ jobs:
         run: ruff check .
       - name: Run Pytest
         run: pytest
+
+  docker_packaging_guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Build backend image
+        run: docker build -f Dockerfile.backend -t vetrecords-backend:ci .
+      - name: Assert shared contract exists in backend image (no shell dependency)
+        run: |
+          set -euo pipefail
+          cid="$(docker create vetrecords-backend:ci)"
+          trap 'docker rm -f "$cid" >/dev/null 2>&1 || true' EXIT
+          docker cp "$cid:/app/shared/global_schema_v0_contract.json" /tmp/backend_global_schema_v0_contract.json
+          test -f /tmp/backend_global_schema_v0_contract.json
+      - name: Build frontend image
+        run: docker build -f Dockerfile.frontend -t vetrecords-frontend:ci .
+      - name: Assert shared contract exists in frontend image (no shell dependency)
+        run: |
+          set -euo pipefail
+          cid="$(docker create vetrecords-frontend:ci)"
+          trap 'docker rm -f "$cid" >/dev/null 2>&1 || true' EXIT
+          docker cp "$cid:/app/shared/global_schema_v0_contract.json" /tmp/frontend_global_schema_v0_contract.json
+          test -f /tmp/frontend_global_schema_v0_contract.json
