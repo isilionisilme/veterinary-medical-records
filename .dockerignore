@@ -1,0 +1,16 @@
+.git
+.github
+.venv
+.vscode
+.pytest_cache
+.ruff_cache
+tmp
+metrics
+
+frontend/node_modules
+frontend/dist
+backend/__pycache__
+backend/.pytest_cache
+
+*.log
+.start-all-processes.json

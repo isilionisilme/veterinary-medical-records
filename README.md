@@ -93,6 +93,54 @@ Shared UX principles referenced by project UX design.
 
 ## Quickstart (Evaluator)
 
+Preferred target: Docker Compose.
+
+### Prerequisites
+
+- Docker Desktop (or Docker Engine) with Docker Compose v2 (`docker compose`)
+
+### One-command run (Docker-first)
+
+1. Optional: copy defaults to local env file:
+   - `cp .env.example .env` (Linux/macOS)
+   - `Copy-Item .env.example .env` (PowerShell)
+2. Start the full app:
+   - `docker compose up --build`
+
+### URLs / ports
+
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:8000`
+- OpenAPI docs: `http://localhost:8000/docs`
+
+### Automated tests
+
+- Backend tests:
+  - `docker compose --profile test run --rm backend-tests`
+- Frontend tests:
+  - `docker compose --profile test run --rm frontend-tests`
+
+### Minimal manual smoke test
+
+1. Open `http://localhost:5173`.
+2. Upload a PDF document.
+3. Verify it appears in the list with status updates.
+4. Open the document detail/review view.
+5. Preview/download the original PDF.
+6. Open structured data and edit at least one field.
+7. If available in your current MVP build, toggle "mark reviewed" and verify the state updates.
+
+### Known limitations / assumptions
+
+- Docker-first flow is designed for local evaluation only.
+- Persistence is local filesystem + SQLite via mounted paths:
+  - `./backend/data`
+  - `./backend/storage`
+- No external services are required.
+- Confidence policy defaults are non-secret and provided in `.env.example`.
+
+### Fallback: local non-Docker run
+
 Prereqs: Python 3.11 and Node.js 18+.
 
 Backend (Windows PowerShell):
@@ -110,9 +158,6 @@ Frontend (new shell):
 Local one-command startup (Windows PowerShell):
 - `./scripts/start-all.ps1`
 - This script starts backend + frontend, sets `VET_RECORDS_EXTRACTION_OBS=1`, and loads confidence-policy env vars from `backend/.env` when present.
-
-OpenAPI and API docs:
-- `http://localhost:8000/docs`
 
 ## Backend implementation
 

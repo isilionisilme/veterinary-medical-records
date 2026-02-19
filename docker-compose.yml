@@ -1,0 +1,48 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    environment:
+      VET_RECORDS_DB_PATH: /app/backend/data/documents.db
+      VET_RECORDS_STORAGE_PATH: /app/backend/storage
+      VET_RECORDS_CORS_ORIGINS: http://localhost:${FRONTEND_PORT:-5173},http://127.0.0.1:${FRONTEND_PORT:-5173}
+      VET_RECORDS_CONFIDENCE_POLICY_VERSION: ${VET_RECORDS_CONFIDENCE_POLICY_VERSION:-v1-local}
+      VET_RECORDS_CONFIDENCE_LOW_MAX: ${VET_RECORDS_CONFIDENCE_LOW_MAX:-0.50}
+      VET_RECORDS_CONFIDENCE_MID_MAX: ${VET_RECORDS_CONFIDENCE_MID_MAX:-0.75}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      - ${BACKEND_DATA_DIR:-./backend/data}:/app/backend/data
+      - ${BACKEND_STORAGE_DIR:-./backend/storage}:/app/backend/storage
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    depends_on:
+      - backend
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+
+  backend-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    profiles: ["test"]
+    command: ["pytest", "backend/tests", "-q"]
+    environment:
+      VET_RECORDS_DB_PATH: /tmp/documents.db
+      VET_RECORDS_STORAGE_PATH: /tmp/storage
+      VET_RECORDS_CONFIDENCE_POLICY_VERSION: ${VET_RECORDS_CONFIDENCE_POLICY_VERSION:-v1-local}
+      VET_RECORDS_CONFIDENCE_LOW_MAX: ${VET_RECORDS_CONFIDENCE_LOW_MAX:-0.50}
+      VET_RECORDS_CONFIDENCE_MID_MAX: ${VET_RECORDS_CONFIDENCE_MID_MAX:-0.75}
+
+  frontend-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    profiles: ["test"]
+    command: ["npm", "run", "test"]
