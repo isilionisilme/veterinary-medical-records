@@ -3,7 +3,12 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import { App } from "./App";
+import {
+  App,
+  MIN_PDF_PANEL_WIDTH_PX,
+  REVIEW_SPLIT_MIN_WIDTH_PX,
+  SPLITTER_COLUMN_WIDTH_PX,
+} from "./App";
 import { GLOBAL_SCHEMA_V0 } from "./lib/globalSchemaV0";
 
 vi.mock("./components/PdfViewer", () => ({
@@ -36,6 +41,34 @@ function renderApp() {
       <App />
     </QueryClientProvider>
   );
+}
+
+async function withDesktopHoverMatchMedia(run: () => Promise<void> | void) {
+  const originalMatchMedia = window.matchMedia;
+  Object.defineProperty(window, "matchMedia", {
+    configurable: true,
+    writable: true,
+    value: vi.fn((query: string) => ({
+      matches: query.includes("(min-width: 1024px)") || query.includes("(hover: hover)"),
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  });
+
+  try {
+    await run();
+  } finally {
+    Object.defineProperty(window, "matchMedia", {
+      configurable: true,
+      writable: true,
+      value: originalMatchMedia,
+    });
+  }
 }
 
 function createDataTransfer(file: File): DataTransfer {
@@ -866,23 +899,7 @@ describe("App upload and list flow", () => {
   });
 
   it("auto-collapses docs sidebar on desktop after selecting a document and expands on hover", async () => {
-    const originalMatchMedia = window.matchMedia;
-    try {
-      Object.defineProperty(window, "matchMedia", {
-        configurable: true,
-        writable: true,
-        value: vi.fn((query: string) => ({
-          matches: query.includes("(min-width: 1024px)") || query.includes("(hover: hover)"),
-          media: query,
-          onchange: null,
-          addListener: vi.fn(),
-          removeListener: vi.fn(),
-          addEventListener: vi.fn(),
-          removeEventListener: vi.fn(),
-          dispatchEvent: vi.fn(),
-        })),
-      });
-
+    await withDesktopHoverMatchMedia(async () => {
       renderApp();
 
       const sidebar = await screen.findByTestId("documents-sidebar");
@@ -928,33 +945,11 @@ describe("App upload and list flow", () => {
 
       fireEvent.click(collapsedReadyItem);
       expect(screen.getByTestId("pdf-viewer")).toHaveAttribute("data-focus-page", "");
-    } finally {
-      Object.defineProperty(window, "matchMedia", {
-        configurable: true,
-        writable: true,
-        value: originalMatchMedia,
-      });
-    }
+    });
   });
 
   it("uploads from collapsed sidebar dropzone without auto-expanding", async () => {
-    const originalMatchMedia = window.matchMedia;
-    try {
-      Object.defineProperty(window, "matchMedia", {
-        configurable: true,
-        writable: true,
-        value: vi.fn((query: string) => ({
-          matches: query.includes("(min-width: 1024px)") || query.includes("(hover: hover)"),
-          media: query,
-          onchange: null,
-          addListener: vi.fn(),
-          removeListener: vi.fn(),
-          addEventListener: vi.fn(),
-          removeEventListener: vi.fn(),
-          dispatchEvent: vi.fn(),
-        })),
-      });
-
+    await withDesktopHoverMatchMedia(async () => {
       renderApp();
       const sidebar = await screen.findByTestId("documents-sidebar");
 
@@ -977,33 +972,11 @@ describe("App upload and list flow", () => {
         const calls = (globalThis.fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls;
         expect(calls.some(([url]) => String(url).includes("/documents/upload"))).toBe(true);
       });
-    } finally {
-      Object.defineProperty(window, "matchMedia", {
-        configurable: true,
-        writable: true,
-        value: originalMatchMedia,
-      });
-    }
+    });
   });
 
   it("keeps sidebar open on mouse leave when pinned, and collapses again after unpin", async () => {
-    const originalMatchMedia = window.matchMedia;
-    try {
-      Object.defineProperty(window, "matchMedia", {
-        configurable: true,
-        writable: true,
-        value: vi.fn((query: string) => ({
-          matches: query.includes("(min-width: 1024px)") || query.includes("(hover: hover)"),
-          media: query,
-          onchange: null,
-          addListener: vi.fn(),
-          removeListener: vi.fn(),
-          addEventListener: vi.fn(),
-          removeEventListener: vi.fn(),
-          dispatchEvent: vi.fn(),
-        })),
-      });
-
+    await withDesktopHoverMatchMedia(async () => {
       renderApp();
       const sidebar = await screen.findByTestId("documents-sidebar");
 
@@ -1023,13 +996,7 @@ describe("App upload and list flow", () => {
       expect(sidebar).toHaveAttribute("data-expanded", "true");
       fireEvent.mouseLeave(sidebar);
       expect(sidebar).toHaveAttribute("data-expanded", "false");
-    } finally {
-      Object.defineProperty(window, "matchMedia", {
-        configurable: true,
-        writable: true,
-        value: originalMatchMedia,
-      });
-    }
+    });
   });
 
   it("uses polished structured header actions without Documento original button", async () => {
@@ -2282,6 +2249,149 @@ describe("App upload and list flow", () => {
       expect(storedRatio).toBeGreaterThan(0.64);
       expect(storedRatio).toBeLessThan(0.65);
       expect(splitGrid.style.gridTemplateColumns).toContain(`${storedRatio}fr`);
+    });
+  });
+
+  it("clamps split drag to current container width when sidebar is collapsed", async () => {
+    const INITIAL_GRID_WIDTH_PX = 1380;
+    const NARROW_GRID_WIDTH_PX = 1030;
+    await withDesktopHoverMatchMedia(async () => {
+      renderApp();
+
+      const sidebar = await screen.findByTestId("documents-sidebar");
+      fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+      await waitForStructuredDataReady();
+      expect(sidebar).toHaveAttribute("data-expanded", "false");
+
+      const splitGrid = screen.getByTestId("review-split-grid") as HTMLDivElement;
+      let simulatedWidth = INITIAL_GRID_WIDTH_PX;
+      vi.spyOn(splitGrid, "getBoundingClientRect").mockImplementation(
+        () =>
+          ({
+            width: simulatedWidth,
+            height: 800,
+            top: 0,
+            left: 0,
+            right: simulatedWidth,
+            bottom: 800,
+            x: 0,
+            y: 0,
+            toJSON: () => ({}),
+          }) as DOMRect
+      );
+
+      const handle = screen.getByTestId("review-split-handle");
+      fireEvent.mouseDown(handle, { clientX: 640 });
+
+      fireEvent.mouseEnter(sidebar);
+      expect(sidebar).toHaveAttribute("data-expanded", "true");
+      simulatedWidth = NARROW_GRID_WIDTH_PX;
+
+      fireEvent.mouseMove(window, { clientX: 10 });
+      fireEvent.mouseUp(window);
+
+      const expectedMinRatio = MIN_PDF_PANEL_WIDTH_PX / (simulatedWidth - SPLITTER_COLUMN_WIDTH_PX);
+      await waitFor(() => {
+        const storedRatio = Number(window.localStorage.getItem("reviewSplitRatio"));
+        expect(storedRatio).toBeGreaterThanOrEqual(expectedMinRatio - 0.001);
+      });
+    });
+  });
+
+  it("re-clamps split ratio after expanding sidebar when splitter was dragged to minimum", async () => {
+    const COLLAPSED_GRID_WIDTH_PX = 1380;
+    const EXPANDED_GRID_WIDTH_PX = 1030;
+    await withDesktopHoverMatchMedia(async () => {
+      renderApp();
+
+      const sidebar = await screen.findByTestId("documents-sidebar");
+      fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+      await waitForStructuredDataReady();
+      expect(sidebar).toHaveAttribute("data-expanded", "false");
+
+      const splitGrid = screen.getByTestId("review-split-grid") as HTMLDivElement;
+      let simulatedWidth = COLLAPSED_GRID_WIDTH_PX;
+      vi.spyOn(splitGrid, "getBoundingClientRect").mockImplementation(
+        () =>
+          ({
+            width: simulatedWidth,
+            height: 800,
+            top: 0,
+            left: 0,
+            right: simulatedWidth,
+            bottom: 800,
+            x: 0,
+            y: 0,
+            toJSON: () => ({}),
+          }) as DOMRect
+      );
+
+      const handle = screen.getByTestId("review-split-handle");
+      fireEvent.mouseDown(handle, { clientX: 640 });
+      fireEvent.mouseMove(window, { clientX: 10 });
+      fireEvent.mouseUp(window);
+
+      simulatedWidth = EXPANDED_GRID_WIDTH_PX;
+      fireEvent.mouseEnter(sidebar);
+      expect(sidebar).toHaveAttribute("data-expanded", "true");
+
+      const expectedExpandedMinRatio =
+        MIN_PDF_PANEL_WIDTH_PX / (simulatedWidth - SPLITTER_COLUMN_WIDTH_PX);
+      await waitFor(() => {
+        const storedRatio = Number(window.localStorage.getItem("reviewSplitRatio"));
+        expect(storedRatio).toBeGreaterThanOrEqual(expectedExpandedMinRatio - 0.001);
+      });
+    });
+  });
+
+  it("keeps stable split bounds when expanded width is narrower than the split min width", async () => {
+    const COLLAPSED_GRID_WIDTH_PX = 1380;
+    const EXPANDED_GRID_WIDTH_PX = 900;
+    await withDesktopHoverMatchMedia(async () => {
+      renderApp();
+
+      const sidebar = await screen.findByTestId("documents-sidebar");
+      fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+      await waitForStructuredDataReady();
+      expect(sidebar).toHaveAttribute("data-expanded", "false");
+
+      const splitGrid = screen.getByTestId("review-split-grid") as HTMLDivElement;
+      let simulatedWidth = COLLAPSED_GRID_WIDTH_PX;
+      vi.spyOn(splitGrid, "getBoundingClientRect").mockImplementation(
+        () =>
+          ({
+            width: simulatedWidth,
+            height: 800,
+            top: 0,
+            left: 0,
+            right: simulatedWidth,
+            bottom: 800,
+            x: 0,
+            y: 0,
+            toJSON: () => ({}),
+          }) as DOMRect
+      );
+      Object.defineProperty(splitGrid, "scrollWidth", {
+        configurable: true,
+        get: () => REVIEW_SPLIT_MIN_WIDTH_PX,
+      });
+
+      const handle = screen.getByTestId("review-split-handle");
+      fireEvent.mouseDown(handle, { clientX: 640 });
+      fireEvent.mouseMove(window, { clientX: 10 });
+      fireEvent.mouseUp(window);
+
+      simulatedWidth = EXPANDED_GRID_WIDTH_PX;
+      fireEvent.mouseEnter(sidebar);
+      expect(sidebar).toHaveAttribute("data-expanded", "true");
+
+      await waitFor(() => {
+        const storedRatio = Number(window.localStorage.getItem("reviewSplitRatio"));
+        const expectedMinRatio =
+          MIN_PDF_PANEL_WIDTH_PX / (REVIEW_SPLIT_MIN_WIDTH_PX - SPLITTER_COLUMN_WIDTH_PX);
+        expect(storedRatio).toBeGreaterThanOrEqual(expectedMinRatio - 0.001);
+      });
+      expect(splitGrid.style.minWidth).toBe(`${REVIEW_SPLIT_MIN_WIDTH_PX}px`);
     });
   });
 

@@ -5,6 +5,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -75,10 +76,11 @@ const REPORT_LAYOUT_STORAGE_KEY = "reportLayout";
 const DOCS_SIDEBAR_PIN_STORAGE_KEY = "docsSidebarPinned";
 const REVIEW_SPLIT_RATIO_STORAGE_KEY = "reviewSplitRatio";
 const DEFAULT_REVIEW_SPLIT_RATIO = 0.62;
-const MIN_PDF_PANEL_WIDTH_PX = 560;
+export const MIN_PDF_PANEL_WIDTH_PX = 560;
 const MIN_STRUCTURED_PANEL_WIDTH_PX = 420;
-const SPLITTER_COLUMN_WIDTH_PX = 14;
-const REVIEW_SPLIT_MIN_WIDTH_PX =
+export const SPLITTER_COLUMN_WIDTH_PX = 14;
+const REVIEW_SPLIT_RATIO_EPSILON = 0.0005;
+export const REVIEW_SPLIT_MIN_WIDTH_PX =
   MIN_PDF_PANEL_WIDTH_PX + MIN_STRUCTURED_PANEL_WIDTH_PX + SPLITTER_COLUMN_WIDTH_PX;
 const SPLIT_SNAP_POINTS = [0.7, 0.6, 0.5] as const;
 const STRUCTURED_FIELD_ROW_CLASS = "w-full";
@@ -150,21 +152,51 @@ function clampNumber(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
-function clampReviewSplitRatio(rawRatio: number, containerWidth: number): number {
-  const safeContainerWidth = Math.max(containerWidth, REVIEW_SPLIT_MIN_WIDTH_PX);
-  const availablePanelWidth = safeContainerWidth - SPLITTER_COLUMN_WIDTH_PX;
+function getReviewSplitBounds(containerWidth: number): {
+  availablePanelWidth: number;
+  minPdfPanelWidth: number;
+  maxPdfPanelWidth: number;
+  canFitBothMinWidths: boolean;
+} {
+  const safeContainerWidth = Number.isFinite(containerWidth) ? Math.max(containerWidth, 0) : 0;
+  const availablePanelWidth = Math.max(safeContainerWidth - SPLITTER_COLUMN_WIDTH_PX, 0);
+  const minPdfPanelWidth = MIN_PDF_PANEL_WIDTH_PX;
+  const maxPdfPanelWidth = Math.max(availablePanelWidth - MIN_STRUCTURED_PANEL_WIDTH_PX, 0);
+  const canFitBothMinWidths =
+    availablePanelWidth >= MIN_PDF_PANEL_WIDTH_PX + MIN_STRUCTURED_PANEL_WIDTH_PX;
+  return { availablePanelWidth, minPdfPanelWidth, maxPdfPanelWidth, canFitBothMinWidths };
+}
+
+function clampReviewSplitPx(rawSplitPx: number, containerWidth: number): number {
+  const { availablePanelWidth, minPdfPanelWidth, maxPdfPanelWidth, canFitBothMinWidths } =
+    getReviewSplitBounds(containerWidth);
+  if (availablePanelWidth <= 0) {
+    return 0;
+  }
+  if (!canFitBothMinWidths) {
+    return clampNumber(rawSplitPx, 0, availablePanelWidth);
+  }
+  return clampNumber(rawSplitPx, minPdfPanelWidth, maxPdfPanelWidth);
+}
+
+function splitPxToReviewSplitRatio(splitPx: number, containerWidth: number): number {
+  const { availablePanelWidth } = getReviewSplitBounds(containerWidth);
   if (availablePanelWidth <= 0) {
     return DEFAULT_REVIEW_SPLIT_RATIO;
   }
+  const clampedSplitPx = clampReviewSplitPx(splitPx, containerWidth);
+  return clampedSplitPx / availablePanelWidth;
+}
 
-  const minRatio = MIN_PDF_PANEL_WIDTH_PX / availablePanelWidth;
-  const maxRatio = 1 - MIN_STRUCTURED_PANEL_WIDTH_PX / availablePanelWidth;
+function reviewSplitRatioToPx(rawRatio: number, containerWidth: number): number {
+  const { availablePanelWidth } = getReviewSplitBounds(containerWidth);
+  const normalizedRatio = Number.isFinite(rawRatio) ? rawRatio : DEFAULT_REVIEW_SPLIT_RATIO;
+  return clampReviewSplitPx(normalizedRatio * availablePanelWidth, containerWidth);
+}
 
-  if (minRatio > maxRatio) {
-    return minRatio;
-  }
-
-  return clampNumber(rawRatio, minRatio, maxRatio);
+function clampReviewSplitRatio(rawRatio: number, containerWidth: number): number {
+  const splitPx = reviewSplitRatioToPx(rawRatio, containerWidth);
+  return splitPxToReviewSplitRatio(splitPx, containerWidth);
 }
 
 function snapReviewSplitRatio(rawRatio: number): number {
@@ -1211,10 +1243,10 @@ export function App() {
   const uploadPanelRef = useRef<HTMLDivElement | null>(null);
   const structuredSearchInputRef = useRef<HTMLInputElement | null>(null);
   const reviewSplitGridRef = useRef<HTMLDivElement | null>(null);
+  const [reviewSplitGridElement, setReviewSplitGridElement] = useState<HTMLDivElement | null>(null);
   const reviewSplitDragStateRef = useRef<{
     startX: number;
-    startRatio: number;
-    containerWidth: number;
+    startSplitPx: number;
   } | null>(null);
   const reviewSplitRatioRef = useRef(reviewSplitRatio);
   const lastExtractionDebugDocIdRef = useRef<string | null>(null);
@@ -1261,6 +1293,26 @@ export function App() {
   const shouldAutoCollapseDocsSidebar =
     shouldUseHoverDocsSidebar && Boolean(activeId) && !isDocsSidebarPinned;
   const isDocsSidebarExpanded = !shouldAutoCollapseDocsSidebar || isDocsSidebarHovered;
+  const getReviewSplitMeasuredWidth = useCallback(() => {
+    const grid = reviewSplitGridRef.current;
+    if (!grid) {
+      return 0;
+    }
+    return Math.max(grid.getBoundingClientRect().width, grid.scrollWidth);
+  }, []);
+  const clampReviewSplitToContainer = useCallback(() => {
+    const containerWidth = getReviewSplitMeasuredWidth();
+    if (containerWidth <= 0) {
+      return;
+    }
+    setReviewSplitRatio((current) => {
+      const next = clampReviewSplitRatio(current, containerWidth);
+      if (Math.abs(next - current) < REVIEW_SPLIT_RATIO_EPSILON) {
+        return current;
+      }
+      return next;
+    });
+  }, [getReviewSplitMeasuredWidth]);
 
   const downloadUrl = useMemo(() => {
     if (!activeId) {
@@ -1369,23 +1421,33 @@ export function App() {
         return;
       }
 
-      const availableWidth = dragState.containerWidth - SPLITTER_COLUMN_WIDTH_PX;
-      if (availableWidth <= 0) {
+      const containerWidth = Math.max(
+        getReviewSplitMeasuredWidth(),
+        0
+      );
+      if (containerWidth <= 0) {
         return;
       }
-
-      const deltaRatio = (event.clientX - dragState.startX) / availableWidth;
-      const nextRatio = clampReviewSplitRatio(
-        dragState.startRatio + deltaRatio,
-        dragState.containerWidth
-      );
+      const nextSplitPx = dragState.startSplitPx + (event.clientX - dragState.startX);
+      const nextRatio = splitPxToReviewSplitRatio(nextSplitPx, containerWidth);
       setReviewSplitRatio(nextRatio);
     };
 
     const onMouseUp = () => {
+      const containerWidth = Math.max(
+        getReviewSplitMeasuredWidth(),
+        0
+      );
+      if (containerWidth <= 0) {
+        setIsDraggingReviewSplit(false);
+        reviewSplitDragStateRef.current = null;
+        return;
+      }
       setIsDraggingReviewSplit(false);
       reviewSplitDragStateRef.current = null;
-      setReviewSplitRatio((current) => snapReviewSplitRatio(current));
+      setReviewSplitRatio((current) =>
+        clampReviewSplitRatio(snapReviewSplitRatio(current), containerWidth)
+      );
     };
 
     document.body.style.cursor = "col-resize";
@@ -1399,28 +1461,54 @@ export function App() {
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
     };
-  }, [isDraggingReviewSplit]);
+  }, [getReviewSplitMeasuredWidth, isDraggingReviewSplit]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
     }
-
-    const clampSplitToContainer = () => {
-      const containerWidth = reviewSplitGridRef.current?.getBoundingClientRect().width ?? 0;
-      if (containerWidth <= 0) {
-        return;
-      }
-      setReviewSplitRatio((current) => clampReviewSplitRatio(current, containerWidth));
-    };
-
-    const rafId = window.requestAnimationFrame(clampSplitToContainer);
-    window.addEventListener("resize", clampSplitToContainer);
+    const rafId = window.requestAnimationFrame(clampReviewSplitToContainer);
+    const resizeObserver =
+      reviewSplitGridElement && typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(clampReviewSplitToContainer)
+        : null;
+    // Observe the current grid node; callback-ref updates this dependency when the node changes.
+    if (resizeObserver && reviewSplitGridElement) {
+      resizeObserver.observe(reviewSplitGridElement);
+    }
+    window.addEventListener("resize", clampReviewSplitToContainer);
 
     return () => {
       window.cancelAnimationFrame(rafId);
-      window.removeEventListener("resize", clampSplitToContainer);
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", clampReviewSplitToContainer);
     };
+  }, [clampReviewSplitToContainer, reviewSplitGridElement]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !reviewSplitGridRef.current) {
+      return;
+    }
+    // Sidebar width animates over 200ms; clamp immediately and again after layout settles.
+    clampReviewSplitToContainer();
+    let rafB: number | null = null;
+    const rafA = window.requestAnimationFrame(() => {
+      clampReviewSplitToContainer();
+      rafB = window.requestAnimationFrame(clampReviewSplitToContainer);
+    });
+    const settleTimer = window.setTimeout(clampReviewSplitToContainer, 240);
+    return () => {
+      window.cancelAnimationFrame(rafA);
+      if (rafB !== null) {
+        window.cancelAnimationFrame(rafB);
+      }
+      window.clearTimeout(settleTimer);
+    };
+  }, [clampReviewSplitToContainer, isDocsSidebarExpanded, isDocsSidebarPinned, shouldAutoCollapseDocsSidebar]);
+
+  const handleReviewSplitGridRef = useCallback((node: HTMLDivElement | null) => {
+    reviewSplitGridRef.current = node;
+    setReviewSplitGridElement(node);
   }, []);
 
   useEffect(() => {
@@ -2961,21 +3049,26 @@ export function App() {
 
   const resetReviewSplitRatio = () => {
     const containerWidth = Math.max(
-      reviewSplitGridRef.current?.getBoundingClientRect().width ?? 0,
-      REVIEW_SPLIT_MIN_WIDTH_PX
+      getReviewSplitMeasuredWidth(),
+      0
     );
+    if (containerWidth <= 0) {
+      return;
+    }
     setReviewSplitRatio(clampReviewSplitRatio(DEFAULT_REVIEW_SPLIT_RATIO, containerWidth));
   };
 
   const startReviewSplitDragging = (event: ReactMouseEvent<HTMLButtonElement>) => {
     const containerWidth = Math.max(
-      reviewSplitGridRef.current?.getBoundingClientRect().width ?? 0,
-      REVIEW_SPLIT_MIN_WIDTH_PX
+      getReviewSplitMeasuredWidth(),
+      0
     );
+    if (containerWidth <= 0) {
+      return;
+    }
     reviewSplitDragStateRef.current = {
       startX: event.clientX,
-      startRatio: reviewSplitRatioRef.current,
-      containerWidth,
+      startSplitPx: reviewSplitRatioToPx(reviewSplitRatioRef.current, containerWidth),
     };
     setIsDraggingReviewSplit(true);
     event.preventDefault();
@@ -2983,20 +3076,27 @@ export function App() {
 
   const handleReviewSplitKeyboard = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
     const containerWidth = Math.max(
-      reviewSplitGridRef.current?.getBoundingClientRect().width ?? 0,
-      REVIEW_SPLIT_MIN_WIDTH_PX
+      getReviewSplitMeasuredWidth(),
+      0
     );
-    const step = 0.03;
+    if (containerWidth <= 0) {
+      return;
+    }
+    const stepPx = 40;
 
     if (event.key === "ArrowLeft") {
       event.preventDefault();
-      setReviewSplitRatio((current) => clampReviewSplitRatio(current - step, containerWidth));
+      setReviewSplitRatio((current) =>
+        splitPxToReviewSplitRatio(reviewSplitRatioToPx(current, containerWidth) - stepPx, containerWidth)
+      );
       return;
     }
 
     if (event.key === "ArrowRight") {
       event.preventDefault();
-      setReviewSplitRatio((current) => clampReviewSplitRatio(current + step, containerWidth));
+      setReviewSplitRatio((current) =>
+        splitPxToReviewSplitRatio(reviewSplitRatioToPx(current, containerWidth) + stepPx, containerWidth)
+      );
       return;
     }
 
@@ -4049,14 +4149,14 @@ export function App() {
                       <div className="h-full min-h-0">
                         <div
                           data-testid="document-layout-grid"
-                          className={`h-full min-h-0 ${
+                          className={`h-full min-h-0 overflow-x-auto ${
                             isPinnedSourcePanelVisible
                               ? "grid grid-cols-[minmax(0,1fr)_minmax(360px,420px)] gap-4"
                               : ""
                           }`}
                         >
                         <div
-                          ref={reviewSplitGridRef}
+                          ref={handleReviewSplitGridRef}
                           data-testid="review-split-grid"
                           className="grid h-full min-h-0 overflow-x-auto"
                           style={reviewSplitLayoutStyle}
