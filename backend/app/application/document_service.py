@@ -875,7 +875,8 @@ def _build_review_calibration_deltas(
         origin = field.get("origin")
         if origin == "human":
             entry["edit_delta"] = 1
-        elif origin == "machine" and bool(field.get("is_critical", False)):
+            entry["accept_delta"] = 0
+        elif origin == "machine" and int(entry["edit_delta"]) == 0:
             entry["accept_delta"] = 1
 
     return [

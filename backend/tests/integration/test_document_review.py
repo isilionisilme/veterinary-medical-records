@@ -494,6 +494,63 @@ def test_cross_document_learning_applies_negative_adjustment_after_edit_signal(t
     assert calibrated_pet_name["field_review_history_adjustment"] < 0
 
 
+def test_mark_document_reviewed_applies_accept_delta_for_non_critical_machine_field(test_client):
+    document_id = _upload_sample_document(test_client)
+    run_id = "run-reviewed-non-critical-machine"
+    context_key = "review:v0:pet_name"
+    mapping_id = "mapping-non-critical-machine"
+    policy_version = "v1"
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(
+        run_id=run_id,
+        data={
+            "schema_version": "v0",
+            "document_id": document_id,
+            "processing_run_id": run_id,
+            "created_at": "2026-02-10T10:00:05+00:00",
+            "fields": [
+                {
+                    "field_id": "field-1",
+                    "key": "coat_color",
+                    "value": "Negro",
+                    "value_type": "string",
+                    "field_candidate_confidence": 0.66,
+                    "field_mapping_confidence": 0.66,
+                    "field_review_history_adjustment": 0.0,
+                    "mapping_id": mapping_id,
+                    "context_key": context_key,
+                    "policy_version": policy_version,
+                    "is_critical": False,
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Color: Negro"},
+                }
+            ],
+        },
+    )
+
+    assert _get_calibration_counts(
+        context_key=context_key,
+        field_key="coat_color",
+        mapping_id=mapping_id,
+        policy_version=policy_version,
+    ) == (0, 0)
+
+    reviewed = test_client.post(f"/documents/{document_id}/reviewed")
+    assert reviewed.status_code == 200
+
+    assert _get_calibration_counts(
+        context_key=context_key,
+        field_key="coat_color",
+        mapping_id=mapping_id,
+        policy_version=policy_version,
+    ) == (1, 0)
+
+
 def test_mark_document_reviewed_is_idempotent(test_client):
     document_id = _upload_sample_document(test_client)
 
