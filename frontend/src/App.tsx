@@ -3591,7 +3591,7 @@ export function App() {
     const { item, value, isLongText, longTextTestId, shortTextTestId } = options;
     const isFieldModified = item.rawField?.origin === "human";
     const modifiedValueClass = isFieldModified
-      ? "!bg-surfaceMuted ring-1 ring-statusWarn/60"
+      ? "!bg-amber-50 ring-1 ring-amber-300/70"
       : "";
 
     return (
