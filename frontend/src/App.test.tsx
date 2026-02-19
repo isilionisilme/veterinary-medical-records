@@ -2762,7 +2762,7 @@ describe("App upload and list flow", () => {
 
     const status = await screen.findByRole("status");
     expect(status).toHaveTextContent("Documento revisado: edición bloqueada.");
-    expect(status).toHaveClass("border-statusError", "bg-surface", "text-text");
+    expect(status).toHaveClass("border-red-300", "bg-red-50", "text-red-700");
   });
 
   it("does not show blocked-edit toast while selecting text in reviewed mode", async () => {
