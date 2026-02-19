@@ -6,6 +6,27 @@ The purpose of the exercise is to demonstrate **product thinking, architectural 
 
 ---
 
+## TL;DR / Evaluator Quickstart
+
+Prerequisites:
+- Docker Desktop with Docker Compose v2 (`docker compose`)
+
+Run evaluation mode:
+- `docker compose up --build`
+
+Open:
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:8000`
+- OpenAPI docs: `http://localhost:8000/docs`
+
+Stop:
+- `docker compose down`
+
+Scope and sequencing source of truth:
+- [`docs/project/IMPLEMENTATION_PLAN.md`](docs/project/IMPLEMENTATION_PLAN.md)
+
+---
+
 ## Problem context
 
 Barkibu processes veterinary insurance claims based on **heterogeneous, unstructured medical documents**, typically PDFs originating from different clinics, countries, and formats.
@@ -37,16 +58,6 @@ Start here:
 
 📄 **[`docs/README.md`](docs/README.md)** — reading order + document authority.
 
-Operational router (AI assistants):
-- `docs/agent_router/00_AUTHORITY.md`
-
----
-
-### Token optimization (exercise)
-
-The repository includes in-repo assistant usage benchmarks (docs consulted + token proxies) under:
-- `metrics/llm_benchmarks/`
-
 ---
 
 ### Project documentation (authoritative)
@@ -68,7 +79,7 @@ Architecture + invariants + authoritative contracts (endpoint map, error semanti
 ---
 
 📄 **[`docs/project/IMPLEMENTATION_PLAN.md`](docs/project/IMPLEMENTATION_PLAN.md)**  
-Scope + story order + acceptance criteria (sequencing authority).
+Scope + story order + acceptance criteria.
 
 📄 **[`docs/project/BACKEND_IMPLEMENTATION.md`](docs/project/BACKEND_IMPLEMENTATION.md)**  
 Backend implementation details (“how”).
@@ -91,17 +102,16 @@ Shared UX principles referenced by project UX design.
 
 ---
 
-## Quickstart (Evaluator)
+### Optional / Repo internals
+
+- Operational router (AI assistants): `docs/agent_router/00_AUTHORITY.md`
+- Token optimization benchmarks: `metrics/llm_benchmarks/`
+
+---
+
+## Evaluation & Dev details
 
 Preferred target: Docker Compose (evaluation mode by default).
-
-### Prerequisites
-
-- Docker Desktop with Docker Compose v2 (`docker compose`)
-- On Windows, Docker Desktop uses WSL2. Ensure virtualization is enabled in firmware (BIOS/UEFI).
-- Optional local env file:
-  - `cp .env.example .env` (Linux/macOS)
-  - `Copy-Item .env.example .env` (PowerShell)
 
 ### Evaluation mode (default, stable)
 
@@ -110,17 +120,21 @@ Evaluation mode is production-like for local validation:
 - deterministic image builds,
 - local persistence for SQLite/files via mounted data/storage paths.
 
-Commands:
-- Build and run:
-  - `docker compose up --build`
-- Stop:
-  - `docker compose down`
+### Reset / persistence
 
-### URLs / ports
+By default, evaluation mode persists local state in:
+- `backend/data`
+- `backend/storage`
 
-- Frontend: `http://localhost:5173`
-- Backend API: `http://localhost:8000`
-- OpenAPI docs: `http://localhost:8000/docs`
+To fully reset local persisted state:
+- stop services: `docker compose down`
+- delete those directories (`backend/data` and `backend/storage`)
+
+### Windows / WSL2 notes (minimal)
+
+- On Windows, prefer running this repo from WSL2 for more reliable local filesystem behavior.
+- Dev-mode file watcher polling is enabled in `docker-compose.dev.yml` (`CHOKIDAR_USEPOLLING=true`, `WATCHPACK_POLLING=true`).
+- If ports are busy, change `.env` values for `FRONTEND_PORT` and `BACKEND_PORT`.
 
 ### Minimal manual smoke test
 
@@ -198,14 +212,12 @@ Environment variables:
 - `VET_RECORDS_DB_PATH`: override the SQLite database location.
 - `VET_RECORDS_STORAGE_PATH`: override the filesystem root for stored documents.
 - `VET_RECORDS_CORS_ORIGINS`: comma-separated list of allowed frontend origins.
-- Confidence policy (required to avoid degraded confidence mode in veterinarian UI):
-  - `VET_RECORDS_CONFIDENCE_POLICY_VERSION`
-  - `VET_RECORDS_CONFIDENCE_LOW_MAX`
-  - `VET_RECORDS_CONFIDENCE_MID_MAX`
-  - Local setup:
-    1. Copy `backend/.env.example` to `backend/.env`.
-    2. Start backend in dev/reload mode (`uvicorn ... --reload` or `./scripts/start-all.ps1`).
-    3. Backend auto-loads `backend/.env` in dev/reload mode only; production/non-dev runtime does not auto-load this file.
+Confidence policy:
+- `VET_RECORDS_CONFIDENCE_POLICY_VERSION`
+- `VET_RECORDS_CONFIDENCE_LOW_MAX`
+- `VET_RECORDS_CONFIDENCE_MID_MAX`
+
+For backend configuration and local runtime details, see [`docs/project/BACKEND_IMPLEMENTATION.md`](docs/project/BACKEND_IMPLEMENTATION.md).
 
 ---
 
@@ -218,9 +230,3 @@ This exercise is intentionally structured to show:
 - and how a system can scale safely in a sensitive, regulated context.
 
 The focus is on **clarity, judgment, and maintainability**, rather than feature completeness.
-
-## Implementation status
-
-The current code covers Release 1 user stories (US-01 through US-04). Later releases are defined in [`docs/project/IMPLEMENTATION_PLAN.md`](docs/project/IMPLEMENTATION_PLAN.md) for sequencing and acceptance criteria.
-
----
