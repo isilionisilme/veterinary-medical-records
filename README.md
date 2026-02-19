@@ -58,16 +58,6 @@ Start here:
 
 📄 **[`docs/README.md`](docs/README.md)** — reading order + document authority.
 
-Operational router (AI assistants):
-- `docs/agent_router/00_AUTHORITY.md`
-
----
-
-### Token optimization (exercise)
-
-The repository includes in-repo assistant usage benchmarks (docs consulted + token proxies) under:
-- `metrics/llm_benchmarks/`
-
 ---
 
 ### Project documentation (authoritative)
@@ -89,7 +79,7 @@ Architecture + invariants + authoritative contracts (endpoint map, error semanti
 ---
 
 📄 **[`docs/project/IMPLEMENTATION_PLAN.md`](docs/project/IMPLEMENTATION_PLAN.md)**  
-Scope + story order + acceptance criteria (sequencing authority).
+Scope + story order + acceptance criteria.
 
 📄 **[`docs/project/BACKEND_IMPLEMENTATION.md`](docs/project/BACKEND_IMPLEMENTATION.md)**  
 Backend implementation details (“how”).
@@ -112,17 +102,16 @@ Shared UX principles referenced by project UX design.
 
 ---
 
-## Quickstart (Evaluator)
+### Optional / Repo internals
+
+- Operational router (AI assistants): `docs/agent_router/00_AUTHORITY.md`
+- Token optimization benchmarks: `metrics/llm_benchmarks/`
+
+---
+
+## Evaluation & Dev details
 
 Preferred target: Docker Compose (evaluation mode by default).
-
-### Prerequisites
-
-- Docker Desktop with Docker Compose v2 (`docker compose`)
-- On Windows, Docker Desktop uses WSL2. Ensure virtualization is enabled in firmware (BIOS/UEFI).
-- Optional local env file:
-  - `cp .env.example .env` (Linux/macOS)
-  - `Copy-Item .env.example .env` (PowerShell)
 
 ### Evaluation mode (default, stable)
 
@@ -130,18 +119,6 @@ Evaluation mode is production-like for local validation:
 - no source-code bind mounts,
 - deterministic image builds,
 - local persistence for SQLite/files via mounted data/storage paths.
-
-Commands:
-- Build and run:
-  - `docker compose up --build`
-- Stop:
-  - `docker compose down`
-
-### URLs / ports
-
-- Frontend: `http://localhost:5173`
-- Backend API: `http://localhost:8000`
-- OpenAPI docs: `http://localhost:8000/docs`
 
 ### Reset / persistence
 
@@ -235,14 +212,12 @@ Environment variables:
 - `VET_RECORDS_DB_PATH`: override the SQLite database location.
 - `VET_RECORDS_STORAGE_PATH`: override the filesystem root for stored documents.
 - `VET_RECORDS_CORS_ORIGINS`: comma-separated list of allowed frontend origins.
-- Confidence policy (required to avoid degraded confidence mode in veterinarian UI):
-  - `VET_RECORDS_CONFIDENCE_POLICY_VERSION`
-  - `VET_RECORDS_CONFIDENCE_LOW_MAX`
-  - `VET_RECORDS_CONFIDENCE_MID_MAX`
-  - Local setup:
-    1. Copy `backend/.env.example` to `backend/.env`.
-    2. Start backend in dev/reload mode (`uvicorn ... --reload` or `./scripts/start-all.ps1`).
-    3. Backend auto-loads `backend/.env` in dev/reload mode only; production/non-dev runtime does not auto-load this file.
+Confidence policy:
+- `VET_RECORDS_CONFIDENCE_POLICY_VERSION`
+- `VET_RECORDS_CONFIDENCE_LOW_MAX`
+- `VET_RECORDS_CONFIDENCE_MID_MAX`
+
+For backend configuration and local runtime details, see [`docs/project/BACKEND_IMPLEMENTATION.md`](docs/project/BACKEND_IMPLEMENTATION.md).
 
 ---
 
