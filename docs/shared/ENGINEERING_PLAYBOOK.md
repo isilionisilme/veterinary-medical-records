@@ -280,7 +280,7 @@ Completion checklist before finishing:
 - No unrelated documentation edits are bundled.
 
 Workflow reference:
-- For this operation, consult only the relevant steps in `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/65_add-user-story-workflow.md`.
+- For this operation, use this section together with the canonical implementation plan in [`docs/project/IMPLEMENTATION_PLAN.md`](../project/IMPLEMENTATION_PLAN.md).
 
 ---
 
@@ -466,7 +466,7 @@ When an AI coding assistant or automation tool is used to create or update a Pul
    - **Non-code, non-doc PR**: the diff contains files that are neither docs nor code (examples: `*.json`, `*.yaml`, `*.yml`, `*.toml`, `*.ini`, `*.env`).
 
 5) For PRs that change `frontend/**` or user-visible behavior/copy:
-   - Load `docs/agent_router/02_PRODUCT/USER_VISIBLE/00_entry.md` before implementation/review.
+  - Review canonical UX/brand sources before implementation/review: [`docs/shared/UX_GUIDELINES.md`](UX_GUIDELINES.md), [`docs/project/UX_DESIGN.md`](../project/UX_DESIGN.md), and [`docs/shared/BRAND_GUIDELINES.md`](BRAND_GUIDELINES.md).
    - Add a `UX/Brand compliance` section to the PR description with concrete evidence.
 
 6) Ask the user whether they want a code review:

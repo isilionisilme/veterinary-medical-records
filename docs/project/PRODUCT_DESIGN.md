@@ -277,9 +277,9 @@ It does not prescribe storage tables or transport contracts.
 
 ## Global Schema v1 (Canonical Field List — Medical Record MVP)
 
-Owner reference (router modules):
-- v1 canonical field list: `docs/agent_router/04_PROJECT/PRODUCT_DESIGN/78_global-schema-v1-medical-record-mvp-field-list.md`
-- v0 legacy/historical field list: `docs/agent_router/04_PROJECT/PRODUCT_DESIGN/77_global-schema-v0-canonical-field-list.md`
+Canonical source location:
+- This section in `docs/project/PRODUCT_DESIGN.md` is the canonical product source for the Global Schema v1 Medical Record MVP field list.
+- The legacy Global Schema v0 reference remains canonical in the Appendix of this same document.
 
 Purpose: define the canonical contract-aligned field universe for the Medical Record panel.
 

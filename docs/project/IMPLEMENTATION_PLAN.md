@@ -814,7 +814,7 @@ Introduce a minimal, consistent UI foundation to prevent ad-hoc styling and enab
 - At least one key review area adopts the primitives and wrappers (viewer toolbar icon actions + one structured-data section).
 - Document status indicators are unified through a reusable `DocumentStatusCluster`, with the primary signal in the document list/sidebar and no redundant duplicate status surfaces.
 - `docs/project/DESIGN_SYSTEM.md` exists and is linked from project docs navigation.
-- Agent router includes a DESIGN_SYSTEM module and user-visible routing references it.
+- Design-system guidance is reflected consistently in operational assistant modules.
 - CI/local design-system check exists and runs.
 
 **Scope Clarification**
