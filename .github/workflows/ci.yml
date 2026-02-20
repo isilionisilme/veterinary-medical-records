@@ -20,6 +20,9 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.11
+      - name: Run canonical docs guard
+        run: |
+          python scripts/check_no_canonical_router_refs.py
       - name: Run doc/test sync guard
         run: |
           python scripts/check_doc_test_sync.py --base-ref "${{ github.event.pull_request.base.sha }}"
