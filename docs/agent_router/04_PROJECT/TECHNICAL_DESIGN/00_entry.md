@@ -55,6 +55,7 @@ Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for i
 - `docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/480_d6-evidence-approximate-by-design.md`
 - `docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/490_d7-semantics-rules-authoritative.md`
 - `docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/500_d8-example-multiple-fields.md`
+- `docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/505_d9-structured-interpretation-schema-v1-visit-grouped-normative.md`
 - `docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/510_e1-pdf-text-extraction.md`
 - `docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/520_e2-language-detection.md`
 - `docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/530_e3-dependency-justification-repository-requirement.md`

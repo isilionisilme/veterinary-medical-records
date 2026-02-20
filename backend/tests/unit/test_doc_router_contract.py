@@ -342,3 +342,15 @@ def test_project_owner_modules_include_confidence_tooltip_breakdown_propagation(
         in implementation_plan_release
     )
     assert "Field Candidate Suggestions (standard review payload)" in technical_b3
+
+
+def test_technical_design_entry_includes_d9_visit_grouped_module() -> None:
+    technical_entry = _read_text(
+        ROUTER_ROOT / "04_PROJECT" / "TECHNICAL_DESIGN" / "00_entry.md"
+    )
+
+    assert (
+        "docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/"
+        "505_d9-structured-interpretation-schema-v1-visit-grouped-normative.md"
+        in technical_entry
+    )
