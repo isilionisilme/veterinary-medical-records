@@ -16,8 +16,11 @@ Section structure and order (fixed):
 Schema-aware rendering mode (deterministic):
 - Medical Record MVP panel uses `schema_version = "v1"` as canonical for rendering.
 - For legacy `schema_version = "v0"` payloads, v0 is treated as legacy/deprecated for this surface.
+- If `schema_version = "v1"`: render fixed non-visit sections plus a dedicated **Visitas** grouping block.
 - For `schema_version = "v1"`, required document-level placeholders (for example NHC when missing) are driven by `medical_record_view.field_slots[]` in Appendix D9, not by UI hardcoding.
 - No heuristics grouping in UI; grouping comes from schema v1 `visits[]`.
+- Synthetic unassigned group copy is fixed: **Sin asignar / Sin fecha**.
+- Review state remains document-level in MVP, even when multiple visits are present.
 
 Display labels (UI-only; internal keys unchanged):
 - **Centro Veterinario**

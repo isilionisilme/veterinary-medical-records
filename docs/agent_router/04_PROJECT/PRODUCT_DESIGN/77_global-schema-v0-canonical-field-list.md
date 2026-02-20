@@ -33,6 +33,20 @@ Compatibility note:
 - v0 payloads may include non-clinical billing/claim keys.
 - Medical Record MVP UI scope is defined elsewhere and can exclude those keys without changing v0 legacy semantics.
 
+## Visit grouping (MVP)
+
+- In Medical Record MVP, visit grouping is rendered through schema v1 visit-grouped semantics.
+- `document_date` is removed from the MVP schema.
+- `claim_id` is removed from the MVP schema.
+- owner_id (string) (optional; product semantics in MVP: owner address shown as label `Dirección` through `owner_address` when available).
+
+### Key -> UI label -> Section (UI)
+
+- `clinic_name` -> `Nombre` -> `Centro Veterinario`
+- `owner_name` -> `Nombre` -> `Propietario`
+- `owner_address` -> `Dirección` -> `Propietario`
+- `nhc` / `medical_record_number` -> `NHC` -> `Centro Veterinario`
+
 ## CRITICAL_KEYS_V0 (Authoritative, closed set)
 
 Source of truth for Appendix D7.4 remains this historical v0 set.
