@@ -34,3 +34,4 @@ Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for i
 ## Propagated updates
 - User-story completion discipline includes same-change status propagation to implementation-plan owner modules when requested.
 - Backfill policy for implemented story status/date updates remains allowed when explicitly requested.
+- Shared pull-request guidance now references canonical UX/brand sources directly.

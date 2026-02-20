@@ -23,3 +23,4 @@ Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for i
 ## Propagated updates
 - Conceptual-model ownership includes explicit separation of `candidate_confidence` (diagnostic) and `field_mapping_confidence` (context stability).
 - Context v1, learnable-unit (`mapping_id`), and confidence-propagation calibration semantics are maintained in this module set.
+- Global Schema v1/v0 canonical ownership remains in `docs/project/PRODUCT_DESIGN.md`; router modules are derived convenience shards only.
