@@ -1,20 +1,62 @@
-# Review UI Rendering Rules (Global Schema v0 Template)
+# Review UI Rendering Rules (Extracted Data / Informe — Medical Record MVP)
 
-1) Always render the full Global Schema v0 template
-- The UI MUST render the complete Global Schema v0 in fixed order and by sections, regardless of how many fields the extractor produced.
-- Extracted keys outside Global Schema v0 MUST appear in a separate section: **Other extracted fields**.
+Panel definition and scope:
+- The panel represents a **Medical Record** (clinical summary).
+- In Medical Record MVP, non-clinical concepts are excluded from this panel by contract taxonomy (`medical_record_view`, `scope`, `section`, `classification`, `other_fields[]`), not by UI heuristics/denylists.
 
-2) Missing vs loading (deterministic)
-- While structured data is loading, show a clear loading state (skeleton/spinner) and do not show missing placeholders yet.
-- Once the run is ready, any absent/non-extracted value must render an explicit placeholder.
+Section structure and order (fixed):
+1. **Centro Veterinario**
+2. **Paciente**
+3. **Propietario**
+4. **Visitas**
+5. **Notas internas**
+6. **Otros campos detectados**
+7. **Información del informe**
 
-3) Placeholders must be explicit and consistent
-- Use a consistent empty placeholder (for example `-`) and optionally a small hint such as `No encontrado`.
-- Do not leave blank space without a placeholder.
+Schema-aware rendering mode (deterministic):
+- Medical Record MVP panel uses `schema_version = "v1"` as canonical for rendering.
+- For legacy `schema_version = "v0"` payloads, v0 is treated as legacy/deprecated for this surface.
+- If `schema_version = "v1"`: render fixed non-visit sections plus a dedicated **Visitas** grouping block.
+- For `schema_version = "v1"`, required document-level placeholders (for example NHC when missing) are driven by `medical_record_view.field_slots[]` in Appendix D9, not by UI hardcoding.
+- No heuristics grouping in UI; grouping comes from schema v1 `visits[]`.
+- Synthetic unassigned group copy is fixed: **Sin asignar / Sin fecha**.
+- Review state remains document-level in MVP, even when multiple visits are present.
 
-4) Repeatable fields render as lists
-- Repeatable fields MUST render as lists.
-- If empty, render an explicit list-empty state (`Sin elementos` or `-`) distinct from scalar placeholders.
+Display labels (UI-only; internal keys unchanged):
+- **Centro Veterinario**
+  - `clinic_name` -> `Nombre`
+  - `clinic_address` -> `Dirección`
+  - `vet_name` renders when present
+  - `NHC`: visible label is always `NHC`; tooltip: `Número de historial clínico`.
+  - Backend key may be `nhc` or `medical_record_number`; visible UX label remains `NHC`.
+  - NHC must render even when missing (`—`).
+- **Propietario**
+  - `owner_name` -> `Nombre`
+  - `owner_address` -> `Dirección`
+  - `owner_id` is not shown in Medical Record MVP.
 
-5) No governance terminology in veterinarian UX
+Key -> UI label -> Section (UI):
+
+| Key | UI label | Section (UI) |
+|---|---|---|
+| clinic_name | Nombre | Centro Veterinario |
+| clinic_address | Dirección | Centro Veterinario |
+| vet_name | Veterinario/a | Centro Veterinario |
+| nhc | NHC | Centro Veterinario |
+| medical_record_number | NHC | Centro Veterinario |
+| pet_name | Nombre | Paciente |
+| dob | Nacimiento | Paciente |
+| reproductive_status | Estado reproductivo | Paciente |
+| owner_name | Nombre | Propietario |
+| owner_address | Dirección | Propietario |
+| visit_date | Fecha | Visitas |
+| admission_date | Admisión | Visitas |
+| discharge_date | Alta | Visitas |
+| reason_for_visit | Motivo | Visitas |
+
+Empty states (deterministic):
+- If `schema_version = "v1"` and `visits = []`, render **Visitas** empty state.
+- If `Otros campos detectados` is empty, show `Sin otros campos detectados.`
+
+No governance terminology in veterinarian UX:
 - The veterinarian UI copy must not expose terms such as `pending_review`, `governance`, or `reviewer`.

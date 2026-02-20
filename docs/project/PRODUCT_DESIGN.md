@@ -267,70 +267,115 @@ It does not prescribe storage tables or transport contracts.
 - Any change that can affect money, coverage, or medical/legal interpretation must not auto-promote.
 - `CRITICAL_KEYS_V0` remains authoritative and closed.
 
-## Global Schema v0 (Canonical Field List)
+## Visit grouping (MVP)
 
-Purpose: provide a stable, scannable review template where fields appear even when missing.
+- **Visita** means one care episode identified primarily by `visit_date`, with optional `admission_date`, `discharge_date`, and `reason_for_visit`.
+- Clinical concepts are **visit-scoped**. In `schema_version = "v1"`, they are grouped under `visits[].fields[]` as defined in [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix D9.
+- The UI must not infer or heuristic-group visits. Grouping comes from the structured payload (`visits[]`).
+- MVP excludes cross-document deduplication, merge/reconciliation, and longitudinal visit tracking.
+- Review completion remains **document-level**: `Mark as reviewed` applies to the full document, including all its visits.
 
-A) Identificación del caso
-- claim_id (string)
-- clinic_name (string)
-- clinic_address (string)
-- vet_name (string)
-- document_date (date) — if missing, fall back to visit_date
+## Global Schema v1 (Canonical Field List — Medical Record MVP)
 
-B) Paciente (CRITICAL subset per CRITICAL_KEYS_V0)
-- pet_name (string) [critical]
-- species (string) [critical]
-- breed (string) [critical]
-- sex (string) [critical]
-- age (string) [critical]
-- dob (date) (optional)
-- microchip_id (string) (optional)
-- weight (string) [critical]
+Canonical source location:
+- This section in `docs/project/PRODUCT_DESIGN.md` is the canonical product source for the Global Schema v1 Medical Record MVP field list.
+- The legacy Global Schema v0 reference remains canonical in the Appendix of this same document.
+
+Purpose: define the canonical contract-aligned field universe for the Medical Record panel.
+
+Document-level sections (top-level fields):
+
+A) Centro Veterinario
+- `clinic_name` (string)
+- `clinic_address` (string)
+- `vet_name` (string)
+- `nhc` (string; canonical NHC concept)
+
+B) Paciente
+- `pet_name` (string)
+- `species` (string)
+- `breed` (string)
+- `sex` (string)
+- `age` (string)
+- `dob` (date)
+- `microchip_id` (string)
+- `weight` (string)
+- `reproductive_status` (string)
 
 C) Propietario
-- owner_name (string)
-- owner_id (string) (optional)
+- `owner_name` (string)
+- `owner_address` (string; real address concept)
 
-D) Visita / episodio
-- visit_date (date) [critical]
-- admission_date (date) (optional)
-- discharge_date (date) (optional)
-- reason_for_visit (string)
+D) Notas internas
+- `notes` (string)
 
-E) Clínico
-- diagnosis (string, repeatable) [critical]
-- symptoms (string, repeatable)
-- procedure (string, repeatable) [critical]
-- medication (string, repeatable) [critical]
-- treatment_plan (string)
-- allergies (string)
-- vaccinations (string, repeatable)
-- lab_result (string, repeatable)
-- imaging (string, repeatable)
+E) Información del informe
+- `language` (string)
 
-F) Costes / facturación
-- invoice_total (string)
-- covered_amount (string) (optional)
-- non_covered_amount (string) (optional)
-- line_item (string, repeatable)
+Visit-level fields:
+- Visit-level clinical data is canonical in `schema_version = "v1"` under `visits[]` and `visits[].fields[]` (see Appendix D9 in [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md)).
+- Visit fields are not part of the document-level top-level list above.
 
-G) Metadatos / revisión
-- notes (string)
-- language (string) (optional)
+Panel boundary (Medical Record MVP):
+- Non-clinical claim concepts are not part of this canonical panel field-set by definition.
+- Classification and taxonomy boundaries are defined by contract metadata in [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md), not by frontend denylists.
 
-Rules:
-- `value_type` allowed set: `string|date|number|boolean|unknown`.
-- v0 recommendation: use `string` for ambiguous or unit-heavy values (for example weight, money, lab values).
-- Presence stability: show all keys; reduce visual load with collapsible sections, not by removing keys.
-- Repeatable fields (explicit): `medication`, `diagnosis`, `procedure`, `lab_result`, `line_item`, `symptoms`, `vaccinations`, `imaging`.
-- `CRITICAL_KEYS_V0` must remain exact:
-  `pet_name`, `species`, `breed`, `sex`, `age`, `weight`, `visit_date`, `diagnosis`, `medication`, `procedure`.
+Product compatibility rule:
+- `age` and `dob` may coexist; any derived display behavior is defined by UX and does not imply new extraction requirements.
 
 ### CRITICAL_KEYS_V0 (Authoritative, closed set)
 
-Source of truth for Appendix D7.4: the exact set listed in
-**Global Schema v0 (Canonical Field List)** above.
+Source of truth for Appendix D7.4: the exact set listed in historical Global Schema v0.
+This set remains authoritative and closed for v0 semantics.
+For v1 Medical Record contract critical/taxonomy semantics, refer to [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix D9.
+
+## Medical Record MVP panel semantics (US-44)
+
+- The `Extracted Data / Informe` panel is a **clinical Medical Record view**.
+- The panel renders a **contract-defined Medical Record field-set and taxonomy** (document-level, visit-level, and explicit other/unmapped bucket).
+- In `schema_version = "v1"`, required document-level panel fields (including missing-value slots) are defined by the Technical contract template (`medical_record_view.field_slots[]`, Appendix D9).
+- Non-clinical claim concepts are out of scope for this panel and must not be rendered here.
+- Panel section order is fixed: `Centro Veterinario` -> `Paciente` -> `Propietario` -> `Visitas` -> `Notas internas` -> `Otros campos detectados` -> `Información del informe`.
+- Labels/copy and empty-states for this panel are defined in [`docs/project/UX_DESIGN.md`](UX_DESIGN.md).
+- `owner_id` is not part of Medical Record panel semantics; owner address is represented by `owner_address`.
+- NHC is part of `Centro Veterinario` panel semantics and must render with label `NHC` and tooltip `Número de historial clínico`.
+- Product compatibility for age and birth date: both `age` and `dob` may coexist; any derived display behavior is UX-defined and does not imply new extraction requirements.
+
+### Authority / cross-doc
+
+- [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md) defines panel meaning and scope (clinical Medical Record view).
+- [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) defines layout, labels, and empty states.
+- [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) defines payload contracts (`schema_version` v0/v1), field taxonomy, and explicit `other/unmapped` contract bucket.
+
+## Appendix: Global Schema v0 (Legacy / Deprecated)
+
+Status:
+- Global Schema v0 is legacy/historical and is retained only for reference.
+- It is not the canonical schema for the Medical Record MVP panel.
+- For this panel, canonical behavior is defined by Global Schema v1 + v1 contract taxonomy.
+- Legacy v0 payloads may still include additional non-clinical compatibility keys; they are outside this MVP panel scope.
+
+Historical v0 reference (flat model):
+
+A) Identificación del caso
+- `claim_id`
+- `clinic_name`
+- `clinic_address`
+- `vet_name`
+- `document_date`
+
+B) Paciente
+- `pet_name`, `species`, `breed`, `sex`, `age`, `dob`, `microchip_id`, `weight`
+
+C) Propietario
+- `owner_name`, `owner_id`
+
+D) Visita / episodio
+- `visit_date`, `admission_date`, `discharge_date`, `reason_for_visit`
+
+E) Clínico / revisión (flat v0)
+- `diagnosis`, `symptoms`, `procedure`, `medication`, `treatment_plan`, `allergies`, `vaccinations`, `lab_result`, `imaging`
+- `notes`, `language`
 
 
 ## 5. Separation of Responsibilities (Product-Level)

@@ -25,6 +25,10 @@ A single extracted or edited data point with confidence and optional evidence.
 | key | string | ✓ | Lowercase `snake_case` |
 | value | string \| number \| boolean \| null | ✓ | Dates stored as ISO strings |
 | value_type | `"string"` \| `"number"` \| `"boolean"` \| `"date"` \| `"unknown"` | ✓ | Explicit typing |
+| scope | `"document"` \| `"visit"` | ✗ | Contract taxonomy hint (v1 preferred). Backward-compatible optional metadata. |
+| section | `"clinic"` \| `"patient"` \| `"owner"` \| `"visits"` \| `"notes"` \| `"other"` \| `"report_info"` | ✗ | Contract section membership hint (v1 preferred). |
+| domain | `"clinical"` \| `"administrative"` \| `"meta"` \| `"other"` | ✗ | Concept domain classification (contract metadata; not UI behavior). |
+| classification | `"medical_record"` \| `"other"` | ✗ | Explicit render taxonomy marker for deterministic consumers. |
 | confidence | number (0–1) | ✓ | Attention signal only |
 | is_critical | boolean | ✓ | Derived: `key ∈ CRITICAL_KEYS_V0` (Appendix D7.4) |
 | origin | `"machine"` \| `"human"` | ✓ | Distinguishes machine output vs human edits |

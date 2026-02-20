@@ -187,15 +187,16 @@ Allow veterinarians to correct structured data naturally, while capturing append
 ## Release 6 — Explicit overrides & workflow closure
 
 ### Goal
-Focus this release on manual language override and reprocessing with the updated language context.
+Focus this release on visit-grouped review rendering (contract-driven) and evaluator-ready workflow closure.
 
 ### Scope
-- Manual language override
-- Reprocess with updated language context
+- Visit-grouped rendering when `schema_version="v1"` with deterministic ordering and no UI heuristics
 - Evaluator-friendly installation and execution packaging/runbook
 
 ### User Stories (in order)
-- US-10 — Change document language and reprocess
+- US-32 — Align review rendering to Global Schema v0 template (Implemented 2026-02-17)
+- US-44 — Medical Record MVP: Update Extracted Data panel structure, labels, and scope (Implemented 2026-02-20)
+- US-43 — Render “Visitas” agrupadas cuando `schema_version="v1"` (contract-driven, no heuristics)
 - US-42 — Provide evaluator-friendly installation & execution (Docker-first) (Implemented 2026-02-19)
 
 ---
@@ -265,6 +266,16 @@ Capture optional user-experience and operability improvements that are implement
 - US-30 — Change application UI language (multilingual UI)
 - US-31 — Externalize configuration and expose settings in UI
 - US-33 — PDF Viewer Zoom (Nice to have)
+
+---
+
+## Post-MVP / Future (Out of MVP release ordering)
+
+### Goal
+Track approved stories that remain in plan scope but are explicitly out of MVP sequencing.
+
+### User Stories (in order)
+- US-10 — Change document language and reprocess
 
 ---
 
@@ -803,7 +814,7 @@ Introduce a minimal, consistent UI foundation to prevent ad-hoc styling and enab
 - At least one key review area adopts the primitives and wrappers (viewer toolbar icon actions + one structured-data section).
 - Document status indicators are unified through a reusable `DocumentStatusCluster`, with the primary signal in the document list/sidebar and no redundant duplicate status surfaces.
 - `docs/project/DESIGN_SYSTEM.md` exists and is linked from project docs navigation.
-- Agent router includes a DESIGN_SYSTEM module and user-visible routing references it.
+- Design-system guidance is reflected consistently in operational assistant modules.
 - CI/local design-system check exists and runs.
 
 **Scope Clarification**
@@ -1029,6 +1040,118 @@ As a veterinarian, I want the review view to always use the full Global Schema v
 - Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
 - When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
+
+---
+
+## US-44 — Medical Record MVP: Update Extracted Data panel structure, labels, and scope
+
+**Status:** Implemented (2026-02-20)  
+**Owner:** Platform / Frontend (UX-led)  
+**Type:** UX/UI behavior + mapping (contract-driven)
+
+### User Story
+As a **veterinarian reviewer**,  
+I want the “Extracted Data / Informe” panel to present a **clinical medical record** with clear sections and field labels,  
+so that I can review and edit clinical information quickly in a clinical-only panel.
+
+### Scope
+
+**In scope**
+1) **Panel purpose and scope (MVP)**
+  - The Extracted Data panel represents a **clinical Medical Record**.
+  - The panel is clinical-only.
+
+2) **Section structure (MVP)**
+  - The panel renders sections in this exact order:
+    1) **Centro Veterinario**
+    2) **Paciente**
+    3) **Propietario**
+    4) **Visitas**
+    5) **Notas internas**
+    6) **Otros campos detectados**
+    7) **Detalles del informe**
+
+3) **Field label changes (display-only)**
+  - Display labels are updated for clarity in the review panel.
+  - “NHC” is shown as **NHC** with tooltip “Número de historial clínico”.
+
+**Out of scope**
+- Introducing new clinical extraction logic beyond what the contract already provides.
+- Normalizing clinical terms (e.g., SNOMED coding) in MVP UI.
+- Any non-clinical claim UI (this story explicitly excludes it).
+
+### Acceptance Criteria
+
+1) The reviewer sees the Extracted Data panel as a **clinical-only** view, without financial/claim concepts.
+2) The reviewer sees the seven sections in this exact order: Centro Veterinario, Paciente, Propietario, Visitas, Notas internas, Otros campos detectados, Detalles del informe.
+3) The reviewer sees updated labels in the panel:
+  - “Identificación del caso” is shown as “Centro Veterinario”.
+  - Clinic and owner names are shown as “Nombre”.
+  - Address fields are shown as “Dirección”.
+  - Date of birth is shown as “Nacimiento”.
+4) The reviewer sees “NHC” with tooltip “Número de historial clínico”.
+5) If NHC is expected but no value is available, the reviewer still sees the NHC row with placeholder “—”.
+6) In “Propietario”, “Dirección” shows an address value; identifier-like values are not presented as addresses.
+7) The reviewer sees “Otros campos detectados” as a separate section for additional detected data.
+8) The reviewer sees “Visitas” grouped by visit, without mixed data between different visits.
+
+### Story-specific technical requirements
+- Keep contract authority in `docs/project/TECHNICAL_DESIGN.md` (Appendix D9 or equivalent authoritative section); do not redefine contract structure in this plan.
+- Keep copy/labels/empty states aligned with `docs/project/UX_DESIGN.md`.
+- Use contract-driven rendering for visit grouping and “Otros campos detectados”; no UI-side heuristics or reclassification.
+- If required contract capabilities are missing (e.g., explicit “other” bucket or owner address concept), this story is blocked until TECHNICAL_DESIGN is updated and backend output is aligned.
+- Add/adjust UI tests for section order, clinical-only scope, NHC behavior, and owner address labeling.
+
+### Dependencies / Placement
+- Depends on UX copy/spec being updated in `docs/project/UX_DESIGN.md`.
+- **Placement:** implement **US-44 before US-43** (US-44 remains separate).
+
+---
+
+## US-43 — Render “Visitas” agrupadas cuando `schema_version="v1"` (contract-driven, no heuristics)
+**Status:** Planned  
+**Owner:** Platform / Frontend
+
+### User Story
+Como **veterinario revisor**, quiero ver los datos clínicos **agrupados por visita** cuando un documento contiene múltiples visitas, para revisar cada episodio de forma clara y evitar mezclar información de visitas distintas.
+
+### Scope
+In scope:
+1) For documents with multiple visits, the reviewer sees a separate block per visit in the “Visitas” section.
+2) The reviewer sees visit information only inside its visit block, and non-visit document information outside visit blocks.
+3) Information is not mixed across visit blocks.
+4) Visit order is stable and consistent for the reviewer.
+5) Search and filters only affect row visibility within existing containers and do not change visit grouping.
+6) Review status (“reviewed/not reviewed”) continues to apply at document level.
+7) Clinical-only scope: this story does not include financial or billing concepts.
+
+Out of scope:
+- UI heuristics to infer visits or move items.
+- “Reviewed per visit”.
+- Backend changes beyond the existing v1 contract.
+
+### Acceptance Criteria
+1) When multiple visits exist, the reviewer sees one block per visit in the “Visitas” section.
+2) Each visit block shows only information for that visit and does not mix information from other visits.
+3) Information shown outside visit blocks is not repeated inside any visit block.
+4) Visit order is deterministic and remains stable across reloads for the same document.
+5) If an “unassigned” block exists, the reviewer sees it as a differentiated block with UX-defined copy.
+6) If no visits are detected, the reviewer sees the UX-defined empty state for “Visitas”.
+7) Search and filters do not change visit grouping or block order.
+8) The review workflow remains document-level.
+9) For documents without visit structure, the current experience remains without visible regressions.
+
+### Story-specific technical requirements
+- Mantener la autoridad de contrato en `docs/project/TECHNICAL_DESIGN.md` Appendix D9; no redefinir payloads en esta historia.
+- Contract-driven rendering and placement boundaries must follow `docs/project/TECHNICAL_DESIGN.md` Appendix D9.
+- Implementar render sin heurísticas: no crear, fusionar, reasignar ni inferir visitas desde frontend.
+- Mantener reglas de separación entre datos de documento y datos de visita según D9.
+- Mantener comportamiento de search/filter de US-34 sin reagrupación.
+- Añadir cobertura de pruebas para orden estable, bloque sin asignar, estado vacío de visitas y regresión de experiencia vigente.
+
+### Authoritative References
+- `docs/project/TECHNICAL_DESIGN.md` Appendix D9
+- `docs/project/UX_DESIGN.md`
 
 ---
 

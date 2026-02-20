@@ -31,11 +31,3 @@
 ```
 
 ---
-
-# Appendix E — Minimal Libraries for PDF Text Extraction & Language Detection (Normative)
-
-This appendix closes the minimum dependency decisions required to implement:
-- Text extraction (step `EXTRACTION`, Appendix C),
-- Language detection (persisted as `ProcessingRun.language_used`, Appendix B2.2).
-
-If any conflict exists, Appendix A and Appendix B take precedence for invariants and persistence rules.

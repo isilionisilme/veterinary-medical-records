@@ -161,7 +161,21 @@ def test_document_review_returns_latest_completed_run_context(test_client):
     assert payload["document_id"] == document_id
     assert payload["latest_completed_run"]["run_id"] == run_id
     assert payload["active_interpretation"]["version_number"] == 1
-    assert payload["active_interpretation"]["data"]["schema_version"] == "v0"
+    assert payload["active_interpretation"]["data"]["schema_version"] == "v1"
+    medical_record_view = payload["active_interpretation"]["data"].get("medical_record_view")
+    assert isinstance(medical_record_view, dict)
+    field_slots = medical_record_view.get("field_slots")
+    assert isinstance(field_slots, list)
+    nhc_slot = next(
+        (
+            slot
+            for slot in field_slots
+            if isinstance(slot, dict) and slot.get("canonical_key") == "nhc"
+        ),
+        None,
+    )
+    assert nhc_slot is not None
+    assert nhc_slot.get("aliases") == ["medical_record_number"]
     assert payload["raw_text_artifact"]["available"] is True
     assert payload["review_status"] == "IN_REVIEW"
     assert payload["reviewed_at"] is None
@@ -266,6 +280,160 @@ def test_document_review_normalizes_legacy_microchip_suffix_to_digits_only(test_
         payload["active_interpretation"]["data"]["global_schema_v0"]["microchip_id"]
         == "00023035139"
     )
+
+
+def test_document_review_v1_moves_visit_scoped_keys_into_visits_group(test_client):
+    document_id = _upload_sample_document(test_client)
+    run_id = "run-review-v1-visit-scoping"
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(
+        run_id=run_id,
+        data={
+            "schema_version": "v1",
+            "document_id": document_id,
+            "processing_run_id": run_id,
+            "created_at": "2026-02-10T10:00:05+00:00",
+            "medical_record_view": {
+                "version": "mvp-1",
+                "sections": [
+                    "clinic",
+                    "patient",
+                    "owner",
+                    "visits",
+                    "notes",
+                    "other",
+                    "report_info",
+                ],
+                "field_slots": [
+                    {
+                        "concept_id": "patient.pet_name",
+                        "section": "patient",
+                        "scope": "document",
+                        "canonical_key": "pet_name",
+                    },
+                ],
+            },
+            "fields": [
+                {
+                    "field_id": "f-pet",
+                    "key": "pet_name",
+                    "value": "Luna",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "patient",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                },
+                {
+                    "field_id": "f-visit-date",
+                    "key": "visit_date",
+                    "value": "2026-02-11",
+                    "value_type": "date",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                },
+                {
+                    "field_id": "f-diagnosis",
+                    "key": "diagnosis",
+                    "value": "Otitis",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                },
+                {
+                    "field_id": "f-procedure",
+                    "key": "procedure",
+                    "value": "Limpieza",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                },
+                {
+                    "field_id": "f-medication",
+                    "key": "medication",
+                    "value": "Gotas",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                },
+                {
+                    "field_id": "f-treatment",
+                    "key": "treatment_plan",
+                    "value": "7 dias",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                },
+                {
+                    "field_id": "f-lab",
+                    "key": "lab_result",
+                    "value": "Normal",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                },
+            ],
+            "visits": [],
+            "other_fields": [],
+        },
+    )
+
+    response = test_client.get(f"/documents/{document_id}/review")
+    assert response.status_code == 200
+    payload = response.json()
+    data = payload["active_interpretation"]["data"]
+
+    top_level_keys = {
+        field.get("key")
+        for field in data.get("fields", [])
+        if isinstance(field, dict)
+    }
+    assert "visit_date" not in top_level_keys
+    assert "diagnosis" not in top_level_keys
+    assert "procedure" not in top_level_keys
+    assert "medication" not in top_level_keys
+    assert "treatment_plan" not in top_level_keys
+    assert "lab_result" not in top_level_keys
+
+    visits = data.get("visits")
+    assert isinstance(visits, list)
+    assert len(visits) > 0
+    unassigned = next(
+        (
+            visit
+            for visit in visits
+            if isinstance(visit, dict) and visit.get("visit_id") == "unassigned"
+        ),
+        None,
+    )
+    assert isinstance(unassigned, dict)
+    assert unassigned.get("visit_date") == "2026-02-11"
+
+    visit_fields = unassigned.get("fields")
+    assert isinstance(visit_fields, list)
+    visit_keys = {field.get("key") for field in visit_fields if isinstance(field, dict)}
+    assert "diagnosis" in visit_keys
+    assert "procedure" in visit_keys
+    assert "medication" in visit_keys
+    assert "treatment_plan" in visit_keys
+    assert "lab_result" in visit_keys
 
 
 def test_document_review_drops_legacy_non_digit_microchip_value(test_client):

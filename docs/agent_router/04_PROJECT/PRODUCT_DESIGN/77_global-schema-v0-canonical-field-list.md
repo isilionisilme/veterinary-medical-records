@@ -1,64 +1,53 @@
-# Global Schema v0 (Canonical Field List)
+# Global Schema v0 (Legacy/Historical Canonical Field List)
 
-Purpose: provide a stable, scannable review template where fields appear even when missing.
+Purpose: preserve the historical flat v0 field universe as compatibility reference.
 
-A) Identificacion del caso
-- claim_id (string)
-- clinic_name (string)
-- clinic_address (string)
-- vet_name (string)
-- document_date (date) - if missing, fall back to visit_date
+Status:
+- Global Schema v0 is legacy/historical and retained for compatibility.
+- It is not the canonical schema for Medical Record MVP panel rendering.
+- Medical Record MVP canonical semantics are defined in `78_global-schema-v1-medical-record-mvp-field-list.md` and Appendix D9.
 
-B) Paciente (CRITICAL subset per CRITICAL_KEYS_V0)
-- pet_name (string) [critical]
-- species (string) [critical]
-- breed (string) [critical]
-- sex (string) [critical]
-- age (string) [critical]
-- dob (date) (optional)
-- microchip_id (string) (optional)
-- weight (string) [critical]
+Historical v0 reference (flat model):
+
+A) Identificación del caso
+- `claim_id`, `clinic_name`, `clinic_address`, `vet_name`, `document_date`
+
+B) Paciente
+- `pet_name`, `species`, `breed`, `sex`, `age`, `dob`, `microchip_id`, `weight`
 
 C) Propietario
-- owner_name (string)
-- owner_id (string) (optional)
+- `owner_name`, `owner_id`
 
 D) Visita / episodio
-- visit_date (date) [critical]
-- admission_date (date) (optional)
-- discharge_date (date) (optional)
-- reason_for_visit (string)
+- `visit_date`, `admission_date`, `discharge_date`, `reason_for_visit`
 
-E) Clinico
-- diagnosis (string, repeatable) [critical]
-- symptoms (string, repeatable)
-- procedure (string, repeatable) [critical]
-- medication (string, repeatable) [critical]
-- treatment_plan (string)
-- allergies (string)
-- vaccinations (string, repeatable)
-- lab_result (string, repeatable)
-- imaging (string, repeatable)
+E) Clínico / revisión (flat v0)
+- `diagnosis`, `symptoms`, `procedure`, `medication`, `treatment_plan`, `allergies`, `vaccinations`, `lab_result`, `imaging`
+- `invoice_total`, `covered_amount`, `non_covered_amount`, `line_item`
+- `notes`, `language`
 
-F) Costes / facturacion
-- invoice_total (string)
-- covered_amount (string) (optional)
-- non_covered_amount (string) (optional)
-- line_item (string, repeatable)
+Repeatable keys (v0):
+- `medication`, `diagnosis`, `procedure`, `lab_result`, `line_item`, `symptoms`, `vaccinations`, `imaging`
 
-G) Metadatos / revision
-- notes (string)
-- language (string) (optional)
+Compatibility note:
+- v0 payloads may include non-clinical billing/claim keys.
+- Medical Record MVP UI scope is defined elsewhere and can exclude those keys without changing v0 legacy semantics.
 
-Rules:
-- `value_type` allowed set: `string|date|number|boolean|unknown`.
-- v0 recommendation: use `string` for ambiguous or unit-heavy values (for example weight, money, lab values).
-- Presence stability: show all keys; reduce visual load with collapsible sections, not by removing keys.
-- Repeatable fields (explicit): `medication`, `diagnosis`, `procedure`, `lab_result`, `line_item`, `symptoms`, `vaccinations`, `imaging`.
-- `CRITICAL_KEYS_V0` must remain exact:
-  `pet_name`, `species`, `breed`, `sex`, `age`, `weight`, `visit_date`, `diagnosis`, `medication`, `procedure`.
+## Visit grouping (MVP)
+
+- In Medical Record MVP, visit grouping is rendered through schema v1 visit-grouped semantics.
+- `document_date` is removed from the MVP schema.
+- `claim_id` is removed from the MVP schema.
+- owner_id (string) (optional; product semantics in MVP: owner address shown as label `Dirección` through `owner_address` when available).
+
+### Key -> UI label -> Section (UI)
+
+- `clinic_name` -> `Nombre` -> `Centro Veterinario`
+- `owner_name` -> `Nombre` -> `Propietario`
+- `owner_address` -> `Dirección` -> `Propietario`
+- `nhc` / `medical_record_number` -> `NHC` -> `Centro Veterinario`
 
 ## CRITICAL_KEYS_V0 (Authoritative, closed set)
 
-Source of truth for Appendix D7.4: the exact set listed in
-**Global Schema v0 (Canonical Field List)** above.
+Source of truth for Appendix D7.4 remains this historical v0 set.
+This set is authoritative and closed for v0 semantics.

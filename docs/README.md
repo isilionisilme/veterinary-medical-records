@@ -2,49 +2,47 @@ This file defines:
 - what each document is in this repository
 - reading order
 
-# Assistant entrypoint (operational)
-- `docs/agent_router/00_AUTHORITY.md` — router for small, intent-based modules (token-optimized).
+# Scope
 
-AI assistants should follow `AGENTS.md` (repo root) and then `docs/agent_router/00_AUTHORITY.md`, loading only the module(s)
-needed for the current intent. The rest of this file is primarily for humans.
+This file is a human-oriented index for canonical documentation.
 
 # Folder structure
 
-This folder is split into three areas:
-- [`docs/agent_router/`](agent_router/): token-optimized operational modules for AI assistants.
-- [`docs/shared/`](shared/): human-oriented, company-wide, project-agnostic standards and guidelines.
-- [`docs/project/`](project/): human-oriented documents specific to this initiative.
+Canonical documentation is organized into:
+- [`docs/shared/`](shared/): company-wide, project-agnostic standards and guidelines.
+- [`docs/project/`](project/): documents specific to this initiative.
+
+## Documentation governance (normative)
+
+- **Canonical source docs (human SoT):** `docs/project/*` and `docs/shared/*`.
+- **Directionality rule:** canonical docs are human-facing sources and should remain self-contained.
 
 ## Reading order (mandatory)
 ### Documentation shared across projects
-- [`AGENTS.md`](../AGENTS.md) — canonical AI assistant entrypoint and routing triggers for this repo.
-- [`docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/00_entry.md`](agent_router/03_SHARED/ENGINEERING_PLAYBOOK/00_entry.md) — engineering standards (split into small modules).
-- [`docs/agent_router/03_SHARED/UX_GUIDELINES/00_entry.md`](agent_router/03_SHARED/UX_GUIDELINES/00_entry.md) — global UX principles (split into small modules).
-- [`docs/agent_router/03_SHARED/BRAND_GUIDELINES/00_entry.md`](agent_router/03_SHARED/BRAND_GUIDELINES/00_entry.md) — global brand rules (split into small modules).
-
-### Tooling (optional)
-- [`metrics/llm_benchmarks/README.md`](../metrics/llm_benchmarks/README.md) — assistant usage benchmarks (opt-in; used only when requested, e.g. `#metrics`).
+- [`docs/shared/ENGINEERING_PLAYBOOK.md`](shared/ENGINEERING_PLAYBOOK.md) — engineering standards and working agreements.
+- [`docs/shared/UX_GUIDELINES.md`](shared/UX_GUIDELINES.md) — global UX principles.
+- [`docs/shared/BRAND_GUIDELINES.md`](shared/BRAND_GUIDELINES.md) — global brand rules.
 
 ### Tooling (optional)
 - [`metrics/llm_benchmarks/README.md`](../metrics/llm_benchmarks/README.md) — assistant usage benchmarks (opt-in; used only when requested, e.g. `#metrics`).
 
 ### Documentation specific to the project
-- [`docs/agent_router/04_PROJECT/PRODUCT_DESIGN/00_entry.md`](agent_router/04_PROJECT/PRODUCT_DESIGN/00_entry.md) — product summary (split into small modules)
-- [`docs/agent_router/04_PROJECT/UX_DESIGN/00_entry.md`](agent_router/04_PROJECT/UX_DESIGN/00_entry.md) — UX interaction contract (split into small modules)
-- [`docs/project/DESIGN_SYSTEM.md`](project/DESIGN_SYSTEM.md) — lean design-system tokens, primitives, and wrappers for user-visible UI implementation
-- [`docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/00_entry.md`](agent_router/04_PROJECT/TECHNICAL_DESIGN/00_entry.md) — architecture + contracts (split into small modules)
-- [`docs/agent_router/04_PROJECT/BACKEND_IMPLEMENTATION/00_entry.md`](agent_router/04_PROJECT/BACKEND_IMPLEMENTATION/00_entry.md) — backend implementation notes (split into small modules)
-- [`docs/agent_router/04_PROJECT/FRONTEND_IMPLEMENTATION/00_entry.md`](agent_router/04_PROJECT/FRONTEND_IMPLEMENTATION/00_entry.md) — frontend implementation notes (split into small modules)
-- [`docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/00_entry.md`](agent_router/04_PROJECT/IMPLEMENTATION_PLAN/00_entry.md) — scope + story order + acceptance criteria (split into small modules)
+- [`docs/project/PRODUCT_DESIGN.md`](project/PRODUCT_DESIGN.md) — product meaning, scope, and governance.
+- [`docs/project/UX_DESIGN.md`](project/UX_DESIGN.md) — UX interaction contract.
+- [`docs/project/DESIGN_SYSTEM.md`](project/DESIGN_SYSTEM.md) — design tokens, primitives, and wrappers.
+- [`docs/project/TECHNICAL_DESIGN.md`](project/TECHNICAL_DESIGN.md) — architecture, contracts, and invariants.
+- [`docs/project/BACKEND_IMPLEMENTATION.md`](project/BACKEND_IMPLEMENTATION.md) — backend implementation notes.
+- [`docs/project/FRONTEND_IMPLEMENTATION.md`](project/FRONTEND_IMPLEMENTATION.md) — frontend implementation notes.
+- [`docs/project/IMPLEMENTATION_PLAN.md`](project/IMPLEMENTATION_PLAN.md) — scope, story ordering, and acceptance criteria.
 
 ## Authority & precedence
 
 If documents conflict, resolve in this order:
-1) [`docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/00_entry.md`](agent_router/04_PROJECT/TECHNICAL_DESIGN/00_entry.md) — contracts and invariants
-2) [`docs/agent_router/04_PROJECT/UX_DESIGN/00_entry.md`](agent_router/04_PROJECT/UX_DESIGN/00_entry.md) — interaction contract
-3) [`docs/agent_router/04_PROJECT/PRODUCT_DESIGN/00_entry.md`](agent_router/04_PROJECT/PRODUCT_DESIGN/00_entry.md) — system meaning and governance boundary
-4) [`docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/00_entry.md`](agent_router/04_PROJECT/IMPLEMENTATION_PLAN/00_entry.md) — sequencing and acceptance criteria
-5) [`docs/agent_router/04_PROJECT/BACKEND_IMPLEMENTATION/00_entry.md`](agent_router/04_PROJECT/BACKEND_IMPLEMENTATION/00_entry.md) and [`docs/agent_router/04_PROJECT/FRONTEND_IMPLEMENTATION/00_entry.md`](agent_router/04_PROJECT/FRONTEND_IMPLEMENTATION/00_entry.md) — implementation notes
+1) [`docs/project/TECHNICAL_DESIGN.md`](project/TECHNICAL_DESIGN.md) — contracts and invariants
+2) [`docs/project/UX_DESIGN.md`](project/UX_DESIGN.md) — interaction contract
+3) [`docs/project/PRODUCT_DESIGN.md`](project/PRODUCT_DESIGN.md) — system meaning and governance boundary
+4) [`docs/project/IMPLEMENTATION_PLAN.md`](project/IMPLEMENTATION_PLAN.md) — sequencing and acceptance criteria
+5) [`docs/project/BACKEND_IMPLEMENTATION.md`](project/BACKEND_IMPLEMENTATION.md) and [`docs/project/FRONTEND_IMPLEMENTATION.md`](project/FRONTEND_IMPLEMENTATION.md) — implementation notes
 
 Shared docs (`docs/shared/*`) apply globally within their scope.
 
