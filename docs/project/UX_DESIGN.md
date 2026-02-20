@@ -164,16 +164,15 @@ Normative behavior:
 ## Review UI Rendering Rules (Extracted Data / Informe — Medical Record MVP)
 
 Panel definition and scope:
-- The panel represents a **Medical Record** (clinical summary), not a billing/claim view.
-- In Medical Record MVP, these keys are not rendered in this panel: `invoice_total`, `covered_amount`, `non_covered_amount`, `line_item`, `claim_id`, `document_date`.
-- If these keys exist for other product flows, they remain out of scope for this panel.
+- The panel represents a **Medical Record** (clinical summary).
+- In Medical Record MVP, non-clinical concepts are excluded from this panel by contract taxonomy (`medical_record_view`, `scope`, `section`, `classification`, `other_fields[]`), not by UI heuristics or denylists.
 
 Section structure and order (fixed):
 1. **Centro Veterinario**
 2. **Paciente**
 3. **Propietario**
 4. **Visitas** (from `visits[]`)
-5. **Notas del revisor**
+5. **Notas internas**
 6. **Otros campos detectados**
 7. **Información del informe** (bottom)
 
@@ -181,8 +180,10 @@ Layout note:
 - Sections render as normal blocks (no tabs), preserving the current visual system without redesign.
 
 Schema-aware rendering mode (deterministic):
-- If `schema_version = "v0"`: render the current flat Global Schema template by fixed sections/order.
-- If `schema_version = "v1"`: render the fixed section order above, with **Visitas** sourced from `visits[]` (per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md), Appendix D9).
+- Medical Record MVP panel uses `schema_version = "v1"` as canonical for rendering.
+- For legacy `schema_version = "v0"` payloads, this panel does not redefine v0 behavior; v0 is treated as legacy/deprecated for this surface (see Product + Technical docs).
+- For `schema_version = "v1"`: render the fixed section order above, with **Visitas** sourced from `visits[]` (per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md), Appendix D9).
+- For `schema_version = "v1"`, required document-level placeholders (for example NHC when missing) are driven by `medical_record_view.field_slots[]` in Appendix D9, not by UI hardcoding.
 - No heuristics grouping in UI; grouping comes from schema v1 `visits[]`.
 
 Display labels (UI-only; internal keys unchanged):
@@ -192,6 +193,8 @@ Display labels (UI-only; internal keys unchanged):
   - `vet_name` renders when present
   - `NHC`: visible label is always `NHC`; tooltip: `Número de historial clínico`.
   - Backend key may be `nhc` or `medical_record_number`; visible UX label remains `NHC`.
+  - NHC must be rendered as a visible field in this section even when missing; when absent in ready state, show placeholder `—`.
+  - Deterministic mapping rule: the contract/taxonomy must map backend key variants (`nhc` or `medical_record_number`) to the single NHC concept before rendering; UI must not guess concept mapping.
 - **Paciente**
   - `pet_name` -> `Nombre`
   - `dob` -> `Nacimiento`
@@ -201,6 +204,25 @@ Display labels (UI-only; internal keys unchanged):
   - `owner_name` -> `Nombre`
   - `owner_address` -> `Dirección`
   - `owner_id` is not shown in Medical Record MVP.
+
+Key -> UI label -> Section (UI):
+
+| Key | UI label | Section (UI) |
+|---|---|---|
+| clinic_name | Nombre | Centro Veterinario |
+| clinic_address | Dirección | Centro Veterinario |
+| vet_name | Veterinario/a | Centro Veterinario |
+| nhc | NHC | Centro Veterinario |
+| medical_record_number | NHC | Centro Veterinario |
+| pet_name | Nombre | Paciente |
+| dob | Nacimiento | Paciente |
+| reproductive_status | Estado reproductivo | Paciente |
+| owner_name | Nombre | Propietario |
+| owner_address | Dirección | Propietario |
+| visit_date | Fecha | Visitas |
+| admission_date | Admisión | Visitas |
+| discharge_date | Alta | Visitas |
+| reason_for_visit | Motivo | Visitas |
 
 Visit rendering rules for `schema_version = "v1"`:
 - UI does not infer visits and does not regroup items by date/content.

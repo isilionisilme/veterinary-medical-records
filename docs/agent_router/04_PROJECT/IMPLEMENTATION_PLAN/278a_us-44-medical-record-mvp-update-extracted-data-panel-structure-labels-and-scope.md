@@ -1,4 +1,4 @@
-# US-44 — Medical Record MVP: Update Extracted Data panel structure, labels, and scope (no billing)
+# US-44 — Medical Record MVP: Update Extracted Data panel structure, labels, and scope
 
 **Status:** Planned  
 **Owner:** Platform / Frontend (UX-led)  
@@ -7,13 +7,13 @@
 ## User Story
 As a **veterinarian reviewer**,  
 I want the “Extracted Data / Informe” panel to present a **clinical medical record** with clear sections and field labels,  
-so that I can review and edit clinical information quickly **without mixing it with billing/claim data**.
+so that I can review and edit clinical information quickly in a clinical-only panel.
 
 ## Scope
 
 **In scope**
 1) **Panel purpose and scope (MVP)**
-   - The Extracted Data panel represents a **Medical Record** (clinical summary), **not** a claim/factura view.
+   - The Extracted Data panel represents a **Medical Record** (clinical summary) and is clinical-only.
 
 2) **Section structure (MVP)**
    - The panel renders sections in this exact order:
@@ -21,7 +21,7 @@ so that I can review and edit clinical information quickly **without mixing it w
      2) **Paciente**
      3) **Propietario**
      4) **Visitas**
-     5) **Notas del revisor**
+   5) **Notas internas**
      6) **Otros campos detectados**
      7) **Información del informe** (bottom)
 
@@ -45,7 +45,7 @@ so that I can review and edit clinical information quickly **without mixing it w
 **Out of scope**
 - Introducing new clinical extraction logic beyond what the contract already provides.
 - Normalizing clinical terms (e.g., SNOMED coding) in MVP UI.
-- Any billing/factura UI (this story explicitly excludes it).
+- Any non-clinical claim UI (this story explicitly excludes it).
 
 ## Acceptance Criteria
 
@@ -57,8 +57,7 @@ so that I can review and edit clinical information quickly **without mixing it w
 3) The Extracted Data panel renders the seven sections in the exact order listed in Scope (2).
 
 **C. Medical Record field set is contract-driven (no FE denylist)**
-4) The panel renders **only** the “Medical Record” field set and taxonomy defined by the backend contract (see TECHNICAL_DESIGN Appendix D9 or equivalent authoritative section), and **does not render** billing/claim fields.
-   - Examples for regression/tests (not source of truth): `invoice_total`, `covered_amount`, `non_covered_amount`, `line_item`, `claim_id`, `document_date`.
+4) The panel renders **only** the “Medical Record” field set and taxonomy defined by the backend contract (see TECHNICAL_DESIGN Appendix D9 or equivalent authoritative section), and excludes non-clinical claim concepts.
 
 **D. “Otros campos detectados” (contract-driven)**
 5) “Otros campos detectados” must render only items explicitly delivered by the backend as “unmapped/other” per contract (no UI-side classification).  
@@ -76,12 +75,12 @@ so that I can review and edit clinical information quickly **without mixing it w
 11) Given `schema_version="v1"`, the UI renders visits only from `visits[]` and does not regroup items across visits. (D9 is authoritative.)
 
 **H. Reviewer notes**
-12) “Notas del revisor” is rendered **as defined in UX_DESIGN**; if not defined there, UX_DESIGN must be updated before implementation.
+12) “Notas internas” is rendered **as defined in UX_DESIGN**; if not defined there, UX_DESIGN must be updated before implementation.
 
 **I. Tests**
 13) Add/adjust UI tests to cover:
    - Section order presence (smoke-level)
-   - Contract-driven exclusion of billing/claim fields (using the examples list as regression checks)
+   - Contract-driven exclusion of non-clinical claim concepts
    - NHC label + tooltip behavior (at least one)
    - Owner “Dirección” is not mislabeled ID
 

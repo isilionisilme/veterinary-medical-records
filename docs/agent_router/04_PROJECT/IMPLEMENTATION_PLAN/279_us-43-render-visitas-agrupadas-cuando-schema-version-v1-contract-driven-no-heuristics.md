@@ -4,7 +4,7 @@
 **Owner:** Platform / Frontend
 
 ## User Story
-Como **veterinario revisor**, quiero ver los datos clínicos y de costes **agrupados por visita** cuando un documento contiene múltiples visitas, para revisar cada episodio de forma clara y evitar mezclar información de visitas distintas.
+Como **veterinario revisor**, quiero ver los datos clínicos **agrupados por visita** cuando un documento contiene múltiples visitas, para revisar cada episodio de forma clara y evitar mezclar información de visitas distintas.
 
 ## Scope
 In scope:

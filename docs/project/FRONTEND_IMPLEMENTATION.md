@@ -121,6 +121,7 @@ Frontend implementation guidance:
 Repeatable keys (v0): `medication`, `diagnosis`, `procedure`, `lab_result`, `line_item`, `symptoms`, `vaccinations`, `imaging`.
 - Always render the repeatable field container.
 - Render an explicit empty-list state when there are no items.
+- Scope note: v0 may include billing repeatables (for example `line_item`) as legacy compatibility semantics, even when Medical Record MVP UI scope excludes non-clinical concepts.
 
 Value typing (v0):
 - Respect the existing v0 value types: `string | date | number | boolean | unknown`.
