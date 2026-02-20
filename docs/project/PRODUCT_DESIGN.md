@@ -267,16 +267,22 @@ It does not prescribe storage tables or transport contracts.
 - Any change that can affect money, coverage, or medical/legal interpretation must not auto-promote.
 - `CRITICAL_KEYS_V0` remains authoritative and closed.
 
+## Visit grouping (MVP)
+
+- **Visita** means one care episode identified primarily by `visit_date`, with optional `admission_date`, `discharge_date`, and `reason_for_visit`.
+- Clinical and cost concepts are **visit-scoped**. In `schema_version = "v1"`, they are grouped under `visits[].fields[]` as defined in [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix D9.
+- The UI must not infer or heuristic-group visits. Grouping comes from the structured payload (`visits[]`).
+- MVP excludes cross-document deduplication, merge/reconciliation, and longitudinal visit tracking.
+- Review completion remains **document-level**: `Mark as reviewed` applies to the full document, including all its visits.
+
 ## Global Schema v0 (Canonical Field List)
 
 Purpose: provide a stable, scannable review template where fields appear even when missing.
 
-A) Identificación del caso
-- claim_id (string)
+A) Datos de la clínica
 - clinic_name (string)
 - clinic_address (string)
 - vet_name (string)
-- document_date (date) — if missing, fall back to visit_date
 
 B) Paciente (CRITICAL subset per CRITICAL_KEYS_V0)
 - pet_name (string) [critical]
@@ -290,15 +296,15 @@ B) Paciente (CRITICAL subset per CRITICAL_KEYS_V0)
 
 C) Propietario
 - owner_name (string)
-- owner_id (string) (optional)
+- owner_id (string) (optional; product semantics in MVP: owner address shown as label "Dirección")
 
-D) Visita / episodio
+D) Visitas (metadata)
 - visit_date (date) [critical]
 - admission_date (date) (optional)
 - discharge_date (date) (optional)
 - reason_for_visit (string)
 
-E) Clínico
+E) Campos por visita (clínico y costes)
 - diagnosis (string, repeatable) [critical]
 - symptoms (string, repeatable)
 - procedure (string, repeatable) [critical]
@@ -308,16 +314,20 @@ E) Clínico
 - vaccinations (string, repeatable)
 - lab_result (string, repeatable)
 - imaging (string, repeatable)
-
-F) Costes / facturación
 - invoice_total (string)
 - covered_amount (string) (optional)
 - non_covered_amount (string) (optional)
 - line_item (string, repeatable)
 
-G) Metadatos / revisión
+F) Revisión
 - notes (string)
 - language (string) (optional)
+
+Product notes:
+- `document_date` is removed from the MVP schema because it is ambiguous; visit-level dates are the relevant temporal anchors.
+- `claim_id` is removed from the MVP schema because it does not provide value in this phase.
+- For MVP compatibility, internal key `owner_id` may remain unchanged in contracts/code, but UI semantics and label are owner address. Technical debt: rename to `owner_address` in a future schema version.
+- In `schema_version = "v1"`, "Clínico" is not rendered as a flat standalone section; clinical/cost fields appear inside each visit group.
 
 Rules:
 - `value_type` allowed set: `string|date|number|boolean|unknown`.
@@ -326,6 +336,22 @@ Rules:
 - Repeatable fields (explicit): `medication`, `diagnosis`, `procedure`, `lab_result`, `line_item`, `symptoms`, `vaccinations`, `imaging`.
 - `CRITICAL_KEYS_V0` must remain exact:
   `pet_name`, `species`, `breed`, `sex`, `age`, `weight`, `visit_date`, `diagnosis`, `medication`, `procedure`.
+
+### Key -> UI label -> Section (UI)
+
+| Key | UI label | Section (UI) |
+|---|---|---|
+| clinic_name | Nombre | Datos de la clínica |
+| clinic_address | Dirección | Datos de la clínica |
+| vet_name | Veterinario/a | Datos de la clínica |
+| pet_name | Nombre | Paciente |
+| dob | Nacimiento | Paciente |
+| owner_name | Nombre | Propietario |
+| owner_id | Dirección | Propietario |
+| visit_date | Fecha | Visitas |
+| admission_date | Admisión | Visitas |
+| discharge_date | Alta | Visitas |
+| reason_for_visit | Motivo | Visitas |
 
 ### CRITICAL_KEYS_V0 (Authoritative, closed set)
 

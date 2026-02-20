@@ -354,3 +354,46 @@ def test_technical_design_entry_includes_d9_visit_grouped_module() -> None:
         "505_d9-structured-interpretation-schema-v1-visit-grouped-normative.md"
         in technical_entry
     )
+
+
+def test_product_and_ux_owner_modules_include_visit_grouping_and_copy_updates() -> None:
+    product_module = _read_text(
+        ROUTER_ROOT
+        / "04_PROJECT"
+        / "PRODUCT_DESIGN"
+        / "77_global-schema-v0-canonical-field-list.md"
+    )
+    ux_module = _read_text(
+        ROUTER_ROOT
+        / "04_PROJECT"
+        / "UX_DESIGN"
+        / "55_review-ui-rendering-rules-global-schema-v0-template.md"
+    )
+
+    assert "## Visit grouping (MVP)" in product_module
+    assert '`document_date` is removed from the MVP schema' in product_module
+    assert '`claim_id` is removed from the MVP schema' in product_module
+    assert (
+        "owner_id (string) (optional; product semantics in MVP: "
+        "owner address shown as label"
+        in product_module
+    )
+    assert "Key -> UI label -> Section (UI)" in product_module
+
+    assert (
+        'If `schema_version = "v1"`: render fixed non-visit sections plus a dedicated '
+        "**Visitas** grouping block"
+        in ux_module
+    )
+    assert (
+        "No heuristics grouping in UI; grouping comes from schema v1 `visits[]`."
+        in ux_module
+    )
+    assert (
+        "Synthetic unassigned group copy is fixed: **Sin asignar / Sin fecha**."
+        in ux_module
+    )
+    assert (
+        "Review state remains document-level in MVP, even when multiple visits are present."
+        in ux_module
+    )
