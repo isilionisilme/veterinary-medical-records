@@ -101,6 +101,318 @@ async function openReadyDocumentAndGetPanel() {
   return screen.getByTestId("right-panel-scroll");
 }
 
+type V1Us44FetchMockOptions = {
+  fieldSlots?: Array<Record<string, unknown>>;
+  fields?: Array<Record<string, unknown>>;
+  visits?: Array<Record<string, unknown>>;
+  otherFields?: Array<Record<string, unknown>>;
+  confidencePolicy?: Record<string, unknown>;
+};
+
+function installV1Us44FetchMock(options?: V1Us44FetchMockOptions) {
+  globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = input.toString();
+    const method = (init?.method ?? "GET").toUpperCase();
+
+    if (url.includes("/documents?") && method === "GET") {
+      return new Response(
+        JSON.stringify({
+          items: [
+            {
+              document_id: "doc-v1",
+              original_filename: "ready.pdf",
+              created_at: "2026-02-10T10:00:00Z",
+              status: "COMPLETED",
+              status_label: "Listo",
+              failure_type: null,
+              review_status: "IN_REVIEW",
+              reviewed_at: null,
+              reviewed_by: null,
+            },
+          ],
+          limit: 50,
+          offset: 0,
+          total: 1,
+        }),
+        { status: 200 }
+      );
+    }
+
+    if (url.match(/\/documents\/doc-v1$/) && method === "GET") {
+      return new Response(
+        JSON.stringify({
+          document_id: "doc-v1",
+          original_filename: "ready.pdf",
+          content_type: "application/pdf",
+          file_size: 10,
+          created_at: "2026-02-10T10:00:00Z",
+          updated_at: "2026-02-10T10:00:00Z",
+          status: "COMPLETED",
+          status_message: "Completed",
+          failure_type: null,
+          review_status: "IN_REVIEW",
+          reviewed_at: null,
+          reviewed_by: null,
+          latest_run: { run_id: "run-doc-v1", state: "COMPLETED", failure_type: null },
+        }),
+        { status: 200 }
+      );
+    }
+
+    if (url.match(/\/documents\/doc-v1\/review$/) && method === "GET") {
+      return new Response(
+        JSON.stringify({
+          document_id: "doc-v1",
+          latest_completed_run: {
+            run_id: "run-doc-v1",
+            state: "COMPLETED",
+            completed_at: "2026-02-10T10:00:00Z",
+            failure_type: null,
+          },
+          active_interpretation: {
+            interpretation_id: "interp-doc-v1",
+            version_number: 1,
+            data: {
+              schema_version: "v1",
+              document_id: "doc-v1",
+              processing_run_id: "run-doc-v1",
+              created_at: "2026-02-10T10:00:00Z",
+              medical_record_view: {
+                version: "mvp-1",
+                sections: ["clinic", "patient", "owner", "visits", "notes", "other", "report_info"],
+                field_slots: options?.fieldSlots ?? [
+                  {
+                    concept_id: "clinic.name",
+                    section: "clinic",
+                    scope: "document",
+                    canonical_key: "clinic_name",
+                    label_key: "clinic_name",
+                  },
+                  {
+                    concept_id: "clinic.nhc",
+                    section: "clinic",
+                    scope: "document",
+                    canonical_key: "nhc",
+                    aliases: ["medical_record_number"],
+                    label_key: "nhc",
+                  },
+                  {
+                    concept_id: "patient.pet_name",
+                    section: "patient",
+                    scope: "document",
+                    canonical_key: "pet_name",
+                    label_key: "pet_name",
+                  },
+                  {
+                    concept_id: "owner.name",
+                    section: "owner",
+                    scope: "document",
+                    canonical_key: "owner_name",
+                    label_key: "owner_name",
+                  },
+                  {
+                    concept_id: "owner.address",
+                    section: "owner",
+                    scope: "document",
+                    canonical_key: "owner_address",
+                    label_key: "owner_address",
+                  },
+                  {
+                    concept_id: "notes.main",
+                    section: "notes",
+                    scope: "document",
+                    canonical_key: "notes",
+                    label_key: "notes",
+                  },
+                  {
+                    concept_id: "report.language",
+                    section: "report_info",
+                    scope: "document",
+                    canonical_key: "language",
+                    label_key: "language",
+                  },
+                  {
+                    concept_id: "contract.allow.invoice_total",
+                    section: "notes",
+                    scope: "document",
+                    canonical_key: "invoice_total",
+                    label_key: "invoice_total",
+                  },
+                ],
+              },
+              fields: options?.fields ?? [
+                {
+                  field_id: "field-clinic-name-doc-v1",
+                  key: "clinic_name",
+                  value: "Centro Norte",
+                  value_type: "string",
+                  scope: "document",
+                  section: "clinic",
+                  classification: "medical_record",
+                  is_critical: false,
+                  origin: "machine",
+                },
+                {
+                  field_id: "field-pet-name-doc-v1",
+                  key: "pet_name",
+                  value: "Luna",
+                  value_type: "string",
+                  scope: "document",
+                  section: "patient",
+                  classification: "medical_record",
+                  is_critical: false,
+                  origin: "machine",
+                },
+                {
+                  field_id: "field-owner-name-doc-v1",
+                  key: "owner_name",
+                  value: "Ana",
+                  value_type: "string",
+                  scope: "document",
+                  section: "owner",
+                  classification: "medical_record",
+                  is_critical: false,
+                  origin: "machine",
+                },
+                {
+                  field_id: "field-owner-address-doc-v1",
+                  key: "owner_address",
+                  value: "Calle Sur 8",
+                  value_type: "string",
+                  scope: "document",
+                  section: "owner",
+                  classification: "medical_record",
+                  is_critical: false,
+                  origin: "machine",
+                },
+                {
+                  field_id: "field-notes-doc-v1",
+                  key: "notes",
+                  value: "Revisar evolución",
+                  value_type: "string",
+                  scope: "document",
+                  section: "notes",
+                  classification: "medical_record",
+                  is_critical: false,
+                  origin: "machine",
+                },
+                {
+                  field_id: "field-language-doc-v1",
+                  key: "language",
+                  value: "es",
+                  value_type: "string",
+                  scope: "document",
+                  section: "report_info",
+                  classification: "medical_record",
+                  is_critical: false,
+                  origin: "machine",
+                },
+                {
+                  field_id: "field-invoice-total-doc-v1",
+                  key: "invoice_total",
+                  value: "123.00",
+                  value_type: "string",
+                  scope: "document",
+                  section: "notes",
+                  classification: "medical_record",
+                  is_critical: false,
+                  origin: "machine",
+                },
+                {
+                  field_id: "field-top-level-other-doc-v1",
+                  key: "top_level_other_should_not_render",
+                  value: "NO",
+                  value_type: "string",
+                  scope: "document",
+                  section: "other",
+                  classification: "other",
+                  is_critical: false,
+                  origin: "machine",
+                },
+              ],
+              visits: options?.visits ?? [
+                {
+                  visit_id: "visit-1",
+                  visit_date: "2026-02-11",
+                  admission_date: null,
+                  discharge_date: null,
+                  reason_for_visit: "Control",
+                  fields: [
+                    {
+                      field_id: "field-visit-diagnosis-doc-v1",
+                      key: "diagnosis",
+                      value: "Estable",
+                      value_type: "string",
+                      scope: "visit",
+                      section: "visits",
+                      classification: "medical_record",
+                      is_critical: false,
+                      origin: "machine",
+                    },
+                  ],
+                },
+              ],
+              other_fields: options?.otherFields ?? [
+                {
+                  field_id: "field-other-contract-doc-v1",
+                  key: "contract_other",
+                  value: "VISIBLE",
+                  value_type: "string",
+                  scope: "document",
+                  section: "other",
+                  classification: "other",
+                  is_critical: false,
+                  origin: "machine",
+                },
+              ],
+              confidence_policy: options?.confidencePolicy ?? {
+                policy_version: "test-v1",
+                band_cutoffs: {
+                  low_max: 0.4,
+                  mid_max: 0.7,
+                },
+              },
+            },
+          },
+          raw_text_artifact: {
+            run_id: "run-doc-v1",
+            available: true,
+          },
+          review_status: "IN_REVIEW",
+          reviewed_at: null,
+          reviewed_by: null,
+        }),
+        { status: 200 }
+      );
+    }
+
+    if (url.includes("/processing-history") && method === "GET") {
+      return new Response(JSON.stringify({ document_id: "doc-v1", runs: [] }), { status: 200 });
+    }
+
+    if (url.includes("/download") && method === "GET") {
+      return new Response(new Blob(["pdf"], { type: "application/pdf" }), { status: 200 });
+    }
+
+    if (url.includes("/raw-text") && method === "GET") {
+      return new Response(
+        JSON.stringify({
+          run_id: "run-doc-v1",
+          artifact_type: "RAW_TEXT",
+          content_type: "text/plain",
+          text: "texto",
+        }),
+        { status: 200 }
+      );
+    }
+
+    return new Response(JSON.stringify({ error_code: "NOT_FOUND" }), { status: 404 });
+  }) as typeof fetch;
+
+  globalThis.URL.createObjectURL = vi.fn(() => "blob://mock");
+  globalThis.URL.revokeObjectURL = vi.fn();
+}
+
 function installReviewedModeFetchMock() {
   const docs: Array<{
     document_id: string;
@@ -1699,14 +2011,23 @@ describe("App upload and list flow", () => {
     renderApp();
     const panel = await openReadyDocumentAndGetPanel();
 
-    const hiddenCoreKeys = new Set(["claim_id", "document_date"]);
+    const hiddenCoreKeys = new Set([
+      "claim_id",
+      "document_date",
+      "owner_id",
+      "invoice_total",
+      "covered_amount",
+      "non_covered_amount",
+      "line_item",
+    ]);
     const uiLabelOverrides: Record<string, string> = {
       clinic_name: "Nombre",
       clinic_address: "Dirección",
       pet_name: "Nombre",
       dob: "Nacimiento",
       owner_name: "Nombre",
-      owner_id: "Dirección",
+      owner_address: "Dirección",
+      nhc: "NHC",
     };
 
     GLOBAL_SCHEMA_V0.filter((field) => !hiddenCoreKeys.has(field.key)).forEach((field) => {
@@ -1715,11 +2036,12 @@ describe("App upload and list flow", () => {
     });
     expect(within(panel).queryByText("ID de reclamacion")).toBeNull();
     expect(within(panel).queryByText("Fecha del documento")).toBeNull();
+    expect(within(panel).queryByText("Importe total")).toBeNull();
     expect(within(panel).getByText("Plan de tratamiento")).toBeInTheDocument();
     expect(within(panel).getAllByText("—").length).toBeGreaterThan(0);
-    expect(within(panel).getByText("Other extracted fields")).toBeInTheDocument();
-    expect(within(panel).getByText("Custom tag")).toBeInTheDocument();
-    expect(within(panel).getByText("Prioridad")).toBeInTheDocument();
+    expect(within(panel).getByText("Otros campos detectados")).toBeInTheDocument();
+    expect(within(panel).getAllByText("Custom tag").length).toBeGreaterThan(0);
+    expect(within(panel).getAllByText("Prioridad").length).toBeGreaterThan(0);
   });
 
   it("hides configured extracted fields from the extra section", async () => {
@@ -1740,7 +2062,7 @@ describe("App upload and list flow", () => {
     const ownerSectionTitle = within(panel).getByText("Propietario");
     const ownerSection = ownerSectionTitle.closest("section");
     expect(ownerSection).not.toBeNull();
-    const caseSectionTitle = within(panel).getByText("Datos de la clínica");
+    const caseSectionTitle = within(panel).getByText("Centro Veterinario");
     const caseSection = caseSectionTitle.closest("section");
     expect(caseSection).not.toBeNull();
     const clinicRow = within(caseSection as HTMLElement).getByTestId("core-row-clinic_name");
@@ -1795,11 +2117,11 @@ describe("App upload and list flow", () => {
     expect(ownerNameValue).toHaveClass("border");
     expect(ownerNameValue).toHaveClass("border-borderSubtle");
 
-    const ownerIdValue =
-      within(ownerSection as HTMLElement).queryByTestId("owner-value-owner_id") ??
-      within(ownerSection as HTMLElement).getByTestId("core-value-owner_id");
-    expect(ownerIdValue).toHaveClass("w-full");
-    expect(ownerIdValue).toHaveClass("bg-surfaceMuted");
+    const ownerAddressValue =
+      within(ownerSection as HTMLElement).queryByTestId("owner-value-owner_address") ??
+      within(ownerSection as HTMLElement).getByTestId("core-value-owner_address");
+    expect(ownerAddressValue).toHaveClass("w-full");
+    expect(ownerAddressValue).toHaveClass("bg-surfaceMuted");
 
     const visitSectionTitle = within(panel).getByText("Visitas");
     const visitSection = visitSectionTitle.closest("section");
@@ -1887,11 +2209,295 @@ describe("App upload and list flow", () => {
     const clinicalRecordConfidence = within(clinicalRecordCard as HTMLElement).getByTestId(
       "confidence-indicator-core:clinic_name"
     );
-    expect(clinicalRecordConfidence).toHaveAttribute(
-      "aria-label",
-      expect.stringMatching(/no disponible/i)
-    );
+    expect(clinicalRecordConfidence).toHaveAttribute("aria-label", "Campo vacío");
     expect(within(panel).queryByTestId("critical-indicator-diagnosis")).toBeInTheDocument();
+  });
+
+  it("renders v1 sections in US-44 fixed order", async () => {
+    installV1Us44FetchMock();
+    renderApp();
+    const panel = await openReadyDocumentAndGetPanel();
+    const panelText = panel.textContent ?? "";
+
+    const orderedSections = [
+      "Centro Veterinario",
+      "Paciente",
+      "Propietario",
+      "Visitas",
+      "Notas internas",
+      "Otros campos detectados",
+      "Detalles del informe",
+    ];
+
+    let lastIndex = -1;
+    orderedSections.forEach((section) => {
+      const index = panelText.indexOf(section);
+      expect(index).toBeGreaterThan(lastIndex);
+      lastIndex = index;
+    });
+  });
+
+  it("uses v1 field_slots for required placeholders (NHC missing renders —)", async () => {
+    installV1Us44FetchMock();
+    renderApp();
+    const panel = await openReadyDocumentAndGetPanel();
+
+    expect(within(panel).getByText("NHC")).toBeInTheDocument();
+    expect(within(panel).getByText("NHC")).toHaveAttribute("title", "Número de historial clínico");
+    expect(within(panel).getByTestId("core-value-nhc")).toHaveTextContent("—");
+    const nhcIndicator = within(panel).getByTestId("confidence-indicator-core:nhc");
+    expect(nhcIndicator).toHaveAttribute("aria-label", "Campo vacío");
+    expect(nhcIndicator.className).toContain("border");
+    expect(nhcIndicator.className).toContain("border-muted");
+    expect(nhcIndicator.className).toContain("bg-surface");
+    expect(nhcIndicator.className).not.toContain("bg-missing");
+  });
+
+  it("shows Visitas empty state in v1 when visits=[]", async () => {
+    installV1Us44FetchMock({ visits: [] });
+    renderApp();
+    const panel = await openReadyDocumentAndGetPanel();
+
+    expect(within(panel).getByText("Visitas")).toBeInTheDocument();
+    expect(within(panel).getByText("Sin visitas detectadas.")).toBeInTheDocument();
+  });
+
+  it("uses v1 detected summary as X/30 and increments X with visit concepts", async () => {
+    const controlledFields = [
+      {
+        field_id: "f-nhc-alias",
+        key: "medical_record_number",
+        value: "NHC-001",
+        value_type: "string",
+        scope: "document",
+        section: "clinic",
+        classification: "medical_record",
+        field_mapping_confidence: 0.6,
+        origin: "machine",
+      },
+      {
+        field_id: "f-pet-name",
+        key: "pet_name",
+        value: "Luna",
+        value_type: "string",
+        scope: "document",
+        section: "patient",
+        classification: "medical_record",
+        field_mapping_confidence: 0.85,
+        origin: "machine",
+      },
+      {
+        field_id: "f-language",
+        key: "language",
+        value: "es",
+        value_type: "string",
+        scope: "document",
+        section: "report_info",
+        classification: "medical_record",
+        field_mapping_confidence: 0.2,
+        origin: "machine",
+      },
+      {
+        field_id: "f-invoice-total",
+        key: "invoice_total",
+        value: "123.00",
+        value_type: "string",
+        scope: "document",
+        section: "notes",
+        classification: "medical_record",
+        field_mapping_confidence: 0.95,
+        origin: "machine",
+      },
+    ];
+    const controlledVisits = [
+      {
+        visit_id: "visit-1",
+        visit_date: "2026-02-11",
+        admission_date: null,
+        discharge_date: null,
+        reason_for_visit: "Control",
+        fields: [
+          {
+            field_id: "f-visit-diagnosis",
+            key: "diagnosis",
+            value: "Estable",
+            value_type: "string",
+            scope: "visit",
+            section: "visits",
+            classification: "medical_record",
+            field_mapping_confidence: 0.65,
+            origin: "machine",
+          },
+          {
+            field_id: "f-visit-procedure",
+            key: "procedure",
+            value: "Exploración",
+            value_type: "string",
+            scope: "visit",
+            section: "visits",
+            classification: "medical_record",
+            field_mapping_confidence: 0.3,
+            origin: "machine",
+          },
+        ],
+      },
+    ];
+
+    const expectedDetected = 3 + 2 + 2;
+    installV1Us44FetchMock({ fields: controlledFields, visits: controlledVisits });
+    renderApp();
+    await openReadyDocumentAndGetPanel();
+
+    expect(screen.getByText("Campos detectados:")).toBeInTheDocument();
+    expect(screen.getByTestId("detected-summary-total")).toHaveTextContent(
+      `${expectedDetected}/30`
+    );
+
+    const low = Number(screen.getByTestId("detected-summary-low").textContent ?? "0");
+    const medium = Number(screen.getByTestId("detected-summary-medium").textContent ?? "0");
+    const high = Number(screen.getByTestId("detected-summary-high").textContent ?? "0");
+    const unknown = Number(screen.getByTestId("detected-summary-unknown").textContent ?? "0");
+    expect(low + medium + high + unknown).toBe(expectedDetected);
+  });
+
+  it("keeps v1 total at 30 and counts only document concepts when visits=[]", async () => {
+    const documentOnlyFields = [
+      {
+        field_id: "f-pet-name",
+        key: "pet_name",
+        value: "Luna",
+        value_type: "string",
+        scope: "document",
+        section: "patient",
+        classification: "medical_record",
+        field_mapping_confidence: 0.8,
+        origin: "machine",
+      },
+      {
+        field_id: "f-notes",
+        key: "notes",
+        value: "Sin incidencias",
+        value_type: "string",
+        scope: "document",
+        section: "notes",
+        classification: "medical_record",
+        origin: "machine",
+      },
+    ];
+
+    const expectedDetected = 2;
+    installV1Us44FetchMock({ fields: documentOnlyFields, visits: [] });
+    renderApp();
+    await openReadyDocumentAndGetPanel();
+
+    expect(screen.getByTestId("detected-summary-total")).toHaveTextContent(
+      `${expectedDetected}/30`
+    );
+
+    const low = Number(screen.getByTestId("detected-summary-low").textContent ?? "0");
+    const medium = Number(screen.getByTestId("detected-summary-medium").textContent ?? "0");
+    const high = Number(screen.getByTestId("detected-summary-high").textContent ?? "0");
+    const unknown = Number(screen.getByTestId("detected-summary-unknown").textContent ?? "0");
+    expect(low + medium + high + unknown).toBe(expectedDetected);
+  });
+
+  it("shows Spanish confidence labels in header dots and unknown tooltip", async () => {
+    installV1Us44FetchMock();
+    renderApp();
+    await openReadyDocumentAndGetPanel();
+
+    expect(screen.getByTestId("detected-summary-dot-low")).toHaveAttribute(
+      "aria-label",
+      "Confianza baja"
+    );
+    expect(screen.getByTestId("detected-summary-dot-medium")).toHaveAttribute(
+      "aria-label",
+      "Confianza media"
+    );
+    expect(screen.getByTestId("detected-summary-dot-high")).toHaveAttribute(
+      "aria-label",
+      "Confianza alta"
+    );
+    expect(screen.getByTestId("detected-summary-dot-unknown")).toHaveAttribute(
+      "aria-label",
+      "Detectado (sin confianza)"
+    );
+    expect(screen.getByTestId("detected-summary-dot-unknown")).toHaveAttribute(
+      "title",
+      "Detectado (sin confianza)"
+    );
+  });
+
+  it("renders Otros campos detectados only from other_fields[] in v1", async () => {
+    installV1Us44FetchMock();
+    renderApp();
+    const panel = await openReadyDocumentAndGetPanel();
+    const extraSection = within(panel).getByTestId("other-extracted-fields-section");
+
+    expect(within(extraSection).getByText("Contract other")).toBeInTheDocument();
+    expect(within(extraSection).getByText("VISIBLE")).toBeInTheDocument();
+    expect(within(extraSection).queryByText("Top level other should not render")).toBeNull();
+    expect(within(extraSection).queryByText("NO")).toBeNull();
+  });
+
+  it("hides billing keys in v1 even when contract/data include them", async () => {
+    installV1Us44FetchMock();
+    renderApp();
+    const panel = await openReadyDocumentAndGetPanel();
+
+    expect(within(panel).queryByText("Invoice total")).toBeNull();
+    expect(within(panel).queryByText("123.00")).toBeNull();
+  });
+
+  it("keeps v1 medical record panel clinical-only even when invoice_total is injected in field_slots and fields", async () => {
+    installV1Us44FetchMock({
+      fieldSlots: [
+        {
+          concept_id: "clinic.name",
+          section: "clinic",
+          scope: "document",
+          canonical_key: "clinic_name",
+          label_key: "clinic_name",
+        },
+        {
+          concept_id: "contract.invoice_total",
+          section: "notes",
+          scope: "document",
+          canonical_key: "invoice_total",
+          label_key: "invoice_total",
+        },
+      ],
+      fields: [
+        {
+          field_id: "field-clinic-name-doc-v1",
+          key: "clinic_name",
+          value: "Centro Norte",
+          value_type: "string",
+          scope: "document",
+          section: "clinic",
+          classification: "medical_record",
+          is_critical: false,
+          origin: "machine",
+        },
+        {
+          field_id: "field-invoice-total-doc-v1",
+          key: "invoice_total",
+          value: "123.00",
+          value_type: "string",
+          scope: "document",
+          section: "notes",
+          classification: "medical_record",
+          is_critical: false,
+          origin: "machine",
+        },
+      ],
+    });
+    renderApp();
+    const panel = await openReadyDocumentAndGetPanel();
+
+    expect(within(panel).getByText("Centro Veterinario")).toBeInTheDocument();
+    expect(within(panel).queryByText(/invoice/i)).toBeNull();
+    expect(within(panel).queryByText("123.00")).toBeNull();
   });
 
   it("shows an empty list state for repeatable fields", async () => {
@@ -1916,11 +2522,11 @@ describe("App upload and list flow", () => {
 
     const panel = screen.getByTestId("right-panel-scroll");
     const missingIndicator = within(panel).getByTestId("confidence-indicator-core:clinic_name");
-    expect(missingIndicator).toHaveAttribute(
-      "aria-label",
-      expect.stringMatching(/no disponible/i)
-    );
-    expect(missingIndicator.className).toContain("bg-missing");
+    expect(missingIndicator).toHaveAttribute("aria-label", "Campo vacío");
+    expect(missingIndicator.className).toContain("border");
+    expect(missingIndicator.className).toContain("border-muted");
+    expect(missingIndicator.className).toContain("bg-surface");
+    expect(missingIndicator.className).not.toContain("bg-missing");
 
     fireEvent.click(screen.getByRole("button", { name: "Baja" }));
     expect(within(screen.getByTestId("right-panel-scroll")).queryByTestId("field-trigger-core:clinic_name")).toBeNull();
@@ -1952,6 +2558,7 @@ describe("App upload and list flow", () => {
     await screen.findByTestId("confidence-policy-degraded");
 
     const indicator = screen.getByTestId("confidence-indicator-core:pet_name");
+    expect(indicator).not.toHaveAttribute("aria-label", "Campo vacío");
     expect(indicator.className).toContain("bg-missing");
     expect(warnSpy).toHaveBeenCalledWith(
       "[confidence-policy]",

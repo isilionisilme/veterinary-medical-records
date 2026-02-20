@@ -43,6 +43,92 @@ from backend.app.ports.file_storage import FileStorage
 NUMERIC_TYPES = (int, float)
 logger = logging.getLogger(__name__)
 
+_MEDICAL_RECORD_V1_SECTIONS: tuple[str, ...] = (
+    "clinic",
+    "patient",
+    "owner",
+    "visits",
+    "notes",
+    "other",
+    "report_info",
+)
+
+_MEDICAL_RECORD_V1_FIELD_SLOTS: tuple[dict[str, object], ...] = (
+    {
+        "concept_id": "clinic.name",
+        "section": "clinic",
+        "scope": "document",
+        "canonical_key": "clinic_name",
+        "label_key": "clinic_name",
+    },
+    {
+        "concept_id": "clinic.nhc",
+        "section": "clinic",
+        "scope": "document",
+        "canonical_key": "nhc",
+        "aliases": ["medical_record_number"],
+        "label_key": "nhc",
+    },
+    {
+        "concept_id": "patient.pet_name",
+        "section": "patient",
+        "scope": "document",
+        "canonical_key": "pet_name",
+        "label_key": "pet_name",
+    },
+    {
+        "concept_id": "owner.name",
+        "section": "owner",
+        "scope": "document",
+        "canonical_key": "owner_name",
+        "label_key": "owner_name",
+    },
+    {
+        "concept_id": "owner.address",
+        "section": "owner",
+        "scope": "document",
+        "canonical_key": "owner_address",
+        "aliases": ["owner_id"],
+        "label_key": "owner_address",
+    },
+    {
+        "concept_id": "notes.main",
+        "section": "notes",
+        "scope": "document",
+        "canonical_key": "notes",
+        "label_key": "notes",
+    },
+    {
+        "concept_id": "report.language",
+        "section": "report_info",
+        "scope": "document",
+        "canonical_key": "language",
+        "label_key": "language",
+    },
+)
+
+_VISIT_GROUP_METADATA_KEYS_V1: tuple[str, ...] = (
+    "visit_date",
+    "admission_date",
+    "discharge_date",
+    "reason_for_visit",
+)
+
+_VISIT_SCOPED_KEYS_V1: tuple[str, ...] = (
+    "symptoms",
+    "diagnosis",
+    "procedure",
+    "medication",
+    "treatment_plan",
+    "allergies",
+    "vaccinations",
+    "lab_result",
+    "imaging",
+)
+
+_VISIT_GROUP_METADATA_KEY_SET_V1 = set(_VISIT_GROUP_METADATA_KEYS_V1)
+_VISIT_SCOPED_KEY_SET_V1 = set(_VISIT_SCOPED_KEYS_V1)
+
 
 def _default_now_iso() -> str:
     return datetime.now(UTC).isoformat()
@@ -409,17 +495,124 @@ def _normalize_review_interpretation_data(data: dict[str, object]) -> dict[str, 
 
     global_schema = normalized_data.get("global_schema_v0")
     if not isinstance(global_schema, dict):
-        return normalized_data if changed else data
+        base_data = normalized_data if changed else data
+        return _project_review_payload_to_v1(dict(base_data))
 
     raw_microchip = global_schema.get("microchip_id")
     normalized_microchip = normalize_microchip_digits_only(raw_microchip)
     if normalized_microchip == raw_microchip:
-        return normalized_data if changed else data
+        base_data = normalized_data if changed else data
+        return _project_review_payload_to_v1(dict(base_data))
 
     normalized_global_schema = dict(global_schema)
     normalized_global_schema["microchip_id"] = normalized_microchip
     normalized_data["global_schema_v0"] = normalized_global_schema
-    return normalized_data
+
+    return _project_review_payload_to_v1(normalized_data)
+
+
+def _project_review_payload_to_v1(data: dict[str, object]) -> dict[str, object]:
+    schema_version = data.get("schema_version")
+    medical_record_view = data.get("medical_record_view")
+    projected = dict(data)
+
+    if schema_version != "v1":
+        projected["schema_version"] = "v1"
+
+    if not isinstance(medical_record_view, dict):
+        projected["medical_record_view"] = {
+            "version": "mvp-1",
+            "sections": list(_MEDICAL_RECORD_V1_SECTIONS),
+            "field_slots": [dict(slot) for slot in _MEDICAL_RECORD_V1_FIELD_SLOTS],
+        }
+
+    if not isinstance(projected.get("visits"), list):
+        projected["visits"] = []
+    if not isinstance(projected.get("other_fields"), list):
+        projected["other_fields"] = []
+
+    return _normalize_v1_review_scoping(projected)
+
+
+def _normalize_v1_review_scoping(data: dict[str, object]) -> dict[str, object]:
+    if data.get("schema_version") != "v1":
+        return data
+
+    raw_fields = data.get("fields")
+    if not isinstance(raw_fields, list):
+        return data
+
+    projected = dict(data)
+    fields_to_keep: list[object] = []
+    visit_scoped_fields: list[dict[str, object]] = []
+    visit_group_metadata: dict[str, object] = {}
+
+    for item in raw_fields:
+        if not isinstance(item, dict):
+            fields_to_keep.append(item)
+            continue
+
+        key_raw = item.get("key")
+        key = key_raw if isinstance(key_raw, str) else ""
+        if key in _VISIT_GROUP_METADATA_KEY_SET_V1:
+            if key not in visit_group_metadata:
+                visit_group_metadata[key] = item.get("value")
+            continue
+
+        if key in _VISIT_SCOPED_KEY_SET_V1:
+            visit_field = dict(item)
+            visit_field["scope"] = "visit"
+            visit_field["section"] = "visits"
+            visit_scoped_fields.append(visit_field)
+            continue
+
+        fields_to_keep.append(item)
+
+    if not visit_scoped_fields and not visit_group_metadata:
+        return projected
+
+    raw_visits = projected.get("visits")
+    visits: list[dict[str, object]] = []
+    if isinstance(raw_visits, list):
+        for visit in raw_visits:
+            if isinstance(visit, dict):
+                visits.append(dict(visit))
+
+    unassigned_visit: dict[str, object] | None = None
+    for visit in visits:
+        visit_id = visit.get("visit_id")
+        if isinstance(visit_id, str) and visit_id == "unassigned":
+            unassigned_visit = visit
+            break
+
+    if unassigned_visit is None:
+        unassigned_visit = {
+            "visit_id": "unassigned",
+            "visit_date": None,
+            "admission_date": None,
+            "discharge_date": None,
+            "reason_for_visit": None,
+            "fields": [],
+        }
+        visits.append(unassigned_visit)
+
+    existing_visit_fields = unassigned_visit.get("fields")
+    normalized_existing_visit_fields: list[object] = []
+    if isinstance(existing_visit_fields, list):
+        normalized_existing_visit_fields = list(existing_visit_fields)
+
+    normalized_existing_visit_fields.extend(visit_scoped_fields)
+    unassigned_visit["fields"] = normalized_existing_visit_fields
+
+    for metadata_key in _VISIT_GROUP_METADATA_KEYS_V1:
+        if metadata_key in visit_group_metadata:
+            unassigned_visit[metadata_key] = visit_group_metadata[metadata_key]
+        elif metadata_key not in unassigned_visit:
+            unassigned_visit[metadata_key] = None
+
+    projected["fields"] = fields_to_keep
+    projected["visits"] = visits
+    return projected
 
 
 def apply_interpretation_edits(

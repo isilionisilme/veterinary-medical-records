@@ -58,7 +58,6 @@ import {
 import { getControlledVocabOptionValues, validateFieldValue } from "./extraction/fieldValidators";
 import { groupProcessingSteps } from "./lib/processingHistory";
 import {
-  GLOBAL_SCHEMA_SECTION_ORDER,
   GLOBAL_SCHEMA_V0,
 } from "./lib/globalSchemaV0";
 import {
@@ -79,8 +78,39 @@ const DEBUG_CONFIDENCE_POLICY = import.meta.env.VITE_DEBUG_CONFIDENCE === "true"
 const MAX_UPLOAD_SIZE_BYTES = 20 * 1024 * 1024;
 const MISSING_VALUE_PLACEHOLDER = "—";
 const EMPTY_LIST_PLACEHOLDER = "Sin elementos";
-const OTHER_EXTRACTED_FIELDS_SECTION_TITLE = "Other extracted fields";
-const OTHER_EXTRACTED_FIELDS_EMPTY_STATE = "No other extracted fields.";
+const OTHER_EXTRACTED_FIELDS_SECTION_TITLE = "Otros campos detectados";
+const OTHER_EXTRACTED_FIELDS_EMPTY_STATE = "Sin otros campos detectados.";
+const VISITS_EMPTY_STATE = "Sin visitas detectadas.";
+const REPORT_INFO_SECTION_TITLE = "Detalles del informe";
+const MEDICAL_RECORD_SECTION_ID_ORDER = [
+  "clinic",
+  "patient",
+  "owner",
+  "visits",
+  "notes",
+  "other",
+  "report_info",
+] as const;
+type MedicalRecordSectionId = (typeof MEDICAL_RECORD_SECTION_ID_ORDER)[number];
+const MEDICAL_RECORD_SECTION_ID_SET = new Set<string>(MEDICAL_RECORD_SECTION_ID_ORDER);
+const SECTION_ID_TO_UI_LABEL: Record<MedicalRecordSectionId, string> = {
+  clinic: "Centro Veterinario",
+  patient: "Paciente",
+  owner: "Propietario",
+  visits: "Visitas",
+  notes: "Notas internas",
+  other: OTHER_EXTRACTED_FIELDS_SECTION_TITLE,
+  report_info: REPORT_INFO_SECTION_TITLE,
+};
+const MEDICAL_RECORD_SECTION_ORDER = [
+  "Centro Veterinario",
+  "Paciente",
+  "Propietario",
+  "Visitas",
+  "Notas internas",
+  OTHER_EXTRACTED_FIELDS_SECTION_TITLE,
+  REPORT_INFO_SECTION_TITLE,
+] as const;
 const REPORT_LAYOUT_STORAGE_KEY = "reportLayout";
 const DOCS_SIDEBAR_PIN_STORAGE_KEY = "docsSidebarPinned";
 const REVIEW_SPLIT_RATIO_STORAGE_KEY = "reviewSplitRatio";
@@ -112,6 +142,45 @@ const VISIT_SECTION_FIELD_KEYS = new Set([
   "visit_date",
   "reason_for_visit",
 ]);
+
+const V1_VISIT_SCOPED_FIELD_KEYS = [
+  "symptoms",
+  "diagnosis",
+  "procedure",
+  "medication",
+  "treatment_plan",
+  "allergies",
+  "vaccinations",
+  "lab_result",
+  "imaging",
+] as const;
+
+const V1_VISIT_METADATA_KEYS = [
+  "visit_date",
+  "admission_date",
+  "discharge_date",
+  "reason_for_visit",
+] as const;
+
+const V1_DOCUMENT_CONCEPTS = [
+  { canonicalKey: "clinic_name" },
+  { canonicalKey: "clinic_address" },
+  { canonicalKey: "vet_name" },
+  { canonicalKey: "nhc", aliases: ["medical_record_number"] },
+  { canonicalKey: "pet_name" },
+  { canonicalKey: "species" },
+  { canonicalKey: "breed" },
+  { canonicalKey: "sex" },
+  { canonicalKey: "age" },
+  { canonicalKey: "dob" },
+  { canonicalKey: "microchip_id" },
+  { canonicalKey: "weight" },
+  { canonicalKey: "reproductive_status", aliases: ["repro_status"] },
+  { canonicalKey: "owner_name" },
+  { canonicalKey: "owner_address" },
+  { canonicalKey: "notes" },
+  { canonicalKey: "language" },
+] as const;
 
 function isLongTextFieldKey(fieldKey: string): boolean {
   return LONG_TEXT_FIELD_KEYS.has(fieldKey);
@@ -146,8 +215,11 @@ const HIDDEN_EXTRACTED_FIELDS = new Set([
 ]);
 
 const SECTION_LABELS: Record<string, string> = {
-  "Identificacion del caso": "Datos de la clínica",
+  "Identificacion del caso": "Centro Veterinario",
+  "Datos de la clínica": "Centro Veterinario",
   "Visita / episodio": "Visitas",
+  Clinico: "Visitas",
+  "Metadatos / revision": REPORT_INFO_SECTION_TITLE,
 };
 
 const FIELD_LABELS: Record<string, string> = {
@@ -156,10 +228,30 @@ const FIELD_LABELS: Record<string, string> = {
   pet_name: "Nombre",
   dob: "Nacimiento",
   owner_name: "Nombre",
-  owner_id: "Dirección",
+  owner_address: "Dirección",
+  nhc: "NHC",
+  medical_record_number: "NHC",
+  notes: "Notas",
+  language: "Idioma",
 };
 
-const HIDDEN_REVIEW_FIELDS = new Set(["document_date", "claim_id"]);
+const HIDDEN_REVIEW_FIELDS = new Set([
+  "document_date",
+  "claim_id",
+  "owner_id",
+  "invoice_total",
+  "covered_amount",
+  "non_covered_amount",
+  "line_item",
+]);
+
+const BILLING_REVIEW_FIELDS = new Set([
+  "claim_id",
+  "invoice_total",
+  "covered_amount",
+  "non_covered_amount",
+  "line_item",
+]);
 
 type ConfidencePolicyDiagnosticEvent = {
   event_type: "CONFIDENCE_POLICY_CONFIG_MISSING";
@@ -352,6 +444,10 @@ type ReviewField = {
   key: string;
   value: string | number | boolean | null;
   value_type: string;
+  scope?: "document" | "visit";
+  section?: string;
+  domain?: "clinical" | "billing" | "meta" | "other" | string;
+  classification?: "medical_record" | "other" | string;
   candidate_suggestions?: CandidateSuggestion[];
   field_candidate_confidence?: number | null;
   field_mapping_confidence?: number;
@@ -362,12 +458,39 @@ type ReviewField = {
   evidence?: ReviewEvidence;
 };
 
+type ReviewVisitGroup = {
+  visit_id: string;
+  visit_date: string | null;
+  admission_date?: string | null;
+  discharge_date?: string | null;
+  reason_for_visit?: string | null;
+  fields: ReviewField[];
+};
+
+type MedicalRecordViewFieldSlot = {
+  concept_id: string;
+  section: MedicalRecordSectionId;
+  scope: "document" | "visit";
+  canonical_key: string;
+  aliases?: string[];
+  label_key?: string;
+};
+
+type MedicalRecordViewTemplate = {
+  version: string;
+  sections: MedicalRecordSectionId[];
+  field_slots: MedicalRecordViewFieldSlot[];
+};
+
 type StructuredInterpretationData = {
   schema_version: string;
   document_id: string;
   processing_run_id: string;
   created_at: string;
+  medical_record_view?: MedicalRecordViewTemplate;
   fields: ReviewField[];
+  visits?: ReviewVisitGroup[];
+  other_fields?: ReviewField[];
   confidence_policy?: ConfidencePolicyConfig;
 };
 
@@ -393,6 +516,7 @@ type ReviewDisplayField = {
   id: string;
   key: string;
   label: string;
+  labelTooltip?: string;
   section: string;
   order: number;
   isCritical: boolean;
@@ -1070,8 +1194,53 @@ function shouldHideExtractedField(key: string): boolean {
   if (HIDDEN_EXTRACTED_FIELDS.has(normalizedKey)) {
     return true;
   }
+  if (HIDDEN_REVIEW_FIELDS.has(key)) {
+    return true;
+  }
   const normalizedLabel = normalizeFieldIdentifier(formatReviewKeyLabel(key));
   return HIDDEN_EXTRACTED_FIELDS.has(normalizedLabel);
+}
+
+function getUiSectionLabelFromSectionId(sectionId: string | undefined): string | null {
+  if (!sectionId) {
+    return null;
+  }
+  const normalized = sectionId.trim().toLowerCase();
+  if (!MEDICAL_RECORD_SECTION_ID_SET.has(normalized)) {
+    return null;
+  }
+  return SECTION_ID_TO_UI_LABEL[normalized as MedicalRecordSectionId];
+}
+
+function resolveUiSection(field: Pick<ReviewField, "key" | "section">, fallbackSection: string): string {
+  const sectionLabel = getUiSectionLabelFromSectionId(field.section);
+  if (sectionLabel) {
+    return sectionLabel;
+  }
+  if (field.key === "notes") {
+    return "Notas internas";
+  }
+  if (field.key === "language") {
+    return REPORT_INFO_SECTION_TITLE;
+  }
+  if (field.key === "owner_address" || field.key === "owner_name") {
+    return "Propietario";
+  }
+  if (field.key === "nhc" || field.key === "medical_record_number") {
+    return "Centro Veterinario";
+  }
+  const fallbackSectionLabel = getUiSectionLabelFromSectionId(fallbackSection);
+  if (fallbackSectionLabel) {
+    return fallbackSectionLabel;
+  }
+  return SECTION_LABELS[field.section ?? fallbackSection] ?? fallbackSection;
+}
+
+function getLabelTooltipText(key: string): string | undefined {
+  if (key === "nhc" || key === "medical_record_number") {
+    return "Número de historial clínico";
+  }
+  return undefined;
 }
 
 function clampConfidence(value: number): number {
@@ -2436,10 +2605,95 @@ export function App() {
     return getUserErrorMessage(rawTextQuery.error, "No se pudo cargar el texto extraido.");
   })();
 
-  const extractedReviewFields = useMemo(
-    () => documentReview.data?.active_interpretation.data.fields ?? [],
-    [documentReview.data?.active_interpretation.data.fields]
-  );
+  const interpretationData = documentReview.data?.active_interpretation.data;
+  const schemaVersion = interpretationData?.schema_version ?? "v0";
+  const isSchemaV1 = schemaVersion === "v1";
+
+  const extractedReviewFields = useMemo(() => {
+    const baseFields = interpretationData?.fields ?? [];
+    if (!isSchemaV1) {
+      return baseFields;
+    }
+
+    const flattenedVisitFields = (interpretationData?.visits ?? []).flatMap((visit, visitIndex) => {
+      const normalizedVisitId = visit.visit_id || `visit_${visitIndex + 1}`;
+      const metadataFields: ReviewField[] = [
+        {
+          field_id: `visit-meta-date:${normalizedVisitId}`,
+          key: "visit_date",
+          value: visit.visit_date,
+          value_type: "date",
+          scope: "visit",
+          section: "visits",
+          classification: "medical_record",
+          domain: "clinical",
+          is_critical: true,
+          origin: "machine",
+        },
+        {
+          field_id: `visit-meta-admission:${normalizedVisitId}`,
+          key: "admission_date",
+          value: visit.admission_date ?? null,
+          value_type: "date",
+          scope: "visit",
+          section: "visits",
+          classification: "medical_record",
+          domain: "clinical",
+          is_critical: false,
+          origin: "machine",
+        },
+        {
+          field_id: `visit-meta-discharge:${normalizedVisitId}`,
+          key: "discharge_date",
+          value: visit.discharge_date ?? null,
+          value_type: "date",
+          scope: "visit",
+          section: "visits",
+          classification: "medical_record",
+          domain: "clinical",
+          is_critical: false,
+          origin: "machine",
+        },
+        {
+          field_id: `visit-meta-reason:${normalizedVisitId}`,
+          key: "reason_for_visit",
+          value: visit.reason_for_visit ?? null,
+          value_type: "string",
+          scope: "visit",
+          section: "visits",
+          classification: "medical_record",
+          domain: "clinical",
+          is_critical: false,
+          origin: "machine",
+        },
+      ];
+
+      const scopedFields = (visit.fields ?? []).map((field, fieldIndex) => ({
+        ...field,
+        field_id: field.field_id || `visit-field:${normalizedVisitId}:${field.key}:${fieldIndex}`,
+        scope: "visit" as const,
+        section: field.section ?? "visits",
+      }));
+
+      return [...metadataFields, ...scopedFields];
+    });
+
+    return [...baseFields, ...flattenedVisitFields];
+  }, [interpretationData, isSchemaV1]);
+
+  const explicitOtherReviewFields = useMemo(() => {
+    if (!isSchemaV1) {
+      return [] as ReviewField[];
+    }
+    return (interpretationData?.other_fields ?? [])
+      .filter((field) => !BILLING_REVIEW_FIELDS.has(field.key))
+      .map((field, index) => ({
+        ...field,
+        field_id: field.field_id || `other-field:${field.key}:${index}`,
+        classification: field.classification ?? "other",
+        section: field.section ?? "other",
+      }));
+  }, [interpretationData, isSchemaV1]);
   const documentConfidencePolicy = useMemo(
     () => resolveConfidencePolicy(documentReview.data?.active_interpretation.data.confidence_policy),
     [documentReview.data?.active_interpretation.data.confidence_policy]
@@ -2491,6 +2745,10 @@ export function App() {
 
     GLOBAL_SCHEMA_V0.forEach((definition) => {
       if ((fieldsByKey.get(definition.key) ?? 0) > 0) {
+        return;
+      }
+
+      if (HIDDEN_REVIEW_FIELDS.has(definition.key)) {
         return;
       }
 
@@ -2598,7 +2856,12 @@ export function App() {
     documentReview.data?.active_interpretation.data,
   ]);
 
-  const validatedReviewFields = validationResult.acceptedFields;
+  const validatedReviewFields = validationResult.acceptedFields.filter((field) => {
+    if (isSchemaV1) {
+      return !BILLING_REVIEW_FIELDS.has(field.key);
+    }
+    return !HIDDEN_REVIEW_FIELDS.has(field.key);
+  });
 
   const buildSelectableField = (
     base: Omit<
@@ -2635,11 +2898,110 @@ export function App() {
   }, [validatedReviewFields]);
 
   const coreDisplayFields = useMemo(() => {
-    return GLOBAL_SCHEMA_V0.filter((definition) => !HIDDEN_REVIEW_FIELDS.has(definition.key)).map(
-      (definition): ReviewDisplayField => {
-      const uiSection = SECTION_LABELS[definition.section] ?? definition.section;
+    let coreDefinitions: Array<{
+      key: string;
+      label: string;
+      section: string;
+      order: number;
+      value_type: string;
+      repeatable: boolean;
+      critical: boolean;
+      aliases?: string[];
+    }> = [];
+
+    if (isSchemaV1) {
+      const fieldSlots = interpretationData?.medical_record_view?.field_slots ?? [];
+      const documentSlots = fieldSlots.filter(
+        (slot) => slot.scope === "document" && !BILLING_REVIEW_FIELDS.has(slot.canonical_key)
+      );
+      const sectionOrderIndex = new Map<string, number>(
+        MEDICAL_RECORD_SECTION_ID_ORDER.map((sectionId, index) => [sectionId, index])
+      );
+
+      const slotDefinitions = documentSlots.map((slot, index) => {
+        const sectionLabel = getUiSectionLabelFromSectionId(slot.section) ?? REPORT_INFO_SECTION_TITLE;
+        const sectionIndex = sectionOrderIndex.get(slot.section) ?? MEDICAL_RECORD_SECTION_ID_ORDER.length;
+        return {
+          key: slot.canonical_key,
+          label: formatReviewKeyLabel(slot.canonical_key),
+          section: sectionLabel,
+          order: sectionIndex * 1000 + index,
+          value_type: "string",
+          repeatable: false,
+          critical: false,
+          aliases: slot.aliases,
+        };
+      });
+
+      const visitDefinitions: Array<{
+        key: string;
+        label: string;
+        section: string;
+        order: number;
+        value_type: string;
+        repeatable: boolean;
+        critical: boolean;
+      }> = [];
+      const seenVisitKeys = new Set<string>();
+      validatedReviewFields
+        .filter((field) => field.scope === "visit" && field.classification !== "other")
+        .forEach((field) => {
+          if (seenVisitKeys.has(field.key)) {
+            return;
+          }
+          seenVisitKeys.add(field.key);
+          visitDefinitions.push({
+            key: field.key,
+            label: formatReviewKeyLabel(field.key),
+            section: "Visitas",
+            order: 3000 + visitDefinitions.length,
+            value_type: field.value_type,
+            repeatable: true,
+            critical: Boolean(field.is_critical),
+          });
+        });
+
+      coreDefinitions = [...slotDefinitions, ...visitDefinitions];
+    } else {
+      const templateDefinitions = GLOBAL_SCHEMA_V0.filter(
+        (definition) => !HIDDEN_REVIEW_FIELDS.has(definition.key)
+      );
+
+      const dynamicMedicalRecordDefinitions = validatedReviewFields
+        .filter((field) => {
+          if (field.classification === "other") {
+            return false;
+          }
+          if (HIDDEN_REVIEW_FIELDS.has(field.key)) {
+            return false;
+          }
+          return !templateDefinitions.some((definition) => definition.key === field.key);
+        })
+        .map((field, index) => ({
+          key: field.key,
+          label: formatReviewKeyLabel(field.key),
+          section: resolveUiSection(field, REPORT_INFO_SECTION_TITLE),
+          order: 10_000 + index,
+          value_type: field.value_type,
+          repeatable: false,
+          critical: Boolean(field.is_critical),
+        }));
+
+      coreDefinitions = [...templateDefinitions, ...dynamicMedicalRecordDefinitions];
+    }
+
+    return coreDefinitions.map((definition): ReviewDisplayField => {
+      const uiSection =
+        "section" in definition && typeof definition.section === "string"
+          ? resolveUiSection({ key: definition.key, section: definition.section }, definition.section)
+          : REPORT_INFO_SECTION_TITLE;
       const uiLabel = FIELD_LABELS[definition.key] ?? definition.label;
+      const labelTooltip = getLabelTooltipText(definition.key);
       let candidates = matchesByKey.get(definition.key) ?? [];
+      if (isSchemaV1 && definition.aliases && definition.aliases.length > 0) {
+        const aliasCandidates = definition.aliases.flatMap((alias) => matchesByKey.get(alias) ?? []);
+        candidates = [...candidates, ...aliasCandidates];
+      }
 
       if (definition.repeatable) {
         const items = candidates
@@ -2667,6 +3029,7 @@ export function App() {
           id: `core:${definition.key}`,
           key: definition.key,
           label: uiLabel,
+          labelTooltip,
           section: uiSection,
           order: definition.order,
           isCritical: definition.critical,
@@ -2708,6 +3071,7 @@ export function App() {
         id: `core:${definition.key}`,
         key: definition.key,
         label: uiLabel,
+        labelTooltip,
         section: uiSection,
         order: definition.order,
         isCritical: definition.critical,
@@ -2718,18 +3082,23 @@ export function App() {
         source: "core",
       };
     }).sort((a, b) => a.order - b.order);
-  }, [matchesByKey]);
+  }, [interpretationData?.medical_record_view?.field_slots, isSchemaV1, matchesByKey, validatedReviewFields]);
 
   const otherDisplayFields = useMemo(() => {
     const coreKeys = new Set(GLOBAL_SCHEMA_V0.map((field) => field.key));
     const grouped = new Map<string, ReviewField[]>();
     const orderedKeys: string[] = [];
 
-    validatedReviewFields.forEach((field) => {
-      if (coreKeys.has(field.key)) {
+    const sourceFields = isSchemaV1 ? explicitOtherReviewFields : validatedReviewFields;
+
+    sourceFields.forEach((field) => {
+      if (!isSchemaV1 && coreKeys.has(field.key)) {
         return;
       }
-      if (shouldHideExtractedField(field.key)) {
+      if (isSchemaV1 && field.classification !== "other") {
+        return;
+      }
+      if (!isSchemaV1 && shouldHideExtractedField(field.key)) {
         return;
       }
       if (!grouped.has(field.key)) {
@@ -2813,7 +3182,7 @@ export function App() {
         source: "extracted",
       };
     });
-  }, [activeConfidencePolicy, validatedReviewFields]);
+  }, [activeConfidencePolicy, explicitOtherReviewFields, isSchemaV1, validatedReviewFields]);
 
   const groupedCoreFields = useMemo(() => {
     const groups = new Map<string, ReviewDisplayField[]>();
@@ -2822,10 +3191,9 @@ export function App() {
       current.push(field);
       groups.set(field.section, current);
     });
-    const orderedSections = [
-      ...new Set(GLOBAL_SCHEMA_SECTION_ORDER.map((section) => SECTION_LABELS[section] ?? section)),
-    ];
-    return orderedSections.map((section) => ({
+    return MEDICAL_RECORD_SECTION_ORDER.filter(
+      (section) => section !== OTHER_EXTRACTED_FIELDS_SECTION_TITLE
+    ).map((section) => ({
       section,
       fields: (groups.get(section) ?? []).sort((a, b) => a.order - b.order),
     }));
@@ -2882,25 +3250,34 @@ export function App() {
     [visibleCoreGroups]
   );
 
-  const reportSections = useMemo(
-    () => [
-      ...visibleCoreGroups.map((group) => ({
-        id: `core:${group.section}`,
-        title: group.section,
-        fields: group.fields,
-      })),
-      ...(!hasActiveStructuredFilters
-        ? [
-            {
-              id: "extra:section",
-              title: OTHER_EXTRACTED_FIELDS_SECTION_TITLE,
-              fields: visibleOtherDisplayFields,
-            },
-          ]
-        : []),
-    ],
-    [hasActiveStructuredFilters, visibleCoreGroups, visibleOtherDisplayFields]
-  );
+  const reportSections = useMemo(() => {
+    const coreSections = visibleCoreGroups.map((group) => ({
+      id: `core:${group.section}`,
+      title: group.section,
+      fields: group.fields,
+    }));
+
+    if (hasActiveStructuredFilters) {
+      return coreSections;
+    }
+
+    const extraSection = {
+      id: "extra:section",
+      title: OTHER_EXTRACTED_FIELDS_SECTION_TITLE,
+      fields: visibleOtherDisplayFields,
+    };
+
+    const infoIndex = coreSections.findIndex((section) => section.title === REPORT_INFO_SECTION_TITLE);
+    if (infoIndex < 0) {
+      return [...coreSections, extraSection];
+    }
+
+    return [
+      ...coreSections.slice(0, infoIndex),
+      extraSection,
+      ...coreSections.slice(infoIndex),
+    ];
+  }, [hasActiveStructuredFilters, visibleCoreGroups, visibleOtherDisplayFields]);
 
   const selectableReviewItems = useMemo(
     () => [...visibleCoreFields, ...visibleOtherDisplayFields].flatMap((field) => field.items),
@@ -2977,18 +3354,147 @@ export function App() {
   const hasNoStructuredFilterResults =
     reviewPanelState === "ready" && hasActiveStructuredFilters && visibleCoreGroups.length === 0;
   const detectedFieldsSummary = useMemo(() => {
+    const summarizeConfidenceBands = () => {
+      let low = 0;
+      let medium = 0;
+      let high = 0;
+      if (!activeConfidencePolicy) {
+        return { low, medium, high, unknown: 0 };
+      }
+
+      coreDisplayFields.forEach((field) => {
+        const presentItems = field.items.filter(
+          (item) => !item.isMissing && item.confidenceBand !== null
+        );
+        if (presentItems.length === 0) {
+          return;
+        }
+        if (presentItems.some((item) => item.confidenceBand === "low")) {
+          low += 1;
+          return;
+        }
+        if (presentItems.some((item) => item.confidenceBand === "medium")) {
+          medium += 1;
+          return;
+        }
+        high += 1;
+      });
+
+      return { low, medium, high, unknown: 0 };
+    };
+
+    if (isSchemaV1) {
+      const topLevelFields = (interpretationData?.fields ?? []).filter(
+        (field): field is ReviewField => Boolean(field && typeof field === "object")
+      );
+      const visits = (interpretationData?.visits ?? []).filter(
+        (visit): visit is ReviewVisitGroup => Boolean(visit && typeof visit === "object")
+      );
+      const confidenceCutoffs = activeConfidencePolicy?.band_cutoffs;
+      let detected = 0;
+      let low = 0;
+      let medium = 0;
+      let high = 0;
+      let unknown = 0;
+
+      const addDetectedConceptFromFields = (
+        fields: ReviewField[],
+        candidateKeys: readonly string[]
+      ) => {
+        const matchingWithValue = fields.filter(
+          (field) => candidateKeys.includes(field.key) && !isFieldValueEmpty(field.value)
+        );
+        if (matchingWithValue.length === 0) {
+          return;
+        }
+
+        detected += 1;
+        if (!confidenceCutoffs) {
+          unknown += 1;
+          return;
+        }
+
+        const bestConfidence = matchingWithValue.reduce<number | null>((currentBest, field) => {
+          const confidence = resolveMappingConfidence(field);
+          if (confidence === null) {
+            return currentBest;
+          }
+          if (currentBest === null || confidence > currentBest) {
+            return confidence;
+          }
+          return currentBest;
+        }, null);
+
+        if (bestConfidence === null) {
+          unknown += 1;
+          return;
+        }
+
+        const tone = getConfidenceTone(bestConfidence, confidenceCutoffs);
+        if (tone === "low") {
+          low += 1;
+          return;
+        }
+        if (tone === "med") {
+          medium += 1;
+          return;
+        }
+        high += 1;
+      };
+
+      V1_DOCUMENT_CONCEPTS.forEach((concept) => {
+        addDetectedConceptFromFields(
+          topLevelFields.filter(
+            (field) => field.scope !== "visit" && !BILLING_REVIEW_FIELDS.has(field.key)
+          ),
+          [concept.canonicalKey, ...(concept.aliases ?? [])]
+        );
+      });
+
+      V1_VISIT_SCOPED_FIELD_KEYS.forEach((key) => {
+        const visitFieldsForKey = visits.flatMap((visit) =>
+          (visit.fields ?? []).filter(
+            (field): field is ReviewField =>
+              Boolean(field && typeof field === "object") && !BILLING_REVIEW_FIELDS.has(field.key)
+          )
+        );
+        addDetectedConceptFromFields(visitFieldsForKey, [key]);
+      });
+
+      V1_VISIT_METADATA_KEYS.forEach((key) => {
+        const hasValue = visits.some((visit) => !isFieldValueEmpty(visit[key]));
+        if (!hasValue) {
+          return;
+        }
+        detected += 1;
+        unknown += 1;
+      });
+
+      return {
+        detected,
+        total:
+          V1_DOCUMENT_CONCEPTS.length +
+          V1_VISIT_SCOPED_FIELD_KEYS.length +
+          V1_VISIT_METADATA_KEYS.length,
+        low,
+        medium,
+        high,
+        unknown,
+      };
+    }
+
     let detected = 0;
-    let low = 0;
-    let medium = 0;
-    let high = 0;
+    const total = GLOBAL_SCHEMA_V0.length;
+    const confidenceBands = summarizeConfidenceBands();
 
     if (!activeConfidencePolicy) {
       return {
         detected,
-        total: GLOBAL_SCHEMA_V0.length,
-        low,
-        medium,
-        high,
+        total,
+        low: confidenceBands.low,
+        medium: confidenceBands.medium,
+        high: confidenceBands.high,
+        unknown: 0,
       };
     }
 
@@ -3001,24 +3507,22 @@ export function App() {
       }
       detected += 1;
       if (presentItems.some((item) => item.confidenceBand === "low")) {
-        low += 1;
         return;
       }
       if (presentItems.some((item) => item.confidenceBand === "medium")) {
-        medium += 1;
         return;
       }
-      high += 1;
     });
 
     return {
       detected,
-      total: GLOBAL_SCHEMA_V0.length,
-      low,
-      medium,
-      high,
+      total,
+      low: confidenceBands.low,
+      medium: confidenceBands.medium,
+      high: confidenceBands.high,
+      unknown: 0,
     };
-  }, [activeConfidencePolicy, coreDisplayFields]);
+  }, [activeConfidencePolicy, coreDisplayFields, interpretationData?.fields, interpretationData?.visits, isSchemaV1]);
   const shouldShowLoadPdfErrorBanner =
     loadPdf.isError && !isConnectivityOrServerError(loadPdf.error);
   const isPinnedSourcePanelVisible =
@@ -3573,9 +4077,19 @@ export function App() {
 
   const renderConfidenceIndicator = (item: ReviewSelectableField, ariaLabel: string) => {
     const tone = item.confidenceBand === "medium" ? "med" : item.confidenceBand;
+    const isEmptyValueIndicator =
+      item.isMissing ||
+      item.displayValue === MISSING_VALUE_PLACEHOLDER ||
+      (item.repeatable && item.displayValue === EMPTY_LIST_PLACEHOLDER);
     return (
       <span data-testid={`badge-group-${item.id}`} className="inline-flex shrink-0 items-center">
-        {tone ? (
+        {isEmptyValueIndicator ? (
+          <span
+            data-testid={`confidence-indicator-${item.id}`}
+            aria-label="Campo vacío"
+            className="inline-block h-2.5 w-2.5 rounded-full border border-muted bg-surface"
+          />
+        ) : tone ? (
           <span
             data-testid={`confidence-indicator-${item.id}`}
             aria-label={ariaLabel}
@@ -3742,7 +4256,14 @@ export function App() {
                   >
                     <FieldRow
                       indicator={renderConfidenceIndicator(item, tooltip.ariaLabel)}
-                      label={<p className={`${STRUCTURED_FIELD_LABEL_CLASS} text-text`}>{field.label}</p>}
+                      label={
+                        <p
+                          className={`${STRUCTURED_FIELD_LABEL_CLASS} text-text`}
+                          title={field.labelTooltip}
+                        >
+                          {field.label}
+                        </p>
+                      }
                       labelMeta={null}
                       className={STRUCTURED_FIELD_ROW_CLASS}
                       valuePlacement={isLongText ? "below-label" : "inline"}
@@ -3841,7 +4362,14 @@ export function App() {
               indicatorTestId={`${styledPrefix}-dot-${field.key}`}
               valueWrapperTestId={shouldUseLongText ? `field-value-${field.key}-wrapper` : undefined}
               indicator={renderConfidenceIndicator(item, tooltip.ariaLabel)}
-              label={<p className={`${STRUCTURED_FIELD_LABEL_CLASS} text-text`}>{field.label}</p>}
+              label={
+                <p
+                  className={`${STRUCTURED_FIELD_LABEL_CLASS} text-text`}
+                  title={field.labelTooltip}
+                >
+                  {field.label}
+                </p>
+              }
               labelMeta={
                 field.isCritical ? (
                   <CriticalBadge
@@ -3899,6 +4427,8 @@ export function App() {
     const repeatableFields = section.fields.filter((field) => field.repeatable);
     const isExtraSection = section.id === "extra:section";
     const isEmptyExtraSection = isExtraSection && section.fields.length === 0;
+    const isVisitsSection = section.title === "Visitas";
+    const isEmptyVisitsSection = isVisitsSection && section.fields.length === 0;
     const isOwnerSection = section.title === "Propietario";
     const shouldUseSingleColumn = isOwnerSection;
 
@@ -3914,7 +4444,12 @@ export function App() {
               {OTHER_EXTRACTED_FIELDS_EMPTY_STATE}
             </p>
           )}
-          {!isEmptyExtraSection && (
+          {isEmptyVisitsSection && (
+            <p className="rounded-control bg-surface px-3 py-2 text-xs text-textSecondary">
+              {VISITS_EMPTY_STATE}
+            </p>
+          )}
+          {!isEmptyExtraSection && !isEmptyVisitsSection && (
             <div
               className={
                 shouldUseSingleColumn
@@ -3938,6 +4473,8 @@ export function App() {
     const repeatableFields = section.fields.filter((field) => field.repeatable);
     const isExtraSection = section.id === "extra:section";
     const isEmptyExtraSection = isExtraSection && section.fields.length === 0;
+    const isVisitsSection = section.title === "Visitas";
+    const isEmptyVisitsSection = isVisitsSection && section.fields.length === 0;
     const isOwnerSection = section.title === "Propietario";
     const shouldUseSingleColumn = isOwnerSection;
 
@@ -3953,7 +4490,12 @@ export function App() {
               {OTHER_EXTRACTED_FIELDS_EMPTY_STATE}
             </p>
           )}
-          {scalarFields.length > 0 && (
+          {isEmptyVisitsSection && (
+            <p className="rounded-control bg-surface px-3 py-2 text-xs text-muted">
+              {VISITS_EMPTY_STATE}
+            </p>
+          )}
+          {scalarFields.length > 0 && !isEmptyVisitsSection && (
             <div
               className={
                 shouldUseSingleColumn
@@ -4287,21 +4829,58 @@ export function App() {
                                 <div className="flex items-center justify-end gap-1 text-xs leading-tight text-textSecondary">
                                 <span className="text-muted">Campos detectados:</span>
                                 <span className="inline-flex items-center gap-1 whitespace-nowrap">
-                                  <span className="font-semibold text-text tabular-nums">
+                                  <span
+                                    data-testid="detected-summary-total"
+                                    className="font-semibold text-text tabular-nums"
+                                  >
                                     {detectedFieldsSummary.detected}/{detectedFieldsSummary.total}
                                   </span>
                                   <span>(</span>
                                   <span className="inline-flex items-center gap-1">
-                                    <ConfidenceDot tone="low" tooltip="Low" ariaLabel="Low" />
-                                    <span className="tabular-nums">{detectedFieldsSummary.low}</span>
+                                    <ConfidenceDot
+                                      testId="detected-summary-dot-low"
+                                      tone="low"
+                                      tooltip="Confianza baja"
+                                      ariaLabel="Confianza baja"
+                                    />
+                                    <span data-testid="detected-summary-low" className="tabular-nums">
+                                      {detectedFieldsSummary.low}
+                                    </span>
                                   </span>
                                   <span className="inline-flex items-center gap-1">
-                                    <ConfidenceDot tone="med" tooltip="Medium" ariaLabel="Medium" />
-                                    <span className="tabular-nums">{detectedFieldsSummary.medium}</span>
+                                    <ConfidenceDot
+                                      testId="detected-summary-dot-medium"
+                                      tone="med"
+                                      tooltip="Confianza media"
+                                      ariaLabel="Confianza media"
+                                    />
+                                    <span data-testid="detected-summary-medium" className="tabular-nums">
+                                      {detectedFieldsSummary.medium}
+                                    </span>
                                   </span>
                                   <span className="inline-flex items-center gap-1">
-                                    <ConfidenceDot tone="high" tooltip="High" ariaLabel="High" />
-                                    <span className="tabular-nums">{detectedFieldsSummary.high}</span>
+                                    <ConfidenceDot
+                                      testId="detected-summary-dot-high"
+                                      tone="high"
+                                      tooltip="Confianza alta"
+                                      ariaLabel="Confianza alta"
+                                    />
+                                    <span data-testid="detected-summary-high" className="tabular-nums">
+                                      {detectedFieldsSummary.high}
+                                    </span>
+                                  </span>
+                                  <span className="inline-flex items-center gap-1">
+                                    <Tooltip content="Detectado (sin confianza)">
+                                      <span
+                                        data-testid="detected-summary-dot-unknown"
+                                        aria-label="Detectado (sin confianza)"
+                                        title="Detectado (sin confianza)"
+                                        className="inline-block h-2.5 w-2.5 rounded-full bg-missing"
+                                      />
+                                    </Tooltip>
+                                    <span data-testid="detected-summary-unknown" className="tabular-nums">
+                                      {detectedFieldsSummary.unknown}
+                                    </span>
                                   </span>
                                   <span>)</span>
                                 </span>
