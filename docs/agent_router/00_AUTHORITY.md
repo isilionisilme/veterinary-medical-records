@@ -18,3 +18,11 @@ Use this file to route by **intent**. Load only the module(s) listed below.
 
 ## Rule
 Load **only one** module unless it explicitly triggers another.
+
+## Documentation governance
+- Canonical docs (human SoT): `docs/project/*`, `docs/shared/*`, and `docs/README.md`.
+- Router docs are derived assistant modules under `docs/agent_router/*`.
+- Prefer router modules for discovery/token-optimized reads; do not load canonical docs by default.
+- Consult canonical docs only when explicitly requested, when router guidance is missing/ambiguous, or when resolving a source-of-truth conflict.
+- Directionality is canonical -> derived.
+- Canonical docs MUST NOT reference `docs/agent_router/*`.

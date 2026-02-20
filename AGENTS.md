@@ -38,6 +38,15 @@ This file is the AI assistant entry point. Keep reads small and follow the route
 - After implementing any change that can be validated from the user perspective (feature, fix, technical improvement, or small in-flight adjustment), include a final `How to test` section with step-by-step expected outcomes.
 - If user-perspective testing does not apply, explicitly state that and provide the best alternative verification method.
 
+## Documentation governance (operational)
+- Canonical docs (human SoT): `docs/project/*`, `docs/shared/*`, and `docs/README.md` as human index.
+- Derived docs (assistant modules): `docs/agent_router/*`.
+- For discovery and token-optimized reads, AI assistants MUST prefer `docs/agent_router/*` modules.
+- Canonical docs (`docs/project/*`, `docs/shared/*`, `docs/README.md`) MUST NOT be loaded by default.
+- Canonical docs may be consulted only when: (a) the user explicitly asks for canonical docs, (b) a router module is missing or ambiguous, or (c) a conflict must be resolved by source-of-truth.
+- Directionality is canonical -> derived.
+- Canonical docs MUST NOT reference `docs/agent_router/*`.
+
 ## Mandatory execution policy (hard rule)
 This policy takes precedence over default sandbox-first behavior.
 
