@@ -275,6 +275,15 @@ It does not prescribe storage tables or transport contracts.
 - MVP excludes cross-document deduplication, merge/reconciliation, and longitudinal visit tracking.
 - Review completion remains **document-level**: `Mark as reviewed` applies to the full document, including all its visits.
 
+## Extracted Data / Informe panel scope (Medical Record MVP)
+
+- The `Extracted Data / Informe` panel is a clinical **Medical Record** review surface.
+- In MVP, this panel is used to review/edit clinical information and not billing/claim amounts.
+- In this panel, do not render billing/claim keys: `invoice_total`, `covered_amount`, `non_covered_amount`, `line_item`, `claim_id`, `document_date`.
+- If those keys exist for other flows, they are out of scope for this panel.
+- Visit rendering behavior remains contract-driven and must follow [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix D9.
+- `Mark as reviewed` remains document-level for MVP.
+
 ## Global Schema v0 (Canonical Field List)
 
 Purpose: provide a stable, scannable review template where fields appear even when missing.
@@ -296,7 +305,7 @@ B) Paciente (CRITICAL subset per CRITICAL_KEYS_V0)
 
 C) Propietario
 - owner_name (string)
-- owner_id (string) (optional; product semantics in MVP: owner address shown as label "Dirección")
+- owner_address (string) (optional)
 
 D) Visitas (metadata)
 - visit_date (date) [critical]
@@ -326,7 +335,8 @@ F) Revisión
 Product notes:
 - `document_date` is removed from the MVP schema because it is ambiguous; visit-level dates are the relevant temporal anchors.
 - `claim_id` is removed from the MVP schema because it does not provide value in this phase.
-- For MVP compatibility, internal key `owner_id` may remain unchanged in contracts/code, but UI semantics and label are owner address. Technical debt: rename to `owner_address` in a future schema version.
+- Owner address should be represented as a real address concept (`owner_address`) in product/UX semantics.
+- `owner_id` is not part of the Medical Record MVP panel semantics.
 - In `schema_version = "v1"`, "Clínico" is not rendered as a flat standalone section; clinical/cost fields appear inside each visit group.
 
 Rules:
@@ -347,7 +357,7 @@ Rules:
 | pet_name | Nombre | Paciente |
 | dob | Nacimiento | Paciente |
 | owner_name | Nombre | Propietario |
-| owner_id | Dirección | Propietario |
+| owner_address | Dirección | Propietario |
 | visit_date | Fecha | Visitas |
 | admission_date | Admisión | Visitas |
 | discharge_date | Alta | Visitas |
