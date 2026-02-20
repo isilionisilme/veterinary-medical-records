@@ -8,50 +8,37 @@ Como **veterinario revisor**, quiero ver los datos clínicos **agrupados por vis
 
 ## Scope
 In scope:
-1) Branch por `schema_version` en “Datos extraídos”:
-   - v0: mantener render actual (flat por secciones).
-   - v1: renderizar sección “Visitas” basada exclusivamente en `visits[]`.
-2) v1: `fields[]` top-level (document-level):
-   - Renderizar `fields[]` como “Campos del documento” (fuera de “Visitas”) y `visits[]` como bloques de visita.
-   - Sin duplicación; no heurísticas; no mover campos entre `fields[]` y `visits[].fields[]`.
-   - Reference: TECHNICAL_DESIGN Appendix D9 (scoping rules).
-   - Tech alignment required: si D9 no fuese suficientemente explícito, validar/ajustar D9 antes/como parte de la implementación.
-3) v1: render de visitas:
-   - Un bloque por `VisitGroup` en `visits[]`.
-   - Metadata desde VisitGroup (si existe): `visit_date`, `admission_date`, `discharge_date`, `reason_for_visit`.
-   - Campos visit-scoped solo desde `VisitGroup.fields[]`.
-4) v1: no heuristics: no reasignar/fusionar/inferir/reagrupar; no crear visitas.
-   - `visit_id="unassigned"` (si viene en payload) se renderiza como un bloque más.
-5) v1: ordenación determinista:
-   - `visit_date` desc; null al final.
-   - Tie-breaker: si empate, preservar orden del array `visits[]` del payload.
-6) Search/filters (US-34): filtran FieldRows dentro de su contenedor; no reagrupan.
-7) Review workflow sigue siendo por documento (Mark reviewed aplica al documento, no por visita).
+1) For documents with multiple visits, the reviewer sees a separate block per visit in the “Visitas” section.
+2) The reviewer sees visit information only inside its visit block, and non-visit document information outside visit blocks.
+3) Information is not mixed across visit blocks.
+4) Visit order is stable and consistent for the reviewer.
+5) Search and filters only affect row visibility within existing containers and do not change visit grouping.
+6) Review status (“reviewed/not reviewed”) continues to apply at document level.
+7) Clinical-only scope: this story does not include financial or billing concepts.
 
 Out of scope:
-- Heurísticas para inferir visitas o mover items.
+- UI heuristics to infer visits or move items.
 - “Reviewed per visit”.
-- Cambios backend más allá del contrato v1 existente.
+- Backend changes beyond the existing v1 contract.
 
 ## Acceptance Criteria
-A) Contrato (referencia):
-1) Soporta v0 (flat `fields[]`) y v1 (`fields[]` + `visits[]`). Reference: TECHNICAL_DESIGN Appendix D9.
-B) v1 separación:
-2) `fields[]` solo en “Campos del documento”; `visits[i].fields[]` solo en visita i; sin duplicación.
-C) No heuristics:
-3) UI no modifica asignación del payload (no mover/crear/fusionar).
-D) Ordenación:
-4) `visit_date` desc; null al final.
-5) Empates: preservar orden del payload.
-6) `unassigned` (si existe) al final con copy/label según UX_DESIGN.
-E) Filters/search:
-7) Oculta/muestra dentro del contenedor; no reordena visitas ni reagrupa.
-F) Empty:
-8) v1 con `visits=[]` muestra empty state (UX_DESIGN) y no fallback a v0.
-G) v0 unchanged:
-9) v0 no cambia (regresión).
-H) Tests mínimos:
-10) 1 test UI ordering/tie-breaker + null + unassigned; 1 test UI empty v1; 1 test regression v0.
+1) When multiple visits exist, the reviewer sees one block per visit in the “Visitas” section.
+2) Each visit block shows only information for that visit and does not mix information from other visits.
+3) Information shown outside visit blocks is not repeated inside any visit block.
+4) Visit order is deterministic and remains stable across reloads for the same document.
+5) If an “unassigned” block exists, the reviewer sees it as a differentiated block with UX-defined copy.
+6) If no visits are detected, the reviewer sees the UX-defined empty state for “Visitas”.
+7) Search and filters do not change visit grouping or block order.
+8) The review workflow remains document-level.
+9) For documents without visit structure, the current experience remains without visible regressions.
+
+## Story-specific technical requirements
+- Mantener la autoridad de contrato en `docs/project/TECHNICAL_DESIGN.md` Appendix D9; no redefinir payloads en esta historia.
+- Contract-driven rendering and placement boundaries must follow `docs/project/TECHNICAL_DESIGN.md` Appendix D9.
+- Implementar render sin heurísticas: no crear, fusionar, reasignar ni inferir visitas desde frontend.
+- Mantener reglas de separación entre datos de documento y datos de visita según D9.
+- Mantener comportamiento de search/filter de US-34 sin reagrupación.
+- Añadir cobertura de pruebas para orden estable, bloque sin asignar, estado vacío de visitas y regresión de experiencia vigente.
 
 ## Authoritative References
 - `docs/project/TECHNICAL_DESIGN.md` Appendix D9

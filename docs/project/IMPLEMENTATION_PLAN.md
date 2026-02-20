@@ -1058,7 +1058,8 @@ so that I can review and edit clinical information quickly in a clinical-only pa
 
 **In scope**
 1) **Panel purpose and scope (MVP)**
-  - The Extracted Data panel represents a **Medical Record** (clinical summary) and is clinical-only.
+  - The Extracted Data panel represents a **clinical Medical Record**.
+  - The panel is clinical-only.
 
 2) **Section structure (MVP)**
   - The panel renders sections in this exact order:
@@ -1068,24 +1069,11 @@ so that I can review and edit clinical information quickly in a clinical-only pa
     4) **Visitas**
     5) **Notas internas**
     6) **Otros campos detectados**
-    7) **Información del informe** (bottom)
+    7) **Detalles del informe**
 
 3) **Field label changes (display-only)**
-  - UI labels are updated for clarity; internal keys may remain unchanged.
-  - Required label decisions (MVP):
-    - “Identificación del caso” → **Centro Veterinario**
-    - `clinic_name` label → **Nombre**
-    - `clinic_address` label → **Dirección**
-    - `pet_name` label → **Nombre**
-    - `dob` label → **Nacimiento**
-    - `owner_name` label → **Nombre**
-    - Replace owner “ID” concept with **Dirección** (see acceptance: Owner address concept must be a real address field)
-  - “NHC” is displayed as **NHC** with tooltip “Número de historial clínico”.
-
-4) **Visits are contract-driven (no heuristics)**
-  - When `schema_version="v1"`, visits are rendered strictly from the contract (`visits[]`), with no UI regrouping.
-  - Visit blocks show visit-level metadata + visit-scoped fields as delivered by the contract.  
-  **Reference:** `docs/project/TECHNICAL_DESIGN.md` Appendix D9.
+  - Display labels are updated for clarity in the review panel.
+  - “NHC” is shown as **NHC** with tooltip “Número de historial clínico”.
 
 **Out of scope**
 - Introducing new clinical extraction logic beyond what the contract already provides.
@@ -1094,47 +1082,28 @@ so that I can review and edit clinical information quickly in a clinical-only pa
 
 ### Acceptance Criteria
 
-**A. References / Authority**
-1) Visit grouping behavior follows `docs/project/TECHNICAL_DESIGN.md` Appendix D9 (v1 visit-grouped).  
-2) Copy/labels/empty-states must be defined in `docs/project/UX_DESIGN.md` (update UX_DESIGN as needed; US references it).
+1) The reviewer sees the Extracted Data panel as a **clinical-only** view, without financial/claim concepts.
+2) The reviewer sees the seven sections in this exact order: Centro Veterinario, Paciente, Propietario, Visitas, Notas internas, Otros campos detectados, Detalles del informe.
+3) The reviewer sees updated labels in the panel:
+  - “Identificación del caso” is shown as “Centro Veterinario”.
+  - Clinic and owner names are shown as “Nombre”.
+  - Address fields are shown as “Dirección”.
+  - Date of birth is shown as “Nacimiento”.
+4) The reviewer sees “NHC” with tooltip “Número de historial clínico”.
+5) If NHC is expected but no value is available, the reviewer still sees the NHC row with placeholder “—”.
+6) In “Propietario”, “Dirección” shows an address value; identifier-like values are not presented as addresses.
+7) The reviewer sees “Otros campos detectados” as a separate section for additional detected data.
+8) The reviewer sees “Visitas” grouped by visit, without mixed data between different visits.
 
-**B. Sections and order**
-3) The Extracted Data panel renders the seven sections in the exact order listed in Scope (2).
-
-**C. Medical Record field set is contract-driven (no FE denylist)**
-4) The panel renders **only** the “Medical Record” field set and taxonomy defined by the backend contract (see TECHNICAL_DESIGN Appendix D9 or equivalent authoritative section), and excludes non-clinical claim concepts.
-
-**D. “Otros campos detectados” (contract-driven)**
-5) “Otros campos detectados” must render only items explicitly delivered by the backend as “unmapped/other” per contract (no UI-side classification).  
-6) **Blocking dependency:** If the contract does not currently expose an explicit bucket/tag for these items, **US-44 is blocked** until TECHNICAL_DESIGN is updated and the backend emits it.
-
-**E. NHC display**
-7) When an NHC value exists, the field label is “NHC” and shows tooltip “Número de historial clínico”.
-8) If the NHC field exists but value is missing, it is still shown with placeholder “—” (per UX_DESIGN).
-
-**F. Owner address concept**
-9) “Propietario → Dirección” requires a real owner address field exposed by the contract (key/naming per TECHNICAL_DESIGN).  
-10) The UI must not display a field labeled “Dirección” if its value corresponds to an identifier-like concept.
-
-**G. v1 visits rendering remains non-heuristic**
-11) Given `schema_version="v1"`, the UI renders visits only from `visits[]` and does not regroup items across visits. (D9 is authoritative.)
-
-**H. Reviewer notes**
-12) “Notas internas” is rendered **as defined in UX_DESIGN**; if not defined there, UX_DESIGN must be updated before implementation.
-
-**I. Tests**
-13) Add/adjust UI tests to cover:
-  - Section order presence (smoke-level)
-  - Contract-driven exclusion of non-clinical claim concepts
-  - NHC label + tooltip behavior (at least one)
-  - Owner “Dirección” is not mislabeled ID
+### Story-specific technical requirements
+- Keep contract authority in `docs/project/TECHNICAL_DESIGN.md` (Appendix D9 or equivalent authoritative section); do not redefine contract structure in this plan.
+- Keep copy/labels/empty states aligned with `docs/project/UX_DESIGN.md`.
+- Use contract-driven rendering for visit grouping and “Otros campos detectados”; no UI-side heuristics or reclassification.
+- If required contract capabilities are missing (e.g., explicit “other” bucket or owner address concept), this story is blocked until TECHNICAL_DESIGN is updated and backend output is aligned.
+- Add/adjust UI tests for section order, clinical-only scope, NHC behavior, and owner address labeling.
 
 ### Dependencies / Placement
 - Depends on UX copy/spec being updated in `docs/project/UX_DESIGN.md`.
-- **Blocking contract dependencies (must be resolved before implementation):**
-  - Contract taxonomy/field set for “Medical Record” (document-level vs visit-level) is defined in TECHNICAL_DESIGN (Appendix D9 or equivalent).
-  - Explicit bucket/tag for “Otros campos detectados” is defined in TECHNICAL_DESIGN and emitted by backend.
-  - Owner address real field is available per TECHNICAL_DESIGN (do not label an ID as address).
 - **Placement:** implement **US-44 before US-43** (US-44 remains separate).
 
 ---
@@ -1148,50 +1117,37 @@ Como **veterinario revisor**, quiero ver los datos clínicos **agrupados por vis
 
 ### Scope
 In scope:
-1) Branch por `schema_version` en “Datos extraídos”:
-   - v0: mantener render actual (flat por secciones).
-   - v1: renderizar sección “Visitas” basada exclusivamente en `visits[]`.
-2) v1: `fields[]` top-level (document-level):
-   - Renderizar `fields[]` como “Campos del documento” (fuera de “Visitas”) y `visits[]` como bloques de visita.
-   - Sin duplicación; no heurísticas; no mover campos entre `fields[]` y `visits[].fields[]`.
-   - Reference: TECHNICAL_DESIGN Appendix D9 (scoping rules).
-   - Tech alignment required: si D9 no fuese suficientemente explícito, validar/ajustar D9 antes/como parte de la implementación.
-3) v1: render de visitas:
-   - Un bloque por `VisitGroup` en `visits[]`.
-   - Metadata desde VisitGroup (si existe): `visit_date`, `admission_date`, `discharge_date`, `reason_for_visit`.
-   - Campos visit-scoped solo desde `VisitGroup.fields[]`.
-4) v1: no heuristics: no reasignar/fusionar/inferir/reagrupar; no crear visitas.
-   - `visit_id="unassigned"` (si viene en payload) se renderiza como un bloque más.
-5) v1: ordenación determinista:
-   - `visit_date` desc; null al final.
-   - Tie-breaker: si empate, preservar orden del array `visits[]` del payload.
-6) Search/filters (US-34): filtran FieldRows dentro de su contenedor; no reagrupan.
-7) Review workflow sigue siendo por documento (Mark reviewed aplica al documento, no por visita).
+1) For documents with multiple visits, the reviewer sees a separate block per visit in the “Visitas” section.
+2) The reviewer sees visit information only inside its visit block, and non-visit document information outside visit blocks.
+3) Information is not mixed across visit blocks.
+4) Visit order is stable and consistent for the reviewer.
+5) Search and filters only affect row visibility within existing containers and do not change visit grouping.
+6) Review status (“reviewed/not reviewed”) continues to apply at document level.
+7) Clinical-only scope: this story does not include financial or billing concepts.
 
 Out of scope:
-- Heurísticas para inferir visitas o mover items.
+- UI heuristics to infer visits or move items.
 - “Reviewed per visit”.
-- Cambios backend más allá del contrato v1 existente.
+- Backend changes beyond the existing v1 contract.
 
 ### Acceptance Criteria
-A) Contrato (referencia):
-1) Soporta v0 (flat `fields[]`) y v1 (`fields[]` + `visits[]`). Reference: TECHNICAL_DESIGN Appendix D9.
-B) v1 separación:
-2) `fields[]` solo en “Campos del documento”; `visits[i].fields[]` solo en visita i; sin duplicación.
-C) No heuristics:
-3) UI no modifica asignación del payload (no mover/crear/fusionar).
-D) Ordenación:
-4) `visit_date` desc; null al final.
-5) Empates: preservar orden del payload.
-6) `unassigned` (si existe) al final con copy/label según UX_DESIGN.
-E) Filters/search:
-7) Oculta/muestra dentro del contenedor; no reordena visitas ni reagrupa.
-F) Empty:
-8) v1 con `visits=[]` muestra empty state (UX_DESIGN) y no fallback a v0.
-G) v0 unchanged:
-9) v0 no cambia (regresión).
-H) Tests mínimos:
-10) 1 test UI ordering/tie-breaker + null + unassigned; 1 test UI empty v1; 1 test regression v0.
+1) When multiple visits exist, the reviewer sees one block per visit in the “Visitas” section.
+2) Each visit block shows only information for that visit and does not mix information from other visits.
+3) Information shown outside visit blocks is not repeated inside any visit block.
+4) Visit order is deterministic and remains stable across reloads for the same document.
+5) If an “unassigned” block exists, the reviewer sees it as a differentiated block with UX-defined copy.
+6) If no visits are detected, the reviewer sees the UX-defined empty state for “Visitas”.
+7) Search and filters do not change visit grouping or block order.
+8) The review workflow remains document-level.
+9) For documents without visit structure, the current experience remains without visible regressions.
+
+### Story-specific technical requirements
+- Mantener la autoridad de contrato en `docs/project/TECHNICAL_DESIGN.md` Appendix D9; no redefinir payloads en esta historia.
+- Contract-driven rendering and placement boundaries must follow `docs/project/TECHNICAL_DESIGN.md` Appendix D9.
+- Implementar render sin heurísticas: no crear, fusionar, reasignar ni inferir visitas desde frontend.
+- Mantener reglas de separación entre datos de documento y datos de visita según D9.
+- Mantener comportamiento de search/filter de US-34 sin reagrupación.
+- Añadir cobertura de pruebas para orden estable, bloque sin asignar, estado vacío de visitas y regresión de experiencia vigente.
 
 ### Authoritative References
 - `docs/project/TECHNICAL_DESIGN.md` Appendix D9
