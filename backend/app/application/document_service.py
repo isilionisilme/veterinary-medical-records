@@ -174,6 +174,8 @@ def _normalize_visit_date_candidate_v1(value: object) -> str | None:
                 parsed = datetime.strptime(normalized_token, fmt)
             except ValueError:
                 continue
+            if fmt == "%d-%m-%y" and (parsed.year < 2000 or parsed.year > 2100):
+                continue
             if parsed.year < 1900 or parsed.year > 2100:
                 continue
             return parsed.date().isoformat()

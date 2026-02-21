@@ -408,6 +408,10 @@ def test_normalize_visit_date_candidate_v1_normalizes_ddmmyy_and_ddmmyyyy() -> N
     assert _normalize_visit_date_candidate_v1("11/02/26") == "2026-02-11"
 
 
+def test_normalize_visit_date_candidate_v1_rejects_legacy_two_digit_years() -> None:
+    assert _normalize_visit_date_candidate_v1("11/02/69") is None
+
+
 def test_normalize_visit_date_candidate_v1_is_deterministic() -> None:
     raw = "Consulta realizada el 11/02/2026"
     first = _normalize_visit_date_candidate_v1(raw)

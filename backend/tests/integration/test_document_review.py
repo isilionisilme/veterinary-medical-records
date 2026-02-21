@@ -728,6 +728,109 @@ def test_document_review_v1_ambiguous_second_date_stays_unassigned(test_client):
     assert "medication" in unassigned_keys
 
 
+def test_document_review_v1_merges_prepopulated_and_inferred_visits_deterministically(test_client):
+    document_id = _upload_sample_document(test_client)
+    run_id = "run-review-v1-prepopulated-merge"
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(
+        run_id=run_id,
+        data={
+            "schema_version": "v1",
+            "document_id": document_id,
+            "processing_run_id": run_id,
+            "created_at": "2026-02-10T10:00:05+00:00",
+            "fields": [
+                {
+                    "field_id": "f-symptoms-v1",
+                    "key": "symptoms",
+                    "value": "Otalgia",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {
+                        "page": 1,
+                        "snippet": "Consulta 11/02/2026: dolor de oido",
+                    },
+                },
+                {
+                    "field_id": "f-medication-v2",
+                    "key": "medication",
+                    "value": "Gotas oticas",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {
+                        "page": 1,
+                        "snippet": "Consulta 18/02/2026: indicar gotas",
+                    },
+                },
+            ],
+            "visits": [
+                {
+                    "visit_id": "visit-existing",
+                    "visit_date": "2026-02-18",
+                    "admission_date": None,
+                    "discharge_date": None,
+                    "reason_for_visit": "Control",
+                    "fields": [
+                        {
+                            "field_id": "vf-existing-lab",
+                            "key": "lab_result",
+                            "value": "Cultivo negativo",
+                            "value_type": "string",
+                            "scope": "visit",
+                            "section": "visits",
+                            "classification": "medical_record",
+                            "origin": "machine",
+                        }
+                    ],
+                }
+            ],
+            "other_fields": [],
+        },
+    )
+
+    first_response = test_client.get(f"/documents/{document_id}/review")
+    assert first_response.status_code == 200
+    first_visits = first_response.json()["active_interpretation"]["data"]["visits"]
+
+    assigned_visits = [
+        visit
+        for visit in first_visits
+        if isinstance(visit, dict) and visit.get("visit_id") != "unassigned"
+    ]
+    assert [visit.get("visit_date") for visit in assigned_visits] == ["2026-02-11", "2026-02-18"]
+
+    first_visit_keys = {
+        field.get("key")
+        for field in assigned_visits[0].get("fields", [])
+        if isinstance(field, dict)
+    }
+    second_visit_keys = {
+        field.get("key")
+        for field in assigned_visits[1].get("fields", [])
+        if isinstance(field, dict)
+    }
+    assert "symptoms" in first_visit_keys
+    assert "medication" not in first_visit_keys
+    assert "medication" in second_visit_keys
+    assert "lab_result" in second_visit_keys
+
+    second_response = test_client.get(f"/documents/{document_id}/review")
+    assert second_response.status_code == 200
+    second_visits = second_response.json()["active_interpretation"]["data"]["visits"]
+    assert first_visits == second_visits
+
+
 def test_document_review_drops_legacy_non_digit_microchip_value(test_client):
     document_id = _upload_sample_document(test_client)
     run_id = "run-review-microchip-non-digit"
