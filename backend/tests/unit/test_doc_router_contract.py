@@ -397,3 +397,31 @@ def test_product_and_ux_owner_modules_include_visit_grouping_and_copy_updates() 
         "Review state remains document-level in MVP, even when multiple visits are present."
         in ux_module
     )
+
+
+def test_frontend_implementation_note_includes_build_determinism_and_required_checks() -> None:
+    source_doc = _read_text(REPO_ROOT / "docs" / "project" / "FRONTEND_IMPLEMENTATION.md")
+    owner_module = _read_text(
+        ROUTER_ROOT
+        / "04_PROJECT"
+        / "FRONTEND_IMPLEMENTATION"
+        / "150_implementation-note.md"
+    )
+
+    required_source_terms = (
+        "For deterministic CI and local builds, keep test/setup files out of the "
+        "production TypeScript compilation scope",
+        "Repository operations recommendation: protect `main` and require both "
+        "`quality` and `frontend_test_build` checks before merge.",
+    )
+    for term in required_source_terms:
+        assert term in source_doc
+
+    required_owner_terms = (
+        "For deterministic CI and local builds, keep test/setup files out of the "
+        "production TypeScript compilation scope",
+        "Repository operations recommendation: protect `main` and require both "
+        "`quality` and `frontend_test_build` checks before merge.",
+    )
+    for term in required_owner_terms:
+        assert term in owner_module
