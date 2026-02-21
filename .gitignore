@@ -219,6 +219,8 @@ __marimo__/
 frontend/node_modules/
 frontend/dist/
 frontend/*.tsbuildinfo
+!frontend/src/lib/
+!frontend/src/lib/**
 
 # Local extraction observability snapshots
 .local/
