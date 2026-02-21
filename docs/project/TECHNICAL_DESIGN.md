@@ -1851,6 +1851,10 @@ If an extracted clinical field cannot be deterministically linked to a specific 
 - `discharge_date = null`
 - `reason_for_visit = null`
 
+Contract clarification:
+- `visit_id = "unassigned"` is an explicit contract value (not a frontend heuristic or fallback label).
+- A payload where all visit-scoped concepts are contained in a single synthetic `unassigned` group is valid for `schema_version = "v1"`.
+
 This rule prevents UI-side heuristic grouping and keeps all visit-scoped items contained in `visits[]`.
 
 ### D9.5 Compatibility Note (Normative)

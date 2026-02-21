@@ -225,6 +225,24 @@ def test_implementation_plan_us42_status_is_propagated() -> None:
     assert "**Status**: Implemented (2026-02-19)" in owner_module
 
 
+def test_technical_design_unassigned_contract_clarification_is_propagated() -> None:
+    source_doc = _read_text(REPO_ROOT / "docs" / "project" / "TECHNICAL_DESIGN.md")
+    owner_doc = _read_text(
+        ROUTER_ROOT
+        / "04_PROJECT"
+        / "TECHNICAL_DESIGN"
+        / "505_d9-structured-interpretation-schema-v1-visit-grouped-normative.md"
+    )
+
+    expected_term = "explicit contract value"
+    expected_phrase = "single synthetic `unassigned` group is valid"
+
+    assert expected_term in source_doc
+    assert expected_term in owner_doc
+    assert expected_phrase in source_doc
+    assert expected_phrase in owner_doc
+
+
 def test_user_visible_entry_includes_design_system_module() -> None:
     user_visible_entry = _read_text(
         ROUTER_ROOT / "02_PRODUCT" / "USER_VISIBLE" / "00_entry.md"
