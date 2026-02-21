@@ -5,6 +5,7 @@ from __future__ import annotations
 import io
 import json
 from datetime import datetime
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -14,12 +15,13 @@ from backend.app.domain import models as app_models
 from backend.app.infra import database
 from backend.app.infra.file_storage import get_storage_root
 
-_US46_MIXED_MULTI_VISIT_ASSIGNMENT_BASELINE = {
-    "version": "mixed_multi_visit_assignment.baseline.v1",
-    "visit_ids": {"visit-2026-02-11", "visit-2026-02-18"},
-    "assigned_visit_scoped_fields": 0,
-    "unassigned_visit_scoped_fields": 5,
-}
+_US46_BASELINE_VERSION = "mixed_multi_visit_assignment.baseline.v1"
+_US46_BASELINE_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "fixtures"
+    / "review_baselines"
+    / f"{_US46_BASELINE_VERSION}.json"
+)
 
 _US46_VISIT_SCOPED_KEYS = {
     "symptoms",
@@ -32,6 +34,23 @@ _US46_VISIT_SCOPED_KEYS = {
     "lab_result",
     "imaging",
 }
+
+
+def _load_us46_mixed_multi_visit_assignment_baseline() -> dict[str, object]:
+    payload = json.loads(_US46_BASELINE_PATH.read_text(encoding="utf-8"))
+    visit_ids = payload.get("visit_ids")
+    normalized_visit_ids = {
+        str(visit_id)
+        for visit_id in visit_ids
+        if isinstance(visit_ids, list) and isinstance(visit_id, str)
+    }
+
+    return {
+        "version": payload.get("version"),
+        "visit_ids": normalized_visit_ids,
+        "assigned_visit_scoped_fields": payload.get("assigned_visit_scoped_fields"),
+        "unassigned_visit_scoped_fields": payload.get("unassigned_visit_scoped_fields"),
+    }
 
 
 @pytest.fixture
@@ -1037,7 +1056,9 @@ def test_document_review_v1_us46_mixed_multi_visit_assignment_regression_guardra
     assert _US46_VISIT_SCOPED_KEYS.isdisjoint(top_level_keys)
 
     stats = _collect_visit_grouping_stats(data.get("visits"))
-    baseline = _US46_MIXED_MULTI_VISIT_ASSIGNMENT_BASELINE
+    baseline = _load_us46_mixed_multi_visit_assignment_baseline()
+
+    assert baseline["version"] == _US46_BASELINE_VERSION
 
     assert stats["assigned_visit_ids"] == baseline["visit_ids"]
     assert stats["assigned_count"] >= baseline["assigned_visit_scoped_fields"] + 2
