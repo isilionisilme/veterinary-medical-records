@@ -2262,6 +2262,89 @@ describe("App upload and list flow", () => {
     expect(within(panel).getByText("Sin visitas detectadas.")).toBeInTheDocument();
   });
 
+  it("shows unassigned helper text in v1 when unassigned visit group is present", async () => {
+    installV1Us44FetchMock({
+      visits: [
+        {
+          visit_id: "visit-regular",
+          visit_date: "2026-02-20",
+          admission_date: null,
+          discharge_date: null,
+          reason_for_visit: "Control",
+          fields: [],
+        },
+        {
+          visit_id: "unassigned",
+          visit_date: null,
+          admission_date: null,
+          discharge_date: null,
+          reason_for_visit: null,
+          fields: [
+            {
+              field_id: "f-unassigned-diagnosis",
+              key: "diagnosis",
+              value: "Sin fecha de visita",
+              value_type: "string",
+              scope: "visit",
+              section: "visits",
+              classification: "medical_record",
+              is_critical: true,
+              origin: "machine",
+            },
+          ],
+        },
+      ],
+    });
+    renderApp();
+    const panel = await openReadyDocumentAndGetPanel();
+
+    const hints = within(panel).getAllByTestId("visits-unassigned-hint");
+    expect(hints).toHaveLength(1);
+    expect(hints[0]).toHaveTextContent("Elementos detectados sin fecha/visita asociada.");
+    expect(within(panel).queryAllByText("Elementos detectados sin fecha/visita asociada.")).toHaveLength(1);
+    expect(within(panel).queryByText("Sin visitas detectadas.")).toBeNull();
+  });
+
+  it("suppresses Visitas empty state when only unassigned visit group exists", async () => {
+    installV1Us44FetchMock({
+      visits: [
+        {
+          visit_id: "unassigned",
+          visit_date: null,
+          admission_date: null,
+          discharge_date: null,
+          reason_for_visit: null,
+          fields: [],
+        },
+      ],
+    });
+    renderApp();
+    const panel = await openReadyDocumentAndGetPanel();
+
+    expect(within(panel).queryByTestId("visits-unassigned-hint")).toBeNull();
+    expect(within(panel).queryByText("Sin visitas detectadas.")).toBeNull();
+  });
+
+  it("does not show unassigned helper when all visit groups are assigned", async () => {
+    installV1Us44FetchMock({
+      visits: [
+        {
+          visit_id: "visit-1",
+          visit_date: "2026-02-20",
+          admission_date: null,
+          discharge_date: null,
+          reason_for_visit: "Control",
+          fields: [],
+        },
+      ],
+    });
+    renderApp();
+    const panel = await openReadyDocumentAndGetPanel();
+
+    expect(within(panel).queryByTestId("visits-unassigned-hint")).toBeNull();
+    expect(within(panel).queryByText("Sin visitas detectadas.")).toBeNull();
+  });
+
   it("uses v1 detected summary as X/30 and increments X with visit concepts", async () => {
     const controlledFields = [
       {

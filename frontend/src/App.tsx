@@ -72,6 +72,10 @@ import {
   matchesStructuredDataFilters,
 } from "./lib/structuredDataFilters";
 import { mapDocumentStatus } from "./lib/documentStatus";
+import {
+  buildVisitGroupingDiagnostics,
+  shouldEmitVisitGroupingDiagnostics,
+} from "./lib/visitGroupingObservability";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 const DEBUG_CONFIDENCE_POLICY = import.meta.env.VITE_DEBUG_CONFIDENCE === "true";
@@ -81,6 +85,8 @@ const EMPTY_LIST_PLACEHOLDER = "Sin elementos";
 const OTHER_EXTRACTED_FIELDS_SECTION_TITLE = "Otros campos detectados";
 const OTHER_EXTRACTED_FIELDS_EMPTY_STATE = "Sin otros campos detectados.";
 const VISITS_EMPTY_STATE = "Sin visitas detectadas.";
+const VISITS_UNASSIGNED_HINT =
+  "Elementos detectados sin fecha/visita asociada.";
 const REPORT_INFO_SECTION_TITLE = "Detalles del informe";
 const MEDICAL_RECORD_SECTION_ID_ORDER = [
   "clinic",
@@ -444,6 +450,7 @@ type ReviewField = {
   key: string;
   value: string | number | boolean | null;
   value_type: string;
+  visit_group_id?: string;
   scope?: "document" | "visit";
   section?: string;
   domain?: "clinical" | "billing" | "meta" | "other" | string;
@@ -509,6 +516,7 @@ type ReviewSelectableField = {
   source: "core" | "extracted";
   evidence?: ReviewEvidence;
   rawField?: ReviewField;
+  visitGroupId?: string;
   repeatable: boolean;
 };
 
@@ -2608,6 +2616,19 @@ export function App() {
   const interpretationData = documentReview.data?.active_interpretation.data;
   const schemaVersion = interpretationData?.schema_version ?? "v0";
   const isSchemaV1 = schemaVersion === "v1";
+  const reviewVisits = useMemo(
+    () =>
+      isSchemaV1
+        ? (interpretationData?.visits ?? []).filter(
+            (visit): visit is ReviewVisitGroup => Boolean(visit && typeof visit === "object")
+          )
+        : [],
+    [interpretationData?.visits, isSchemaV1]
+  );
+  const hasVisitGroups = reviewVisits.length > 0;
+  const hasUnassignedVisitGroup = reviewVisits.some(
+    (visit) => visit.visit_id.trim().toLowerCase() === "unassigned"
+  );
 
   const extractedReviewFields = useMemo(() => {
     const baseFields = interpretationData?.fields ?? [];
@@ -2615,7 +2636,7 @@ export function App() {
       return baseFields;
     }
 
-    const flattenedVisitFields = (interpretationData?.visits ?? []).flatMap((visit, visitIndex) => {
+    const flattenedVisitFields = reviewVisits.flatMap((visit, visitIndex) => {
       const normalizedVisitId = visit.visit_id || `visit_${visitIndex + 1}`;
       const metadataFields: ReviewField[] = [
         {
@@ -2623,6 +2644,7 @@ export function App() {
           key: "visit_date",
           value: visit.visit_date,
           value_type: "date",
+          visit_group_id: normalizedVisitId,
           scope: "visit",
           section: "visits",
           classification: "medical_record",
@@ -2635,6 +2657,7 @@ export function App() {
           key: "admission_date",
           value: visit.admission_date ?? null,
           value_type: "date",
+          visit_group_id: normalizedVisitId,
           scope: "visit",
           section: "visits",
           classification: "medical_record",
@@ -2647,6 +2670,7 @@ export function App() {
           key: "discharge_date",
           value: visit.discharge_date ?? null,
           value_type: "date",
+          visit_group_id: normalizedVisitId,
           scope: "visit",
           section: "visits",
           classification: "medical_record",
@@ -2659,6 +2683,7 @@ export function App() {
           key: "reason_for_visit",
           value: visit.reason_for_visit ?? null,
           value_type: "string",
+          visit_group_id: normalizedVisitId,
           scope: "visit",
           section: "visits",
           classification: "medical_record",
@@ -2671,6 +2696,7 @@ export function App() {
       const scopedFields = (visit.fields ?? []).map((field, fieldIndex) => ({
         ...field,
         field_id: field.field_id || `visit-field:${normalizedVisitId}:${field.key}:${fieldIndex}`,
+        visit_group_id: normalizedVisitId,
         scope: "visit" as const,
         section: field.section ?? "visits",
       }));
@@ -2679,7 +2705,7 @@ export function App() {
     });
 
     return [...baseFields, ...flattenedVisitFields];
-  }, [interpretationData, isSchemaV1]);
+  }, [interpretationData?.fields, isSchemaV1, reviewVisits]);
 
   const explicitOtherReviewFields = useMemo(() => {
     if (!isSchemaV1) {
@@ -2856,6 +2882,17 @@ export function App() {
     documentReview.data?.active_interpretation.data,
   ]);
 
+  useEffect(() => {
+    if (!isSchemaV1 || !shouldEmitVisitGroupingDiagnostics(import.meta.env)) {
+      return;
+    }
+    const diagnostics = buildVisitGroupingDiagnostics(reviewVisits);
+    console.info("[visit-grouping][diagnostic]", {
+      document_id: interpretationData?.document_id ?? null,
+      ...diagnostics,
+    });
+  }, [interpretationData?.document_id, isSchemaV1, reviewVisits]);
+
   const validatedReviewFields = validationResult.acceptedFields.filter((field) => {
     if (isSchemaV1) {
       return !BILLING_REVIEW_FIELDS.has(field.key);
@@ -2884,6 +2921,7 @@ export function App() {
       confidence: mappingConfidence ?? 0,
       confidenceBand,
       rawField,
+      visitGroupId: rawField?.visit_group_id,
     };
   };
 
@@ -3387,9 +3425,7 @@ export function App() {
       const topLevelFields = (interpretationData?.fields ?? []).filter(
         (field): field is ReviewField => Boolean(field && typeof field === "object")
       );
-      const visits = (interpretationData?.visits ?? []).filter(
-        (visit): visit is ReviewVisitGroup => Boolean(visit && typeof visit === "object")
-      );
+      const visits = reviewVisits;
       const confidenceCutoffs = activeConfidencePolicy?.band_cutoffs;
       let detected = 0;
       let low = 0;
@@ -3523,7 +3559,7 @@ export function App() {
       high: confidenceBands.high,
       unknown: 0,
     };
-  }, [activeConfidencePolicy, coreDisplayFields, interpretationData?.fields, interpretationData?.visits, isSchemaV1]);
+  }, [activeConfidencePolicy, coreDisplayFields, interpretationData?.fields, isSchemaV1, reviewVisits]);
   const shouldShowLoadPdfErrorBanner =
     loadPdf.isError && !isConnectivityOrServerError(loadPdf.error);
   const isPinnedSourcePanelVisible =
@@ -4175,6 +4211,10 @@ export function App() {
 
   const renderRepeatableReviewField = (field: ReviewDisplayField) => {
     const countLabel = field.items.length === 1 ? "1 elemento" : `${field.items.length} elementos`;
+    const shouldShowUnassignedVisitHintForField = hasUnassignedVisitGroup;
+    const firstUnassignedItemIndex = field.items.findIndex(
+      (item) => item.visitGroupId?.trim().toLowerCase() === "unassigned"
+    );
     return (
       <FieldBlock key={field.id} className="px-1 py-1">
         <div className="flex items-center justify-between gap-2 pb-1">
@@ -4194,10 +4234,14 @@ export function App() {
           {field.isEmptyList && (
             <p className="py-0.5 text-sm italic text-missing">{EMPTY_LIST_PLACEHOLDER}</p>
           )}
-          {field.items.map((item) => {
+          {field.items.map((item, index) => {
             const isSelected = selectedFieldId === item.id;
             const isLongText = shouldRenderLongTextValue(field.key, item.displayValue);
             const tooltip = buildFieldTooltip(item);
+            const isUnassignedVisitGroup =
+              shouldShowUnassignedVisitHintForField &&
+              item.visitGroupId?.trim().toLowerCase() === "unassigned";
+            const shouldRenderUnassignedHint = isUnassignedVisitGroup && index === firstUnassignedItemIndex;
             return (
               <div
                 key={item.id}
@@ -4205,6 +4249,14 @@ export function App() {
                   isSelected ? "rounded-md bg-accentSoft/50" : ""
                 }`}
               >
+                {shouldRenderUnassignedHint && (
+                  <p
+                    className="mb-1 rounded-control bg-surface px-3 py-2 text-xs text-muted"
+                    data-testid="visits-unassigned-hint"
+                  >
+                    {VISITS_UNASSIGNED_HINT}
+                  </p>
+                )}
                 <Tooltip
                   content={tooltip.content}
                   open={
@@ -4429,7 +4481,7 @@ export function App() {
     const isExtraSection = section.id === "extra:section";
     const isEmptyExtraSection = isExtraSection && section.fields.length === 0;
     const isVisitsSection = section.title === "Visitas";
-    const isEmptyVisitsSection = isVisitsSection && section.fields.length === 0;
+    const isEmptyVisitsSection = isVisitsSection && section.fields.length === 0 && !hasVisitGroups;
     const isOwnerSection = section.title === "Propietario";
     const shouldUseSingleColumn = isOwnerSection;
 
@@ -4475,7 +4527,7 @@ export function App() {
     const isExtraSection = section.id === "extra:section";
     const isEmptyExtraSection = isExtraSection && section.fields.length === 0;
     const isVisitsSection = section.title === "Visitas";
-    const isEmptyVisitsSection = isVisitsSection && section.fields.length === 0;
+    const isEmptyVisitsSection = isVisitsSection && section.fields.length === 0 && !hasVisitGroups;
     const isOwnerSection = section.title === "Propietario";
     const shouldUseSingleColumn = isOwnerSection;
 
