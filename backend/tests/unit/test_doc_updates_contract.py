@@ -39,6 +39,17 @@ DOC_UPDATES_ROUTER_PARITY_MAP = (
 DOC_TEST_SYNC_GUARD = REPO_ROOT / "scripts" / "check_doc_test_sync.py"
 DOC_ROUTER_PARITY_GUARD = REPO_ROOT / "scripts" / "check_doc_router_parity.py"
 IMPLEMENTATION_PLAN = REPO_ROOT / "docs" / "project" / "IMPLEMENTATION_PLAN.md"
+IMPLEMENTATION_PLAN_ROUTER_ENTRY = (
+    REPO_ROOT / "docs" / "agent_router" / "04_PROJECT" / "IMPLEMENTATION_PLAN" / "00_entry.md"
+)
+IMPLEMENTATION_PLAN_ROUTER_RELEASE_6 = (
+    REPO_ROOT
+    / "docs"
+    / "agent_router"
+    / "04_PROJECT"
+    / "IMPLEMENTATION_PLAN"
+    / "120_release-6-explicit-overrides-workflow-closure.md"
+)
 
 
 def _read_text(path: Path) -> str:
@@ -183,6 +194,19 @@ def test_implementation_plan_tracks_us08_us09_us32_us39_as_implemented() -> None
         "**Status**: Implemented (2026-02-17)"
     ) in text
     assert text.count("**Status**: Implemented (2026-02-17)") >= 3
+
+
+def test_implementation_plan_router_tracks_us45_propagation() -> None:
+    entry_text = _read_text(IMPLEMENTATION_PLAN_ROUTER_ENTRY)
+    release_6_text = _read_text(IMPLEMENTATION_PLAN_ROUTER_RELEASE_6)
+    assert (
+        "279a_us-45-visit-detection-mvp-deterministic-contract-driven-coverage-improvement.md"
+        in entry_text
+    )
+    assert (
+        "US-45 — Visit Detection MVP (Deterministic, Contract-Driven Coverage Improvement)"
+        in release_6_text
+    )
 
 
 def test_ci_does_not_ignore_markdown_only_changes() -> None:
