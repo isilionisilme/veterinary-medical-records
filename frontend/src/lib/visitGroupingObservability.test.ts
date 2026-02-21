@@ -28,6 +28,25 @@ describe("visitGroupingObservability", () => {
     expect(diagnostics.all_visit_scoped_in_unassigned).toBe(false);
   });
 
+  it("falls back to visit_<n> key when visit_id is empty or whitespace", () => {
+    const diagnostics = buildVisitGroupingDiagnostics([
+      {
+        visit_id: "  ",
+        fields: [{ key: "diagnosis" }],
+      },
+      {
+        visit_id: "",
+        fields: [{ key: "symptoms" }, { key: "procedure" }],
+      },
+    ]);
+
+    expect(diagnostics.fields_per_visit).toEqual({
+      visit_1: 1,
+      visit_2: 2,
+    });
+    expect(diagnostics.unassigned_present).toBe(false);
+  });
+
   it("returns false in production-like mode for diagnostics emission", () => {
     expect(shouldEmitVisitGroupingDiagnostics({ DEV: false, MODE: "production" })).toBe(false);
   });
