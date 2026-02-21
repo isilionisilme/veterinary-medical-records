@@ -14,6 +14,25 @@ from backend.app.domain import models as app_models
 from backend.app.infra import database
 from backend.app.infra.file_storage import get_storage_root
 
+_US46_MIXED_MULTI_VISIT_ASSIGNMENT_BASELINE = {
+    "version": "mixed_multi_visit_assignment.baseline.v1",
+    "visit_ids": {"visit-2026-02-11", "visit-2026-02-18"},
+    "assigned_visit_scoped_fields": 0,
+    "unassigned_visit_scoped_fields": 5,
+}
+
+_US46_VISIT_SCOPED_KEYS = {
+    "symptoms",
+    "diagnosis",
+    "procedure",
+    "medication",
+    "treatment_plan",
+    "allergies",
+    "vaccinations",
+    "lab_result",
+    "imaging",
+}
+
 
 @pytest.fixture
 def test_db(tmp_path, monkeypatch):
@@ -115,6 +134,50 @@ def _insert_structured_interpretation(
         conn.commit()
 
 
+def _collect_visit_grouping_stats(visits: object) -> dict[str, object]:
+    assigned_visit_ids: set[str] = set()
+    assigned_keys: set[str] = set()
+    assigned_count = 0
+    unassigned_count = 0
+
+    if not isinstance(visits, list):
+        return {
+            "assigned_visit_ids": assigned_visit_ids,
+            "assigned_keys": assigned_keys,
+            "assigned_count": assigned_count,
+            "unassigned_count": unassigned_count,
+        }
+
+    for visit in visits:
+        if not isinstance(visit, dict):
+            continue
+
+        visit_id = visit.get("visit_id")
+        fields = visit.get("fields")
+        if not isinstance(fields, list):
+            continue
+
+        if isinstance(visit_id, str) and visit_id != "unassigned":
+            assigned_visit_ids.add(visit_id)
+            for field in fields:
+                if not isinstance(field, dict):
+                    continue
+                assigned_count += 1
+                field_key = field.get("key")
+                if isinstance(field_key, str):
+                    assigned_keys.add(field_key)
+            continue
+
+        unassigned_count += sum(1 for field in fields if isinstance(field, dict))
+
+    return {
+        "assigned_visit_ids": assigned_visit_ids,
+        "assigned_keys": assigned_keys,
+        "assigned_count": assigned_count,
+        "unassigned_count": unassigned_count,
+    }
+
+
 def _get_calibration_counts(
     *,
     context_key: str,
@@ -166,6 +229,27 @@ def test_document_review_returns_latest_completed_run_context(test_client):
     assert isinstance(medical_record_view, dict)
     field_slots = medical_record_view.get("field_slots")
     assert isinstance(field_slots, list)
+    patient_slots = [
+        slot
+        for slot in field_slots
+        if isinstance(slot, dict) and slot.get("section") == "patient"
+    ]
+    patient_slot_keys = {
+        slot.get("canonical_key")
+        for slot in patient_slots
+        if isinstance(slot.get("canonical_key"), str)
+    }
+    assert {
+        "pet_name",
+        "species",
+        "breed",
+        "sex",
+        "age",
+        "dob",
+        "microchip_id",
+        "weight",
+        "reproductive_status",
+    }.issubset(patient_slot_keys)
     nhc_slot = next(
         (
             slot
@@ -829,6 +913,136 @@ def test_document_review_v1_merges_prepopulated_and_inferred_visits_deterministi
     assert second_response.status_code == 200
     second_visits = second_response.json()["active_interpretation"]["data"]["visits"]
     assert first_visits == second_visits
+
+
+def test_document_review_v1_us46_mixed_multi_visit_assignment_regression_guardrail(test_client):
+    document_id = _upload_sample_document(test_client)
+    run_id = "run-review-v1-us46-mixed-multi-visit-assignment"
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(
+        run_id=run_id,
+        data={
+            "schema_version": "v1",
+            "document_id": document_id,
+            "processing_run_id": run_id,
+            "created_at": "2026-02-10T10:00:05+00:00",
+            "fields": [
+                {
+                    "field_id": "f-diagnosis-v1",
+                    "key": "diagnosis",
+                    "value": "Otitis externa",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {
+                        "page": 1,
+                        "snippet": "Consulta 11/02/2026: diagnostico de otitis externa",
+                    },
+                },
+                {
+                    "field_id": "f-medication-v2",
+                    "key": "medication",
+                    "value": "Gotas oticas",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {
+                        "page": 1,
+                        "snippet": "Visita 18/02/2026: medicacion indicada",
+                    },
+                },
+                {
+                    "field_id": "f-procedure-v2",
+                    "key": "procedure",
+                    "value": "Limpieza auricular",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {
+                        "page": 1,
+                        "snippet": "Control 18/02/2026: limpieza auricular",
+                    },
+                },
+                {
+                    "field_id": "f-lab-unassigned",
+                    "key": "lab_result",
+                    "value": "Cortisol basal elevado",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {
+                        "page": 1,
+                        "snippet": "Informe emitido 01/03/2026: cortisol basal elevado",
+                    },
+                },
+                {
+                    "field_id": "f-treatment-unassigned",
+                    "key": "treatment_plan",
+                    "value": "Reevaluar en 7 dias",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {
+                        "page": 1,
+                        "snippet": "01/03/2026: reevaluar en 7 dias",
+                    },
+                },
+            ],
+            "visits": [
+                {
+                    "visit_id": "visit-2026-02-11",
+                    "visit_date": "2026-02-11",
+                    "admission_date": None,
+                    "discharge_date": None,
+                    "reason_for_visit": "Consulta",
+                    "fields": [],
+                },
+                {
+                    "visit_id": "visit-2026-02-18",
+                    "visit_date": "2026-02-18",
+                    "admission_date": None,
+                    "discharge_date": None,
+                    "reason_for_visit": "Control",
+                    "fields": [],
+                },
+            ],
+            "other_fields": [],
+        },
+    )
+
+    response = test_client.get(f"/documents/{document_id}/review")
+    assert response.status_code == 200
+    data = response.json()["active_interpretation"]["data"]
+
+    top_level_keys = {
+        field.get("key")
+        for field in data.get("fields", [])
+        if isinstance(field, dict)
+    }
+    assert _US46_VISIT_SCOPED_KEYS.isdisjoint(top_level_keys)
+
+    stats = _collect_visit_grouping_stats(data.get("visits"))
+    baseline = _US46_MIXED_MULTI_VISIT_ASSIGNMENT_BASELINE
+
+    assert stats["assigned_visit_ids"] == baseline["visit_ids"]
+    assert stats["assigned_count"] >= baseline["assigned_visit_scoped_fields"] + 2
+    assert stats["unassigned_count"] <= baseline["unassigned_visit_scoped_fields"] - 2
+    assert {"diagnosis", "medication", "procedure"}.intersection(stats["assigned_keys"])
 
 
 def test_document_review_drops_legacy_non_digit_microchip_value(test_client):
