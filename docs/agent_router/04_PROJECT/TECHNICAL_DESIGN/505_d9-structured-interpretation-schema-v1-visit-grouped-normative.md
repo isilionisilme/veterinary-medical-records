@@ -182,6 +182,11 @@ Contract clarification:
 
 This rule prevents UI-side heuristic grouping and keeps all visit-scoped items contained in `visits[]`.
 
+Sufficient evidence boundary for assigned VisitGroup creation (US-45, deterministic):
+- Producer MAY create an assigned `VisitGroup` (`visit_id != "unassigned"`) only when a date token is normalizable to ISO (`YYYY-MM-DD`) and the same evidence includes visit context (`visita|consulta|control|revisión|seguimiento|ingreso|alta`) without non-visit context.
+- Non-visit/administrative contexts (for example DOB/nacimiento, microchip/chip, invoice/factura, report/informe/emisión/documento date references) MUST NOT create assigned VisitGroups.
+- If a field evidence snippet contains ambiguous date tokens without sufficient visit context, that field MUST remain in `unassigned`.
+
 ## D9.5 Compatibility Note (Normative)
 
 - v0 continues to use the flat `fields[]` list.

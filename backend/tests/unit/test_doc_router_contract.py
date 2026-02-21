@@ -243,6 +243,27 @@ def test_technical_design_unassigned_contract_clarification_is_propagated() -> N
     assert expected_phrase in owner_doc
 
 
+def test_technical_design_sufficient_evidence_boundary_is_propagated() -> None:
+    source_doc = _read_text(REPO_ROOT / "docs" / "project" / "TECHNICAL_DESIGN.md")
+    owner_doc = _read_text(
+        ROUTER_ROOT
+        / "04_PROJECT"
+        / "TECHNICAL_DESIGN"
+        / "505_d9-structured-interpretation-schema-v1-visit-grouped-normative.md"
+    )
+
+    required_terms = (
+        "Sufficient evidence boundary for assigned VisitGroup creation",
+        "visit context (`visita|consulta|control|revisión|seguimiento|ingreso|alta`)",
+        "MUST NOT create assigned VisitGroups",
+        "ambiguous date tokens without sufficient visit context",
+    )
+
+    for term in required_terms:
+        assert term in source_doc
+        assert term in owner_doc
+
+
 def test_user_visible_entry_includes_design_system_module() -> None:
     user_visible_entry = _read_text(
         ROUTER_ROOT / "02_PRODUCT" / "USER_VISIBLE" / "00_entry.md"
