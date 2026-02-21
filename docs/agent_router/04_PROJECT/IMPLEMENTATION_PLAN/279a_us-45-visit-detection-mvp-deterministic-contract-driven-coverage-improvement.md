@@ -1,6 +1,6 @@
 # US-45 — Visit Detection MVP (Deterministic, Contract-Driven Coverage Improvement)
 
-**Status:** Planned
+**Status:** Implemented (2026-02-21)
 
 ## Context / Problem
 With US-43, the UI is strictly contract-driven: it renders `active_interpretation.data.visits[]` when `schema_version="v1"`, without inferring or grouping visits client-side.
