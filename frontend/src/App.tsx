@@ -3443,11 +3443,12 @@ export function App() {
       };
 
       V1_DOCUMENT_CONCEPTS.forEach((concept) => {
+        const aliases = "aliases" in concept ? concept.aliases ?? [] : [];
         addDetectedConceptFromFields(
           topLevelFields.filter(
             (field) => field.scope !== "visit" && !BILLING_REVIEW_FIELDS.has(field.key)
           ),
-          [concept.canonicalKey, ...(concept.aliases ?? [])]
+          [concept.canonicalKey, ...aliases]
         );
       });
 
