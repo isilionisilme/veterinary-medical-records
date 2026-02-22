@@ -4,6 +4,7 @@ from pathlib import Path
 
 from backend.app.application.document_service import (
     _normalize_visit_date_candidate,
+    _project_review_payload_to_canonical,
     get_document_original_location,
     get_document_status_details,
     mark_document_reviewed,
@@ -418,4 +419,21 @@ def test_normalize_visit_date_candidate_is_deterministic() -> None:
     second = _normalize_visit_date_candidate(raw)
     assert first == "2026-02-11"
     assert second == first
+
+
+def test_project_review_payload_logs_compat_projection_when_schema_version_missing(caplog) -> None:
+    caplog.set_level("INFO", logger="backend.app.application.document_service")
+
+    payload = {
+        "schema_contract": "legacy-flat",
+        "global_schema": {"pet_name": "Luna"},
+        "fields": [],
+    }
+
+    projected = _project_review_payload_to_canonical(payload)
+
+    assert projected["schema_contract"] == "visit-grouped-canonical"
+    assert projected["schema_version"] == "v1"
+    assert "event=compat_schema_projection" in caplog.text
+    assert "stage=document_service" in caplog.text
 

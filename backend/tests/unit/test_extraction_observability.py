@@ -98,8 +98,13 @@ def test_persist_snapshot_is_idempotent_per_document_and_run_id(
     assert second["was_created"] is False
 
 
-def test_get_extraction_runs_normalizes_legacy_schema_version(monkeypatch, tmp_path: Path) -> None:
+def test_get_extraction_runs_normalizes_legacy_schema_version(
+    monkeypatch,
+    tmp_path: Path,
+    caplog,
+) -> None:
     monkeypatch.setattr(extraction_observability, "_OBSERVABILITY_DIR", tmp_path)
+    caplog.set_level("INFO", logger="backend.app.application.extraction_observability")
 
     extraction_observability.persist_extraction_run_snapshot(
         {
@@ -116,6 +121,8 @@ def test_get_extraction_runs_normalizes_legacy_schema_version(monkeypatch, tmp_p
     runs = extraction_observability.get_extraction_runs("doc-legacy")
     assert len(runs) == 1
     assert runs[0]["schemaVersion"] == "canonical"
+    assert "event=legacy_schema_version_normalized" in caplog.text
+    assert "stage=extraction_observability" in caplog.text
 
 
 def test_build_extraction_triage_populates_missing_and_rejected_lists() -> None:

@@ -40,6 +40,7 @@ _GOAL_FIELDS = (
 )
 SNAPSHOT_SCHEMA_VERSION_CANONICAL = "canonical"
 SNAPSHOT_SCHEMA_VERSION_LEGACY = "v1"
+LEGACY_COMPAT_EVENT_PREFIX = "[legacy-compat]"
 
 SNAPSHOT_CONFIDENCE_MID_MIN = 0.6
 SNAPSHOT_CONFIDENCE_HIGH_MIN = 0.8
@@ -217,6 +218,14 @@ def _normalize_snapshot_schema_version(value: Any) -> str:
             SNAPSHOT_SCHEMA_VERSION_CANONICAL,
             SNAPSHOT_SCHEMA_VERSION_LEGACY,
         }:
+            if normalized == SNAPSHOT_SCHEMA_VERSION_LEGACY:
+                _emit_info(
+                    f"{LEGACY_COMPAT_EVENT_PREFIX} event=legacy_schema_version_normalized "
+                    "stage=extraction_observability flow=snapshot_normalization "
+                    f"incoming_schema_version={normalized} "
+                    "normalized_schema_version="
+                    f"{SNAPSHOT_SCHEMA_VERSION_CANONICAL}"
+                )
             return SNAPSHOT_SCHEMA_VERSION_CANONICAL
     return SNAPSHOT_SCHEMA_VERSION_CANONICAL
 

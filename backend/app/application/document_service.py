@@ -45,6 +45,7 @@ NUMERIC_TYPES = (int, float)
 logger = logging.getLogger(__name__)
 _REVIEW_SCHEMA_CONTRACT_CANONICAL = "visit-grouped-canonical"
 _REVIEW_SCHEMA_VERSION_COMPAT = "v1"
+_LEGACY_COMPAT_EVENT_PREFIX = "[legacy-compat]"
 
 _MEDICAL_RECORD_CANONICAL_SECTIONS: tuple[str, ...] = (
     "clinic",
@@ -678,6 +679,8 @@ def _normalize_review_interpretation_data(data: dict[str, object]) -> dict[str, 
 def _project_review_payload_to_canonical(data: dict[str, object]) -> dict[str, object]:
     medical_record_view = data.get("medical_record_view")
     projected = dict(data)
+    incoming_schema_contract = projected.get("schema_contract")
+    incoming_schema_version = projected.get("schema_version")
 
     default_medical_record_view = {
         "version": "mvp-1",
@@ -701,6 +704,20 @@ def _project_review_payload_to_canonical(data: dict[str, object]) -> dict[str, o
     projected["schema_contract"] = _REVIEW_SCHEMA_CONTRACT_CANONICAL
     if not isinstance(projected.get("schema_version"), str):
         projected["schema_version"] = _REVIEW_SCHEMA_VERSION_COMPAT
+
+    applied_schema_contract_compat = incoming_schema_contract != _REVIEW_SCHEMA_CONTRACT_CANONICAL
+    applied_schema_version_compat = not isinstance(incoming_schema_version, str)
+    if applied_schema_contract_compat or applied_schema_version_compat:
+        logger.info(
+            "%s event=compat_schema_projection stage=document_service flow=review_projection "
+            "schema_contract_compat=%s schema_version_compat=%s incoming_schema_contract=%s "
+            "incoming_schema_version_type=%s",
+            _LEGACY_COMPAT_EVENT_PREFIX,
+            applied_schema_contract_compat,
+            applied_schema_version_compat,
+            incoming_schema_contract,
+            type(incoming_schema_version).__name__,
+        )
 
     if not isinstance(projected.get("visits"), list):
         projected["visits"] = []
