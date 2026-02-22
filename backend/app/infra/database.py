@@ -191,13 +191,13 @@ def _ensure_status_history_schema(conn: sqlite3.Connection) -> None:
         );
         """
     )
-    legacy_rows = conn.execute(
+    historical_rows = conn.execute(
         """
         SELECT document_id, state, created_at
         FROM document_status_history
         """
     ).fetchall()
-    for row in legacy_rows:
+    for row in historical_rows:
         conn.execute(
             """
             INSERT INTO document_status_history_new (id, document_id, status, run_id, created_at)

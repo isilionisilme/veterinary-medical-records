@@ -463,3 +463,17 @@ def test_frontend_implementation_note_includes_build_determinism_and_required_ch
     )
     for term in required_owner_terms:
         assert term in owner_module
+
+
+def test_backend_implementation_schema_contract_wording_is_propagated() -> None:
+    source_doc = _read_text(REPO_ROOT / "docs" / "project" / "BACKEND_IMPLEMENTATION.md")
+    owner_doc = _read_text(
+        ROUTER_ROOT
+        / "04_PROJECT"
+        / "BACKEND_IMPLEMENTATION"
+        / "100_structured-interpretation-schema.md"
+    )
+
+    required_phrase = "Structured Interpretation Schema visit-grouped canonical contract"
+    assert required_phrase in source_doc
+    assert required_phrase in owner_doc

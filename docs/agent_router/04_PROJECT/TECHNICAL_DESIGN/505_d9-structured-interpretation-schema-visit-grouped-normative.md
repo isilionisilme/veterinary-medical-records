@@ -4,8 +4,7 @@ The canonical visit-grouped contract defines deterministic visit grouping for mu
 
 - Multi-visit PDFs exist; UI must not heuristic-group.
 - The canonical contract enables deterministic grouping by introducing `visits[]`.
-- The legacy flat contract is deprecated and retained only for historical compatibility.
-- Canon note for Medical Record panel: `canonical contract` is canonical for this surface; legacy flat contract is deprecated for Medical Record panel rendering.
+- Canon note for Medical Record panel: `canonical contract` is canonical for this surface.
 
 ## D9.1 Top-Level Object: StructuredInterpretation (Canonical Visit-grouped) (JSON)
 
@@ -127,23 +126,23 @@ Document-level Medical Record keys (MUST be represented by `medical_record_view.
 - Owner section (`section = "owner"`): `owner_name`, `owner_address`.
 - Notes section (`section = "notes"`): `notes`.
 
-Section-id transitional compatibility (normative):
-- Legacy producers may emit `section = "review_notes"`; producers/contract adapters MUST map it to stable `section = "notes"` before consumer rendering.
-- Legacy producers may emit `section = "visit"`; producers/contract adapters MUST map it to stable `section = "visits"` before consumer rendering.
+Section-id normalization (normative):
+- Producers/contract adapters MUST map `section = "review_notes"` to stable `section = "notes"` before consumer rendering.
+- Producers/contract adapters MUST map `section = "visit"` to stable `section = "visits"` before consumer rendering.
 - Frontend consumers MUST NOT infer or heuristically remap section ids.
 - Report info section (`section = "report_info"`): `language`.
 
 Reproductive status concept (normative):
 - Canonical key is `reproductive_status`.
-- Transitional compatibility: legacy `repro_status` may be emitted by older producers but MUST be mapped to canonical `reproductive_status` in contract metadata.
+- `repro_status` aliases MUST be mapped to canonical `reproductive_status` in contract metadata.
 
 Owner address concept (normative):
 - `owner_address` is the explicit owner address concept for Medical Record taxonomy.
-- Legacy `owner_id` is an identifier concept and MUST NOT be interpreted as address in Medical Record taxonomy.
+- `owner_id` is an identifier concept and MUST NOT be interpreted as address in Medical Record taxonomy.
 
 NHC (normative):
 - Preferred key is `nhc` (Número de historial clínico), document-level, clinic section.
-- Transitional compatibility: `medical_record_number` may be emitted by legacy producers; producers should converge to `nhc`.
+- `medical_record_number` aliases MUST map to `nhc`.
 - Deterministic taxonomy rule: producers MUST map both key variants to the same Medical Record concept (`NHC`) in contract metadata; frontend consumers MUST NOT infer this mapping heuristically.
 
 Age and DOB (normative compatibility):
@@ -187,10 +186,8 @@ Sufficient evidence boundary for assigned VisitGroup creation (US-45, determinis
 - Non-visit/administrative contexts (for example DOB/nacimiento, microchip/chip, invoice/factura, report/informe/emisión/documento date references) MUST NOT create assigned VisitGroups.
 - If a field evidence snippet contains ambiguous date tokens without sufficient visit context, that field MUST remain in `unassigned`.
 
-## D9.5 Compatibility Note (Normative)
+## D9.5 Contract Note (Normative)
 
-- Legacy flat contract continues to use the flat `fields[]` list.
-- For Medical Record MVP panel rendering, legacy flat contract is treated as deprecated and is not the canonical surface contract.
 - Frontend may branch rendering by `schema_contract` in general integrations, but this document defines contract shape only (UX owns layout).
 
 ## D9.6 Authoritative Contract Boundary for Medical Record Rendering

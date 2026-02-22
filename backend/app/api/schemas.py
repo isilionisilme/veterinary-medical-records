@@ -243,7 +243,7 @@ class ExtractionRunSnapshotRequest(BaseModel):
     runId: str
     documentId: str
     createdAt: str
-    schemaVersion: str
+    schemaVersion: Literal["canonical"]
     fields: dict[str, ExtractionFieldSnapshotRequest]
     counts: ExtractionCountsSnapshotRequest
 

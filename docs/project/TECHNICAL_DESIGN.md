@@ -1171,7 +1171,7 @@ Response body (minimum):
 - `run_id`
 - `interpretation_id`
 - `version_number` (new active version number)
-- `data` (Structured Interpretation Schema legacy flat contract; Appendix D)
+- `data` (Structured Interpretation Schema visit-grouped canonical contract; Appendix D)
 
 Rules:
 - Human edits MUST produce `origin = "human"` fields (Appendix D) and append `FieldChangeLog` entries (B2.5).
@@ -1501,8 +1501,8 @@ This is a deliberately small contract, **not a full medical ontology**.
 - **Assistive, not authoritative**: outputs are explainable and editable.
 - **Non-blocking**: confidence and governance never block veterinarians.
 - **Run-scoped & append-only**: nothing is overwritten; every interpretation belongs to a processing run.
-- **Approximate evidence**: page + snippet; no PDF coordinates in legacy flat contract.
-- **Flat structure (legacy flat contract)**: optimize for flexibility and speed, not completeness.
+- **Approximate evidence**: page + snippet; no PDF coordinates are required.
+- **Canonical structure**: deterministic visit grouping and explicit rendering taxonomy.
 
 Note (materialization boundary):
 - Machine interpretation payloads may be partial with respect to Global Schema.
@@ -1511,10 +1511,10 @@ Note (materialization boundary):
 
 ## D2. Versioning
 
-- `schema_contract` is a string. Current value: `"legacy-flat"`.
+- `schema_contract` is a string. Current value: `"visit-grouped-canonical"`.
 - Future versions must be explicit and intentional.
 - Additive changes are preferred; breaking changes require a new version.
-- The canonical visit-grouped contract introduces deterministic visit grouping via a `visits[]` container while preserving `StructuredField` semantics. legacy flat remains supported.
+- The canonical visit-grouped contract uses deterministic visit grouping via a `visits[]` container while preserving `StructuredField` semantics.
 
 ## D3. Relationship to Persistent Model (Authoritative)
 
@@ -1524,21 +1524,39 @@ The JSON object defined in this appendix is stored as the `data` payload of `Int
 
 ```json
 {
-  "schema_contract": "legacy-flat",
+  "schema_contract": "visit-grouped-canonical",
   "document_id": "uuid",
   "processing_run_id": "uuid",
   "created_at": "2026-02-05T12:34:56Z",
-  "fields": []
+  "medical_record_view": {
+    "version": "mvp-1",
+    "sections": [
+      "clinic",
+      "patient",
+      "owner",
+      "visits",
+      "notes",
+      "other",
+      "report_info"
+    ],
+    "field_slots": []
+  },
+  "fields": [],
+  "visits": [],
+  "other_fields": []
 }
 ```
 
 | Field | Type | Required | Notes |
 |---|---|---:|---|
-| schema_contract | string | ✓ | Always `"legacy-flat"` |
+| schema_contract | string | ✓ | Always `"visit-grouped-canonical"` |
 | document_id | uuid | ✓ | Convenience for debugging |
 | processing_run_id | uuid | ✓ | Links to a specific processing attempt |
 | created_at | ISO 8601 string | ✓ | Snapshot creation time |
-| fields | array of `StructuredField` | ✓ | Flat list of structured fields |
+| medical_record_view | `MedicalRecordViewTemplate` | ✓ | Deterministic panel template |
+| fields | array of `StructuredField` | ✓ | Non-visit-scoped fields |
+| visits | array of `VisitGroup` | ✓ | Visit-scoped deterministic grouping |
+| other_fields | array of `StructuredField` | ✓ | Explicit unmapped/other bucket |
 
 ## D5. StructuredField (Authoritative)
 
@@ -1620,10 +1638,15 @@ Source of truth for `CRITICAL_KEYS`:
 
 ```json
 {
-  "schema_contract": "legacy-flat",
+  "schema_contract": "visit-grouped-canonical",
   "document_id": "doc-123",
   "processing_run_id": "run-456",
   "created_at": "2026-02-05T12:34:56Z",
+  "medical_record_view": {
+    "version": "mvp-1",
+    "sections": ["clinic", "patient", "owner", "visits", "notes", "other", "report_info"],
+    "field_slots": []
+  },
   "fields": [
     {
       "field_id": "f1",
@@ -1634,17 +1657,29 @@ Source of truth for `CRITICAL_KEYS`:
       "is_critical": true,
       "origin": "machine",
       "evidence": { "page": 2, "snippet": "Patient: Luna" }
-    },
-    {
-      "field_id": "f2",
-      "key": "pet_name",
-      "value": "Luna",
-      "value_type": "string",
-      "confidence": 1.0,
-      "is_critical": true,
-      "origin": "human"
     }
-  ]
+  ],
+  "visits": [
+    {
+      "visit_id": "visit-1",
+      "visit_date": "2026-02-05",
+      "admission_date": null,
+      "discharge_date": null,
+      "reason_for_visit": "Vomiting",
+      "fields": [
+        {
+          "field_id": "vf1",
+          "key": "diagnosis",
+          "value": "Gastroenteritis",
+          "value_type": "string",
+          "confidence": 0.78,
+          "is_critical": false,
+          "origin": "machine"
+        }
+      ]
+    }
+  ],
+  "other_fields": []
 }
 ```
 
@@ -1654,8 +1689,7 @@ The canonical visit-grouped contract defines deterministic visit grouping for mu
 
 - Multi-visit PDFs exist; UI must not heuristic-group.
 - The canonical contract enables deterministic grouping by introducing `visits[]`.
-- The legacy flat contract is deprecated and retained only for historical compatibility.
-- Canon note for Medical Record panel: `canonical contract` is canonical for this surface; legacy flat contract is deprecated for Medical Record panel rendering.
+- Canon note for Medical Record panel: `canonical contract` is canonical for this surface.
 
 ### D9.1 Top-Level Object: StructuredInterpretation (Canonical Visit-grouped) (JSON)
 
@@ -1802,23 +1836,23 @@ Document-level Medical Record keys (MUST be represented by `medical_record_view.
 - Owner section (`section = "owner"`): `owner_name`, `owner_address`.
 - Notes section (`section = "notes"`): `notes`.
 
-Section-id transitional compatibility (normative):
-- Legacy producers may emit `section = "review_notes"`; producers/contract adapters MUST map it to stable `section = "notes"` before consumer rendering.
-- Legacy producers may emit `section = "visit"`; producers/contract adapters MUST map it to stable `section = "visits"` before consumer rendering.
+Section-id normalization (normative):
+- Producers/contract adapters MUST map `section = "review_notes"` to stable `section = "notes"` before consumer rendering.
+- Producers/contract adapters MUST map `section = "visit"` to stable `section = "visits"` before consumer rendering.
 - Frontend consumers MUST NOT infer or heuristically remap section ids.
 - Report info section (`section = "report_info"`): `language`.
 
 Reproductive status concept (normative):
 - Canonical key is `reproductive_status`.
-- Transitional compatibility: legacy `repro_status` may be emitted by older producers but MUST be mapped to canonical `reproductive_status` in contract metadata.
+- `repro_status` aliases MUST be mapped to canonical `reproductive_status` in contract metadata.
 
 Owner address concept (normative):
 - `owner_address` is the explicit owner address concept for Medical Record taxonomy.
-- Legacy `owner_id` is an identifier concept and MUST NOT be interpreted as address in Medical Record taxonomy.
+- `owner_id` is an identifier concept and MUST NOT be interpreted as address in Medical Record taxonomy.
 
 NHC (normative):
 - Preferred key is `nhc` (Número de historial clínico), document-level, clinic section.
-- Transitional compatibility: `medical_record_number` may be emitted by legacy producers; producers should converge to `nhc`.
+- `medical_record_number` aliases MUST map to `nhc`.
 - Deterministic taxonomy rule: producers MUST map both key variants to the same Medical Record concept (`NHC`) in contract metadata; frontend consumers MUST NOT infer this mapping heuristically.
 
 Age and DOB (normative compatibility):
@@ -1830,8 +1864,8 @@ Medical Record boundary (contract taxonomy):
 - Non-clinical claim concepts are excluded from Medical Record taxonomy by classification/domain.
 
 Medical Record panel eligibility taxonomy (normative summary):
-- `Centro Veterinario`: `clinic_name`, `clinic_address`, `vet_name`, `nhc` (canonical; legacy alias mapped to same concept).
-- `Paciente`: `pet_name`, `species`, `breed`, `sex`, `age`, `dob`, `microchip_id`, `weight`, `reproductive_status` (canonical; legacy alias mapped).
+- `Centro Veterinario`: `clinic_name`, `clinic_address`, `vet_name`, `nhc`.
+- `Paciente`: `pet_name`, `species`, `breed`, `sex`, `age`, `dob`, `microchip_id`, `weight`, `reproductive_status`.
 - `Propietario`: `owner_name`, `owner_address` (`owner_id` excluded from Medical Record taxonomy).
 - `Visitas`: visit metadata (`visit_date`, `admission_date`, `discharge_date`, `reason_for_visit`) + visit-scoped fields inside `visits[].fields[]`.
 - `Notas internas`: `notes`.
@@ -1862,10 +1896,8 @@ Sufficient evidence boundary for assigned VisitGroup creation (US-45, determinis
 - Non-visit/administrative contexts (for example DOB/nacimiento, microchip/chip, invoice/factura, report/informe/emisión/documento date references) MUST NOT create assigned VisitGroups.
 - If a field evidence snippet contains ambiguous date tokens without sufficient visit context, that field MUST remain in `unassigned`.
 
-### D9.5 Compatibility Note (Normative)
+### D9.5 Contract Note (Normative)
 
-- Legacy flat contract continues to use the flat `fields[]` list.
-- For Medical Record MVP panel rendering, legacy flat contract is treated as deprecated and is not the canonical surface contract.
 - Frontend may branch rendering by `schema_contract` in general integrations, but this document defines contract shape only (UX owns layout).
 
 ### D9.6 Authoritative Contract Boundary for Medical Record Rendering

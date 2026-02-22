@@ -121,7 +121,7 @@ describe("FieldEditDialog species", () => {
     expect(onValueChange).toHaveBeenCalledWith("felino");
   });
 
-  it("shows legacy normalized species value as disabled detected option", () => {
+  it("shows normalized species value as disabled detected option", () => {
     const { onSave } = renderSpeciesDialog({
       value: "canina",
       isSaveDisabled: true,
@@ -168,7 +168,7 @@ describe("FieldEditDialog sex", () => {
     expect(screen.getByRole("option", { name: "Hembra" })).toBeInTheDocument();
   });
 
-  it("shows legacy normalized sex value as disabled detected option", () => {
+  it("shows normalized sex value as disabled detected option", () => {
     const { onSave } = renderSexDialog({
       value: "female",
       isSaveDisabled: true,

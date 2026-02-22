@@ -279,7 +279,7 @@ It does not prescribe storage tables or transport contracts.
 
 Canonical source location:
 - This section in `docs/project/PRODUCT_DESIGN.md` is the canonical product source for the Global Schema Medical Record MVP field list.
-- The legacy Global Schema reference remains canonical in the Appendix of this same document.
+- The historical appendix in this document is reference-only and non-normative.
 
 Purpose: define the canonical contract-aligned field universe for the Medical Record panel.
 
@@ -325,9 +325,8 @@ Product compatibility rule:
 
 ### CRITICAL_KEYS (Authoritative, closed set)
 
-Source of truth for Appendix D7.4: the exact set listed in historical Global Schema.
-This set remains authoritative and closed for legacy flat semantics.
-For Medical Record contract critical/taxonomy semantics, refer to [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix D9.
+Historical continuity note: Appendix D7.4 keeps the same closed CRITICAL_KEYS set defined in the historical Global Schema.
+For Medical Record canonical contract critical/taxonomy semantics, the normative authority is [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix D9.
 
 ## Medical Record MVP panel semantics (US-44)
 
@@ -345,17 +344,17 @@ For Medical Record contract critical/taxonomy semantics, refer to [`docs/project
 
 - [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md) defines panel meaning and scope (clinical Medical Record view).
 - [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) defines layout, labels, and empty states.
-- [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) defines payload contracts (`schema_contract` legacy/visit-grouped), field taxonomy, and explicit `other/unmapped` contract bucket.
+- [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) defines canonical payload contracts (`schema_contract` visit-grouped), field taxonomy, and explicit `other/unmapped` contract bucket.
 
-## Appendix: Global Schema (Legacy / Deprecated)
+## Appendix: Historical Global Schema Reference (Non-normative)
 
 Status:
-- Global Schema is legacy/historical and is retained only for reference.
+- Global Schema here is retained only for historical reference.
 - It is not the canonical schema for the Medical Record MVP panel.
 - For this panel, canonical behavior is defined by Global Schema + contract taxonomy.
-- Legacy legacy payloads may still include additional non-clinical compatibility keys; they are outside this MVP panel scope.
+- Additional non-clinical keys are outside this MVP panel scope.
 
-Historical legacy reference (flat model):
+Historical reference model:
 
 A) Identificación del caso
 - `claim_id`
@@ -373,7 +372,7 @@ C) Propietario
 D) Visita / episodio
 - `visit_date`, `admission_date`, `discharge_date`, `reason_for_visit`
 
-E) Clínico / revisión (flat legacy)
+E) Clínico / revisión
 - `diagnosis`, `symptoms`, `procedure`, `medication`, `treatment_plan`, `allergies`, `vaccinations`, `lab_result`, `imaging`
 - `notes`, `language`
 

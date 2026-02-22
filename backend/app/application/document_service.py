@@ -44,7 +44,6 @@ from backend.app.ports.file_storage import FileStorage
 NUMERIC_TYPES = (int, float)
 logger = logging.getLogger(__name__)
 _REVIEW_SCHEMA_CONTRACT_CANONICAL = "visit-grouped-canonical"
-_REVIEW_SCHEMA_VERSION_COMPAT = "v1"
 
 _MEDICAL_RECORD_CANONICAL_SECTIONS: tuple[str, ...] = (
     "clinic",
@@ -699,8 +698,7 @@ def _project_review_payload_to_canonical(data: dict[str, object]) -> dict[str, o
         projected["medical_record_view"] = normalized_medical_record_view
 
     projected["schema_contract"] = _REVIEW_SCHEMA_CONTRACT_CANONICAL
-    if not isinstance(projected.get("schema_version"), str):
-        projected["schema_version"] = _REVIEW_SCHEMA_VERSION_COMPAT
+    projected.pop("schema_version", None)
 
     if not isinstance(projected.get("visits"), list):
         projected["visits"] = []

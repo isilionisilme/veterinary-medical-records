@@ -42,6 +42,9 @@ Panel boundary (Medical Record MVP):
 Product compatibility rule:
 - `age` and `dob` may coexist; any derived display behavior is defined by UX and does not imply new extraction requirements.
 
+Canonical source note:
+- Historical appendix references are reference-only and non-normative for Medical Record MVP rendering.
+
 ## Medical Record MVP panel semantics (US-44)
 
 - The `Extracted Data / Informe` panel is a **clinical Medical Record view**.

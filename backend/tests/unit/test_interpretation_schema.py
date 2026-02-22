@@ -58,11 +58,11 @@ def test_interpretation_artifact_contains_full_global_schema_shape() -> None:
     for repeatable_key in REPEATABLE_KEYS:
         assert isinstance(global_schema[repeatable_key], list)
 
-    assert data.get("schema_contract") == "legacy-flat"
-    assert data.get("schema_version") == "v1"
+    assert data.get("schema_contract") == "visit-grouped-canonical"
+    assert "schema_version" not in data
 
 
-def test_interpretation_artifact_uses_legacy_context_key_fallback_for_calibration() -> None:
+def test_interpretation_artifact_does_not_use_context_key_fallback_for_calibration() -> None:
     pet_name_lookup_count = 0
 
     class FakeRepository:
@@ -78,8 +78,6 @@ def test_interpretation_artifact_uses_legacy_context_key_fallback_for_calibratio
             if field_key != "pet_name":
                 return None
             pet_name_lookup_count += 1
-            if pet_name_lookup_count >= 2:
-                return (7, 0)
             return None
 
     payload = _build_interpretation_artifact(
@@ -94,8 +92,20 @@ def test_interpretation_artifact_uses_legacy_context_key_fallback_for_calibratio
         for field in payload["data"]["fields"]
         if isinstance(field, dict) and field.get("key") == "pet_name"
     )
-    assert pet_name_lookup_count >= 2
-    assert pet_name_field["field_review_history_adjustment"] > 0
+    assert pet_name_lookup_count == 1
+    assert pet_name_field["field_review_history_adjustment"] == 0
+
+
+def test_interpretation_artifact_does_not_emit_schema_version_field() -> None:
+    payload = _build_interpretation_artifact(
+        document_id="doc-schema-contract",
+        run_id="run-schema-contract",
+        raw_text="Paciente: Luna",
+    )
+
+    data = payload["data"]
+    assert data.get("schema_contract") == "visit-grouped-canonical"
+    assert "schema_version" not in data
 
 
 def test_interpretation_artifact_empty_raw_text_keeps_global_schema_shape() -> None:

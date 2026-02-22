@@ -245,7 +245,7 @@ def test_document_review_returns_latest_completed_run_context(test_client):
     assert payload["active_interpretation"]["data"].get("schema_contract") == (
         "visit-grouped-canonical"
     )
-    assert payload["active_interpretation"]["data"].get("schema_version") == "v1"
+    assert "schema_version" not in payload["active_interpretation"]["data"]
     medical_record_view = payload["active_interpretation"]["data"].get("medical_record_view")
     assert isinstance(medical_record_view, dict)
     field_slots = medical_record_view.get("field_slots")
@@ -323,10 +323,10 @@ def test_document_review_payload_uses_canonical_global_schema_key_only(test_clie
     data = payload["active_interpretation"]["data"]
     assert "global_schema" in data
     assert isinstance(data["global_schema"], dict)
-    legacy_like_keys = [
+    unexpected_prefixed_keys = [
         key for key in data.keys() if isinstance(key, str) and key.startswith("global_schema_")
     ]
-    assert legacy_like_keys == []
+    assert unexpected_prefixed_keys == []
 
 
 def test_document_review_normalizes_partial_medical_record_view_to_canonical_shape(test_client):
@@ -344,7 +344,7 @@ def test_document_review_normalizes_partial_medical_record_view_to_canonical_sha
             "document_id": document_id,
             "processing_run_id": run_id,
             "created_at": "2026-02-10T10:00:05+00:00",
-            "schema_contract": "legacy-flat",
+            "schema_contract": "visit-grouped-canonical",
             "medical_record_view": {"version": "mvp-1"},
             "global_schema": {"pet_name": "Luna"},
             "fields": [],
@@ -436,7 +436,7 @@ def test_document_review_returns_conflict_when_interpretation_is_missing(test_cl
     assert payload["details"]["reason"] == "INTERPRETATION_MISSING"
 
 
-def test_document_review_normalizes_legacy_microchip_suffix_to_digits_only(test_client):
+def test_document_review_normalizes_microchip_suffix_to_digits_only(test_client):
     document_id = _upload_sample_document(test_client)
     run_id = "run-review-microchip-suffix"
     _insert_run(
@@ -1136,7 +1136,7 @@ def test_document_review_us46_mixed_multi_visit_assignment_regression_guardrail(
     assert {"diagnosis", "medication", "procedure"}.intersection(stats["assigned_keys"])
 
 
-def test_document_review_drops_legacy_non_digit_microchip_value(test_client):
+def test_document_review_drops_non_digit_microchip_value(test_client):
     document_id = _upload_sample_document(test_client)
     run_id = "run-review-microchip-non-digit"
     _insert_run(
@@ -1360,7 +1360,7 @@ def test_cross_document_learning_applies_negative_adjustment_after_edit_signal(t
 def test_mark_document_reviewed_applies_accept_delta_for_non_critical_machine_field(test_client):
     document_id = _upload_sample_document(test_client)
     run_id = "run-reviewed-non-critical-machine"
-    context_key = "review:legacy:pet_name"
+    context_key = "review:canonical:pet_name"
     mapping_id = "mapping-non-critical-machine"
     policy_version = "v1"
     _insert_run(
