@@ -149,7 +149,7 @@ const VISIT_SECTION_FIELD_KEYS = new Set([
   "reason_for_visit",
 ]);
 
-const V1_VISIT_SCOPED_FIELD_KEYS = [
+const CANONICAL_VISIT_SCOPED_FIELD_KEYS = [
   "symptoms",
   "diagnosis",
   "procedure",
@@ -161,14 +161,14 @@ const V1_VISIT_SCOPED_FIELD_KEYS = [
   "imaging",
 ] as const;
 
-const V1_VISIT_METADATA_KEYS = [
+const CANONICAL_VISIT_METADATA_KEYS = [
   "visit_date",
   "admission_date",
   "discharge_date",
   "reason_for_visit",
 ] as const;
 
-const V1_DOCUMENT_CONCEPTS = [
+const CANONICAL_DOCUMENT_CONCEPTS = [
   { canonicalKey: "clinic_name" },
   { canonicalKey: "clinic_address" },
   { canonicalKey: "vet_name" },
@@ -258,6 +258,10 @@ const BILLING_REVIEW_FIELDS = new Set([
   "non_covered_amount",
   "line_item",
 ]);
+
+const CRITICAL_GLOBAL_SCHEMA_KEYS = new Set(
+  GLOBAL_SCHEMA.filter((field) => field.critical).map((field) => field.key)
+);
 
 type ConfidencePolicyDiagnosticEvent = {
   event_type: "CONFIDENCE_POLICY_CONFIG_MISSING";
@@ -490,10 +494,10 @@ type MedicalRecordViewTemplate = {
 };
 
 type StructuredInterpretationData = {
-  schema_version: string;
   document_id: string;
   processing_run_id: string;
   created_at: string;
+  schema_contract?: string;
   medical_record_view?: MedicalRecordViewTemplate;
   fields: ReviewField[];
   visits?: ReviewVisitGroup[];
@@ -2614,16 +2618,26 @@ export function App() {
   })();
 
   const interpretationData = documentReview.data?.active_interpretation.data;
-  const schemaVersion = interpretationData?.schema_version ?? "v0";
-  const isSchemaV1 = schemaVersion === "v1";
+  const schemaContract =
+    typeof interpretationData?.schema_contract === "string"
+      ? interpretationData.schema_contract.trim().toLowerCase()
+      : null;
+  const hasCanonicalContractSignal = schemaContract === "visit-grouped-canonical";
+  const isCanonicalContract = hasCanonicalContractSignal;
+  const hasMalformedCanonicalFieldSlots = useMemo(() => {
+    if (!isCanonicalContract) {
+      return false;
+    }
+    return !Array.isArray(interpretationData?.medical_record_view?.field_slots);
+  }, [interpretationData?.medical_record_view?.field_slots, isCanonicalContract]);
   const reviewVisits = useMemo(
     () =>
-      isSchemaV1
+      isCanonicalContract
         ? (interpretationData?.visits ?? []).filter(
             (visit): visit is ReviewVisitGroup => Boolean(visit && typeof visit === "object")
           )
         : [],
-    [interpretationData?.visits, isSchemaV1]
+    [interpretationData?.visits, isCanonicalContract]
   );
   const hasVisitGroups = reviewVisits.length > 0;
   const hasUnassignedVisitGroup = reviewVisits.some(
@@ -2632,7 +2646,7 @@ export function App() {
 
   const extractedReviewFields = useMemo(() => {
     const baseFields = interpretationData?.fields ?? [];
-    if (!isSchemaV1) {
+    if (!isCanonicalContract) {
       return baseFields;
     }
 
@@ -2705,10 +2719,10 @@ export function App() {
     });
 
     return [...baseFields, ...flattenedVisitFields];
-  }, [interpretationData?.fields, isSchemaV1, reviewVisits]);
+  }, [interpretationData?.fields, isCanonicalContract, reviewVisits]);
 
   const explicitOtherReviewFields = useMemo(() => {
-    if (!isSchemaV1) {
+    if (!isCanonicalContract) {
       return [] as ReviewField[];
     }
     return (interpretationData?.other_fields ?? [])
@@ -2719,7 +2733,7 @@ export function App() {
         classification: field.classification ?? "other",
         section: field.section ?? "other",
       }));
-  }, [interpretationData, isSchemaV1]);
+  }, [interpretationData, isCanonicalContract]);
   const documentConfidencePolicy = useMemo(
     () => resolveConfidencePolicy(documentReview.data?.active_interpretation.data.confidence_policy),
     [documentReview.data?.active_interpretation.data.confidence_policy]
@@ -2883,7 +2897,7 @@ export function App() {
   ]);
 
   useEffect(() => {
-    if (!isSchemaV1 || !shouldEmitVisitGroupingDiagnostics(import.meta.env)) {
+    if (!isCanonicalContract || !shouldEmitVisitGroupingDiagnostics(import.meta.env)) {
       return;
     }
     const diagnostics = buildVisitGroupingDiagnostics(reviewVisits);
@@ -2891,10 +2905,10 @@ export function App() {
       document_id: interpretationData?.document_id ?? null,
       ...diagnostics,
     });
-  }, [interpretationData?.document_id, isSchemaV1, reviewVisits]);
+  }, [interpretationData?.document_id, isCanonicalContract, reviewVisits]);
 
   const validatedReviewFields = validationResult.acceptedFields.filter((field) => {
-    if (isSchemaV1) {
+    if (isCanonicalContract) {
       return !BILLING_REVIEW_FIELDS.has(field.key);
     }
     return !HIDDEN_REVIEW_FIELDS.has(field.key);
@@ -2947,8 +2961,12 @@ export function App() {
       aliases?: string[];
     }> = [];
 
-    if (isSchemaV1) {
-      const fieldSlots = interpretationData?.medical_record_view?.field_slots ?? [];
+    if (isCanonicalContract) {
+      if (hasMalformedCanonicalFieldSlots) {
+        return [];
+      }
+      const rawFieldSlots = interpretationData?.medical_record_view?.field_slots;
+      const fieldSlots = Array.isArray(rawFieldSlots) ? rawFieldSlots : [];
       const documentSlots = fieldSlots.filter(
         (slot) => slot.scope === "document" && !BILLING_REVIEW_FIELDS.has(slot.canonical_key)
       );
@@ -2967,6 +2985,9 @@ export function App() {
         const criticalFromFields = validatedReviewFields.some(
           (field) => slotKeys.includes(field.key) && Boolean(field.is_critical)
         );
+        const isCriticalSlot =
+          CRITICAL_GLOBAL_SCHEMA_KEYS.has(slot.canonical_key) ||
+          Boolean(slot.aliases?.some((alias) => CRITICAL_GLOBAL_SCHEMA_KEYS.has(alias)));
         return {
           key: slot.canonical_key,
           label: formatReviewKeyLabel(slot.canonical_key),
@@ -2974,7 +2995,7 @@ export function App() {
           order: sectionIndex * 1000 + index,
           value_type: "string",
           repeatable: false,
-          critical: criticalFromSchema || criticalFromFields,
+          critical: criticalFromSchema || criticalFromFields || isCriticalSlot,
           aliases: slot.aliases,
         };
       });
@@ -3044,7 +3065,7 @@ export function App() {
       const uiLabel = FIELD_LABELS[definition.key] ?? definition.label;
       const labelTooltip = getLabelTooltipText(definition.key);
       let candidates = matchesByKey.get(definition.key) ?? [];
-      if (isSchemaV1 && definition.aliases && definition.aliases.length > 0) {
+      if (isCanonicalContract && definition.aliases && definition.aliases.length > 0) {
         const aliasCandidates = definition.aliases.flatMap((alias) => matchesByKey.get(alias) ?? []);
         candidates = [...candidates, ...aliasCandidates];
       }
@@ -3128,23 +3149,29 @@ export function App() {
         source: "core",
       };
     }).sort((a, b) => a.order - b.order);
-  }, [interpretationData?.medical_record_view?.field_slots, isSchemaV1, matchesByKey, validatedReviewFields]);
+  }, [
+    hasMalformedCanonicalFieldSlots,
+    interpretationData?.medical_record_view?.field_slots,
+    isCanonicalContract,
+    matchesByKey,
+    validatedReviewFields,
+  ]);
 
   const otherDisplayFields = useMemo(() => {
     const coreKeys = new Set(GLOBAL_SCHEMA.map((field) => field.key));
     const grouped = new Map<string, ReviewField[]>();
     const orderedKeys: string[] = [];
 
-    const sourceFields = isSchemaV1 ? explicitOtherReviewFields : validatedReviewFields;
+    const sourceFields = isCanonicalContract ? explicitOtherReviewFields : validatedReviewFields;
 
     sourceFields.forEach((field) => {
-      if (!isSchemaV1 && coreKeys.has(field.key)) {
+      if (!isCanonicalContract && coreKeys.has(field.key)) {
         return;
       }
-      if (isSchemaV1 && field.classification !== "other") {
+      if (isCanonicalContract && field.classification !== "other") {
         return;
       }
-      if (!isSchemaV1 && shouldHideExtractedField(field.key)) {
+      if (!isCanonicalContract && shouldHideExtractedField(field.key)) {
         return;
       }
       if (!grouped.has(field.key)) {
@@ -3228,7 +3255,7 @@ export function App() {
         source: "extracted",
       };
     });
-  }, [activeConfidencePolicy, explicitOtherReviewFields, isSchemaV1, validatedReviewFields]);
+  }, [activeConfidencePolicy, explicitOtherReviewFields, isCanonicalContract, validatedReviewFields]);
 
   const groupedCoreFields = useMemo(() => {
     const groups = new Map<string, ReviewDisplayField[]>();
@@ -3457,7 +3484,7 @@ export function App() {
       return { low, medium, high, unknown };
     };
 
-    if (isSchemaV1) {
+    if (isCanonicalContract) {
       const topLevelFields = (interpretationData?.fields ?? []).filter(
         (field): field is ReviewField => Boolean(field && typeof field === "object")
       );
@@ -3514,7 +3541,7 @@ export function App() {
         high += 1;
       };
 
-      V1_DOCUMENT_CONCEPTS.forEach((concept) => {
+      CANONICAL_DOCUMENT_CONCEPTS.forEach((concept) => {
         const aliases = "aliases" in concept ? concept.aliases ?? [] : [];
         addDetectedConceptFromFields(
           topLevelFields.filter(
@@ -3524,7 +3551,7 @@ export function App() {
         );
       });
 
-      V1_VISIT_SCOPED_FIELD_KEYS.forEach((key) => {
+      CANONICAL_VISIT_SCOPED_FIELD_KEYS.forEach((key) => {
         const visitFieldsForKey = visits.flatMap((visit) =>
           (visit.fields ?? []).filter(
             (field): field is ReviewField =>
@@ -3534,7 +3561,7 @@ export function App() {
         addDetectedConceptFromFields(visitFieldsForKey, [key]);
       });
 
-      V1_VISIT_METADATA_KEYS.forEach((key) => {
+      CANONICAL_VISIT_METADATA_KEYS.forEach((key) => {
         const hasValue = visits.some((visit) => !isFieldValueEmpty(visit[key]));
         if (!hasValue) {
           return;
@@ -3546,9 +3573,9 @@ export function App() {
       return {
         detected,
         total:
-          V1_DOCUMENT_CONCEPTS.length +
-          V1_VISIT_SCOPED_FIELD_KEYS.length +
-          V1_VISIT_METADATA_KEYS.length,
+          CANONICAL_DOCUMENT_CONCEPTS.length +
+          CANONICAL_VISIT_SCOPED_FIELD_KEYS.length +
+          CANONICAL_VISIT_METADATA_KEYS.length,
         low,
         medium,
         high,
@@ -3595,7 +3622,7 @@ export function App() {
       high: confidenceBands.high,
       unknown: 0,
     };
-  }, [activeConfidencePolicy, coreDisplayFields, interpretationData?.fields, isSchemaV1, reviewVisits]);
+  }, [activeConfidencePolicy, coreDisplayFields, interpretationData?.fields, isCanonicalContract, reviewVisits]);
   const shouldShowLoadPdfErrorBanner =
     loadPdf.isError && !isConnectivityOrServerError(loadPdf.error);
   const isPinnedSourcePanelVisible =
@@ -5222,7 +5249,15 @@ export function App() {
                                         Documento marcado como revisado. Los datos están en modo de solo lectura.
                                       </p>
                                     )}
-                                    {hasNoStructuredFilterResults && (
+                                    {hasMalformedCanonicalFieldSlots && (
+                                      <p
+                                        data-testid="canonical-contract-error"
+                                        className="rounded-control border border-statusWarn bg-surface px-3 py-2 text-xs text-text"
+                                      >
+                                        No se puede renderizar la plantilla canónica: `medical_record_view.field_slots` es inválido.
+                                      </p>
+                                    )}
+                                    {!hasMalformedCanonicalFieldSlots && hasNoStructuredFilterResults && (
                                       <div className={reviewMessageMutedClass} role="status" aria-live="polite">
                                         <p>No hay resultados con los filtros actuales.</p>
                                         <div className="mt-2">
@@ -5237,11 +5272,12 @@ export function App() {
                                         </div>
                                       </div>
                                     )}
-                                    {reportSections.map((section) =>
-                                      reportLayout === 1
-                                        ? renderSectionLayout1(section)
-                                        : renderSectionLayout2(section)
-                                    )}
+                                    {!hasMalformedCanonicalFieldSlots &&
+                                      reportSections.map((section) =>
+                                        reportLayout === 1
+                                          ? renderSectionLayout1(section)
+                                          : renderSectionLayout2(section)
+                                      )}
                                   </div>
                                 </ScrollArea>
                               )}

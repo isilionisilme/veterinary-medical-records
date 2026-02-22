@@ -190,11 +190,11 @@ Authority: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix C3
 
 
 ## Structured interpretation schema 
-Authority: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix D (Structured Interpretation Schema v0).
+Authority: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix D (Structured Interpretation Schema visit-grouped canonical contract).
 Product semantics for confidence are defined in [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md); UX behavior remains in [`docs/project/UX_DESIGN.md`](UX_DESIGN.md).
 
 Alignment note:
-- Interpretation output may be partial with respect to the full Global Schema v0 key universe.
+- Interpretation output may be partial with respect to the full Global Schema key universe.
 - Backend does not backfill missing keys for presentation; frontend materializes the full schema view per Product Design authority.
 
 ### Storage contract
@@ -209,7 +209,7 @@ Implementation responsibility:
 - Exactly one active interpretation version per run.
 
 ### Critical keys
-`StructuredField.is_critical` MUST be derived from `key ∈ CRITICAL_KEYS_V0`.
+`StructuredField.is_critical` MUST be derived from `key ∈ CRITICAL_KEYS`.
 Source of truth: [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md).
 
 Backend responsibility:
@@ -243,8 +243,8 @@ Update behavior:
 
 ### Confidence calibration & policy (MVP contracts)
 
-- Compute Context v1 during interpretation/review event handling and derive `context_key` as a stable canonical serialization/hash.
-- Context-key serialization is versioned and stable across runs (for example, prefix with `ctx_v1:` before serialization/hash).
+- Compute Context during interpretation/review event handling and derive `context_key` as a stable canonical serialization/hash.
+- Context-key serialization is stable across runs (for example, prefix with `ctx:` before serialization/hash).
 - `mapping_id` originates from the extraction/mapping strategy used for each field result and is persisted with the field payload used for calibration events.
 - `candidate_confidence` is diagnostic and is exposed only via debug endpoints/flags, never by default veterinarian UI endpoints.
 - Persist signal-source events with deterministic identifiers:

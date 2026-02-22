@@ -43,8 +43,9 @@ from backend.app.ports.file_storage import FileStorage
 
 NUMERIC_TYPES = (int, float)
 logger = logging.getLogger(__name__)
+_REVIEW_SCHEMA_CONTRACT_CANONICAL = "visit-grouped-canonical"
 
-_MEDICAL_RECORD_V1_SECTIONS: tuple[str, ...] = (
+_MEDICAL_RECORD_CANONICAL_SECTIONS: tuple[str, ...] = (
     "clinic",
     "patient",
     "owner",
@@ -54,7 +55,7 @@ _MEDICAL_RECORD_V1_SECTIONS: tuple[str, ...] = (
     "report_info",
 )
 
-_MEDICAL_RECORD_V1_FIELD_SLOTS: tuple[dict[str, object], ...] = (
+_MEDICAL_RECORD_CANONICAL_FIELD_SLOTS: tuple[dict[str, object], ...] = (
     {
         "concept_id": "clinic.name",
         "section": "clinic",
@@ -179,14 +180,14 @@ _MEDICAL_RECORD_V1_FIELD_SLOTS: tuple[dict[str, object], ...] = (
     },
 )
 
-_VISIT_GROUP_METADATA_KEYS_V1: tuple[str, ...] = (
+_VISIT_GROUP_METADATA_KEYS: tuple[str, ...] = (
     "visit_date",
     "admission_date",
     "discharge_date",
     "reason_for_visit",
 )
 
-_VISIT_SCOPED_KEYS_V1: tuple[str, ...] = (
+_VISIT_SCOPED_KEYS: tuple[str, ...] = (
     "symptoms",
     "diagnosis",
     "procedure",
@@ -198,24 +199,24 @@ _VISIT_SCOPED_KEYS_V1: tuple[str, ...] = (
     "imaging",
 )
 
-_VISIT_GROUP_METADATA_KEY_SET_V1 = set(_VISIT_GROUP_METADATA_KEYS_V1)
-_VISIT_SCOPED_KEY_SET_V1 = set(_VISIT_SCOPED_KEYS_V1)
-_VISIT_DATE_TOKEN_PATTERN_V1 = re.compile(
+_VISIT_GROUP_METADATA_KEY_SET = set(_VISIT_GROUP_METADATA_KEYS)
+_VISIT_SCOPED_KEY_SET = set(_VISIT_SCOPED_KEYS)
+_VISIT_DATE_TOKEN_PATTERN = re.compile(
     r"(?P<iso>\b\d{4}[-\/.]\d{1,2}[-\/.]\d{1,2}\b)|"
     r"(?P<dmy>\b\d{1,2}[-\/.]\d{1,2}[-\/.]\d{2,4}\b)",
     re.IGNORECASE,
 )
-_VISIT_CONTEXT_PATTERN_V1 = re.compile(
+_VISIT_CONTEXT_PATTERN = re.compile(
     r"\b(visita|consulta|control|revisi[oó]n|seguimiento|ingreso|alta)\b",
     re.IGNORECASE,
 )
-_NON_VISIT_DATE_CONTEXT_PATTERN_V1 = re.compile(
+_NON_VISIT_DATE_CONTEXT_PATTERN = re.compile(
     r"\b(nacimiento|dob|microchip|chip|factura|invoice|informe|emisi[oó]n|documento)\b",
     re.IGNORECASE,
 )
 
 
-def _normalize_visit_date_candidate_v1(value: object) -> str | None:
+def _normalize_visit_date_candidate(value: object) -> str | None:
     if not isinstance(value, str):
         return None
 
@@ -224,7 +225,7 @@ def _normalize_visit_date_candidate_v1(value: object) -> str | None:
         return None
 
     candidates = [raw_value]
-    for match in _VISIT_DATE_TOKEN_PATTERN_V1.finditer(raw_value):
+    for match in _VISIT_DATE_TOKEN_PATTERN.finditer(raw_value):
         token = match.group(0)
         if token:
             candidates.append(token)
@@ -254,7 +255,7 @@ def _normalize_visit_date_candidate_v1(value: object) -> str | None:
     return None
 
 
-def _extract_visit_date_candidates_from_text_v1(*, text: object) -> list[str]:
+def _extract_visit_date_candidates_from_text(*, text: object) -> list[str]:
     if not isinstance(text, str):
         return []
 
@@ -262,15 +263,15 @@ def _extract_visit_date_candidates_from_text_v1(*, text: object) -> list[str]:
     if not snippet:
         return []
 
-    has_visit_context = _VISIT_CONTEXT_PATTERN_V1.search(snippet) is not None
-    has_non_visit_context = _NON_VISIT_DATE_CONTEXT_PATTERN_V1.search(snippet) is not None
+    has_visit_context = _VISIT_CONTEXT_PATTERN.search(snippet) is not None
+    has_non_visit_context = _NON_VISIT_DATE_CONTEXT_PATTERN.search(snippet) is not None
     if not has_visit_context or has_non_visit_context:
         return []
 
     dates: list[str] = []
     seen_dates: set[str] = set()
-    for match in _VISIT_DATE_TOKEN_PATTERN_V1.finditer(snippet):
-        normalized_date = _normalize_visit_date_candidate_v1(match.group(0))
+    for match in _VISIT_DATE_TOKEN_PATTERN.finditer(snippet):
+        normalized_date = _normalize_visit_date_candidate(match.group(0))
         if normalized_date is None or normalized_date in seen_dates:
             continue
         seen_dates.add(normalized_date)
@@ -278,13 +279,13 @@ def _extract_visit_date_candidates_from_text_v1(*, text: object) -> list[str]:
     return dates
 
 
-def _contains_any_date_token_v1(*, text: object) -> bool:
+def _contains_any_date_token(*, text: object) -> bool:
     if not isinstance(text, str):
         return False
-    return _VISIT_DATE_TOKEN_PATTERN_V1.search(text) is not None
+    return _VISIT_DATE_TOKEN_PATTERN.search(text) is not None
 
 
-def _extract_evidence_snippet_v1(field: dict[str, object]) -> str | None:
+def _extract_evidence_snippet(field: dict[str, object]) -> str | None:
     evidence = field.get("evidence")
     if not isinstance(evidence, dict):
         return None
@@ -658,48 +659,56 @@ def _normalize_review_interpretation_data(data: dict[str, object]) -> dict[str, 
     global_schema = normalized_data.get("global_schema")
     if not isinstance(global_schema, dict):
         base_data = normalized_data if changed else data
-        return _project_review_payload_to_v1(dict(base_data))
+        return _project_review_payload_to_canonical(dict(base_data))
 
     raw_microchip = global_schema.get("microchip_id")
     normalized_microchip = normalize_microchip_digits_only(raw_microchip)
     if normalized_microchip == raw_microchip:
         base_data = normalized_data if changed else data
-        return _project_review_payload_to_v1(dict(base_data))
+        return _project_review_payload_to_canonical(dict(base_data))
 
     normalized_global_schema = dict(global_schema)
     normalized_global_schema["microchip_id"] = normalized_microchip
     normalized_data["global_schema"] = normalized_global_schema
 
-    return _project_review_payload_to_v1(normalized_data)
+    return _project_review_payload_to_canonical(normalized_data)
 
 
-def _project_review_payload_to_v1(data: dict[str, object]) -> dict[str, object]:
-    schema_version = data.get("schema_version")
+def _project_review_payload_to_canonical(data: dict[str, object]) -> dict[str, object]:
     medical_record_view = data.get("medical_record_view")
     projected = dict(data)
 
-    if schema_version != "v1":
-        projected["schema_version"] = "v1"
-
+    default_medical_record_view = {
+        "version": "mvp-1",
+        "sections": list(_MEDICAL_RECORD_CANONICAL_SECTIONS),
+        "field_slots": [dict(slot) for slot in _MEDICAL_RECORD_CANONICAL_FIELD_SLOTS],
+    }
     if not isinstance(medical_record_view, dict):
-        projected["medical_record_view"] = {
-            "version": "mvp-1",
-            "sections": list(_MEDICAL_RECORD_V1_SECTIONS),
-            "field_slots": [dict(slot) for slot in _MEDICAL_RECORD_V1_FIELD_SLOTS],
-        }
+        projected["medical_record_view"] = default_medical_record_view
+    else:
+        normalized_medical_record_view = dict(medical_record_view)
+        if not isinstance(normalized_medical_record_view.get("version"), str):
+            normalized_medical_record_view["version"] = default_medical_record_view["version"]
+        if not isinstance(normalized_medical_record_view.get("sections"), list):
+            normalized_medical_record_view["sections"] = default_medical_record_view["sections"]
+        if not isinstance(normalized_medical_record_view.get("field_slots"), list):
+            normalized_medical_record_view["field_slots"] = default_medical_record_view[
+                "field_slots"
+            ]
+        projected["medical_record_view"] = normalized_medical_record_view
+
+    projected["schema_contract"] = _REVIEW_SCHEMA_CONTRACT_CANONICAL
+    projected.pop("schema_version", None)
 
     if not isinstance(projected.get("visits"), list):
         projected["visits"] = []
     if not isinstance(projected.get("other_fields"), list):
         projected["other_fields"] = []
 
-    return _normalize_v1_review_scoping(projected)
+    return _normalize_canonical_review_scoping(projected)
 
 
-def _normalize_v1_review_scoping(data: dict[str, object]) -> dict[str, object]:
-    if data.get("schema_version") != "v1":
-        return data
-
+def _normalize_canonical_review_scoping(data: dict[str, object]) -> dict[str, object]:
     raw_fields = data.get("fields")
     if not isinstance(raw_fields, list):
         return data
@@ -718,11 +727,11 @@ def _normalize_v1_review_scoping(data: dict[str, object]) -> dict[str, object]:
 
         key_raw = item.get("key")
         key = key_raw if isinstance(key_raw, str) else ""
-        if key in _VISIT_GROUP_METADATA_KEY_SET_V1:
+        if key in _VISIT_GROUP_METADATA_KEY_SET:
             values = visit_group_metadata.setdefault(key, [])
             values.append(item.get("value"))
             if key == "visit_date":
-                normalized_visit_date = _normalize_visit_date_candidate_v1(item.get("value"))
+                normalized_visit_date = _normalize_visit_date_candidate(item.get("value"))
                 if (
                     normalized_visit_date is not None
                     and normalized_visit_date not in seen_detected_visit_dates
@@ -731,13 +740,13 @@ def _normalize_v1_review_scoping(data: dict[str, object]) -> dict[str, object]:
                     detected_visit_dates.append(normalized_visit_date)
             continue
 
-        if key in _VISIT_SCOPED_KEY_SET_V1:
+        if key in _VISIT_SCOPED_KEY_SET:
             visit_field = dict(item)
             visit_field["scope"] = "visit"
             visit_field["section"] = "visits"
             visit_scoped_fields.append(visit_field)
-            evidence_snippet = _extract_evidence_snippet_v1(visit_field)
-            for normalized_visit_date in _extract_visit_date_candidates_from_text_v1(
+            evidence_snippet = _extract_evidence_snippet(visit_field)
+            for normalized_visit_date in _extract_visit_date_candidates_from_text(
                 text=evidence_snippet
             ):
                 if normalized_visit_date in seen_detected_visit_dates:
@@ -773,7 +782,7 @@ def _normalize_v1_review_scoping(data: dict[str, object]) -> dict[str, object]:
         else:
             visit["fields"] = []
 
-        normalized_visit_date = _normalize_visit_date_candidate_v1(visit.get("visit_date"))
+        normalized_visit_date = _normalize_visit_date_candidate(visit.get("visit_date"))
         if normalized_visit_date is not None:
             visit["visit_date"] = normalized_visit_date
             visit_by_date.setdefault(normalized_visit_date, visit)
@@ -798,7 +807,7 @@ def _normalize_v1_review_scoping(data: dict[str, object]) -> dict[str, object]:
         visit_by_date[visit_date] = generated_visit
 
     for visit in assigned_visits:
-        for metadata_key in _VISIT_GROUP_METADATA_KEYS_V1:
+        for metadata_key in _VISIT_GROUP_METADATA_KEYS:
             if metadata_key not in visit:
                 visit[metadata_key] = None
 
@@ -810,14 +819,14 @@ def _normalize_v1_review_scoping(data: dict[str, object]) -> dict[str, object]:
             unassigned_visit["fields"] = []
 
     for visit_field in visit_scoped_fields:
-        evidence_snippet = _extract_evidence_snippet_v1(visit_field)
-        evidence_visit_dates = _extract_visit_date_candidates_from_text_v1(text=evidence_snippet)
+        evidence_snippet = _extract_evidence_snippet(visit_field)
+        evidence_visit_dates = _extract_visit_date_candidates_from_text(text=evidence_snippet)
         target_visit: dict[str, object] | None = None
         for candidate_visit_date in evidence_visit_dates:
             target_visit = visit_by_date.get(candidate_visit_date)
             if target_visit is not None:
                 break
-        has_ambiguous_date_token = _contains_any_date_token_v1(text=evidence_snippet)
+        has_ambiguous_date_token = _contains_any_date_token(text=evidence_snippet)
         if (
             target_visit is None
             and len(visit_by_date) == 1
@@ -849,11 +858,11 @@ def _normalize_v1_review_scoping(data: dict[str, object]) -> dict[str, object]:
         target_visit_fields.append(visit_field)
 
     metadata_values_for_unassigned: dict[str, object] = {}
-    for metadata_key in _VISIT_GROUP_METADATA_KEYS_V1:
+    for metadata_key in _VISIT_GROUP_METADATA_KEYS:
         values = visit_group_metadata.get(metadata_key, [])
         if metadata_key == "visit_date":
             for value in values:
-                normalized_visit_date = _normalize_visit_date_candidate_v1(value)
+                normalized_visit_date = _normalize_visit_date_candidate(value)
                 if normalized_visit_date is None:
                     continue
                 target_visit = visit_by_date.get(normalized_visit_date)
@@ -867,7 +876,7 @@ def _normalize_v1_review_scoping(data: dict[str, object]) -> dict[str, object]:
             metadata_values_for_unassigned.setdefault(metadata_key, values[0])
 
     if unassigned_visit is not None:
-        for metadata_key in _VISIT_GROUP_METADATA_KEYS_V1:
+        for metadata_key in _VISIT_GROUP_METADATA_KEYS:
             if metadata_key in metadata_values_for_unassigned:
                 unassigned_visit[metadata_key] = metadata_values_for_unassigned[metadata_key]
             elif metadata_key not in unassigned_visit:

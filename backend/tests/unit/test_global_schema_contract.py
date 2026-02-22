@@ -6,13 +6,14 @@ import pytest
 
 import backend.app.application.global_schema as schema_module
 from backend.app.application.global_schema import (
+    CONTRACT_NAME,
+    CONTRACT_REVISION,
     CRITICAL_KEYS,
     GLOBAL_SCHEMA_KEYS,
-    SCHEMA_VERSION,
 )
 
 
-def test_global_schema_contract_version_and_order() -> None:
+def test_global_schema_contract_order() -> None:
     expected_keys = [
         "claim_id",
         "clinic_name",
@@ -50,7 +51,6 @@ def test_global_schema_contract_version_and_order() -> None:
         "language",
     ]
 
-    assert SCHEMA_VERSION == "v0"
     assert list(GLOBAL_SCHEMA_KEYS) == expected_keys
     assert len(GLOBAL_SCHEMA_KEYS) == 34
 
@@ -72,12 +72,16 @@ def test_global_schema_contract_critical_subset() -> None:
     assert CRITICAL_KEYS == expected_critical
 
 
+def test_global_schema_contract_exposes_metadata() -> None:
+    assert CONTRACT_NAME == "global-schema-flat"
+    assert CONTRACT_REVISION == "2026-02-canonical"
+
+
 def test_load_schema_contract_rejects_missing_required_field_keys(tmp_path, monkeypatch) -> None:
     invalid_contract_path = tmp_path / "invalid_schema_contract.json"
     invalid_contract_path.write_text(
         json.dumps(
             {
-                "schema_version": "v0",
                 "fields": [
                     {
                         "label": "Missing key",
@@ -103,7 +107,6 @@ def test_load_schema_contract_rejects_duplicate_keys(tmp_path, monkeypatch) -> N
     invalid_contract_path.write_text(
         json.dumps(
             {
-                "schema_version": "v0",
                 "fields": [
                     {
                         "key": "pet_name",

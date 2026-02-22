@@ -38,6 +38,7 @@ _GOAL_FIELDS = (
     "discharge_date",
     "vet_name",
 )
+SNAPSHOT_SCHEMA_VERSION_CANONICAL = "canonical"
 
 SNAPSHOT_CONFIDENCE_MID_MIN = 0.6
 SNAPSHOT_CONFIDENCE_HIGH_MIN = 0.8
@@ -185,7 +186,7 @@ def build_extraction_snapshot_from_interpretation(
         "runId": run_id,
         "documentId": document_id,
         "createdAt": created_at,
-        "schemaVersion": "v1",
+        "schemaVersion": "canonical",
         "fields": fields,
         "counts": {
             "totalFields": len(GLOBAL_SCHEMA_KEYS),
@@ -217,7 +218,14 @@ def _read_runs(path: Path) -> list[dict[str, Any]]:
         return []
     if not isinstance(payload, list):
         return []
-    return [item for item in payload if isinstance(item, dict)]
+    normalized_runs: list[dict[str, Any]] = []
+    for item in payload:
+        if not isinstance(item, dict):
+            continue
+        normalized = dict(item)
+        normalized["schemaVersion"] = SNAPSHOT_SCHEMA_VERSION_CANONICAL
+        normalized_runs.append(normalized)
+    return normalized_runs
 
 
 def _write_runs(path: Path, runs: list[dict[str, Any]]) -> None:
@@ -695,6 +703,11 @@ def _log_diff(
 
 
 def persist_extraction_run_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
+    snapshot = dict(snapshot)
+    schema_version = str(snapshot.get("schemaVersion", "")).strip().lower()
+    if schema_version != SNAPSHOT_SCHEMA_VERSION_CANONICAL:
+        raise ValueError("schemaVersion must be canonical")
+    snapshot["schemaVersion"] = SNAPSHOT_SCHEMA_VERSION_CANONICAL
     document_id = str(snapshot.get("documentId", "")).strip()
     if not document_id:
         raise ValueError("documentId is required")

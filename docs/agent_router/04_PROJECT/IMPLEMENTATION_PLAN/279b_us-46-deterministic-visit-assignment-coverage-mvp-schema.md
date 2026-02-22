@@ -1,4 +1,4 @@
-# US-46 — Deterministic Visit Assignment Coverage MVP (Schema v1)
+# US-46 — Deterministic Visit Assignment Coverage MVP (Schema)
 
 **Status:** Planned  
 **Owner:** Platform / Backend (contract-driven)

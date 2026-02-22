@@ -31,12 +31,10 @@ def test_compute_review_history_adjustment_is_bounded_and_rounded() -> None:
 
 def test_build_context_key_is_stable_for_same_inputs() -> None:
     first = build_context_key(
-        schema_version="v0",
         document_type="veterinary_record",
         language="es",
     )
     second = build_context_key(
-        schema_version="v0",
         document_type="veterinary_record",
         language="es",
     )

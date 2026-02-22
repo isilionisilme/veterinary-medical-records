@@ -10,7 +10,7 @@ Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for i
 - `docs/agent_router/04_PROJECT/UX_DESIGN/30_2-confidence-ux-definition.md`
 - `docs/agent_router/04_PROJECT/UX_DESIGN/40_3-confidence-visibility.md`
 - `docs/agent_router/04_PROJECT/UX_DESIGN/50_4-veterinarian-review-flow.md`
-- `docs/agent_router/04_PROJECT/UX_DESIGN/55_review-ui-rendering-rules-global-schema-v0-template.md`
+- `docs/agent_router/04_PROJECT/UX_DESIGN/55_review-ui-rendering-rules-global-schema-template.md`
 - `docs/agent_router/04_PROJECT/UX_DESIGN/60_5-structural-effects-ux-consequences-only.md`
 - `docs/agent_router/04_PROJECT/UX_DESIGN/70_6-sensitive-changes-ux-rules.md`
 - `docs/agent_router/04_PROJECT/UX_DESIGN/80_7-reviewer-interaction-model.md`

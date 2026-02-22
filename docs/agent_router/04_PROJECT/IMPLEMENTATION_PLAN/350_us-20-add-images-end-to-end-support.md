@@ -19,7 +19,7 @@ As a user, I want to upload, access, and process image documents so that scans a
 - Tech: Processing model and run invariants: [`docs/project/TECHNICAL_DESIGN.md`](../TECHNICAL_DESIGN/00_entry.md) Sections 3–4 + Appendix A2
 - Tech: Step model + failure mapping: [`docs/project/TECHNICAL_DESIGN.md`](../TECHNICAL_DESIGN/00_entry.md) Appendix C
 - Tech: Extraction library decisions (appendix): [`docs/project/TECHNICAL_DESIGN.md`](../TECHNICAL_DESIGN/00_entry.md) Appendix E
-- UX: Review flow guarantees and rendering contract: [`docs/project/UX_DESIGN.md`](../UX_DESIGN/00_entry.md) sections **Confidence — UX Definition**, **Veterinarian Review Flow**, **Review-in-Context Contract**, and **Review UI Rendering Rules (Global Schema v0 Template)**.
+- UX: Review flow guarantees and rendering contract: [`docs/project/UX_DESIGN.md`](../UX_DESIGN/00_entry.md) sections **Confidence — UX Definition**, **Veterinarian Review Flow**, **Review-in-Context Contract**, and **Review UI Rendering Rules (Global Schema Template)**.
 
 **Story-specific technical requirements**
 - Add server-side type detection for images based on server-side inspection.

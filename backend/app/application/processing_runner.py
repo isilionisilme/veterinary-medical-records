@@ -35,7 +35,6 @@ from backend.app.application.global_schema import (
     CRITICAL_KEYS,
     GLOBAL_SCHEMA_KEYS,
     REPEATABLE_KEYS,
-    SCHEMA_VERSION,
     VALUE_TYPE_BY_KEY,
     normalize_global_schema,
     validate_global_schema_shape,
@@ -161,6 +160,7 @@ _VET_OR_CLINIC_CONTEXT_PATTERN = re.compile(
 )
 _CLINICAL_RECORD_GUARD_PATTERN = re.compile(r"(?i)\b(?:\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4})\b")
 NUMERIC_TYPES = (int, float)
+REVIEW_SCHEMA_CONTRACT = "visit-grouped-canonical"
 
 
 def _default_now_iso() -> str:
@@ -187,7 +187,7 @@ class ProcessingError(Exception):
 
 
 class InterpretationBuildError(Exception):
-    """Raised when interpretation cannot be built into the canonical v0 shape."""
+    """Raised when interpretation cannot be built into the canonical schema shape."""
 
     def __init__(
         self, *, error_code: str, details: dict[str, object] | None = None
@@ -552,18 +552,19 @@ def _build_interpretation_artifact(
             )
 
         calibration_context_key = build_context_key(
-            schema_version=SCHEMA_VERSION,
             document_type="veterinary_record",
             language=normalized_values.get("language")
             if isinstance(normalized_values.get("language"), str)
             else None,
         )
+        context_key_aliases: tuple[str, ...] = ()
         calibration_policy_version = resolve_calibration_policy_version()
         fields = _build_structured_fields_from_global_schema(
             normalized_values=normalized_values,
             evidence_map=canonical_evidence,
             candidate_bundle=candidate_bundle,
             context_key=calibration_context_key,
+            context_key_aliases=context_key_aliases,
             policy_version=calibration_policy_version,
             repository=repository,
         )
@@ -572,10 +573,10 @@ def _build_interpretation_artifact(
         fields = []
         warning_codes.append("EMPTY_RAW_TEXT")
         calibration_context_key = build_context_key(
-            schema_version=SCHEMA_VERSION,
             document_type="veterinary_record",
             language=None,
         )
+        context_key_aliases = ()
 
     populated_keys = [
         key
@@ -599,10 +600,10 @@ def _build_interpretation_artifact(
         evidence_map=canonical_evidence,
     )
     data: dict[str, object] = {
-        "schema_version": SCHEMA_VERSION,
         "document_id": document_id,
         "processing_run_id": run_id,
         "created_at": now_iso,
+        "schema_contract": REVIEW_SCHEMA_CONTRACT,
         "fields": fields,
         "global_schema": normalized_values,
         "summary": {
@@ -1535,6 +1536,7 @@ def _build_structured_fields_from_global_schema(
     evidence_map: Mapping[str, list[dict[str, object]]],
     candidate_bundle: Mapping[str, list[dict[str, object]]],
     context_key: str,
+    context_key_aliases: tuple[str, ...],
     policy_version: str,
     repository: DocumentRepository | None,
 ) -> list[dict[str, object]]:
@@ -1581,6 +1583,7 @@ def _build_structured_fields_from_global_schema(
                         ),
                         mapping_id=mapping_id,
                         context_key=context_key,
+                        context_key_aliases=context_key_aliases,
                         policy_version=policy_version,
                         repository=repository,
                         candidate_suggestions=candidate_suggestions,
@@ -1610,6 +1613,7 @@ def _build_structured_fields_from_global_schema(
                 page=(evidence.get("page") if isinstance(evidence, dict) else None),
                 mapping_id=mapping_id,
                 context_key=context_key,
+                context_key_aliases=context_key_aliases,
                 policy_version=policy_version,
                 repository=repository,
                 candidate_suggestions=candidate_suggestions,
@@ -1694,6 +1698,7 @@ def _build_structured_field(
     page: int | None,
     mapping_id: str | None,
     context_key: str,
+    context_key_aliases: tuple[str, ...],
     policy_version: str,
     repository: DocumentRepository | None,
     candidate_suggestions: list[dict[str, object]] | None,
@@ -1706,6 +1711,7 @@ def _build_structured_field(
     field_review_history_adjustment = _resolve_review_history_adjustment(
         repository=repository,
         context_key=context_key,
+        context_key_aliases=context_key_aliases,
         field_key=key,
         mapping_id=mapping_id,
         policy_version=policy_version,
@@ -1790,10 +1796,12 @@ def _resolve_review_history_adjustment(
     *,
     repository: DocumentRepository | None,
     context_key: str,
+    context_key_aliases: tuple[str, ...],
     field_key: str,
     mapping_id: str | None,
     policy_version: str,
 ) -> float:
+    _ = context_key_aliases
     if repository is None:
         return 0.0
 

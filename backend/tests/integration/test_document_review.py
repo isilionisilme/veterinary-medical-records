@@ -15,7 +15,7 @@ from backend.app.domain import models as app_models
 from backend.app.infra import database
 from backend.app.infra.file_storage import get_storage_root
 
-_US46_BASELINE_VERSION = "mixed_multi_visit_assignment.baseline.v1"
+_US46_BASELINE_VERSION = "mixed_multi_visit_assignment.baseline.canonical"
 _US46_BASELINE_PATH = (
     Path(__file__).resolve().parents[1]
     / "fixtures"
@@ -113,7 +113,6 @@ def _insert_structured_interpretation(
     data: dict[str, object] | None = None,
 ) -> None:
     payload_data = data or {
-        "schema_version": "v0",
         "document_id": "doc",
         "processing_run_id": run_id,
         "created_at": "2026-02-10T10:00:05+00:00",
@@ -243,7 +242,10 @@ def test_document_review_returns_latest_completed_run_context(test_client):
     assert payload["document_id"] == document_id
     assert payload["latest_completed_run"]["run_id"] == run_id
     assert payload["active_interpretation"]["version_number"] == 1
-    assert payload["active_interpretation"]["data"]["schema_version"] == "v1"
+    assert payload["active_interpretation"]["data"].get("schema_contract") == (
+        "visit-grouped-canonical"
+    )
+    assert "schema_version" not in payload["active_interpretation"]["data"]
     medical_record_view = payload["active_interpretation"]["data"].get("medical_record_view")
     assert isinstance(medical_record_view, dict)
     field_slots = medical_record_view.get("field_slots")
@@ -296,7 +298,6 @@ def test_document_review_payload_uses_canonical_global_schema_key_only(test_clie
     _insert_structured_interpretation(
         run_id=run_id,
         data={
-            "schema_version": "v0",
             "document_id": document_id,
             "processing_run_id": run_id,
             "created_at": "2026-02-10T10:00:05+00:00",
@@ -322,7 +323,43 @@ def test_document_review_payload_uses_canonical_global_schema_key_only(test_clie
     data = payload["active_interpretation"]["data"]
     assert "global_schema" in data
     assert isinstance(data["global_schema"], dict)
-    assert "global_schema_v0" not in data
+    unexpected_prefixed_keys = [
+        key for key in data.keys() if isinstance(key, str) and key.startswith("global_schema_")
+    ]
+    assert unexpected_prefixed_keys == []
+
+
+def test_document_review_normalizes_partial_medical_record_view_to_canonical_shape(test_client):
+    document_id = _upload_sample_document(test_client)
+    run_id = "run-review-partial-medical-record-view"
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(
+        run_id=run_id,
+        data={
+            "document_id": document_id,
+            "processing_run_id": run_id,
+            "created_at": "2026-02-10T10:00:05+00:00",
+            "schema_contract": "visit-grouped-canonical",
+            "medical_record_view": {"version": "mvp-1"},
+            "global_schema": {"pet_name": "Luna"},
+            "fields": [],
+        },
+    )
+
+    response = test_client.get(f"/documents/{document_id}/review")
+    assert response.status_code == 200
+    data = response.json()["active_interpretation"]["data"]
+
+    assert data.get("schema_contract") == "visit-grouped-canonical"
+    medical_record_view = data.get("medical_record_view")
+    assert isinstance(medical_record_view, dict)
+    assert isinstance(medical_record_view.get("sections"), list)
+    assert isinstance(medical_record_view.get("field_slots"), list)
 
 
 def test_document_review_omits_confidence_policy_when_config_missing(
@@ -343,7 +380,6 @@ def test_document_review_omits_confidence_policy_when_config_missing(
     _insert_structured_interpretation(
         run_id=run_id,
         data={
-            "schema_version": "v0",
             "document_id": document_id,
             "processing_run_id": run_id,
             "created_at": "2026-02-10T10:00:05+00:00",
@@ -400,7 +436,7 @@ def test_document_review_returns_conflict_when_interpretation_is_missing(test_cl
     assert payload["details"]["reason"] == "INTERPRETATION_MISSING"
 
 
-def test_document_review_normalizes_legacy_microchip_suffix_to_digits_only(test_client):
+def test_document_review_normalizes_microchip_suffix_to_digits_only(test_client):
     document_id = _upload_sample_document(test_client)
     run_id = "run-review-microchip-suffix"
     _insert_run(
@@ -412,7 +448,6 @@ def test_document_review_normalizes_legacy_microchip_suffix_to_digits_only(test_
     _insert_structured_interpretation(
         run_id=run_id,
         data={
-            "schema_version": "v0",
             "global_schema": {"microchip_id": "00023035139 NHC"},
         },
     )
@@ -426,9 +461,9 @@ def test_document_review_normalizes_legacy_microchip_suffix_to_digits_only(test_
     )
 
 
-def test_document_review_v1_moves_visit_scoped_keys_into_visits_group(test_client):
+def test_document_review_moves_visit_scoped_keys_into_visits_group(test_client):
     document_id = _upload_sample_document(test_client)
-    run_id = "run-review-v1-visit-scoping"
+    run_id = "run-review-canonical-visit-scoping"
     _insert_run(
         document_id=document_id,
         run_id=run_id,
@@ -438,7 +473,6 @@ def test_document_review_v1_moves_visit_scoped_keys_into_visits_group(test_clien
     _insert_structured_interpretation(
         run_id=run_id,
         data={
-            "schema_version": "v1",
             "document_id": document_id,
             "processing_run_id": run_id,
             "created_at": "2026-02-10T10:00:05+00:00",
@@ -580,9 +614,9 @@ def test_document_review_v1_moves_visit_scoped_keys_into_visits_group(test_clien
     assert "lab_result" in visit_keys
 
 
-def test_document_review_v1_detects_multiple_assigned_visits_from_field_evidence(test_client):
+def test_document_review_detects_multiple_assigned_visits_from_field_evidence(test_client):
     document_id = _upload_sample_document(test_client)
-    run_id = "run-review-v1-multi-visit-evidence"
+    run_id = "run-review-canonical-multi-visit-evidence"
     _insert_run(
         document_id=document_id,
         run_id=run_id,
@@ -592,7 +626,6 @@ def test_document_review_v1_detects_multiple_assigned_visits_from_field_evidence
     _insert_structured_interpretation(
         run_id=run_id,
         data={
-            "schema_version": "v1",
             "document_id": document_id,
             "processing_run_id": run_id,
             "created_at": "2026-02-10T10:00:05+00:00",
@@ -609,7 +642,7 @@ def test_document_review_v1_detects_multiple_assigned_visits_from_field_evidence
                     "evidence": {"page": 1, "snippet": "Paciente: Luna"},
                 },
                 {
-                    "field_id": "f-symptoms-v1",
+                    "field_id": "f-symptoms-canonical",
                     "key": "symptoms",
                     "value": "Otalgia",
                     "value_type": "string",
@@ -695,9 +728,9 @@ def test_document_review_v1_detects_multiple_assigned_visits_from_field_evidence
     assert first_visits == second_visits
 
 
-def test_document_review_v1_non_visit_dates_do_not_create_assigned_visits(test_client):
+def test_document_review_non_visit_dates_do_not_create_assigned_visits(test_client):
     document_id = _upload_sample_document(test_client)
-    run_id = "run-review-v1-non-visit-dates"
+    run_id = "run-review-canonical-non-visit-dates"
     _insert_run(
         document_id=document_id,
         run_id=run_id,
@@ -707,7 +740,6 @@ def test_document_review_v1_non_visit_dates_do_not_create_assigned_visits(test_c
     _insert_structured_interpretation(
         run_id=run_id,
         data={
-            "schema_version": "v1",
             "document_id": document_id,
             "processing_run_id": run_id,
             "created_at": "2026-02-10T10:00:05+00:00",
@@ -785,9 +817,9 @@ def test_document_review_v1_non_visit_dates_do_not_create_assigned_visits(test_c
     assert "procedure" in unassigned_keys
 
 
-def test_document_review_v1_ambiguous_second_date_stays_unassigned(test_client):
+def test_document_review_ambiguous_second_date_stays_unassigned(test_client):
     document_id = _upload_sample_document(test_client)
-    run_id = "run-review-v1-ambiguous-second-date"
+    run_id = "run-review-canonical-ambiguous-second-date"
     _insert_run(
         document_id=document_id,
         run_id=run_id,
@@ -797,13 +829,12 @@ def test_document_review_v1_ambiguous_second_date_stays_unassigned(test_client):
     _insert_structured_interpretation(
         run_id=run_id,
         data={
-            "schema_version": "v1",
             "document_id": document_id,
             "processing_run_id": run_id,
             "created_at": "2026-02-10T10:00:05+00:00",
             "fields": [
                 {
-                    "field_id": "f-symptoms-v1",
+                    "field_id": "f-symptoms-canonical",
                     "key": "symptoms",
                     "value": "Dolor",
                     "value_type": "string",
@@ -872,9 +903,9 @@ def test_document_review_v1_ambiguous_second_date_stays_unassigned(test_client):
     assert "medication" in unassigned_keys
 
 
-def test_document_review_v1_merges_prepopulated_and_inferred_visits_deterministically(test_client):
+def test_document_review_merges_prepopulated_and_inferred_visits_deterministically(test_client):
     document_id = _upload_sample_document(test_client)
-    run_id = "run-review-v1-prepopulated-merge"
+    run_id = "run-review-canonical-prepopulated-merge"
     _insert_run(
         document_id=document_id,
         run_id=run_id,
@@ -884,13 +915,12 @@ def test_document_review_v1_merges_prepopulated_and_inferred_visits_deterministi
     _insert_structured_interpretation(
         run_id=run_id,
         data={
-            "schema_version": "v1",
             "document_id": document_id,
             "processing_run_id": run_id,
             "created_at": "2026-02-10T10:00:05+00:00",
             "fields": [
                 {
-                    "field_id": "f-symptoms-v1",
+                    "field_id": "f-symptoms-canonical",
                     "key": "symptoms",
                     "value": "Otalgia",
                     "value_type": "string",
@@ -975,9 +1005,9 @@ def test_document_review_v1_merges_prepopulated_and_inferred_visits_deterministi
     assert first_visits == second_visits
 
 
-def test_document_review_v1_us46_mixed_multi_visit_assignment_regression_guardrail(test_client):
+def test_document_review_us46_mixed_multi_visit_assignment_regression_guardrail(test_client):
     document_id = _upload_sample_document(test_client)
-    run_id = "run-review-v1-us46-mixed-multi-visit-assignment"
+    run_id = "run-review-canonical-us46-mixed-multi-visit-assignment"
     _insert_run(
         document_id=document_id,
         run_id=run_id,
@@ -987,13 +1017,12 @@ def test_document_review_v1_us46_mixed_multi_visit_assignment_regression_guardra
     _insert_structured_interpretation(
         run_id=run_id,
         data={
-            "schema_version": "v1",
             "document_id": document_id,
             "processing_run_id": run_id,
             "created_at": "2026-02-10T10:00:05+00:00",
             "fields": [
                 {
-                    "field_id": "f-diagnosis-v1",
+                    "field_id": "f-diagnosis-canonical",
                     "key": "diagnosis",
                     "value": "Otitis externa",
                     "value_type": "string",
@@ -1107,7 +1136,7 @@ def test_document_review_v1_us46_mixed_multi_visit_assignment_regression_guardra
     assert {"diagnosis", "medication", "procedure"}.intersection(stats["assigned_keys"])
 
 
-def test_document_review_drops_legacy_non_digit_microchip_value(test_client):
+def test_document_review_drops_non_digit_microchip_value(test_client):
     document_id = _upload_sample_document(test_client)
     run_id = "run-review-microchip-non-digit"
     _insert_run(
@@ -1119,7 +1148,6 @@ def test_document_review_drops_legacy_non_digit_microchip_value(test_client):
     _insert_structured_interpretation(
         run_id=run_id,
         data={
-            "schema_version": "v0",
             "global_schema": {"microchip_id": "BEATRIZ ABARCA C/ ORTEGA"},
         },
     )
@@ -1142,7 +1170,6 @@ def test_document_review_keeps_canonical_microchip_digits_unchanged(test_client)
     _insert_structured_interpretation(
         run_id=run_id,
         data={
-            "schema_version": "v0",
             "global_schema": {"microchip_id": "00023035139"},
         },
     )
@@ -1168,7 +1195,6 @@ def test_document_review_sanitizes_confidence_breakdown_payload_values(test_clie
     _insert_structured_interpretation(
         run_id=run_id,
         data={
-            "schema_version": "v0",
             "document_id": document_id,
             "processing_run_id": run_id,
             "created_at": "2026-02-10T10:00:05+00:00",
@@ -1212,7 +1238,6 @@ def test_document_review_composes_mapping_confidence_from_candidate_and_adjustme
     _insert_structured_interpretation(
         run_id=run_id,
         data={
-            "schema_version": "v0",
             "document_id": document_id,
             "processing_run_id": run_id,
             "created_at": "2026-02-10T10:00:05+00:00",
@@ -1278,8 +1303,7 @@ def test_cross_document_learning_applies_negative_adjustment_after_edit_signal(t
         _insert_structured_interpretation(
             run_id=run_id,
             data={
-                "schema_version": "v0",
-                "document_id": document_id,
+                    "document_id": document_id,
                 "processing_run_id": run_id,
                 "created_at": "2026-02-10T10:00:05+00:00",
                 "global_schema": baseline["data"]["global_schema"],
@@ -1336,7 +1360,7 @@ def test_cross_document_learning_applies_negative_adjustment_after_edit_signal(t
 def test_mark_document_reviewed_applies_accept_delta_for_non_critical_machine_field(test_client):
     document_id = _upload_sample_document(test_client)
     run_id = "run-reviewed-non-critical-machine"
-    context_key = "review:v0:pet_name"
+    context_key = "review:canonical:pet_name"
     mapping_id = "mapping-non-critical-machine"
     policy_version = "v1"
     _insert_run(
@@ -1348,7 +1372,6 @@ def test_mark_document_reviewed_applies_accept_delta_for_non_critical_machine_fi
     _insert_structured_interpretation(
         run_id=run_id,
         data={
-            "schema_version": "v0",
             "document_id": document_id,
             "processing_run_id": run_id,
             "created_at": "2026-02-10T10:00:05+00:00",
@@ -1451,7 +1474,6 @@ def test_reopen_review_reverts_reviewed_calibration_deltas_and_allows_reapply(te
     _insert_structured_interpretation(
         run_id=run_id,
         data={
-            "schema_version": "v0",
             "document_id": document_id,
             "processing_run_id": run_id,
             "created_at": "2026-02-10T10:00:05+00:00",
@@ -1541,7 +1563,6 @@ def test_reopen_review_reverts_snapshot_from_reviewed_run_even_with_newer_comple
     _insert_structured_interpretation(
         run_id=reviewed_run_id,
         data={
-            "schema_version": "v0",
             "document_id": document_id,
             "processing_run_id": reviewed_run_id,
             "created_at": "2026-02-10T10:00:05+00:00",

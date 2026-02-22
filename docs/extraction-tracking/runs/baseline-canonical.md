@@ -1,4 +1,4 @@
-# Baseline v1 snapshot (post-PR #83)
+# Baseline canonical snapshot (post-PR #83)
 
 ## Scope
 - Freeze a reviewer-friendly baseline after PR #83 before opening the next extraction iteration.

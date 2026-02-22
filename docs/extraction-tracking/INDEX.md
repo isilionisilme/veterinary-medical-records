@@ -10,7 +10,7 @@
   - UI-facing structured values are in `active_interpretation.data.global_schema`.
   - Debug extraction snapshots are auto-persisted by backend for completed runs.
   - Snapshot ownership is backend-canonical; frontend no longer posts `POST /debug/extraction-runs`.
-  - `GET /runs/{run_id}/artifacts/global-schema-v0` has been observed as 404 in parity checks.
+  - Legacy run-level structured artifact endpoint has been observed as 404 in parity checks.
   - Debug parity should pin run with `GET /debug/extraction-runs/{document_id}/summary?limit=...&run_id=...`.
 - Next recommended minimal iteration: run a fresh latest-5 parity sweep after PR #100 to verify run-pinned summary coverage remains stable under backend-only snapshot ownership.
 - Coverage pass note (MVP): ensure agreed MVP fields render in UI and are populated when present in raw_text, using label-first extraction with low/medium confidence policy.
@@ -26,7 +26,7 @@
   - `npm --prefix frontend run test -- App.test.tsx`
 
 ## Baseline snapshots
-- [Baseline v1 (post-PR #83)](runs/baseline-v1.md): freeze point before PR #85+ iterations.
+- [Baseline canonical (post-PR #83)](runs/baseline-canonical.md): freeze point before PR #85+ iterations.
 
 ## Guardrails & risk
 - [Consolidated risk matrix](risk-matrix.md): high-risk false-positive patterns and active guardrails across golden fields.
@@ -49,7 +49,7 @@ The following PRs represent the evolution of the extraction tracking system. Eac
 | 5. Reviewer Hardening | [#81](https://github.com/isilionisilme/veterinary-medical-records/pull/81) | Refactors docs for reviewer-friendliness, PR/commit anchoring, and minimal duplication. |
 | 6. Docs-Only PR | [#82](https://github.com/isilionisilme/veterinary-medical-records/pull/82) | Creates a single, clean docs-only PR for all extraction tracking documentation. |
 | 7. PR Storyline & Anchors | [#83](https://github.com/isilionisilme/veterinary-medical-records/pull/83) | Adds PR Storyline, explicit PR anchors, and final reviewer-facing improvements. |
-| 8. Baseline Snapshot v1 | [#84](https://github.com/isilionisilme/veterinary-medical-records/pull/84) | Freezes post-#83 baseline and expected-vs-observed anchors before next loop. |
+| 8. Baseline Snapshot (canonical) | [#84](https://github.com/isilionisilme/veterinary-medical-records/pull/84) | Freezes post-#83 baseline and expected-vs-observed anchors before next loop. |
 | 9. owner_name Parity Recheck | [#85](https://github.com/isilionisilme/veterinary-medical-records/pull/85) | Applies conservative `Datos del Cliente` fallback and hardens ambiguity guardrails. |
 | 10. owner_name Post-fix Parity Evidence | [#86](https://github.com/isilionisilme/veterinary-medical-records/pull/86) | Confirms owner_name remains detection-missing (no UI mismatch) on a fresh post-fix run. |
 | 11. microchip OCR Hardening | [#87](https://github.com/isilionisilme/veterinary-medical-records/pull/87) | Hardens malformed `N�`/`Nro` microchip capture and adds false-positive guardrails. |
@@ -95,7 +95,7 @@ The following PRs represent the evolution of the extraction tracking system. Eac
 - Exit criteria met for this chapter: each recent iteration (#85–#88) has commit anchors, tests, and reviewer-facing docs linkage.
 
 ## UI ↔ Backend parity / debugging reports
-- [UI run parity](runs/ui-run-parity.md): UI fields come from `/documents/{document_id}/review`, using `active_interpretation.data.global_schema`; explicit `/runs/{run_id}/artifacts/global-schema-v0` observed as 404 in checks.
+- [UI run parity](runs/ui-run-parity.md): UI fields come from `/documents/{document_id}/review`, using `active_interpretation.data.global_schema`; legacy run-level structured artifact endpoint observed as 404 in checks.
 - [UI field parity (microchip/owner)](runs/ui-field-parity-microchip-owner.md): in one real run, both empty with `has_candidates=false`, classified as detection-missing at that point.
 - [UI field parity (microchip post-PR87)](runs/ui-field-parity-microchip-post-pr87.md): latest-5 recheck shows stable missing parity but residual canonical drift (`NHC` suffix and one non-chip false-positive historical value).
 - [UI field parity (microchip post-PR92)](runs/ui-field-parity-microchip-post-pr92.md): latest-5 recheck confirms review-facing digits-only normalization and blocking of legacy non-chip values.
@@ -105,5 +105,5 @@ The following PRs represent the evolution of the extraction tracking system. Eac
 - [UI field parity (owner_name post-PR97)](runs/ui-field-parity-owner-name-post-pr97.md): `run_id`-pinned debug summary now filters correctly; current 404s indicate missing persisted snapshots for those runs.
 - [UI field parity (owner_name post-PR99)](runs/ui-field-parity-owner-name-post-pr99.md): backend now auto-persists snapshots for completed runs, closing the primary 404 persistence gap for new runs.
 - [UI field parity (owner_name post-PR100)](runs/ui-field-parity-owner-name-post-pr100.md): ownership policy update confirms backend-only snapshot writes and removes frontend POST path.
-- [Baseline v1 snapshot](runs/baseline-v1.md): freeze point (post-PR #83) for expected-vs-observed comparison before next loop.
+- [Baseline canonical snapshot](runs/baseline-canonical.md): freeze point (post-PR #83) for expected-vs-observed comparison before next loop.
 - [Raw-text signal diagnostic (microchip/owner)](../debug/raw-text-signal-microchip-owner.md): later evidence found clear raw_text signal for microchip and prompted a minimal microchip-only heuristic fix.

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from backend.app.application import extraction_observability
@@ -16,7 +17,7 @@ def _snapshot(
         "runId": run_id,
         "documentId": document_id,
         "createdAt": "2026-02-13T20:00:00Z",
-        "schemaVersion": "v1",
+        "schemaVersion": "canonical",
         "fields": {
             "pet_name": {
                 "status": status,
@@ -96,6 +97,60 @@ def test_persist_snapshot_is_idempotent_per_document_and_run_id(
     assert runs[0]["fields"]["pet_name"]["status"] == "accepted"
     assert first["was_created"] is True
     assert second["was_created"] is False
+
+
+def test_get_extraction_runs_preserves_canonical_schema_version(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(extraction_observability, "_OBSERVABILITY_DIR", tmp_path)
+
+    extraction_observability.persist_extraction_run_snapshot(
+        {
+            **_snapshot(
+                run_id="run-schema-version-coercion",
+                document_id="doc-schema-version-coercion",
+                status="accepted",
+                confidence="mid",
+            ),
+            "schemaVersion": "canonical",
+        }
+    )
+
+    runs = extraction_observability.get_extraction_runs("doc-schema-version-coercion")
+    assert len(runs) == 1
+    assert runs[0]["schemaVersion"] == "canonical"
+
+
+def test_get_extraction_runs_coerces_historical_schema_version_to_canonical(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(extraction_observability, "_OBSERVABILITY_DIR", tmp_path)
+
+    document_id = "doc-historical-schema-version"
+    path = extraction_observability._document_runs_path(document_id)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(
+            [
+                {
+                    **_snapshot(
+                        run_id="run-legacy-schema-version",
+                        document_id=document_id,
+                        status="accepted",
+                        confidence="mid",
+                    ),
+                    "schemaVersion": "v1",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    runs = extraction_observability.get_extraction_runs(document_id)
+    assert len(runs) == 1
+    assert runs[0]["schemaVersion"] == "canonical"
 
 
 def test_build_extraction_triage_populates_missing_and_rejected_lists() -> None:
@@ -223,7 +278,7 @@ def test_persist_snapshot_logs_goal_fields_status_and_diff(
         "runId": "run-goal-1",
         "documentId": "doc-goal",
         "createdAt": "2026-02-14T07:40:00Z",
-        "schemaVersion": "v1",
+        "schemaVersion": "canonical",
         "fields": {
             "owner_name": {
                 "status": "missing",
@@ -251,7 +306,7 @@ def test_persist_snapshot_logs_goal_fields_status_and_diff(
         "runId": "run-goal-2",
         "documentId": "doc-goal",
         "createdAt": "2026-02-14T07:41:00Z",
-        "schemaVersion": "v1",
+        "schemaVersion": "canonical",
         "fields": {
             "owner_name": {
                 "status": "accepted",

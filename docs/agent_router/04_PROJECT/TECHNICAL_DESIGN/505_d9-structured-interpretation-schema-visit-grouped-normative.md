@@ -1,17 +1,16 @@
-# D9. Structured Interpretation Schema (v1 — Visit-grouped) (Normative)
+# D9. Structured Interpretation Schema (Visit-grouped Canonical) (Normative)
 
-Version `v1` defines deterministic visit grouping for multi-visit documents.
+The canonical visit-grouped contract defines deterministic visit grouping for multi-visit documents.
 
 - Multi-visit PDFs exist; UI must not heuristic-group.
-- v1 enables deterministic grouping by introducing `visits[]`.
-- v0 remains valid; this is an explicit schema version evolution.
-- Canon note for Medical Record panel: `schema_version = "v1"` is canonical for this surface; `v0` is legacy/deprecated for Medical Record panel rendering.
+- The canonical contract enables deterministic grouping by introducing `visits[]`.
+- Canon note for Medical Record panel: `canonical contract` is canonical for this surface.
 
-## D9.1 Top-Level Object: StructuredInterpretation v1 (JSON)
+## D9.1 Top-Level Object: StructuredInterpretation (Canonical Visit-grouped) (JSON)
 
 ```json
 {
-  "schema_version": "v1",
+  "schema_contract": "visit-grouped-canonical",
   "document_id": "uuid",
   "processing_run_id": "uuid",
   "created_at": "2026-02-05T12:34:56Z",
@@ -36,7 +35,7 @@ Version `v1` defines deterministic visit grouping for multi-visit documents.
 
 | Field | Type | Required | Notes |
 |---|---|---:|---|
-| schema_version | string | ✓ | Always `"v1"` |
+| schema_contract | string | ✓ | Always `"visit-grouped-canonical"` |
 | document_id | uuid | ✓ | Convenience for debugging |
 | processing_run_id | uuid | ✓ | Links to a specific processing attempt |
 | created_at | ISO 8601 string | ✓ | Snapshot creation time |
@@ -98,7 +97,7 @@ Normative rendering rules:
 
 ## D9.3 Scoping Rules (Normative)
 
-For `schema_version = "v1"`:
+For `canonical contract`:
 1. Top-level `fields[]` MUST contain only non-visit-scoped keys (clinic/patient/owner/notes metadata and any future non-visit keys).
 2. Visit-scoped concepts MUST appear inside exactly one `visits[].fields[]` entry set, not in top-level `fields[]`.
 3. “Otros campos detectados” MUST be contract-driven through explicit `other_fields[]`; FE MUST NOT reclassify and MUST NOT source this section from `fields[]` or `visits[]`.
@@ -127,23 +126,23 @@ Document-level Medical Record keys (MUST be represented by `medical_record_view.
 - Owner section (`section = "owner"`): `owner_name`, `owner_address`.
 - Notes section (`section = "notes"`): `notes`.
 
-Section-id transitional compatibility (normative):
-- Legacy producers may emit `section = "review_notes"`; producers/contract adapters MUST map it to stable `section = "notes"` before consumer rendering.
-- Legacy producers may emit `section = "visit"`; producers/contract adapters MUST map it to stable `section = "visits"` before consumer rendering.
+Section-id normalization (normative):
+- Producers/contract adapters MUST map `section = "review_notes"` to stable `section = "notes"` before consumer rendering.
+- Producers/contract adapters MUST map `section = "visit"` to stable `section = "visits"` before consumer rendering.
 - Frontend consumers MUST NOT infer or heuristically remap section ids.
 - Report info section (`section = "report_info"`): `language`.
 
 Reproductive status concept (normative):
 - Canonical key is `reproductive_status`.
-- Transitional compatibility: legacy `repro_status` may be emitted by older producers but MUST be mapped to canonical `reproductive_status` in contract metadata.
+- `repro_status` aliases MUST be mapped to canonical `reproductive_status` in contract metadata.
 
 Owner address concept (normative):
 - `owner_address` is the explicit owner address concept for Medical Record taxonomy.
-- Legacy `owner_id` is an identifier concept and MUST NOT be interpreted as address in Medical Record taxonomy.
+- `owner_id` is an identifier concept and MUST NOT be interpreted as address in Medical Record taxonomy.
 
 NHC (normative):
 - Preferred key is `nhc` (Número de historial clínico), document-level, clinic section.
-- Transitional compatibility: `medical_record_number` may be emitted by legacy producers; producers should converge to `nhc`.
+- `medical_record_number` aliases MUST map to `nhc`.
 - Deterministic taxonomy rule: producers MUST map both key variants to the same Medical Record concept (`NHC`) in contract metadata; frontend consumers MUST NOT infer this mapping heuristically.
 
 Age and DOB (normative compatibility):
@@ -163,7 +162,7 @@ Medical Record panel eligibility taxonomy (normative summary):
 - `Información del informe`: `language`.
 - `Otros campos detectados`: explicit contract bucket only (`other_fields[]`), never UI-side classification.
 
-Date normalization (v1 contract target):
+Date normalization (canonical contract target):
 - Canonical date representation for `visit_date`, `admission_date`, and `discharge_date` is ISO 8601 date string (`YYYY-MM-DD`).
 - Transitional note: non-ISO inputs (for example `dd/mm/yyyy`) may exist upstream; producers should normalize to canonical ISO in payload output.
 
@@ -178,7 +177,7 @@ If an extracted clinical field cannot be deterministically linked to a specific 
 
 Contract clarification:
 - `visit_id = "unassigned"` is an explicit contract value (not a frontend heuristic or fallback label).
-- A payload where all visit-scoped concepts are contained in a single synthetic `unassigned` group is valid for `schema_version = "v1"`.
+- A payload where all visit-scoped concepts are contained in a single synthetic `unassigned` group is valid for `canonical contract`.
 
 This rule prevents UI-side heuristic grouping and keeps all visit-scoped items contained in `visits[]`.
 
@@ -187,11 +186,9 @@ Sufficient evidence boundary for assigned VisitGroup creation (US-45, determinis
 - Non-visit/administrative contexts (for example DOB/nacimiento, microchip/chip, invoice/factura, report/informe/emisión/documento date references) MUST NOT create assigned VisitGroups.
 - If a field evidence snippet contains ambiguous date tokens without sufficient visit context, that field MUST remain in `unassigned`.
 
-## D9.5 Compatibility Note (Normative)
+## D9.5 Contract Note (Normative)
 
-- v0 continues to use the flat `fields[]` list.
-- For Medical Record MVP panel rendering, v0 is treated as legacy/deprecated and is not the canonical surface contract.
-- Frontend may branch rendering by `schema_version` in general integrations, but this document defines contract shape only (UX owns layout).
+- Frontend may branch rendering by `schema_contract` in general integrations, but this document defines contract shape only (UX owns layout).
 
 ## D9.6 Authoritative Contract Boundary for Medical Record Rendering
 

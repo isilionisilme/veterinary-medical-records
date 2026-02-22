@@ -3,7 +3,7 @@
 **Status:** Implemented (2026-02-21)
 
 ## Context / Problem
-With US-43, the UI is strictly contract-driven: it renders `active_interpretation.data.visits[]` when `schema_version="v1"`, without inferring or grouping visits client-side.
+With US-43, the UI is strictly contract-driven: it renders `active_interpretation.data.visits[]` when `canonical contract`, without inferring or grouping visits client-side.
 
 Current issue: in documents that visually contain multiple episodes/visits, the backend often returns only:
 - `visits = [{ visit_id: "unassigned", ... }]`
@@ -12,7 +12,7 @@ or an empty grouping, making “Extracted Data > Visits” operationally unhelpf
 This is a backend grouping coverage issue, not a UI issue.
 
 ## Objective
-Improve coverage of the `Structured Interpretation Schema v1 (visit-grouped)` contract so that:
+Improve coverage of the `Structured Interpretation Schema (visit-grouped)` contract so that:
 
 When there is sufficient deterministic evidence of distinct clinical episodes, the backend produces real VisitGroups (`visit_id != "unassigned"`) with `visit_date` populated when appropriate, preserving determinism and safety.
 
@@ -53,7 +53,7 @@ Out of scope
 - UI does not invent visits or regroup data.
 - Anything not assignable with sufficient evidence → `unassigned`.
 - `visit_date` is VisitGroup metadata (not a field in `fields[]`).
-- This story references (does not redefine) the v1 contract in TECHNICAL_DESIGN Appendix D9.
+- This story references (does not redefine) the canonical visit-grouped contract in TECHNICAL_DESIGN Appendix D9.
 
 ## Acceptance Criteria (testable)
 
