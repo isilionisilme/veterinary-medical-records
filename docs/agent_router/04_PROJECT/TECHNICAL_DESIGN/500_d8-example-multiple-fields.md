@@ -21,7 +21,6 @@
       "is_critical": true,
       "origin": "machine",
       "evidence": { "page": 2, "snippet": "Patient: Luna" }
-    },
     }
   ],
   "visits": [

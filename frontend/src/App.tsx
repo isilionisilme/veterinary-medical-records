@@ -2624,6 +2624,12 @@ export function App() {
       : null;
   const hasCanonicalContractSignal = schemaContract === "visit-grouped-canonical";
   const isCanonicalContract = hasCanonicalContractSignal;
+  const hasMalformedCanonicalFieldSlots = useMemo(() => {
+    if (!isCanonicalContract) {
+      return false;
+    }
+    return !Array.isArray(interpretationData?.medical_record_view?.field_slots);
+  }, [interpretationData?.medical_record_view?.field_slots, isCanonicalContract]);
   const reviewVisits = useMemo(
     () =>
       isCanonicalContract
@@ -2956,6 +2962,9 @@ export function App() {
     }> = [];
 
     if (isCanonicalContract) {
+      if (hasMalformedCanonicalFieldSlots) {
+        return [];
+      }
       const rawFieldSlots = interpretationData?.medical_record_view?.field_slots;
       const fieldSlots = Array.isArray(rawFieldSlots) ? rawFieldSlots : [];
       const documentSlots = fieldSlots.filter(
@@ -3132,7 +3141,13 @@ export function App() {
         source: "core",
       };
     }).sort((a, b) => a.order - b.order);
-  }, [interpretationData?.medical_record_view?.field_slots, isCanonicalContract, matchesByKey, validatedReviewFields]);
+  }, [
+    hasMalformedCanonicalFieldSlots,
+    interpretationData?.medical_record_view?.field_slots,
+    isCanonicalContract,
+    matchesByKey,
+    validatedReviewFields,
+  ]);
 
   const otherDisplayFields = useMemo(() => {
     const coreKeys = new Set(GLOBAL_SCHEMA.map((field) => field.key));
@@ -5212,16 +5227,25 @@ export function App() {
                                         Documento marcado como revisado. Los datos están en modo de solo lectura.
                                       </p>
                                     )}
-                                    {hasNoStructuredFilterResults && (
+                                    {hasMalformedCanonicalFieldSlots && (
+                                      <p
+                                        data-testid="canonical-contract-error"
+                                        className="rounded-control border border-statusWarn bg-surface px-3 py-2 text-xs text-text"
+                                      >
+                                        No se puede renderizar la plantilla canónica: `medical_record_view.field_slots` es inválido.
+                                      </p>
+                                    )}
+                                    {!hasMalformedCanonicalFieldSlots && hasNoStructuredFilterResults && (
                                       <p className="rounded-control bg-surface px-3 py-2 text-xs text-muted">
                                         No hay resultados con los filtros actuales.
                                       </p>
                                     )}
-                                    {reportSections.map((section) =>
-                                      reportLayout === 1
-                                        ? renderSectionLayout1(section)
-                                        : renderSectionLayout2(section)
-                                    )}
+                                    {!hasMalformedCanonicalFieldSlots &&
+                                      reportSections.map((section) =>
+                                        reportLayout === 1
+                                          ? renderSectionLayout1(section)
+                                          : renderSectionLayout2(section)
+                                      )}
                                   </div>
                                 </ScrollArea>
                               )}

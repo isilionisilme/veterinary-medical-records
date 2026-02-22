@@ -49,5 +49,5 @@ Scope note:
 
 ## CRITICAL_KEYS (Authoritative, closed set)
 
-Source of truth for Appendix D7.4 remains this historical set.
-This set is authoritative and closed for historical flat semantics.
+Historical continuity note: Appendix D7.4 keeps the same closed CRITICAL_KEYS set from the historical Global Schema.
+For Medical Record canonical contract critical/taxonomy semantics, the normative authority is Technical Design Appendix D9.

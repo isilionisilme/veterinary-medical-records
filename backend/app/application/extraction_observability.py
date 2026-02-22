@@ -218,7 +218,14 @@ def _read_runs(path: Path) -> list[dict[str, Any]]:
         return []
     if not isinstance(payload, list):
         return []
-    return [item for item in payload if isinstance(item, dict)]
+    normalized_runs: list[dict[str, Any]] = []
+    for item in payload:
+        if not isinstance(item, dict):
+            continue
+        normalized = dict(item)
+        normalized["schemaVersion"] = SNAPSHOT_SCHEMA_VERSION_CANONICAL
+        normalized_runs.append(normalized)
+    return normalized_runs
 
 
 def _write_runs(path: Path, runs: list[dict[str, Any]]) -> None:

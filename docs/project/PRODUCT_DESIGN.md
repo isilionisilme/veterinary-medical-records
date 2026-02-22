@@ -325,9 +325,8 @@ Product compatibility rule:
 
 ### CRITICAL_KEYS (Authoritative, closed set)
 
-Source of truth for Appendix D7.4: the exact set listed in historical Global Schema.
-This set remains authoritative and closed for canonical schema semantics.
-For Medical Record contract critical/taxonomy semantics, refer to [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix D9.
+Historical continuity note: Appendix D7.4 keeps the same closed CRITICAL_KEYS set defined in the historical Global Schema.
+For Medical Record canonical contract critical/taxonomy semantics, the normative authority is [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix D9.
 
 ## Medical Record MVP panel semantics (US-44)
 

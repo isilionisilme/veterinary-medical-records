@@ -2260,7 +2260,7 @@ describe("App upload and list flow", () => {
     expect(within(panel).queryByTestId("critical-indicator-clinic_name")).toBeNull();
   });
 
-  it("keeps canonical rendering when schema_contract is canonical and field_slots are malformed", async () => {
+  it("shows explicit canonical contract error when field_slots are malformed", async () => {
     installCanonicalUs44FetchMock({
       schemaContract: "visit-grouped-canonical",
       fieldSlots: { malformed: true } as unknown as Array<Record<string, unknown>>,
@@ -2269,8 +2269,10 @@ describe("App upload and list flow", () => {
     renderApp();
     const panel = await openReadyDocumentAndGetPanel();
 
-    expect(within(panel).getByText("Visitas")).toBeInTheDocument();
-    expect(within(panel).getByText("Sin visitas detectadas.")).toBeInTheDocument();
+    expect(within(panel).getByTestId("canonical-contract-error")).toBeInTheDocument();
+    expect(within(panel).getByText(/medical_record_view\.field_slots/i)).toBeInTheDocument();
+    expect(within(panel).queryByText("Sin visitas detectadas.")).toBeNull();
+    expect(within(panel).queryByText(/Identificaci[oó]n del caso/i)).toBeNull();
   });
 
   it("shows Visitas empty state in canonical contract when visits=[]", async () => {

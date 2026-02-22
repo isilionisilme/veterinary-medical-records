@@ -1657,7 +1657,6 @@ Source of truth for `CRITICAL_KEYS`:
       "is_critical": true,
       "origin": "machine",
       "evidence": { "page": 2, "snippet": "Patient: Luna" }
-    },
     }
   ],
   "visits": [
