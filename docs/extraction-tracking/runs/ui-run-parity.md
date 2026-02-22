@@ -15,7 +15,7 @@
 ## Findings
 - UI extracted fields are loaded via `GET /documents/{document_id}/review`.
 - UI uses `latest_completed_run.run_id` from the review payload.
-- Structured values come from `active_interpretation.data.global_schema_v0`.
+- Structured values come from `active_interpretation.data.global_schema`.
 - In at least one check, `GET /runs/{run_id}/artifacts/global-schema-v0` returned 404.
 
 ## Conclusion

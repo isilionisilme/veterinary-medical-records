@@ -20,7 +20,7 @@
 
 ## How to test (exact commands)
 - `python -m pytest backend/tests/unit/test_golden_extraction_regression.py -s -q`
-- `python -m pytest backend/tests/unit/test_interpretation_schema_v0.py -q`
+- `python -m pytest backend/tests/unit/test_interpretation_schema.py -q`
 - Optional parity check: `GET /documents/{document_id}/review` + debug summary with same `run_id`.
 
 ## History (commit + PR link)

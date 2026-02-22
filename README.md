@@ -179,7 +179,7 @@ Notes:
 
 ### Troubleshooting
 
-- `Global Schema v0 contract file not found` or frontend import errors for `global_schema_v0_contract.json`:
+- `Global Schema contract file not found` or frontend import errors for `global_schema_contract.json`:
   - Both images now copy `shared/` to `/app/shared` during build.
   - Rebuild without cache to rule out stale images:
     - `docker compose build --no-cache backend frontend`
@@ -189,6 +189,17 @@ Notes:
   - Confirm daemon health: `docker info`
   - Validate compose config: `docker compose config`
   - Tail logs: `docker compose logs -f backend frontend`
+
+### Global Schema migration note
+
+- API payloads now expose canonical `active_interpretation.data.global_schema` only.
+- Legacy key `active_interpretation.data.global_schema_v0` is intentionally removed.
+- If you have historical artifacts/consumers expecting the legacy key:
+  - Reprocess documents to regenerate interpretations with canonical payload shape.
+  - Update downstream consumers to read `global_schema`.
+- Rollback plan (if needed):
+  - Revert this branch/PR and redeploy previous backend image.
+  - Existing historical artifacts remain readable by the previous versioned code path.
 
 ## Backend implementation
 

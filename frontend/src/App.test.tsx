@@ -9,7 +9,7 @@ import {
   REVIEW_SPLIT_MIN_WIDTH_PX,
   SPLITTER_COLUMN_WIDTH_PX,
 } from "./App";
-import { GLOBAL_SCHEMA_V0 } from "./lib/globalSchemaV0";
+import { GLOBAL_SCHEMA } from "./lib/globalSchema";
 
 vi.mock("./components/PdfViewer", () => ({
   PdfViewer: (props: {
@@ -2030,7 +2030,7 @@ describe("App upload and list flow", () => {
       nhc: "NHC",
     };
 
-    GLOBAL_SCHEMA_V0.filter((field) => !hiddenCoreKeys.has(field.key)).forEach((field) => {
+    GLOBAL_SCHEMA.filter((field) => !hiddenCoreKeys.has(field.key)).forEach((field) => {
       const expectedLabel = uiLabelOverrides[field.key] ?? field.label;
       expect(within(panel).getAllByText(expectedLabel).length).toBeGreaterThan(0);
     });
@@ -2168,8 +2168,8 @@ describe("App upload and list flow", () => {
     await waitForStructuredDataReady();
 
     const panel = screen.getByTestId("right-panel-scroll");
-    const criticalFields = GLOBAL_SCHEMA_V0.filter((field) => field.critical);
-    const nonCriticalFields = GLOBAL_SCHEMA_V0.filter((field) => !field.critical);
+    const criticalFields = GLOBAL_SCHEMA.filter((field) => field.critical);
+    const nonCriticalFields = GLOBAL_SCHEMA.filter((field) => !field.critical);
 
     criticalFields.forEach((field) => {
       expect(within(panel).queryByTestId(`critical-indicator-${field.key}`)).toBeInTheDocument();

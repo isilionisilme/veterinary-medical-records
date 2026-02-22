@@ -18,7 +18,7 @@
 - Post-PR97, `run_id`-pinned debug summary is available, but returns `404` when no snapshot exists for that run; this indicates snapshot availability gap, not extraction absence.
 
 ## How to test (exact commands)
-- `python -m pytest backend/tests/unit/test_golden_extraction_regression.py backend/tests/unit/test_interpretation_schema_v0.py -q`
+- `python -m pytest backend/tests/unit/test_golden_extraction_regression.py backend/tests/unit/test_interpretation_schema.py -q`
 - For parity: `GET /debug/extraction-runs/{document_id}/summary?limit=1&run_id={run_id}` and inspect `owner_name`.
 
 ## History (commit + PR link)

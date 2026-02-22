@@ -15,7 +15,7 @@
 - Address-heavy lines near labels can produce false positives if not guarded.
 
 ## How to test (exact commands)
-- `python -m pytest backend/tests/unit/test_golden_extraction_regression.py backend/tests/unit/test_interpretation_schema_v0.py -q`
+- `python -m pytest backend/tests/unit/test_golden_extraction_regression.py backend/tests/unit/test_interpretation_schema.py -q`
 
 ## History (commit + PR link)
 - Branch `fix/golden-vet-name-iteration` | Commit `40762a48` | PR: [#77](https://github.com/your-org/veterinary-medical-records/pull/77) | docA missing→accepted (`NOMBRE DEMO`).

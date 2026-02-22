@@ -292,7 +292,7 @@ def test_build_snapshot_from_interpretation_returns_expected_shape() -> None:
         "interpretation_id": "int-1",
         "version_number": 1,
         "data": {
-            "global_schema_v0": {
+            "global_schema": {
                 "pet_name": "Luna",
                 "owner_name": "BEATRIZ ABARCA",
                 "microchip_id": "00023035139",
@@ -343,7 +343,7 @@ def test_build_snapshot_from_interpretation_uses_first_repeatable_value() -> Non
         "interpretation_id": "int-2",
         "version_number": 1,
         "data": {
-            "global_schema_v0": {
+            "global_schema": {
                 "medication": ["Amoxicilina", "Meloxicam"],
             },
             "fields": [

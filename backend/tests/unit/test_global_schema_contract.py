@@ -4,15 +4,15 @@ import json
 
 import pytest
 
-import backend.app.application.global_schema_v0 as schema_module
-from backend.app.application.global_schema_v0 import (
-    CRITICAL_KEYS_V0,
-    GLOBAL_SCHEMA_V0_KEYS,
-    SCHEMA_VERSION_V0,
+import backend.app.application.global_schema as schema_module
+from backend.app.application.global_schema import (
+    CRITICAL_KEYS,
+    GLOBAL_SCHEMA_KEYS,
+    SCHEMA_VERSION,
 )
 
 
-def test_global_schema_v0_contract_version_and_order() -> None:
+def test_global_schema_contract_version_and_order() -> None:
     expected_keys = [
         "claim_id",
         "clinic_name",
@@ -50,12 +50,12 @@ def test_global_schema_v0_contract_version_and_order() -> None:
         "language",
     ]
 
-    assert SCHEMA_VERSION_V0 == "v0"
-    assert list(GLOBAL_SCHEMA_V0_KEYS) == expected_keys
-    assert len(GLOBAL_SCHEMA_V0_KEYS) == 34
+    assert SCHEMA_VERSION == "v0"
+    assert list(GLOBAL_SCHEMA_KEYS) == expected_keys
+    assert len(GLOBAL_SCHEMA_KEYS) == 34
 
 
-def test_global_schema_v0_contract_critical_subset() -> None:
+def test_global_schema_contract_critical_subset() -> None:
     expected_critical = {
         "pet_name",
         "species",
@@ -69,7 +69,7 @@ def test_global_schema_v0_contract_critical_subset() -> None:
         "procedure",
     }
 
-    assert CRITICAL_KEYS_V0 == expected_critical
+    assert CRITICAL_KEYS == expected_critical
 
 
 def test_load_schema_contract_rejects_missing_required_field_keys(tmp_path, monkeypatch) -> None:

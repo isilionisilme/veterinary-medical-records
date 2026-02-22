@@ -23,7 +23,7 @@
   - [backend/app/application/processing_runner.py](../../backend/app/application/processing_runner.py) (`_mine_interpretation_candidates`, `_candidate_sort_key`)
   - [frontend/src/extraction/fieldValidators.ts](../../frontend/src/extraction/fieldValidators.ts) (`validateMicrochip`)
 - Tests:
-  - [backend/tests/unit/test_interpretation_schema_v0.py](../../backend/tests/unit/test_interpretation_schema_v0.py)
+  - [backend/tests/unit/test_interpretation_schema.py](../../backend/tests/unit/test_interpretation_schema.py)
   - [backend/tests/unit/test_interpretation_canonical_fixtures.py](../../backend/tests/unit/test_interpretation_canonical_fixtures.py)
   - [frontend/src/extraction/fieldValidators.test.ts](../../frontend/src/extraction/fieldValidators.test.ts)
 - Notes:

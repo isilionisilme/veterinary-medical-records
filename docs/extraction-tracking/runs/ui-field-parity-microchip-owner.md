@@ -13,7 +13,7 @@
 	- `GET /debug/extraction-runs/{document_id}/summary?limit=1&run_id={run_id}`
 
 ## Findings
-- From review payload under `active_interpretation.data.global_schema_v0`:
+- From review payload under `active_interpretation.data.global_schema`:
 - `microchip_id`: `null`
 - `owner_name`: `null`
 - key `microchip`: not present

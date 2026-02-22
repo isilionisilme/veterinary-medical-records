@@ -11,9 +11,9 @@ from pathlib import Path
 from typing import Any
 
 from backend.app.application.field_normalizers import CANONICAL_SPECIES
-from backend.app.application.global_schema_v0 import (
-    GLOBAL_SCHEMA_V0_KEYS,
-    REPEATABLE_KEYS_V0,
+from backend.app.application.global_schema import (
+    GLOBAL_SCHEMA_KEYS,
+    REPEATABLE_KEYS,
 )
 
 logger = logging.getLogger(__name__)
@@ -90,11 +90,8 @@ def build_extraction_snapshot_from_interpretation(
     if not isinstance(data, dict):
         return None
 
-    global_schema = (
-        data.get("global_schema_v0")
-        if isinstance(data.get("global_schema_v0"), dict)
-        else {}
-    )
+    global_schema_raw = data.get("global_schema")
+    global_schema = global_schema_raw if isinstance(global_schema_raw, dict) else {}
     raw_fields = data.get("fields") if isinstance(data.get("fields"), list) else []
 
     top_candidates_by_field: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -104,7 +101,7 @@ def build_extraction_snapshot_from_interpretation(
         if not isinstance(raw_field, dict):
             continue
         field_key = _as_text(raw_field.get("key"))
-        if not field_key or field_key not in GLOBAL_SCHEMA_V0_KEYS:
+        if not field_key or field_key not in GLOBAL_SCHEMA_KEYS:
             continue
 
         candidate_value = _as_text(raw_field.get("value"))
@@ -132,13 +129,13 @@ def build_extraction_snapshot_from_interpretation(
         top_candidates_by_field[field_key] = candidates[:3]
 
     fields: dict[str, dict[str, Any]] = {}
-    for field_key in GLOBAL_SCHEMA_V0_KEYS:
+    for field_key in GLOBAL_SCHEMA_KEYS:
         top_candidates = top_candidates_by_field.get(field_key, [])
         top1 = top_candidates[0] if top_candidates else None
 
         raw_value = global_schema.get(field_key)
         normalized_value: str | None
-        if field_key in REPEATABLE_KEYS_V0:
+        if field_key in REPEATABLE_KEYS:
             if isinstance(raw_value, list):
                 normalized_value = next(
                     (str(item).strip() for item in raw_value if str(item).strip()),
@@ -191,7 +188,7 @@ def build_extraction_snapshot_from_interpretation(
         "schemaVersion": "v1",
         "fields": fields,
         "counts": {
-            "totalFields": len(GLOBAL_SCHEMA_V0_KEYS),
+            "totalFields": len(GLOBAL_SCHEMA_KEYS),
             "accepted": accepted_count,
             "rejected": rejected_count,
             "missing": missing_count,

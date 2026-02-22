@@ -13,7 +13,7 @@
   - `GET /debug/extraction-runs/{document_id}/summary?limit=1`
 
 ## Findings
-- From review payload under `active_interpretation.data.global_schema_v0`:
+- From review payload under `active_interpretation.data.global_schema`:
   - `owner_name`: `null`
 - From debug summary (`limit=1`, latest run):
   - `owner_name.missing_count=1`

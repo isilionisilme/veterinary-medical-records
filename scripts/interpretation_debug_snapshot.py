@@ -15,11 +15,11 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from backend.app.application.global_schema_v0 import (
-    GLOBAL_SCHEMA_V0_KEYS,
-    REPEATABLE_KEYS_V0,
-    normalize_global_schema_v0,
-    validate_global_schema_v0_shape,
+from backend.app.application.global_schema import (
+    GLOBAL_SCHEMA_KEYS,
+    REPEATABLE_KEYS,
+    normalize_global_schema,
+    validate_global_schema_shape,
 )
 from backend.app.infra import database
 from backend.app.infra.file_storage import LocalFileStorage
@@ -104,11 +104,11 @@ def _latest_interpretation_failure(*, run_id: str) -> dict[str, Any] | None:
     return None
 
 
-def _build_key_summary(global_schema_v0: dict[str, object]) -> list[dict[str, Any]]:
+def _build_key_summary(global_schema: dict[str, object]) -> list[dict[str, Any]]:
     summaries: list[dict[str, Any]] = []
-    for key in GLOBAL_SCHEMA_V0_KEYS:
-        value = global_schema_v0.get(key)
-        if key in REPEATABLE_KEYS_V0:
+    for key in GLOBAL_SCHEMA_KEYS:
+        value = global_schema.get(key)
+        if key in REPEATABLE_KEYS:
             values = value if isinstance(value, list) else []
             summaries.append(
                 {
@@ -196,23 +196,23 @@ def build_snapshot(document_id: str) -> dict[str, Any]:
             data = {}
             parsing_errors.append("Interpretation payload is missing `data` object.")
 
-        raw_global = data.get("global_schema_v0")
+        raw_global = data.get("global_schema")
         if raw_global is not None and not isinstance(raw_global, dict):
             parsing_errors.append(
-                "`data.global_schema_v0` exists but is not an object."
+                "`data.global_schema` exists but is not an object."
             )
             raw_global = {}
 
-        normalized_global = normalize_global_schema_v0(
+        normalized_global = normalize_global_schema(
             raw_global if isinstance(raw_global, dict) else None
         )
-        validation_errors.extend(validate_global_schema_v0_shape(normalized_global))
+        validation_errors.extend(validate_global_schema_shape(normalized_global))
 
         keys_present = [
             key
-            for key in GLOBAL_SCHEMA_V0_KEYS
+            for key in GLOBAL_SCHEMA_KEYS
             if (
-                key in REPEATABLE_KEYS_V0
+                key in REPEATABLE_KEYS
                 and isinstance(normalized_global.get(key), list)
                 and len(normalized_global.get(key, [])) > 0
             )

@@ -51,7 +51,7 @@ def build_context_key_from_interpretation_data(data: Mapping[str, object]) -> st
     document_type = document_type_raw if isinstance(document_type_raw, str) else None
 
     language: str | None = None
-    global_schema = data.get("global_schema_v0")
+    global_schema = data.get("global_schema")
     if isinstance(global_schema, Mapping):
         language_raw = global_schema.get("language")
         if isinstance(language_raw, str):

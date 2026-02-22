@@ -3,10 +3,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from backend.app.application.global_schema_v0 import (
-    GLOBAL_SCHEMA_V0_KEYS,
-    REPEATABLE_KEYS_V0,
-    VALUE_TYPE_BY_KEY_V0,
+from backend.app.application.global_schema import (
+    GLOBAL_SCHEMA_KEYS,
+    REPEATABLE_KEYS,
+    VALUE_TYPE_BY_KEY,
 )
 from backend.app.application.processing_runner import (
     _build_interpretation_artifact,
@@ -14,11 +14,11 @@ from backend.app.application.processing_runner import (
 )
 
 _SHARED_CONTRACT_PATH = (
-    Path(__file__).resolve().parents[3] / "shared" / "global_schema_v0_contract.json"
+    Path(__file__).resolve().parents[3] / "shared" / "global_schema_contract.json"
 )
 
 
-def _parse_frontend_global_schema_v0() -> dict[str, str]:
+def _parse_frontend_global_schema() -> dict[str, str]:
     raw_contract = json.loads(_SHARED_CONTRACT_PATH.read_text(encoding="utf-8"))
     fields = raw_contract.get("fields", []) if isinstance(raw_contract, dict) else []
     return {
@@ -28,7 +28,7 @@ def _parse_frontend_global_schema_v0() -> dict[str, str]:
     }
 
 
-def test_interpretation_artifact_contains_full_global_schema_v0_shape() -> None:
+def test_interpretation_artifact_contains_full_global_schema_shape() -> None:
     raw_text = """
     Paciente: Luna
     Especie: Canina
@@ -51,12 +51,12 @@ def test_interpretation_artifact_contains_full_global_schema_v0_shape() -> None:
     data = payload["data"]
     assert isinstance(data, dict)
 
-    global_schema_v0 = data.get("global_schema_v0")
-    assert isinstance(global_schema_v0, dict)
-    assert list(global_schema_v0.keys()) == list(GLOBAL_SCHEMA_V0_KEYS)
+    global_schema = data.get("global_schema")
+    assert isinstance(global_schema, dict)
+    assert list(global_schema.keys()) == list(GLOBAL_SCHEMA_KEYS)
 
-    for repeatable_key in REPEATABLE_KEYS_V0:
-        assert isinstance(global_schema_v0[repeatable_key], list)
+    for repeatable_key in REPEATABLE_KEYS:
+        assert isinstance(global_schema[repeatable_key], list)
 
 
 def test_interpretation_artifact_empty_raw_text_keeps_global_schema_shape() -> None:
@@ -67,9 +67,9 @@ def test_interpretation_artifact_empty_raw_text_keeps_global_schema_shape() -> N
     )
 
     data = payload["data"]
-    global_schema_v0 = data.get("global_schema_v0")
-    assert isinstance(global_schema_v0, dict)
-    assert list(global_schema_v0.keys()) == list(GLOBAL_SCHEMA_V0_KEYS)
+    global_schema = data.get("global_schema")
+    assert isinstance(global_schema, dict)
+    assert list(global_schema.keys()) == list(GLOBAL_SCHEMA_KEYS)
     assert data["summary"]["warning_codes"] == ["EMPTY_RAW_TEXT"]
 
 
@@ -332,7 +332,7 @@ def test_repeatable_fields_are_capped_to_three_candidates_in_global_schema() -> 
         ),
     )
 
-    diagnosis = payload["data"]["global_schema_v0"]["diagnosis"]
+    diagnosis = payload["data"]["global_schema"]["diagnosis"]
     assert isinstance(diagnosis, list)
     assert len(diagnosis) == 3
 
@@ -456,14 +456,14 @@ def test_visit_date_is_populated_from_labeled_input() -> None:
         raw_text="Fecha de visita: 03/01/2026",
     )
 
-    schema = payload["data"]["global_schema_v0"]
+    schema = payload["data"]["global_schema"]
     assert schema["visit_date"] == "03/01/2026"
 
 
-def test_frontend_and_backend_global_schema_v0_keys_and_types_are_in_sync() -> None:
-    frontend_schema = _parse_frontend_global_schema_v0()
+def test_frontend_and_backend_global_schema_keys_and_types_are_in_sync() -> None:
+    frontend_schema = _parse_frontend_global_schema()
 
-    assert set(frontend_schema.keys()) == set(GLOBAL_SCHEMA_V0_KEYS)
+    assert set(frontend_schema.keys()) == set(GLOBAL_SCHEMA_KEYS)
 
-    for key in GLOBAL_SCHEMA_V0_KEYS:
-        assert frontend_schema[key] == VALUE_TYPE_BY_KEY_V0[key]
+    for key in GLOBAL_SCHEMA_KEYS:
+        assert frontend_schema[key] == VALUE_TYPE_BY_KEY[key]

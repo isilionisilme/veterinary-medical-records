@@ -21,11 +21,11 @@ from backend.app.application.confidence_calibration import (
     resolve_calibration_policy_version,
 )
 from backend.app.application.field_normalizers import normalize_microchip_digits_only
-from backend.app.application.global_schema_v0 import (
-    CRITICAL_KEYS_V0,
-    REPEATABLE_KEYS_V0,
-    VALUE_TYPE_BY_KEY_V0,
-    normalize_global_schema_v0,
+from backend.app.application.global_schema import (
+    CRITICAL_KEYS,
+    REPEATABLE_KEYS,
+    VALUE_TYPE_BY_KEY,
+    normalize_global_schema,
 )
 from backend.app.domain.models import (
     Document,
@@ -655,7 +655,7 @@ def _normalize_review_interpretation_data(data: dict[str, object]) -> dict[str, 
         if changed:
             normalized_data["fields"] = normalized_fields
 
-    global_schema = normalized_data.get("global_schema_v0")
+    global_schema = normalized_data.get("global_schema")
     if not isinstance(global_schema, dict):
         base_data = normalized_data if changed else data
         return _project_review_payload_to_v1(dict(base_data))
@@ -668,7 +668,7 @@ def _normalize_review_interpretation_data(data: dict[str, object]) -> dict[str, 
 
     normalized_global_schema = dict(global_schema)
     normalized_global_schema["microchip_id"] = normalized_microchip
-    normalized_data["global_schema_v0"] = normalized_global_schema
+    normalized_data["global_schema"] = normalized_global_schema
 
     return _project_review_payload_to_v1(normalized_data)
 
@@ -957,7 +957,7 @@ def apply_interpretation_edits(
                     result=None,
                     invalid_reason=f"changes[{index}].key",
                 )
-            value_type = str(change.get("value_type", "")).strip() or VALUE_TYPE_BY_KEY_V0.get(
+            value_type = str(change.get("value_type", "")).strip() or VALUE_TYPE_BY_KEY.get(
                 key, "string"
             )
             if "value" not in change:
@@ -979,7 +979,7 @@ def apply_interpretation_edits(
                 "context_key": context_key,
                 "mapping_id": None,
                 "policy_version": calibration_policy_version,
-                "is_critical": key in CRITICAL_KEYS_V0,
+                "is_critical": key in CRITICAL_KEYS,
                 "origin": "human",
             }
             new_field_key = new_field.get("key")
@@ -1122,7 +1122,8 @@ def apply_interpretation_edits(
     new_data["created_at"] = now_iso
     new_data["processing_run_id"] = run_id
     new_data["fields"] = [_sanitize_confidence_breakdown(field) for field in updated_fields]
-    new_data["global_schema_v0"] = _build_global_schema_from_fields(updated_fields)
+    projected_global_schema = _build_global_schema_from_fields(updated_fields)
+    new_data["global_schema"] = projected_global_schema
 
     new_payload = {
         "interpretation_id": new_interpretation_id,
@@ -1608,7 +1609,7 @@ def _build_global_schema_from_fields(fields: list[dict[str, object]]) -> dict[st
         if not key:
             continue
         value = field.get("value")
-        if key in REPEATABLE_KEYS_V0:
+        if key in REPEATABLE_KEYS:
             if is_field_value_empty(value):
                 continue
             bucket = schema_accumulator.get(key)
@@ -1621,7 +1622,7 @@ def _build_global_schema_from_fields(fields: list[dict[str, object]]) -> dict[st
         if key not in schema_accumulator and not is_field_value_empty(value):
             schema_accumulator[key] = value
 
-    return normalize_global_schema_v0(schema_accumulator)
+    return normalize_global_schema(schema_accumulator)
 
 
 def is_field_value_empty(value: Any) -> bool:

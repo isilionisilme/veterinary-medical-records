@@ -284,6 +284,47 @@ def test_document_review_returns_latest_completed_run_context(test_client):
     assert payload["reviewed_at"] is None
 
 
+def test_document_review_payload_uses_canonical_global_schema_key_only(test_client):
+    document_id = _upload_sample_document(test_client)
+    run_id = "run-review-canonical-global-schema"
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(
+        run_id=run_id,
+        data={
+            "schema_version": "v0",
+            "document_id": document_id,
+            "processing_run_id": run_id,
+            "created_at": "2026-02-10T10:00:05+00:00",
+            "global_schema": {"pet_name": "Luna"},
+            "fields": [
+                {
+                    "field_id": "field-1",
+                    "key": "pet_name",
+                    "value": "Luna",
+                    "value_type": "string",
+                    "is_critical": False,
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Paciente: Luna"},
+                }
+            ],
+        },
+    )
+
+    response = test_client.get(f"/documents/{document_id}/review")
+    assert response.status_code == 200
+    payload = response.json()
+
+    data = payload["active_interpretation"]["data"]
+    assert "global_schema" in data
+    assert isinstance(data["global_schema"], dict)
+    assert "global_schema_v0" not in data
+
+
 def test_document_review_omits_confidence_policy_when_config_missing(
     test_client: TestClient, monkeypatch: pytest.MonkeyPatch
 ):
@@ -372,7 +413,7 @@ def test_document_review_normalizes_legacy_microchip_suffix_to_digits_only(test_
         run_id=run_id,
         data={
             "schema_version": "v0",
-            "global_schema_v0": {"microchip_id": "00023035139 NHC"},
+            "global_schema": {"microchip_id": "00023035139 NHC"},
         },
     )
 
@@ -380,7 +421,7 @@ def test_document_review_normalizes_legacy_microchip_suffix_to_digits_only(test_
     assert response.status_code == 200
     payload = response.json()
     assert (
-        payload["active_interpretation"]["data"]["global_schema_v0"]["microchip_id"]
+        payload["active_interpretation"]["data"]["global_schema"]["microchip_id"]
         == "00023035139"
     )
 
@@ -1079,14 +1120,14 @@ def test_document_review_drops_legacy_non_digit_microchip_value(test_client):
         run_id=run_id,
         data={
             "schema_version": "v0",
-            "global_schema_v0": {"microchip_id": "BEATRIZ ABARCA C/ ORTEGA"},
+            "global_schema": {"microchip_id": "BEATRIZ ABARCA C/ ORTEGA"},
         },
     )
 
     response = test_client.get(f"/documents/{document_id}/review")
     assert response.status_code == 200
     payload = response.json()
-    assert payload["active_interpretation"]["data"]["global_schema_v0"]["microchip_id"] is None
+    assert payload["active_interpretation"]["data"]["global_schema"]["microchip_id"] is None
 
 
 def test_document_review_keeps_canonical_microchip_digits_unchanged(test_client):
@@ -1102,7 +1143,7 @@ def test_document_review_keeps_canonical_microchip_digits_unchanged(test_client)
         run_id=run_id,
         data={
             "schema_version": "v0",
-            "global_schema_v0": {"microchip_id": "00023035139"},
+            "global_schema": {"microchip_id": "00023035139"},
         },
     )
 
@@ -1110,7 +1151,7 @@ def test_document_review_keeps_canonical_microchip_digits_unchanged(test_client)
     assert response.status_code == 200
     payload = response.json()
     assert (
-        payload["active_interpretation"]["data"]["global_schema_v0"]["microchip_id"]
+        payload["active_interpretation"]["data"]["global_schema"]["microchip_id"]
         == "00023035139"
     )
 
@@ -1241,7 +1282,7 @@ def test_cross_document_learning_applies_negative_adjustment_after_edit_signal(t
                 "document_id": document_id,
                 "processing_run_id": run_id,
                 "created_at": "2026-02-10T10:00:05+00:00",
-                "global_schema_v0": baseline["data"]["global_schema_v0"],
+                "global_schema": baseline["data"]["global_schema"],
                 "fields": [
                     {
                         "field_id": "field-1",
@@ -1414,7 +1455,7 @@ def test_reopen_review_reverts_reviewed_calibration_deltas_and_allows_reapply(te
             "document_id": document_id,
             "processing_run_id": run_id,
             "created_at": "2026-02-10T10:00:05+00:00",
-            "global_schema_v0": baseline["data"]["global_schema_v0"],
+            "global_schema": baseline["data"]["global_schema"],
             "fields": [
                 {
                     "field_id": "field-1",
@@ -1504,7 +1545,7 @@ def test_reopen_review_reverts_snapshot_from_reviewed_run_even_with_newer_comple
             "document_id": document_id,
             "processing_run_id": reviewed_run_id,
             "created_at": "2026-02-10T10:00:05+00:00",
-            "global_schema_v0": baseline["data"]["global_schema_v0"],
+            "global_schema": baseline["data"]["global_schema"],
             "fields": [
                 {
                     "field_id": "field-1",
