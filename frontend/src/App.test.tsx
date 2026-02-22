@@ -2302,6 +2302,78 @@ describe("App upload and list flow", () => {
     expect(within(panel).getByText("Sin visitas detectadas.")).toBeInTheDocument();
   });
 
+  it("renders Visitas grouped by episode with chronological numbering and reverse visual order", async () => {
+    installCanonicalUs44FetchMock({
+      visits: [
+        {
+          visit_id: "visit-newest",
+          visit_date: "2026-02-20",
+          admission_date: null,
+          discharge_date: null,
+          reason_for_visit: "Revisión final",
+          fields: [
+            {
+              field_id: "f-diagnosis-newest",
+              key: "diagnosis",
+              value: "Alta",
+              value_type: "string",
+              scope: "visit",
+              section: "visits",
+              classification: "medical_record",
+              is_critical: false,
+              origin: "machine",
+            },
+          ],
+        },
+        {
+          visit_id: "visit-oldest",
+          visit_date: "2026-02-10",
+          admission_date: null,
+          discharge_date: null,
+          reason_for_visit: "Ingreso",
+          fields: [],
+        },
+        {
+          visit_id: "visit-middle",
+          visit_date: "2026-02-15",
+          admission_date: null,
+          discharge_date: null,
+          reason_for_visit: "Control",
+          fields: [],
+        },
+      ],
+    });
+    renderApp();
+    const panel = await openReadyDocumentAndGetPanel();
+
+    const visitsSection = within(panel).getByText("Visitas").closest("section");
+    expect(visitsSection).not.toBeNull();
+
+    const visitHeaders = within(visitsSection as HTMLElement)
+      .getAllByText(/^Visita\s\d+$/)
+      .map((node) => node.textContent?.trim());
+    expect(visitHeaders).toEqual(["Visita 3", "Visita 2", "Visita 1"]);
+
+    const newestEpisode = within(visitsSection as HTMLElement).getByTestId("visit-episode-3");
+    const middleEpisode = within(visitsSection as HTMLElement).getByTestId("visit-episode-2");
+    const oldestEpisode = within(visitsSection as HTMLElement).getByTestId("visit-episode-1");
+
+    expect(within(newestEpisode).getByTestId("visit-row-visit_date")).toBeInTheDocument();
+    expect(within(middleEpisode).getByTestId("visit-row-visit_date")).toBeInTheDocument();
+    expect(within(oldestEpisode).getByTestId("visit-row-visit_date")).toBeInTheDocument();
+
+    expect(within(newestEpisode).getByText(new Date("2026-02-20T00:00:00Z").toLocaleDateString("es-ES"))).toBeInTheDocument();
+    expect(within(middleEpisode).getByText(new Date("2026-02-15T00:00:00Z").toLocaleDateString("es-ES"))).toBeInTheDocument();
+    expect(within(oldestEpisode).getByText(new Date("2026-02-10T00:00:00Z").toLocaleDateString("es-ES"))).toBeInTheDocument();
+
+    expect(within(oldestEpisode).getByText("Diagnóstico")).toBeInTheDocument();
+    expect(within(oldestEpisode).getByText("Procedimiento")).toBeInTheDocument();
+    expect(within(oldestEpisode).getByText("Medicación")).toBeInTheDocument();
+    expect(within(oldestEpisode).getByText("Plan de tratamiento")).toBeInTheDocument();
+    expect(within(oldestEpisode).getByText("Resultado de laboratorio")).toBeInTheDocument();
+    expect(within(oldestEpisode).getAllByText("Sin elementos").length).toBeGreaterThan(0);
+  });
+
   it("shows unassigned helper text in canonical contract when unassigned visit group is present", async () => {
     installCanonicalUs44FetchMock({
       visits: [
@@ -2340,6 +2412,7 @@ describe("App upload and list flow", () => {
 
     const hints = within(panel).getAllByTestId("visits-unassigned-hint");
     expect(hints).toHaveLength(1);
+    expect(within(panel).getByTestId("visit-unassigned-group")).toBeInTheDocument();
     expect(hints[0]).toHaveTextContent("Elementos detectados sin fecha/visita asociada.");
     expect(within(panel).queryAllByText("Elementos detectados sin fecha/visita asociada.")).toHaveLength(1);
     expect(within(panel).queryByText("Sin visitas detectadas.")).toBeNull();

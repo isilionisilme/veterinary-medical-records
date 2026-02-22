@@ -239,6 +239,19 @@ const FIELD_LABELS: Record<string, string> = {
   medical_record_number: "NHC",
   notes: "Notas",
   language: "Idioma",
+  visit_date: "Fecha de visita",
+  admission_date: "Fecha de ingreso",
+  discharge_date: "Fecha de alta",
+  reason_for_visit: "Motivo de visita",
+  diagnosis: "Diagnóstico",
+  symptoms: "Síntomas",
+  procedure: "Procedimiento",
+  medication: "Medicación",
+  treatment_plan: "Plan de tratamiento",
+  allergies: "Alergias",
+  vaccinations: "Vacunaciones",
+  lab_result: "Resultado de laboratorio",
+  imaging: "Imagen",
 };
 
 const HIDDEN_REVIEW_FIELDS = new Set([
@@ -1368,6 +1381,26 @@ function formatFieldValue(value: string | number | boolean | null, valueType: st
     }
   }
   return String(value);
+}
+
+function getNormalizedVisitId(visit: ReviewVisitGroup, visitIndex: number): string {
+  const trimmedVisitId = visit.visit_id.trim();
+  if (trimmedVisitId.length > 0) {
+    return trimmedVisitId;
+  }
+  return `visit_${visitIndex + 1}`;
+}
+
+function getVisitTimestamp(visitDate: string | null): number | null {
+  if (!visitDate || visitDate.trim().length === 0) {
+    return null;
+  }
+  const parsed = new Date(visitDate);
+  const time = parsed.getTime();
+  if (Number.isNaN(time)) {
+    return null;
+  }
+  return time;
 }
 
 function truncateText(text: string, limit: number): string {
@@ -2651,7 +2684,7 @@ export function App() {
     }
 
     const flattenedVisitFields = reviewVisits.flatMap((visit, visitIndex) => {
-      const normalizedVisitId = visit.visit_id || `visit_${visitIndex + 1}`;
+      const normalizedVisitId = getNormalizedVisitId(visit, visitIndex);
       const metadataFields: ReviewField[] = [
         {
           field_id: `visit-meta-date:${normalizedVisitId}`,
@@ -3271,6 +3304,37 @@ export function App() {
       fields: (groups.get(section) ?? []).sort((a, b) => a.order - b.order),
     }));
   }, [coreDisplayFields]);
+
+  const canonicalVisitFieldOrder = useMemo(() => {
+    const fallbackOrder = [...CANONICAL_VISIT_METADATA_KEYS, ...CANONICAL_VISIT_SCOPED_FIELD_KEYS];
+    if (!isCanonicalContract || hasMalformedCanonicalFieldSlots) {
+      return fallbackOrder;
+    }
+
+    const rawSlots = interpretationData?.medical_record_view?.field_slots;
+    const slots = Array.isArray(rawSlots) ? rawSlots : [];
+    const orderedKeys: string[] = [];
+    slots.forEach((slot) => {
+      if (slot.scope !== "visit") {
+        return;
+      }
+      const canonicalKey = slot.canonical_key;
+      if (!canonicalKey || BILLING_REVIEW_FIELDS.has(canonicalKey)) {
+        return;
+      }
+      if (!orderedKeys.includes(canonicalKey)) {
+        orderedKeys.push(canonicalKey);
+      }
+    });
+
+    fallbackOrder.forEach((key) => {
+      if (!orderedKeys.includes(key)) {
+        orderedKeys.push(key);
+      }
+    });
+
+    return orderedKeys;
+  }, [hasMalformedCanonicalFieldSlots, interpretationData?.medical_record_view?.field_slots, isCanonicalContract]);
 
   const structuredDataFilters = useMemo(
     () => ({
@@ -4272,9 +4336,12 @@ export function App() {
     );
   };
 
-  const renderRepeatableReviewField = (field: ReviewDisplayField) => {
+  const renderRepeatableReviewField = (
+    field: ReviewDisplayField,
+    options?: { showUnassignedHint?: boolean }
+  ) => {
     const countLabel = field.items.length === 1 ? "1 elemento" : `${field.items.length} elementos`;
-    const shouldShowUnassignedVisitHintForField = hasUnassignedVisitGroup;
+    const shouldShowUnassignedVisitHintForField = options?.showUnassignedHint ?? hasUnassignedVisitGroup;
     const firstUnassignedItemIndex = field.items.findIndex(
       (item) => item.visitGroupId?.trim().toLowerCase() === "unassigned"
     );
@@ -4538,12 +4605,304 @@ export function App() {
     return renderScalarReviewField(field);
   };
 
+  const renderCanonicalVisitEpisodes = () => {
+    if (!isCanonicalContract) {
+      return null;
+    }
+
+    const visitScopedFields = validatedReviewFields.filter(
+      (field) => field.scope === "visit" && !BILLING_REVIEW_FIELDS.has(field.key)
+    );
+    const fieldsByVisitId = new Map<string, ReviewField[]>();
+    visitScopedFields.forEach((field) => {
+      const rawVisitId = typeof field.visit_group_id === "string" ? field.visit_group_id.trim() : "";
+      if (rawVisitId.length === 0) {
+        return;
+      }
+      const existing = fieldsByVisitId.get(rawVisitId) ?? [];
+      existing.push(field);
+      fieldsByVisitId.set(rawVisitId, existing);
+    });
+
+    const chronologicalVisits = reviewVisits
+      .map((visit, index) => ({
+        visit,
+        originalIndex: index,
+        normalizedVisitId: getNormalizedVisitId(visit, index),
+      }))
+      .filter((entry) => entry.normalizedVisitId.trim().toLowerCase() !== "unassigned")
+      .sort((a, b) => {
+        const leftDate = getVisitTimestamp(a.visit.visit_date);
+        const rightDate = getVisitTimestamp(b.visit.visit_date);
+        if (leftDate !== null && rightDate !== null && leftDate !== rightDate) {
+          return leftDate - rightDate;
+        }
+        if (leftDate === null && rightDate !== null) {
+          return 1;
+        }
+        if (leftDate !== null && rightDate === null) {
+          return -1;
+        }
+        return a.originalIndex - b.originalIndex;
+      });
+
+    const visitBlocksAscending = chronologicalVisits.map((entry, chronologicalIndex) => {
+      const visitId = entry.normalizedVisitId;
+      const metadataFields: ReviewField[] = [
+        {
+          field_id: `visit-meta-date:${visitId}`,
+          key: "visit_date",
+          value: entry.visit.visit_date,
+          value_type: "date",
+          visit_group_id: visitId,
+          scope: "visit",
+          section: "visits",
+          classification: "medical_record",
+          domain: "clinical",
+          is_critical: true,
+          origin: "machine",
+        },
+        {
+          field_id: `visit-meta-admission:${visitId}`,
+          key: "admission_date",
+          value: entry.visit.admission_date ?? null,
+          value_type: "date",
+          visit_group_id: visitId,
+          scope: "visit",
+          section: "visits",
+          classification: "medical_record",
+          domain: "clinical",
+          is_critical: false,
+          origin: "machine",
+        },
+        {
+          field_id: `visit-meta-discharge:${visitId}`,
+          key: "discharge_date",
+          value: entry.visit.discharge_date ?? null,
+          value_type: "date",
+          visit_group_id: visitId,
+          scope: "visit",
+          section: "visits",
+          classification: "medical_record",
+          domain: "clinical",
+          is_critical: false,
+          origin: "machine",
+        },
+        {
+          field_id: `visit-meta-reason:${visitId}`,
+          key: "reason_for_visit",
+          value: entry.visit.reason_for_visit ?? null,
+          value_type: "string",
+          visit_group_id: visitId,
+          scope: "visit",
+          section: "visits",
+          classification: "medical_record",
+          domain: "clinical",
+          is_critical: false,
+          origin: "machine",
+        },
+      ];
+
+      const scopedVisitFields = (fieldsByVisitId.get(visitId) ?? []).filter(
+        (field) => !CANONICAL_VISIT_METADATA_KEYS.includes(field.key as (typeof CANONICAL_VISIT_METADATA_KEYS)[number])
+      );
+
+      const fieldsByKey = new Map<string, ReviewField[]>();
+      [...metadataFields, ...scopedVisitFields].forEach((field) => {
+        const existing = fieldsByKey.get(field.key) ?? [];
+        existing.push(field);
+        fieldsByKey.set(field.key, existing);
+      });
+
+      const extraKeys = Array.from(fieldsByKey.keys()).filter((key) => !canonicalVisitFieldOrder.includes(key));
+      const orderedKeys = [...canonicalVisitFieldOrder, ...extraKeys];
+
+      return {
+        id: visitId,
+        visitNumber: chronologicalIndex + 1,
+        orderedKeys,
+        fieldsByKey,
+      };
+    });
+
+    const assignedVisitIdSet = new Set(
+      chronologicalVisits.map((entry) => entry.normalizedVisitId.trim().toLowerCase())
+    );
+    const unassignedFields = visitScopedFields.filter((field) => {
+      const visitGroupId = typeof field.visit_group_id === "string" ? field.visit_group_id.trim() : "";
+      if (!visitGroupId) {
+        return true;
+      }
+      const normalized = visitGroupId.toLowerCase();
+      if (normalized === "unassigned") {
+        return true;
+      }
+      return !assignedVisitIdSet.has(normalized);
+    });
+
+    const unassignedByKey = new Map<string, ReviewField[]>();
+    unassignedFields.forEach((field) => {
+      const existing = unassignedByKey.get(field.key) ?? [];
+      existing.push(field);
+      unassignedByKey.set(field.key, existing);
+    });
+    const unassignedExtraKeys = Array.from(unassignedByKey.keys()).filter(
+      (key) => !canonicalVisitFieldOrder.includes(key)
+    );
+    const orderedUnassignedKeys = [
+      ...canonicalVisitFieldOrder.filter((key) => unassignedByKey.has(key)),
+      ...unassignedExtraKeys,
+    ];
+
+    const buildDisplayField = (
+      visitId: string,
+      key: string,
+      fields: ReviewField[],
+      order: number
+    ): ReviewDisplayField => {
+      const label = FIELD_LABELS[key] ?? formatReviewKeyLabel(key);
+      const valueType = fields[0]?.value_type ?? (key.includes("date") ? "date" : "string");
+      const isMetadataField = CANONICAL_VISIT_METADATA_KEYS.includes(
+        key as (typeof CANONICAL_VISIT_METADATA_KEYS)[number]
+      );
+
+      if (!isMetadataField) {
+        const presentFields = fields.filter((field) => !isFieldValueEmpty(field.value));
+        const items = presentFields.map((field, itemIndex) =>
+          buildSelectableField(
+            {
+              id: `visit:${visitId}:${key}:${itemIndex}`,
+              key,
+              label,
+              section: "Visitas",
+              order,
+              valueType: field.value_type,
+              displayValue: formatFieldValue(field.value, field.value_type),
+              source: "core",
+              evidence: field.evidence,
+              repeatable: true,
+            },
+            field,
+            false
+          )
+        );
+
+        return {
+          id: `visit-field:${visitId}:${key}`,
+          key,
+          label,
+          section: "Visitas",
+          order,
+          isCritical: fields.some((field) => Boolean(field.is_critical)),
+          valueType,
+          repeatable: true,
+          items,
+          isEmptyList: items.length === 0,
+          source: "core",
+        };
+      }
+
+      const scalarField = fields[0];
+      const hasValue = Boolean(scalarField && !isFieldValueEmpty(scalarField.value));
+      const scalarItem = buildSelectableField(
+        {
+          id: scalarField
+            ? `visit:${visitId}:${key}:0`
+            : `visit:${visitId}:${key}:missing`,
+          key,
+          label,
+          section: "Visitas",
+          order,
+          valueType,
+          displayValue:
+            scalarField && hasValue
+              ? formatFieldValue(scalarField.value, scalarField.value_type)
+              : MISSING_VALUE_PLACEHOLDER,
+          source: "core",
+          evidence: scalarField?.evidence,
+          repeatable: false,
+        },
+        scalarField,
+        !hasValue
+      );
+
+      return {
+        id: `visit-field:${visitId}:${key}`,
+        key,
+        label,
+        section: "Visitas",
+        order,
+        isCritical: Boolean(scalarField?.is_critical),
+        valueType,
+        repeatable: false,
+        items: [scalarItem],
+        isEmptyList: false,
+        source: "core",
+      };
+    };
+
+    return (
+      <div className={STRUCTURED_FIELD_STACK_CLASS}>
+        {[...visitBlocksAscending].reverse().map((visitBlock) => {
+          const visitFields = visitBlock.orderedKeys.map((key, fieldIndex) => {
+            const fields = visitBlock.fieldsByKey.get(key) ?? [];
+            return buildDisplayField(visitBlock.id, key, fields, fieldIndex + 1);
+          });
+
+          return (
+            <div
+              key={visitBlock.id}
+              className="rounded-card border border-borderSubtle bg-surfaceMuted px-3 py-3 shadow-subtle"
+              data-testid={`visit-episode-${visitBlock.visitNumber}`}
+            >
+              <p className="text-sm font-semibold text-text">Visita {visitBlock.visitNumber}</p>
+              <div className={`mt-2 grid gap-x-5 ${STRUCTURED_FIELD_STACK_CLASS} lg:grid-cols-2`}>
+                {visitFields.map((field) =>
+                  field.repeatable ? renderRepeatableReviewField(field) : renderScalarReviewField(field)
+                )}
+              </div>
+            </div>
+          );
+        })}
+        {orderedUnassignedKeys.length > 0 && (
+          <div
+            className="rounded-card border border-borderSubtle bg-surfaceMuted px-3 py-3 shadow-subtle"
+            data-testid="visit-unassigned-group"
+          >
+            <p className="text-sm font-semibold text-text">No asociados a visita</p>
+            <p
+              className="mt-2 rounded-control bg-surfaceMuted px-3 py-2 text-xs text-muted"
+              data-testid="visits-unassigned-hint"
+            >
+              {VISITS_UNASSIGNED_HINT}
+            </p>
+            <div className={`mt-2 ${STRUCTURED_FIELD_STACK_CLASS}`}>
+              {orderedUnassignedKeys
+                .map((key, fieldIndex) => {
+                  const fields = unassignedByKey.get(key) ?? [];
+                  if (fields.length === 0) {
+                    return null;
+                  }
+                  const displayField = buildDisplayField("unassigned", key, fields, fieldIndex + 1);
+                  return displayField.repeatable
+                    ? renderRepeatableReviewField(displayField, { showUnassignedHint: false })
+                    : renderScalarReviewField(displayField);
+                })
+                .filter((field) => field !== null)}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderSectionLayout2 = (section: { id: string; title: string; fields: ReviewDisplayField[] }) => {
     const scalarFields = section.fields.filter((field) => !field.repeatable);
     const repeatableFields = section.fields.filter((field) => field.repeatable);
     const isExtraSection = section.id === "extra:section";
     const isEmptyExtraSection = isExtraSection && section.fields.length === 0;
     const isVisitsSection = section.title === "Visitas";
+    const shouldRenderCanonicalVisitsByEpisode = isVisitsSection && isCanonicalContract;
     const isEmptyVisitsSection = isVisitsSection && section.fields.length === 0 && !hasVisitGroups;
     const isOwnerSection = section.title === "Propietario";
     const shouldUseSingleColumn = isOwnerSection;
@@ -4565,7 +4924,7 @@ export function App() {
               {VISITS_EMPTY_STATE}
             </p>
           )}
-          {!isEmptyExtraSection && !isEmptyVisitsSection && (
+          {!isEmptyExtraSection && !isEmptyVisitsSection && !shouldRenderCanonicalVisitsByEpisode && (
             <div
               className={
                 shouldUseSingleColumn
@@ -4576,8 +4935,13 @@ export function App() {
               {scalarFields.map(renderScalarReviewField)}
             </div>
           )}
-          {repeatableFields.length > 0 && (
-            <div className={`mt-2 ${STRUCTURED_FIELD_STACK_CLASS}`}>{repeatableFields.map(renderRepeatableReviewField)}</div>
+          {!isEmptyExtraSection && !isEmptyVisitsSection && shouldRenderCanonicalVisitsByEpisode && (
+            <>{renderCanonicalVisitEpisodes()}</>
+          )}
+          {repeatableFields.length > 0 && !shouldRenderCanonicalVisitsByEpisode && (
+            <div className={`mt-2 ${STRUCTURED_FIELD_STACK_CLASS}`}>
+              {repeatableFields.map((field) => renderRepeatableReviewField(field))}
+            </div>
           )}
         </div>
       </SectionBlock>
@@ -4590,6 +4954,7 @@ export function App() {
     const isExtraSection = section.id === "extra:section";
     const isEmptyExtraSection = isExtraSection && section.fields.length === 0;
     const isVisitsSection = section.title === "Visitas";
+    const shouldRenderCanonicalVisitsByEpisode = isVisitsSection && isCanonicalContract;
     const isEmptyVisitsSection = isVisitsSection && section.fields.length === 0 && !hasVisitGroups;
     const isOwnerSection = section.title === "Propietario";
     const shouldUseSingleColumn = isOwnerSection;
@@ -4611,7 +4976,7 @@ export function App() {
               {VISITS_EMPTY_STATE}
             </p>
           )}
-          {scalarFields.length > 0 && !isEmptyVisitsSection && (
+          {scalarFields.length > 0 && !isEmptyVisitsSection && !shouldRenderCanonicalVisitsByEpisode && (
             <div
               className={
                 shouldUseSingleColumn
@@ -4622,8 +4987,13 @@ export function App() {
               {scalarFields.map(renderScalarTileField)}
             </div>
           )}
-          {repeatableFields.length > 0 && (
-            <div className={STRUCTURED_FIELD_STACK_CLASS}>{repeatableFields.map(renderRepeatableTileField)}</div>
+          {!isEmptyVisitsSection && shouldRenderCanonicalVisitsByEpisode && (
+            <>{renderCanonicalVisitEpisodes()}</>
+          )}
+          {repeatableFields.length > 0 && !shouldRenderCanonicalVisitsByEpisode && (
+            <div className={STRUCTURED_FIELD_STACK_CLASS}>
+              {repeatableFields.map((field) => renderRepeatableTileField(field))}
+            </div>
           )}
         </div>
       </SectionBlock>
