@@ -1,4 +1,4 @@
-# Global Schema v1 (Medical Record MVP Canonical Field List)
+# Global Schema (Medical Record MVP Canonical Field List)
 
 Purpose: define the canonical contract-aligned field universe for the Medical Record panel.
 
@@ -32,7 +32,7 @@ E) Información del informe
 - `language` (string)
 
 Visit-level fields:
-- Visit-level clinical data is canonical in `schema_version = "v1"` under `visits[]` and `visits[].fields[]` (see Appendix D9 in [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md)).
+- Visit-level clinical data is canonical in `canonical contract` under `visits[]` and `visits[].fields[]` (see Appendix D9 in [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md)).
 - Visit fields are not part of the document-level top-level list above.
 
 Panel boundary (Medical Record MVP):
@@ -46,6 +46,6 @@ Product compatibility rule:
 
 - The `Extracted Data / Informe` panel is a **clinical Medical Record view**.
 - The panel renders a **contract-defined Medical Record field-set and taxonomy** (document-level, visit-level, and explicit other/unmapped bucket).
-- In `schema_version = "v1"`, required document-level panel fields (including missing-value slots) are defined by the Technical contract template (`medical_record_view.field_slots[]`, Appendix D9).
+- In `canonical contract`, required document-level panel fields (including missing-value slots) are defined by the Technical contract template (`medical_record_view.field_slots[]`, Appendix D9).
 - Non-clinical claim concepts are out of scope for this panel.
 - Labels/copy and empty-states for this panel are defined in [`docs/project/UX_DESIGN.md`](UX_DESIGN.md).

@@ -114,11 +114,11 @@ def test_project_split_entries_include_new_product_and_ux_modules() -> None:
         in product_entry
     )
     assert (
-        "docs/agent_router/04_PROJECT/PRODUCT_DESIGN/77_global-schema-v0-canonical-field-list.md"
+        "docs/agent_router/04_PROJECT/PRODUCT_DESIGN/77_global-schema-canonical-field-list.md"
         in product_entry
     )
     assert (
-        "docs/agent_router/04_PROJECT/UX_DESIGN/55_review-ui-rendering-rules-global-schema-v0-template.md"
+        "docs/agent_router/04_PROJECT/UX_DESIGN/55_review-ui-rendering-rules-global-schema-template.md"
         in ux_entry
     )
 
@@ -128,7 +128,7 @@ def test_project_split_entry_includes_frontend_global_schema_rendering_module() 
         ROUTER_ROOT / "04_PROJECT" / "FRONTEND_IMPLEMENTATION" / "00_entry.md"
     )
     assert (
-        "docs/agent_router/04_PROJECT/FRONTEND_IMPLEMENTATION/65_review-rendering-backbone-global-schema-v0.md"
+        "docs/agent_router/04_PROJECT/FRONTEND_IMPLEMENTATION/65_review-rendering-backbone-global-schema.md"
         in frontend_entry
     )
 
@@ -150,10 +150,10 @@ def test_project_split_entry_includes_implementation_plan_us32_module() -> None:
     )
 
     assert (
-        "docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/275_us-32-align-review-rendering-to-global-schema-v0-template.md"
+        "docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/275_us-32-align-review-rendering-to-global-schema-template.md"
         in plan_entry
     )
-    assert "US-32 — Align review rendering to Global Schema v0 template" in release5
+    assert "US-32 — Align review rendering to Global Schema template" in release5
 
 
 def test_project_split_entry_includes_implementation_plan_us35_module() -> None:
@@ -231,7 +231,7 @@ def test_technical_design_unassigned_contract_clarification_is_propagated() -> N
         ROUTER_ROOT
         / "04_PROJECT"
         / "TECHNICAL_DESIGN"
-        / "505_d9-structured-interpretation-schema-v1-visit-grouped-normative.md"
+        / "505_d9-structured-interpretation-schema-visit-grouped-normative.md"
     )
 
     expected_term = "explicit contract value"
@@ -249,7 +249,7 @@ def test_technical_design_sufficient_evidence_boundary_is_propagated() -> None:
         ROUTER_ROOT
         / "04_PROJECT"
         / "TECHNICAL_DESIGN"
-        / "505_d9-structured-interpretation-schema-v1-visit-grouped-normative.md"
+        / "505_d9-structured-interpretation-schema-visit-grouped-normative.md"
     )
 
     required_terms = (
@@ -309,12 +309,12 @@ def test_product_design_module_76_includes_confidence_context_contract_terms() -
     for required_term in (
         "candidate_confidence",
         "field_mapping_confidence",
-        "Context v1 (Deterministic)",
+        "Context (Deterministic)",
         "Learnable Unit (`mapping_id`)",
         "Signals & Weighting (qualitative)",
         "Policy State (soft behavior)",
         "Confidence Propagation & Calibration",
-        "Global Schema v0 keys/order do not change automatically during this propagation",
+        "Global Schema keys/order do not change automatically during this propagation",
     ):
         assert required_term in module_76
 
@@ -373,7 +373,7 @@ def test_project_owner_modules_include_confidence_tooltip_breakdown_propagation(
         in implementation_plan_release
     )
     assert (
-        "US-32 — Align review rendering to Global Schema v0 template"
+        "US-32 — Align review rendering to Global Schema template"
         in implementation_plan_release
     )
     assert (
@@ -390,7 +390,7 @@ def test_technical_design_entry_includes_d9_visit_grouped_module() -> None:
 
     assert (
         "docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/"
-        "505_d9-structured-interpretation-schema-v1-visit-grouped-normative.md"
+        "505_d9-structured-interpretation-schema-visit-grouped-normative.md"
         in technical_entry
     )
 
@@ -400,13 +400,13 @@ def test_product_and_ux_owner_modules_include_visit_grouping_and_copy_updates() 
         ROUTER_ROOT
         / "04_PROJECT"
         / "PRODUCT_DESIGN"
-        / "77_global-schema-v0-canonical-field-list.md"
+        / "77_global-schema-canonical-field-list.md"
     )
     ux_module = _read_text(
         ROUTER_ROOT
         / "04_PROJECT"
         / "UX_DESIGN"
-        / "55_review-ui-rendering-rules-global-schema-v0-template.md"
+        / "55_review-ui-rendering-rules-global-schema-template.md"
     )
 
     assert "## Visit grouping (MVP)" in product_module
@@ -420,12 +420,11 @@ def test_product_and_ux_owner_modules_include_visit_grouping_and_copy_updates() 
     assert "Key -> UI label -> Section (UI)" in product_module
 
     assert (
-        'If `schema_version = "v1"`: render fixed non-visit sections plus a dedicated '
-        "**Visitas** grouping block"
+        "Render fixed non-visit sections plus a dedicated **Visitas** grouping block."
         in ux_module
     )
     assert (
-        "No heuristics grouping in UI; grouping comes from schema v1 `visits[]`."
+        "No heuristics grouping in UI; grouping comes from `visits[]` in the canonical contract."
         in ux_module
     )
     assert (

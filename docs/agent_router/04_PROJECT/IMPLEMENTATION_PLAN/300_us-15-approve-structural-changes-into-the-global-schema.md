@@ -5,7 +5,7 @@ As a reviewer, I want to approve structural changes so that future interpretatio
 
 **Acceptance Criteria**
 - I can approve a candidate.
-- Approval creates a new canonical schema version.
+- Approval creates a new canonical schema contract snapshot.
 - Approved changes apply prospectively to new runs only.
 - Past documents and past runs remain unchanged.
 - Approval does not trigger implicit reprocessing.
@@ -14,12 +14,12 @@ As a reviewer, I want to approve structural changes so that future interpretatio
 - No automatic promotion without explicit reviewer action.
 
 **Authoritative References**
-- Tech: Schema version persistence and current schema rule: [`docs/project/TECHNICAL_DESIGN.md`](../TECHNICAL_DESIGN/00_entry.md) Appendix B2.7
-- Tech: `schema_version_used` persisted per run: [`docs/project/TECHNICAL_DESIGN.md`](../TECHNICAL_DESIGN/00_entry.md) Appendix B2.2
+- Tech: Schema contract persistence and current schema rule: [`docs/project/TECHNICAL_DESIGN.md`](../TECHNICAL_DESIGN/00_entry.md) Appendix B2.7
+- Tech: `schema_contract_used` persisted per run: [`docs/project/TECHNICAL_DESIGN.md`](../TECHNICAL_DESIGN/00_entry.md) Appendix B2.2
 - Tech: Governance invariants: [`docs/project/TECHNICAL_DESIGN.md`](../TECHNICAL_DESIGN/00_entry.md) Appendix A7
 
 **Test Expectations**
-- Approval creates a new schema version and new runs use it.
+- Approval creates a new schema contract snapshot and new runs use it.
 - Existing runs retain their historical schema association.
 
 **Definition of Done (DoD)**

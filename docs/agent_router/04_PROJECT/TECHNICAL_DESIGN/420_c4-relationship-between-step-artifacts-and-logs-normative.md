@@ -5,7 +5,7 @@
 
 ---
 
-# Appendix D — Structured Interpretation Schema (v0) (Normative)
+# Appendix D — Structured Interpretation Schema (Canonical) (Normative)
 
 This appendix defines the **authoritative minimum JSON schema** for structured interpretations.
 It exists to remove ambiguity for implementation (especially AI-assisted coding) and to support:

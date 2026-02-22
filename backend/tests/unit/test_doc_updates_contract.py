@@ -187,10 +187,10 @@ def test_implementation_plan_tracks_us08_us09_us32_us39_as_implemented() -> None
     text = _read_text(IMPLEMENTATION_PLAN)
     assert "## US-08 — Edit structured data" in text
     assert "## US-09 — Capture correction signals" in text
-    assert "## US-32 — Align review rendering to Global Schema v0 template" in text
+    assert "## US-32 — Align review rendering to Global Schema template" in text
     assert "## US-39 — Align veterinarian confidence signal with mapping confidence policy" in text
     assert (
-        "## US-32 — Align review rendering to Global Schema v0 template\n\n"
+        "## US-32 — Align review rendering to Global Schema template\n\n"
         "**Status**: Implemented (2026-02-17)"
     ) in text
     assert text.count("**Status**: Implemented (2026-02-17)") >= 3
@@ -214,12 +214,12 @@ def test_implementation_plan_router_tracks_us46_propagation() -> None:
     entry_text = _read_text(IMPLEMENTATION_PLAN_ROUTER_ENTRY)
     release_6_text = _read_text(IMPLEMENTATION_PLAN_ROUTER_RELEASE_6)
 
-    assert "## US-46 — Deterministic Visit Assignment Coverage MVP (Schema v1)" in source_text
+    assert "## US-46 — Deterministic Visit Assignment Coverage MVP (Schema)" in source_text
     assert (
-        "279b_us-46-deterministic-visit-assignment-coverage-mvp-schema-v1.md"
+        "279b_us-46-deterministic-visit-assignment-coverage-mvp-schema.md"
         in entry_text
     )
-    assert "US-46 — Deterministic Visit Assignment Coverage MVP (Schema v1)" in release_6_text
+    assert "US-46 — Deterministic Visit Assignment Coverage MVP (Schema)" in release_6_text
 
 
 def test_ci_does_not_ignore_markdown_only_changes() -> None:

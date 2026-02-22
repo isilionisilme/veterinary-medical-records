@@ -215,14 +215,14 @@ It does not prescribe storage tables or transport contracts.
 - Confidence guides attention and defaults over time, but must never block veterinary workflow.
 - Safety asymmetry applies: `field_mapping_confidence` decreases fast on contradiction, increases slowly on repeated consistency, and remains reversible.
 
-### Context v1 (Deterministic)
+### Context (Deterministic)
 
 - Purpose: deterministic aggregation key for correction/review signals and `field_mapping_confidence` propagation.
-- Context v1 fields: `doc_family`/`document_type`, `language`, `country`, `layout_fingerprint`, `extractor_version`, `schema_version`.
-- Context v1 is computed per document/run and persisted alongside review/correction signals; it is deterministic system metadata, not LLM-defined.
-- `veterinarian_id` is explicitly excluded from Context v1.
+- Context fields: `doc_family`/`document_type`, `language`, `country`, `layout_fingerprint`, `extractor_version`, `schema_contract`.
+- Context is computed per document/run and persisted alongside review/correction signals; it is deterministic system metadata, not LLM-defined.
+- `veterinarian_id` is explicitly excluded from Context.
 - `clinic_id` is not a first-class context key; use `layout_fingerprint` for layout-level grouping.
-- Context is versioned as **Context v1** to allow future evolution without redefining prior context semantics.
+- Context semantics are deterministic and stable for the current MVP contract.
 
 ### Learnable Unit (`mapping_id`)
 
@@ -252,7 +252,7 @@ It does not prescribe storage tables or transport contracts.
 - Policy actions adjust default ranking/selection behavior and do not add/remove Global Schema keys.
 - `candidate_confidence` can influence extraction diagnostics, but governance and policy actions use `field_mapping_confidence` in context.
 - By default, we do not require explicit per-field confirmation: implicit review is used as a weak positive signal when a veterinarian marks the document as reviewed and a field remains unchanged.
-- Global Schema v0 keys/order do not change automatically during this propagation; only `field_mapping_confidence` and policy state may change.
+- Global Schema keys/order do not change automatically during this propagation; only `field_mapping_confidence` and policy state may change.
 
 #### Future Improvements
 
@@ -265,21 +265,21 @@ It does not prescribe storage tables or transport contracts.
 - `pending_review` means "captured as a structural signal", not blocked workflow.
 - Global schema changes are prospective only and never silently rewrite history.
 - Any change that can affect money, coverage, or medical/legal interpretation must not auto-promote.
-- `CRITICAL_KEYS_V0` remains authoritative and closed.
+- `CRITICAL_KEYS` remains authoritative and closed.
 
 ## Visit grouping (MVP)
 
 - **Visita** means one care episode identified primarily by `visit_date`, with optional `admission_date`, `discharge_date`, and `reason_for_visit`.
-- Clinical concepts are **visit-scoped**. In `schema_version = "v1"`, they are grouped under `visits[].fields[]` as defined in [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix D9.
+- Clinical concepts are **visit-scoped**. In `canonical contract`, they are grouped under `visits[].fields[]` as defined in [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix D9.
 - The UI must not infer or heuristic-group visits. Grouping comes from the structured payload (`visits[]`).
 - MVP excludes cross-document deduplication, merge/reconciliation, and longitudinal visit tracking.
 - Review completion remains **document-level**: `Mark as reviewed` applies to the full document, including all its visits.
 
-## Global Schema v1 (Canonical Field List — Medical Record MVP)
+## Global Schema (Canonical Field List — Medical Record MVP)
 
 Canonical source location:
-- This section in `docs/project/PRODUCT_DESIGN.md` is the canonical product source for the Global Schema v1 Medical Record MVP field list.
-- The legacy Global Schema v0 reference remains canonical in the Appendix of this same document.
+- This section in `docs/project/PRODUCT_DESIGN.md` is the canonical product source for the Global Schema Medical Record MVP field list.
+- The legacy Global Schema reference remains canonical in the Appendix of this same document.
 
 Purpose: define the canonical contract-aligned field universe for the Medical Record panel.
 
@@ -313,7 +313,7 @@ E) Información del informe
 - `language` (string)
 
 Visit-level fields:
-- Visit-level clinical data is canonical in `schema_version = "v1"` under `visits[]` and `visits[].fields[]` (see Appendix D9 in [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md)).
+- Visit-level clinical data is canonical in `canonical contract` under `visits[]` and `visits[].fields[]` (see Appendix D9 in [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md)).
 - Visit fields are not part of the document-level top-level list above.
 
 Panel boundary (Medical Record MVP):
@@ -323,17 +323,17 @@ Panel boundary (Medical Record MVP):
 Product compatibility rule:
 - `age` and `dob` may coexist; any derived display behavior is defined by UX and does not imply new extraction requirements.
 
-### CRITICAL_KEYS_V0 (Authoritative, closed set)
+### CRITICAL_KEYS (Authoritative, closed set)
 
-Source of truth for Appendix D7.4: the exact set listed in historical Global Schema v0.
-This set remains authoritative and closed for v0 semantics.
-For v1 Medical Record contract critical/taxonomy semantics, refer to [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix D9.
+Source of truth for Appendix D7.4: the exact set listed in historical Global Schema.
+This set remains authoritative and closed for legacy flat semantics.
+For Medical Record contract critical/taxonomy semantics, refer to [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix D9.
 
 ## Medical Record MVP panel semantics (US-44)
 
 - The `Extracted Data / Informe` panel is a **clinical Medical Record view**.
 - The panel renders a **contract-defined Medical Record field-set and taxonomy** (document-level, visit-level, and explicit other/unmapped bucket).
-- In `schema_version = "v1"`, required document-level panel fields (including missing-value slots) are defined by the Technical contract template (`medical_record_view.field_slots[]`, Appendix D9).
+- In `canonical contract`, required document-level panel fields (including missing-value slots) are defined by the Technical contract template (`medical_record_view.field_slots[]`, Appendix D9).
 - Non-clinical claim concepts are out of scope for this panel and must not be rendered here.
 - Panel section order is fixed: `Centro Veterinario` -> `Paciente` -> `Propietario` -> `Visitas` -> `Notas internas` -> `Otros campos detectados` -> `Información del informe`.
 - Labels/copy and empty-states for this panel are defined in [`docs/project/UX_DESIGN.md`](UX_DESIGN.md).
@@ -345,17 +345,17 @@ For v1 Medical Record contract critical/taxonomy semantics, refer to [`docs/proj
 
 - [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md) defines panel meaning and scope (clinical Medical Record view).
 - [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) defines layout, labels, and empty states.
-- [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) defines payload contracts (`schema_version` v0/v1), field taxonomy, and explicit `other/unmapped` contract bucket.
+- [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) defines payload contracts (`schema_contract` legacy/visit-grouped), field taxonomy, and explicit `other/unmapped` contract bucket.
 
-## Appendix: Global Schema v0 (Legacy / Deprecated)
+## Appendix: Global Schema (Legacy / Deprecated)
 
 Status:
-- Global Schema v0 is legacy/historical and is retained only for reference.
+- Global Schema is legacy/historical and is retained only for reference.
 - It is not the canonical schema for the Medical Record MVP panel.
-- For this panel, canonical behavior is defined by Global Schema v1 + v1 contract taxonomy.
-- Legacy v0 payloads may still include additional non-clinical compatibility keys; they are outside this MVP panel scope.
+- For this panel, canonical behavior is defined by Global Schema + contract taxonomy.
+- Legacy legacy payloads may still include additional non-clinical compatibility keys; they are outside this MVP panel scope.
 
-Historical v0 reference (flat model):
+Historical legacy reference (flat model):
 
 A) Identificación del caso
 - `claim_id`
@@ -373,7 +373,7 @@ C) Propietario
 D) Visita / episodio
 - `visit_date`, `admission_date`, `discharge_date`, `reason_for_visit`
 
-E) Clínico / revisión (flat v0)
+E) Clínico / revisión (flat legacy)
 - `diagnosis`, `symptoms`, `procedure`, `medication`, `treatment_plan`, `allergies`, `vaccinations`, `lab_result`, `imaging`
 - `notes`, `language`
 

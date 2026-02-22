@@ -58,6 +58,45 @@ def test_interpretation_artifact_contains_full_global_schema_shape() -> None:
     for repeatable_key in REPEATABLE_KEYS:
         assert isinstance(global_schema[repeatable_key], list)
 
+    assert data.get("schema_contract") == "legacy-flat"
+    assert data.get("schema_version") == "v1"
+
+
+def test_interpretation_artifact_uses_legacy_context_key_fallback_for_calibration() -> None:
+    pet_name_lookup_count = 0
+
+    class FakeRepository:
+        def get_calibration_counts(
+            self,
+            *,
+            context_key: str,
+            field_key: str,
+            mapping_id: str | None,
+            policy_version: str,
+        ) -> tuple[int, int] | None:
+            nonlocal pet_name_lookup_count
+            if field_key != "pet_name":
+                return None
+            pet_name_lookup_count += 1
+            if pet_name_lookup_count >= 2:
+                return (7, 0)
+            return None
+
+    payload = _build_interpretation_artifact(
+        document_id="doc-fallback-calibration",
+        run_id="run-fallback-calibration",
+        raw_text="Paciente: Luna",
+        repository=FakeRepository(),
+    )
+
+    pet_name_field = next(
+        field
+        for field in payload["data"]["fields"]
+        if isinstance(field, dict) and field.get("key") == "pet_name"
+    )
+    assert pet_name_lookup_count >= 2
+    assert pet_name_field["field_review_history_adjustment"] > 0
+
 
 def test_interpretation_artifact_empty_raw_text_keeps_global_schema_shape() -> None:
     payload = _build_interpretation_artifact(

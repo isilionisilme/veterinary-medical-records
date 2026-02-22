@@ -42,8 +42,8 @@ As a veterinarian reviewer, I want to resize the PDF and structured-data panels 
 
 **Authoritative References**
 - UX: Side-by-side review interaction baseline: [`docs/project/UX_DESIGN.md`](../UX_DESIGN/00_entry.md) Sections 2–4.
-- Product: Global Schema canonical ordering invariants: [`docs/project/PRODUCT_DESIGN.md`](../PRODUCT_DESIGN/00_entry.md) section **Global Schema v0 (Canonical Field List)**.
-- Frontend context: review rendering backbone and deterministic structure: [`docs/project/FRONTEND_IMPLEMENTATION.md`](../FRONTEND_IMPLEMENTATION/00_entry.md) section **Review Rendering Backbone (Global Schema v0)**.
+- Product: Global Schema canonical ordering invariants: [`docs/project/PRODUCT_DESIGN.md`](../PRODUCT_DESIGN/00_entry.md) section **Global Schema (Canonical Field List)**.
+- Frontend context: review rendering backbone and deterministic structure: [`docs/project/FRONTEND_IMPLEMENTATION.md`](../FRONTEND_IMPLEMENTATION/00_entry.md) section **Review Rendering Backbone (Global Schema)**.
 
 **Test Expectations**
 - Splitter drag updates panel widths while honoring min/max constraints.

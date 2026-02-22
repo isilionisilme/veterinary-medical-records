@@ -1,16 +1,16 @@
-# US-32 — Align review rendering to Global Schema v0 template
+# US-32 — Align review rendering to Global Schema template
 
 **Status**: Implemented (2026-02-17)
 
 **User Story**
-As a veterinarian, I want the review view to always use the full Global Schema v0 template so that scanning is consistent across documents.
+As a veterinarian, I want the review view to always use the full Global Schema template so that scanning is consistent across documents.
 
 **Acceptance Criteria**
-- The UI renders the complete Global Schema v0 in fixed order and by sections, regardless of how many fields were extracted.
+- The UI renders the complete Global Schema in fixed order and by sections, regardless of how many fields were extracted.
 - Non-extracted keys render explicit placeholders (no blank gaps).
 - While structured data is loading, the UI shows a loading state and does not render missing placeholders yet.
 - Repeatable fields render as lists and show an explicit empty-list state when no items are present.
-- Extracted keys outside Global Schema v0 are rendered in a separate section named `Other extracted fields`.
+- Extracted keys outside Global Schema are rendered in a separate section named `Other extracted fields`.
 - Veterinarian-facing copy does not expose governance terminology such as `pending_review`, `reviewer`, or `governance`.
 
 **Scope Clarification**
@@ -21,10 +21,10 @@ As a veterinarian, I want the review view to always use the full Global Schema v
 - Confidence payload naming follows the hard-rename contract: `field_mapping_confidence`, `text_extraction_reliability`, and `field_review_history_adjustment`.
 
 **Authoritative References**
-- Product: Global schema authority and field list: [`docs/project/PRODUCT_DESIGN.md`](../PRODUCT_DESIGN/00_entry.md) section **Global Schema v0 (Canonical Field List)**.
-- UX: Rendering and placeholder behavior: [`docs/project/UX_DESIGN.md`](../UX_DESIGN/00_entry.md) section **Review UI Rendering Rules (Global Schema v0 Template)**.
+- Product: Global schema authority and field list: [`docs/project/PRODUCT_DESIGN.md`](../PRODUCT_DESIGN/00_entry.md) section **Global Schema (Canonical Field List)**.
+- UX: Rendering and placeholder behavior: [`docs/project/UX_DESIGN.md`](../UX_DESIGN/00_entry.md) section **Review UI Rendering Rules (Global Schema Template)**.
 - Tech: Structured interpretation schema and partial payload boundary: [`docs/project/TECHNICAL_DESIGN.md`](../TECHNICAL_DESIGN/00_entry.md) Appendix D.
-- Frontend implementation notes: [`docs/project/FRONTEND_IMPLEMENTATION.md`](../FRONTEND_IMPLEMENTATION/00_entry.md) section **Review Rendering Backbone (Global Schema v0)**.
+- Frontend implementation notes: [`docs/project/FRONTEND_IMPLEMENTATION.md`](../FRONTEND_IMPLEMENTATION/00_entry.md) section **Review Rendering Backbone (Global Schema)**.
 
 **Test Expectations**
 - Review screens always show the same section/key structure, independent of extraction completeness.

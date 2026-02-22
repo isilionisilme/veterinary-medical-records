@@ -1,5 +1,5 @@
 {
-  "version": "mixed_multi_visit_assignment.baseline.v1",
+  "version": "mixed_multi_visit_assignment.baseline.canonical",
   "visit_ids": [
     "visit-2026-02-11",
     "visit-2026-02-18"

@@ -42,7 +42,7 @@ Key fields:
 - `completed_at`
 - `failure_type` (nullable)
 - `language_used`
-- `schema_version_used`
+- `schema_contract_used`
 
 Invariants:
 - Append-only.
@@ -150,10 +150,10 @@ If any user story lists different endpoint paths, treat them as non-normative ex
 
 ## B2.7 SchemaVersion (Authoritative)
 
-**Purpose**: Stores the canonical schema versions used by new processing runs.
+**Purpose**: Stores canonical schema contract snapshots used by new processing runs.
 
 Key fields:
-- `schema_version_id` (PK)
+- `schema_contract_id` (PK)
 - `version_number` (monotonic integer)
 - `schema_definition` (JSON)
 - `created_at`
@@ -161,9 +161,9 @@ Key fields:
 - `change_summary` (nullable)
 
 Invariants:
-- Append-only; schema versions are immutable.
-- “Current schema” is resolved as the schema version with the highest `version_number`.
-- New processing runs MUST persist `schema_version_used` resolved at run creation time (B2.2).
+- Append-only; schema contract snapshots are immutable.
+- “Current schema” is resolved as the schema contract snapshot with the highest `version_number`.
+- New processing runs MUST persist `schema_contract_used` resolved at run creation time (B2.2).
 
 ---
 
@@ -200,7 +200,7 @@ Key fields:
 - `decision_type` (closed set; `APPROVE | REJECT | DEFER | FLAG_CRITICAL`)
 - `previous_status` (nullable)
 - `new_status` (nullable)
-- `schema_version_id` (nullable; present when approval creates a new schema version)
+- `schema_contract_id` (nullable; present when approval creates a new schema contract snapshot)
 - `reviewer_id`
 - `reason` (nullable)
 - `created_at`

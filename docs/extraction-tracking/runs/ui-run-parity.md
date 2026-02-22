@@ -16,7 +16,7 @@
 - UI extracted fields are loaded via `GET /documents/{document_id}/review`.
 - UI uses `latest_completed_run.run_id` from the review payload.
 - Structured values come from `active_interpretation.data.global_schema`.
-- In at least one check, `GET /runs/{run_id}/artifacts/global-schema-v0` returned 404.
+- In at least one check, legacy run-level structured artifact endpoint returned 404.
 
 ## Conclusion
 - Run parity confirmed for `/review` path in this check.

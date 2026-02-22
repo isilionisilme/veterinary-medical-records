@@ -7,7 +7,7 @@ Introduce reviewer-facing governance for global schema evolution, fully isolated
 - Aggregation of pending structural change candidates
 - Reviewer-facing inspection, filtering, and prioritization
 - Approval, rejection, and deferral
-- Canonical schema versioning (prospective only)
+- Canonical schema evolution governance (prospective only)
 - Append-only governance audit trail
 
 ## User Stories (in order)

@@ -12,7 +12,7 @@ As a reviewer, I want to filter and prioritize pending structural changes so I c
 - This story does not introduce automatic decisions.
 
 **Authoritative References**
-- Product: Critical keys policy: [`docs/project/PRODUCT_DESIGN.md`](../PRODUCT_DESIGN/00_entry.md) CRITICAL_KEYS_V0
+- Product: Critical keys policy: [`docs/project/PRODUCT_DESIGN.md`](../PRODUCT_DESIGN/00_entry.md) CRITICAL_KEYS
 - Tech: Critical concept derivation: [`docs/project/TECHNICAL_DESIGN.md`](../TECHNICAL_DESIGN/00_entry.md) Appendix D7.4
 - Tech: Governance endpoints: [`docs/project/TECHNICAL_DESIGN.md`](../TECHNICAL_DESIGN/00_entry.md) Appendix B3
 

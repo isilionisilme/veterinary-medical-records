@@ -62,7 +62,7 @@ Rules:
 - `POST /reviewer/structural-changes/{candidate_id}/decision`
   - Record a governance decision (approve/reject/defer).
 - `GET /reviewer/schema/current`
-  - Retrieve the current canonical schema version.
+  - Retrieve the current canonical schema contract snapshot.
 - `GET /reviewer/governance/audit-trail`
   - Retrieve append-only governance decision history.
 
@@ -76,13 +76,13 @@ Rules:
   - `latest_run_id`, `latest_run_state` (nullable if none exists),
   - `latest_run_failure_type` (nullable),
   - `latest_run_language_used` (nullable),
-  - `latest_run_schema_version_used` (nullable).
+  - `latest_run_schema_contract_used` (nullable).
 
 - `GET /documents/{id}`
   Returns:
   - document metadata,
   - derived `document_status`,
-  - `latest_run` summary (id, state, timestamps, failure_type, language_used, schema_version_used).
+  - `latest_run` summary (id, state, timestamps, failure_type, language_used, schema_contract_used).
   - `language_override` (nullable).
 
 - `GET /documents/{id}/review`
@@ -189,7 +189,7 @@ Response body (minimum):
 - `run_id`
 - `interpretation_id`
 - `version_number` (new active version number)
-- `data` (Structured Interpretation Schema v0; Appendix D)
+- `data` (Structured Interpretation Schema legacy flat contract; Appendix D)
 
 Rules:
 - Human edits MUST produce `origin = "human"` fields (Appendix D) and append `FieldChangeLog` entries (B2.5).
@@ -219,11 +219,11 @@ Rules:
   - `decision_id`
   - `candidate_id` (nullable)
   - `decision_type`
-  - `schema_version_id` (nullable)
+  - `schema_contract_id` (nullable)
   - `created_at`
 
 `GET /reviewer/schema/current` returns:
-- `schema_version_id`
+- `schema_contract_id`
 - `version_number`
 - `created_at`
 - `change_summary` (nullable)
@@ -233,7 +233,7 @@ Rules:
   - `decision_id`
   - `candidate_id` (nullable)
   - `decision_type`
-  - `schema_version_id` (nullable)
+  - `schema_contract_id` (nullable)
   - `reviewer_id`
   - `reason` (nullable)
   - `created_at`
