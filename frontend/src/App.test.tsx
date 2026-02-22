@@ -2251,6 +2251,15 @@ describe("App upload and list flow", () => {
     expect(nhcIndicator.className).not.toContain("bg-missing");
   });
 
+  it("keeps critical badges in canonical Datos extraídos for critical document fields", async () => {
+    installCanonicalUs44FetchMock();
+    renderApp();
+    const panel = await openReadyDocumentAndGetPanel();
+
+    expect(within(panel).queryByTestId("critical-indicator-pet_name")).toBeInTheDocument();
+    expect(within(panel).queryByTestId("critical-indicator-clinic_name")).toBeNull();
+  });
+
   it("falls back to legacy-flat rendering when explicit schema_contract is legacy-flat and field_slots are malformed", async () => {
     installCanonicalUs44FetchMock({
       schemaContract: "legacy-flat",

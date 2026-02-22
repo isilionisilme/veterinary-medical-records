@@ -259,6 +259,10 @@ const BILLING_REVIEW_FIELDS = new Set([
   "line_item",
 ]);
 
+const CRITICAL_GLOBAL_SCHEMA_KEYS = new Set(
+  GLOBAL_SCHEMA.filter((field) => field.critical).map((field) => field.key)
+);
+
 type ConfidencePolicyDiagnosticEvent = {
   event_type: "CONFIDENCE_POLICY_CONFIG_MISSING";
   document_id: string | null;
@@ -2968,6 +2972,9 @@ export function App() {
       const slotDefinitions = documentSlots.map((slot, index) => {
         const sectionLabel = getUiSectionLabelFromSectionId(slot.section) ?? REPORT_INFO_SECTION_TITLE;
         const sectionIndex = sectionOrderIndex.get(slot.section) ?? MEDICAL_RECORD_SECTION_ID_ORDER.length;
+        const isCriticalSlot =
+          CRITICAL_GLOBAL_SCHEMA_KEYS.has(slot.canonical_key) ||
+          Boolean(slot.aliases?.some((alias) => CRITICAL_GLOBAL_SCHEMA_KEYS.has(alias)));
         return {
           key: slot.canonical_key,
           label: formatReviewKeyLabel(slot.canonical_key),
@@ -2975,7 +2982,7 @@ export function App() {
           order: sectionIndex * 1000 + index,
           value_type: "string",
           repeatable: false,
-          critical: false,
+          critical: isCriticalSlot,
           aliases: slot.aliases,
         };
       });
