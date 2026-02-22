@@ -4872,7 +4872,7 @@ export function App() {
               className="bg-surfaceMuted animate-fadein"
               data-testid={`visit-episode-${visitBlock.visitNumber}`}
             >
-              <details open className="group">
+              <details className="group">
                 <summary className="list-none cursor-pointer [&::-webkit-details-marker]:hidden">
                   <CardHeader className="space-y-2">
                     <div className="flex items-start justify-between gap-3">
