@@ -16,7 +16,7 @@ def test_frontend_image_copies_shared_contract_directory() -> None:
 
 
 def test_frontend_contract_import_path_stays_repo_relative() -> None:
-    source = (REPO_ROOT / "frontend" / "src" / "lib" / "globalSchemaV0.ts").read_text(
+    source = (REPO_ROOT / "frontend" / "src" / "lib" / "globalSchema.ts").read_text(
         encoding="utf-8"
     )
-    assert "../../../shared/global_schema_v0_contract.json" in source
+    assert "../../../shared/global_schema_contract.json" in source

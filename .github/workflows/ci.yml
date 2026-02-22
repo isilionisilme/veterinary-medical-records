@@ -124,8 +124,8 @@ jobs:
           set -euo pipefail
           cid="$(docker create vetrecords-backend:ci)"
           trap 'docker rm -f "$cid" >/dev/null 2>&1 || true' EXIT
-          docker cp "$cid:/app/shared/global_schema_v0_contract.json" /tmp/backend_global_schema_v0_contract.json
-          test -f /tmp/backend_global_schema_v0_contract.json
+          docker cp "$cid:/app/shared/global_schema_contract.json" /tmp/backend_global_schema_contract.json
+          test -f /tmp/backend_global_schema_contract.json
       - name: Build frontend image
         if: steps.packaging_changes.outputs.docker_packaging == 'true'
         run: docker build -f Dockerfile.frontend -t vetrecords-frontend:ci .
@@ -135,8 +135,8 @@ jobs:
           set -euo pipefail
           cid="$(docker create vetrecords-frontend:ci)"
           trap 'docker rm -f "$cid" >/dev/null 2>&1 || true' EXIT
-          docker cp "$cid:/app/shared/global_schema_v0_contract.json" /tmp/frontend_global_schema_v0_contract.json
-          test -f /tmp/frontend_global_schema_v0_contract.json
+          docker cp "$cid:/app/shared/global_schema_contract.json" /tmp/frontend_global_schema_contract.json
+          test -f /tmp/frontend_global_schema_contract.json
       - name: Docker packaging guard skipped (no relevant changes)
         if: steps.packaging_changes.outputs.docker_packaging != 'true'
         run: echo "No Docker packaging-relevant changes detected; skipping Docker image guard."

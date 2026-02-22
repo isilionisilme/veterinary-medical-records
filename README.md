@@ -179,7 +179,7 @@ Notes:
 
 ### Troubleshooting
 
-- `Global Schema v0 contract file not found` or frontend import errors for `global_schema_v0_contract.json`:
+- `Global Schema contract file not found` or frontend import errors for `global_schema_contract.json`:
   - Both images now copy `shared/` to `/app/shared` during build.
   - Rebuild without cache to rule out stale images:
     - `docker compose build --no-cache backend frontend`
