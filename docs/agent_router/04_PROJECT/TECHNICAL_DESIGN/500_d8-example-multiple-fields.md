@@ -2,7 +2,7 @@
 
 ```json
 {
-  "schema_version": "v0",
+  "schema_contract": "legacy-flat",
   "document_id": "doc-123",
   "processing_run_id": "run-456",
   "created_at": "2026-02-05T12:34:56Z",

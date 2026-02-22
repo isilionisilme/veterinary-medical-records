@@ -237,13 +237,13 @@ If a client attempts to edit/review while a `RUNNING` run exists, the API MUST r
 - Confidence is a stored **attention signal** only.
 - The meaning/governance of confidence in veterinarian workflows is defined in [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md).
 
-### Context v1 (Deterministic)
+### Context (Deterministic)
 
 - Purpose: deterministic aggregation key for signals and `field_mapping_confidence`.
-- Context v1 fields: `doc_family`/`document_type`, `language`, `country`, `layout_fingerprint`, `extractor_version`, `schema_version`.
-- Context v1 is serialized into a stable canonical representation and/or hash key for storage and aggregation.
+- Context fields: `doc_family`/`document_type`, `language`, `country`, `layout_fingerprint`, `extractor_version`, `schema_contract`.
+- Context is serialized into a stable canonical representation and/or hash key for storage and aggregation.
 - Exclusions: do not include `veterinarian_id`; avoid `clinic_id` as a first-class key (use `layout_fingerprint`).
-- Versioning: this contract is named **Context v1** to allow future context evolution.
+- This contract remains deterministic and stable for current MVP semantics.
 
 ### Learnable Unit Key (`mapping_id`)
 
@@ -263,7 +263,7 @@ Minimum field-level payload for calibration-aware review must support:
 - `field_mapping_confidence` (0–1), the primary veterinarian-facing confidence signal.
 - `policy_state` (`neutral|boosted|demoted|suppressed`).
 - `mapping_id` (stable strategy identifier).
-- `context_key` (derived from Context v1).
+- `context_key` (derived from Context).
 - `candidate_confidence` (optional, diagnostic only, not shown by default).
 
 ### Confidence breakdown for veterinarian tooltip (MVP visibility contract)
@@ -620,7 +620,7 @@ User actions:
 
 Reviewer actions:
 - `GOVERNANCE_DECISION_RECORDED`
-- `SCHEMA_VERSION_CREATED`
+- `SCHEMA_CONTRACT_CREATED`
 
 Rules:
 - Structured logs remain best-effort and never block processing.
@@ -810,7 +810,7 @@ Key fields:
 - `completed_at`
 - `failure_type` (nullable)
 - `language_used`
-- `schema_version_used`
+- `schema_contract_used`
 
 Invariants:
 - Append-only.
@@ -918,10 +918,10 @@ If any user story lists different endpoint paths, treat them as non-normative ex
 
 ### B2.7 SchemaVersion (Authoritative)
 
-**Purpose**: Stores the canonical schema versions used by new processing runs.
+**Purpose**: Stores canonical schema contract snapshots used by new processing runs.
 
 Key fields:
-- `schema_version_id` (PK)
+- `schema_contract_id` (PK)
 - `version_number` (monotonic integer)
 - `schema_definition` (JSON)
 - `created_at`
@@ -929,9 +929,9 @@ Key fields:
 - `change_summary` (nullable)
 
 Invariants:
-- Append-only; schema versions are immutable.
-- “Current schema” is resolved as the schema version with the highest `version_number`.
-- New processing runs MUST persist `schema_version_used` resolved at run creation time (B2.2).
+- Append-only; schema contract snapshots are immutable.
+- “Current schema” is resolved as the schema contract snapshot with the highest `version_number`.
+- New processing runs MUST persist `schema_contract_used` resolved at run creation time (B2.2).
 
 ---
 
@@ -968,7 +968,7 @@ Key fields:
 - `decision_type` (closed set; `APPROVE | REJECT | DEFER | FLAG_CRITICAL`)
 - `previous_status` (nullable)
 - `new_status` (nullable)
-- `schema_version_id` (nullable; present when approval creates a new schema version)
+- `schema_contract_id` (nullable; present when approval creates a new schema contract snapshot)
 - `reviewer_id`
 - `reason` (nullable)
 - `created_at`
@@ -1044,7 +1044,7 @@ Rules:
 - `POST /reviewer/structural-changes/{candidate_id}/decision`
   - Record a governance decision (approve/reject/defer).
 - `GET /reviewer/schema/current`
-  - Retrieve the current canonical schema version.
+  - Retrieve the current canonical schema contract snapshot.
 - `GET /reviewer/governance/audit-trail`
   - Retrieve append-only governance decision history.
 
@@ -1058,13 +1058,13 @@ Rules:
   - `latest_run_id`, `latest_run_state` (nullable if none exists),
   - `latest_run_failure_type` (nullable),
   - `latest_run_language_used` (nullable),
-  - `latest_run_schema_version_used` (nullable).
+  - `latest_run_schema_contract_used` (nullable).
 
 - `GET /documents/{id}`
   Returns:
   - document metadata,
   - derived `document_status`,
-  - `latest_run` summary (id, state, timestamps, failure_type, language_used, schema_version_used).
+  - `latest_run` summary (id, state, timestamps, failure_type, language_used, schema_contract_used).
   - `language_override` (nullable).
 
 - `GET /documents/{id}/review`
@@ -1171,7 +1171,7 @@ Response body (minimum):
 - `run_id`
 - `interpretation_id`
 - `version_number` (new active version number)
-- `data` (Structured Interpretation Schema v0; Appendix D)
+- `data` (Structured Interpretation Schema legacy flat contract; Appendix D)
 
 Rules:
 - Human edits MUST produce `origin = "human"` fields (Appendix D) and append `FieldChangeLog` entries (B2.5).
@@ -1201,11 +1201,11 @@ Rules:
   - `decision_id`
   - `candidate_id` (nullable)
   - `decision_type`
-  - `schema_version_id` (nullable)
+  - `schema_contract_id` (nullable)
   - `created_at`
 
 `GET /reviewer/schema/current` returns:
-- `schema_version_id`
+- `schema_contract_id`
 - `version_number`
 - `created_at`
 - `change_summary` (nullable)
@@ -1215,7 +1215,7 @@ Rules:
   - `decision_id`
   - `candidate_id` (nullable)
   - `decision_type`
-  - `schema_version_id` (nullable)
+  - `schema_contract_id` (nullable)
   - `reviewer_id`
   - `reason` (nullable)
   - `created_at`
@@ -1485,7 +1485,7 @@ Rule:
 
 ---
 
-# Appendix D — Structured Interpretation Schema (v0) (Normative)
+# Appendix D — Structured Interpretation Schema (Canonical) (Normative)
 
 This appendix defines the **authoritative minimum JSON schema** for structured interpretations.
 It exists to remove ambiguity for implementation (especially AI-assisted coding) and to support:
@@ -1501,8 +1501,8 @@ This is a deliberately small contract, **not a full medical ontology**.
 - **Assistive, not authoritative**: outputs are explainable and editable.
 - **Non-blocking**: confidence and governance never block veterinarians.
 - **Run-scoped & append-only**: nothing is overwritten; every interpretation belongs to a processing run.
-- **Approximate evidence**: page + snippet; no PDF coordinates in v0.
-- **Flat structure (v0)**: optimize for flexibility and speed, not completeness.
+- **Approximate evidence**: page + snippet; no PDF coordinates in legacy flat contract.
+- **Flat structure (legacy flat contract)**: optimize for flexibility and speed, not completeness.
 
 Note (materialization boundary):
 - Machine interpretation payloads may be partial with respect to Global Schema.
@@ -1511,10 +1511,10 @@ Note (materialization boundary):
 
 ## D2. Versioning
 
-- `schema_version` is a string. Current value: `"v0"`.
+- `schema_contract` is a string. Current value: `"legacy-flat"`.
 - Future versions must be explicit and intentional.
 - Additive changes are preferred; breaking changes require a new version.
-- Version `"v1"` introduces deterministic visit grouping via a `visits[]` container while preserving `StructuredField` semantics. v0 remains supported.
+- The canonical visit-grouped contract introduces deterministic visit grouping via a `visits[]` container while preserving `StructuredField` semantics. legacy flat remains supported.
 
 ## D3. Relationship to Persistent Model (Authoritative)
 
@@ -1524,7 +1524,7 @@ The JSON object defined in this appendix is stored as the `data` payload of `Int
 
 ```json
 {
-  "schema_version": "v0",
+  "schema_contract": "legacy-flat",
   "document_id": "uuid",
   "processing_run_id": "uuid",
   "created_at": "2026-02-05T12:34:56Z",
@@ -1534,7 +1534,7 @@ The JSON object defined in this appendix is stored as the `data` payload of `Int
 
 | Field | Type | Required | Notes |
 |---|---|---:|---|
-| schema_version | string | ✓ | Always `"v0"` |
+| schema_contract | string | ✓ | Always `"legacy-flat"` |
 | document_id | uuid | ✓ | Convenience for debugging |
 | processing_run_id | uuid | ✓ | Links to a specific processing attempt |
 | created_at | ISO 8601 string | ✓ | Snapshot creation time |
@@ -1567,12 +1567,12 @@ A single extracted or edited data point with confidence and optional evidence.
 | key | string | ✓ | Lowercase `snake_case` |
 | value | string \| number \| boolean \| null | ✓ | Dates stored as ISO strings |
 | value_type | `"string"` \| `"number"` \| `"boolean"` \| `"date"` \| `"unknown"` | ✓ | Explicit typing |
-| scope | `"document"` \| `"visit"` | ✗ | Contract taxonomy hint (v1 preferred). Backward-compatible optional metadata. |
-| section | `"clinic"` \| `"patient"` \| `"owner"` \| `"visits"` \| `"notes"` \| `"other"` \| `"report_info"` | ✗ | Contract section membership hint (v1 preferred). |
+| scope | `"document"` \| `"visit"` | ✗ | Contract taxonomy hint (canonical preferred). Backward-compatible optional metadata. |
+| section | `"clinic"` \| `"patient"` \| `"owner"` \| `"visits"` \| `"notes"` \| `"other"` \| `"report_info"` | ✗ | Contract section membership hint (canonical preferred). |
 | domain | `"clinical"` \| `"administrative"` \| `"meta"` \| `"other"` | ✗ | Concept domain classification (contract metadata; not UI behavior). |
 | classification | `"medical_record"` \| `"other"` | ✗ | Explicit render taxonomy marker for deterministic consumers. |
 | confidence | number (0–1) | ✓ | Attention signal only |
-| is_critical | boolean | ✓ | Derived: `key ∈ CRITICAL_KEYS_V0` (Appendix D7.4) |
+| is_critical | boolean | ✓ | Derived: `key ∈ CRITICAL_KEYS` (Appendix D7.4) |
 | origin | `"machine"` \| `"human"` | ✓ | Distinguishes machine output vs human edits |
 | evidence | `Evidence` | ✗ | Optional; expected for machine output when available |
 
@@ -1603,14 +1603,14 @@ This is never exposed or actionable in veterinarian-facing workflows.
 ### D7.4 Critical Concepts (Authoritative)
 
 Derivation (authoritative):
-- `StructuredField.is_critical = (StructuredField.key ∈ CRITICAL_KEYS_V0)`
+- `StructuredField.is_critical = (StructuredField.key ∈ CRITICAL_KEYS)`
 
 Rules (technical, authoritative):
 - `is_critical` MUST be derived from the field key (not model-decided).
-- `CRITICAL_KEYS_V0` is a closed set (no heuristics, no model output).
+- `CRITICAL_KEYS` is a closed set (no heuristics, no model output).
 - This designation MUST NOT block workflows; it only drives UI signaling and internal flags.
 
-Source of truth for `CRITICAL_KEYS_V0`:
+Source of truth for `CRITICAL_KEYS`:
 - Defined in [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md) (product authority).
 - The complete Global Schema key list, fixed ordering, section grouping, repeatability rules, and cross-key fallback rules (including `document_date` fallback to `visit_date`) are also governed by [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md).
 
@@ -1620,7 +1620,7 @@ Source of truth for `CRITICAL_KEYS_V0`:
 
 ```json
 {
-  "schema_version": "v0",
+  "schema_contract": "legacy-flat",
   "document_id": "doc-123",
   "processing_run_id": "run-456",
   "created_at": "2026-02-05T12:34:56Z",
@@ -1648,20 +1648,20 @@ Source of truth for `CRITICAL_KEYS_V0`:
 }
 ```
 
-## D9. Structured Interpretation Schema (v1 — Visit-grouped) (Normative)
+## D9. Structured Interpretation Schema (Visit-grouped Canonical) (Normative)
 
-Version `v1` defines deterministic visit grouping for multi-visit documents.
+The canonical visit-grouped contract defines deterministic visit grouping for multi-visit documents.
 
 - Multi-visit PDFs exist; UI must not heuristic-group.
-- v1 enables deterministic grouping by introducing `visits[]`.
-- v0 remains valid; this is an explicit schema version evolution.
-- Canon note for Medical Record panel: `schema_version = "v1"` is canonical for this surface; `v0` is legacy/deprecated for Medical Record panel rendering.
+- The canonical contract enables deterministic grouping by introducing `visits[]`.
+- The legacy flat contract is deprecated and retained only for historical compatibility.
+- Canon note for Medical Record panel: `canonical contract` is canonical for this surface; legacy flat contract is deprecated for Medical Record panel rendering.
 
-### D9.1 Top-Level Object: StructuredInterpretation v1 (JSON)
+### D9.1 Top-Level Object: StructuredInterpretation (Canonical Visit-grouped) (JSON)
 
 ```json
 {
-  "schema_version": "v1",
+  "schema_contract": "visit-grouped-canonical",
   "document_id": "uuid",
   "processing_run_id": "uuid",
   "created_at": "2026-02-05T12:34:56Z",
@@ -1686,7 +1686,7 @@ Version `v1` defines deterministic visit grouping for multi-visit documents.
 
 | Field | Type | Required | Notes |
 |---|---|---:|---|
-| schema_version | string | ✓ | Always `"v1"` |
+| schema_contract | string | ✓ | Always `"visit-grouped-canonical"` |
 | document_id | uuid | ✓ | Convenience for debugging |
 | processing_run_id | uuid | ✓ | Links to a specific processing attempt |
 | created_at | ISO 8601 string | ✓ | Snapshot creation time |
@@ -1773,7 +1773,7 @@ Normative rendering rules:
 
 ### D9.3 Scoping Rules (Normative)
 
-For `schema_version = "v1"`:
+For `canonical contract`:
 1. Top-level `fields[]` MUST contain only non-visit-scoped keys (clinic/patient/owner/notes metadata and any future non-visit keys).
 2. Visit-scoped concepts MUST appear inside exactly one `visits[].fields[]` entry set, not in top-level `fields[]`.
 3. “Otros campos detectados” MUST be contract-driven through explicit `other_fields[]`; FE MUST NOT reclassify and MUST NOT source this section from `fields[]` or `visits[]`.
@@ -1838,7 +1838,7 @@ Medical Record panel eligibility taxonomy (normative summary):
 - `Información del informe`: `language` and equivalent report metadata.
 - `Otros campos detectados`: explicit contract bucket only (`other_fields[]`), never UI-side classification.
 
-Date normalization (v1 contract target):
+Date normalization (canonical contract target):
 - Canonical date representation for `visit_date`, `admission_date`, and `discharge_date` is ISO 8601 date string (`YYYY-MM-DD`).
 - Transitional note: non-ISO inputs (for example `dd/mm/yyyy`) may exist upstream; producers should normalize to canonical ISO in payload output.
 
@@ -1853,7 +1853,7 @@ If an extracted clinical field cannot be deterministically linked to a specific 
 
 Contract clarification:
 - `visit_id = "unassigned"` is an explicit contract value (not a frontend heuristic or fallback label).
-- A payload where all visit-scoped concepts are contained in a single synthetic `unassigned` group is valid for `schema_version = "v1"`.
+- A payload where all visit-scoped concepts are contained in a single synthetic `unassigned` group is valid for `canonical contract`.
 
 This rule prevents UI-side heuristic grouping and keeps all visit-scoped items contained in `visits[]`.
 
@@ -1864,9 +1864,9 @@ Sufficient evidence boundary for assigned VisitGroup creation (US-45, determinis
 
 ### D9.5 Compatibility Note (Normative)
 
-- v0 continues to use the flat `fields[]` list.
-- For Medical Record MVP panel rendering, v0 is treated as legacy/deprecated and is not the canonical surface contract.
-- Frontend may branch rendering by `schema_version` in general integrations, but this document defines contract shape only (UX owns layout).
+- Legacy flat contract continues to use the flat `fields[]` list.
+- For Medical Record MVP panel rendering, legacy flat contract is treated as deprecated and is not the canonical surface contract.
+- Frontend may branch rendering by `schema_contract` in general integrations, but this document defines contract shape only (UX owns layout).
 
 ### D9.6 Authoritative Contract Boundary for Medical Record Rendering
 

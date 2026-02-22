@@ -1,5 +1,5 @@
 # Structured interpretation schema 
-Authority: [`docs/project/TECHNICAL_DESIGN.md`](../TECHNICAL_DESIGN/00_entry.md) Appendix D (Structured Interpretation Schema v0).
+Authority: [`docs/project/TECHNICAL_DESIGN.md`](../TECHNICAL_DESIGN/00_entry.md) Appendix D (Structured Interpretation Schema legacy flat contract).
 
 Alignment note:
 - Interpretation output may be partial with respect to the full Global Schema key universe.
@@ -17,7 +17,7 @@ Implementation responsibility:
 - Exactly one active interpretation version per run.
 
 ## Critical keys
-`StructuredField.is_critical` MUST be derived from `key ∈ CRITICAL_KEYS_V0`.
+`StructuredField.is_critical` MUST be derived from `key ∈ CRITICAL_KEYS`.
 Source of truth: [`docs/project/PRODUCT_DESIGN.md`](../PRODUCT_DESIGN/00_entry.md).
 
 Backend responsibility:

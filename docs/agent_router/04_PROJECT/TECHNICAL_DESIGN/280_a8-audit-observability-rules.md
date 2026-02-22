@@ -37,7 +37,7 @@ User actions:
 
 Reviewer actions:
 - `GOVERNANCE_DECISION_RECORDED`
-- `SCHEMA_VERSION_CREATED`
+- `SCHEMA_CONTRACT_CREATED`
 
 Rules:
 - Structured logs remain best-effort and never block processing.

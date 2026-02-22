@@ -110,7 +110,7 @@
           "required_terms": [
             "candidate_confidence",
             "field_mapping_confidence",
-            "Context v1 (Deterministic)",
+            "Context (Deterministic)",
             "Learnable Unit (`mapping_id`)",
             "Signals & Weighting (qualitative)",
             "Policy State (soft behavior)",

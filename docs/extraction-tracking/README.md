@@ -16,7 +16,7 @@ This folder tracks the extraction program using an evidence-first, one-field-per
 - Open `risk-matrix.md` for a consolidated view of false-positive risks and active guardrails.
 - Open `INDEX.md` section `Chapter closeout` for chapter status and remaining anchor gaps.
 - Open `runs/*.md` only when validating UI/backend parity or run-specific diagnostics.
-- For frozen comparison before new iterations, open `runs/baseline-v1.md`.
+- For frozen comparison before new iterations, open `runs/baseline-canonical.md`.
 
 ## Anchor policy (required per entry)
 - Golden iteration entries must include: field, commit hash, branch, test command.
@@ -43,7 +43,7 @@ This folder tracks the extraction program using an evidence-first, one-field-per
 - `GET /runs/{run_id}/artifacts/raw-text`
 
 Notes:
-- In current checks, `GET /runs/{run_id}/artifacts/global-schema-v0` returned 404; UI-facing structured values are in `active_interpretation.data.global_schema` from `/documents/{document_id}/review`.
+- In current checks, legacy run-level structured artifact endpoints returned 404; UI-facing structured values are in `active_interpretation.data.global_schema` from `/documents/{document_id}/review`.
 
 ## How to add a new iteration entry
 1. Confirm evidence (fixture or real run) and isolate one target field.

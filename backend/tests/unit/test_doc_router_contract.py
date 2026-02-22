@@ -231,7 +231,7 @@ def test_technical_design_unassigned_contract_clarification_is_propagated() -> N
         ROUTER_ROOT
         / "04_PROJECT"
         / "TECHNICAL_DESIGN"
-        / "505_d9-structured-interpretation-schema-v1-visit-grouped-normative.md"
+        / "505_d9-structured-interpretation-schema-visit-grouped-normative.md"
     )
 
     expected_term = "explicit contract value"
@@ -249,7 +249,7 @@ def test_technical_design_sufficient_evidence_boundary_is_propagated() -> None:
         ROUTER_ROOT
         / "04_PROJECT"
         / "TECHNICAL_DESIGN"
-        / "505_d9-structured-interpretation-schema-v1-visit-grouped-normative.md"
+        / "505_d9-structured-interpretation-schema-visit-grouped-normative.md"
     )
 
     required_terms = (
@@ -309,7 +309,7 @@ def test_product_design_module_76_includes_confidence_context_contract_terms() -
     for required_term in (
         "candidate_confidence",
         "field_mapping_confidence",
-        "Context v1 (Deterministic)",
+        "Context (Deterministic)",
         "Learnable Unit (`mapping_id`)",
         "Signals & Weighting (qualitative)",
         "Policy State (soft behavior)",
@@ -390,7 +390,7 @@ def test_technical_design_entry_includes_d9_visit_grouped_module() -> None:
 
     assert (
         "docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/"
-        "505_d9-structured-interpretation-schema-v1-visit-grouped-normative.md"
+        "505_d9-structured-interpretation-schema-visit-grouped-normative.md"
         in technical_entry
     )
 
@@ -420,12 +420,11 @@ def test_product_and_ux_owner_modules_include_visit_grouping_and_copy_updates() 
     assert "Key -> UI label -> Section (UI)" in product_module
 
     assert (
-        'If `schema_version = "v1"`: render fixed non-visit sections plus a dedicated '
-        "**Visitas** grouping block"
+        "Render fixed non-visit sections plus a dedicated **Visitas** grouping block."
         in ux_module
     )
     assert (
-        "No heuristics grouping in UI; grouping comes from schema v1 `visits[]`."
+        "No heuristics grouping in UI; grouping comes from `visits[]` in the canonical contract."
         in ux_module
     )
     assert (

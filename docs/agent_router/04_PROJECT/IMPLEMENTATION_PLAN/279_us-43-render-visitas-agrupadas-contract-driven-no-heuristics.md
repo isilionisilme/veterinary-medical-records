@@ -1,4 +1,4 @@
-# US-43 — Render “Visitas” agrupadas cuando `schema_version="v1"` (contract-driven, no heuristics)
+# US-43 — Render “Visitas” agrupadas cuando `canonical contract` (contract-driven, no heuristics)
 
 **Status:** Planned  
 **Owner:** Platform / Frontend
@@ -19,7 +19,7 @@ In scope:
 Out of scope:
 - UI heuristics to infer visits or move items.
 - “Reviewed per visit”.
-- Backend changes beyond the existing v1 contract.
+- Backend changes beyond the existing contract.
 
 ## Acceptance Criteria
 1) When multiple visits exist, the reviewer sees one block per visit in the “Visitas” section.

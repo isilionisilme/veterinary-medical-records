@@ -180,11 +180,10 @@ Layout note:
 - Sections render as normal blocks (no tabs), preserving the current visual system without redesign.
 
 Schema-aware rendering mode (deterministic):
-- Medical Record MVP panel uses `schema_version = "v1"` as canonical for rendering.
-- For legacy `schema_version = "v0"` payloads, this panel does not redefine v0 behavior; v0 is treated as legacy/deprecated for this surface (see Product + Technical docs).
-- For `schema_version = "v1"`: render the fixed section order above, with **Visitas** sourced from `visits[]` (per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md), Appendix D9).
-- For `schema_version = "v1"`, required document-level placeholders (for example NHC when missing) are driven by `medical_record_view.field_slots[]` in Appendix D9, not by UI hardcoding.
-- No heuristics grouping in UI; grouping comes from schema v1 `visits[]`.
+- Medical Record MVP panel uses a single canonical structured contract (non-versioned).
+- Render the fixed section order above, with **Visitas** sourced from `visits[]` (per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md), Appendix D9).
+- Required document-level placeholders (for example NHC when missing) are driven by `medical_record_view.field_slots[]` in Appendix D9, not by UI hardcoding.
+- No heuristics grouping in UI; grouping comes from `visits[]` in the canonical contract.
 
 Display labels (UI-only; internal keys unchanged):
 - **Centro Veterinario**
@@ -224,7 +223,7 @@ Key -> UI label -> Section (UI):
 | discharge_date | Alta | Visitas |
 | reason_for_visit | Motivo | Visitas |
 
-Visit rendering rules for `schema_version = "v1"`:
+Visit rendering rules for the canonical contract:
 - UI does not infer visits and does not regroup items by date/content.
 - Render one visual unit per `VisitGroup` from `visits[]` only (Appendix D9 is authoritative).
 - Recommended in-visit rendering order (display-only):
@@ -242,7 +241,7 @@ Missing vs loading (deterministic):
 - Once the run is ready, any absent/non-extracted value must render an explicit placeholder.
 
 Empty states (deterministic):
-- If `schema_version = "v1"` and `visits = []`, render **Visitas** with empty state and no fallback to v0 layout.
+- If `visits = []`, render **Visitas** with empty state.
 - If a visit exists but `fields[]` is empty, show `Sin campos detectados en esta visita.`
 - If `Otros campos detectados` is empty, show `Sin otros campos detectados.`
 

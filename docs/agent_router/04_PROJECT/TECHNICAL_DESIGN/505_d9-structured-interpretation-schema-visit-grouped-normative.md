@@ -1,17 +1,17 @@
-# D9. Structured Interpretation Schema (v1 — Visit-grouped) (Normative)
+# D9. Structured Interpretation Schema (Visit-grouped Canonical) (Normative)
 
-Version `v1` defines deterministic visit grouping for multi-visit documents.
+The canonical visit-grouped contract defines deterministic visit grouping for multi-visit documents.
 
 - Multi-visit PDFs exist; UI must not heuristic-group.
-- v1 enables deterministic grouping by introducing `visits[]`.
-- v0 remains valid; this is an explicit schema version evolution.
-- Canon note for Medical Record panel: `schema_version = "v1"` is canonical for this surface; `v0` is legacy/deprecated for Medical Record panel rendering.
+- The canonical contract enables deterministic grouping by introducing `visits[]`.
+- The legacy flat contract is deprecated and retained only for historical compatibility.
+- Canon note for Medical Record panel: `canonical contract` is canonical for this surface; legacy flat contract is deprecated for Medical Record panel rendering.
 
-## D9.1 Top-Level Object: StructuredInterpretation v1 (JSON)
+## D9.1 Top-Level Object: StructuredInterpretation (Canonical Visit-grouped) (JSON)
 
 ```json
 {
-  "schema_version": "v1",
+  "schema_contract": "visit-grouped-canonical",
   "document_id": "uuid",
   "processing_run_id": "uuid",
   "created_at": "2026-02-05T12:34:56Z",
@@ -36,7 +36,7 @@ Version `v1` defines deterministic visit grouping for multi-visit documents.
 
 | Field | Type | Required | Notes |
 |---|---|---:|---|
-| schema_version | string | ✓ | Always `"v1"` |
+| schema_contract | string | ✓ | Always `"visit-grouped-canonical"` |
 | document_id | uuid | ✓ | Convenience for debugging |
 | processing_run_id | uuid | ✓ | Links to a specific processing attempt |
 | created_at | ISO 8601 string | ✓ | Snapshot creation time |
@@ -98,7 +98,7 @@ Normative rendering rules:
 
 ## D9.3 Scoping Rules (Normative)
 
-For `schema_version = "v1"`:
+For `canonical contract`:
 1. Top-level `fields[]` MUST contain only non-visit-scoped keys (clinic/patient/owner/notes metadata and any future non-visit keys).
 2. Visit-scoped concepts MUST appear inside exactly one `visits[].fields[]` entry set, not in top-level `fields[]`.
 3. “Otros campos detectados” MUST be contract-driven through explicit `other_fields[]`; FE MUST NOT reclassify and MUST NOT source this section from `fields[]` or `visits[]`.
@@ -163,7 +163,7 @@ Medical Record panel eligibility taxonomy (normative summary):
 - `Información del informe`: `language`.
 - `Otros campos detectados`: explicit contract bucket only (`other_fields[]`), never UI-side classification.
 
-Date normalization (v1 contract target):
+Date normalization (canonical contract target):
 - Canonical date representation for `visit_date`, `admission_date`, and `discharge_date` is ISO 8601 date string (`YYYY-MM-DD`).
 - Transitional note: non-ISO inputs (for example `dd/mm/yyyy`) may exist upstream; producers should normalize to canonical ISO in payload output.
 
@@ -178,7 +178,7 @@ If an extracted clinical field cannot be deterministically linked to a specific 
 
 Contract clarification:
 - `visit_id = "unassigned"` is an explicit contract value (not a frontend heuristic or fallback label).
-- A payload where all visit-scoped concepts are contained in a single synthetic `unassigned` group is valid for `schema_version = "v1"`.
+- A payload where all visit-scoped concepts are contained in a single synthetic `unassigned` group is valid for `canonical contract`.
 
 This rule prevents UI-side heuristic grouping and keeps all visit-scoped items contained in `visits[]`.
 
@@ -189,9 +189,9 @@ Sufficient evidence boundary for assigned VisitGroup creation (US-45, determinis
 
 ## D9.5 Compatibility Note (Normative)
 
-- v0 continues to use the flat `fields[]` list.
-- For Medical Record MVP panel rendering, v0 is treated as legacy/deprecated and is not the canonical surface contract.
-- Frontend may branch rendering by `schema_version` in general integrations, but this document defines contract shape only (UX owns layout).
+- Legacy flat contract continues to use the flat `fields[]` list.
+- For Medical Record MVP panel rendering, legacy flat contract is treated as deprecated and is not the canonical surface contract.
+- Frontend may branch rendering by `schema_contract` in general integrations, but this document defines contract shape only (UX owns layout).
 
 ## D9.6 Authoritative Contract Boundary for Medical Record Rendering
 

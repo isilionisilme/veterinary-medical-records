@@ -190,15 +190,15 @@ Allow veterinarians to correct structured data naturally, while capturing append
 Focus this release on visit-grouped review rendering (contract-driven) and evaluator-ready workflow closure.
 
 ### Scope
-- Visit-grouped rendering when `schema_version="v1"` with deterministic ordering and no UI heuristics
+- Visit-grouped rendering when `canonical contract` with deterministic ordering and no UI heuristics
 - Evaluator-friendly installation and execution packaging/runbook
 
 ### User Stories (in order)
 - US-32 — Align review rendering to Global Schema template (Implemented 2026-02-17)
 - US-44 — Medical Record MVP: Update Extracted Data panel structure, labels, and scope (Implemented 2026-02-20)
-- US-43 — Render “Visitas” agrupadas cuando `schema_version="v1"` (contract-driven, no heuristics)
+- US-43 — Render “Visitas” agrupadas cuando `canonical contract` (contract-driven, no heuristics)
 - US-45 — Visit Detection MVP (Deterministic, Contract-Driven Coverage Improvement) (Implemented 2026-02-21)
-- US-46 — Deterministic Visit Assignment Coverage MVP (Schema v1)
+- US-46 — Deterministic Visit Assignment Coverage MVP (Schema)
 - US-42 — Provide evaluator-friendly installation & execution (Docker-first) (Implemented 2026-02-19)
 
 ---
@@ -212,7 +212,7 @@ Introduce reviewer-facing governance for global schema evolution, fully isolated
 - Aggregation of pending structural change candidates
 - Reviewer-facing inspection, filtering, and prioritization
 - Approval, rejection, and deferral
-- Canonical schema versioning (prospective only)
+- Canonical schema evolution governance (prospective only)
 - Append-only governance audit trail
 
 ### User Stories (in order)
@@ -1110,7 +1110,7 @@ so that I can review and edit clinical information quickly in a clinical-only pa
 
 ---
 
-## US-43 — Render “Visitas” agrupadas cuando `schema_version="v1"` (contract-driven, no heuristics)
+## US-43 — Render “Visitas” agrupadas cuando `canonical contract` (contract-driven, no heuristics)
 **Status:** Planned  
 **Owner:** Platform / Frontend
 
@@ -1130,7 +1130,7 @@ In scope:
 Out of scope:
 - UI heuristics to infer visits or move items.
 - “Reviewed per visit”.
-- Backend changes beyond the existing v1 contract.
+- Backend changes beyond the existing canonical visit-grouped contract.
 
 ### Acceptance Criteria
 1) When multiple visits exist, the reviewer sees one block per visit in the “Visitas” section.
@@ -1162,7 +1162,7 @@ Out of scope:
 **Status:** Implemented (2026-02-21)
 
 ### Context / Problem
-With US-43, the UI is strictly contract-driven: it renders `active_interpretation.data.visits[]` when `schema_version="v1"`, without inferring or grouping visits client-side.
+With US-43, the UI is strictly contract-driven: it renders `active_interpretation.data.visits[]` when `canonical contract`, without inferring or grouping visits client-side.
 
 Current issue: in documents that visually contain multiple episodes/visits, the backend often returns only:
 - `visits = [{ visit_id: "unassigned", ... }]`
@@ -1171,7 +1171,7 @@ or an empty grouping, making “Extracted Data > Visits” operationally unhelpf
 This is a backend grouping coverage issue, not a UI issue.
 
 ### Objective
-Improve coverage of the `Structured Interpretation Schema v1 (visit-grouped)` contract so that:
+Improve coverage of the `Structured Interpretation Schema (visit-grouped)` contract so that:
 
 When there is sufficient deterministic evidence of distinct clinical episodes, the backend produces real VisitGroups (`visit_id != "unassigned"`) with `visit_date` populated when appropriate, preserving determinism and safety.
 
@@ -1212,7 +1212,7 @@ Out of scope
 - UI does not invent visits or regroup data.
 - Anything not assignable with sufficient evidence → `unassigned`.
 - `visit_date` is VisitGroup metadata (not a field in `fields[]`).
-- This story references (does not redefine) the v1 contract in TECHNICAL_DESIGN Appendix D9.
+- This story references (does not redefine) the canonical visit-grouped contract in TECHNICAL_DESIGN Appendix D9.
 
 ### Acceptance Criteria (testable)
 
@@ -1247,7 +1247,7 @@ Out of scope
 
 ---
 
-## US-46 — Deterministic Visit Assignment Coverage MVP (Schema v1)
+## US-46 — Deterministic Visit Assignment Coverage MVP (Schema)
 
 **Status:** Planned  
 **Owner:** Platform / Backend (contract-driven)
@@ -1460,7 +1460,7 @@ As a reviewer, I want to filter and prioritize pending structural changes so I c
 - This story does not introduce automatic decisions.
 
 **Authoritative References**
-- Product: Critical keys policy: [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md) CRITICAL_KEYS_V0
+- Product: Critical keys policy: [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md) CRITICAL_KEYS
 - Tech: Critical concept derivation: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix D7.4
 - Tech: Governance endpoints: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3
 
@@ -1482,7 +1482,7 @@ As a reviewer, I want to approve structural changes so that future interpretatio
 
 **Acceptance Criteria**
 - I can approve a candidate.
-- Approval creates a new canonical schema version.
+- Approval creates a new canonical schema contract snapshot.
 - Approved changes apply prospectively to new runs only.
 - Past documents and past runs remain unchanged.
 - Approval does not trigger implicit reprocessing.
@@ -1491,12 +1491,12 @@ As a reviewer, I want to approve structural changes so that future interpretatio
 - No automatic promotion without explicit reviewer action.
 
 **Authoritative References**
-- Tech: Schema version persistence and current schema rule: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B2.7
-- Tech: `schema_version_used` persisted per run: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B2.2
+- Tech: Schema contract persistence and current schema rule: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B2.7
+- Tech: `schema_contract_used` persisted per run: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B2.2
 - Tech: Governance invariants: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix A7
 
 **Test Expectations**
-- Approval creates a new schema version and new runs use it.
+- Approval creates a new schema contract snapshot and new runs use it.
 - Existing runs retain their historical schema association.
 
 **Definition of Done (DoD)**

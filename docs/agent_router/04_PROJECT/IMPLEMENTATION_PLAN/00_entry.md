@@ -39,9 +39,9 @@ Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for i
 - `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/277_us-41-show-top-5-candidate-suggestions-in-field-edit-modal.md`
 - `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/278_us-42-provide-evaluator-friendly-installation-execution-docker-first.md`
 - `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/278a_us-44-medical-record-mvp-update-extracted-data-panel-structure-labels-and-scope.md`
-- `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/279_us-43-render-visitas-agrupadas-cuando-schema-version-v1-contract-driven-no-heuristics.md`
+- `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/279_us-43-render-visitas-agrupadas-contract-driven-no-heuristics.md`
 - `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/279a_us-45-visit-detection-mvp-deterministic-contract-driven-coverage-improvement.md`
-- `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/279b_us-46-deterministic-visit-assignment-coverage-mvp-schema-v1.md`
+- `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/279b_us-46-deterministic-visit-assignment-coverage-mvp-schema.md`
 - `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/280_us-13-review-aggregated-pending-structural-changes.md`
 - `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/290_us-14-filter-and-prioritize-pending-structural-changes.md`
 - `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/300_us-15-approve-structural-changes-into-the-global-schema.md`
