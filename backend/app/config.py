@@ -7,9 +7,13 @@ import os
 DEFAULT_CONFIDENCE_POLICY_VERSION = "v1"
 DEFAULT_CONFIDENCE_LOW_MAX = 0.50
 DEFAULT_CONFIDENCE_MID_MAX = 0.75
+DEFAULT_HUMAN_EDIT_NEUTRAL_CANDIDATE_CONFIDENCE = 0.50
 CONFIDENCE_POLICY_VERSION_ENV = "VET_RECORDS_CONFIDENCE_POLICY_VERSION"
 CONFIDENCE_LOW_MAX_ENV = "VET_RECORDS_CONFIDENCE_LOW_MAX"
 CONFIDENCE_MID_MAX_ENV = "VET_RECORDS_CONFIDENCE_MID_MAX"
+HUMAN_EDIT_NEUTRAL_CANDIDATE_CONFIDENCE_ENV = (
+    "VET_RECORDS_HUMAN_EDIT_NEUTRAL_CANDIDATE_CONFIDENCE"
+)
 
 
 def processing_enabled() -> bool:
@@ -58,6 +62,21 @@ def confidence_policy_version_or_none() -> str | None:
 
     raw = os.environ.get(CONFIDENCE_POLICY_VERSION_ENV, "").strip()
     return raw or None
+
+
+def human_edit_neutral_candidate_confidence() -> float:
+    """Return neutral candidate confidence baseline for human edits (0..1)."""
+
+    raw = os.environ.get(HUMAN_EDIT_NEUTRAL_CANDIDATE_CONFIDENCE_ENV)
+    if raw is None:
+        return DEFAULT_HUMAN_EDIT_NEUTRAL_CANDIDATE_CONFIDENCE
+    try:
+        value = float(raw)
+    except ValueError:
+        return DEFAULT_HUMAN_EDIT_NEUTRAL_CANDIDATE_CONFIDENCE
+    if 0 <= value <= 1:
+        return value
+    return DEFAULT_HUMAN_EDIT_NEUTRAL_CANDIDATE_CONFIDENCE
 
 
 def confidence_band_cutoffs_or_none() -> tuple[float, float] | None:

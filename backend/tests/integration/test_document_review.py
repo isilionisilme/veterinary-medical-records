@@ -1662,6 +1662,8 @@ def test_interpretation_edit_creates_new_version_and_change_logs(test_client):
     assert payload["run_id"] == run_id
     assert payload["version_number"] == 2
     edited_fields = payload["data"]["fields"]
+    edited_pet_name = next(field for field in edited_fields if field["field_id"] == "field-1")
+    added_custom_field = next(field for field in edited_fields if field["key"] == "new_custom_key")
     assert any(
         field["field_id"] == "field-1"
         and field["value"] == "Nala"
@@ -1674,6 +1676,10 @@ def test_interpretation_edit_creates_new_version_and_change_logs(test_client):
         and field["origin"] == "human"
         for field in edited_fields
     )
+    assert edited_pet_name["field_candidate_confidence"] == pytest.approx(0.5, abs=1e-9)
+    assert edited_pet_name["field_mapping_confidence"] == pytest.approx(0.5, abs=1e-9)
+    assert added_custom_field["field_candidate_confidence"] == pytest.approx(0.5, abs=1e-9)
+    assert added_custom_field["field_mapping_confidence"] == pytest.approx(0.5, abs=1e-9)
 
     with database.get_connection() as conn:
         interpretation_rows = conn.execute(
@@ -1823,6 +1829,8 @@ def test_interpretation_edit_real_update_still_marks_human_and_logs_change(test_
     field = next(item for item in payload["data"]["fields"] if item["field_id"] == "field-1")
     assert field["value"] == "Nala"
     assert field["origin"] == "human"
+    assert field["field_candidate_confidence"] == pytest.approx(0.5, abs=1e-9)
+    assert field["field_mapping_confidence"] == pytest.approx(0.5, abs=1e-9)
 
     with database.get_connection() as conn:
         change_log_rows = conn.execute(
@@ -1839,6 +1847,62 @@ def test_interpretation_edit_real_update_still_marks_human_and_logs_change(test_
     assert change_log["change_type"] == "UPDATE"
     assert change_log["old_value"] == "Luna"
     assert change_log["new_value"] == "Nala"
+
+
+def test_interpretation_edit_update_preserves_prior_candidate_confidence(test_client):
+    document_id = _upload_sample_document(test_client)
+    run_id = "run-review-edit-preserve-candidate-confidence"
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(
+        run_id=run_id,
+        data={
+            "document_id": document_id,
+            "processing_run_id": run_id,
+            "created_at": "2026-02-10T10:00:05+00:00",
+            "fields": [
+                {
+                    "field_id": "field-1",
+                    "key": "pet_name",
+                    "value": "Luna",
+                    "value_type": "string",
+                    "field_candidate_confidence": 0.66,
+                    "field_review_history_adjustment": -10,
+                    "field_mapping_confidence": 0.56,
+                    "is_critical": False,
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Paciente: Luna"},
+                }
+            ],
+        },
+    )
+
+    response = test_client.post(
+        f"/runs/{run_id}/interpretations",
+        json={
+            "base_version_number": 1,
+            "changes": [
+                {
+                    "op": "UPDATE",
+                    "field_id": "field-1",
+                    "value": "Nala",
+                    "value_type": "string",
+                }
+            ],
+        },
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    field = next(item for item in payload["data"]["fields"] if item["field_id"] == "field-1")
+    assert field["origin"] == "human"
+    assert field["field_candidate_confidence"] == pytest.approx(0.66, abs=1e-9)
+    assert field["field_review_history_adjustment"] == pytest.approx(0.0, abs=1e-9)
+    assert field["field_mapping_confidence"] == pytest.approx(0.66, abs=1e-9)
 
 
 def test_interpretation_edit_returns_conflict_when_active_run_exists(test_client):

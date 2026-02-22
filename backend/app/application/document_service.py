@@ -27,6 +27,7 @@ from backend.app.application.global_schema import (
     VALUE_TYPE_BY_KEY,
     normalize_global_schema,
 )
+from backend.app.config import human_edit_neutral_candidate_confidence
 from backend.app.domain.models import (
     Document,
     DocumentWithLatestRun,
@@ -947,6 +948,7 @@ def apply_interpretation_edits(
     active_fields = _coerce_interpretation_fields(active_data.get("fields"))
     context_key = _resolve_context_key_for_edit_scopes(active_data, active_fields)
     calibration_policy_version = resolve_calibration_policy_version()
+    neutral_candidate_confidence = human_edit_neutral_candidate_confidence()
 
     updated_fields = [dict(field) for field in active_fields]
     field_change_logs: list[dict[str, object]] = []
@@ -976,15 +978,20 @@ def apply_interpretation_edits(
                 )
 
             new_field_id = str(uuid4())
+            new_candidate_confidence = neutral_candidate_confidence
+            new_review_history_adjustment = _sanitize_field_review_history_adjustment(0)
             new_field = {
                 "field_id": new_field_id,
                 "key": key,
                 "value": change.get("value"),
                 "value_type": value_type,
-                "field_candidate_confidence": 1.0,
-                "field_mapping_confidence": 1.0,
+                "field_candidate_confidence": new_candidate_confidence,
+                "field_mapping_confidence": _compose_field_mapping_confidence(
+                    candidate_confidence=new_candidate_confidence,
+                    review_history_adjustment=new_review_history_adjustment,
+                ),
                 "text_extraction_reliability": _sanitize_text_extraction_reliability(None),
-                "field_review_history_adjustment": _sanitize_field_review_history_adjustment(0),
+                "field_review_history_adjustment": new_review_history_adjustment,
                 "context_key": context_key,
                 "mapping_id": None,
                 "policy_version": calibration_policy_version,
@@ -1089,15 +1096,24 @@ def apply_interpretation_edits(
             continue
 
         mapping_id = normalize_mapping_id(existing_field.get("mapping_id"))
+        next_candidate_confidence = _resolve_human_edit_candidate_confidence(
+            existing_field,
+            neutral_candidate_confidence=neutral_candidate_confidence,
+        )
+        next_review_history_adjustment = _sanitize_field_review_history_adjustment(0)
+        next_mapping_confidence = _compose_field_mapping_confidence(
+            candidate_confidence=next_candidate_confidence,
+            review_history_adjustment=next_review_history_adjustment,
+        )
         updated_fields[existing_index] = {
             **updated_fields[existing_index],
             "value": change.get("value"),
             "value_type": value_type,
             "origin": "human",
-            "field_candidate_confidence": 1.0,
-            "field_mapping_confidence": 1.0,
+            "field_candidate_confidence": next_candidate_confidence,
+            "field_mapping_confidence": next_mapping_confidence,
             "text_extraction_reliability": _sanitize_text_extraction_reliability(None),
-            "field_review_history_adjustment": _sanitize_field_review_history_adjustment(0),
+            "field_review_history_adjustment": next_review_history_adjustment,
             "context_key": context_key,
             "mapping_id": mapping_id,
             "policy_version": calibration_policy_version,
@@ -1283,6 +1299,22 @@ def _compose_field_mapping_confidence(
 ) -> float:
     composed = candidate_confidence + (review_history_adjustment / 100.0)
     return min(max(composed, 0.0), 1.0)
+
+
+def _resolve_human_edit_candidate_confidence(
+    field: dict[str, object], *, neutral_candidate_confidence: float
+) -> float:
+    candidate_confidence = _sanitize_field_candidate_confidence(
+        field.get("field_candidate_confidence")
+    )
+    if candidate_confidence is not None:
+        return candidate_confidence
+
+    mapping_confidence = _sanitize_field_mapping_confidence(field.get("field_mapping_confidence"))
+    if mapping_confidence is not None:
+        return mapping_confidence
+
+    return neutral_candidate_confidence
 
 
 def _sanitize_confidence_breakdown(field: dict[str, object]) -> dict[str, object]:
