@@ -190,6 +190,17 @@ Notes:
   - Validate compose config: `docker compose config`
   - Tail logs: `docker compose logs -f backend frontend`
 
+### Global Schema migration note
+
+- API payloads now expose canonical `active_interpretation.data.global_schema` only.
+- Legacy key `active_interpretation.data.global_schema_v0` is intentionally removed.
+- If you have historical artifacts/consumers expecting the legacy key:
+  - Reprocess documents to regenerate interpretations with canonical payload shape.
+  - Update downstream consumers to read `global_schema`.
+- Rollback plan (if needed):
+  - Revert this branch/PR and redeploy previous backend image.
+  - Existing historical artifacts remain readable by the previous versioned code path.
+
 ## Backend implementation
 
 The backend is implemented using:
