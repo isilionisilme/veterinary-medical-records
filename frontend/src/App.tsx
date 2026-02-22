@@ -11,7 +11,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { AlignLeft, Download, FileText, Info, Pencil, RefreshCw, Search, X } from "lucide-react";
+import { AlignLeft, Download, FileText, FilterX, Info, Pencil, RefreshCw, Search, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { ConfidenceDot } from "./components/app/ConfidenceDot";
@@ -2970,6 +2970,9 @@ export function App() {
       const documentSlots = fieldSlots.filter(
         (slot) => slot.scope === "document" && !BILLING_REVIEW_FIELDS.has(slot.canonical_key)
       );
+      const schemaCriticalByKey = new Map(
+        GLOBAL_SCHEMA.map((definition) => [definition.key, Boolean(definition.critical)])
+      );
       const sectionOrderIndex = new Map<string, number>(
         MEDICAL_RECORD_SECTION_ID_ORDER.map((sectionId, index) => [sectionId, index])
       );
@@ -2977,6 +2980,11 @@ export function App() {
       const slotDefinitions = documentSlots.map((slot, index) => {
         const sectionLabel = getUiSectionLabelFromSectionId(slot.section) ?? REPORT_INFO_SECTION_TITLE;
         const sectionIndex = sectionOrderIndex.get(slot.section) ?? MEDICAL_RECORD_SECTION_ID_ORDER.length;
+        const slotKeys = [slot.canonical_key, ...(slot.aliases ?? [])];
+        const criticalFromSchema = slotKeys.some((key) => schemaCriticalByKey.get(key));
+        const criticalFromFields = validatedReviewFields.some(
+          (field) => slotKeys.includes(field.key) && Boolean(field.is_critical)
+        );
         const isCriticalSlot =
           CRITICAL_GLOBAL_SCHEMA_KEYS.has(slot.canonical_key) ||
           Boolean(slot.aliases?.some((alias) => CRITICAL_GLOBAL_SCHEMA_KEYS.has(alias)));
@@ -2987,7 +2995,7 @@ export function App() {
           order: sectionIndex * 1000 + index,
           value_type: "string",
           repeatable: false,
-          critical: isCriticalSlot,
+          critical: criticalFromSchema || criticalFromFields || isCriticalSlot,
           aliases: slot.aliases,
         };
       });
@@ -3288,13 +3296,32 @@ export function App() {
     setSelectedConfidenceBuckets([]);
   }, [activeConfidencePolicy, selectedConfidenceBuckets]);
 
-  const hasValueRestriction = showOnlyWithValue !== showOnlyEmpty;
+  const hasValueRestriction = showOnlyWithValue || showOnlyEmpty;
 
   const hasActiveStructuredFilters =
     structuredSearchTerm.trim().length > 0 ||
     selectedConfidenceBuckets.length > 0 ||
     showOnlyCritical ||
     hasValueRestriction;
+
+  const resetStructuredFilters = useCallback(() => {
+    setStructuredSearchInput("");
+    setSelectedConfidenceBuckets([]);
+    setShowOnlyCritical(false);
+    setShowOnlyWithValue(false);
+    setShowOnlyEmpty(false);
+    structuredSearchInputRef.current?.focus();
+  }, []);
+
+  const getFilterToggleItemClass = useCallback(
+    (isActive: boolean) =>
+      `h-7 w-7 rounded-full border-0 p-0 transition-all ${
+        isActive
+          ? "bg-surfaceMuted text-text ring-1 ring-borderSubtle"
+          : "bg-surface text-textSecondary shadow-none hover:bg-surfaceMuted hover:text-text"
+      }`,
+    []
+  );
 
   const visibleCoreGroups = useMemo(() => {
     if (!hasActiveStructuredFilters) {
@@ -3418,19 +3445,24 @@ export function App() {
     reviewPanelState !== "loading" && reviewPanelState !== "ready" && Boolean(reviewPanelMessage);
   const hasNoStructuredFilterResults =
     reviewPanelState === "ready" && hasActiveStructuredFilters && visibleCoreGroups.length === 0;
+  const reviewMessageInfoClass =
+    "rounded-control border border-borderSubtle bg-surface px-3 py-2 text-xs text-textSecondary";
+  const reviewMessageMutedClass =
+    "rounded-control border border-borderSubtle bg-surfaceMuted px-3 py-2 text-xs text-textSecondary";
+  const reviewMessageWarningClass =
+    "rounded-control border border-statusWarn bg-surface px-3 py-2 text-xs text-text";
   const detectedFieldsSummary = useMemo(() => {
     const summarizeConfidenceBands = () => {
       let low = 0;
       let medium = 0;
       let high = 0;
+      let unknown = 0;
       if (!activeConfidencePolicy) {
         return { low, medium, high, unknown: 0 };
       }
 
       coreDisplayFields.forEach((field) => {
-        const presentItems = field.items.filter(
-          (item) => !item.isMissing && item.confidenceBand !== null
-        );
+        const presentItems = field.items.filter((item) => !item.isMissing);
         if (presentItems.length === 0) {
           return;
         }
@@ -3442,10 +3474,14 @@ export function App() {
           medium += 1;
           return;
         }
-        high += 1;
+        if (presentItems.some((item) => item.confidenceBand === "high")) {
+          high += 1;
+          return;
+        }
+        unknown += 1;
       });
 
-      return { low, medium, high, unknown: 0 };
+      return { low, medium, high, unknown };
     };
 
     if (isCanonicalContract) {
@@ -4757,8 +4793,9 @@ export function App() {
                       ) : (
                         <div
                           data-testid="viewer-empty-state"
-                          className="relative flex h-full flex-col rounded-card bg-surfaceMuted p-6"
+                          className="relative flex h-full flex-col rounded-card bg-surfaceMuted p-6 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                           role="button"
+                          aria-label="Cargar documento"
                           tabIndex={0}
                           onClick={handleOpenUploadArea}
                           onKeyDown={(event) => {
@@ -4791,7 +4828,7 @@ export function App() {
                           data-testid="document-layout-grid"
                           className={`h-full min-h-0 overflow-x-auto ${
                             isPinnedSourcePanelVisible
-                              ? "grid grid-cols-[minmax(0,1fr)_minmax(360px,420px)] gap-4"
+                              ? "grid grid-cols-[minmax(0,1fr)_minmax(320px,400px)] gap-4"
                               : ""
                           }`}
                         >
@@ -4807,6 +4844,9 @@ export function App() {
                           >
                             <div>
                               <h3 className="text-lg font-semibold text-textSecondary">Informe</h3>
+                              <p className="mt-0.5 text-xs text-textSecondary">
+                                Consulta el documento y navega por la evidencia asociada.
+                              </p>
                             </div>
                             {fileUrl ? (
                               <PdfViewer
@@ -4856,134 +4896,65 @@ export function App() {
                             data-testid="structured-column-stack"
                             className="panel-shell-muted flex h-full w-full min-h-0 min-w-[420px] flex-1 flex-col gap-[var(--canvas-gap)] p-[var(--canvas-gap)]"
                           >
-                            <div className="flex w-full items-center justify-between gap-2">
-                              <h3 className="text-lg font-semibold text-textSecondary">Datos extraídos</h3>
-                              <div className="flex items-center justify-end gap-2">
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="toolbar"
-                                  disabled={
-                                    reviewPanelState !== "ready" ||
-                                    isDocumentReviewed ||
-                                    interpretationEditMutation.isPending
-                                  }
-                                  onClick={handleAddField}
-                                >
-                                  Añadir campo
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant={isDocumentReviewed ? "outline" : "primary"}
-                                  size="toolbar"
-                                  className="min-w-[168px]"
-                                  disabled={
-                                    !activeId ||
-                                    isActiveDocumentProcessing ||
-                                    reviewToggleMutation.isPending
-                                  }
-                                  onClick={() => {
-                                    if (!activeId) {
-                                      return;
-                                    }
-                                    reviewToggleMutation.mutate({
-                                      docId: activeId,
-                                      target: isDocumentReviewed ? "in_review" : "reviewed",
-                                    });
-                                  }}
-                                >
-                                  {reviewToggleMutation.isPending ? (
-                                    <>
-                                      <RefreshCw size={14} className="animate-spin" aria-hidden="true" />
-                                      {isDocumentReviewed ? "Reabriendo..." : "Marcando..."}
-                                    </>
-                                  ) : isDocumentReviewed ? (
-                                    <>
-                                      <RefreshCw size={14} aria-hidden="true" />
-                                      Reabrir
-                                    </>
-                                  ) : (
-                                    "Marcar revisado"
-                                  )}
-                                </Button>
-                                <div className="flex items-center justify-end gap-1 text-xs leading-tight text-textSecondary">
-                                <span className="text-muted">Campos detectados:</span>
-                                <span className="inline-flex items-center gap-1 whitespace-nowrap">
-                                  <span
-                                    data-testid="detected-summary-total"
-                                    className="font-semibold text-text tabular-nums"
-                                  >
-                                    {detectedFieldsSummary.detected}/{detectedFieldsSummary.total}
-                                  </span>
-                                  <span>(</span>
-                                  <span className="inline-flex items-center gap-1">
-                                    <ConfidenceDot
-                                      testId="detected-summary-dot-low"
-                                      tone="low"
-                                      tooltip="Confianza baja"
-                                      ariaLabel="Confianza baja"
-                                    />
-                                    <span data-testid="detected-summary-low" className="tabular-nums">
-                                      {detectedFieldsSummary.low}
-                                    </span>
-                                  </span>
-                                  <span className="inline-flex items-center gap-1">
-                                    <ConfidenceDot
-                                      testId="detected-summary-dot-medium"
-                                      tone="med"
-                                      tooltip="Confianza media"
-                                      ariaLabel="Confianza media"
-                                    />
-                                    <span data-testid="detected-summary-medium" className="tabular-nums">
-                                      {detectedFieldsSummary.medium}
-                                    </span>
-                                  </span>
-                                  <span className="inline-flex items-center gap-1">
-                                    <ConfidenceDot
-                                      testId="detected-summary-dot-high"
-                                      tone="high"
-                                      tooltip="Confianza alta"
-                                      ariaLabel="Confianza alta"
-                                    />
-                                    <span data-testid="detected-summary-high" className="tabular-nums">
-                                      {detectedFieldsSummary.high}
-                                    </span>
-                                  </span>
-                                  <span className="inline-flex items-center gap-1">
-                                    <Tooltip content="Detectado (sin confianza)">
-                                      <span
-                                        data-testid="detected-summary-dot-unknown"
-                                        aria-label="Detectado (sin confianza)"
-                                        title="Detectado (sin confianza)"
-                                        className="inline-block h-2.5 w-2.5 rounded-full bg-missing"
-                                      />
-                                    </Tooltip>
-                                    <span data-testid="detected-summary-unknown" className="tabular-nums">
-                                      {detectedFieldsSummary.unknown}
-                                    </span>
-                                  </span>
-                                  <span>)</span>
-                                </span>
-                                </div>
+                            <div className="flex w-full flex-wrap items-center justify-between gap-3">
+                              <div className="min-w-[220px]">
+                                <h3 className="text-lg font-semibold text-textSecondary">Datos extraídos</h3>
+                                <p className="mt-0.5 text-xs text-textSecondary">
+                                  Revisa y confirma los campos antes de marcar el documento como revisado.
+                                </p>
                               </div>
-                            </div>
-
-                            {reviewPanelState === "ready" && !activeConfidencePolicy && (
-                              <p
-                                data-testid="confidence-policy-degraded"
-                                className="rounded-control border border-border bg-surface px-3 py-2 text-xs text-textSecondary"
+                              <Tooltip
+                                content={
+                                  isDocumentReviewed
+                                    ? "Reabre el documento para continuar la revisión. Puedes volver a marcarlo como revisado cuando termines."
+                                    : "Marca este documento como revisado cuando confirmes los datos. Si lo necesitas, luego puedes reabrirlo sin problema."
+                                }
                               >
-                                Configuración de confianza no disponible para este documento. La
-                                señal visual de confianza está en modo degradado.
-                              </p>
-                            )}
+                                <span className="inline-flex">
+                                  <Button
+                                    type="button"
+                                    variant={isDocumentReviewed ? "outline" : "primary"}
+                                    size="toolbar"
+                                    className="min-w-[168px]"
+                                    disabled={
+                                      !activeId ||
+                                      isActiveDocumentProcessing ||
+                                      reviewToggleMutation.isPending
+                                    }
+                                    onClick={() => {
+                                      if (!activeId) {
+                                        return;
+                                      }
+                                      reviewToggleMutation.mutate({
+                                        docId: activeId,
+                                        target: isDocumentReviewed ? "in_review" : "reviewed",
+                                      });
+                                    }}
+                                  >
+                                    {reviewToggleMutation.isPending ? (
+                                      <>
+                                        <RefreshCw size={14} className="animate-spin" aria-hidden="true" />
+                                        {isDocumentReviewed ? "Reabriendo..." : "Marcando..."}
+                                      </>
+                                    ) : isDocumentReviewed ? (
+                                      <>
+                                        <RefreshCw size={14} aria-hidden="true" />
+                                        Reabrir
+                                      </>
+                                    ) : (
+                                      "Marcar revisado"
+                                    )}
+                                  </Button>
+                                </span>
+                              </Tooltip>
+                            </div>
 
                             <div data-testid="structured-search-shell" className="panel-shell px-3 py-2">
                               <div className="flex flex-wrap items-center gap-2">
                                 <label className="relative min-w-[220px] flex-1">
                                   <Search
                                     size={14}
-                                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"
+                                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-textSecondary"
                                     aria-hidden="true"
                                   />
                                   <Input
@@ -5012,8 +4983,6 @@ export function App() {
                                   )}
                                 </label>
 
-                                <Separator orientation="vertical" className="hidden h-6 sm:block" />
-
                                 <ToggleGroup
                                   type="multiple"
                                   value={selectedConfidenceBuckets}
@@ -5022,63 +4991,92 @@ export function App() {
                                     setSelectedConfidenceBuckets(
                                       values.filter(
                                         (value): value is ConfidenceBucket =>
-                                          value === "low" || value === "medium" || value === "high"
+                                          value === "low" || value === "medium" || value === "high" || value === "unknown"
                                       )
                                     )
                                   }
                                   aria-label="Filtros de confianza"
+                                  className="p-0"
                                 >
-                                  <Tooltip content="Baja">
+                                  <Tooltip content="Confianza baja">
                                     <ToggleGroupItem
                                       value="low"
-                                      aria-label="Baja"
-                                      className={`h-7 w-7 rounded-full border-0 bg-transparent p-0 data-[state=on]:border-0 ${
+                                      aria-label={`Baja (${detectedFieldsSummary.low})`}
+                                      className={`h-7 rounded-control border-0 px-2.5 text-xs shadow-none ${
                                         selectedConfidenceBuckets.includes("low")
-                                          ? "bg-accentSoft/35"
-                                          : ""
+                                          ? "bg-surfaceMuted text-text ring-1 ring-borderSubtle"
+                                          : "bg-surface text-textSecondary"
                                       }`}
                                     >
-                                      <span
-                                        aria-hidden="true"
-                                        className="inline-block h-3 w-3 shrink-0 rounded-full bg-confidenceLow"
-                                      />
+                                      <span className="inline-flex items-center gap-1.5">
+                                        <span
+                                          aria-hidden="true"
+                                          className="inline-block h-3 w-3 shrink-0 rounded-full bg-confidenceLow"
+                                        />
+                                        <span className="tabular-nums">{detectedFieldsSummary.low}</span>
+                                      </span>
                                     </ToggleGroupItem>
                                   </Tooltip>
-                                  <Tooltip content="Media">
+                                  <Tooltip content="Confianza media">
                                     <ToggleGroupItem
                                       value="medium"
-                                      aria-label="Media"
-                                      className={`h-7 w-7 rounded-full border-0 bg-transparent p-0 data-[state=on]:border-0 ${
+                                      aria-label={`Media (${detectedFieldsSummary.medium})`}
+                                      className={`h-7 rounded-control border-0 px-2.5 text-xs shadow-none ${
                                         selectedConfidenceBuckets.includes("medium")
-                                          ? "bg-accentSoft/35"
-                                          : ""
+                                          ? "bg-surfaceMuted text-text ring-1 ring-borderSubtle"
+                                          : "bg-surface text-textSecondary"
                                       }`}
                                     >
-                                      <span
-                                        aria-hidden="true"
-                                        className="inline-block h-3 w-3 shrink-0 rounded-full bg-confidenceMed"
-                                      />
+                                      <span className="inline-flex items-center gap-1.5">
+                                        <span
+                                          aria-hidden="true"
+                                          className="inline-block h-3 w-3 shrink-0 rounded-full bg-confidenceMed"
+                                        />
+                                        <span className="tabular-nums">{detectedFieldsSummary.medium}</span>
+                                      </span>
                                     </ToggleGroupItem>
                                   </Tooltip>
-                                  <Tooltip content="Alta">
+                                  <Tooltip content="Confianza alta">
                                     <ToggleGroupItem
                                       value="high"
-                                      aria-label="Alta"
-                                      className={`h-7 w-7 rounded-full border-0 bg-transparent p-0 data-[state=on]:border-0 ${
+                                      aria-label={`Alta (${detectedFieldsSummary.high})`}
+                                      className={`h-7 rounded-control border-0 px-2.5 text-xs shadow-none ${
                                         selectedConfidenceBuckets.includes("high")
-                                          ? "bg-accentSoft/35"
-                                          : ""
+                                          ? "bg-surfaceMuted text-text ring-1 ring-borderSubtle"
+                                          : "bg-surface text-textSecondary"
                                       }`}
                                     >
-                                      <span
-                                        aria-hidden="true"
-                                        className="inline-block h-3 w-3 shrink-0 rounded-full bg-confidenceHigh"
-                                      />
+                                      <span className="inline-flex items-center gap-1.5">
+                                        <span
+                                          aria-hidden="true"
+                                          className="inline-block h-3 w-3 shrink-0 rounded-full bg-confidenceHigh"
+                                        />
+                                        <span className="tabular-nums">{detectedFieldsSummary.high}</span>
+                                      </span>
+                                    </ToggleGroupItem>
+                                  </Tooltip>
+                                  <Tooltip content="Detectado (sin confianza)">
+                                    <ToggleGroupItem
+                                      value="unknown"
+                                      aria-label={`Sin confianza (${detectedFieldsSummary.unknown})`}
+                                      className={`h-7 rounded-control border-0 px-2.5 text-xs shadow-none ${
+                                        selectedConfidenceBuckets.includes("unknown")
+                                          ? "bg-surfaceMuted text-text ring-1 ring-borderSubtle"
+                                          : "bg-surface text-textSecondary"
+                                      }`}
+                                    >
+                                      <span className="inline-flex items-center gap-1.5">
+                                        <span
+                                          aria-hidden="true"
+                                          className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-missing"
+                                        />
+                                        <span className="tabular-nums">{detectedFieldsSummary.unknown}</span>
+                                      </span>
                                     </ToggleGroupItem>
                                   </Tooltip>
                                 </ToggleGroup>
 
-                                <span aria-hidden="true" className="mx-1 h-6 w-px bg-borderSubtle" />
+                                <div aria-hidden="true" className="mx-1 h-6 w-px shrink-0 self-center bg-border" />
 
                                 <ToggleGroup
                                   type="multiple"
@@ -5089,34 +5087,29 @@ export function App() {
                                   ]}
                                   disabled={reviewPanelState !== "ready"}
                                   onValueChange={(values) => {
+                                    const hasNonEmpty = values.includes("nonEmpty");
+                                    const hasEmpty = values.includes("empty");
                                     setShowOnlyCritical(values.includes("critical"));
-                                    setShowOnlyWithValue(values.includes("nonEmpty"));
-                                    setShowOnlyEmpty(values.includes("empty"));
+                                    setShowOnlyWithValue(hasNonEmpty && !hasEmpty);
+                                    setShowOnlyEmpty(hasEmpty && !hasNonEmpty);
                                   }}
                                   aria-label="Filtros adicionales"
+                                  className="p-0"
                                 >
                                   <Tooltip content="Críticos: muestra únicamente campos marcados como críticos.">
                                     <ToggleGroupItem
                                       value="critical"
                                       aria-label="Mostrar solo campos críticos"
-                                      className={`h-7 w-7 rounded-full border-0 bg-transparent p-0 data-[state=on]:border-0 ${
-                                        showOnlyCritical
-                                          ? "bg-accentSoft/35"
-                                          : ""
-                                      }`}
+                                      className={getFilterToggleItemClass(showOnlyCritical)}
                                     >
                                       <CriticalIcon compact />
                                     </ToggleGroupItem>
                                   </Tooltip>
-                                  <Tooltip content="No vacíos: muestra solo campos con valor.">
+                                  <Tooltip content="No vacíos: muestra solo campos con valor (excluye Vacíos).">
                                     <ToggleGroupItem
                                       value="nonEmpty"
                                       aria-label="Mostrar solo campos no vacíos"
-                                      className={`h-7 w-7 rounded-full border-0 bg-transparent p-0 data-[state=on]:border-0 ${
-                                        showOnlyWithValue
-                                          ? "bg-accentSoft/35"
-                                          : ""
-                                      }`}
+                                      className={getFilterToggleItemClass(showOnlyWithValue)}
                                     >
                                       <span
                                         aria-hidden="true"
@@ -5124,15 +5117,11 @@ export function App() {
                                       />
                                     </ToggleGroupItem>
                                   </Tooltip>
-                                  <Tooltip content="Vacíos: muestra solo campos sin dato.">
+                                  <Tooltip content="Vacíos: muestra solo campos sin dato (excluye No vacíos).">
                                     <ToggleGroupItem
                                       value="empty"
                                       aria-label="Mostrar solo campos vacíos"
-                                      className={`h-7 w-7 rounded-full border-0 bg-transparent p-0 data-[state=on]:border-0 ${
-                                        showOnlyEmpty
-                                          ? "bg-accentSoft/35"
-                                          : ""
-                                      }`}
+                                      className={getFilterToggleItemClass(showOnlyEmpty)}
                                     >
                                       <span
                                         aria-hidden="true"
@@ -5142,8 +5131,36 @@ export function App() {
                                   </Tooltip>
                                 </ToggleGroup>
 
+                                <div aria-hidden="true" className="mx-1 h-6 w-px shrink-0 self-center bg-border" />
+                                <IconButton
+                                  label="Limpiar filtros"
+                                  disabled={
+                                    reviewPanelState !== "ready" ||
+                                    (structuredSearchInput.trim().length === 0 &&
+                                      selectedConfidenceBuckets.length === 0 &&
+                                      !showOnlyCritical &&
+                                      !showOnlyWithValue &&
+                                      !showOnlyEmpty)
+                                  }
+                                  onClick={resetStructuredFilters}
+                                >
+                                  <FilterX size={14} aria-hidden="true" />
+                                </IconButton>
+
                               </div>
                             </div>
+
+                            {reviewPanelState === "ready" && !activeConfidencePolicy && (
+                              <p
+                                data-testid="confidence-policy-degraded"
+                                className={reviewMessageInfoClass}
+                                role="status"
+                                aria-live="polite"
+                              >
+                                Configuración de confianza no disponible para este documento. La
+                                señal visual de confianza está en modo degradado.
+                              </p>
+                            )}
 
                             <div className="flex-1 min-h-0">
                               {reviewPanelState === "loading" && (
@@ -5152,7 +5169,7 @@ export function App() {
                                   aria-live="polite"
                                   className="h-full min-h-0 overflow-y-auto pr-1 space-y-2"
                                 >
-                                  <p className="rounded-control border border-borderSubtle bg-surfaceMuted px-3 py-2 text-xs text-textSecondary">
+                                  <p className={reviewMessageInfoClass}>
                                     {reviewPanelMessage}
                                   </p>
                                   <div data-testid="review-core-skeleton" className="space-y-2">
@@ -5180,7 +5197,7 @@ export function App() {
                                       <p className="text-base font-semibold text-ink">
                                         Interpretación no disponible
                                       </p>
-                                      <p className="mt-2 text-xs text-muted">
+                                      <p className="mt-2 text-xs text-textSecondary">
                                         No se pudo cargar la interpretación. Comprueba tu conexión y vuelve
                                         a intentarlo.
                                       </p>
@@ -5223,7 +5240,7 @@ export function App() {
                                 >
                                   <div className="space-y-3">
                                     {isDocumentReviewed && (
-                                      <p className="rounded-control border border-statusWarn bg-surface px-3 py-2 text-xs text-text">
+                                      <p className={reviewMessageWarningClass}>
                                         Documento marcado como revisado. Los datos están en modo de solo lectura.
                                       </p>
                                     )}
@@ -5236,9 +5253,19 @@ export function App() {
                                       </p>
                                     )}
                                     {!hasMalformedCanonicalFieldSlots && hasNoStructuredFilterResults && (
-                                      <p className="rounded-control bg-surface px-3 py-2 text-xs text-muted">
-                                        No hay resultados con los filtros actuales.
-                                      </p>
+                                      <div className={reviewMessageMutedClass} role="status" aria-live="polite">
+                                        <p>No hay resultados con los filtros actuales.</p>
+                                        <div className="mt-2">
+                                          <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="toolbar"
+                                            onClick={resetStructuredFilters}
+                                          >
+                                            Limpiar filtros
+                                          </Button>
+                                        </div>
+                                      </div>
                                     )}
                                     {!hasMalformedCanonicalFieldSlots &&
                                       reportSections.map((section) =>
@@ -5252,7 +5279,7 @@ export function App() {
                             </div>
 
                             {evidenceNotice && (
-                              <p className="rounded-control bg-surface px-3 py-2 text-xs text-muted">
+                              <p className={reviewMessageMutedClass}>
                                 {evidenceNotice}
                               </p>
                             )}
@@ -5292,16 +5319,16 @@ export function App() {
                   </>
                 )}
                 {activeViewerTab === "raw_text" && (
-                  <div className="flex h-full flex-col rounded-card bg-surface p-4">
-                    <div className="rounded-control bg-surface px-2 py-2">
+                  <div className="flex h-full flex-col rounded-card border border-borderSubtle bg-surface p-4">
+                    <div className="rounded-control border border-borderSubtle bg-surface px-2 py-2">
                       <div className="flex items-center justify-between gap-4">
                       <div className="flex items-center gap-1">{viewerModeToolbarIcons}</div>
                       <div className="flex items-center gap-1">{viewerDownloadIcon}</div>
                     </div>
                     </div>
-                    <div className="rounded-card bg-surface p-3">
+                    <div className="rounded-card border border-borderSubtle bg-surface p-3">
                       <div className="flex flex-col gap-2 text-xs text-ink">
-                        <span className="text-muted">
+                        <span className="text-textSecondary">
                           ¿El texto no es correcto? Puedes reprocesarlo para regenerar la extraccion.
                         </span>
                         <div className="flex flex-wrap items-center gap-2">
@@ -5324,7 +5351,7 @@ export function App() {
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <input
-                        className="w-full rounded-control bg-surface px-3 py-2 text-xs text-muted outline-none sm:w-64"
+                        className="w-full rounded-control border border-borderSubtle bg-surface px-3 py-2 text-xs text-text outline-none placeholder:text-textSecondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:w-64"
                         placeholder="Buscar en el texto"
                         value={rawSearch}
                         disabled={!canSearchRawText}
@@ -5356,22 +5383,22 @@ export function App() {
                       </Button>
                     </div>
                     {copyFeedback && (
-                      <p className="mt-2 text-xs text-muted" role="status" aria-live="polite">
+                      <p className="mt-2 text-xs text-textSecondary" role="status" aria-live="polite">
                         {copyFeedback}
                       </p>
                     )}
                     {hasRawText && rawSearchNotice && (
-                      <p className="mt-2 text-xs text-muted">{rawSearchNotice}</p>
+                      <p className="mt-2 text-xs text-textSecondary">{rawSearchNotice}</p>
                     )}
                     {isRawTextLoading && (
-                      <p className="mt-2 text-xs text-muted">Cargando texto extraido...</p>
+                      <p className="mt-2 text-xs text-textSecondary">Cargando texto extraido...</p>
                     )}
                     {rawTextErrorMessage && (
                       <p className="mt-2 text-xs text-statusError">
                         {rawTextErrorMessage}
                       </p>
                     )}
-                    <div className="mt-3 flex-1 overflow-y-auto rounded-card bg-surface p-3 font-mono text-xs text-muted">
+                    <div className="mt-3 flex-1 overflow-y-auto rounded-card border border-borderSubtle bg-surface p-3 font-mono text-xs text-textSecondary">
                       {rawTextContent ? (
                         <pre>{rawTextContent}</pre>
                       ) : (
@@ -5381,8 +5408,8 @@ export function App() {
                   </div>
                 )}
                 {activeViewerTab === "technical" && (
-                  <div className="h-full overflow-y-auto rounded-card bg-surface p-3">
-                    <div className="rounded-control bg-surface px-2 py-2">
+                  <div className="h-full overflow-y-auto rounded-card border border-borderSubtle bg-surface p-3">
+                    <div className="rounded-control border border-borderSubtle bg-surface px-2 py-2">
                       <div className="flex items-center justify-between gap-4">
                       <div className="flex items-center gap-1">{viewerModeToolbarIcons}</div>
                       <div className="flex items-center gap-1">{viewerDownloadIcon}</div>
@@ -5434,7 +5461,7 @@ export function App() {
                           {processingHistory.data.runs.map((run) => (
                             <div
                               key={run.run_id}
-                              className="rounded-card bg-surface p-2"
+                              className="rounded-card border border-borderSubtle bg-surface p-2"
                             >
                               <div className="text-xs font-semibold text-ink">
                                 {formatRunHeader(run)}

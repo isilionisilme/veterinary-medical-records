@@ -34,7 +34,14 @@ export function SourcePanel({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button type="button" variant="ghost" onClick={onTogglePin} disabled={!isDesktopForPin}>
+          <Button
+            type="button"
+            variant="ghost"
+            aria-pressed={isSourcePinned}
+            aria-label={isSourcePinned ? "Desfijar fuente" : "Fijar fuente"}
+            onClick={onTogglePin}
+            disabled={!isDesktopForPin}
+          >
             {isSourcePinned ? "Desfijar" : "Fijar"}
           </Button>
           <IconButton label="Cerrar panel de fuente" onClick={onClose}>
@@ -45,9 +52,9 @@ export function SourcePanel({
       <ScrollArea data-testid="source-panel-scroll" className="mt-3 min-h-0 flex-1">
         {content}
       </ScrollArea>
-      <div className="mt-3 rounded-control border border-border bg-surface px-3 py-2 text-xs text-textSecondary">
+      <div className="mt-3 rounded-control border border-borderSubtle bg-surface px-3 py-2 text-xs text-textSecondary">
         <p className="font-semibold text-text">Evidencia</p>
-        <p className="mt-1">{sourceSnippet ?? "Sin evidencia disponible"}</p>
+        <p className="mt-1 text-textSecondary">{sourceSnippet ?? "Sin evidencia disponible"}</p>
       </div>
     </div>
   );

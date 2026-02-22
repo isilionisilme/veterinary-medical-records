@@ -101,6 +101,25 @@ async function openReadyDocumentAndGetPanel() {
   return screen.getByTestId("right-panel-scroll");
 }
 
+function parseCountFromAriaLabel(element: HTMLElement): number {
+  return Number(element.getAttribute("aria-label")?.match(/\((\d+)\)/)?.[1] ?? "0");
+}
+
+function getConfidenceSummaryCounts() {
+  const lowButton = screen.getByRole("button", { name: /^Baja \(\d+\)$/i });
+  const mediumButton = screen.getByRole("button", { name: /^Media \(\d+\)$/i });
+  const highButton = screen.getByRole("button", { name: /^Alta \(\d+\)$/i });
+  const unknownButton = screen.getByRole("button", { name: /^Sin confianza \(\d+\)$/i });
+
+  return {
+    low: parseCountFromAriaLabel(lowButton),
+    medium: parseCountFromAriaLabel(mediumButton),
+    high: parseCountFromAriaLabel(highButton),
+    unknown: parseCountFromAriaLabel(unknownButton),
+    unknownButton,
+  };
+}
+
 type CanonicalUs44FetchMockOptions = {
   schemaContract?: string;
   fieldSlots?: Array<Record<string, unknown>>;
@@ -1178,13 +1197,11 @@ describe("App upload and list flow", () => {
     );
     expect(screen.getByTestId("structured-search-shell")).toHaveClass("panel-shell");
     const firstDocumentRow = screen.getByTestId("doc-row-doc-ready");
-    expect(firstDocumentRow).toHaveClass("bg-surface");
-    expect(firstDocumentRow).toHaveClass("border");
-    expect(firstDocumentRow).toHaveClass("border-transparent");
-    expect(firstDocumentRow).toHaveClass("ring-1");
-    expect(firstDocumentRow).toHaveClass("ring-borderSubtle");
+    expect(firstDocumentRow).toHaveClass("bg-surfaceMuted");
+    expect(firstDocumentRow).toHaveClass("rounded-card");
+    expect(firstDocumentRow).toHaveClass("shadow-subtle");
     const hoverableDocumentRow = screen.getByTestId("doc-row-doc-processing");
-    expect(hoverableDocumentRow).toHaveClass("hover:border-borderSubtle");
+    expect(hoverableDocumentRow).toHaveClass("hover:bg-surfaceMuted");
     const searchInput = screen.getByRole("textbox", { name: /Buscar en datos extraídos/i });
     expect(searchInput).toHaveClass("border");
     expect(searchInput).toHaveClass("bg-surface");
@@ -2240,6 +2257,7 @@ describe("App upload and list flow", () => {
     renderApp();
     const panel = await openReadyDocumentAndGetPanel();
 
+    expect(within(panel).getByTestId("critical-indicator-pet_name")).toBeInTheDocument();
     expect(within(panel).getByText("NHC")).toBeInTheDocument();
     expect(within(panel).getByText("NHC")).toHaveAttribute("title", "Número de historial clínico");
     expect(within(panel).getByTestId("core-value-nhc")).toHaveTextContent("—");
@@ -2453,15 +2471,8 @@ describe("App upload and list flow", () => {
     renderApp();
     await openReadyDocumentAndGetPanel();
 
-    expect(screen.getByText("Campos detectados:")).toBeInTheDocument();
-    expect(screen.getByTestId("detected-summary-total")).toHaveTextContent(
-      `${expectedDetected}/30`
-    );
-
-    const low = Number(screen.getByTestId("detected-summary-low").textContent ?? "0");
-    const medium = Number(screen.getByTestId("detected-summary-medium").textContent ?? "0");
-    const high = Number(screen.getByTestId("detected-summary-high").textContent ?? "0");
-    const unknown = Number(screen.getByTestId("detected-summary-unknown").textContent ?? "0");
+    const { low, medium, high, unknown, unknownButton } = getConfidenceSummaryCounts();
+    expect(unknownButton).toBeInTheDocument();
     expect(low + medium + high + unknown).toBe(expectedDetected);
   });
 
@@ -2495,14 +2506,8 @@ describe("App upload and list flow", () => {
     renderApp();
     await openReadyDocumentAndGetPanel();
 
-    expect(screen.getByTestId("detected-summary-total")).toHaveTextContent(
-      `${expectedDetected}/30`
-    );
-
-    const low = Number(screen.getByTestId("detected-summary-low").textContent ?? "0");
-    const medium = Number(screen.getByTestId("detected-summary-medium").textContent ?? "0");
-    const high = Number(screen.getByTestId("detected-summary-high").textContent ?? "0");
-    const unknown = Number(screen.getByTestId("detected-summary-unknown").textContent ?? "0");
+    const { low, medium, high, unknown, unknownButton } = getConfidenceSummaryCounts();
+    expect(unknownButton).toBeInTheDocument();
     expect(low + medium + high + unknown).toBe(expectedDetected);
   });
 
@@ -2511,26 +2516,10 @@ describe("App upload and list flow", () => {
     renderApp();
     await openReadyDocumentAndGetPanel();
 
-    expect(screen.getByTestId("detected-summary-dot-low")).toHaveAttribute(
-      "aria-label",
-      "Confianza baja"
-    );
-    expect(screen.getByTestId("detected-summary-dot-medium")).toHaveAttribute(
-      "aria-label",
-      "Confianza media"
-    );
-    expect(screen.getByTestId("detected-summary-dot-high")).toHaveAttribute(
-      "aria-label",
-      "Confianza alta"
-    );
-    expect(screen.getByTestId("detected-summary-dot-unknown")).toHaveAttribute(
-      "aria-label",
-      "Detectado (sin confianza)"
-    );
-    expect(screen.getByTestId("detected-summary-dot-unknown")).toHaveAttribute(
-      "title",
-      "Detectado (sin confianza)"
-    );
+    expect(screen.getByRole("button", { name: /^Baja \(\d+\)$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Media \(\d+\)$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Alta \(\d+\)$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Sin confianza \(\d+\)$/i })).toBeInTheDocument();
   });
 
   it("renders Otros campos detectados only from other_fields[] in canonical contract", async () => {
@@ -2633,10 +2622,10 @@ describe("App upload and list flow", () => {
     expect(missingIndicator.className).toContain("bg-surface");
     expect(missingIndicator.className).not.toContain("bg-missing");
 
-    fireEvent.click(screen.getByRole("button", { name: "Baja" }));
+    fireEvent.click(screen.getByRole("button", { name: /^Baja/i }));
     expect(within(screen.getByTestId("right-panel-scroll")).queryByTestId("field-trigger-core:clinic_name")).toBeNull();
 
-    fireEvent.click(screen.getByRole("button", { name: "Baja" }));
+    fireEvent.click(screen.getByRole("button", { name: /^Baja/i }));
     fireEvent.click(screen.getByRole("button", { name: "Mostrar solo campos vacíos" }));
     expect(within(screen.getByTestId("right-panel-scroll")).getByTestId("field-trigger-core:clinic_name")).toBeInTheDocument();
   });
@@ -3483,9 +3472,9 @@ describe("App upload and list flow", () => {
 
     fireEvent.mouseUp(getPetNameFieldButton(), { button: 0 });
 
-    const status = await screen.findByRole("status");
+    const status = await screen.findByRole("alert");
     expect(status).toHaveTextContent("Documento revisado: edición bloqueada.");
-    expect(status).toHaveClass("border-red-300", "bg-red-50", "text-red-700");
+    expect(status).toHaveClass("border-statusError", "text-statusError");
   });
 
   it("does not show blocked-edit toast while selecting text in reviewed mode", async () => {

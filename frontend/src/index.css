@@ -34,7 +34,7 @@
   --color-surface-muted: var(--surface-muted);
   --color-text: #1f2933;
   --color-text-secondary: #6b7280;
-  --color-text-muted: #9ca3af;
+  --color-text-muted: #6b7280;
   --text-title: var(--color-text);
   --text-body: var(--color-text);
   --text-muted: var(--color-text-secondary);
@@ -47,6 +47,9 @@
   --status-success: #4caf93;
   --status-warn: #e6b566;
   --status-error: #d16d6a;
+  --status-success-bg: var(--surface);
+  --status-info-bg: var(--surface-muted);
+  --status-error-bg: var(--surface);
   --confidence-low: var(--status-error);
   --confidence-med: var(--status-warn);
   --confidence-high: var(--status-success);
