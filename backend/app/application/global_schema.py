@@ -78,8 +78,30 @@ def _load_schema_contract() -> dict[str, object]:
     return raw
 
 
+def _validate_contract_metadata(raw_contract: Mapping[str, object]) -> tuple[str, str] | None:
+    contract_name = raw_contract.get("contract_name")
+    contract_revision = raw_contract.get("contract_revision")
+    if contract_name is None and contract_revision is None:
+        return None
+    if not isinstance(contract_name, str) or not contract_name.strip():
+        raise RuntimeError(
+            "Global Schema contract metadata 'contract_name' must be a non-empty string"
+        )
+    if not isinstance(contract_revision, str) or not contract_revision.strip():
+        raise RuntimeError(
+            "Global Schema contract metadata 'contract_revision' must be a non-empty string"
+        )
+    return (contract_name.strip(), contract_revision.strip())
+
+
 _SCHEMA_CONTRACT = _load_schema_contract()
+_CONTRACT_METADATA = _validate_contract_metadata(_SCHEMA_CONTRACT)
 _FIELD_DEFINITIONS = list(_SCHEMA_CONTRACT["fields"])
+
+CONTRACT_NAME: str | None = _CONTRACT_METADATA[0] if _CONTRACT_METADATA is not None else None
+CONTRACT_REVISION: str | None = (
+    _CONTRACT_METADATA[1] if _CONTRACT_METADATA is not None else None
+)
 
 GLOBAL_SCHEMA_KEYS: tuple[str, ...] = tuple(
     str(field["key"]).strip() for field in _FIELD_DEFINITIONS

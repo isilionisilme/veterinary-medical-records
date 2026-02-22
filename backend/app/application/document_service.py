@@ -43,6 +43,8 @@ from backend.app.ports.file_storage import FileStorage
 
 NUMERIC_TYPES = (int, float)
 logger = logging.getLogger(__name__)
+_REVIEW_SCHEMA_CONTRACT_CANONICAL = "visit-grouped-canonical"
+_REVIEW_SCHEMA_VERSION_COMPAT = "v1"
 
 _MEDICAL_RECORD_CANONICAL_SECTIONS: tuple[str, ...] = (
     "clinic",
@@ -677,12 +679,28 @@ def _project_review_payload_to_canonical(data: dict[str, object]) -> dict[str, o
     medical_record_view = data.get("medical_record_view")
     projected = dict(data)
 
+    default_medical_record_view = {
+        "version": "mvp-1",
+        "sections": list(_MEDICAL_RECORD_CANONICAL_SECTIONS),
+        "field_slots": [dict(slot) for slot in _MEDICAL_RECORD_CANONICAL_FIELD_SLOTS],
+    }
     if not isinstance(medical_record_view, dict):
-        projected["medical_record_view"] = {
-            "version": "mvp-1",
-            "sections": list(_MEDICAL_RECORD_CANONICAL_SECTIONS),
-            "field_slots": [dict(slot) for slot in _MEDICAL_RECORD_CANONICAL_FIELD_SLOTS],
-        }
+        projected["medical_record_view"] = default_medical_record_view
+    else:
+        normalized_medical_record_view = dict(medical_record_view)
+        if not isinstance(normalized_medical_record_view.get("version"), str):
+            normalized_medical_record_view["version"] = default_medical_record_view["version"]
+        if not isinstance(normalized_medical_record_view.get("sections"), list):
+            normalized_medical_record_view["sections"] = default_medical_record_view["sections"]
+        if not isinstance(normalized_medical_record_view.get("field_slots"), list):
+            normalized_medical_record_view["field_slots"] = default_medical_record_view[
+                "field_slots"
+            ]
+        projected["medical_record_view"] = normalized_medical_record_view
+
+    projected["schema_contract"] = _REVIEW_SCHEMA_CONTRACT_CANONICAL
+    if not isinstance(projected.get("schema_version"), str):
+        projected["schema_version"] = _REVIEW_SCHEMA_VERSION_COMPAT
 
     if not isinstance(projected.get("visits"), list):
         projected["visits"] = []

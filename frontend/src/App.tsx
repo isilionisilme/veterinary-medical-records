@@ -493,6 +493,8 @@ type StructuredInterpretationData = {
   document_id: string;
   processing_run_id: string;
   created_at: string;
+  schema_contract?: string;
+  schema_version?: string;
   medical_record_view?: MedicalRecordViewTemplate;
   fields: ReviewField[];
   visits?: ReviewVisitGroup[];
@@ -2613,7 +2615,16 @@ export function App() {
   })();
 
   const interpretationData = documentReview.data?.active_interpretation.data;
-  const isCanonicalContract = Array.isArray(interpretationData?.medical_record_view?.field_slots);
+  const schemaContract =
+    typeof interpretationData?.schema_contract === "string"
+      ? interpretationData.schema_contract.trim().toLowerCase()
+      : null;
+  const hasCanonicalContractSignal = schemaContract === "visit-grouped-canonical";
+  const hasExplicitContractSignal = Boolean(schemaContract);
+  const isCanonicalContract =
+    hasCanonicalContractSignal ||
+    (!hasExplicitContractSignal &&
+      Array.isArray(interpretationData?.medical_record_view?.field_slots));
   const reviewVisits = useMemo(
     () =>
       isCanonicalContract

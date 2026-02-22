@@ -38,6 +38,8 @@ _GOAL_FIELDS = (
     "discharge_date",
     "vet_name",
 )
+SNAPSHOT_SCHEMA_VERSION_CANONICAL = "canonical"
+SNAPSHOT_SCHEMA_VERSION_LEGACY = "v1"
 
 SNAPSHOT_CONFIDENCE_MID_MIN = 0.6
 SNAPSHOT_CONFIDENCE_HIGH_MIN = 0.8
@@ -208,6 +210,25 @@ def _document_runs_path(document_id: str) -> Path:
     return _OBSERVABILITY_DIR / f"{_safe_document_filename(document_id)}.json"
 
 
+def _normalize_snapshot_schema_version(value: Any) -> str:
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {
+            SNAPSHOT_SCHEMA_VERSION_CANONICAL,
+            SNAPSHOT_SCHEMA_VERSION_LEGACY,
+        }:
+            return SNAPSHOT_SCHEMA_VERSION_CANONICAL
+    return SNAPSHOT_SCHEMA_VERSION_CANONICAL
+
+
+def _normalize_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
+    normalized = dict(snapshot)
+    normalized["schemaVersion"] = _normalize_snapshot_schema_version(
+        normalized.get("schemaVersion")
+    )
+    return normalized
+
+
 def _read_runs(path: Path) -> list[dict[str, Any]]:
     if not path.exists():
         return []
@@ -217,7 +238,7 @@ def _read_runs(path: Path) -> list[dict[str, Any]]:
         return []
     if not isinstance(payload, list):
         return []
-    return [item for item in payload if isinstance(item, dict)]
+    return [_normalize_snapshot(item) for item in payload if isinstance(item, dict)]
 
 
 def _write_runs(path: Path, runs: list[dict[str, Any]]) -> None:
@@ -695,6 +716,7 @@ def _log_diff(
 
 
 def persist_extraction_run_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
+    snapshot = _normalize_snapshot(snapshot)
     document_id = str(snapshot.get("documentId", "")).strip()
     if not document_id:
         raise ValueError("documentId is required")

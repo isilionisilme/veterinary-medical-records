@@ -102,6 +102,7 @@ async function openReadyDocumentAndGetPanel() {
 }
 
 type CanonicalUs44FetchMockOptions = {
+  schemaContract?: string;
   fieldSlots?: Array<Record<string, unknown>>;
   fields?: Array<Record<string, unknown>>;
   visits?: Array<Record<string, unknown>>;
@@ -176,6 +177,7 @@ function installCanonicalUs44FetchMock(options?: CanonicalUs44FetchMockOptions) 
               document_id: "doc-canonical",
               processing_run_id: "run-doc-canonical",
               created_at: "2026-02-10T10:00:00Z",
+              schema_contract: options?.schemaContract ?? "visit-grouped-canonical",
               medical_record_view: {
                 version: "mvp-1",
                 sections: ["clinic", "patient", "owner", "visits", "notes", "other", "report_info"],
@@ -2247,6 +2249,20 @@ describe("App upload and list flow", () => {
     expect(nhcIndicator.className).toContain("border-muted");
     expect(nhcIndicator.className).toContain("bg-surface");
     expect(nhcIndicator.className).not.toContain("bg-missing");
+  });
+
+  it("falls back to legacy-flat rendering when explicit schema_contract is legacy-flat and field_slots are malformed", async () => {
+    installCanonicalUs44FetchMock({
+      schemaContract: "legacy-flat",
+      fieldSlots: { malformed: true } as unknown as Array<Record<string, unknown>>,
+      visits: [],
+    });
+    renderApp();
+    const panel = await openReadyDocumentAndGetPanel();
+
+    expect(within(panel).getByText("Visitas")).toBeInTheDocument();
+    expect(within(panel).queryByText("Sin visitas detectadas.")).toBeNull();
+    expect(within(panel).getByTestId("core-row-pet_name")).toBeInTheDocument();
   });
 
   it("shows Visitas empty state in canonical contract when visits=[]", async () => {

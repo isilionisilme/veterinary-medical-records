@@ -242,7 +242,10 @@ def test_document_review_returns_latest_completed_run_context(test_client):
     assert payload["document_id"] == document_id
     assert payload["latest_completed_run"]["run_id"] == run_id
     assert payload["active_interpretation"]["version_number"] == 1
-    assert all(not key.startswith("schema_") for key in payload["active_interpretation"]["data"])
+    assert payload["active_interpretation"]["data"].get("schema_contract") == (
+        "visit-grouped-canonical"
+    )
+    assert payload["active_interpretation"]["data"].get("schema_version") == "v1"
     medical_record_view = payload["active_interpretation"]["data"].get("medical_record_view")
     assert isinstance(medical_record_view, dict)
     field_slots = medical_record_view.get("field_slots")
@@ -324,6 +327,39 @@ def test_document_review_payload_uses_canonical_global_schema_key_only(test_clie
         key for key in data.keys() if isinstance(key, str) and key.startswith("global_schema_")
     ]
     assert legacy_like_keys == []
+
+
+def test_document_review_normalizes_partial_medical_record_view_to_canonical_shape(test_client):
+    document_id = _upload_sample_document(test_client)
+    run_id = "run-review-partial-medical-record-view"
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(
+        run_id=run_id,
+        data={
+            "document_id": document_id,
+            "processing_run_id": run_id,
+            "created_at": "2026-02-10T10:00:05+00:00",
+            "schema_contract": "legacy-flat",
+            "medical_record_view": {"version": "mvp-1"},
+            "global_schema": {"pet_name": "Luna"},
+            "fields": [],
+        },
+    )
+
+    response = test_client.get(f"/documents/{document_id}/review")
+    assert response.status_code == 200
+    data = response.json()["active_interpretation"]["data"]
+
+    assert data.get("schema_contract") == "visit-grouped-canonical"
+    medical_record_view = data.get("medical_record_view")
+    assert isinstance(medical_record_view, dict)
+    assert isinstance(medical_record_view.get("sections"), list)
+    assert isinstance(medical_record_view.get("field_slots"), list)
 
 
 def test_document_review_omits_confidence_policy_when_config_missing(

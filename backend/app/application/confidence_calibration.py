@@ -10,6 +10,7 @@ from backend.app.config import confidence_policy_version
 
 CONTEXT_VERSION = "v1"
 CONTEXT_KEY_PREFIX = "ctx_v1:"
+LEGACY_SCHEMA_VERSIONS: tuple[str, ...] = ("v1", "legacy-flat", "unknown")
 DEFAULT_DOCUMENT_TYPE = "veterinary_record"
 DEFAULT_LANGUAGE = "unknown"
 CALIBRATION_MIN_VOLUME = 3
@@ -22,22 +23,64 @@ def resolve_calibration_policy_version() -> str:
     return confidence_policy_version()
 
 
-def build_context_key(*, document_type: str | None, language: str | None) -> str:
-    normalized_document_type = (document_type or DEFAULT_DOCUMENT_TYPE).strip().lower()
+def _normalize_document_type(value: str | None) -> str:
+    normalized_document_type = (value or DEFAULT_DOCUMENT_TYPE).strip().lower()
     if not normalized_document_type:
         normalized_document_type = DEFAULT_DOCUMENT_TYPE
-    normalized_language = (language or DEFAULT_LANGUAGE).strip().lower()
+    return normalized_document_type
+
+
+def _normalize_language(value: str | None) -> str:
+    normalized_language = (value or DEFAULT_LANGUAGE).strip().lower()
     if not normalized_language:
         normalized_language = DEFAULT_LANGUAGE
+    return normalized_language
+
+
+def _build_context_key_with_payload(payload: Mapping[str, object]) -> str:
+    canonical = json.dumps(dict(payload), sort_keys=True, separators=(",", ":"))
+    digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    return f"{CONTEXT_KEY_PREFIX}{digest}"
+
+
+def build_context_key(*, document_type: str | None, language: str | None) -> str:
+    normalized_document_type = _normalize_document_type(document_type)
+    normalized_language = _normalize_language(language)
 
     payload = {
         "context_version": CONTEXT_VERSION,
         "document_type": normalized_document_type,
         "language": normalized_language,
     }
-    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
-    digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
-    return f"{CONTEXT_KEY_PREFIX}{digest}"
+    return _build_context_key_with_payload(payload)
+
+
+def build_legacy_context_keys(
+    *,
+    document_type: str | None,
+    language: str | None,
+    schema_versions: tuple[str, ...] = LEGACY_SCHEMA_VERSIONS,
+) -> tuple[str, ...]:
+    normalized_document_type = _normalize_document_type(document_type)
+    normalized_language = _normalize_language(language)
+    keys: list[str] = []
+    seen: set[str] = set()
+
+    for schema_version in schema_versions:
+        normalized_schema_version = (schema_version or "unknown").strip().lower() or "unknown"
+        payload = {
+            "context_version": CONTEXT_VERSION,
+            "schema_version": normalized_schema_version,
+            "document_type": normalized_document_type,
+            "language": normalized_language,
+        }
+        key = _build_context_key_with_payload(payload)
+        if key in seen:
+            continue
+        seen.add(key)
+        keys.append(key)
+
+    return tuple(keys)
 
 
 def build_context_key_from_interpretation_data(data: Mapping[str, object]) -> str:

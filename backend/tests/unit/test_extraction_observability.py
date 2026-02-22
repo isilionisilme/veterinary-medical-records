@@ -98,6 +98,26 @@ def test_persist_snapshot_is_idempotent_per_document_and_run_id(
     assert second["was_created"] is False
 
 
+def test_get_extraction_runs_normalizes_legacy_schema_version(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(extraction_observability, "_OBSERVABILITY_DIR", tmp_path)
+
+    extraction_observability.persist_extraction_run_snapshot(
+        {
+            **_snapshot(
+                run_id="run-legacy",
+                document_id="doc-legacy",
+                status="accepted",
+                confidence="mid",
+            ),
+            "schemaVersion": "v1",
+        }
+    )
+
+    runs = extraction_observability.get_extraction_runs("doc-legacy")
+    assert len(runs) == 1
+    assert runs[0]["schemaVersion"] == "canonical"
+
+
 def test_build_extraction_triage_populates_missing_and_rejected_lists() -> None:
     snapshot = {
         "runId": "run-triage",

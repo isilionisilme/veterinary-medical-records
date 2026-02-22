@@ -1,4 +1,6 @@
 {
+  "contract_name": "global-schema-flat",
+  "contract_revision": "2026-02-canonical",
   "fields": [
     {
       "key": "claim_id",
