@@ -27,6 +27,7 @@ from backend.app.application.global_schema import (
     VALUE_TYPE_BY_KEY,
     normalize_global_schema,
 )
+from backend.app.config import human_edit_neutral_candidate_confidence
 from backend.app.domain.models import (
     Document,
     DocumentWithLatestRun,
@@ -42,7 +43,6 @@ from backend.app.ports.document_repository import DocumentRepository
 from backend.app.ports.file_storage import FileStorage
 
 NUMERIC_TYPES = (int, float)
-HUMAN_EDIT_NEUTRAL_CANDIDATE_CONFIDENCE = 0.5
 logger = logging.getLogger(__name__)
 _REVIEW_SCHEMA_CONTRACT_CANONICAL = "visit-grouped-canonical"
 
@@ -948,6 +948,7 @@ def apply_interpretation_edits(
     active_fields = _coerce_interpretation_fields(active_data.get("fields"))
     context_key = _resolve_context_key_for_edit_scopes(active_data, active_fields)
     calibration_policy_version = resolve_calibration_policy_version()
+    neutral_candidate_confidence = human_edit_neutral_candidate_confidence()
 
     updated_fields = [dict(field) for field in active_fields]
     field_change_logs: list[dict[str, object]] = []
@@ -977,7 +978,7 @@ def apply_interpretation_edits(
                 )
 
             new_field_id = str(uuid4())
-            new_candidate_confidence = HUMAN_EDIT_NEUTRAL_CANDIDATE_CONFIDENCE
+            new_candidate_confidence = neutral_candidate_confidence
             new_review_history_adjustment = _sanitize_field_review_history_adjustment(0)
             new_field = {
                 "field_id": new_field_id,
@@ -1095,7 +1096,10 @@ def apply_interpretation_edits(
             continue
 
         mapping_id = normalize_mapping_id(existing_field.get("mapping_id"))
-        next_candidate_confidence = _resolve_human_edit_candidate_confidence(existing_field)
+        next_candidate_confidence = _resolve_human_edit_candidate_confidence(
+            existing_field,
+            neutral_candidate_confidence=neutral_candidate_confidence,
+        )
         next_review_history_adjustment = _sanitize_field_review_history_adjustment(0)
         next_mapping_confidence = _compose_field_mapping_confidence(
             candidate_confidence=next_candidate_confidence,
@@ -1297,7 +1301,9 @@ def _compose_field_mapping_confidence(
     return min(max(composed, 0.0), 1.0)
 
 
-def _resolve_human_edit_candidate_confidence(field: dict[str, object]) -> float:
+def _resolve_human_edit_candidate_confidence(
+    field: dict[str, object], *, neutral_candidate_confidence: float
+) -> float:
     candidate_confidence = _sanitize_field_candidate_confidence(
         field.get("field_candidate_confidence")
     )
@@ -1308,7 +1314,7 @@ def _resolve_human_edit_candidate_confidence(field: dict[str, object]) -> float:
     if mapping_confidence is not None:
         return mapping_confidence
 
-    return HUMAN_EDIT_NEUTRAL_CANDIDATE_CONFIDENCE
+    return neutral_candidate_confidence
 
 
 def _sanitize_confidence_breakdown(field: dict[str, object]) -> dict[str, object]:
