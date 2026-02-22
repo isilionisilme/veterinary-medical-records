@@ -186,7 +186,7 @@ export function DocumentsSidebar({
                     onChange={onSidebarFileInputChange}
                   />
                   {isUploadPending && (
-                    <div className="flex items-center gap-2 text-xs text-muted">
+                    <div className="flex items-center gap-2 text-xs text-textSecondary" role="status" aria-live="polite">
                       <RefreshCw size={14} className="animate-spin" />
                       <span>Subiendo...</span>
                     </div>
@@ -234,8 +234,10 @@ export function DocumentsSidebar({
             )}
 
             {isDocumentListError && documentListErrorMessage && (
-              <div className="panel-shell p-[var(--canvas-gap)] text-sm text-ink">
-                <p>{documentListErrorMessage}</p>
+              <div className="panel-shell p-[var(--canvas-gap)]">
+                <p className="rounded-control border border-statusError bg-surface px-3 py-2 text-sm text-ink" role="alert">
+                  {documentListErrorMessage}
+                </p>
               </div>
             )}
 
@@ -253,10 +255,12 @@ export function DocumentsSidebar({
                   ))}
                 </div>
               ) : (
-                <div className={`panel-shell flex flex-col gap-[var(--canvas-gap)] p-[var(--canvas-gap)] ${isDocsSidebarExpanded ? "pr-3" : ""}`}>
+                <div className={`panel-shell flex flex-col p-[var(--canvas-gap)] ${isDocsSidebarExpanded ? "gap-2 pr-3" : "gap-[var(--canvas-gap)]"}`}>
                   {documents.length === 0 ? (
                     isDocsSidebarExpanded ? (
-                      <p className="px-1 py-2 text-sm text-muted">Aun no hay documentos cargados.</p>
+                      <p className="rounded-control border border-borderSubtle bg-surface px-3 py-2 text-sm text-textSecondary">
+                        Aun no hay documentos cargados.
+                      </p>
                     ) : null
                   ) : (
                     groupedDocuments.flatMap((group) => {
@@ -268,15 +272,15 @@ export function DocumentsSidebar({
                       const isActive = activeId === item.document_id;
                       const status = mapDocumentStatus(item);
                       const expandedRowClass = isActive
-                        ? "rounded-card border border-transparent bg-surface text-ink ring-1 ring-borderSubtle shadow-subtle"
-                        : `rounded-card border border-transparent bg-surface text-ink hover:border-borderSubtle hover:bg-surfaceMuted ${group.reviewed ? "opacity-70" : ""}`;
+                        ? "rounded-card bg-surfaceMuted text-ink shadow-subtle"
+                        : `rounded-card bg-surface text-ink hover:bg-surfaceMuted ${group.reviewed ? "opacity-80" : ""}`;
                       const collapsedRowClass = isActive
-                        ? "rounded-lg border border-transparent bg-transparent text-ink"
+                        ? "rounded-lg border border-transparent bg-surfaceMuted text-ink ring-1 ring-borderSubtle"
                         : `rounded-lg border border-transparent bg-transparent text-ink hover:border-borderSubtle hover:bg-surface ${
-                            group.reviewed ? "opacity-70" : ""
+                          group.reviewed ? "opacity-80" : ""
                           }`;
                       const collapsedIconClass = isActive
-                        ? "relative flex h-10 w-10 items-center justify-center rounded-full border border-transparent bg-surface text-ink ring-1 ring-borderSubtle transition"
+                        ? "relative flex h-10 w-10 items-center justify-center rounded-full border border-transparent bg-surface text-ink ring-1 ring-borderSubtle ring-2 ring-border shadow-subtle transition"
                         : "relative flex h-10 w-10 items-center justify-center rounded-full border border-transparent bg-transparent transition hover:border-borderSubtle hover:bg-surface";
                       const button = (
                         <button
@@ -285,19 +289,26 @@ export function DocumentsSidebar({
                           type="button"
                           onClick={() => onSelectDocument(item.document_id)}
                           aria-pressed={isActive}
+                          aria-current={isActive ? "true" : undefined}
                           aria-label={`${item.original_filename} (${status.label})`}
-                          className={`w-full overflow-visible text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+                          className={`relative w-full overflow-visible text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
                             isDocsSidebarExpanded
                               ? expandedRowClass
                               : collapsedRowClass
-                          } ${isDocsSidebarExpanded ? "px-3 py-2" : "px-0 py-1"} ${
+                          } ${isDocsSidebarExpanded ? "min-h-[72px] px-3 py-2" : "px-0 py-1"} ${
                             !isDocsSidebarExpanded ? "shadow-none" : ""
                           }`}
                         >
+                          {isDocsSidebarExpanded && isActive && (
+                            <span
+                              aria-hidden="true"
+                              className="absolute bottom-2 left-1 top-2 w-0.5 rounded-full bg-accent"
+                            />
+                          )}
                           <div
                             className={`flex items-center ${
                               isDocsSidebarExpanded
-                                ? "justify-between gap-3"
+                                ? "items-start justify-between gap-3"
                                 : "mx-auto w-full justify-center"
                             }`}
                           >
@@ -310,18 +321,30 @@ export function DocumentsSidebar({
                             >
                               {isDocsSidebarExpanded ? (
                                 <>
-                                  <p className="truncate text-sm font-semibold text-textBody">{item.original_filename}</p>
-                                  <p className="mt-0.5 text-xs text-textMuted">Subido: {formatTimestamp(item.created_at)}</p>
+                                  <p
+                                    className={`truncate text-sm leading-5 ${
+                                      isActive ? "font-semibold text-text" : "font-medium text-textBody"
+                                    }`}
+                                  >
+                                    {item.original_filename}
+                                  </p>
+                                  {isActive && <span className="sr-only">Documento seleccionado</span>}
+                                  <p className="mt-1 text-[11px] leading-4 text-textMuted">Subido: {formatTimestamp(item.created_at)}</p>
                                 </>
                               ) : (
-                                <FileText size={15} aria-hidden="true" />
+                                <>
+                                  <FileText size={15} aria-hidden="true" />
+                                  {isActive && <span className="sr-only">Documento seleccionado</span>}
+                                </>
                               )}
                               {!isDocsSidebarExpanded && (
-                                <DocumentStatusChip
-                                  status={status}
-                                  compact
-                                  className="absolute right-0.5 top-0.5"
-                                />
+                                <>
+                                  <DocumentStatusChip
+                                    status={status}
+                                    compact
+                                    className="absolute right-0.5 top-0.5"
+                                  />
+                                </>
                               )}
                             </div>
                             {isDocsSidebarExpanded ? (
@@ -329,7 +352,7 @@ export function DocumentsSidebar({
                             ) : null}
                           </div>
                           {isDocsSidebarExpanded && isProcessingTooLong(item.created_at, item.status) && (
-                            <p className="mt-2 text-xs text-muted">Tardando mas de lo esperado</p>
+                            <p className="mt-2 text-xs text-textSecondary">Tardando mas de lo esperado</p>
                           )}
                           {isDocsSidebarExpanded && item.failure_type && (
                             <p className="mt-2 text-xs text-statusError">Error: {item.failure_type}</p>
@@ -357,12 +380,26 @@ export function DocumentsSidebar({
                       }
 
                       return [
-                        <p
+                        ...(group.reviewed
+                          ? [
+                              <div
+                                key={`${group.key}-separator`}
+                                aria-hidden="true"
+                                className="mx-1 mt-3 h-px bg-borderSubtle"
+                              />,
+                            ]
+                          : []),
+                        <div
                           key={`${group.key}-header`}
-                          className="px-1 pt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-textMuted"
+                          className={`${group.reviewed ? "mt-2" : "mt-1"} flex items-center justify-between px-1`}
                         >
-                          {group.title}
-                        </p>,
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-textMuted">
+                            {group.title}
+                          </p>
+                          <span className="rounded-full bg-surfaceMuted px-2 py-0.5 text-[10px] font-semibold text-textSecondary">
+                            {group.items.length}
+                          </span>
+                        </div>,
                         ...sectionItems,
                       ];
                     })

@@ -13,6 +13,27 @@ type ToastHostProps = {
 
 const TOAST_CONTAINER_BASE_CLASS =
   "fixed left-1/2 z-[60] w-full max-w-lg -translate-x-1/2 px-4 sm:w-[32rem]";
+const TOAST_BASE_CLASS = "rounded-2xl border px-5 py-4 shadow-subtle";
+
+function getToastKindClass(kind: "success" | "info" | "error"): string {
+  if (kind === "success") {
+    return "border-statusSuccess text-statusSuccess";
+  }
+  if (kind === "info") {
+    return "border-accent text-text";
+  }
+  return "border-statusError text-statusError";
+}
+
+function getToastKindBackground(kind: "success" | "info" | "error"): React.CSSProperties {
+  if (kind === "success") {
+    return { backgroundColor: "var(--status-success-bg)" };
+  }
+  if (kind === "info") {
+    return { backgroundColor: "var(--status-info-bg)" };
+  }
+  return { backgroundColor: "var(--status-error-bg)" };
+}
 
 function getUploadToastTopClass(hasConnectivityToast: boolean): string {
   return hasConnectivityToast ? "top-28" : "top-10";
@@ -36,8 +57,9 @@ export function ToastHost({
       {connectivityToast && (
         <div className="fixed left-1/2 top-10 z-[65] w-full max-w-lg -translate-x-1/2 px-4 sm:w-[32rem]">
           <div
-            className="rounded-2xl border border-red-300 bg-red-50 px-5 py-4 text-red-700"
-            role="status"
+            className={`${TOAST_BASE_CLASS} ${getToastKindClass("error")}`}
+            style={getToastKindBackground("error")}
+            role="alert"
           >
             <div className="flex items-start justify-between gap-3">
               <p className="text-sm">No se pudo conectar con el servidor.</p>
@@ -57,12 +79,11 @@ export function ToastHost({
           className={`${TOAST_CONTAINER_BASE_CLASS} ${getUploadToastTopClass(Boolean(connectivityToast))}`}
         >
           <div
-            className={`rounded-2xl border px-5 py-4 text-base ${
-              uploadFeedback.kind === "success"
-                ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-                : "border-red-300 bg-red-50 text-red-700"
-            }`}
-            role="status"
+            className={`${TOAST_BASE_CLASS} text-base ${getToastKindClass(
+              uploadFeedback.kind === "success" ? "success" : "error"
+            )}`}
+            style={getToastKindBackground(uploadFeedback.kind === "success" ? "success" : "error")}
+            role={uploadFeedback.kind === "error" ? "alert" : "status"}
           >
             <div className="flex items-center justify-between gap-3">
               <span>{uploadFeedback.message}</span>
@@ -103,14 +124,21 @@ export function ToastHost({
           className={`${TOAST_CONTAINER_BASE_CLASS} ${getActionToastTopClass(Boolean(connectivityToast))}`}
         >
           <div
-            className={`rounded-2xl border px-5 py-4 text-base ${
+            className={`${TOAST_BASE_CLASS} text-base ${getToastKindClass(
               actionFeedback.kind === "success"
-                ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                ? "success"
                 : actionFeedback.kind === "info"
-                  ? "border-blue-300 bg-blue-50 text-blue-700"
-                  : "border-red-300 bg-red-50 text-red-700"
-            }`}
-            role="status"
+                  ? "info"
+                  : "error"
+            )}`}
+            style={getToastKindBackground(
+              actionFeedback.kind === "success"
+                ? "success"
+                : actionFeedback.kind === "info"
+                  ? "info"
+                  : "error"
+            )}
+            role={actionFeedback.kind === "error" ? "alert" : "status"}
           >
             <div className="flex items-center justify-between gap-3">
               <span>{actionFeedback.message}</span>
