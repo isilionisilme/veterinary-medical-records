@@ -34,7 +34,7 @@ Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for i
 - `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/250_us-09-capture-correction-signals.md`
 - `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/260_us-10-change-document-language-and-reprocess.md`
 - `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/270_us-12-mark-document-as-reviewed.md`
-- `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/275_us-32-align-review-rendering-to-global-schema-v0-template.md`
+- `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/275_us-32-align-review-rendering-to-global-schema-template.md`
 - `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/276_us-35-resizable-splitter-between-pdf-viewer-and-structured-data-panel.md`
 - `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/277_us-41-show-top-5-candidate-suggestions-in-field-edit-modal.md`
 - `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/278_us-42-provide-evaluator-friendly-installation-execution-docker-first.md`

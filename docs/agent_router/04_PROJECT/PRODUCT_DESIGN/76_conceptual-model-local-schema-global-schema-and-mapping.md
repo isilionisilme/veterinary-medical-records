@@ -58,7 +58,7 @@ It does not prescribe storage tables or transport contracts.
 - Policy actions adjust default ranking/selection behavior and do not add/remove Global Schema keys.
 - `candidate_confidence` can influence extraction diagnostics, but governance and policy actions use `field_mapping_confidence` in context.
 - By default, we do not require explicit per-field confirmation: implicit review is used as a weak positive signal when a veterinarian marks the document as reviewed and a field remains unchanged.
-- Global Schema v0 keys/order do not change automatically during this propagation; only `field_mapping_confidence` and policy state may change.
+- Global Schema keys/order do not change automatically during this propagation; only `field_mapping_confidence` and policy state may change.
 
 ### Future Improvements
 

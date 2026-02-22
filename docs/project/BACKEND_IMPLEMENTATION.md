@@ -194,7 +194,7 @@ Authority: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix D 
 Product semantics for confidence are defined in [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md); UX behavior remains in [`docs/project/UX_DESIGN.md`](UX_DESIGN.md).
 
 Alignment note:
-- Interpretation output may be partial with respect to the full Global Schema v0 key universe.
+- Interpretation output may be partial with respect to the full Global Schema key universe.
 - Backend does not backfill missing keys for presentation; frontend materializes the full schema view per Product Design authority.
 
 ### Storage contract

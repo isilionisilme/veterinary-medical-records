@@ -9,6 +9,6 @@ This is a deliberately small contract, **not a full medical ontology**.
 - **Flat structure (v0)**: optimize for flexibility and speed, not completeness.
 
 Note (materialization boundary):
-- Machine interpretation payloads may be partial with respect to Global Schema v0.
+- Machine interpretation payloads may be partial with respect to Global Schema.
 - Backend contracts here define valid structured payload shape; they do not require backend-side full-schema backfilling.
-- UI rendering materializes and displays the full Global Schema v0, including empty values for missing keys.
+- UI rendering materializes and displays the full Global Schema, including empty values for missing keys.

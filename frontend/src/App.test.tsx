@@ -2007,7 +2007,7 @@ describe("App upload and list flow", () => {
     expect(calls.some(([url]) => String(url).includes("/documents/upload"))).toBe(false);
   }, 12000);
 
-  it("renders the full Global Schema v0 template with explicit missing states", async () => {
+  it("renders the full Global Schema template with explicit missing states", async () => {
     renderApp();
     const panel = await openReadyDocumentAndGetPanel();
 

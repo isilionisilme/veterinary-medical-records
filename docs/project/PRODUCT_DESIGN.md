@@ -252,7 +252,7 @@ It does not prescribe storage tables or transport contracts.
 - Policy actions adjust default ranking/selection behavior and do not add/remove Global Schema keys.
 - `candidate_confidence` can influence extraction diagnostics, but governance and policy actions use `field_mapping_confidence` in context.
 - By default, we do not require explicit per-field confirmation: implicit review is used as a weak positive signal when a veterinarian marks the document as reviewed and a field remains unchanged.
-- Global Schema v0 keys/order do not change automatically during this propagation; only `field_mapping_confidence` and policy state may change.
+- Global Schema keys/order do not change automatically during this propagation; only `field_mapping_confidence` and policy state may change.
 
 #### Future Improvements
 
@@ -279,7 +279,7 @@ It does not prescribe storage tables or transport contracts.
 
 Canonical source location:
 - This section in `docs/project/PRODUCT_DESIGN.md` is the canonical product source for the Global Schema v1 Medical Record MVP field list.
-- The legacy Global Schema v0 reference remains canonical in the Appendix of this same document.
+- The legacy Global Schema reference remains canonical in the Appendix of this same document.
 
 Purpose: define the canonical contract-aligned field universe for the Medical Record panel.
 
@@ -325,7 +325,7 @@ Product compatibility rule:
 
 ### CRITICAL_KEYS_V0 (Authoritative, closed set)
 
-Source of truth for Appendix D7.4: the exact set listed in historical Global Schema v0.
+Source of truth for Appendix D7.4: the exact set listed in historical Global Schema.
 This set remains authoritative and closed for v0 semantics.
 For v1 Medical Record contract critical/taxonomy semantics, refer to [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix D9.
 
@@ -347,10 +347,10 @@ For v1 Medical Record contract critical/taxonomy semantics, refer to [`docs/proj
 - [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) defines layout, labels, and empty states.
 - [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) defines payload contracts (`schema_version` v0/v1), field taxonomy, and explicit `other/unmapped` contract bucket.
 
-## Appendix: Global Schema v0 (Legacy / Deprecated)
+## Appendix: Global Schema (Legacy / Deprecated)
 
 Status:
-- Global Schema v0 is legacy/historical and is retained only for reference.
+- Global Schema is legacy/historical and is retained only for reference.
 - It is not the canonical schema for the Medical Record MVP panel.
 - For this panel, canonical behavior is defined by Global Schema v1 + v1 contract taxonomy.
 - Legacy v0 payloads may still include additional non-clinical compatibility keys; they are outside this MVP panel scope.

@@ -23,6 +23,6 @@ Rules (technical, authoritative):
 
 Source of truth for `CRITICAL_KEYS_V0`:
 - Defined in [`docs/project/PRODUCT_DESIGN.md`](../PRODUCT_DESIGN/00_entry.md) (product authority).
-- The complete Global Schema v0 key list, fixed ordering, section grouping, repeatability rules, and cross-key fallback rules (including `document_date` fallback to `visit_date`) are also governed by [`docs/project/PRODUCT_DESIGN.md`](../PRODUCT_DESIGN/00_entry.md).
+- The complete Global Schema key list, fixed ordering, section grouping, repeatability rules, and cross-key fallback rules (including `document_date` fallback to `visit_date`) are also governed by [`docs/project/PRODUCT_DESIGN.md`](../PRODUCT_DESIGN/00_entry.md).
 
 ---

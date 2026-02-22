@@ -1,9 +1,9 @@
-# Global Schema v0 (Legacy/Historical Canonical Field List)
+# Global Schema (Legacy/Historical Canonical Field List)
 
 Purpose: preserve the historical flat v0 field universe as compatibility reference.
 
 Status:
-- Global Schema v0 is legacy/historical and retained for compatibility.
+- Global Schema is legacy/historical and retained for compatibility.
 - It is not the canonical schema for Medical Record MVP panel rendering.
 - Medical Record MVP canonical semantics are defined in `78_global-schema-v1-medical-record-mvp-field-list.md` and Appendix D9.
 

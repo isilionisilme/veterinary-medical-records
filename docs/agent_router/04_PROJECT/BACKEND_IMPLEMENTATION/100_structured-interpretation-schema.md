@@ -2,7 +2,7 @@
 Authority: [`docs/project/TECHNICAL_DESIGN.md`](../TECHNICAL_DESIGN/00_entry.md) Appendix D (Structured Interpretation Schema v0).
 
 Alignment note:
-- Interpretation output may be partial with respect to the full Global Schema v0 key universe.
+- Interpretation output may be partial with respect to the full Global Schema key universe.
 - Backend does not backfill missing keys for presentation; frontend materializes the full schema view per Product Design authority.
 
 ## Storage contract

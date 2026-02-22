@@ -180,7 +180,7 @@ Allow veterinarians to correct structured data naturally, while capturing append
 - US-41 — Show Top-5 candidate suggestions in Field Edit Modal
 - US-39 — Align veterinarian confidence signal with mapping confidence policy
 - US-40 — Implement field-level confidence tooltip breakdown (Implemented 2026-02-18)
-- US-32 — Align review rendering to Global Schema v0 template (Implemented 2026-02-17)
+- US-32 — Align review rendering to Global Schema template (Implemented 2026-02-17)
 
 ---
 
@@ -194,7 +194,7 @@ Focus this release on visit-grouped review rendering (contract-driven) and evalu
 - Evaluator-friendly installation and execution packaging/runbook
 
 ### User Stories (in order)
-- US-32 — Align review rendering to Global Schema v0 template (Implemented 2026-02-17)
+- US-32 — Align review rendering to Global Schema template (Implemented 2026-02-17)
 - US-44 — Medical Record MVP: Update Extracted Data panel structure, labels, and scope (Implemented 2026-02-20)
 - US-43 — Render “Visitas” agrupadas cuando `schema_version="v1"` (contract-driven, no heuristics)
 - US-45 — Visit Detection MVP (Deterministic, Contract-Driven Coverage Improvement) (Implemented 2026-02-21)
@@ -663,7 +663,7 @@ As a veterinarian reviewer, I want to mark a document as reviewed and unmark it 
 - Reopen clears or updates reviewed-state metadata per authoritative contract while preserving extracted/corrected field content.
 
 **Authoritative References**
-- UX: Veterinarian review flow and status visibility: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) Sections 1, 4, and section **Review UI Rendering Rules (Global Schema v0 Template)**.
+- UX: Veterinarian review flow and status visibility: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) Sections 1, 4, and section **Review UI Rendering Rules (Global Schema Template)**.
 - Product: Human-in-the-loop and non-blocking workflow principles: [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md) Sections 2 and 5.
 - Tech: Review status model and transition rules: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix A1.3 + Appendix B4.
 
@@ -695,7 +695,7 @@ As a veterinarian, I want to quickly narrow down structured fields using search 
   - Search input with a magnifying-glass icon.
   - Confidence filter chips: `Baja`, `Media`, `Alta`.
   - Toggles: `Solo CRÍTICOS`, `Solo con valor`.
-- Filtering applies to rendered Global Schema v0 fields in fixed order.
+- Filtering applies to rendered Global Schema fields in fixed order.
 - Search is case-insensitive and matches field label, schema key, and rendered value (when present).
 - Confidence bucket semantics are:
   - `Baja` when confidence < 0.50
@@ -712,21 +712,21 @@ As a veterinarian, I want to quickly narrow down structured fields using search 
 - Search uses debounce between 150 and 250 ms.
 
 **Scope Clarification**
-- This story does not change Global Schema v0 keys or ordering.
+- This story does not change Global Schema keys or ordering.
 - This story does not add or modify endpoints.
 - This story does not change interpretation persistence semantics.
 - Changes should remain localized to the review panel UI and related filtering logic.
 
 **Authoritative References**
-- Product: Canonical field authority and order: [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md) section **Global Schema v0 (Canonical Field List)**.
-- UX: Review rendering baseline and deterministic missing/empty behavior: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) section **Review UI Rendering Rules (Global Schema v0 Template)**.
+- Product: Canonical field authority and order: [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md) section **Global Schema (Canonical Field List)**.
+- UX: Review rendering baseline and deterministic missing/empty behavior: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) section **Review UI Rendering Rules (Global Schema Template)**.
 - Brand: UI controls and visual consistency: [`docs/shared/BRAND_GUIDELINES.md`](../shared/BRAND_GUIDELINES.md).
-- Frontend context: review rendering backbone: [`docs/project/FRONTEND_IMPLEMENTATION.md`](FRONTEND_IMPLEMENTATION.md) section **Review Rendering Backbone (Global Schema v0)**.
+- Frontend context: review rendering backbone: [`docs/project/FRONTEND_IMPLEMENTATION.md`](FRONTEND_IMPLEMENTATION.md) section **Review Rendering Backbone (Global Schema)**.
 
 **Test Expectations**
 - Unit tests cover search matching behavior (label/key/rendered value).
 - Unit tests cover confidence bucket classification boundaries.
-- Review panel keeps Global Schema v0 order deterministic while filters are applied.
+- Review panel keeps Global Schema order deterministic while filters are applied.
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
@@ -782,8 +782,8 @@ As a veterinarian reviewer, I want to resize the PDF and structured-data panels 
 
 **Authoritative References**
 - UX: Side-by-side review interaction baseline: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) Sections 2–4.
-- Product: Global Schema canonical ordering invariants: [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md) section **Global Schema v0 (Canonical Field List)**.
-- Frontend context: review rendering backbone and deterministic structure: [`docs/project/FRONTEND_IMPLEMENTATION.md`](FRONTEND_IMPLEMENTATION.md) section **Review Rendering Backbone (Global Schema v0)**.
+- Product: Global Schema canonical ordering invariants: [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md) section **Global Schema (Canonical Field List)**.
+- Frontend context: review rendering backbone and deterministic structure: [`docs/project/FRONTEND_IMPLEMENTATION.md`](FRONTEND_IMPLEMENTATION.md) section **Review Rendering Backbone (Global Schema)**.
 
 **Test Expectations**
 - Splitter drag updates panel widths while honoring min/max constraints.
@@ -832,7 +832,7 @@ Introduce a minimal, consistent UI foundation to prevent ad-hoc styling and enab
 - Large refactors of unrelated screens.
 
 **Authoritative References**
-- UX: Review interaction contract and confidence behavior: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) Sections 2–4 and section **Review UI Rendering Rules (Global Schema v0 Template)**.
+- UX: Review interaction contract and confidence behavior: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) Sections 2–4 and section **Review UI Rendering Rules (Global Schema Template)**.
 - Shared UX boundaries: [`docs/shared/UX_GUIDELINES.md`](../shared/UX_GUIDELINES.md).
 - Brand constraints and tokenization requirement: [`docs/shared/BRAND_GUIDELINES.md`](../shared/BRAND_GUIDELINES.md).
 - Design system implementation contract: [`docs/project/DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md).
@@ -1005,19 +1005,19 @@ As a veterinarian, I want to change the detected language of a document so that 
 
 ---
 
-## US-32 — Align review rendering to Global Schema v0 template
+## US-32 — Align review rendering to Global Schema template
 
 **Status**: Implemented (2026-02-17)
 
 **User Story**
-As a veterinarian, I want the review view to always use the full Global Schema v0 template so that scanning is consistent across documents.
+As a veterinarian, I want the review view to always use the full Global Schema template so that scanning is consistent across documents.
 
 **Acceptance Criteria**
-- The UI renders the complete Global Schema v0 in fixed order and by sections, regardless of how many fields were extracted.
+- The UI renders the complete Global Schema in fixed order and by sections, regardless of how many fields were extracted.
 - Non-extracted keys render explicit placeholders (no blank gaps).
 - While structured data is loading, the UI shows a loading state and does not render missing placeholders yet.
 - Repeatable fields render as lists and show an explicit empty-list state when no items are present.
-- Extracted keys outside Global Schema v0 are rendered in a separate section named `Other extracted fields`.
+- Extracted keys outside Global Schema are rendered in a separate section named `Other extracted fields`.
 - Veterinarian-facing copy does not expose governance terminology such as `pending_review`, `reviewer`, or `governance`.
 
 **Scope Clarification**
@@ -1027,10 +1027,10 @@ As a veterinarian, I want the review view to always use the full Global Schema v
 - This story does not change run semantics; it defines review rendering behavior only.
 
 **Authoritative References**
-- Product: Global schema authority and field list: [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md) section **Global Schema v0 (Canonical Field List)**.
-- UX: Rendering and placeholder behavior: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) section **Review UI Rendering Rules (Global Schema v0 Template)**.
+- Product: Global schema authority and field list: [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md) section **Global Schema (Canonical Field List)**.
+- UX: Rendering and placeholder behavior: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) section **Review UI Rendering Rules (Global Schema Template)**.
 - Tech: Structured interpretation schema and partial payload boundary: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix D.
-- Frontend implementation notes: [`docs/project/FRONTEND_IMPLEMENTATION.md`](FRONTEND_IMPLEMENTATION.md) section **Review Rendering Backbone (Global Schema v0)**.
+- Frontend implementation notes: [`docs/project/FRONTEND_IMPLEMENTATION.md`](FRONTEND_IMPLEMENTATION.md) section **Review Rendering Backbone (Global Schema)**.
 
 **Test Expectations**
 - Review screens always show the same section/key structure, independent of extraction completeness.
@@ -1616,7 +1616,7 @@ As a user, I want to upload, access, and process DOCX documents so that the same
 - Tech: Endpoint surface and error semantics: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3/B3.2
 - Tech: Processing model and run invariants: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Sections 3–4 + Appendix A2
 - Tech: Step model + failure mapping: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix C
-- UX: Review flow guarantees and rendering contract: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) sections **Confidence — UX Definition**, **Veterinarian Review Flow**, **Review-in-Context Contract**, and **Review UI Rendering Rules (Global Schema v0 Template)**.
+- UX: Review flow guarantees and rendering contract: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) sections **Confidence — UX Definition**, **Veterinarian Review Flow**, **Review-in-Context Contract**, and **Review UI Rendering Rules (Global Schema Template)**.
 
 **Story-specific technical requirements**
 - Add server-side type detection for DOCX based on server-side inspection.
@@ -1656,7 +1656,7 @@ As a user, I want to upload, access, and process image documents so that scans a
 - Tech: Processing model and run invariants: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Sections 3–4 + Appendix A2
 - Tech: Step model + failure mapping: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix C
 - Tech: Extraction library decisions (appendix): [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix E
-- UX: Review flow guarantees and rendering contract: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) sections **Confidence — UX Definition**, **Veterinarian Review Flow**, **Review-in-Context Contract**, and **Review UI Rendering Rules (Global Schema v0 Template)**.
+- UX: Review flow guarantees and rendering contract: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) sections **Confidence — UX Definition**, **Veterinarian Review Flow**, **Review-in-Context Contract**, and **Review UI Rendering Rules (Global Schema Template)**.
 
 **Story-specific technical requirements**
 - Add server-side type detection for images based on server-side inspection.

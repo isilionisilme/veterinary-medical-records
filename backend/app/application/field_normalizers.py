@@ -1,4 +1,4 @@
-"""Deterministic canonical normalization for Global Schema v0 fields."""
+"""Deterministic canonical normalization for Global Schema fields."""
 
 from __future__ import annotations
 
