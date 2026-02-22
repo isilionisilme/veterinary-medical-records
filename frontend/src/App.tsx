@@ -5132,25 +5132,20 @@ export function App() {
                                 </ToggleGroup>
 
                                 <div aria-hidden="true" className="mx-1 h-6 w-px shrink-0 self-center bg-border" />
-                                <Tooltip content="Limpiar filtros">
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    aria-label="Limpiar filtros"
-                                    disabled={
-                                      reviewPanelState !== "ready" ||
-                                      (structuredSearchInput.trim().length === 0 &&
-                                        selectedConfidenceBuckets.length === 0 &&
-                                        !showOnlyCritical &&
-                                        !showOnlyWithValue &&
-                                        !showOnlyEmpty)
-                                    }
-                                    onClick={resetStructuredFilters}
-                                  >
-                                    <FilterX size={14} aria-hidden="true" />
-                                  </Button>
-                                </Tooltip>
+                                <IconButton
+                                  label="Limpiar filtros"
+                                  disabled={
+                                    reviewPanelState !== "ready" ||
+                                    (structuredSearchInput.trim().length === 0 &&
+                                      selectedConfidenceBuckets.length === 0 &&
+                                      !showOnlyCritical &&
+                                      !showOnlyWithValue &&
+                                      !showOnlyEmpty)
+                                  }
+                                  onClick={resetStructuredFilters}
+                                >
+                                  <FilterX size={14} aria-hidden="true" />
+                                </IconButton>
 
                               </div>
                             </div>
