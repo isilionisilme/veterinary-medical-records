@@ -98,7 +98,7 @@ def test_persist_snapshot_is_idempotent_per_document_and_run_id(
     assert second["was_created"] is False
 
 
-def test_get_extraction_runs_normalizes_legacy_schema_version(
+def test_get_extraction_runs_normalizes_compat_schema_version(
     monkeypatch,
     tmp_path: Path,
     caplog,

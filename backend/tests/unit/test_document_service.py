@@ -409,7 +409,7 @@ def test_normalize_visit_date_candidate_normalizes_ddmmyy_and_ddmmyyyy() -> None
     assert _normalize_visit_date_candidate("11/02/26") == "2026-02-11"
 
 
-def test_normalize_visit_date_candidate_rejects_legacy_two_digit_years() -> None:
+def test_normalize_visit_date_candidate_rejects_two_digit_years_1969() -> None:
     assert _normalize_visit_date_candidate("11/02/69") is None
 
 

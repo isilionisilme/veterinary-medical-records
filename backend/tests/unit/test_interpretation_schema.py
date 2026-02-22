@@ -62,7 +62,7 @@ def test_interpretation_artifact_contains_full_global_schema_shape() -> None:
     assert "schema_version" not in data
 
 
-def test_interpretation_artifact_does_not_use_legacy_context_key_fallback_for_calibration() -> None:
+def test_interpretation_artifact_does_not_use_context_key_fallback_for_calibration() -> None:
     pet_name_lookup_count = 0
 
     class FakeRepository:

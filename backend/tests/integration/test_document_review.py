@@ -436,7 +436,7 @@ def test_document_review_returns_conflict_when_interpretation_is_missing(test_cl
     assert payload["details"]["reason"] == "INTERPRETATION_MISSING"
 
 
-def test_document_review_normalizes_legacy_microchip_suffix_to_digits_only(test_client):
+def test_document_review_normalizes_microchip_suffix_to_digits_only(test_client):
     document_id = _upload_sample_document(test_client)
     run_id = "run-review-microchip-suffix"
     _insert_run(
@@ -1136,7 +1136,7 @@ def test_document_review_us46_mixed_multi_visit_assignment_regression_guardrail(
     assert {"diagnosis", "medication", "procedure"}.intersection(stats["assigned_keys"])
 
 
-def test_document_review_drops_legacy_non_digit_microchip_value(test_client):
+def test_document_review_drops_non_digit_microchip_value(test_client):
     document_id = _upload_sample_document(test_client)
     run_id = "run-review-microchip-non-digit"
     _insert_run(
