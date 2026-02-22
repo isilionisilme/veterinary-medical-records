@@ -18,7 +18,6 @@ from uuid import uuid4
 
 from backend.app.application.confidence_calibration import (
     build_context_key,
-    build_legacy_context_keys,
     compute_review_history_adjustment,
     normalize_mapping_id,
     resolve_calibration_policy_version,
@@ -162,7 +161,6 @@ _VET_OR_CLINIC_CONTEXT_PATTERN = re.compile(
 _CLINICAL_RECORD_GUARD_PATTERN = re.compile(r"(?i)\b(?:\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4})\b")
 NUMERIC_TYPES = (int, float)
 REVIEW_SCHEMA_CONTRACT = "legacy-flat"
-REVIEW_SCHEMA_VERSION_COMPAT = "v1"
 LEGACY_COMPAT_EVENT_PREFIX = "[legacy-compat]"
 
 
@@ -560,20 +558,7 @@ def _build_interpretation_artifact(
             if isinstance(normalized_values.get("language"), str)
             else None,
         )
-        legacy_calibration_context_keys = build_legacy_context_keys(
-            document_type="veterinary_record",
-            language=normalized_values.get("language")
-            if isinstance(normalized_values.get("language"), str)
-            else None,
-        )
-        logger.info(
-            "%s event=context_key_fallback_candidates_prepared "
-            "stage=processing_runner flow=interpretation_build "
-            "primary_context_key=%s legacy_context_keys=%s",
-            LEGACY_COMPAT_EVENT_PREFIX,
-            calibration_context_key,
-            legacy_calibration_context_keys,
-        )
+        legacy_calibration_context_keys: tuple[str, ...] = ()
         calibration_policy_version = resolve_calibration_policy_version()
         fields = _build_structured_fields_from_global_schema(
             normalized_values=normalized_values,
@@ -592,18 +577,7 @@ def _build_interpretation_artifact(
             document_type="veterinary_record",
             language=None,
         )
-        legacy_calibration_context_keys = build_legacy_context_keys(
-            document_type="veterinary_record",
-            language=None,
-        )
-        logger.info(
-            "%s event=context_key_fallback_candidates_prepared "
-            "stage=processing_runner flow=interpretation_build "
-            "primary_context_key=%s legacy_context_keys=%s",
-            LEGACY_COMPAT_EVENT_PREFIX,
-            calibration_context_key,
-            legacy_calibration_context_keys,
-        )
+        legacy_calibration_context_keys = ()
 
     populated_keys = [
         key
@@ -631,7 +605,6 @@ def _build_interpretation_artifact(
         "processing_run_id": run_id,
         "created_at": now_iso,
         "schema_contract": REVIEW_SCHEMA_CONTRACT,
-        "schema_version": REVIEW_SCHEMA_VERSION_COMPAT,
         "fields": fields,
         "global_schema": normalized_values,
         "summary": {
@@ -644,13 +617,6 @@ def _build_interpretation_artifact(
         },
         "context_key": calibration_context_key,
     }
-    logger.info(
-        "%s event=compat_schema_projection stage=processing_runner "
-        "flow=interpretation_build schema_contract=%s schema_version=%s",
-        LEGACY_COMPAT_EVENT_PREFIX,
-        REVIEW_SCHEMA_CONTRACT,
-        REVIEW_SCHEMA_VERSION_COMPAT,
-    )
     if policy_version is not None and band_cutoffs is not None:
         low_max, mid_max = band_cutoffs
         data["confidence_policy"] = {
@@ -1845,29 +1811,6 @@ def _resolve_review_history_adjustment(
         mapping_id=mapping_id,
         policy_version=policy_version,
     )
-    if counts is None:
-        for legacy_context_key in legacy_context_keys:
-            if legacy_context_key == context_key:
-                continue
-            counts = repository.get_calibration_counts(
-                context_key=legacy_context_key,
-                field_key=field_key,
-                mapping_id=mapping_id,
-                policy_version=policy_version,
-            )
-            if counts is not None:
-                logger.info(
-                    "%s event=context_key_fallback_hit stage=processing_runner "
-                    "flow=review_history_adjustment primary_context_key=%s "
-                    "fallback_context_key=%s field_key=%s mapping_id=%s policy_version=%s",
-                    LEGACY_COMPAT_EVENT_PREFIX,
-                    context_key,
-                    legacy_context_key,
-                    field_key,
-                    mapping_id,
-                    policy_version,
-                )
-                break
     if counts is None:
         return 0.0
 

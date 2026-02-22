@@ -245,7 +245,7 @@ def test_document_review_returns_latest_completed_run_context(test_client):
     assert payload["active_interpretation"]["data"].get("schema_contract") == (
         "visit-grouped-canonical"
     )
-    assert payload["active_interpretation"]["data"].get("schema_version") == "v1"
+    assert "schema_version" not in payload["active_interpretation"]["data"]
     medical_record_view = payload["active_interpretation"]["data"].get("medical_record_view")
     assert isinstance(medical_record_view, dict)
     field_slots = medical_record_view.get("field_slots")

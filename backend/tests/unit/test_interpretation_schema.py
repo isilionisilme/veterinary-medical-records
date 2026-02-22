@@ -59,10 +59,10 @@ def test_interpretation_artifact_contains_full_global_schema_shape() -> None:
         assert isinstance(global_schema[repeatable_key], list)
 
     assert data.get("schema_contract") == "legacy-flat"
-    assert data.get("schema_version") == "v1"
+    assert "schema_version" not in data
 
 
-def test_interpretation_artifact_uses_legacy_context_key_fallback_for_calibration() -> None:
+def test_interpretation_artifact_does_not_use_legacy_context_key_fallback_for_calibration() -> None:
     pet_name_lookup_count = 0
 
     class FakeRepository:
@@ -78,8 +78,6 @@ def test_interpretation_artifact_uses_legacy_context_key_fallback_for_calibratio
             if field_key != "pet_name":
                 return None
             pet_name_lookup_count += 1
-            if pet_name_lookup_count >= 2:
-                return (7, 0)
             return None
 
     payload = _build_interpretation_artifact(
@@ -94,50 +92,11 @@ def test_interpretation_artifact_uses_legacy_context_key_fallback_for_calibratio
         for field in payload["data"]["fields"]
         if isinstance(field, dict) and field.get("key") == "pet_name"
     )
-    assert pet_name_lookup_count >= 2
-    assert pet_name_field["field_review_history_adjustment"] > 0
+    assert pet_name_lookup_count == 1
+    assert pet_name_field["field_review_history_adjustment"] == 0
 
 
-def test_interpretation_artifact_logs_legacy_context_fallback_hit(caplog) -> None:
-    pet_name_lookup_count = 0
-
-    class FakeRepository:
-        def get_calibration_counts(
-            self,
-            *,
-            context_key: str,
-            field_key: str,
-            mapping_id: str | None,
-            policy_version: str,
-        ) -> tuple[int, int] | None:
-            nonlocal pet_name_lookup_count
-            if field_key != "pet_name":
-                return None
-            pet_name_lookup_count += 1
-            if pet_name_lookup_count < 2:
-                return None
-            return (4, 0)
-
-    caplog.set_level("INFO", logger="backend.app.application.processing_runner")
-    payload = _build_interpretation_artifact(
-        document_id="doc-fallback-log",
-        run_id="run-fallback-log",
-        raw_text="Paciente: Luna",
-        repository=FakeRepository(),
-    )
-
-    pet_name_field = next(
-        field
-        for field in payload["data"]["fields"]
-        if isinstance(field, dict) and field.get("key") == "pet_name"
-    )
-    assert pet_name_field["field_review_history_adjustment"] > 0
-    assert "event=context_key_fallback_hit" in caplog.text
-    assert "stage=processing_runner" in caplog.text
-
-
-def test_interpretation_artifact_logs_compat_schema_projection(caplog) -> None:
-    caplog.set_level("INFO", logger="backend.app.application.processing_runner")
+def test_interpretation_artifact_does_not_emit_schema_version_compat_field() -> None:
     payload = _build_interpretation_artifact(
         document_id="doc-schema-compat-log",
         run_id="run-schema-compat-log",
@@ -146,9 +105,7 @@ def test_interpretation_artifact_logs_compat_schema_projection(caplog) -> None:
 
     data = payload["data"]
     assert data.get("schema_contract") == "legacy-flat"
-    assert data.get("schema_version") == "v1"
-    assert "event=compat_schema_projection" in caplog.text
-    assert "flow=interpretation_build" in caplog.text
+    assert "schema_version" not in data
 
 
 def test_interpretation_artifact_empty_raw_text_keeps_global_schema_shape() -> None:

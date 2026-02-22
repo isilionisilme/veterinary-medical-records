@@ -426,6 +426,7 @@ def test_project_review_payload_logs_compat_projection_when_schema_version_missi
 
     payload = {
         "schema_contract": "legacy-flat",
+        "schema_version": "v1",
         "global_schema": {"pet_name": "Luna"},
         "fields": [],
     }
@@ -433,7 +434,7 @@ def test_project_review_payload_logs_compat_projection_when_schema_version_missi
     projected = _project_review_payload_to_canonical(payload)
 
     assert projected["schema_contract"] == "visit-grouped-canonical"
-    assert projected["schema_version"] == "v1"
+    assert "schema_version" not in projected
     assert "event=compat_schema_projection" in caplog.text
     assert "stage=document_service" in caplog.text
 
