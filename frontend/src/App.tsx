@@ -58,8 +58,8 @@ import {
 import { getControlledVocabOptionValues, validateFieldValue } from "./extraction/fieldValidators";
 import { groupProcessingSteps } from "./lib/processingHistory";
 import {
-  GLOBAL_SCHEMA_V0,
-} from "./lib/globalSchemaV0";
+  GLOBAL_SCHEMA,
+} from "./lib/globalSchema";
 import {
   formatDuration,
   formatShortDate,
@@ -2769,7 +2769,7 @@ export function App() {
       });
     });
 
-    GLOBAL_SCHEMA_V0.forEach((definition) => {
+    GLOBAL_SCHEMA.forEach((definition) => {
       if ((fieldsByKey.get(definition.key) ?? 0) > 0) {
         return;
       }
@@ -3001,7 +3001,7 @@ export function App() {
 
       coreDefinitions = [...slotDefinitions, ...visitDefinitions];
     } else {
-      const templateDefinitions = GLOBAL_SCHEMA_V0.filter(
+      const templateDefinitions = GLOBAL_SCHEMA.filter(
         (definition) => !HIDDEN_REVIEW_FIELDS.has(definition.key)
       );
 
@@ -3123,7 +3123,7 @@ export function App() {
   }, [interpretationData?.medical_record_view?.field_slots, isSchemaV1, matchesByKey, validatedReviewFields]);
 
   const otherDisplayFields = useMemo(() => {
-    const coreKeys = new Set(GLOBAL_SCHEMA_V0.map((field) => field.key));
+    const coreKeys = new Set(GLOBAL_SCHEMA.map((field) => field.key));
     const grouped = new Map<string, ReviewField[]>();
     const orderedKeys: string[] = [];
 
@@ -3521,7 +3521,7 @@ export function App() {
     }
 
     let detected = 0;
-    const total = GLOBAL_SCHEMA_V0.length;
+    const total = GLOBAL_SCHEMA.length;
     const confidenceBands = summarizeConfidenceBands();
 
     if (!activeConfidencePolicy) {
