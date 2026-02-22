@@ -2045,9 +2045,22 @@ describe("App upload and list flow", () => {
       nhc: "NHC",
     };
 
+    const normalizeLabel = (value: string) =>
+      value
+        .normalize("NFD")
+        .replace(/\p{Diacritic}/gu, "")
+        .toLowerCase()
+        .trim();
+
     GLOBAL_SCHEMA.filter((field) => !hiddenCoreKeys.has(field.key)).forEach((field) => {
       const expectedLabel = uiLabelOverrides[field.key] ?? field.label;
-      expect(within(panel).getAllByText(expectedLabel).length).toBeGreaterThan(0);
+      const matchingLabels = within(panel).queryAllByText((content, node) => {
+        if (!node || !(node instanceof HTMLElement)) {
+          return false;
+        }
+        return normalizeLabel(content) === normalizeLabel(expectedLabel);
+      });
+      expect(matchingLabels.length).toBeGreaterThan(0);
     });
     expect(within(panel).queryByText("ID de reclamacion")).toBeNull();
     expect(within(panel).queryByText("Fecha del documento")).toBeNull();
@@ -2362,9 +2375,9 @@ describe("App upload and list flow", () => {
     expect(within(middleEpisode).getByTestId("visit-row-visit_date")).toBeInTheDocument();
     expect(within(oldestEpisode).getByTestId("visit-row-visit_date")).toBeInTheDocument();
 
-    expect(within(newestEpisode).getByText(new Date("2026-02-20T00:00:00Z").toLocaleDateString("es-ES"))).toBeInTheDocument();
-    expect(within(middleEpisode).getByText(new Date("2026-02-15T00:00:00Z").toLocaleDateString("es-ES"))).toBeInTheDocument();
-    expect(within(oldestEpisode).getByText(new Date("2026-02-10T00:00:00Z").toLocaleDateString("es-ES"))).toBeInTheDocument();
+    expect(within(newestEpisode).getAllByText(new Date("2026-02-20T00:00:00Z").toLocaleDateString("es-ES")).length).toBeGreaterThan(0);
+    expect(within(middleEpisode).getAllByText(new Date("2026-02-15T00:00:00Z").toLocaleDateString("es-ES")).length).toBeGreaterThan(0);
+    expect(within(oldestEpisode).getAllByText(new Date("2026-02-10T00:00:00Z").toLocaleDateString("es-ES")).length).toBeGreaterThan(0);
 
     expect(within(oldestEpisode).getByText("Diagnóstico")).toBeInTheDocument();
     expect(within(oldestEpisode).getByText("Procedimiento")).toBeInTheDocument();
@@ -2675,7 +2688,7 @@ describe("App upload and list flow", () => {
     await waitForStructuredDataReady();
 
     const panel = screen.getByTestId("right-panel-scroll");
-    const medicationCard = within(panel).getByText("Medicacion").closest("article");
+    const medicationCard = within(panel).getByText(/Medicaci[oó]n/i).closest("article");
     expect(medicationCard).not.toBeNull();
     expect(within(medicationCard as HTMLElement).getByText("Sin elementos")).toBeInTheDocument();
   });

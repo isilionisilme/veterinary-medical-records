@@ -11,7 +11,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { AlignLeft, Download, FileText, FilterX, Info, Pencil, RefreshCw, Search, X } from "lucide-react";
+import { AlignLeft, ChevronDown, Download, FileText, FilterX, Info, Pencil, RefreshCw, Search, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { ConfidenceDot } from "./components/app/ConfidenceDot";
@@ -32,6 +32,8 @@ import {
   type UploadFeedback,
 } from "./components/toast/toast-types";
 import { Button } from "./components/ui/button";
+import { Badge } from "./components/ui/badge";
+import { Card, CardContent, CardHeader } from "./components/ui/card";
 import { Input } from "./components/ui/input";
 import { ScrollArea } from "./components/ui/scroll-area";
 import { Separator } from "./components/ui/separator";
@@ -240,9 +242,9 @@ const FIELD_LABELS: Record<string, string> = {
   notes: "Notas",
   language: "Idioma",
   visit_date: "Fecha de visita",
-  admission_date: "Fecha de ingreso",
+  admission_date: "Fecha de admision",
   discharge_date: "Fecha de alta",
-  reason_for_visit: "Motivo de visita",
+  reason_for_visit: "Motivo de consulta",
   diagnosis: "Diagnóstico",
   symptoms: "Síntomas",
   procedure: "Procedimiento",
@@ -4720,6 +4722,8 @@ export function App() {
       return {
         id: visitId,
         visitNumber: chronologicalIndex + 1,
+        visitDate: entry.visit.visit_date,
+        reasonForVisit: entry.visit.reason_for_visit,
         orderedKeys,
         fieldsByKey,
       };
@@ -4849,29 +4853,97 @@ export function App() {
             return buildDisplayField(visitBlock.id, key, fields, fieldIndex + 1);
           });
 
+          const metadataFields = visitFields.filter((field) =>
+            (CANONICAL_VISIT_METADATA_KEYS as readonly string[]).includes(field.key)
+          );
+          const scalarClinicalFields = visitFields.filter(
+            (field) => !(CANONICAL_VISIT_METADATA_KEYS as readonly string[]).includes(field.key) && !field.repeatable
+          );
+          const repeatableClinicalFields = visitFields.filter((field) => field.repeatable);
+          const hasVisitDate = !isFieldValueEmpty(visitBlock.visitDate ?? null);
+          const hasReasonForVisit = !isFieldValueEmpty(visitBlock.reasonForVisit ?? null);
+          const visitDateLabel = hasVisitDate
+            ? formatFieldValue(visitBlock.visitDate ?? null, "date")
+            : "Sin fecha";
+
           return (
-            <div
+            <Card
               key={visitBlock.id}
-              className="rounded-card border border-borderSubtle bg-surfaceMuted px-3 py-3 shadow-subtle"
+              className="bg-surfaceMuted animate-fadein"
               data-testid={`visit-episode-${visitBlock.visitNumber}`}
             >
-              <p className="text-sm font-semibold text-text">Visita {visitBlock.visitNumber}</p>
-              <div className={`mt-2 grid gap-x-5 ${STRUCTURED_FIELD_STACK_CLASS} lg:grid-cols-2`}>
-                {visitFields.map((field) =>
-                  field.repeatable ? renderRepeatableReviewField(field) : renderScalarReviewField(field)
-                )}
-              </div>
-            </div>
+              <details open className="group">
+                <summary className="list-none cursor-pointer [&::-webkit-details-marker]:hidden">
+                  <CardHeader className="space-y-2">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-base font-semibold text-textTitle">Visita {visitBlock.visitNumber}</span>
+                          <span className="text-sm text-textSecondary">{visitDateLabel}</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          <Badge variant={hasVisitDate ? "secondary" : "outline"}>
+                            {hasVisitDate ? "Con fecha" : "Sin fecha"}
+                          </Badge>
+                          <Badge variant={hasReasonForVisit ? "secondary" : "outline"}>
+                            {hasReasonForVisit ? "Con motivo" : "Sin motivo"}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="mt-0.5 inline-flex items-center gap-1 text-xs text-textSecondary">
+                        <span>Detalles</span>
+                        <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" aria-hidden="true" />
+                      </div>
+                    </div>
+                  </CardHeader>
+                </summary>
+
+                <Separator />
+
+                <CardContent className="pt-3">
+                  <div className="grid grid-cols-1 gap-x-6 gap-y-2 md:grid-cols-2">
+                    {metadataFields.map((field) => renderScalarReviewField(field))}
+                  </div>
+
+                  {scalarClinicalFields.length > 0 && (
+                    <>
+                      <Separator className="my-2" />
+                      <div className="space-y-1">
+                        <span className="text-sm font-semibold text-textSecondary">Campos clínicos</span>
+                        <div className="grid grid-cols-1 gap-x-6 gap-y-2 md:grid-cols-2">
+                          {scalarClinicalFields.map((field) => renderScalarReviewField(field))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {repeatableClinicalFields.length > 0 && (
+                    <>
+                      <Separator className="my-2" />
+                      <div className="space-y-1">
+                        <span className="text-sm font-semibold text-textSecondary">Listas clínicas</span>
+                        <div className="space-y-2">
+                          {repeatableClinicalFields.map((field) => renderRepeatableReviewField(field))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </details>
+            </Card>
           );
         })}
         {orderedUnassignedKeys.length > 0 && (
           <div
-            className="rounded-card border border-borderSubtle bg-surfaceMuted px-3 py-3 shadow-subtle"
+            className="rounded-card border-2 border-dashed border-accent/40 bg-surface px-4 py-4 shadow-subtle animate-fadein"
             data-testid="visit-unassigned-group"
           >
-            <p className="text-sm font-semibold text-text">No asociados a visita</p>
+            <div className="flex items-center gap-2 mb-2">
+              <Info className="h-5 w-5 text-accent" aria-hidden="true" />
+              <span className="text-base font-bold text-accent">No asociadas a visita</span>
+            </div>
             <p
-              className="mt-2 rounded-control bg-surfaceMuted px-3 py-2 text-xs text-muted"
+              className="rounded-control bg-surfaceMuted px-3 py-2 text-xs text-accent"
               data-testid="visits-unassigned-hint"
             >
               {VISITS_UNASSIGNED_HINT}
