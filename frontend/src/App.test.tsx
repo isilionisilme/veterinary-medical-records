@@ -2240,6 +2240,7 @@ describe("App upload and list flow", () => {
     renderApp();
     const panel = await openReadyDocumentAndGetPanel();
 
+    expect(within(panel).getByTestId("critical-indicator-pet_name")).toBeInTheDocument();
     expect(within(panel).getByText("NHC")).toBeInTheDocument();
     expect(within(panel).getByText("NHC")).toHaveAttribute("title", "Número de historial clínico");
     expect(within(panel).getByTestId("core-value-nhc")).toHaveTextContent("—");

@@ -2952,6 +2952,9 @@ export function App() {
       const documentSlots = fieldSlots.filter(
         (slot) => slot.scope === "document" && !BILLING_REVIEW_FIELDS.has(slot.canonical_key)
       );
+      const schemaCriticalByKey = new Map(
+        GLOBAL_SCHEMA.map((definition) => [definition.key, Boolean(definition.critical)])
+      );
       const sectionOrderIndex = new Map<string, number>(
         MEDICAL_RECORD_SECTION_ID_ORDER.map((sectionId, index) => [sectionId, index])
       );
@@ -2959,6 +2962,11 @@ export function App() {
       const slotDefinitions = documentSlots.map((slot, index) => {
         const sectionLabel = getUiSectionLabelFromSectionId(slot.section) ?? REPORT_INFO_SECTION_TITLE;
         const sectionIndex = sectionOrderIndex.get(slot.section) ?? MEDICAL_RECORD_SECTION_ID_ORDER.length;
+        const slotKeys = [slot.canonical_key, ...(slot.aliases ?? [])];
+        const criticalFromSchema = slotKeys.some((key) => schemaCriticalByKey.get(key));
+        const criticalFromFields = validatedReviewFields.some(
+          (field) => slotKeys.includes(field.key) && Boolean(field.is_critical)
+        );
         return {
           key: slot.canonical_key,
           label: formatReviewKeyLabel(slot.canonical_key),
@@ -2966,7 +2974,7 @@ export function App() {
           order: sectionIndex * 1000 + index,
           value_type: "string",
           repeatable: false,
-          critical: false,
+          critical: criticalFromSchema || criticalFromFields,
           aliases: slot.aliases,
         };
       });
