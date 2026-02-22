@@ -148,7 +148,7 @@
     },
     {
       "key": "admission_date",
-      "label": "Fecha de admision",
+      "label": "Fecha de admisión",
       "section": "Visita / episodio",
       "value_type": "date",
       "repeatable": false,
@@ -166,7 +166,7 @@
     },
     {
       "key": "reason_for_visit",
-      "label": "Motivo de consulta",
+      "label": "Motivo de visita",
       "section": "Visita / episodio",
       "value_type": "string",
       "repeatable": false,
