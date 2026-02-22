@@ -21,7 +21,7 @@ def test_persist_observability_snapshot_for_completed_run_persists_when_enabled(
     repository = _RepositoryStub(
         {
             "data": {
-                "global_schema_v0": {"pet_name": "Luna"},
+                "global_schema": {"pet_name": "Luna"},
                 "fields": [{"key": "pet_name", "value": "Luna", "confidence": 0.72}],
             }
         }
@@ -54,7 +54,7 @@ def test_persist_observability_snapshot_for_completed_run_skips_when_disabled(
     repository = _RepositoryStub(
         {
             "data": {
-                "global_schema_v0": {"pet_name": "Luna"},
+                "global_schema": {"pet_name": "Luna"},
                 "fields": [{"key": "pet_name", "value": "Luna", "confidence": 0.72}],
             }
         }

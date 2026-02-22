@@ -32,8 +32,8 @@ def test_interpretation_fixture_regressions(
         raw_text=raw_text,
     )
 
-    global_schema_v0 = payload["data"]["global_schema_v0"]
-    assert global_schema_v0[field_key] == expected
+    global_schema = payload["data"]["global_schema"]
+    assert global_schema[field_key] == expected
 
 
 def test_species_token_is_not_kept_inside_breed() -> None:
@@ -45,7 +45,7 @@ def test_species_token_is_not_kept_inside_breed() -> None:
         raw_text=raw_text,
     )
 
-    breed = payload["data"]["global_schema_v0"]["breed"]
+    breed = payload["data"]["global_schema"]["breed"]
     assert isinstance(breed, str)
     assert "canina" not in breed.casefold()
     assert "canino" not in breed.casefold()
@@ -80,8 +80,8 @@ def test_unanchored_dates_default_to_document_date_not_visit_date() -> None:
         raw_text=raw_text,
     )
 
-    global_schema_v0 = payload["data"]["global_schema_v0"]
-    assert global_schema_v0["visit_date"] is None
+    global_schema = payload["data"]["global_schema"]
+    assert global_schema["visit_date"] is None
     date_selection = payload["data"]["summary"]["date_selection"]
     document_selection = date_selection["document_date"]
     assert isinstance(document_selection, dict)
@@ -102,7 +102,7 @@ def test_alphanumeric_microchip_value_without_digits_is_dropped() -> None:
         raw_text=raw_text,
     )
 
-    assert payload["data"]["global_schema_v0"]["microchip_id"] is None
+    assert payload["data"]["global_schema"]["microchip_id"] is None
 
 
 def test_invalid_calendar_date_is_dropped() -> None:
@@ -117,7 +117,7 @@ def test_invalid_calendar_date_is_dropped() -> None:
         raw_text=raw_text,
     )
 
-    assert payload["data"]["global_schema_v0"]["visit_date"] is None
+    assert payload["data"]["global_schema"]["visit_date"] is None
 
 
 def test_unanchored_timeline_date_does_not_set_visit_date() -> None:
@@ -132,8 +132,8 @@ def test_unanchored_timeline_date_does_not_set_visit_date() -> None:
         raw_text=raw_text,
     )
 
-    global_schema_v0 = payload["data"]["global_schema_v0"]
-    assert global_schema_v0["visit_date"] is None
+    global_schema = payload["data"]["global_schema"]
+    assert global_schema["visit_date"] is None
     date_selection = payload["data"]["summary"]["date_selection"]
     document_selection = date_selection["document_date"]
     assert isinstance(document_selection, dict)

@@ -68,7 +68,7 @@ def test_doc_a_golden_goal_fields_regression(monkeypatch) -> None:
         raw_text=_load_fixture("docA.txt"),
     )
 
-    schema = data["global_schema_v0"]
+    schema = data["global_schema"]
     candidates = data.get("candidate_bundle", {})
     assert isinstance(schema, dict)
     assert isinstance(candidates, dict)
@@ -107,7 +107,7 @@ def test_doc_b_golden_goal_fields_regression(monkeypatch) -> None:
         raw_text=_load_fixture("docB.txt"),
     )
 
-    schema = data["global_schema_v0"]
+    schema = data["global_schema"]
     candidates = data.get("candidate_bundle", {})
     assert isinstance(schema, dict)
     assert isinstance(candidates, dict)
