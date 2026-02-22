@@ -185,7 +185,7 @@ def build_extraction_snapshot_from_interpretation(
         "runId": run_id,
         "documentId": document_id,
         "createdAt": created_at,
-        "schemaVersion": "v1",
+        "schemaVersion": "canonical",
         "fields": fields,
         "counts": {
             "totalFields": len(GLOBAL_SCHEMA_KEYS),

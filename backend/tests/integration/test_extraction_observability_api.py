@@ -31,7 +31,7 @@ def _snapshot_payload() -> dict[str, object]:
         "runId": "run-1",
         "documentId": "doc-1",
         "createdAt": "2026-02-13T20:00:00Z",
-        "schemaVersion": "v1",
+        "schemaVersion": "canonical",
         "fields": {
             "pet_name": {
                 "status": "accepted",
@@ -58,7 +58,7 @@ def _triage_snapshot_payload() -> dict[str, object]:
         "runId": "run-triage-1",
         "documentId": "doc-triage-1",
         "createdAt": "2026-02-13T20:01:00Z",
-        "schemaVersion": "v1",
+        "schemaVersion": "canonical",
         "fields": {
             "claim_id": {
                 "status": "missing",

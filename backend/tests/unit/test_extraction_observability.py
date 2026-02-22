@@ -16,7 +16,7 @@ def _snapshot(
         "runId": run_id,
         "documentId": document_id,
         "createdAt": "2026-02-13T20:00:00Z",
-        "schemaVersion": "v1",
+        "schemaVersion": "canonical",
         "fields": {
             "pet_name": {
                 "status": status,
@@ -223,7 +223,7 @@ def test_persist_snapshot_logs_goal_fields_status_and_diff(
         "runId": "run-goal-1",
         "documentId": "doc-goal",
         "createdAt": "2026-02-14T07:40:00Z",
-        "schemaVersion": "v1",
+        "schemaVersion": "canonical",
         "fields": {
             "owner_name": {
                 "status": "missing",
@@ -251,7 +251,7 @@ def test_persist_snapshot_logs_goal_fields_status_and_diff(
         "runId": "run-goal-2",
         "documentId": "doc-goal",
         "createdAt": "2026-02-14T07:41:00Z",
-        "schemaVersion": "v1",
+        "schemaVersion": "canonical",
         "fields": {
             "owner_name": {
                 "status": "accepted",

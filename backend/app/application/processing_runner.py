@@ -35,7 +35,6 @@ from backend.app.application.global_schema import (
     CRITICAL_KEYS,
     GLOBAL_SCHEMA_KEYS,
     REPEATABLE_KEYS,
-    SCHEMA_VERSION,
     VALUE_TYPE_BY_KEY,
     normalize_global_schema,
     validate_global_schema_shape,
@@ -187,7 +186,7 @@ class ProcessingError(Exception):
 
 
 class InterpretationBuildError(Exception):
-    """Raised when interpretation cannot be built into the canonical v0 shape."""
+    """Raised when interpretation cannot be built into the canonical schema shape."""
 
     def __init__(
         self, *, error_code: str, details: dict[str, object] | None = None
@@ -552,7 +551,6 @@ def _build_interpretation_artifact(
             )
 
         calibration_context_key = build_context_key(
-            schema_version=SCHEMA_VERSION,
             document_type="veterinary_record",
             language=normalized_values.get("language")
             if isinstance(normalized_values.get("language"), str)
@@ -572,7 +570,6 @@ def _build_interpretation_artifact(
         fields = []
         warning_codes.append("EMPTY_RAW_TEXT")
         calibration_context_key = build_context_key(
-            schema_version=SCHEMA_VERSION,
             document_type="veterinary_record",
             language=None,
         )
@@ -599,7 +596,6 @@ def _build_interpretation_artifact(
         evidence_map=canonical_evidence,
     )
     data: dict[str, object] = {
-        "schema_version": SCHEMA_VERSION,
         "document_id": document_id,
         "processing_run_id": run_id,
         "created_at": now_iso,

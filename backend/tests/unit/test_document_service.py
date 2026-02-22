@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from backend.app.application.document_service import (
-    _normalize_visit_date_candidate_v1,
+    _normalize_visit_date_candidate,
     get_document_original_location,
     get_document_status_details,
     mark_document_reviewed,
@@ -397,25 +397,25 @@ def test_reopen_document_review_clears_review_metadata() -> None:
     assert result.reviewed_by is None
 
 
-def test_normalize_visit_date_candidate_v1_is_type_safe() -> None:
-    assert _normalize_visit_date_candidate_v1(None) is None
-    assert _normalize_visit_date_candidate_v1(123) is None
-    assert _normalize_visit_date_candidate_v1({"value": "11/02/2026"}) is None
+def test_normalize_visit_date_candidate_is_type_safe() -> None:
+    assert _normalize_visit_date_candidate(None) is None
+    assert _normalize_visit_date_candidate(123) is None
+    assert _normalize_visit_date_candidate({"value": "11/02/2026"}) is None
 
 
-def test_normalize_visit_date_candidate_v1_normalizes_ddmmyy_and_ddmmyyyy() -> None:
-    assert _normalize_visit_date_candidate_v1("11/02/2026") == "2026-02-11"
-    assert _normalize_visit_date_candidate_v1("11/02/26") == "2026-02-11"
+def test_normalize_visit_date_candidate_normalizes_ddmmyy_and_ddmmyyyy() -> None:
+    assert _normalize_visit_date_candidate("11/02/2026") == "2026-02-11"
+    assert _normalize_visit_date_candidate("11/02/26") == "2026-02-11"
 
 
-def test_normalize_visit_date_candidate_v1_rejects_legacy_two_digit_years() -> None:
-    assert _normalize_visit_date_candidate_v1("11/02/69") is None
+def test_normalize_visit_date_candidate_rejects_legacy_two_digit_years() -> None:
+    assert _normalize_visit_date_candidate("11/02/69") is None
 
 
-def test_normalize_visit_date_candidate_v1_is_deterministic() -> None:
+def test_normalize_visit_date_candidate_is_deterministic() -> None:
     raw = "Consulta realizada el 11/02/2026"
-    first = _normalize_visit_date_candidate_v1(raw)
-    second = _normalize_visit_date_candidate_v1(raw)
+    first = _normalize_visit_date_candidate(raw)
+    second = _normalize_visit_date_candidate(raw)
     assert first == "2026-02-11"
     assert second == first
 

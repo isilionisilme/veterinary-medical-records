@@ -22,10 +22,7 @@ def resolve_calibration_policy_version() -> str:
     return confidence_policy_version()
 
 
-def build_context_key(
-    *, schema_version: str, document_type: str | None, language: str | None
-) -> str:
-    normalized_schema_version = (schema_version or "unknown").strip().lower() or "unknown"
+def build_context_key(*, document_type: str | None, language: str | None) -> str:
     normalized_document_type = (document_type or DEFAULT_DOCUMENT_TYPE).strip().lower()
     if not normalized_document_type:
         normalized_document_type = DEFAULT_DOCUMENT_TYPE
@@ -35,7 +32,6 @@ def build_context_key(
 
     payload = {
         "context_version": CONTEXT_VERSION,
-        "schema_version": normalized_schema_version,
         "document_type": normalized_document_type,
         "language": normalized_language,
     }
@@ -45,8 +41,6 @@ def build_context_key(
 
 
 def build_context_key_from_interpretation_data(data: Mapping[str, object]) -> str:
-    schema_version_raw = data.get("schema_version")
-    schema_version = schema_version_raw if isinstance(schema_version_raw, str) else "unknown"
     document_type_raw = data.get("document_type")
     document_type = document_type_raw if isinstance(document_type_raw, str) else None
 
@@ -71,7 +65,6 @@ def build_context_key_from_interpretation_data(data: Mapping[str, object]) -> st
                     break
 
     return build_context_key(
-        schema_version=schema_version,
         document_type=document_type,
         language=language,
     )

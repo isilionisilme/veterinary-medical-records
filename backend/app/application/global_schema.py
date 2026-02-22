@@ -29,10 +29,6 @@ def _load_schema_contract() -> dict[str, object]:
     if not isinstance(raw, dict):
         raise RuntimeError("Global Schema contract must be a JSON object")
 
-    schema_version = raw.get("schema_version")
-    if not isinstance(schema_version, str) or not schema_version.strip():
-        raise RuntimeError("Global Schema contract must define a non-empty schema_version")
-
     fields = raw.get("fields")
     if not isinstance(fields, list) or not fields:
         raise RuntimeError("Global Schema contract must define a non-empty fields list")
@@ -83,7 +79,6 @@ def _load_schema_contract() -> dict[str, object]:
 
 
 _SCHEMA_CONTRACT = _load_schema_contract()
-SCHEMA_VERSION = str(_SCHEMA_CONTRACT.get("schema_version", ""))
 _FIELD_DEFINITIONS = list(_SCHEMA_CONTRACT["fields"])
 
 GLOBAL_SCHEMA_KEYS: tuple[str, ...] = tuple(
