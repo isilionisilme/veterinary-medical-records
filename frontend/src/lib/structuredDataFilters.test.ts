@@ -100,6 +100,30 @@ describe("structuredDataFilters", () => {
         }
       )
     ).toBe(false);
+
+    expect(
+      matchesStructuredDataFilters(
+        buildField({
+          items: [{ displayValue: "sin score", confidence: 0, confidenceBand: null, isMissing: false }],
+        }),
+        {
+          ...baseFilters,
+          selectedConfidence: ["unknown"],
+        }
+      )
+    ).toBe(true);
+
+    expect(
+      matchesStructuredDataFilters(
+        buildField({
+          items: [{ displayValue: "sin score", confidence: 0, confidenceBand: null, isMissing: false }],
+        }),
+        {
+          ...baseFilters,
+          selectedConfidence: ["medium"],
+        }
+      )
+    ).toBe(false);
   });
 
   it("treats repeatable fields as matching when any item matches and list length > 0 for onlyWithValue", () => {

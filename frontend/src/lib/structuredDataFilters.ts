@@ -1,4 +1,4 @@
-export type ConfidenceBucket = "low" | "medium" | "high";
+export type ConfidenceBucket = "low" | "medium" | "high" | "unknown";
 
 export type StructuredFilterItem = {
   displayValue: string;
@@ -49,7 +49,15 @@ function matchesConfidence(field: StructuredFilterField, selected: ConfidenceBuc
     return true;
   }
   const allowed = new Set(selected);
-  return field.items.some((item) => !item.isMissing && item.confidenceBand !== null && allowed.has(item.confidenceBand));
+  return field.items.some((item) => {
+    if (item.isMissing) {
+      return false;
+    }
+    if (item.confidenceBand === null) {
+      return allowed.has("unknown");
+    }
+    return allowed.has(item.confidenceBand);
+  });
 }
 
 export function matchesStructuredDataFilters(

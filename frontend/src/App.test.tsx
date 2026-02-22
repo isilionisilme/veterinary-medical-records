@@ -2433,14 +2433,14 @@ describe("App upload and list flow", () => {
     const lowButton = screen.getByRole("button", { name: /^Baja \(\d+\)$/i });
     const mediumButton = screen.getByRole("button", { name: /^Media \(\d+\)$/i });
     const highButton = screen.getByRole("button", { name: /^Alta \(\d+\)$/i });
-    const unknownChip = document.querySelector('[aria-label^="Sin confianza ("]');
+    const unknownButton = screen.getByRole("button", { name: /^Sin confianza \(\d+\)$/i });
 
-    expect(unknownChip).not.toBeNull();
+    expect(unknownButton).toBeInTheDocument();
 
     const low = Number(lowButton.getAttribute("aria-label")?.match(/\((\d+)\)/)?.[1] ?? "0");
     const medium = Number(mediumButton.getAttribute("aria-label")?.match(/\((\d+)\)/)?.[1] ?? "0");
     const high = Number(highButton.getAttribute("aria-label")?.match(/\((\d+)\)/)?.[1] ?? "0");
-    const unknown = Number((unknownChip as HTMLElement).getAttribute("aria-label")?.match(/\((\d+)\)/)?.[1] ?? "0");
+    const unknown = Number(unknownButton.getAttribute("aria-label")?.match(/\((\d+)\)/)?.[1] ?? "0");
     expect(low + medium + high + unknown).toBe(expectedDetected);
   });
 
@@ -2477,14 +2477,14 @@ describe("App upload and list flow", () => {
     const lowButton = screen.getByRole("button", { name: /^Baja \(\d+\)$/i });
     const mediumButton = screen.getByRole("button", { name: /^Media \(\d+\)$/i });
     const highButton = screen.getByRole("button", { name: /^Alta \(\d+\)$/i });
-    const unknownChip = document.querySelector('[aria-label^="Sin confianza ("]');
+    const unknownButton = screen.getByRole("button", { name: /^Sin confianza \(\d+\)$/i });
 
-    expect(unknownChip).not.toBeNull();
+    expect(unknownButton).toBeInTheDocument();
 
     const low = Number(lowButton.getAttribute("aria-label")?.match(/\((\d+)\)/)?.[1] ?? "0");
     const medium = Number(mediumButton.getAttribute("aria-label")?.match(/\((\d+)\)/)?.[1] ?? "0");
     const high = Number(highButton.getAttribute("aria-label")?.match(/\((\d+)\)/)?.[1] ?? "0");
-    const unknown = Number((unknownChip as HTMLElement).getAttribute("aria-label")?.match(/\((\d+)\)/)?.[1] ?? "0");
+    const unknown = Number(unknownButton.getAttribute("aria-label")?.match(/\((\d+)\)/)?.[1] ?? "0");
     expect(low + medium + high + unknown).toBe(expectedDetected);
   });
 
@@ -2496,8 +2496,7 @@ describe("App upload and list flow", () => {
     expect(screen.getByRole("button", { name: /^Baja \(\d+\)$/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^Media \(\d+\)$/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^Alta \(\d+\)$/i })).toBeInTheDocument();
-    const unknownChip = document.querySelector('[aria-label^="Sin confianza ("]');
-    expect(unknownChip).not.toBeNull();
+    expect(screen.getByRole("button", { name: /^Sin confianza \(\d+\)$/i })).toBeInTheDocument();
   });
 
   it("renders Otros campos detectados only from other_fields[] in v1", async () => {

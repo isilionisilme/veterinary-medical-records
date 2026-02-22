@@ -3429,14 +3429,13 @@ export function App() {
       let low = 0;
       let medium = 0;
       let high = 0;
+      let unknown = 0;
       if (!activeConfidencePolicy) {
         return { low, medium, high, unknown: 0 };
       }
 
       coreDisplayFields.forEach((field) => {
-        const presentItems = field.items.filter(
-          (item) => !item.isMissing && item.confidenceBand !== null
-        );
+        const presentItems = field.items.filter((item) => !item.isMissing);
         if (presentItems.length === 0) {
           return;
         }
@@ -3448,10 +3447,14 @@ export function App() {
           medium += 1;
           return;
         }
-        high += 1;
+        if (presentItems.some((item) => item.confidenceBand === "high")) {
+          high += 1;
+          return;
+        }
+        unknown += 1;
       });
 
-      return { low, medium, high, unknown: 0 };
+      return { low, medium, high, unknown };
     };
 
     if (isSchemaV1) {
@@ -4961,7 +4964,7 @@ export function App() {
                                     setSelectedConfidenceBuckets(
                                       values.filter(
                                         (value): value is ConfidenceBucket =>
-                                          value === "low" || value === "medium" || value === "high"
+                                          value === "low" || value === "medium" || value === "high" || value === "unknown"
                                       )
                                     )
                                   }
@@ -5026,16 +5029,23 @@ export function App() {
                                     </ToggleGroupItem>
                                   </Tooltip>
                                   <Tooltip content="Detectado (sin confianza)">
-                                    <span
+                                    <ToggleGroupItem
+                                      value="unknown"
                                       aria-label={`Sin confianza (${detectedFieldsSummary.unknown})`}
-                                      className="inline-flex h-7 items-center gap-1.5 rounded-control px-2.5 text-xs text-textSecondary"
+                                      className={`h-7 rounded-control border-0 px-2.5 text-xs shadow-none ${
+                                        selectedConfidenceBuckets.includes("unknown")
+                                          ? "bg-surfaceMuted text-text ring-1 ring-borderSubtle"
+                                          : "bg-surface text-textSecondary"
+                                      }`}
                                     >
-                                      <span
-                                        aria-hidden="true"
-                                        className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-missing"
-                                      />
-                                      <span className="tabular-nums">{detectedFieldsSummary.unknown}</span>
-                                    </span>
+                                      <span className="inline-flex items-center gap-1.5">
+                                        <span
+                                          aria-hidden="true"
+                                          className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-missing"
+                                        />
+                                        <span className="tabular-nums">{detectedFieldsSummary.unknown}</span>
+                                      </span>
+                                    </ToggleGroupItem>
                                   </Tooltip>
                                 </ToggleGroup>
 
