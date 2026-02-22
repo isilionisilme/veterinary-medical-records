@@ -101,7 +101,7 @@ async function openReadyDocumentAndGetPanel() {
   return screen.getByTestId("right-panel-scroll");
 }
 
-type V1Us44FetchMockOptions = {
+type CanonicalUs44FetchMockOptions = {
   fieldSlots?: Array<Record<string, unknown>>;
   fields?: Array<Record<string, unknown>>;
   visits?: Array<Record<string, unknown>>;
@@ -109,7 +109,7 @@ type V1Us44FetchMockOptions = {
   confidencePolicy?: Record<string, unknown>;
 };
 
-function installV1Us44FetchMock(options?: V1Us44FetchMockOptions) {
+function installCanonicalUs44FetchMock(options?: CanonicalUs44FetchMockOptions) {
   globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = input.toString();
     const method = (init?.method ?? "GET").toUpperCase();
@@ -119,7 +119,7 @@ function installV1Us44FetchMock(options?: V1Us44FetchMockOptions) {
         JSON.stringify({
           items: [
             {
-              document_id: "doc-v1",
+              document_id: "doc-canonical",
               original_filename: "ready.pdf",
               created_at: "2026-02-10T10:00:00Z",
               status: "COMPLETED",
@@ -138,10 +138,10 @@ function installV1Us44FetchMock(options?: V1Us44FetchMockOptions) {
       );
     }
 
-    if (url.match(/\/documents\/doc-v1$/) && method === "GET") {
+    if (url.match(/\/documents\/doc-canonical$/) && method === "GET") {
       return new Response(
         JSON.stringify({
-          document_id: "doc-v1",
+          document_id: "doc-canonical",
           original_filename: "ready.pdf",
           content_type: "application/pdf",
           file_size: 10,
@@ -153,29 +153,28 @@ function installV1Us44FetchMock(options?: V1Us44FetchMockOptions) {
           review_status: "IN_REVIEW",
           reviewed_at: null,
           reviewed_by: null,
-          latest_run: { run_id: "run-doc-v1", state: "COMPLETED", failure_type: null },
+          latest_run: { run_id: "run-doc-canonical", state: "COMPLETED", failure_type: null },
         }),
         { status: 200 }
       );
     }
 
-    if (url.match(/\/documents\/doc-v1\/review$/) && method === "GET") {
+    if (url.match(/\/documents\/doc-canonical\/review$/) && method === "GET") {
       return new Response(
         JSON.stringify({
-          document_id: "doc-v1",
+          document_id: "doc-canonical",
           latest_completed_run: {
-            run_id: "run-doc-v1",
+            run_id: "run-doc-canonical",
             state: "COMPLETED",
             completed_at: "2026-02-10T10:00:00Z",
             failure_type: null,
           },
           active_interpretation: {
-            interpretation_id: "interp-doc-v1",
+            interpretation_id: "interp-doc-canonical",
             version_number: 1,
             data: {
-              schema_version: "v1",
-              document_id: "doc-v1",
-              processing_run_id: "run-doc-v1",
+              document_id: "doc-canonical",
+              processing_run_id: "run-doc-canonical",
               created_at: "2026-02-10T10:00:00Z",
               medical_record_view: {
                 version: "mvp-1",
@@ -242,7 +241,7 @@ function installV1Us44FetchMock(options?: V1Us44FetchMockOptions) {
               },
               fields: options?.fields ?? [
                 {
-                  field_id: "field-clinic-name-doc-v1",
+                  field_id: "field-clinic-name-doc-canonical",
                   key: "clinic_name",
                   value: "Centro Norte",
                   value_type: "string",
@@ -253,7 +252,7 @@ function installV1Us44FetchMock(options?: V1Us44FetchMockOptions) {
                   origin: "machine",
                 },
                 {
-                  field_id: "field-pet-name-doc-v1",
+                  field_id: "field-pet-name-doc-canonical",
                   key: "pet_name",
                   value: "Luna",
                   value_type: "string",
@@ -264,7 +263,7 @@ function installV1Us44FetchMock(options?: V1Us44FetchMockOptions) {
                   origin: "machine",
                 },
                 {
-                  field_id: "field-owner-name-doc-v1",
+                  field_id: "field-owner-name-doc-canonical",
                   key: "owner_name",
                   value: "Ana",
                   value_type: "string",
@@ -275,7 +274,7 @@ function installV1Us44FetchMock(options?: V1Us44FetchMockOptions) {
                   origin: "machine",
                 },
                 {
-                  field_id: "field-owner-address-doc-v1",
+                  field_id: "field-owner-address-doc-canonical",
                   key: "owner_address",
                   value: "Calle Sur 8",
                   value_type: "string",
@@ -286,7 +285,7 @@ function installV1Us44FetchMock(options?: V1Us44FetchMockOptions) {
                   origin: "machine",
                 },
                 {
-                  field_id: "field-notes-doc-v1",
+                  field_id: "field-notes-doc-canonical",
                   key: "notes",
                   value: "Revisar evolución",
                   value_type: "string",
@@ -297,7 +296,7 @@ function installV1Us44FetchMock(options?: V1Us44FetchMockOptions) {
                   origin: "machine",
                 },
                 {
-                  field_id: "field-language-doc-v1",
+                  field_id: "field-language-doc-canonical",
                   key: "language",
                   value: "es",
                   value_type: "string",
@@ -308,7 +307,7 @@ function installV1Us44FetchMock(options?: V1Us44FetchMockOptions) {
                   origin: "machine",
                 },
                 {
-                  field_id: "field-invoice-total-doc-v1",
+                  field_id: "field-invoice-total-doc-canonical",
                   key: "invoice_total",
                   value: "123.00",
                   value_type: "string",
@@ -319,7 +318,7 @@ function installV1Us44FetchMock(options?: V1Us44FetchMockOptions) {
                   origin: "machine",
                 },
                 {
-                  field_id: "field-top-level-other-doc-v1",
+                  field_id: "field-top-level-other-doc-canonical",
                   key: "top_level_other_should_not_render",
                   value: "NO",
                   value_type: "string",
@@ -339,7 +338,7 @@ function installV1Us44FetchMock(options?: V1Us44FetchMockOptions) {
                   reason_for_visit: "Control",
                   fields: [
                     {
-                      field_id: "field-visit-diagnosis-doc-v1",
+                      field_id: "field-visit-diagnosis-doc-canonical",
                       key: "diagnosis",
                       value: "Estable",
                       value_type: "string",
@@ -354,7 +353,7 @@ function installV1Us44FetchMock(options?: V1Us44FetchMockOptions) {
               ],
               other_fields: options?.otherFields ?? [
                 {
-                  field_id: "field-other-contract-doc-v1",
+                  field_id: "field-other-contract-doc-canonical",
                   key: "contract_other",
                   value: "VISIBLE",
                   value_type: "string",
@@ -375,7 +374,7 @@ function installV1Us44FetchMock(options?: V1Us44FetchMockOptions) {
             },
           },
           raw_text_artifact: {
-            run_id: "run-doc-v1",
+            run_id: "run-doc-canonical",
             available: true,
           },
           review_status: "IN_REVIEW",
@@ -387,7 +386,7 @@ function installV1Us44FetchMock(options?: V1Us44FetchMockOptions) {
     }
 
     if (url.includes("/processing-history") && method === "GET") {
-      return new Response(JSON.stringify({ document_id: "doc-v1", runs: [] }), { status: 200 });
+      return new Response(JSON.stringify({ document_id: "doc-canonical", runs: [] }), { status: 200 });
     }
 
     if (url.includes("/download") && method === "GET") {
@@ -397,7 +396,7 @@ function installV1Us44FetchMock(options?: V1Us44FetchMockOptions) {
     if (url.includes("/raw-text") && method === "GET") {
       return new Response(
         JSON.stringify({
-          run_id: "run-doc-v1",
+          run_id: "run-doc-canonical",
           artifact_type: "RAW_TEXT",
           content_type: "text/plain",
           text: "texto",
@@ -521,7 +520,6 @@ function installReviewedModeFetchMock() {
             interpretation_id: "interp-doc-ready",
             version_number: 1,
             data: {
-              schema_version: "v0",
               document_id: activeDoc.document_id,
               processing_run_id: "run-doc-ready",
               created_at: "2026-02-10T10:00:00Z",
@@ -695,7 +693,6 @@ describe("App upload and list flow", () => {
               interpretation_id: `interp-${docId}`,
               version_number: 1,
               data: {
-                schema_version: "v0",
                 document_id: docId,
                 processing_run_id: `run-${docId}`,
                 created_at: "2026-02-10T10:00:00Z",
@@ -1420,7 +1417,6 @@ describe("App upload and list flow", () => {
               interpretation_id: "interp-doc-ready",
               version_number: 1,
               data: {
-                schema_version: "v0",
                 document_id: "doc-ready",
                 processing_run_id: "run-doc-ready",
                 created_at: "2026-02-10T10:00:00Z",
@@ -2213,8 +2209,8 @@ describe("App upload and list flow", () => {
     expect(within(panel).queryByTestId("critical-indicator-diagnosis")).toBeInTheDocument();
   });
 
-  it("renders v1 sections in US-44 fixed order", async () => {
-    installV1Us44FetchMock();
+  it("renders canonical sections in US-44 fixed order", async () => {
+    installCanonicalUs44FetchMock();
     renderApp();
     const panel = await openReadyDocumentAndGetPanel();
     const panelText = panel.textContent ?? "";
@@ -2237,8 +2233,8 @@ describe("App upload and list flow", () => {
     });
   });
 
-  it("uses v1 field_slots for required placeholders (NHC missing renders —)", async () => {
-    installV1Us44FetchMock();
+  it("uses canonical field_slots for required placeholders (NHC missing renders —)", async () => {
+    installCanonicalUs44FetchMock();
     renderApp();
     const panel = await openReadyDocumentAndGetPanel();
 
@@ -2253,8 +2249,8 @@ describe("App upload and list flow", () => {
     expect(nhcIndicator.className).not.toContain("bg-missing");
   });
 
-  it("shows Visitas empty state in v1 when visits=[]", async () => {
-    installV1Us44FetchMock({ visits: [] });
+  it("shows Visitas empty state in canonical contract when visits=[]", async () => {
+    installCanonicalUs44FetchMock({ visits: [] });
     renderApp();
     const panel = await openReadyDocumentAndGetPanel();
 
@@ -2262,8 +2258,8 @@ describe("App upload and list flow", () => {
     expect(within(panel).getByText("Sin visitas detectadas.")).toBeInTheDocument();
   });
 
-  it("shows unassigned helper text in v1 when unassigned visit group is present", async () => {
-    installV1Us44FetchMock({
+  it("shows unassigned helper text in canonical contract when unassigned visit group is present", async () => {
+    installCanonicalUs44FetchMock({
       visits: [
         {
           visit_id: "visit-regular",
@@ -2306,7 +2302,7 @@ describe("App upload and list flow", () => {
   });
 
   it("suppresses Visitas empty state when only unassigned visit group exists", async () => {
-    installV1Us44FetchMock({
+    installCanonicalUs44FetchMock({
       visits: [
         {
           visit_id: "unassigned",
@@ -2326,7 +2322,7 @@ describe("App upload and list flow", () => {
   });
 
   it("does not show unassigned helper when all visit groups are assigned", async () => {
-    installV1Us44FetchMock({
+    installCanonicalUs44FetchMock({
       visits: [
         {
           visit_id: "visit-1",
@@ -2345,7 +2341,7 @@ describe("App upload and list flow", () => {
     expect(within(panel).queryByText("Sin visitas detectadas.")).toBeNull();
   });
 
-  it("uses v1 detected summary as X/30 and increments X with visit concepts", async () => {
+  it("uses canonical detected summary as X/30 and increments X with visit concepts", async () => {
     const controlledFields = [
       {
         field_id: "f-nhc-alias",
@@ -2427,7 +2423,7 @@ describe("App upload and list flow", () => {
     ];
 
     const expectedDetected = 3 + 2 + 2;
-    installV1Us44FetchMock({ fields: controlledFields, visits: controlledVisits });
+    installCanonicalUs44FetchMock({ fields: controlledFields, visits: controlledVisits });
     renderApp();
     await openReadyDocumentAndGetPanel();
 
@@ -2443,7 +2439,7 @@ describe("App upload and list flow", () => {
     expect(low + medium + high + unknown).toBe(expectedDetected);
   });
 
-  it("keeps v1 total at 30 and counts only document concepts when visits=[]", async () => {
+  it("keeps canonical total at 30 and counts only document concepts when visits=[]", async () => {
     const documentOnlyFields = [
       {
         field_id: "f-pet-name",
@@ -2469,7 +2465,7 @@ describe("App upload and list flow", () => {
     ];
 
     const expectedDetected = 2;
-    installV1Us44FetchMock({ fields: documentOnlyFields, visits: [] });
+    installCanonicalUs44FetchMock({ fields: documentOnlyFields, visits: [] });
     renderApp();
     await openReadyDocumentAndGetPanel();
 
@@ -2485,7 +2481,7 @@ describe("App upload and list flow", () => {
   });
 
   it("shows Spanish confidence labels in header dots and unknown tooltip", async () => {
-    installV1Us44FetchMock();
+    installCanonicalUs44FetchMock();
     renderApp();
     await openReadyDocumentAndGetPanel();
 
@@ -2511,8 +2507,8 @@ describe("App upload and list flow", () => {
     );
   });
 
-  it("renders Otros campos detectados only from other_fields[] in v1", async () => {
-    installV1Us44FetchMock();
+  it("renders Otros campos detectados only from other_fields[] in canonical contract", async () => {
+    installCanonicalUs44FetchMock();
     renderApp();
     const panel = await openReadyDocumentAndGetPanel();
     const extraSection = within(panel).getByTestId("other-extracted-fields-section");
@@ -2523,8 +2519,8 @@ describe("App upload and list flow", () => {
     expect(within(extraSection).queryByText("NO")).toBeNull();
   });
 
-  it("hides billing keys in v1 even when contract/data include them", async () => {
-    installV1Us44FetchMock();
+  it("hides billing keys in canonical contract even when contract/data include them", async () => {
+    installCanonicalUs44FetchMock();
     renderApp();
     const panel = await openReadyDocumentAndGetPanel();
 
@@ -2532,8 +2528,8 @@ describe("App upload and list flow", () => {
     expect(within(panel).queryByText("123.00")).toBeNull();
   });
 
-  it("keeps v1 medical record panel clinical-only even when invoice_total is injected in field_slots and fields", async () => {
-    installV1Us44FetchMock({
+  it("keeps canonical medical record panel clinical-only even when invoice_total is injected in field_slots and fields", async () => {
+    installCanonicalUs44FetchMock({
       fieldSlots: [
         {
           concept_id: "clinic.name",
@@ -2552,7 +2548,7 @@ describe("App upload and list flow", () => {
       ],
       fields: [
         {
-          field_id: "field-clinic-name-doc-v1",
+          field_id: "field-clinic-name-doc-canonical",
           key: "clinic_name",
           value: "Centro Norte",
           value_type: "string",
@@ -2563,7 +2559,7 @@ describe("App upload and list flow", () => {
           origin: "machine",
         },
         {
-          field_id: "field-invoice-total-doc-v1",
+          field_id: "field-invoice-total-doc-canonical",
           key: "invoice_total",
           value: "123.00",
           value_type: "string",
@@ -2840,7 +2836,6 @@ describe("App upload and list flow", () => {
                     interpretation_id: "interp-doc-ready",
                     version_number: 1,
                     data: {
-                      schema_version: "v0",
                       document_id: "doc-ready",
                       processing_run_id: "run-doc-ready",
                       created_at: "2026-02-10T10:00:00Z",

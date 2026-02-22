@@ -14,13 +14,10 @@ export type GlobalSchemaField = {
 type RawSchemaField = Omit<GlobalSchemaField, "order">;
 
 type RawContract = {
-  schema_version: string;
   fields: RawSchemaField[];
 };
 
 const parsedContract = schemaContract as RawContract;
-
-export const GLOBAL_SCHEMA_VERSION: string = parsedContract.schema_version;
 
 export const GLOBAL_SCHEMA: GlobalSchemaField[] = parsedContract.fields.map((field, index) => ({
   ...field,
