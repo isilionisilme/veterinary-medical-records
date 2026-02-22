@@ -109,8 +109,8 @@ def test_get_extraction_runs_normalizes_compat_schema_version(
     extraction_observability.persist_extraction_run_snapshot(
         {
             **_snapshot(
-                run_id="run-legacy",
-                document_id="doc-legacy",
+                run_id="run-compat",
+                document_id="doc-compat",
                 status="accepted",
                 confidence="mid",
             ),
@@ -118,7 +118,7 @@ def test_get_extraction_runs_normalizes_compat_schema_version(
         }
     )
 
-    runs = extraction_observability.get_extraction_runs("doc-legacy")
+    runs = extraction_observability.get_extraction_runs("doc-compat")
     assert len(runs) == 1
     assert runs[0]["schemaVersion"] == "canonical"
     assert "event=compat_schema_version_normalized" in caplog.text

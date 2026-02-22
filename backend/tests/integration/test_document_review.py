@@ -323,10 +323,10 @@ def test_document_review_payload_uses_canonical_global_schema_key_only(test_clie
     data = payload["active_interpretation"]["data"]
     assert "global_schema" in data
     assert isinstance(data["global_schema"], dict)
-    legacy_like_keys = [
+    unexpected_prefixed_keys = [
         key for key in data.keys() if isinstance(key, str) and key.startswith("global_schema_")
     ]
-    assert legacy_like_keys == []
+    assert unexpected_prefixed_keys == []
 
 
 def test_document_review_normalizes_partial_medical_record_view_to_canonical_shape(test_client):
@@ -1360,7 +1360,7 @@ def test_cross_document_learning_applies_negative_adjustment_after_edit_signal(t
 def test_mark_document_reviewed_applies_accept_delta_for_non_critical_machine_field(test_client):
     document_id = _upload_sample_document(test_client)
     run_id = "run-reviewed-non-critical-machine"
-    context_key = "review:legacy:pet_name"
+    context_key = "review:compat:pet_name"
     mapping_id = "mapping-non-critical-machine"
     policy_version = "v1"
     _insert_run(
