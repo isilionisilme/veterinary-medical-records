@@ -25,6 +25,17 @@ ALLOWED_HEX = {
     "#9ca3af",  # Muted text
     "#e5e7eb",  # Borders
     "#eef1f4",  # Subtle separators
+    "#f2f5f8",  # Recovered surface-muted baseline
+    "#cfd8e3",  # Recovered subtle border baseline
+    "#4b5563",  # Recovered secondary text baseline
+    "#d7dee7",  # Recovered border baseline
+    "#e5603d",  # Recovered accent baseline
+    "#3f9e86",  # Recovered success baseline
+    "#c99645",  # Recovered warning baseline
+    "#c45f5c",  # Recovered error baseline
+    "#e7f4ef",  # Recovered success surface baseline
+    "#f3f6f9",  # Recovered info surface baseline
+    "#f9eceb",  # Recovered error surface baseline
     "#4caf93",  # Success
     "#e6b566",  # Warning
     "#d16d6a",  # Error
