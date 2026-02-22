@@ -15,7 +15,7 @@
 - Date collisions with other timeline events can be rejected by context.
 
 ## How to test (exact commands)
-- `python -m pytest backend/tests/unit/test_golden_extraction_regression.py backend/tests/unit/test_interpretation_schema_v0.py -q`
+- `python -m pytest backend/tests/unit/test_golden_extraction_regression.py backend/tests/unit/test_interpretation_schema.py -q`
 
 ## History (commit + PR link)
 - Branch `fix/golden-discharge-date-iteration` | Commit `cb95be5e` | PR: [#77](https://github.com/your-org/veterinary-medical-records/pull/77) | docA missing→accepted (`2024-07-20`).

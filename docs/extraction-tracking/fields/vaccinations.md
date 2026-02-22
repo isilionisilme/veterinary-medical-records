@@ -15,7 +15,7 @@
 - Date-heavy administrative lines are intentionally excluded.
 
 ## How to test (exact commands)
-- `python -m pytest backend/tests/unit/test_golden_extraction_regression.py backend/tests/unit/test_interpretation_schema_v0.py -q`
+- `python -m pytest backend/tests/unit/test_golden_extraction_regression.py backend/tests/unit/test_interpretation_schema.py -q`
 
 ## History (commit + PR link)
 - Branch `fix/golden-vaccinations-iteration` | Commit `c5d3ffbe` | PR: [#77](https://github.com/your-org/veterinary-medical-records/pull/77) | docA missing→accepted (`Rabia, Moquillo, Parvo`).

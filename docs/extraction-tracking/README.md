@@ -33,8 +33,8 @@ This folder tracks the extraction program using an evidence-first, one-field-per
 
 ## Quick commands
 - `python -m pytest backend/tests/unit/test_golden_extraction_regression.py -s -q`
-- `python -m pytest backend/tests/unit/test_golden_extraction_regression.py backend/tests/unit/test_interpretation_schema_v0.py -q`
-- `python -m pytest backend/tests/unit/test_interpretation_schema_v0.py backend/tests/integration/test_extraction_observability_api.py -q`
+- `python -m pytest backend/tests/unit/test_golden_extraction_regression.py backend/tests/unit/test_interpretation_schema.py -q`
+- `python -m pytest backend/tests/unit/test_interpretation_schema.py backend/tests/integration/test_extraction_observability_api.py -q`
 
 ## Debug endpoints for UI/backend parity
 - `GET /documents/{document_id}/review`
@@ -43,7 +43,7 @@ This folder tracks the extraction program using an evidence-first, one-field-per
 - `GET /runs/{run_id}/artifacts/raw-text`
 
 Notes:
-- In current checks, `GET /runs/{run_id}/artifacts/global-schema-v0` returned 404; UI-facing structured values are in `active_interpretation.data.global_schema_v0` from `/documents/{document_id}/review`.
+- In current checks, `GET /runs/{run_id}/artifacts/global-schema-v0` returned 404; UI-facing structured values are in `active_interpretation.data.global_schema` from `/documents/{document_id}/review`.
 
 ## How to add a new iteration entry
 1. Confirm evidence (fixture or real run) and isolate one target field.
