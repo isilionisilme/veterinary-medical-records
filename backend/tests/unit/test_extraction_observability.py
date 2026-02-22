@@ -121,7 +121,7 @@ def test_get_extraction_runs_normalizes_legacy_schema_version(
     runs = extraction_observability.get_extraction_runs("doc-legacy")
     assert len(runs) == 1
     assert runs[0]["schemaVersion"] == "canonical"
-    assert "event=legacy_schema_version_normalized" in caplog.text
+    assert "event=compat_schema_version_normalized" in caplog.text
     assert "stage=extraction_observability" in caplog.text
 
 

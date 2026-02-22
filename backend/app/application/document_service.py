@@ -44,7 +44,7 @@ from backend.app.ports.file_storage import FileStorage
 NUMERIC_TYPES = (int, float)
 logger = logging.getLogger(__name__)
 _REVIEW_SCHEMA_CONTRACT_CANONICAL = "visit-grouped-canonical"
-_LEGACY_COMPAT_EVENT_PREFIX = "[legacy-compat]"
+_COMPAT_EVENT_PREFIX = "[compat]"
 
 _MEDICAL_RECORD_CANONICAL_SECTIONS: tuple[str, ...] = (
     "clinic",
@@ -710,7 +710,7 @@ def _project_review_payload_to_canonical(data: dict[str, object]) -> dict[str, o
             "%s event=compat_schema_projection stage=document_service flow=review_projection "
             "schema_contract_compat=%s schema_version_removed=%s incoming_schema_contract=%s "
             "incoming_schema_version_type=%s",
-            _LEGACY_COMPAT_EVENT_PREFIX,
+            _COMPAT_EVENT_PREFIX,
             applied_schema_contract_compat,
             removed_schema_version_compat,
             incoming_schema_contract,
