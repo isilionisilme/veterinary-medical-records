@@ -31,14 +31,14 @@ from backend.app.application.field_normalizers import (
     SPECIES_TOKEN_TO_CANONICAL,
     normalize_canonical_fields,
 )
-from backend.app.application.global_schema_v0 import (
-    CRITICAL_KEYS_V0,
-    GLOBAL_SCHEMA_V0_KEYS,
-    REPEATABLE_KEYS_V0,
-    SCHEMA_VERSION_V0,
-    VALUE_TYPE_BY_KEY_V0,
-    normalize_global_schema_v0,
-    validate_global_schema_v0_shape,
+from backend.app.application.global_schema import (
+    CRITICAL_KEYS,
+    GLOBAL_SCHEMA_KEYS,
+    REPEATABLE_KEYS,
+    SCHEMA_VERSION,
+    VALUE_TYPE_BY_KEY,
+    normalize_global_schema,
+    validate_global_schema_shape,
 )
 from backend.app.config import (
     confidence_band_cutoffs_or_none,
@@ -543,8 +543,8 @@ def _build_interpretation_artifact(
             canonical_values,
             canonical_evidence,
         )
-        normalized_values = normalize_global_schema_v0(canonical_values)
-        validation_errors = validate_global_schema_v0_shape(normalized_values)
+        normalized_values = normalize_global_schema(canonical_values)
+        validation_errors = validate_global_schema_shape(normalized_values)
         if validation_errors:
             raise InterpretationBuildError(
                 error_code="INTERPRETATION_VALIDATION_FAILED",
@@ -552,7 +552,7 @@ def _build_interpretation_artifact(
             )
 
         calibration_context_key = build_context_key(
-            schema_version=SCHEMA_VERSION_V0,
+            schema_version=SCHEMA_VERSION,
             document_type="veterinary_record",
             language=normalized_values.get("language")
             if isinstance(normalized_values.get("language"), str)
@@ -568,18 +568,18 @@ def _build_interpretation_artifact(
             repository=repository,
         )
     else:
-        normalized_values = normalize_global_schema_v0(None)
+        normalized_values = normalize_global_schema(None)
         fields = []
         warning_codes.append("EMPTY_RAW_TEXT")
         calibration_context_key = build_context_key(
-            schema_version=SCHEMA_VERSION_V0,
+            schema_version=SCHEMA_VERSION,
             document_type="veterinary_record",
             language=None,
         )
 
     populated_keys = [
         key
-        for key in GLOBAL_SCHEMA_V0_KEYS
+        for key in GLOBAL_SCHEMA_KEYS
         if (
             isinstance(normalized_values.get(key), list)
             and len(normalized_values.get(key, [])) > 0
@@ -599,14 +599,14 @@ def _build_interpretation_artifact(
         evidence_map=canonical_evidence,
     )
     data: dict[str, object] = {
-        "schema_version": SCHEMA_VERSION_V0,
+        "schema_version": SCHEMA_VERSION,
         "document_id": document_id,
         "processing_run_id": run_id,
         "created_at": now_iso,
         "fields": fields,
-        "global_schema_v0": normalized_values,
+        "global_schema": normalized_values,
         "summary": {
-            "total_keys": len(GLOBAL_SCHEMA_V0_KEYS),
+            "total_keys": len(GLOBAL_SCHEMA_KEYS),
             "populated_keys": len(populated_keys),
             "keys_present": populated_keys,
             "warning_codes": warning_codes,
@@ -1393,14 +1393,14 @@ def _map_candidates_to_global_schema(
     mapped: dict[str, object] = {}
     evidence_map: dict[str, list[dict[str, object]]] = {}
 
-    for key in GLOBAL_SCHEMA_V0_KEYS:
+    for key in GLOBAL_SCHEMA_KEYS:
         key_candidates = sorted(
             candidate_bundle.get(key, []),
             key=lambda item: _candidate_sort_key(item, key),
             reverse=True,
         )
 
-        if key in REPEATABLE_KEYS_V0:
+        if key in REPEATABLE_KEYS:
             selected = key_candidates[:3]
             mapped[key] = [
                 str(item.get("value", "")).strip()
@@ -1541,15 +1541,15 @@ def _build_structured_fields_from_global_schema(
     fields: list[dict[str, object]] = []
     candidate_suggestions_by_key = {
         key: _build_field_candidate_suggestions(key=key, candidate_bundle=candidate_bundle)
-        for key in GLOBAL_SCHEMA_V0_KEYS
+        for key in GLOBAL_SCHEMA_KEYS
     }
 
-    for key in GLOBAL_SCHEMA_V0_KEYS:
+    for key in GLOBAL_SCHEMA_KEYS:
         value = normalized_values.get(key)
         key_evidence = evidence_map.get(key, [])
         candidate_suggestions = candidate_suggestions_by_key.get(key)
 
-        if key in REPEATABLE_KEYS_V0:
+        if key in REPEATABLE_KEYS:
             if not isinstance(value, list):
                 continue
             for index, item in enumerate(value):
@@ -1575,7 +1575,7 @@ def _build_structured_fields_from_global_schema(
                             if isinstance(evidence, dict)
                             else item
                         ),
-                        value_type=VALUE_TYPE_BY_KEY_V0.get(key, "string"),
+                        value_type=VALUE_TYPE_BY_KEY.get(key, "string"),
                         page=(
                             evidence.get("page") if isinstance(evidence, dict) else None
                         ),
@@ -1606,7 +1606,7 @@ def _build_structured_fields_from_global_schema(
                 snippet=(
                     evidence.get("snippet") if isinstance(evidence, dict) else value
                 ),
-                value_type=VALUE_TYPE_BY_KEY_V0.get(key, "string"),
+                value_type=VALUE_TYPE_BY_KEY.get(key, "string"),
                 page=(evidence.get("page") if isinstance(evidence, dict) else None),
                 mapping_id=mapping_id,
                 context_key=context_key,
@@ -1726,7 +1726,7 @@ def _build_structured_field(
         "context_key": context_key,
         "mapping_id": mapping_id,
         "policy_version": policy_version,
-        "is_critical": key in CRITICAL_KEYS_V0,
+        "is_critical": key in CRITICAL_KEYS,
         "origin": "machine",
         "evidence": {
             "page": page,
