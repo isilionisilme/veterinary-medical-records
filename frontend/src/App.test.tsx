@@ -101,6 +101,25 @@ async function openReadyDocumentAndGetPanel() {
   return screen.getByTestId("right-panel-scroll");
 }
 
+function parseCountFromAriaLabel(element: HTMLElement): number {
+  return Number(element.getAttribute("aria-label")?.match(/\((\d+)\)/)?.[1] ?? "0");
+}
+
+function getConfidenceSummaryCounts() {
+  const lowButton = screen.getByRole("button", { name: /^Baja \(\d+\)$/i });
+  const mediumButton = screen.getByRole("button", { name: /^Media \(\d+\)$/i });
+  const highButton = screen.getByRole("button", { name: /^Alta \(\d+\)$/i });
+  const unknownButton = screen.getByRole("button", { name: /^Sin confianza \(\d+\)$/i });
+
+  return {
+    low: parseCountFromAriaLabel(lowButton),
+    medium: parseCountFromAriaLabel(mediumButton),
+    high: parseCountFromAriaLabel(highButton),
+    unknown: parseCountFromAriaLabel(unknownButton),
+    unknownButton,
+  };
+}
+
 type V1Us44FetchMockOptions = {
   fieldSlots?: Array<Record<string, unknown>>;
   fields?: Array<Record<string, unknown>>;
@@ -2430,17 +2449,8 @@ describe("App upload and list flow", () => {
     renderApp();
     await openReadyDocumentAndGetPanel();
 
-    const lowButton = screen.getByRole("button", { name: /^Baja \(\d+\)$/i });
-    const mediumButton = screen.getByRole("button", { name: /^Media \(\d+\)$/i });
-    const highButton = screen.getByRole("button", { name: /^Alta \(\d+\)$/i });
-    const unknownButton = screen.getByRole("button", { name: /^Sin confianza \(\d+\)$/i });
-
+    const { low, medium, high, unknown, unknownButton } = getConfidenceSummaryCounts();
     expect(unknownButton).toBeInTheDocument();
-
-    const low = Number(lowButton.getAttribute("aria-label")?.match(/\((\d+)\)/)?.[1] ?? "0");
-    const medium = Number(mediumButton.getAttribute("aria-label")?.match(/\((\d+)\)/)?.[1] ?? "0");
-    const high = Number(highButton.getAttribute("aria-label")?.match(/\((\d+)\)/)?.[1] ?? "0");
-    const unknown = Number(unknownButton.getAttribute("aria-label")?.match(/\((\d+)\)/)?.[1] ?? "0");
     expect(low + medium + high + unknown).toBe(expectedDetected);
   });
 
@@ -2474,17 +2484,8 @@ describe("App upload and list flow", () => {
     renderApp();
     await openReadyDocumentAndGetPanel();
 
-    const lowButton = screen.getByRole("button", { name: /^Baja \(\d+\)$/i });
-    const mediumButton = screen.getByRole("button", { name: /^Media \(\d+\)$/i });
-    const highButton = screen.getByRole("button", { name: /^Alta \(\d+\)$/i });
-    const unknownButton = screen.getByRole("button", { name: /^Sin confianza \(\d+\)$/i });
-
+    const { low, medium, high, unknown, unknownButton } = getConfidenceSummaryCounts();
     expect(unknownButton).toBeInTheDocument();
-
-    const low = Number(lowButton.getAttribute("aria-label")?.match(/\((\d+)\)/)?.[1] ?? "0");
-    const medium = Number(mediumButton.getAttribute("aria-label")?.match(/\((\d+)\)/)?.[1] ?? "0");
-    const high = Number(highButton.getAttribute("aria-label")?.match(/\((\d+)\)/)?.[1] ?? "0");
-    const unknown = Number(unknownButton.getAttribute("aria-label")?.match(/\((\d+)\)/)?.[1] ?? "0");
     expect(low + medium + high + unknown).toBe(expectedDetected);
   });
 
