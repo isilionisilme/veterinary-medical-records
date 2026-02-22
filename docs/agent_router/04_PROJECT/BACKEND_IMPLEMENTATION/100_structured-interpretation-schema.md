@@ -1,5 +1,5 @@
 # Structured interpretation schema 
-Authority: [`docs/project/TECHNICAL_DESIGN.md`](../TECHNICAL_DESIGN/00_entry.md) Appendix D (Structured Interpretation Schema legacy flat contract).
+Authority: [`docs/project/TECHNICAL_DESIGN.md`](../TECHNICAL_DESIGN/00_entry.md) Appendix D (Structured Interpretation Schema visit-grouped canonical contract).
 
 Alignment note:
 - Interpretation output may be partial with respect to the full Global Schema key universe.

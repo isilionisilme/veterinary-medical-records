@@ -39,8 +39,6 @@ _GOAL_FIELDS = (
     "vet_name",
 )
 SNAPSHOT_SCHEMA_VERSION_CANONICAL = "canonical"
-SNAPSHOT_SCHEMA_VERSION_COMPAT = "v1"
-COMPAT_EVENT_PREFIX = "[compat]"
 
 SNAPSHOT_CONFIDENCE_MID_MIN = 0.6
 SNAPSHOT_CONFIDENCE_HIGH_MIN = 0.8
@@ -211,33 +209,6 @@ def _document_runs_path(document_id: str) -> Path:
     return _OBSERVABILITY_DIR / f"{_safe_document_filename(document_id)}.json"
 
 
-def _normalize_snapshot_schema_version(value: Any) -> str:
-    if isinstance(value, str):
-        normalized = value.strip().lower()
-        if normalized in {
-            SNAPSHOT_SCHEMA_VERSION_CANONICAL,
-            SNAPSHOT_SCHEMA_VERSION_COMPAT,
-        }:
-            if normalized == SNAPSHOT_SCHEMA_VERSION_COMPAT:
-                _emit_info(
-                    f"{COMPAT_EVENT_PREFIX} event=compat_schema_version_normalized "
-                    "stage=extraction_observability flow=snapshot_normalization "
-                    f"incoming_schema_version={normalized} "
-                    "normalized_schema_version="
-                    f"{SNAPSHOT_SCHEMA_VERSION_CANONICAL}"
-                )
-            return SNAPSHOT_SCHEMA_VERSION_CANONICAL
-    return SNAPSHOT_SCHEMA_VERSION_CANONICAL
-
-
-def _normalize_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
-    normalized = dict(snapshot)
-    normalized["schemaVersion"] = _normalize_snapshot_schema_version(
-        normalized.get("schemaVersion")
-    )
-    return normalized
-
-
 def _read_runs(path: Path) -> list[dict[str, Any]]:
     if not path.exists():
         return []
@@ -247,7 +218,7 @@ def _read_runs(path: Path) -> list[dict[str, Any]]:
         return []
     if not isinstance(payload, list):
         return []
-    return [_normalize_snapshot(item) for item in payload if isinstance(item, dict)]
+    return [item for item in payload if isinstance(item, dict)]
 
 
 def _write_runs(path: Path, runs: list[dict[str, Any]]) -> None:
@@ -725,7 +696,11 @@ def _log_diff(
 
 
 def persist_extraction_run_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
-    snapshot = _normalize_snapshot(snapshot)
+    snapshot = dict(snapshot)
+    schema_version = str(snapshot.get("schemaVersion", "")).strip().lower()
+    if schema_version != SNAPSHOT_SCHEMA_VERSION_CANONICAL:
+        raise ValueError("schemaVersion must be canonical")
+    snapshot["schemaVersion"] = SNAPSHOT_SCHEMA_VERSION_CANONICAL
     document_id = str(snapshot.get("documentId", "")).strip()
     if not document_id:
         raise ValueError("documentId is required")

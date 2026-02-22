@@ -44,7 +44,6 @@ from backend.app.ports.file_storage import FileStorage
 NUMERIC_TYPES = (int, float)
 logger = logging.getLogger(__name__)
 _REVIEW_SCHEMA_CONTRACT_CANONICAL = "visit-grouped-canonical"
-_COMPAT_EVENT_PREFIX = "[compat]"
 
 _MEDICAL_RECORD_CANONICAL_SECTIONS: tuple[str, ...] = (
     "clinic",
@@ -678,8 +677,6 @@ def _normalize_review_interpretation_data(data: dict[str, object]) -> dict[str, 
 def _project_review_payload_to_canonical(data: dict[str, object]) -> dict[str, object]:
     medical_record_view = data.get("medical_record_view")
     projected = dict(data)
-    incoming_schema_contract = projected.get("schema_contract")
-    incoming_schema_version = projected.get("schema_version")
 
     default_medical_record_view = {
         "version": "mvp-1",
@@ -702,20 +699,6 @@ def _project_review_payload_to_canonical(data: dict[str, object]) -> dict[str, o
 
     projected["schema_contract"] = _REVIEW_SCHEMA_CONTRACT_CANONICAL
     projected.pop("schema_version", None)
-
-    applied_schema_contract_compat = incoming_schema_contract != _REVIEW_SCHEMA_CONTRACT_CANONICAL
-    removed_schema_version_compat = isinstance(incoming_schema_version, str)
-    if applied_schema_contract_compat or removed_schema_version_compat:
-        logger.info(
-            "%s event=compat_schema_projection stage=document_service flow=review_projection "
-            "schema_contract_compat=%s schema_version_removed=%s incoming_schema_contract=%s "
-            "incoming_schema_version_type=%s",
-            _COMPAT_EVENT_PREFIX,
-            applied_schema_contract_compat,
-            removed_schema_version_compat,
-            incoming_schema_contract,
-            type(incoming_schema_version).__name__,
-        )
 
     if not isinstance(projected.get("visits"), list):
         projected["visits"] = []

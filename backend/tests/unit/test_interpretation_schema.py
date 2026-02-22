@@ -58,7 +58,7 @@ def test_interpretation_artifact_contains_full_global_schema_shape() -> None:
     for repeatable_key in REPEATABLE_KEYS:
         assert isinstance(global_schema[repeatable_key], list)
 
-    assert data.get("schema_contract") == "legacy-flat"
+    assert data.get("schema_contract") == "visit-grouped-canonical"
     assert "schema_version" not in data
 
 
@@ -96,15 +96,15 @@ def test_interpretation_artifact_does_not_use_context_key_fallback_for_calibrati
     assert pet_name_field["field_review_history_adjustment"] == 0
 
 
-def test_interpretation_artifact_does_not_emit_schema_version_compat_field() -> None:
+def test_interpretation_artifact_does_not_emit_schema_version_field() -> None:
     payload = _build_interpretation_artifact(
-        document_id="doc-schema-compat-log",
-        run_id="run-schema-compat-log",
+        document_id="doc-schema-contract",
+        run_id="run-schema-contract",
         raw_text="Paciente: Luna",
     )
 
     data = payload["data"]
-    assert data.get("schema_contract") == "legacy-flat"
+    assert data.get("schema_contract") == "visit-grouped-canonical"
     assert "schema_version" not in data
 
 

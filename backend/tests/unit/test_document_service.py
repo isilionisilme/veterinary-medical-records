@@ -421,12 +421,9 @@ def test_normalize_visit_date_candidate_is_deterministic() -> None:
     assert second == first
 
 
-def test_project_review_payload_logs_compat_projection_when_schema_version_missing(caplog) -> None:
-    caplog.set_level("INFO", logger="backend.app.application.document_service")
-
+def test_project_review_payload_projects_to_canonical_schema_contract() -> None:
     payload = {
-        "schema_contract": "legacy-flat",
-        "schema_version": "v1",
+        "schema_contract": "visit-grouped-canonical",
         "global_schema": {"pet_name": "Luna"},
         "fields": [],
     }
@@ -435,6 +432,4 @@ def test_project_review_payload_logs_compat_projection_when_schema_version_missi
 
     assert projected["schema_contract"] == "visit-grouped-canonical"
     assert "schema_version" not in projected
-    assert "event=compat_schema_projection" in caplog.text
-    assert "stage=document_service" in caplog.text
 

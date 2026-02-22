@@ -160,7 +160,7 @@ _VET_OR_CLINIC_CONTEXT_PATTERN = re.compile(
 )
 _CLINICAL_RECORD_GUARD_PATTERN = re.compile(r"(?i)\b(?:\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4})\b")
 NUMERIC_TYPES = (int, float)
-REVIEW_SCHEMA_CONTRACT = "legacy-flat"
+REVIEW_SCHEMA_CONTRACT = "visit-grouped-canonical"
 
 
 def _default_now_iso() -> str:

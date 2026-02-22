@@ -344,7 +344,7 @@ def test_document_review_normalizes_partial_medical_record_view_to_canonical_sha
             "document_id": document_id,
             "processing_run_id": run_id,
             "created_at": "2026-02-10T10:00:05+00:00",
-            "schema_contract": "legacy-flat",
+            "schema_contract": "visit-grouped-canonical",
             "medical_record_view": {"version": "mvp-1"},
             "global_schema": {"pet_name": "Luna"},
             "fields": [],
@@ -1360,7 +1360,7 @@ def test_cross_document_learning_applies_negative_adjustment_after_edit_signal(t
 def test_mark_document_reviewed_applies_accept_delta_for_non_critical_machine_field(test_client):
     document_id = _upload_sample_document(test_client)
     run_id = "run-reviewed-non-critical-machine"
-    context_key = "review:compat:pet_name"
+    context_key = "review:canonical:pet_name"
     mapping_id = "mapping-non-critical-machine"
     policy_version = "v1"
     _insert_run(

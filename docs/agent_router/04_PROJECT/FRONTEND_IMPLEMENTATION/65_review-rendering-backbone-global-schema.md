@@ -9,12 +9,12 @@ Frontend implementation guidance:
 - Show explicit empty states/placeholders for missing values; do not hide keys only because the model omitted them.
 - If `document_date` is missing, display the Product Design fallback to `visit_date`.
 
-Repeatable keys (legacy flat): `medication`, `diagnosis`, `procedure`, `lab_result`, `line_item`, `symptoms`, `vaccinations`, `imaging`.
+Repeatable keys: `medication`, `diagnosis`, `procedure`, `lab_result`, `line_item`, `symptoms`, `vaccinations`, `imaging`.
 - Always render the repeatable field container.
 - Render an explicit empty-list state when there are no items.
-- Scope note: legacy flat payloads may include billing repeatables (for example `line_item`) as compatibility semantics, even when Medical Record MVP UI scope excludes non-clinical concepts.
+- Scope note: payloads may include billing repeatables (for example `line_item`) even when Medical Record MVP UI scope excludes non-clinical concepts.
 
-Value typing (legacy flat):
-- Respect the existing legacy flat value types: `string | date | number | boolean | unknown`.
+Value typing:
+- Respect the existing contract value types: `string | date | number | boolean | unknown`.
 - For ambiguous or unit-bearing values, default to `string`.
 - Do not introduce new parsing obligations beyond existing backend/frontend contracts.

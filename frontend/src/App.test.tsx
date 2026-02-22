@@ -2260,9 +2260,9 @@ describe("App upload and list flow", () => {
     expect(within(panel).queryByTestId("critical-indicator-clinic_name")).toBeNull();
   });
 
-  it("falls back to legacy-flat rendering when explicit schema_contract is legacy-flat and field_slots are malformed", async () => {
+  it("keeps canonical rendering when schema_contract is canonical and field_slots are malformed", async () => {
     installCanonicalUs44FetchMock({
-      schemaContract: "legacy-flat",
+      schemaContract: "visit-grouped-canonical",
       fieldSlots: { malformed: true } as unknown as Array<Record<string, unknown>>,
       visits: [],
     });
@@ -2270,8 +2270,7 @@ describe("App upload and list flow", () => {
     const panel = await openReadyDocumentAndGetPanel();
 
     expect(within(panel).getByText("Visitas")).toBeInTheDocument();
-    expect(within(panel).queryByText("Sin visitas detectadas.")).toBeNull();
-    expect(within(panel).getByTestId("core-row-pet_name")).toBeInTheDocument();
+    expect(within(panel).getByText("Sin visitas detectadas.")).toBeInTheDocument();
   });
 
   it("shows Visitas empty state in canonical contract when visits=[]", async () => {
@@ -2682,7 +2681,7 @@ describe("App upload and list flow", () => {
     expect(screen.queryByTestId("confidence-policy-degraded")).toBeNull();
   });
 
-  it("does not fallback to legacy confidence when field_mapping_confidence is missing", async () => {
+  it("does not fallback to deprecated confidence when field_mapping_confidence is missing", async () => {
     const baseFetch = globalThis.fetch as typeof fetch;
 
     globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {

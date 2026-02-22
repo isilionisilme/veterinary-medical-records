@@ -98,31 +98,27 @@ def test_persist_snapshot_is_idempotent_per_document_and_run_id(
     assert second["was_created"] is False
 
 
-def test_get_extraction_runs_normalizes_compat_schema_version(
+def test_get_extraction_runs_preserves_canonical_schema_version(
     monkeypatch,
     tmp_path: Path,
-    caplog,
 ) -> None:
     monkeypatch.setattr(extraction_observability, "_OBSERVABILITY_DIR", tmp_path)
-    caplog.set_level("INFO", logger="backend.app.application.extraction_observability")
 
     extraction_observability.persist_extraction_run_snapshot(
         {
             **_snapshot(
-                run_id="run-compat",
-                document_id="doc-compat",
+                run_id="run-schema-version-coercion",
+                document_id="doc-schema-version-coercion",
                 status="accepted",
                 confidence="mid",
             ),
-            "schemaVersion": "v1",
+            "schemaVersion": "canonical",
         }
     )
 
-    runs = extraction_observability.get_extraction_runs("doc-compat")
+    runs = extraction_observability.get_extraction_runs("doc-schema-version-coercion")
     assert len(runs) == 1
     assert runs[0]["schemaVersion"] == "canonical"
-    assert "event=compat_schema_version_normalized" in caplog.text
-    assert "stage=extraction_observability" in caplog.text
 
 
 def test_build_extraction_triage_populates_missing_and_rejected_lists() -> None:

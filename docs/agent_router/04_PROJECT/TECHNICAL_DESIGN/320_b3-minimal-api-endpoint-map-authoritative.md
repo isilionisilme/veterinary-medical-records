@@ -189,7 +189,7 @@ Response body (minimum):
 - `run_id`
 - `interpretation_id`
 - `version_number` (new active version number)
-- `data` (Structured Interpretation Schema legacy flat contract; Appendix D)
+- `data` (Structured Interpretation Schema visit-grouped canonical contract; Appendix D)
 
 Rules:
 - Human edits MUST produce `origin = "human"` fields (Appendix D) and append `FieldChangeLog` entries (B2.5).
