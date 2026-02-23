@@ -25,7 +25,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [x] F1-C 🔄 — Implementación de items del backlog (Codex, una iteración por item)
 
 ### Fase 2 — Mantenibilidad y refactor estructural
-- [ ] F2-A 🔄 — Auditoría ln-620 + codebase_audit.md (Codex)
+- [x] F2-A 🔄 — Auditoría ln-620 + codebase_audit.md (Codex)
 - [ ] F2-B 🚧 — Validación de backlog — **TÚ decides estrategia de descomposición** (Claude)
 - [ ] F2-C 🔄 — Refactor App.tsx (Codex)
 - [ ] F2-D 🔄 — Refactor processing_runner.py (Codex)
@@ -109,7 +109,45 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - ✅ **Item 5** — Comandos administrativos one-off explícitos → Aprobado
 
 ### F2-A — Backlog ln-620 codebase audit (top 5)
-_Pendiente. Codex rellenará esta sección al completar F2-A._
+1. ✅ **Descomponer `frontend/src/App.tsx` por verticales funcionales**
+  - **Problema:** `App.tsx` concentra demasiadas responsabilidades (shell UI, estado, wiring de datos/API, validaciones y diagnósticos), generando acoplamiento y fricción de cambio.
+  - **Impacto:** Crítico en mantenibilidad percibida y en primera impresión del evaluador.
+  - **Esfuerzo:** L
+  - **Riesgo:** Medio
+  - **Criterio de aceptación:** El flujo actual se mantiene, pero el archivo se divide en módulos cohesivos por feature (sin archivos nuevos >500 líneas).
+  - **Evidencia de validación:** `npm test` verde + smoke manual de navegación/subida/revisión sin regresiones.
+
+2. ✅ **Separar responsabilidades de `backend/app/application/processing_runner.py`**
+  - **Problema:** Mezcla orquestación de runs, extracción/parsing y ensamblado de interpretación en un único módulo de alto blast radius.
+  - **Impacto:** Alto en calidad de arquitectura y mantenibilidad backend.
+  - **Esfuerzo:** L
+  - **Riesgo:** Medio-Alto
+  - **Criterio de aceptación:** Orquestación, extracción y ensamblado pasan a módulos separados manteniendo contratos públicos actuales.
+  - **Evidencia de validación:** `pytest --tb=short -q` en verde + mismas transiciones de run en pruebas existentes.
+
+3. ✅ **Dividir `backend/app/application/document_service.py` por casos de uso**
+  - **Problema:** Acumula upload/review/edit/calibración/listado en una sola unidad, dificultando legibilidad y evolución segura.
+  - **Impacto:** Alto en evaluación de diseño de capa de aplicación.
+  - **Esfuerzo:** L
+  - **Riesgo:** Medio
+  - **Criterio de aceptación:** Servicios internos separados por caso de uso sin cambiar contratos HTTP ni comportamiento observable.
+  - **Evidencia de validación:** `pytest --tb=short -q` en verde + rutas consumiendo interfaces equivalentes.
+
+4. ✅ **Redistribuir `frontend/src/App.test.tsx` alineado al refactor**
+  - **Problema:** Suite monolítica y acoplada al archivo gigante, bloqueando refactors seguros.
+  - **Impacto:** Medio-Alto en percepción de estrategia de testing.
+  - **Esfuerzo:** M
+  - **Riesgo:** Medio
+  - **Criterio de aceptación:** Tests por componente/feature con cobertura equivalente o superior y menor acoplamiento estructural.
+  - **Evidencia de validación:** `npm test` estable + cobertura mantenida o mejorada en áreas críticas.
+
+5. ✅ **Completar guardas de calidad frontend (lint/formato/coverage) y limpiar duplicidades de tests**
+  - **Problema:** Faltan gates frontend consistentes y hay duplicación puntual en pruebas, reduciendo señal de disciplina de ingeniería.
+  - **Impacto:** Medio en madurez de prácticas durante refactor incremental.
+  - **Esfuerzo:** S-M
+  - **Riesgo:** Bajo
+  - **Criterio de aceptación:** CI con lint frontend real + coverage gate definido + tests duplicados consolidados.
+  - **Evidencia de validación:** Pipeline falla ante violaciones y pasa en rama limpia, sin suites redundantes en los módulos afectados.
 
 ### F2-B — Decisiones de validación y estrategia de descomposición
 _Pendiente. Claude escribirá aquí los items aprobados, la estrategia de descomposición de cada archivo monolítico (módulos destino, responsabilidades), y las decisiones del usuario._
