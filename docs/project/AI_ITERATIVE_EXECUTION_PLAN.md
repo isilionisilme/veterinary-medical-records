@@ -21,7 +21,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 
 ### Fase 1 — Auditoría de arquitectura
 - [x] F1-A 🔄 — Auditoría 12-Factor → backlog (Codex)
-- [ ] F1-B 🚧 — Validación de backlog — **TÚ decides qué items se implementan** (Claude)
+- [x] F1-B 🚧 — Validación de backlog — **TÚ decides qué items se implementan** (Claude)
 - [ ] F1-C 🔄 — Implementación de items del backlog (Codex, una iteración por item)
 
 ### Fase 2 — Mantenibilidad y refactor estructural
@@ -31,6 +31,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [ ] F2-D 🔄 — Refactor processing_runner.py (Codex)
 - [ ] F2-E 🔄 — Refactor document_service.py (Codex)
 - [ ] F2-F 🔄 — Redistribución App.test.tsx (Codex)
+- [ ] F2-G 🚧 — **TÚ pruebas la app post-refactor** (~10 min: docker compose up, subir PDF, editar, confirmar)
 
 ### Fase 3 — Quick wins de tooling
 - [ ] F3-A 🔄 — Definir config ESLint + Prettier + pre-commit (Claude)
@@ -101,7 +102,11 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
   - **Evidencia de validación:** Ejecución local de comandos y referencia cruzada en documentación.
 
 ### F1-B — Decisiones de validación
-_Pendiente. Claude escribirá aquí los items aprobados (✅) y descartados (❌ con razón) tras la validación del usuario en F1-B._
+- ✅ **Item 1** — Centralizar configuración/validación en único settings module tipado → Aprobado
+- ✅ **Item 2** — Exponer metadata de release (commit/version/build-date) → Aprobado
+- ✅ **Item 3** — Desacoplar bootstrap del scheduler del composition root HTTP → Aprobado (riesgo medio aceptado: el código actual ya usa stop_event limpio; refactor es mayormente mover código)
+- ❌ **Item 4** — Worker profile opcional en Compose → **Descartado.** SQLite no soporta escrituras concurrentes fiables desde dos procesos. Si el evaluador activa el profile y falla con `database is locked`, la impresión es peor que no tenerlo.
+- ✅ **Item 5** — Comandos administrativos one-off explícitos → Aprobado
 
 ### F2-A — Backlog ln-620 codebase audit (top 5)
 _Pendiente. Codex rellenará esta sección al completar F2-A._
@@ -273,11 +278,12 @@ Los pasos marcados con 🚧 (**hard-gate**) cortan la cadena. **No ejecutes el s
 |---|---|---|
 | **F1-B** | Qué items del backlog 12-factor valen la pena implementar (descartar falsos positivos / fuera de scope) | ~10 min |
 | **F2-B** | Estrategia de descomposición de los archivos monolíticos (nombres de módulos, responsabilidades) | ~15 min |
+| **F2-G** | Verificación manual post-refactor — ¿la app se ve y funciona correctamente? | ~10 min |
 | **F5-B** | Argumentos reales de los ADRs (deben reflejar *tu* razonamiento, no el de la IA) | ~15 min |
 | **F6-A** | Experiencia del evaluador — solo tú puedes juzgar la primera impresión del repo | ~15 min |
 | **F7-A** | Veredicto final: LISTO / NO LISTO + crear PR | ~15 min |
 
-**Tu tiempo activo total: ~65 minutos repartidos en 5 pausas.** El resto fluye automáticamente con test gates como red de seguridad.
+**Tu tiempo activo total: ~75 minutos repartidos en 6 pausas.** El resto fluye automáticamente con test gates como red de seguridad.
 ### Template para prompts de implementación (just-in-time)
 Todos los prompts de implementación generados just-in-time siguen esta estructura. Claude la rellena antes de cada paso de Codex:
 
