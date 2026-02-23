@@ -30,6 +30,18 @@
       ]
     },
     {
+      "source_doc": "docs/project/codebase_audit.md",
+      "description": "Project codebase_audit must map to project owner entry module.",
+      "router_modules": [
+        {
+          "path": "docs/agent_router/04_PROJECT/CODEBASE_AUDIT/00_entry.md",
+          "required_terms": [
+            "CODEBASE_AUDIT — Modules"
+          ]
+        }
+      ]
+    },
+    {
       "source_doc": "docs/shared/BRAND_GUIDELINES.md",
       "description": "Shared BRAND_GUIDELINES must map to shared owner entry module.",
       "router_modules": [

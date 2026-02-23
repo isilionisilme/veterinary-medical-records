@@ -99,6 +99,20 @@
       ]
     },
     {
+      "doc_glob": "docs/project/codebase_audit.md",
+      "description": "Project codebase_audit changes require doc sync/parity guard alignment.",
+      "owner_any": [
+        "docs/agent_router/04_PROJECT/CODEBASE_AUDIT/*.md",
+        "docs/agent_router/04_PROJECT/CODEBASE_AUDIT/**/*.md"
+      ],
+      "required_any": [
+        "docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json",
+        "docs/agent_router/01_WORKFLOW/DOC_UPDATES/router_parity_map.json",
+        "scripts/check_doc_test_sync.py",
+        "scripts/check_doc_router_parity.py"
+      ]
+    },
+    {
       "doc_glob": "docs/project/BACKEND_IMPLEMENTATION.md",
       "description": "Project BACKEND_IMPLEMENTATION changes require propagation to its owner module.",
       "owner_any": [

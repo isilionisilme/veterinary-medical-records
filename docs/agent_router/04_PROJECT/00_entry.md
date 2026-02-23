@@ -3,6 +3,7 @@
 Split, token-optimized versions of `docs/project/*`.
 
 ## Index
+- `docs/agent_router/04_PROJECT/CODEBASE_AUDIT/00_entry.md`
 - `docs/agent_router/04_PROJECT/PRODUCT_DESIGN/00_entry.md`
 - `docs/agent_router/04_PROJECT/UX_DESIGN/00_entry.md`
 - `docs/agent_router/04_PROJECT/DESIGN_SYSTEM/00_entry.md`
