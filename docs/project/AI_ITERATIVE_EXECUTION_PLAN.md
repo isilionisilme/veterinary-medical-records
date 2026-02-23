@@ -20,7 +20,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - 🚧 **hard-gate** — Requiere tu decisión antes de continuar. No saltar.
 
 ### Fase 1 — Auditoría de arquitectura
-- [ ] F1-A 🔄 — Auditoría 12-Factor → backlog (Codex)
+- [x] F1-A 🔄 — Auditoría 12-Factor → backlog (Codex)
 - [ ] F1-B 🚧 — Validación de backlog — **TÚ decides qué items se implementan** (Claude)
 - [ ] F1-C 🔄 — Implementación de items del backlog (Codex, una iteración por item)
 
@@ -60,7 +60,45 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 > Esta sección es el source of truth para los backlogs. Codex escribe aquí el top-5 del backlog de cada auditoría antes de commitear. Así el plan es autocontenido y cualquier sesión siguiente tiene el contexto sin depender del historial del chat.
 
 ### F1-A — Backlog 12-Factor (top 5)
-_Pendiente. Codex rellenará esta sección al completar F1-A._
+1. ✅ **Centralizar configuración/validación de entorno en un único settings module tipado**
+  - **Problema:** Lectura de env distribuida entre `config.py` e infraestructura (`database.py`, `file_storage.py`), con riesgo de drift.
+  - **Impacto:** Alto en mantenibilidad y percepción de arquitectura.
+  - **Esfuerzo:** S
+  - **Riesgo:** Bajo
+  - **Criterio de aceptación:** Todos los env vars runtime se validan en un único punto y los adapters consumen settings resueltos.
+  - **Evidencia de validación:** `pytest` backend y arranque `docker compose up --build` sin regressions.
+
+2. ✅ **Exponer metadata de release (commit/version/build-date) como frontera explícita build-release-run**
+  - **Problema:** Build/run reproducibles, pero sin superficie explícita de release metadata.
+  - **Impacto:** Medio-alto en evaluación de prácticas de ingeniería.
+  - **Esfuerzo:** S
+  - **Riesgo:** Bajo
+  - **Criterio de aceptación:** API/contenerización exponen versión/revisión inmutable verificable en CI.
+  - **Evidencia de validación:** Job CI verificando metadata y smoke local.
+
+3. ✅ **Desacoplar bootstrap del scheduler del composition root HTTP**
+  - **Problema:** API process y processing scheduler comparten ciclo de vida directo en `main.py`.
+  - **Impacto:** Alto en mantenibilidad evolutiva y claridad de responsabilidades.
+  - **Esfuerzo:** M
+  - **Riesgo:** Medio
+  - **Criterio de aceptación:** Arranque/parada del scheduler encapsulados detrás de una frontera explícita sin cambiar contratos HTTP.
+  - **Evidencia de validación:** `pytest` backend completo + pruebas de ciclo de vida sin cambios funcionales.
+
+4. ✅ **Añadir profile opcional de worker en Compose (sin alterar flujo evaluador por defecto)**
+  - **Problema:** No existe process type dedicado para presión de cola; todo corre en el proceso web.
+  - **Impacto:** Medio en madurez arquitectónica percibida.
+  - **Esfuerzo:** M
+  - **Riesgo:** Medio
+  - **Criterio de aceptación:** `docker compose` mantiene comportamiento actual; profile opcional habilita worker separado reutilizando código existente.
+  - **Evidencia de validación:** Compose config válida + smoke con y sin profile.
+
+5. ✅ **Definir comandos administrativos one-off explícitos (schema/maintenance/diagnostics)**
+  - **Problema:** Existen scripts y tests, pero falta interfaz administrativa formal para tareas operativas.
+  - **Impacto:** Medio en 12-factor factor XII y operabilidad.
+  - **Esfuerzo:** S
+  - **Riesgo:** Bajo
+  - **Criterio de aceptación:** README/docs documentan comandos idempotentes para tareas administrativas recurrentes.
+  - **Evidencia de validación:** Ejecución local de comandos y referencia cruzada en documentación.
 
 ### F1-B — Decisiones de validación
 _Pendiente. Claude escribirá aquí los items aprobados (✅) y descartados (❌ con razón) tras la validación del usuario en F1-B._
