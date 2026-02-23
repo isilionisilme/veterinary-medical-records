@@ -168,6 +168,13 @@ Notes:
 - Frontend tests:
   - `docker compose --profile test run --rm frontend-tests`
 
+### Administrative commands
+
+- Ensure DB schema: `python -m backend.app.cli db-schema`
+- Check DB readability and table count: `python -m backend.app.cli db-check`
+- Print resolved runtime config: `python -m backend.app.cli config-check`
+- Commands are idempotent and intended for one-off local maintenance/diagnostics.
+
 ### Rebuild guidance after changes
 
 - If you changed code only and are in dev mode: no rebuild needed.
