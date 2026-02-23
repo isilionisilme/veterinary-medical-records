@@ -201,10 +201,127 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-_Completado: F2-E_
+F2-F — Redistribuir `App.test.tsx` (3,697 LOC) en test files por componente
 
 ### Prompt
-_Vacío._
+
+> **PLAN-EDIT-LAST RULE (hard constraint for Codex):**
+> **NEVER edit AI_ITERATIVE_EXECUTION_PLAN.md until ALL tests pass and code is committed.**
+> The plan file is the source of truth — marking a step `[x]` before tests pass corrupts the entire pipeline.
+> If you run out of context before reaching the test gate: STOP and tell the user. Do NOT edit the plan.
+
+```
+--- AGENT IDENTITY CHECK ---
+This prompt is designed for GPT-5.3-Codex in VS Code Copilot Chat.
+If you are not GPT-5.3-Codex: STOP. Tell the user to switch agents.
+--- END IDENTITY CHECK ---
+
+--- BRANCH CHECK ---
+Run: git branch --show-current
+If NOT `improvement/refactor`: STOP. Tell the user: "⚠️ Cambia a la rama improvement/refactor antes de continuar: git checkout improvement/refactor"
+--- END BRANCH CHECK ---
+
+--- SYNC CHECK ---
+Run: git pull origin improvement/refactor
+This ensures the local copy has the latest Estado, Resultados, and Prompt activo from previous sessions.
+--- END SYNC CHECK ---
+
+--- PRE-FLIGHT CHECK (ejecutar antes de empezar) ---
+1. Paso anterior completado: verify that `F2-E` in Estado de ejecución has `[x]`. If not: STOP.
+2. Target file exists: run `Test-Path frontend/src/App.test.tsx`. If it does NOT exist: STOP and tell the user.
+3. Component files exist: verify these files exist (they were created in F2-C):
+   - `frontend/src/components/UploadPanel.tsx`
+   - `frontend/src/components/DocumentSidebar.tsx` (or `DocumentsSidebar.tsx`)
+   - `frontend/src/components/ReviewWorkspace.tsx`
+   - `frontend/src/components/StructuredDataView.tsx`
+   If any are missing, STOP and report which are missing.
+--- END PRE-FLIGHT CHECK ---
+
+--- TASK: Redistribute App.test.tsx into per-component test files ---
+
+**Source:** `frontend/src/App.test.tsx` (~3,697 lines, single `describe("App upload and list flow", ...)`)
+**Goal:** Split into component-level test files while keeping a slim `App.test.tsx` for shell/layout tests.
+
+### Analysis phase (do this FIRST, before writing any code)
+1. Read the full `App.test.tsx` and categorize every `it(...)` block by which component it primarily exercises.
+2. Build a mapping table — do NOT start moving code until the mapping is complete.
+
+### Target test files and what belongs in each
+
+| Test file | What goes here |
+|---|---|
+| `components/UploadPanel.test.tsx` | Upload flow tests: file selection, drag-and-drop, size validation, toast auto-dismiss, non-PDF rejection, upload from collapsed sidebar, empty-state file picker, drag-and-drop while document open |
+| `components/DocumentSidebar.test.tsx` | Document list tests: status labels, PROCESSING→Listo refresh, search/clear, branding in sidebar, sidebar auto-collapse/expand/pin/unpin, list rendering |
+| `components/ReviewWorkspace.test.tsx` | Review/edit tests: field selection, confidence tooltips, evidence behavior, PDF navigation from row click, scroll preservation, blocked-edit toast in reviewed mode, reviewed warning banner, reviewed toggle, keyboard blocked-edit, source drawer behavior, split grid drag handle, split ratio persistence/clamp/restore |
+| `components/StructuredDataView.test.tsx` | Structured data rendering: Global Schema template, canonical sections ordering (US-44), field_slots placeholders, visit grouping, unassigned visits, detected summary counts, confidence labels/dots, Otros campos, billing key hiding, repeatable fields, empty indicators, low-confidence filter, degraded confidence mode, canonical contract error, visit date display |
+| `App.test.tsx` (reduced shell) | Layout/shell tests: unified layout without mode controls, viewer header actions, connectivity toast, no-document empty state, doc list availability in unified layout, "keeps browse defaults", reprocess flow, extracted text copy/refresh, skeleton while loading |
+
+### Implementation rules
+
+1. **Shared test infrastructure stays in a shared file.** Create `frontend/src/test/helpers.ts` (or similar) containing:
+   - `renderApp()` function
+   - `withDesktopHoverMatchMedia()` helper
+   - `createDataTransfer()` helper
+   - `waitForStructuredDataReady()` helper
+   - `clickPetNameField()` helper
+   - `openReadyDocumentAndGetPanel()` helper
+   - `parseCountFromAriaLabel()` + `getConfidenceSummaryCounts()` helpers
+   - `installCanonicalUs44FetchMock()` + its type `CanonicalUs44FetchMockOptions`
+   - `installReviewedModeFetchMock()` + `openReviewedDocument()` + `getPetNameFieldButton()`
+   - Any other helpers/mocks used across multiple test files.
+   
+   Each new test file imports from this shared helpers file instead of duplicating the code.
+
+2. **Inline `beforeEach` fetch mocks** that are specific to one test group stay with that group. Only truly shared mocks go to helpers.
+
+3. **Do NOT change test logic.** Move tests exactly as they are — same assertions, same `it()` descriptions. The refactor is structural only.
+
+4. **No test file > 800 LOC.** If a target file would exceed 800 lines, split it further (e.g., `ReviewWorkspace.test.tsx` and `ReviewWorkspaceSplit.test.tsx`, or group by sub-feature).
+
+5. **All tests must pass after the move.** Run `npm test` — if any test breaks, fix it before proceeding. Common issues:
+   - Missing imports from the shared helpers file
+   - Mock setup that was in the old `beforeEach` not being replicated
+   - `vi.mock()` calls that need to be in each test file (they are hoisted per-file)
+
+6. **Keep `vi.mock("./components/PdfViewer", ...)` in each test file that needs it** — Vitest hoists `vi.mock` per file, so it must be declared in the file where it's used, not in a shared helper.
+
+7. **The reduced `App.test.tsx`** should be ≤400 LOC and focus only on tests that exercise the App shell itself (layout, panel wiring, mode switching). It should still import from `./App` and use the shared helpers.
+
+8. **Run ruff/lint checks on frontend** after all moves: `cd frontend && npx tsc --noEmit`
+
+--- END TASK ---
+
+--- TEST GATE (ejecutar ANTES de tocar el plan o commitear) ---
+Backend: cd d:/Git/veterinary-medical-records && python -m pytest --tb=short -q
+Frontend: cd d:/Git/veterinary-medical-records/frontend && npm test
+Si algún test falla: STOP. Reporta los fallos al usuario. NO commitees. NO edites el plan.
+Save the last summary line of each test run (e.g. "246 passed in 10.63s") — you will need it for the commit message.
+--- END TEST GATE ---
+
+--- SCOPE BOUNDARY (two-commit strategy) ---
+Execute these steps IN THIS EXACT ORDER. Do NOT reorder.
+
+STEP A — Commit code (plan file untouched):
+1. git add -A -- . ':!docs/project/AI_ITERATIVE_EXECUTION_PLAN.md'
+2. git commit -m "test(plan-f2f): redistribute App.test.tsx into per-component test files
+
+Test proof: <pytest summary line> | <npm test summary line>"
+
+STEP B — Commit plan update (only after code is committed):
+1. Edit AI_ITERATIVE_EXECUTION_PLAN.md: change `- [ ] F2-F` to `- [x] F2-F`.
+2. Clean `## Prompt activo`: replace `### Paso objetivo` content with `_Completado: F2-F_` and `### Prompt` with `_Vacío._`
+3. git add docs/project/AI_ITERATIVE_EXECUTION_PLAN.md
+4. git commit -m "docs(plan-f2f): mark step done"
+
+STEP C — Push both commits:
+1. git push origin improvement/refactor
+
+STEP D — Tell the user:
+"✓ F2-F completado, tests OK, pusheado. Siguiente: vuelve a Claude para F2-G 🚧 — pruebas manuales post-refactor (~10 min: docker compose up, subir PDF, editar, confirmar)."
+
+5. Stop.
+--- END SCOPE BOUNDARY ---
+```
 
 ---
 
