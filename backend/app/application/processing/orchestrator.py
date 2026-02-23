@@ -1,46 +1,18 @@
 """Processing subsystem modules extracted from processing_runner."""
 
 from __future__ import annotations
+
 import asyncio
 import logging
-import math
-import os
 import re
-import time
-import zlib
-from collections import defaultdict
-from collections.abc import Mapping
-from dataclasses import dataclass
 from datetime import UTC, datetime
-from pathlib import Path
-from uuid import uuid4
-from backend.app.application.confidence_calibration import (
-    build_context_key,
-    compute_review_history_adjustment,
-    normalize_mapping_id,
-    resolve_calibration_policy_version,
-)
+
 from backend.app.application.extraction_observability import (
     build_extraction_snapshot_from_interpretation,
     persist_extraction_run_snapshot,
 )
 from backend.app.application.extraction_quality import evaluate_extracted_text_quality
-from backend.app.application.field_normalizers import (
-    SPECIES_TOKEN_TO_CANONICAL,
-    normalize_canonical_fields,
-)
-from backend.app.application.global_schema import (
-    CRITICAL_KEYS,
-    GLOBAL_SCHEMA_KEYS,
-    REPEATABLE_KEYS,
-    VALUE_TYPE_BY_KEY,
-    normalize_global_schema,
-    validate_global_schema_shape,
-)
 from backend.app.config import (
-    confidence_band_cutoffs_or_none,
-    confidence_policy_explicit_config_diagnostics,
-    confidence_policy_version_or_none,
     extraction_observability_enabled,
 )
 from backend.app.domain.models import (
@@ -51,6 +23,9 @@ from backend.app.domain.models import (
 )
 from backend.app.ports.document_repository import DocumentRepository
 from backend.app.ports.file_storage import FileStorage
+
+from . import pdf_extraction
+from .interpretation import _build_interpretation_artifact
 
 logger = logging.getLogger(__name__)
 
@@ -160,8 +135,6 @@ _CLINICAL_RECORD_GUARD_PATTERN = re.compile(r"(?i)\b(?:\d{1,2}[\/\-.]\d{1,2}[\/\
 NUMERIC_TYPES = (int, float)
 REVIEW_SCHEMA_CONTRACT = "visit-grouped-canonical"
 
-from .interpretation import _build_interpretation_artifact
-from . import pdf_extraction
 
 def _default_now_iso() -> str:
     return datetime.now(UTC).isoformat()

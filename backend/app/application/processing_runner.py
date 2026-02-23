@@ -1,12 +1,6 @@
 """Legacy compatibility shim for processing subsystem."""
 
 # Legacy shim — imports moved to backend.app.application.processing/
-from backend.app.application.processing import (
-    InterpretationBuildError,
-    ProcessingError,
-    enqueue_processing_run,
-    processing_scheduler,
-)
 from backend.app.application.processing import interpretation as _interpretation
 from backend.app.application.processing import orchestrator as _orchestrator
 from backend.app.application.processing import pdf_extraction as _pdf_extraction

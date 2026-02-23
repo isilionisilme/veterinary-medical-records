@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from backend.app.application import extraction_observability, processing_runner
+from backend.app.application import extraction_observability
 from backend.app.main import create_app
 
 
