@@ -3949,6 +3949,14 @@ export function App() {
     const validation = validateFieldValue("weight", editingFieldDraftValue);
     return !validation.ok;
   }, [isEditingWeightField, editingFieldDraftValue]);
+  const isEditingAgeField = editingField?.key === "age";
+  const isEditingAgeInvalid = useMemo(() => {
+    if (!isEditingAgeField) {
+      return false;
+    }
+    const validation = validateFieldValue("age", editingFieldDraftValue);
+    return !validation.ok;
+  }, [isEditingAgeField, editingFieldDraftValue]);
   const isEditingDateField = useMemo(() => {
     const fieldKey = editingField?.key;
     if (!fieldKey) {
@@ -4025,6 +4033,12 @@ export function App() {
     }
     if (editingField.key === "weight") {
       const validation = validateFieldValue("weight", editingFieldDraftValue);
+      if (!validation.ok) {
+        return;
+      }
+    }
+    if (editingField.key === "age") {
+      const validation = validateFieldValue("age", editingFieldDraftValue);
       if (!validation.ok) {
         return;
       }
@@ -5036,6 +5050,7 @@ export function App() {
         isSaveDisabled={
           isEditingMicrochipInvalid ||
           isEditingWeightInvalid ||
+          isEditingAgeInvalid ||
           isEditingDateInvalid ||
           isEditingSexInvalid ||
           isEditingSpeciesInvalid
@@ -5048,6 +5063,11 @@ export function App() {
         weightErrorMessage={
           isEditingWeightField && isEditingWeightInvalid
             ? "Introduce un peso entre 0,5 y 120 kg."
+            : null
+        }
+        ageErrorMessage={
+          isEditingAgeField && isEditingAgeInvalid
+            ? "Introduce una edad entre 0-999 años"
             : null
         }
         dateErrorMessage={

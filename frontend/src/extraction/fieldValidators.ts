@@ -229,7 +229,7 @@ function validateAge(value: string): FieldValidationResult {
     return { ok: false, reason: "empty" };
   }
 
-  const match = compact.match(/^(\d{1,2})(?:\s*(?:años?|anos?|a))?$/i);
+  const match = compact.match(/^(\d{1,3})$/);
   if (!match) {
     return { ok: false, reason: "invalid-age" };
   }
@@ -239,7 +239,7 @@ function validateAge(value: string): FieldValidationResult {
     return { ok: false, reason: "invalid-age" };
   }
 
-  return { ok: true, normalized: `${years} años` };
+  return { ok: true, normalized: `${years}` };
 }
 
 export function validateFieldValue(fieldKey: string, value: string): FieldValidationResult {
