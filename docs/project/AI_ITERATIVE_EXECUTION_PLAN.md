@@ -201,10 +201,152 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-_Completado: F2-D_
+F2-E — Descomponer `document_service.py` (1,615 LOC) en 5 módulos bajo `application/documents/`
 
 ### Prompt
-_Vacío._
+
+> **PLAN-EDIT-LAST RULE (hard constraint for Codex):**
+> **NEVER edit AI_ITERATIVE_EXECUTION_PLAN.md until ALL tests pass and code is committed.**
+> The plan file is the source of truth — marking a step `[x]` before tests pass corrupts the entire pipeline.
+> If you run out of context before reaching the test gate: STOP and tell the user. Do NOT edit the plan.
+
+```
+--- AGENT IDENTITY CHECK ---
+This prompt is designed for GPT-5.3-Codex in VS Code Copilot Chat.
+If you are not GPT-5.3-Codex: STOP. Tell the user to switch agents.
+--- END IDENTITY CHECK ---
+
+--- BRANCH CHECK ---
+Run: git branch --show-current
+If NOT `improvement/refactor`: STOP. Tell the user: "⚠️ Cambia a la rama improvement/refactor antes de continuar: git checkout improvement/refactor"
+--- END BRANCH CHECK ---
+
+--- SYNC CHECK ---
+Run: git pull origin improvement/refactor
+This ensures the local copy has the latest Estado, Resultados, and Prompt activo from previous sessions.
+--- END SYNC CHECK ---
+
+--- PRE-FLIGHT CHECK (ejecutar antes de empezar) ---
+1. Paso anterior completado: verify that `F2-D` in Estado de ejecución has `[x]`. If not: STOP.
+2. Backlog disponible: verify `### F2-B — Decisiones de validación y estrategia de descomposición` is NOT `_Pendiente_`. If it is: STOP.
+3. Target file exists: run `Test-Path backend/app/application/document_service.py`. If it does NOT exist: STOP and tell the user.
+--- END PRE-FLIGHT CHECK ---
+
+--- TASK: Decompose document_service.py into application/documents/ package ---
+
+**Source:** `backend/app/application/document_service.py` (~1,615 lines)
+**Target:** new package `backend/app/application/documents/` with 5 modules + `__init__.py`
+
+Follow the decomposition strategy approved in F2-B exactly:
+
+| New module | Functions/classes to move | Approx lines |
+|---|---|---|
+| `documents/upload_service.py` | `DocumentUploadResult`, `register_document_upload`, helpers (`_default_now_iso`, `_to_utc_z`, `_default_id`) | ~60 |
+| `documents/query_service.py` | `get_document`, `DocumentStatusDetails`, `get_document_status_details`, `DocumentOriginalLocation`, `get_document_original_location`, `ProcessingStepHistory`, `ProcessingRunHistory`, `ProcessingHistory`, `get_processing_history`, `_to_processing_run_history`, `_to_processing_step_history`, `DocumentListItem`, `DocumentListResult`, `list_documents`, `_to_list_item` | ~350 |
+| `documents/review_service.py` | `LatestCompletedRunReview`, `ActiveInterpretationReview`, `RawTextArtifactAvailability`, `DocumentReview`, `DocumentReviewLookupResult`, `get_document_review`, `_normalize_review_interpretation_data`, `_project_review_payload_to_canonical`, `_normalize_canonical_review_scoping`, `ReviewToggleResult`, `mark_document_reviewed`, `reopen_document_review` | ~500 |
+| `documents/edit_service.py` | `InterpretationEditResult`, `InterpretationEditOutcome`, `apply_interpretation_edits`, `_coerce_interpretation_fields`, `_normalize_string_for_noop`, `_normalize_value_for_noop`, `_is_noop_update`, `_sanitize_text_extraction_reliability`, `_sanitize_field_review_history_adjustment`, `_sanitize_field_candidate_confidence`, `_sanitize_field_mapping_confidence`, `_compose_field_mapping_confidence`, `_resolve_human_edit_candidate_confidence`, `_sanitize_confidence_breakdown`, `_build_field_change_log`, `_build_global_schema_from_fields`, `is_field_value_empty` | ~440 |
+| `documents/calibration.py` | `_build_review_calibration_deltas`, `_resolve_context_key_for_edit_scopes`, `_apply_reviewed_document_calibration`, `_revert_reviewed_document_calibration` | ~260 |
+
+**Shared constants and helpers at the top of document_service.py** (like `_MEDICAL_RECORD_CANONICAL_SECTIONS`, `_MEDICAL_RECORD_CANONICAL_FIELD_SLOTS`, `_VISIT_GROUP_METADATA_KEYS`, `_VISIT_SCOPED_KEYS`, date patterns, `_normalize_visit_date_candidate`, `_extract_visit_date_candidates_from_text`, `_contains_any_date_token`, `_extract_evidence_snippet`, `NUMERIC_TYPES`, `_REVIEW_SCHEMA_CONTRACT_CANONICAL`) should go into a `documents/_shared.py` module that other modules import from.
+
+**`documents/__init__.py`** must re-export ALL public names so existing imports work unchanged:
+```python
+from backend.app.application.documents.upload_service import (
+    DocumentUploadResult,
+    register_document_upload,
+)
+from backend.app.application.documents.query_service import (
+    get_document,
+    get_document_status_details,
+    get_document_original_location,
+    get_processing_history,
+    list_documents,
+    DocumentStatusDetails,
+    DocumentOriginalLocation,
+    ProcessingStepHistory,
+    ProcessingRunHistory,
+    ProcessingHistory,
+    DocumentListItem,
+    DocumentListResult,
+)
+from backend.app.application.documents.review_service import (
+    get_document_review,
+    mark_document_reviewed,
+    reopen_document_review,
+    DocumentReview,
+    DocumentReviewLookupResult,
+    LatestCompletedRunReview,
+    ActiveInterpretationReview,
+    RawTextArtifactAvailability,
+    ReviewToggleResult,
+)
+from backend.app.application.documents.edit_service import (
+    apply_interpretation_edits,
+    InterpretationEditResult,
+    InterpretationEditOutcome,
+    is_field_value_empty,
+)
+# Also re-export _project_review_payload_to_canonical and
+# _normalize_visit_date_candidate — they are imported by tests.
+from backend.app.application.documents.review_service import (
+    _project_review_payload_to_canonical,
+)
+from backend.app.application.documents.edit_service import (
+    _resolve_human_edit_candidate_confidence,
+)
+```
+
+**Critical constraints:**
+1. **Do NOT change `routes.py` imports.** The old import path `from backend.app.application.document_service import ...` must keep working. To achieve this, convert `document_service.py` into a **legacy shim** (like was done for `processing_runner.py`) that re-imports from the new package:
+   ```python
+   """Legacy shim — re-exports from documents/ package for backward compatibility."""
+   from backend.app.application.documents import *  # noqa: F401,F403
+   ```
+   This way `routes.py`, `test_document_service.py`, and `test_confidence_config_and_fallback.py` all keep working with zero import changes.
+
+2. **No file > 500 LOC.** If any module exceeds 500, split further or move helpers.
+
+3. **Preserve all private helpers.** Functions starting with `_` that are used cross-module should go to `_shared.py` and be imported where needed. Functions only used within one module stay private to that module.
+
+4. **Imports between new modules are allowed** (e.g., `edit_service.py` can import from `calibration.py` since `apply_interpretation_edits` calls `_build_review_calibration_deltas` and `_apply_reviewed_document_calibration`). Trace the call graph carefully.
+
+5. **Wire the review_service ↔ edit_service dependency:** `mark_document_reviewed` calls `_apply_reviewed_document_calibration` (from calibration) and `reopen_document_review` calls `_revert_reviewed_document_calibration` (from calibration). Move these references correctly.
+
+6. **Run ruff** after code changes: `cd d:/Git/veterinary-medical-records && python -m ruff check backend/app/application/documents/ backend/app/application/document_service.py --fix`. Fix all linting errors before proceeding.
+
+--- END TASK ---
+
+--- TEST GATE (ejecutar ANTES de tocar el plan o commitear) ---
+Backend: cd d:/Git/veterinary-medical-records && python -m pytest --tb=short -q
+Frontend: cd d:/Git/veterinary-medical-records/frontend && npm test
+Si algún test falla: STOP. Reporta los fallos al usuario. NO commitees. NO edites el plan.
+Save the last summary line of each test run (e.g. "246 passed in 10.63s") — you will need it for the commit message.
+--- END TEST GATE ---
+
+--- SCOPE BOUNDARY (two-commit strategy) ---
+Execute these steps IN THIS EXACT ORDER. Do NOT reorder.
+
+STEP A — Commit code (plan file untouched):
+1. git add -A -- . ':!docs/project/AI_ITERATIVE_EXECUTION_PLAN.md'
+2. git commit -m "refactor(plan-f2e): decompose document_service.py into documents/ package
+
+Test proof: <pytest summary line> | <npm test summary line>"
+
+STEP B — Commit plan update (only after code is committed):
+1. Edit AI_ITERATIVE_EXECUTION_PLAN.md: change `- [ ] F2-E` to `- [x] F2-E`.
+2. Clean `## Prompt activo`: replace `### Paso objetivo` content with `_Completado: F2-E_` and `### Prompt` with `_Vacío._`
+3. git add docs/project/AI_ITERATIVE_EXECUTION_PLAN.md
+4. git commit -m "docs(plan-f2e): mark step done"
+
+STEP C — Push both commits:
+1. git push origin improvement/refactor
+
+STEP D — Tell the user:
+"✓ F2-E completado, tests OK, pusheado. Siguiente: vuelve a Claude para que prepare el prompt de F2-F (redistribución de App.test.tsx)."
+
+5. Stop.
+--- END SCOPE BOUNDARY ---
+```
 
 ---
 
