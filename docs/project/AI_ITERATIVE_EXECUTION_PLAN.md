@@ -15,39 +15,43 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 
 > **Protocolo "Continúa":** abre un chat nuevo, selecciona el agente correcto, adjunta este archivo y escribe `Continúa`. El agente leerá el estado, ejecutará el siguiente paso sin completar y se detendrá al terminar.
 
+**Leyenda de automatización:**
+- 🔄 **auto-chain** — Codex ejecuta solo; tú revisas el resultado *después*.
+- 🚧 **hard-gate** — Requiere tu decisión antes de continuar. No saltar.
+
 ### Fase 1 — Auditoría de arquitectura
-- [ ] F1-A — Auditoría 12-Factor → backlog (Codex)
-- [ ] F1-B — Validación de backlog (Claude)
-- [ ] F1-C — Implementación de items del backlog (Codex, una iteración por item)
+- [ ] F1-A 🔄 — Auditoría 12-Factor → backlog (Codex)
+- [ ] F1-B 🚧 — Validación de backlog — **TÚ decides qué items se implementan** (Claude)
+- [ ] F1-C 🔄 — Implementación de items del backlog (Codex, una iteración por item)
 
 ### Fase 2 — Mantenibilidad y refactor estructural
-- [ ] F2-A — Auditoría ln-620 + codebase_audit.md (Codex)
-- [ ] F2-B — Validación de backlog (Claude)
-- [ ] F2-C — Refactor App.tsx (Codex)
-- [ ] F2-D — Refactor processing_runner.py (Codex)
-- [ ] F2-E — Refactor document_service.py (Codex)
-- [ ] F2-F — Redistribución App.test.tsx (Codex)
+- [ ] F2-A 🔄 — Auditoría ln-620 + codebase_audit.md (Codex)
+- [ ] F2-B 🚧 — Validación de backlog — **TÚ decides estrategia de descomposición** (Claude)
+- [ ] F2-C 🔄 — Refactor App.tsx (Codex)
+- [ ] F2-D 🔄 — Refactor processing_runner.py (Codex)
+- [ ] F2-E 🔄 — Refactor document_service.py (Codex)
+- [ ] F2-F 🔄 — Redistribución App.test.tsx (Codex)
 
 ### Fase 3 — Quick wins de tooling
-- [ ] F3-A — Definir config ESLint + Prettier + pre-commit (Claude)
-- [ ] F3-B — Implementar tooling + coverage (Codex)
+- [ ] F3-A 🔄 — Definir config ESLint + Prettier + pre-commit (Claude)
+- [ ] F3-B 🔄 — Implementar tooling + coverage (Codex)
 
 ### Fase 4 — Calidad de tests
-- [ ] F4-A — Auditoría frontend-testing (Codex)
-- [ ] F4-B — Auditoría python-testing-patterns (Codex)
-- [ ] F4-C — Implementar mejoras de tests (Codex)
+- [ ] F4-A 🔄 — Auditoría frontend-testing (Codex)
+- [ ] F4-B 🔄 — Auditoría python-testing-patterns (Codex)
+- [ ] F4-C 🔄 — Implementar mejoras de tests (Codex)
 
 ### Fase 5 — Documentación
-- [ ] F5-A — Revisión docs con project-guidelines-example (Codex)
-- [ ] F5-B — ADRs de arquitectura: definir contenido (Claude)
-- [ ] F5-C — ADRs de arquitectura: crear ficheros (Codex)
-- [ ] F5-D — FUTURE_IMPROVEMENTS.md (Codex)
+- [ ] F5-A 🔄 — Revisión docs con project-guidelines-example (Codex)
+- [ ] F5-B 🚧 — ADRs de arquitectura: **TÚ defines los argumentos** (Claude)
+- [ ] F5-C 🔄 — ADRs de arquitectura: crear ficheros (Codex)
+- [ ] F5-D 🔄 — FUTURE_IMPROVEMENTS.md (Codex)
 
 ### Fase 6 — Smoke test del evaluador
-- [ ] F6-A — Verificar README y flujo end-to-end (Claude + Codex)
+- [ ] F6-A 🚧 — **TÚ pruebas el flujo end-to-end como evaluador** (Claude + Codex)
 
 ### Fase 7 — Cierre global
-- [ ] F7-A — Veredicto final (Claude)
+- [ ] F7-A 🚧 — Veredicto final (Claude)
 
 ---
 
@@ -132,7 +136,21 @@ Flujo para Claude (pasos marcados con “Claude” en el Estado):
 3. Escribe: `Continúa`.
 
 El agente leerá el Estado, identificará el primer ítem `[ ]` sin completar, ejecutará ese único paso y se detendrá.
+### Auto-chain vs Hard-gate
 
+Los pasos marcados con 🔄 (**auto-chain**) se pueden ejecutar consecutivamente sin intervención humana. Cuando hay varios 🔄 seguidos del mismo agente, basta con abrir un chat y escribir `Continúa` repetidamente — o incluso esperar a que termine y volver a escribir `Continúa` para el siguiente.
+
+Los pasos marcados con 🚧 (**hard-gate**) cortan la cadena. **No ejecutes el siguiente paso hasta completar el hard-gate.** Estos son los momentos donde tú tomas decisiones que afectan todo el trabajo posterior:
+
+| Hard-gate | Qué decides | Tiempo estimado |
+|---|---|---|
+| **F1-B** | Qué items del backlog 12-factor valen la pena implementar (descartar falsos positivos / fuera de scope) | ~10 min |
+| **F2-B** | Estrategia de descomposición de los archivos monolíticos (nombres de módulos, responsabilidades) | ~15 min |
+| **F5-B** | Argumentos reales de los ADRs (deben reflejar *tu* razonamiento, no el de la IA) | ~15 min |
+| **F6-A** | Experiencia del evaluador — solo tú puedes juzgar la primera impresión del repo | ~15 min |
+| **F7-A** | Veredicto final: LISTO / NO LISTO | ~10 min |
+
+**Tu tiempo activo total: ~65 minutos repartidos en 5 pausas.** El resto fluye automáticamente con test gates como red de seguridad.
 ### Template para prompts de implementación (just-in-time)
 Todos los prompts de implementación generados just-in-time siguen esta estructura. Claude la rellena antes de cada paso de Codex:
 
