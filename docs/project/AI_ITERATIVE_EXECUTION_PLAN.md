@@ -51,6 +51,18 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 
 ---
 
+## Resultados de auditorías — rellenar automáticamente al completar cada auditoría
+
+> Esta sección es el source of truth para los backlogs. Codex escribe aquí el top-5 del backlog de cada auditoría antes de commitear. Así el plan es autocontenido y cualquier sesión siguiente tiene el contexto sin depender del historial del chat.
+
+### F1-A — Backlog 12-Factor (top 5)
+_Pendiente. Codex rellenará esta sección al completar F1-A._
+
+### F2-A — Backlog ln-620 codebase audit (top 5)
+_Pendiente. Codex rellenará esta sección al completar F2-A._
+
+---
+
 ## Skills instaladas y uso recomendado
 
 ### Arquitectura / calidad
@@ -109,12 +121,48 @@ Cada prompt incluye al final una instrucción para que el agente:
 2. Haga commit automáticamente con el mensaje estandarizado (sin pedir permiso, informando al usuario del commit realizado).
 3. Se detenga.
 
-Esto permite reiniciar cualquier sesión con:
-1. Abre un chat nuevo con el agente indicado para el siguiente paso.
+Flujo para Codex (pasos marcados con “Codex” en el Estado):
+1. Abre un chat **nuevo** en Copilot, selecciona **GPT-5.3-Codex**.
 2. Adjunta este archivo.
 3. Escribe: `Continúa`.
 
-El agente leerá el Estado, identificará el primer ítem sin completar, ejecutará ese paso y se detendrá al terminar.
+Flujo para Claude (pasos marcados con “Claude” en el Estado):
+1. Vuelve a **este chat** (Claude en Copilot).
+2. Adjunta este archivo.
+3. Escribe: `Continúa`.
+
+El agente leerá el Estado, identificará el primer ítem `[ ]` sin completar, ejecutará ese único paso y se detendrá.
+
+### Template para prompts de implementación (just-in-time)
+Todos los prompts de implementación generados just-in-time siguen esta estructura. Claude la rellena antes de cada paso de Codex:
+
+```
+--- AGENT IDENTITY CHECK ---
+This prompt is designed for GPT-5.3-Codex in VS Code Copilot Chat.
+If you are not GPT-5.3-Codex: STOP. Tell the user to switch agents.
+--- END IDENTITY CHECK ---
+
+--- BRANCH CHECK ---
+Run: git branch --show-current
+If NOT `improvement/refactor`: STOP. Tell the user: "⚠️ Cambia a la rama improvement/refactor antes de continuar: git checkout improvement/refactor"
+--- END BRANCH CHECK ---
+
+[TASK — rellenado por Claude con instrucciones específicas del paso]
+
+--- TEST GATE (ejecutar antes de commitear) ---
+Backend: cd d:/Git/veterinary-medical-records && python -m pytest --tb=short -q
+Frontend: cd d:/Git/veterinary-medical-records/frontend && npm test
+Si algún test falla: STOP. Reporta los fallos al usuario. NO commitees.
+--- END TEST GATE ---
+
+--- SCOPE BOUNDARY ---
+Cuando termines y todos los tests pasen:
+1. Edita AI_ITERATIVE_EXECUTION_PLAN.md: cambia `- [ ] F?-?` a `- [x] F?-?`.
+2. git add -A && git commit -m "<tipo>(plan-f?-?): <descripción>" && git push origin improvement/refactor
+3. Dile al usuario: "✓ F?-? completado, tests OK, pusheado. Vuelve a Claude para [siguiente paso]."
+4. Stop.
+--- END SCOPE BOUNDARY ---
+```
 
 ### Convención de commits
 Todos los commits de este flujo siguen el formato:
@@ -162,6 +210,12 @@ If you are Claude, Gemini, or any model other than GPT-5.3-Codex:
   Tell the user: "Este prompt está diseñado para GPT-5.3-Codex. Por favor, cambia el agente en el desplegable del chat de Copilot a GPT-5.3-Codex y pega el prompt de nuevo."
 --- END IDENTITY CHECK ---
 
+--- BRANCH CHECK ---
+Run: git branch --show-current
+If the current branch is NOT `improvement/refactor`:
+  STOP. Tell the user: "⚠️ Estás en la rama '<branch>'. Este prompt debe ejecutarse en 'improvement/refactor'. Cámbiala con: git checkout improvement/refactor"
+--- END BRANCH CHECK ---
+
 Use the skill `12-factor-apps` to perform a full 12-Factor compliance audit on this codebase.
 
 codebase_path: d:/Git/veterinary-medical-records
@@ -187,10 +241,11 @@ Audit instructions:
 --- SCOPE BOUNDARY — STOP HERE ---
 Do NOT implement any changes. Your output for this prompt is the audit report + backlog ONLY.
 When done:
-1. Edit docs/project/AI_ITERATIVE_EXECUTION_PLAN.md: change `- [ ] F1-A` to `- [x] F1-A` in the Estado de ejecución section.
-2. Commit with: `git add -A && git commit -m "audit(plan-f1a): 12-factor compliance report + backlog"`
-3. Tell the user: "✓ F1-A completado y commiteado. Vuelve a Claude (este chat) para validar el backlog (F1-B)."
-4. Stop.
+1. Write the top-5 backlog items into the `### F1-A — Backlog 12-Factor (top 5)` section of docs/project/AI_ITERATIVE_EXECUTION_PLAN.md (replace the _Pendiente_ placeholder).
+2. Change `- [ ] F1-A` to `- [x] F1-A` in the Estado de ejecución section.
+3. git add -A && git commit -m "audit(plan-f1a): 12-factor compliance report + backlog" && git push origin improvement/refactor
+4. Tell the user: "✓ F1-A completado, pusheado. Vuelve a Claude (este chat) con el archivo adjunto para validar el backlog (F1-B)."
+5. Stop.
 --- END SCOPE BOUNDARY ---
 ```
 
@@ -232,6 +287,12 @@ If you are Claude, Gemini, or any model other than GPT-5.3-Codex:
   Tell the user: "Este prompt está diseñado para GPT-5.3-Codex. Por favor, cambia el agente en el desplegable del chat de Copilot a GPT-5.3-Codex y pega el prompt de nuevo."
 --- END IDENTITY CHECK ---
 
+--- BRANCH CHECK ---
+Run: git branch --show-current
+If the current branch is NOT `improvement/refactor`:
+  STOP. Tell the user: "⚠️ Estás en la rama '<branch>'. Este prompt debe ejecutarse en 'improvement/refactor'. Cámbiala con: git checkout improvement/refactor"
+--- END BRANCH CHECK ---
+
 Use the skill `ln-620-codebase-auditor` to perform a full codebase quality audit on this project.
 
 Project root: d:/Git/veterinary-medical-records
@@ -262,10 +323,11 @@ Then return a prioritized backlog of the top 10 actionable items for Codex to im
 --- SCOPE BOUNDARY — STOP HERE ---
 Do NOT implement any changes. Your output for this prompt is the audit report + backlog ONLY.
 When done:
-1. Edit docs/project/AI_ITERATIVE_EXECUTION_PLAN.md: change `- [ ] F2-A` to `- [x] F2-A` in the Estado de ejecución section.
-2. Commit with: `git add -A && git commit -m "audit(plan-f2a): ln-620 codebase audit report + remediation backlog"`
-3. Tell the user: "✓ F2-A completado y commiteado. Vuelve a Claude (este chat) para validar el backlog (F2-B)."
-4. Stop.
+1. Write the top-5 backlog items into the `### F2-A — Backlog ln-620 codebase audit (top 5)` section of docs/project/AI_ITERATIVE_EXECUTION_PLAN.md (replace the _Pendiente_ placeholder).
+2. Change `- [ ] F2-A` to `- [x] F2-A` in the Estado de ejecución section.
+3. git add -A && git commit -m "audit(plan-f2a): ln-620 codebase audit report + remediation backlog" && git push origin improvement/refactor
+4. Tell the user: "✓ F2-A completado, pusheado. Vuelve a Claude (este chat) con el archivo adjunto para validar el backlog (F2-B)."
+5. Stop.
 --- END SCOPE BOUNDARY ---
 ```
 
