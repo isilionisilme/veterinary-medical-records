@@ -119,7 +119,6 @@ const MEDICAL_RECORD_SECTION_ORDER = [
   OTHER_EXTRACTED_FIELDS_SECTION_TITLE,
   REPORT_INFO_SECTION_TITLE,
 ] as const;
-const REPORT_LAYOUT_STORAGE_KEY = "reportLayout";
 const DOCS_SIDEBAR_PIN_STORAGE_KEY = "docsSidebarPinned";
 const REVIEW_SPLIT_RATIO_STORAGE_KEY = "reviewSplitRatio";
 const DEFAULT_REVIEW_SPLIT_RATIO = 0.62;
@@ -555,8 +554,6 @@ type ReviewDisplayField = {
 };
 
 type ReviewPanelState = "idle" | "loading" | "ready" | "no_completed_run" | "error";
-type ReportLayout = 1 | 2;
-
 type DocumentReviewResponse = {
   document_id: string;
   latest_completed_run: {
@@ -1466,20 +1463,6 @@ export function App() {
     return stored;
   });
   const [isDraggingReviewSplit, setIsDraggingReviewSplit] = useState(false);
-  const [reportLayout, setReportLayout] = useState<ReportLayout>(() => {
-    if (!import.meta.env.DEV || typeof window === "undefined") {
-      return 2;
-    }
-    const queryValue = new URLSearchParams(window.location.search).get("reportLayout");
-    if (queryValue === "1" || queryValue === "2") {
-      return Number(queryValue) as ReportLayout;
-    }
-    const stored = window.localStorage.getItem(REPORT_LAYOUT_STORAGE_KEY);
-    if (stored === "1" || stored === "2") {
-      return Number(stored) as ReportLayout;
-    }
-    return 2;
-  });
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const uploadPanelRef = useRef<HTMLDivElement | null>(null);
   const structuredSearchInputRef = useRef<HTMLInputElement | null>(null);
@@ -1563,13 +1546,6 @@ export function App() {
   }, [activeId]);
 
   useEffect(() => {
-    if (!import.meta.env.DEV || typeof window === "undefined") {
-      return;
-    }
-    window.localStorage.setItem(REPORT_LAYOUT_STORAGE_KEY, String(reportLayout));
-  }, [reportLayout]);
-
-  useEffect(() => {
     reviewSplitRatioRef.current = reviewSplitRatio;
   }, [reviewSplitRatio]);
 
@@ -1593,25 +1569,6 @@ export function App() {
     }, 200);
     return () => window.clearTimeout(timer);
   }, [structuredSearchInput]);
-
-  useEffect(() => {
-    if (!import.meta.env.DEV || typeof window === "undefined") {
-      return;
-    }
-    const onKeyDown = (event: globalThis.KeyboardEvent) => {
-      if (!event.shiftKey || (event.key !== "L" && event.key !== "l")) {
-        return;
-      }
-      const target = event.target as HTMLElement | null;
-      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
-        return;
-      }
-      event.preventDefault();
-      setReportLayout((current) => (current === 1 ? 2 : 1));
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
 
   useEffect(() => {
     if (typeof window.matchMedia !== "function") {
@@ -4599,14 +4556,6 @@ export function App() {
     );
   };
 
-  const renderRepeatableTileField = (field: ReviewDisplayField) => {
-    return renderRepeatableReviewField(field);
-  };
-
-  const renderScalarTileField = (field: ReviewDisplayField) => {
-    return renderScalarReviewField(field);
-  };
-
   const renderCanonicalVisitEpisodes = () => {
     if (!isCanonicalContract) {
       return null;
@@ -4968,7 +4917,7 @@ export function App() {
     );
   };
 
-  const renderSectionLayout2 = (section: { id: string; title: string; fields: ReviewDisplayField[] }) => {
+  const renderSectionLayout = (section: { id: string; title: string; fields: ReviewDisplayField[] }) => {
     const scalarFields = section.fields.filter((field) => !field.repeatable);
     const repeatableFields = section.fields.filter((field) => field.repeatable);
     const isExtraSection = section.id === "extra:section";
@@ -5013,58 +4962,6 @@ export function App() {
           {repeatableFields.length > 0 && !shouldRenderCanonicalVisitsByEpisode && (
             <div className={`mt-2 ${STRUCTURED_FIELD_STACK_CLASS}`}>
               {repeatableFields.map((field) => renderRepeatableReviewField(field))}
-            </div>
-          )}
-        </div>
-      </SectionBlock>
-    );
-  };
-
-  const renderSectionLayout1 = (section: { id: string; title: string; fields: ReviewDisplayField[] }) => {
-    const scalarFields = section.fields.filter((field) => !field.repeatable);
-    const repeatableFields = section.fields.filter((field) => field.repeatable);
-    const isExtraSection = section.id === "extra:section";
-    const isEmptyExtraSection = isExtraSection && section.fields.length === 0;
-    const isVisitsSection = section.title === "Visitas";
-    const shouldRenderCanonicalVisitsByEpisode = isVisitsSection && isCanonicalContract;
-    const isEmptyVisitsSection = isVisitsSection && section.fields.length === 0 && !hasVisitGroups;
-    const isOwnerSection = section.title === "Propietario";
-    const shouldUseSingleColumn = isOwnerSection;
-
-    return (
-      <SectionBlock
-        key={section.id}
-        testId={isExtraSection ? "other-extracted-fields-section" : undefined}
-      >
-        <SectionHeader title={section.title} />
-        <div className={`mt-2 ${STRUCTURED_FIELD_STACK_CLASS}`}>
-          {isEmptyExtraSection && (
-            <p className="rounded-control bg-surface px-3 py-2 text-xs text-muted">
-              {OTHER_EXTRACTED_FIELDS_EMPTY_STATE}
-            </p>
-          )}
-          {isEmptyVisitsSection && (
-            <p className="rounded-control bg-surface px-3 py-2 text-xs text-muted">
-              {VISITS_EMPTY_STATE}
-            </p>
-          )}
-          {scalarFields.length > 0 && !isEmptyVisitsSection && !shouldRenderCanonicalVisitsByEpisode && (
-            <div
-              className={
-                shouldUseSingleColumn
-                  ? `grid grid-cols-1 gap-x-5 ${STRUCTURED_FIELD_STACK_CLASS}`
-                  : `grid gap-x-5 ${STRUCTURED_FIELD_STACK_CLASS} lg:grid-cols-2`
-              }
-            >
-              {scalarFields.map(renderScalarTileField)}
-            </div>
-          )}
-          {!isEmptyVisitsSection && shouldRenderCanonicalVisitsByEpisode && (
-            <>{renderCanonicalVisitEpisodes()}</>
-          )}
-          {repeatableFields.length > 0 && !shouldRenderCanonicalVisitsByEpisode && (
-            <div className={STRUCTURED_FIELD_STACK_CLASS}>
-              {repeatableFields.map((field) => renderRepeatableTileField(field))}
             </div>
           )}
         </div>
@@ -5710,11 +5607,7 @@ export function App() {
                                       </div>
                                     )}
                                     {!hasMalformedCanonicalFieldSlots &&
-                                      reportSections.map((section) =>
-                                        reportLayout === 1
-                                          ? renderSectionLayout1(section)
-                                          : renderSectionLayout2(section)
-                                      )}
+                                      reportSections.map((section) => renderSectionLayout(section))}
                                   </div>
                                 </ScrollArea>
                               )}

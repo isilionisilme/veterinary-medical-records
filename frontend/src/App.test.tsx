@@ -3466,51 +3466,6 @@ describe("App upload and list flow", () => {
     expect(neutralValue).toHaveClass("text-muted");
   });
 
-  it("toggles report layout in DEV with Shift+L and persists selection", async () => {
-    renderApp();
-
-    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await waitForStructuredDataReady();
-
-    expect(screen.queryByRole("button", { name: /\+\s*Añadir/i })).toBeNull();
-    expect(window.localStorage.getItem("reportLayout")).toBe("2");
-
-    fireEvent.keyDown(window, { key: "L", shiftKey: true });
-
-    await waitFor(() => {
-      expect(window.localStorage.getItem("reportLayout")).toBe("1");
-    });
-    expect(screen.queryByRole("button", { name: /\+\s*Añadir/i })).toBeNull();
-
-    fireEvent.keyDown(window, { key: "L", shiftKey: true });
-
-    await waitFor(() => {
-      expect(window.localStorage.getItem("reportLayout")).toBe("2");
-    });
-    expect(screen.queryByRole("button", { name: /\+\s*Añadir/i })).toBeNull();
-  });
-
-  it("initializes report layout from query param before localStorage", async () => {
-    window.localStorage.setItem("reportLayout", "2");
-    window.history.replaceState({}, "", "/?reportLayout=1");
-    renderApp();
-
-    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await waitForStructuredDataReady();
-    expect(screen.queryByRole("button", { name: /\+\s*Añadir/i })).toBeNull();
-    expect(window.localStorage.getItem("reportLayout")).toBe("1");
-  });
-
-  it("initializes report layout from localStorage when query param is missing", async () => {
-    window.localStorage.setItem("reportLayout", "1");
-    renderApp();
-
-    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    await waitForStructuredDataReady();
-    expect(screen.queryByRole("button", { name: /\+\s*Añadir/i })).toBeNull();
-    expect(window.localStorage.getItem("reportLayout")).toBe("1");
-  });
-
   it("synchronizes selected field with viewer context repeatedly, including repeated same-field clicks", async () => {
     renderApp();
 
