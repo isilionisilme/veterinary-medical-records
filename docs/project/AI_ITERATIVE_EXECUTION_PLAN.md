@@ -67,6 +67,20 @@ _Pendiente. Codex rellenará esta sección al completar F2-A._
 
 ---
 
+## Prompt activo (just-in-time) — write-then-execute
+
+> **Uso:** Claude escribe aquí el próximo prompt de Codex ANTES de que el usuario cambie de agente. Así Codex lo lee directamente del archivo adjunto — cero copy-paste, cero error humano.
+>
+> **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
+
+### Paso objetivo
+_Ninguno. Claude rellenará esta sección cuando el siguiente paso sea de Codex y no tenga prompt pre-escrito._
+
+### Prompt
+_Vacío. Claude escribirá aquí el prompt completo (con identity check, branch check, pre-flight, task, test gate, scope boundary)._
+
+---
+
 ## Skills instaladas y uso recomendado
 
 ### Arquitectura / calidad
@@ -116,8 +130,8 @@ Trabajar por **iteraciones** y no mezclar alcance:
 
 ## Estrategia de prompts
 
-- **Prompts de auditoría** (Fases 1 y 2): generados en este documento, listos para copiar.
-- **Prompts de implementación** (Fases 3+): generados just-in-time, usando el output de las auditorías como input. Evita obsolescencia por cambios en el código.
+- **Prompts de auditoría** (Fases 1 y 2): pre-escritos en las secciones de cada fase. Codex los lee directamente del archivo.
+- **Prompts de implementación** (Fases 3+): generados just-in-time por Claude. **Claude los escribe en la sección `## Prompt activo`** de este archivo, commitea y pushea. Luego el usuario abre Codex, adjunta el archivo y escribe `Continúa`. Codex lee el prompt de la sección `Prompt activo`. **El usuario nunca copia ni pega prompts manualmente.**
 
 ### Protocolo "Continúa"
 Cada prompt incluye al final una instrucción para que el agente:
@@ -125,10 +139,16 @@ Cada prompt incluye al final una instrucción para que el agente:
 2. Haga commit automáticamente con el mensaje estandarizado (sin pedir permiso, informando al usuario del commit realizado).
 3. Se detenga.
 
-Flujo para Codex (pasos marcados con “Codex” en el Estado):
+Flujo para Codex — pasos con prompt pre-escrito (F1-A, F2-A):
 1. Abre un chat **nuevo** en Copilot, selecciona **GPT-5.3-Codex**.
 2. Adjunta este archivo.
-3. Escribe: `Continúa`.
+3. Escribe: `Continúa`. Codex lee el prompt de la sección de la fase correspondiente.
+
+Flujo para Codex — pasos just-in-time (F1-C, F2-C…F2-F, F3-B, F4-A…F4-C, F5-A/C/D):
+1. Primero, vuelve a **Claude (este chat)** y escribe `Continúa`. Claude escribirá el prompt en la sección `## Prompt activo`, commiteará y te dirá "listo".
+2. Entonces abre un chat **nuevo** con **GPT-5.3-Codex**.
+3. Adjunta este archivo.
+4. Escribe: `Continúa`. Codex lee el prompt de la sección `## Prompt activo`.
 
 Flujo para Claude (pasos marcados con “Claude” en el Estado):
 1. Vuelve a **este chat** (Claude en Copilot).
@@ -165,6 +185,12 @@ Run: git branch --show-current
 If NOT `improvement/refactor`: STOP. Tell the user: "⚠️ Cambia a la rama improvement/refactor antes de continuar: git checkout improvement/refactor"
 --- END BRANCH CHECK ---
 
+--- PRE-FLIGHT CHECK (ejecutar antes de empezar) ---
+1. Paso anterior completado: verify the previous step in Estado de ejecución has `[x]`. If not: STOP. Tell the user: "⚠️ El paso anterior no está marcado como completado. Complétalo primero."
+2. Backlog disponible (si aplica): if this step depends on an audit backlog (F1-C depends on F1-A, F2-C…F depends on F2-A), verify the corresponding `### Resultados de auditorías` section is NOT `_Pendiente_`. If it is: STOP. Tell the user: "⚠️ El backlog de [fase] no está relleno. Ejecuta la auditoría primero."
+3. Target files exist: for any file path mentioned in the TASK section below, run `Test-Path <path>`. If any file does NOT exist: STOP. Tell the user which file is missing — it may have been renamed in a prior refactor step.
+--- END PRE-FLIGHT CHECK ---
+
 [TASK — rellenado por Claude con instrucciones específicas del paso]
 
 --- TEST GATE (ejecutar antes de commitear) ---
@@ -176,9 +202,10 @@ Si algún test falla: STOP. Reporta los fallos al usuario. NO commitees.
 --- SCOPE BOUNDARY ---
 Cuando termines y todos los tests pasen:
 1. Edita AI_ITERATIVE_EXECUTION_PLAN.md: cambia `- [ ] F?-?` a `- [x] F?-?`.
-2. git add -A && git commit -m "<tipo>(plan-f?-?): <descripción>" && git push origin improvement/refactor
-3. Dile al usuario: "✓ F?-? completado, tests OK, pusheado. Vuelve a Claude para [siguiente paso]."
-4. Stop.
+2. Limpia la sección `## Prompt activo`: reemplaza el contenido de `### Paso objetivo` con `_Completado: F?-?_` y `### Prompt` con `_Vacío._`
+3. git add -A && git commit -m "<tipo>(plan-f?-?): <descripción>" && git push origin improvement/refactor
+4. Dile al usuario: "✓ F?-? completado, tests OK, pusheado. Vuelve a Claude para [siguiente paso]."
+5. Stop.
 --- END SCOPE BOUNDARY ---
 ```
 
