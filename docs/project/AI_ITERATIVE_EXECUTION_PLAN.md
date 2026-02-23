@@ -62,8 +62,14 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 ### F1-A — Backlog 12-Factor (top 5)
 _Pendiente. Codex rellenará esta sección al completar F1-A._
 
+### F1-B — Decisiones de validación
+_Pendiente. Claude escribirá aquí los items aprobados (✅) y descartados (❌ con razón) tras la validación del usuario en F1-B._
+
 ### F2-A — Backlog ln-620 codebase audit (top 5)
 _Pendiente. Codex rellenará esta sección al completar F2-A._
+
+### F2-B — Decisiones de validación y estrategia de descomposición
+_Pendiente. Claude escribirá aquí los items aprobados, la estrategia de descomposición de cada archivo monolítico (módulos destino, responsabilidades), y las decisiones del usuario._
 
 ---
 
@@ -137,6 +143,31 @@ Si un paso completado causa un problema no detectado por los tests:
 1. `git revert HEAD` (revierte el commit sin perder historial)
 2. Editar Estado de ejecución: cambiar `[x]` de vuelta a `[ ]` en el paso afectado
 3. Reportar a Claude para diagnóstico antes de reintentar
+
+### Plan = solo agentes
+**El usuario NO edita este archivo manualmente.** Solo los agentes (Claude y Codex) modifican `AI_ITERATIVE_EXECUTION_PLAN.md`. Si el usuario necesita cambiar algo (ej: añadir un paso, corregir un typo), se lo pide a Claude y Claude hace la edición + commit.
+
+Razón: una edición humana accidental (borrar un `[x]`, reformatear una tabla, truncar un prompt) puede corromper el routing y causar que Codex repita o salte pasos.
+
+### Hard-gates: protocolo de decisión estructurada
+En los pasos 🚧 (F1-B, F2-B, F5-B, F6-A), Claude presenta las opciones como lista numerada:
+```
+Items del backlog:
+1. ✅ Centralizar config en Settings class — Impact: Alto, Effort: S
+2. ✅ Añadir health check endpoint — Impact: Medio, Effort: S
+3. ❌ Migrar a PostgreSQL — Impact: Alto, Effort: L (FUERA DE SCOPE)
+4. ✅ Separar logging config — Impact: Medio, Effort: S
+5. ❌ Añadir service mesh — Impact: Bajo, Effort: L (FUERA DE SCOPE)
+```
+El usuario responde SOLO con números: `1, 2, 4` o `todos` o `ninguno`.
+Claude entonces:
+1. Escribe la decisión en la sección `## Resultados de auditorías` correspondiente (items aprobados ✅, descartados ❌ con razón).
+2. Commitea + pushea la decisión.
+3. Prepara el prompt de implementación en `## Prompt activo` (solo con los items aprobados).
+4. Commitea + pushea el prompt.
+5. Le dice al usuario: "Decisiones guardadas. Abre Codex, adjunta el plan, escribe Continúa."
+
+Así las decisiones quedan en el archivo y sobreviven a la pérdida del chat.
 
 ## Estrategia de prompts
 
@@ -223,6 +254,11 @@ Run: git branch --show-current
 If NOT `improvement/refactor`: STOP. Tell the user: "⚠️ Cambia a la rama improvement/refactor antes de continuar: git checkout improvement/refactor"
 --- END BRANCH CHECK ---
 
+--- SYNC CHECK ---
+Run: git pull origin improvement/refactor
+This ensures the local copy has the latest Estado, Resultados, and Prompt activo from previous sessions.
+--- END SYNC CHECK ---
+
 --- PRE-FLIGHT CHECK (ejecutar antes de empezar) ---
 1. Paso anterior completado: verify the previous step in Estado de ejecución has `[x]`. If not: STOP. Tell the user: "⚠️ El paso anterior no está marcado como completado. Complétalo primero."
 2. Backlog disponible (si aplica): if this step depends on an audit backlog (F1-C depends on F1-A, F2-C…F depends on F2-A), verify the corresponding `### Resultados de auditorías` section is NOT `_Pendiente_`. If it is: STOP. Tell the user: "⚠️ El backlog de [fase] no está relleno. Ejecuta la auditoría primero."
@@ -298,6 +334,11 @@ Run: git branch --show-current
 If the current branch is NOT `improvement/refactor`:
   STOP. Tell the user: "⚠️ Estás en la rama '<branch>'. Este prompt debe ejecutarse en 'improvement/refactor'. Cámbiala con: git checkout improvement/refactor"
 --- END BRANCH CHECK ---
+
+--- SYNC CHECK ---
+Run: git pull origin improvement/refactor
+This ensures the local copy has the latest Estado and Resultados from previous sessions.
+--- END SYNC CHECK ---
 
 Use the skill `12-factor-apps` to perform a full 12-Factor compliance audit on this codebase.
 
@@ -375,6 +416,11 @@ Run: git branch --show-current
 If the current branch is NOT `improvement/refactor`:
   STOP. Tell the user: "⚠️ Estás en la rama '<branch>'. Este prompt debe ejecutarse en 'improvement/refactor'. Cámbiala con: git checkout improvement/refactor"
 --- END BRANCH CHECK ---
+
+--- SYNC CHECK ---
+Run: git pull origin improvement/refactor
+This ensures the local copy has the latest Estado and Resultados from previous sessions.
+--- END SYNC CHECK ---
 
 Use the skill `ln-620-codebase-auditor` to perform a full codebase quality audit on this project.
 
