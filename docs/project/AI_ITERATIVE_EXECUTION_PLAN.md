@@ -121,7 +121,7 @@ Estas áreas puntúan alto con los evaluadores. Todo cambio debe preservarlas:
 | **Docker setup** | `docker compose up --build` funcional, healthchecks, perfiles de test, dev overlay |
 | **CI pipeline** | 6 jobs: brand, design system, doc/test parity, docker packaging, quality, frontend |
 | **Documentación** | `docs/README.md` con reading order, TECHNICAL_DESIGN.md (1950 líneas), extraction-tracking |
-| **Evidencia incremental** | PR storyline (19 PRs trazados), golden field iterations, run parity reports |
+| **Evidencia incremental** | PR storyline (143 PRs trazados), golden field iterations, run parity reports |
 
 ---
 
