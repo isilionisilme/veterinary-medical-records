@@ -26,7 +26,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 
 ### Fase 2 — Mantenibilidad y refactor estructural
 - [x] F2-A 🔄 — Auditoría ln-620 + codebase_audit.md (Codex)
-- [ ] F2-B 🚧 — Validación de backlog — **TÚ decides estrategia de descomposición** (Claude)
+- [x] F2-B 🚧 — Validación de backlog — **TÚ decides estrategia de descomposición** (Claude)
 - [ ] F2-C 🔄 — Refactor App.tsx (Codex)
 - [ ] F2-D 🔄 — Refactor processing_runner.py (Codex)
 - [ ] F2-E 🔄 — Refactor document_service.py (Codex)
@@ -150,7 +150,47 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
   - **Evidencia de validación:** Pipeline falla ante violaciones y pasa en rama limpia, sin suites redundantes en los módulos afectados.
 
 ### F2-B — Decisiones de validación y estrategia de descomposición
-_Pendiente. Claude escribirá aquí los items aprobados, la estrategia de descomposición de cada archivo monolítico (módulos destino, responsabilidades), y las decisiones del usuario._
+
+**Decisión del usuario:** Items 1-4 aprobados. Item 5 (quality guards) absorbido en F3.
+
+#### App.tsx (5,998 → ~8 módulos, shell ≤400 LOC)
+| Módulo destino | Responsabilidad |
+|---|---|
+| `src/types/` | Types e interfaces (~25 tipos locales) |
+| `src/lib/api.ts` | API client, queries, mutations (useQuery/useMutation wrappers) |
+| `src/lib/utils.ts` | Funciones utilitarias (formatters, validators, label resolvers) |
+| `src/components/UploadPanel.tsx` | Upload, drag-and-drop, toast management |
+| `src/components/DocumentSidebar.tsx` | Lista de documentos, búsqueda, selección |
+| `src/components/ReviewWorkspace.tsx` | Interpretación, edición, field selection, confidence |
+| `src/components/StructuredDataView.tsx` | Canonical sections, visit grouping, field rows, long-text |
+| `src/App.tsx` (shell) | Layout, split-panel, sidebar state, wiring de componentes |
+
+#### processing_runner.py (2,901 → ~5 módulos)
+| Módulo destino | Responsabilidad |
+|---|---|
+| `application/processing/scheduler.py` | Queue, tick loop, dequeue |
+| `application/processing/orchestrator.py` | `_execute_run`, `_process_document`, step tracking |
+| `application/processing/interpretation.py` | Build artifact, candidate mining, schema mapping, field assembly |
+| `application/processing/pdf_extraction.py` | 3 estrategias PDF (fitz, extractor, no-deps fallback) |
+| `application/processing/__init__.py` | Re-exports públicos: `enqueue_processing_run`, `processing_scheduler` |
+
+#### document_service.py (1,874 → ~5 módulos)
+| Módulo destino | Responsabilidad |
+|---|---|
+| `application/documents/upload_service.py` | `register_document_upload` |
+| `application/documents/query_service.py` | `get_document`, `list_documents`, `get_processing_history`, DTOs |
+| `application/documents/review_service.py` | `get_document_review`, projection, normalization, toggle |
+| `application/documents/edit_service.py` | `apply_interpretation_edits`, helpers, confidence, audit |
+| `application/documents/calibration.py` | Build/apply/revert calibration deltas |
+
+#### App.test.tsx (3,693 → redistribución por componente)
+- Tests de upload → `UploadPanel.test.tsx`
+- Tests de sidebar → `DocumentSidebar.test.tsx`
+- Tests de review/edit → `ReviewWorkspace.test.tsx`
+- Tests de structured data → `StructuredDataView.test.tsx`
+- Tests de layout/shell → `App.test.tsx` (reducido)
+
+**Regla global:** ningún archivo nuevo > 500 LOC.
 
 ---
 
@@ -161,10 +201,102 @@ _Pendiente. Claude escribirá aquí los items aprobados, la estrategia de descom
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-_Completado: F1-C_
+_F2-C: Descomponer App.tsx en módulos por feature (types, api, utils, 4 componentes + shell)._
 
 ### Prompt
-_Vacío._
+```
+--- AGENT IDENTITY CHECK ---
+This prompt is designed for GPT-5.3-Codex in VS Code Copilot Chat.
+If you are not GPT-5.3-Codex: STOP. Tell the user to switch agents.
+--- END IDENTITY CHECK ---
+
+--- BRANCH CHECK ---
+Run: git branch --show-current
+If NOT `improvement/refactor`: STOP. Tell the user: "⚠️ Cambia a la rama improvement/refactor antes de continuar: git checkout improvement/refactor"
+--- END BRANCH CHECK ---
+
+--- SYNC CHECK ---
+Run: git pull origin improvement/refactor
+--- END SYNC CHECK ---
+
+--- PRE-FLIGHT CHECK ---
+1. Verify F2-B has `[x]` in Estado de ejecución. If not: STOP.
+2. Verify `### F2-B — Decisiones de validación` is NOT `_Pendiente_`. If it is: STOP.
+3. Verify these files exist:
+   - frontend/src/App.tsx
+   - frontend/src/App.test.tsx
+--- END PRE-FLIGHT CHECK ---
+
+TASK — Decompose `frontend/src/App.tsx` (~5,998 lines) into modular files following the strategy in `### F2-B — Decisiones de validación y estrategia de descomposición`.
+
+**Target module structure (from F2-B decisions):**
+
+1. **`src/types/index.ts`** — Move ALL local type definitions and interfaces (~25 types: `DocumentListItem`, `ReviewField`, `ReviewVisitGroup`, `StructuredInterpretationData`, `DocumentReviewResponse`, etc.) from the top of App.tsx. Export them as named exports.
+
+2. **`src/lib/api.ts`** — Extract API client layer:
+   - API_BASE constant and all fetch wrapper functions
+   - useQuery hooks: `documentList`, `documentDetails`, `processingHistory`, `documentReview`, `rawTextQuery`
+   - useMutation hooks: `loadPdf`, `uploadMutation`, `reprocessMutation`, `reviewToggleMutation`, `interpretationEditMutation`
+   - Export as custom hooks: `useDocumentList()`, `useDocumentDetails(id)`, etc.
+   - Import types from `src/types/`
+
+3. **`src/lib/utils.ts`** — Extract all ~35 standalone utility functions that are defined BEFORE the `App()` component (field formatting, confidence logic, split-panel math, error helpers, label resolution). These are pure functions with no React dependencies.
+
+4. **`src/components/UploadPanel.tsx`** — Extract upload flow:
+   - Upload mutation invocation, drag-and-drop handlers (`isDragOver*` state, `onDragEnter/Leave/Drop`)
+   - Upload toast/feedback management
+   - File input ref and related logic
+   - Props: receive callbacks like `onUploadSuccess`, `onError` from parent
+
+5. **`src/components/DocumentSidebar.tsx`** — Extract document list:
+   - Document list rendering, search/filter (`rawSearch` state), sort logic (`sortedDocuments` memo)
+   - Document selection (`activeId` management)
+   - Sidebar collapse/expand/pin state and media query effect
+   - Props: `documents`, `activeId`, `onSelect`, `isCollapsed`, etc.
+
+6. **`src/components/ReviewWorkspace.tsx`** — Extract review/edit workspace:
+   - Field selection (`selectedFieldId`, `editingField`)
+   - Interpretation edit mutation invocation
+   - Review toggle mutation invocation
+   - Confidence policy display and diagnostics
+   - Props: receive document data - delegates rendering of structured data to StructuredDataView
+
+7. **`src/components/StructuredDataView.tsx`** — Extract structured data rendering:
+   - Canonical sections rendering, visit grouping
+   - Field rows, long-text rendering
+   - This is the heaviest JSX block (~1500 lines of rendering logic)
+   - Props: `reviewData`, `selectedFieldId`, `onFieldSelect`, `onFieldEdit`
+
+8. **`src/App.tsx` (shell, ≤400 lines)** — What remains:
+   - Top-level layout (split-panel grid)
+   - Split ratio state and drag logic
+   - Wiring: passes data and callbacks between components
+   - Route/view management (`activeViewerTab`)
+   - Global effects (connectivity toast, auto-open)
+
+**CRITICAL RULES:**
+- **No file > 500 lines.** If a component exceeds this during extraction, split further (e.g., StructuredDataView can delegate to sub-components like `FieldRow.tsx`, `VisitGroup.tsx`).
+- **Preserve ALL existing behavior.** This is a structural refactor ONLY — no behavior changes.
+- **Preserve ALL existing imports** from external libraries. Don't change versions or add new dependencies.
+- **Keep existing test file intact for now** (`App.test.tsx`). It will be redistributed in F2-F. For this step, update imports in App.test.tsx so tests still pass against the refactored structure.
+- **Move constants** (API_BASE, SECTION_ORDER, field key sets, placeholders) to the module that uses them. If shared, put in `src/lib/constants.ts`.
+- **Use named exports** everywhere (no default exports).
+
+--- TEST GATE ---
+Frontend: cd d:/Git/veterinary-medical-records/frontend && npm test
+Backend: cd d:/Git/veterinary-medical-records && python -m pytest --tb=short -q
+If any test fails: STOP. Report failures. Do NOT commit.
+--- END TEST GATE ---
+
+--- SCOPE BOUNDARY ---
+When done and all tests pass:
+1. Edit AI_ITERATIVE_EXECUTION_PLAN.md: change `- [ ] F2-C` to `- [x] F2-C`.
+2. Clean `## Prompt activo`: replace `### Paso objetivo` content with `_Completado: F2-C_` and `### Prompt` with `_Vacío._`
+3. git add -A && git commit -m "refactor(plan-f2c): decompose App.tsx into modular components and lib modules" && git push origin improvement/refactor
+4. Tell the user: "✓ F2-C completado, tests OK, pusheado. Siguiente: abre un chat nuevo en Copilot → selecciona GPT-5.3-Codex → adjunta AI_ITERATIVE_EXECUTION_PLAN.md → escribe Continúa (para F2-D 🔄 refactor processing_runner.py)."
+5. Stop.
+--- END SCOPE BOUNDARY ---
+```
 
 ---
 
