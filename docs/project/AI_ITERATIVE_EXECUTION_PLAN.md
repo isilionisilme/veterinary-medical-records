@@ -119,14 +119,24 @@ Estas áreas puntúan alto con los evaluadores. Todo cambio debe preservarlas:
 
 ---
 
-## Regla operativa clave
+## Reglas operativas
 
-Trabajar por **iteraciones** y no mezclar alcance:
-1. **Claude (este chat)** propone/valida (usando skill correspondiente).
-2. **Codex** implementa.
-3. **Claude (este chat)** evalúa contra criterios de aceptación.
-4. Si hay brechas, **Codex** corrige y se repite.
-5. Solo cuando **Claude (este chat)** confirme **"iteración cerrada"**, pasar a la siguiente.
+### Iteraciones atómicas
+Nunca mezclar alcance entre pasos. Cada paso del Estado de ejecución es una unidad atómica: se ejecuta, se commitea, se pushea, se marca `[x]`. Si falla, se reporta — no se continúa al siguiente.
+
+### Regla "Continúa-only"
+**Cuando el usuario escribe `Continúa`, el agente ejecuta SOLO lo que dicta el plan (Estado + prompt correspondiente).** Si el mensaje del usuario incluye instrucciones adicionales junto a "Continúa" (ej: "Continúa, pero no toques X" o "Continúa y de paso haz Y"), el agente debe:
+1. **Ignorar las instrucciones extra.**
+2. Responder: "⚠️ El protocolo Continúa ejecuta exactamente el siguiente paso del plan. Si necesitas modificar el alcance, díselo primero a Claude para que actualice el plan y el prompt."
+3. No ejecutar nada hasta que el usuario confirme con un `Continúa` limpio.
+
+Esto evita que instrucciones ad-hoc del usuario se mezclen con las del plan y causen desviaciones no controladas.
+
+### Rollback
+Si un paso completado causa un problema no detectado por los tests:
+1. `git revert HEAD` (revierte el commit sin perder historial)
+2. Editar Estado de ejecución: cambiar `[x]` de vuelta a `[ ]` en el paso afectado
+3. Reportar a Claude para diagnóstico antes de reintentar
 
 ## Estrategia de prompts
 
@@ -156,6 +166,23 @@ Flujo para Claude (pasos marcados con “Claude” en el Estado):
 3. Escribe: `Continúa`.
 
 El agente leerá el Estado, identificará el primer ítem `[ ]` sin completar, ejecutará ese único paso y se detendrá.
+
+### Routing de "Continúa" para Codex
+Cuando Codex recibe `Continúa` con este archivo adjunto, sigue esta lógica de decisión:
+
+```
+1. Lee Estado de ejecución → encuentra el primer `[ ]`.
+2. Si el paso es de Claude (no de Codex):
+   → STOP. Dile al usuario: "Este paso es de Claude. Vuelve al chat de Claude."
+3. Si el paso es F1-A:
+   → Lee el prompt de la sección "Fase 1 — Prompt para Codex".
+4. Si el paso es F2-A:
+   → Lee el prompt de la sección "Fase 2 — Prompt para Codex".
+5. Para cualquier otro paso de Codex:
+   → Lee el prompt de la sección "## Prompt activo".
+   → Si `### Prompt` contiene `_Vacío._`: STOP.
+     Dile al usuario: "⚠️ No hay prompt activo. Vuelve a Claude para que lo genere."
+```
 ### Auto-chain vs Hard-gate
 
 Los pasos marcados con 🔄 (**auto-chain**) se pueden ejecutar consecutivamente sin intervención humana. Cuando hay varios 🔄 seguidos del mismo agente, basta con abrir un chat y escribir `Continúa` repetidamente — o incluso esperar a que termine y volver a escribir `Continúa` para el siguiente.
