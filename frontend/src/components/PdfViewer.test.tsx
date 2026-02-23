@@ -230,7 +230,9 @@ describe("PdfViewer", () => {
       cancelable: true,
       bubbles: true,
     });
-    container.dispatchEvent(plainWheel);
+    act(() => {
+      container.dispatchEvent(plainWheel);
+    });
     expect(plainWheel.defaultPrevented).toBe(false);
     expect(indicator).toHaveTextContent("100%");
 
@@ -240,7 +242,9 @@ describe("PdfViewer", () => {
       cancelable: true,
       bubbles: true,
     });
-    container.dispatchEvent(ctrlWheelIn);
+    act(() => {
+      container.dispatchEvent(ctrlWheelIn);
+    });
     expect(ctrlWheelIn.defaultPrevented).toBe(true);
     await waitFor(() => {
       expect(indicator).toHaveTextContent("110%");
@@ -252,7 +256,9 @@ describe("PdfViewer", () => {
       cancelable: true,
       bubbles: true,
     });
-    container.dispatchEvent(ctrlWheelOut);
+    act(() => {
+      container.dispatchEvent(ctrlWheelOut);
+    });
     expect(ctrlWheelOut.defaultPrevented).toBe(true);
     await waitFor(() => {
       expect(indicator).toHaveTextContent("100%");

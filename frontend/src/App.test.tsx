@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -1073,7 +1073,9 @@ describe("App upload and list flow", () => {
 
     expect(await screen.findByText(/Documento subido correctamente/i)).toBeInTheDocument();
 
-    await new Promise((resolve) => setTimeout(resolve, 3600));
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 3600));
+    });
     await waitFor(() => {
       expect(screen.queryByText(/Documento subido correctamente/i)).toBeNull();
     });
@@ -1093,7 +1095,9 @@ describe("App upload and list flow", () => {
     ).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Reintentar/i })).toBeNull();
 
-    await new Promise((resolve) => setTimeout(resolve, 5200));
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 5200));
+    });
     await waitFor(() => {
       expect(screen.queryByText(/El archivo supera el tamaño máximo \(20 MB\)\./i)).toBeNull();
     });

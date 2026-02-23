@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 
-from backend.app.application.processing_runner import processing_scheduler
+from backend.app.application.processing import processing_scheduler
 from backend.app.ports.document_repository import DocumentRepository
 from backend.app.ports.file_storage import FileStorage
 

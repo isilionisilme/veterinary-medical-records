@@ -367,8 +367,7 @@ def test_debug_extraction_summary_endpoint_reads_auto_persisted_snapshot_after_p
     monkeypatch.setenv("VET_RECORDS_EXTRACTION_OBS", "1")
     monkeypatch.setattr(extraction_observability, "_OBSERVABILITY_DIR", tmp_path / "obs")
     monkeypatch.setattr(
-        processing_runner,
-        "_extract_pdf_text_with_extractor",
+        "backend.app.application.processing.pdf_extraction._extract_pdf_text_with_extractor",
         lambda _path: (
             "Paciente: Luna\nEspecie: canino\nRaza: mestizo\nDiagnostico: control",
             "test",
