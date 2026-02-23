@@ -150,22 +150,33 @@ Cada prompt incluye al final una instrucción para que el agente:
 3. Se detenga.
 
 Flujo para Codex — pasos con prompt pre-escrito (F1-A, F2-A):
-1. Abre un chat **nuevo** en Copilot, selecciona **GPT-5.3-Codex**.
-2. Adjunta este archivo.
-3. Escribe: `Continúa`. Codex lee el prompt de la sección de la fase correspondiente.
+> _Referencia para agentes. El usuario no necesita leer esto — cada agente le indica el siguiente paso al terminar._
+
+Codex lee el prompt de la sección de la fase correspondiente ("Fase 1 — Prompt para Codex" o "Fase 2 — Prompt para Codex").
 
 Flujo para Codex — pasos just-in-time (F1-C, F2-C…F2-F, F3-B, F4-A…F4-C, F5-A/C/D):
-1. Primero, vuelve a **Claude (este chat)** y escribe `Continúa`. Claude escribirá el prompt en la sección `## Prompt activo`, commiteará y te dirá "listo".
-2. Entonces abre un chat **nuevo** con **GPT-5.3-Codex**.
-3. Adjunta este archivo.
-4. Escribe: `Continúa`. Codex lee el prompt de la sección `## Prompt activo`.
+> _Referencia para agentes._
 
-Flujo para Claude (pasos marcados con “Claude” en el Estado):
-1. Vuelve a **este chat** (Claude en Copilot).
-2. Adjunta este archivo.
-3. Escribe: `Continúa`.
+Claude prepara el prompt en `## Prompt activo`, commitea y le dice al usuario: "Listo. Abre un chat nuevo con Codex, adjunta el plan y escribe Continúa." Codex lee el prompt de `## Prompt activo`.
 
-El agente leerá el Estado, identificará el primer ítem `[ ]` sin completar, ejecutará ese único paso y se detendrá.
+Flujo para Claude (pasos marcados con "Claude" en el Estado):
+> _Referencia para agentes._
+
+Claude lee el Estado, ejecuta el paso y al terminar le dice al usuario el siguiente movimiento.
+
+### Instrucciones de siguiente paso (regla para todos los agentes)
+Al terminar un paso, el agente SIEMPRE indica al usuario el siguiente movimiento con instrucciones concretas:
+
+- **Si el siguiente paso es de Codex (prompt pre-escrito):**
+  → "Abre un chat nuevo en Copilot → selecciona GPT-5.3-Codex → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
+- **Si el siguiente paso es de Codex (just-in-time):**
+  → "Vuelve a Claude (este chat) con el plan adjunto y escribe `Continúa`. Claude preparará el prompt."
+- **Si el siguiente paso es de Claude (🚧 hard-gate):**
+  → "Vuelve a Claude (este chat) con el plan adjunto y escribe `Continúa`."
+- **Si el siguiente paso es de Claude (🔄 auto-chain):**
+  → "Vuelve a Claude (este chat) con el plan adjunto y escribe `Continúa`."
+
+Así el usuario nunca necesita consultar el plan para saber qué hacer — simplemente sigue las indicaciones del agente.
 
 ### Routing de "Continúa" para Codex
 Cuando Codex recibe `Continúa` con este archivo adjunto, sigue esta lógica de decisión:
@@ -316,7 +327,7 @@ When done:
 1. Write the top-5 backlog items into the `### F1-A — Backlog 12-Factor (top 5)` section of docs/project/AI_ITERATIVE_EXECUTION_PLAN.md (replace the _Pendiente_ placeholder).
 2. Change `- [ ] F1-A` to `- [x] F1-A` in the Estado de ejecución section.
 3. git add -A && git commit -m "audit(plan-f1a): 12-factor compliance report + backlog" && git push origin improvement/refactor
-4. Tell the user: "✓ F1-A completado, pusheado. Vuelve a Claude (este chat) con el archivo adjunto para validar el backlog (F1-B)."
+4. Tell the user: "✓ F1-A completado, pusheado. Siguiente: vuelve a Claude (este chat) con el plan adjunto y escribe `Continúa` para validar el backlog (F1-B 🚧)."
 5. Stop.
 --- END SCOPE BOUNDARY ---
 ```
@@ -398,7 +409,7 @@ When done:
 1. Write the top-5 backlog items into the `### F2-A — Backlog ln-620 codebase audit (top 5)` section of docs/project/AI_ITERATIVE_EXECUTION_PLAN.md (replace the _Pendiente_ placeholder).
 2. Change `- [ ] F2-A` to `- [x] F2-A` in the Estado de ejecución section.
 3. git add -A && git commit -m "audit(plan-f2a): ln-620 codebase audit report + remediation backlog" && git push origin improvement/refactor
-4. Tell the user: "✓ F2-A completado, pusheado. Vuelve a Claude (este chat) con el archivo adjunto para validar el backlog (F2-B)."
+4. Tell the user: "✓ F2-A completado, pusheado. Siguiente: vuelve a Claude (este chat) con el plan adjunto y escribe `Continúa` para validar el backlog (F2-B 🚧)."
 5. Stop.
 --- END SCOPE BOUNDARY ---
 ```
