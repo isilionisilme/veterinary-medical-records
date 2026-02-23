@@ -5337,7 +5337,7 @@ export function App() {
                                   aria-label="Filtros de confianza"
                                   className="p-0"
                                 >
-                                  <Tooltip content="Confianza baja">
+                                  <Tooltip content="Valor detectado con baja fiabilidad.">
                                     <ToggleGroupItem
                                       value="low"
                                       aria-label={`Baja (${detectedFieldsSummary.low})`}
@@ -5356,7 +5356,7 @@ export function App() {
                                       </span>
                                     </ToggleGroupItem>
                                   </Tooltip>
-                                  <Tooltip content="Confianza media">
+                                  <Tooltip content="Valor detectado con fiabilidad media.">
                                     <ToggleGroupItem
                                       value="medium"
                                       aria-label={`Media (${detectedFieldsSummary.medium})`}
@@ -5375,7 +5375,7 @@ export function App() {
                                       </span>
                                     </ToggleGroupItem>
                                   </Tooltip>
-                                  <Tooltip content="Confianza alta">
+                                  <Tooltip content="Valor detectado con alta fiabilidad.">
                                     <ToggleGroupItem
                                       value="high"
                                       aria-label={`Alta (${detectedFieldsSummary.high})`}
@@ -5394,7 +5394,7 @@ export function App() {
                                       </span>
                                     </ToggleGroupItem>
                                   </Tooltip>
-                                  <Tooltip content="Detectado (sin confianza)">
+                                  <Tooltip content="Valor presente, sin confianza automática asignada.">
                                     <ToggleGroupItem
                                       value="unknown"
                                       aria-label={`Sin confianza (${detectedFieldsSummary.unknown})`}
@@ -5435,7 +5435,7 @@ export function App() {
                                   aria-label="Filtros adicionales"
                                   className="p-0"
                                 >
-                                  <Tooltip content="Críticos: muestra únicamente campos marcados como críticos.">
+                                  <Tooltip content="Mostrar campos marcados como críticos.">
                                     <ToggleGroupItem
                                       value="critical"
                                       aria-label="Mostrar solo campos críticos"
@@ -5444,7 +5444,7 @@ export function App() {
                                       <CriticalIcon compact />
                                     </ToggleGroupItem>
                                   </Tooltip>
-                                  <Tooltip content="No vacíos: muestra solo campos con valor (excluye Vacíos).">
+                                  <Tooltip content="Mostrar campos con algún valor.">
                                     <ToggleGroupItem
                                       value="nonEmpty"
                                       aria-label="Mostrar solo campos no vacíos"
@@ -5456,7 +5456,7 @@ export function App() {
                                       />
                                     </ToggleGroupItem>
                                   </Tooltip>
-                                  <Tooltip content="Vacíos: muestra solo campos sin dato (excluye No vacíos).">
+                                  <Tooltip content="Mostrar campos vacíos.">
                                     <ToggleGroupItem
                                       value="empty"
                                       aria-label="Mostrar solo campos vacíos"
@@ -5473,6 +5473,8 @@ export function App() {
                                 <div aria-hidden="true" className="mx-1 h-6 w-px shrink-0 self-center bg-border" />
                                 <IconButton
                                   label="Limpiar filtros"
+                                  tooltip="Borrar filtros."
+                                  className="border-0 bg-transparent shadow-none hover:bg-transparent"
                                   disabled={
                                     reviewPanelState !== "ready" ||
                                     (structuredSearchInput.trim().length === 0 &&
