@@ -51,7 +51,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [ ] F6-A 🚧 — **TÚ pruebas el flujo end-to-end como evaluador** (Claude + Codex)
 
 ### Fase 7 — Cierre global
-- [ ] F7-A 🚧 — Veredicto final (Claude)
+- [ ] F7-A 🚧 — Veredicto final + PR a main (Claude/Codex)
 
 ---
 
@@ -237,7 +237,7 @@ Los pasos marcados con 🚧 (**hard-gate**) cortan la cadena. **No ejecutes el s
 | **F2-B** | Estrategia de descomposición de los archivos monolíticos (nombres de módulos, responsabilidades) | ~15 min |
 | **F5-B** | Argumentos reales de los ADRs (deben reflejar *tu* razonamiento, no el de la IA) | ~15 min |
 | **F6-A** | Experiencia del evaluador — solo tú puedes juzgar la primera impresión del repo | ~15 min |
-| **F7-A** | Veredicto final: LISTO / NO LISTO | ~10 min |
+| **F7-A** | Veredicto final: LISTO / NO LISTO + crear PR | ~15 min |
 
 **Tu tiempo activo total: ~65 minutos repartidos en 5 pausas.** El resto fluye automáticamente con test gates como red de seguridad.
 ### Template para prompts de implementación (just-in-time)
@@ -559,11 +559,66 @@ Crear `docs/project/FUTURE_IMPROVEMENTS.md` con roadmap 2/4/8 semanas (entregabl
 
 ## Fase 7 — Cierre global
 
-> **Modelo:** `Claude (este chat)` para el repaso y el veredicto — `Codex` para las correcciones.
+> **Modelo:** `Claude (este chat)` para el repaso y el veredicto — `Codex` para las correcciones y la PR.
 
 1. `Claude (este chat)` — repaso final del delta completo (sin rediseños grandes).
 2. `Codex` — aplicar correcciones imprescindibles de cierre menores.
 3. `Claude (este chat)` — veredicto final **"LISTO PARA ENTREGAR / NO LISTO"** con lista de lo implementado vs pendiente.
+4. Si LISTO: `Codex` — crear la PR final con `gh pr create` usando el template de abajo. Claude revisa el body antes de merge.
+
+### PR final — template de body
+
+```
+gh pr create \
+  --base main \
+  --head improvement/refactor \
+  --title "improvement: architecture audit, structural refactor, tooling & documentation" \
+  --body "## Summary
+Structured improvement across 7 phases, driven by AI-assisted audits and iterative implementation.
+
+### Phase 1 — Architecture audit (12-Factor)
+- [commits del backlog F1-A y F1-C]
+
+### Phase 2 — Structural refactor
+- App.tsx (~6000 → modular components, none >500 LOC)
+- processing_runner.py (~2900 → extraction/interpretation/orchestration modules)
+- document_service.py (~1800 → split responsibilities)
+- App.test.tsx redistributed to match new component structure
+
+### Phase 3 — Tooling quick wins
+- ESLint + Prettier configured
+- Coverage reporting (vitest + pytest-cov)
+- .pre-commit-config.yaml (ruff + eslint + prettier)
+
+### Phase 4 — Test quality
+- Frontend: [gaps cerrados]
+- Backend: [gaps cerrados]
+
+### Phase 5 — Documentation
+- ADR-ARCH-001 through ADR-ARCH-004
+- FUTURE_IMPROVEMENTS.md (2/4/8 week roadmap)
+- Documentation structure optimized
+
+### Phase 6 — Evaluator smoke test
+- README → running system in ≤5 commands verified
+- Full E2E flow verified (upload → extract → edit → confirm)
+
+### How to test
+\`\`\`bash
+git clone <repo> && cd veterinary-medical-records
+docker compose up --build
+# Wait for healthy → open http://localhost:5173
+# Upload a PDF → verify extraction → edit a field → confirm
+\`\`\`
+
+All tests pass: \`pytest\` (backend) + \`npm test\` (frontend)."
+```
+
+> **Nota:** Claude rellenará los `[placeholders]` con datos reales del Estado y Resultados antes de que Codex ejecute la creación. El template es una guía, no texto final.
+
+### Estrategia de rama y PR
+- **Una sola rama:** `improvement/refactor` (ya creada).
+- **Una sola PR:** al finalizar F7-A, merge a `main`. Con 143 PRs existentes, la evidencia incremental está más que cubierta. Los commits individuales de cada fase (`audit(plan-f1a)`, `refactor(plan-f2c)`, etc.) dan la trazabilidad paso a paso dentro de la PR.
 
 ---
 
