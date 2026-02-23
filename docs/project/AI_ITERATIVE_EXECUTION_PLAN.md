@@ -30,7 +30,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [x] F2-C 🔄 — Refactor App.tsx (Codex)
 - [x] F2-D 🔄 — Refactor processing_runner.py (Codex)
 - [x] F2-E 🔄 — Refactor document_service.py (Codex)
-- [ ] F2-F 🔄 — Redistribución App.test.tsx (Codex)
+- [x] F2-F 🔄 — Redistribución App.test.tsx (Codex)
 - [ ] F2-G 🚧 — **TÚ pruebas la app post-refactor** (~10 min: docker compose up, subir PDF, editar, confirmar)
 
 ### Fase 3 — Quick wins de tooling
@@ -154,127 +154,10 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 **Decisión del usuario:** Items 1-4 aprobados. Item 5 (quality guards) absorbido en F3.
 
 #### App.tsx (5,998 → ~8 módulos, shell ≤400 LOC)
-| Módulo destino | Responsabilidad |
+_Completado: F2-F_
 |---|---|
 | `src/types/` | Types e interfaces (~25 tipos locales) |
-| `src/lib/api.ts` | API client, queries, mutations (useQuery/useMutation wrappers) |
-| `src/lib/utils.ts` | Funciones utilitarias (formatters, validators, label resolvers) |
-| `src/components/UploadPanel.tsx` | Upload, drag-and-drop, toast management |
-| `src/components/DocumentSidebar.tsx` | Lista de documentos, búsqueda, selección |
-| `src/components/ReviewWorkspace.tsx` | Interpretación, edición, field selection, confidence |
-| `src/components/StructuredDataView.tsx` | Canonical sections, visit grouping, field rows, long-text |
-| `src/App.tsx` (shell) | Layout, split-panel, sidebar state, wiring de componentes |
-
-#### processing_runner.py (2,901 → ~5 módulos)
-| Módulo destino | Responsabilidad |
-|---|---|
-| `application/processing/scheduler.py` | Queue, tick loop, dequeue |
-| `application/processing/orchestrator.py` | `_execute_run`, `_process_document`, step tracking |
-| `application/processing/interpretation.py` | Build artifact, candidate mining, schema mapping, field assembly |
-| `application/processing/pdf_extraction.py` | 3 estrategias PDF (fitz, extractor, no-deps fallback) |
-| `application/processing/__init__.py` | Re-exports públicos: `enqueue_processing_run`, `processing_scheduler` |
-
-#### document_service.py (1,874 → ~5 módulos)
-| Módulo destino | Responsabilidad |
-|---|---|
-| `application/documents/upload_service.py` | `register_document_upload` |
-| `application/documents/query_service.py` | `get_document`, `list_documents`, `get_processing_history`, DTOs |
-| `application/documents/review_service.py` | `get_document_review`, projection, normalization, toggle |
-| `application/documents/edit_service.py` | `apply_interpretation_edits`, helpers, confidence, audit |
-| `application/documents/calibration.py` | Build/apply/revert calibration deltas |
-
-#### App.test.tsx (3,693 → redistribución por componente)
-- Tests de upload → `UploadPanel.test.tsx`
-- Tests de sidebar → `DocumentSidebar.test.tsx`
-- Tests de review/edit → `ReviewWorkspace.test.tsx`
-- Tests de structured data → `StructuredDataView.test.tsx`
-- Tests de layout/shell → `App.test.tsx` (reducido)
-
-**Regla global:** ningún archivo nuevo > 500 LOC.
-
----
-
-## Prompt activo (just-in-time) — write-then-execute
-
-> **Uso:** Claude escribe aquí el próximo prompt de Codex ANTES de que el usuario cambie de agente. Así Codex lo lee directamente del archivo adjunto — cero copy-paste, cero error humano.
->
-> **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
-
-### Paso objetivo
-F2-F — Redistribuir `App.test.tsx` (3,697 LOC) en test files por componente
-
-### Prompt
-
-> **PLAN-EDIT-LAST RULE (hard constraint for Codex):**
-> **NEVER edit AI_ITERATIVE_EXECUTION_PLAN.md until ALL tests pass and code is committed.**
-> The plan file is the source of truth — marking a step `[x]` before tests pass corrupts the entire pipeline.
-> If you run out of context before reaching the test gate: STOP and tell the user. Do NOT edit the plan.
-
-```
---- AGENT IDENTITY CHECK ---
-This prompt is designed for GPT-5.3-Codex in VS Code Copilot Chat.
-If you are not GPT-5.3-Codex: STOP. Tell the user to switch agents.
---- END IDENTITY CHECK ---
-
---- BRANCH CHECK ---
-Run: git branch --show-current
-If NOT `improvement/refactor`: STOP. Tell the user: "⚠️ Cambia a la rama improvement/refactor antes de continuar: git checkout improvement/refactor"
---- END BRANCH CHECK ---
-
---- SYNC CHECK ---
-Run: git pull origin improvement/refactor
-This ensures the local copy has the latest Estado, Resultados, and Prompt activo from previous sessions.
---- END SYNC CHECK ---
-
---- PRE-FLIGHT CHECK (ejecutar antes de empezar) ---
-1. Paso anterior completado: verify that `F2-E` in Estado de ejecución has `[x]`. If not: STOP.
-2. Target file exists: run `Test-Path frontend/src/App.test.tsx`. If it does NOT exist: STOP and tell the user.
-3. Component files exist: verify these files exist (they were created in F2-C):
-   - `frontend/src/components/UploadPanel.tsx`
-   - `frontend/src/components/DocumentSidebar.tsx` (or `DocumentsSidebar.tsx`)
-   - `frontend/src/components/ReviewWorkspace.tsx`
-   - `frontend/src/components/StructuredDataView.tsx`
-   If any are missing, STOP and report which are missing.
---- END PRE-FLIGHT CHECK ---
-
---- TASK: Redistribute App.test.tsx into per-component test files ---
-
-**Source:** `frontend/src/App.test.tsx` (~3,697 lines, single `describe("App upload and list flow", ...)`)
-**Goal:** Split into component-level test files while keeping a slim `App.test.tsx` for shell/layout tests.
-
-### Analysis phase (do this FIRST, before writing any code)
-1. Read the full `App.test.tsx` and categorize every `it(...)` block by which component it primarily exercises.
-2. Build a mapping table — do NOT start moving code until the mapping is complete.
-
-### Target test files and what belongs in each
-
-| Test file | What goes here |
-|---|---|
-| `components/UploadPanel.test.tsx` | Upload flow tests: file selection, drag-and-drop, size validation, toast auto-dismiss, non-PDF rejection, upload from collapsed sidebar, empty-state file picker, drag-and-drop while document open |
-| `components/DocumentSidebar.test.tsx` | Document list tests: status labels, PROCESSING→Listo refresh, search/clear, branding in sidebar, sidebar auto-collapse/expand/pin/unpin, list rendering |
-| `components/ReviewWorkspace.test.tsx` | Review/edit tests: field selection, confidence tooltips, evidence behavior, PDF navigation from row click, scroll preservation, blocked-edit toast in reviewed mode, reviewed warning banner, reviewed toggle, keyboard blocked-edit, source drawer behavior, split grid drag handle, split ratio persistence/clamp/restore |
-| `components/StructuredDataView.test.tsx` | Structured data rendering: Global Schema template, canonical sections ordering (US-44), field_slots placeholders, visit grouping, unassigned visits, detected summary counts, confidence labels/dots, Otros campos, billing key hiding, repeatable fields, empty indicators, low-confidence filter, degraded confidence mode, canonical contract error, visit date display |
-| `App.test.tsx` (reduced shell) | Layout/shell tests: unified layout without mode controls, viewer header actions, connectivity toast, no-document empty state, doc list availability in unified layout, "keeps browse defaults", reprocess flow, extracted text copy/refresh, skeleton while loading |
-
-### Implementation rules
-
-1. **Shared test infrastructure stays in a shared file.** Create `frontend/src/test/helpers.ts` (or similar) containing:
-   - `renderApp()` function
-   - `withDesktopHoverMatchMedia()` helper
-   - `createDataTransfer()` helper
-   - `waitForStructuredDataReady()` helper
-   - `clickPetNameField()` helper
-   - `openReadyDocumentAndGetPanel()` helper
-   - `parseCountFromAriaLabel()` + `getConfidenceSummaryCounts()` helpers
-   - `installCanonicalUs44FetchMock()` + its type `CanonicalUs44FetchMockOptions`
-   - `installReviewedModeFetchMock()` + `openReviewedDocument()` + `getPetNameFieldButton()`
-   - Any other helpers/mocks used across multiple test files.
-   
-   Each new test file imports from this shared helpers file instead of duplicating the code.
-
-2. **Inline `beforeEach` fetch mocks** that are specific to one test group stay with that group. Only truly shared mocks go to helpers.
-
-3. **Do NOT change test logic.** Move tests exactly as they are — same assertions, same `it()` descriptions. The refactor is structural only.
+_Vacío._
 
 4. **No test file > 800 LOC.** If a target file would exceed 800 lines, split it further (e.g., `ReviewWorkspace.test.tsx` and `ReviewWorkspaceSplit.test.tsx`, or group by sub-feature).
 
