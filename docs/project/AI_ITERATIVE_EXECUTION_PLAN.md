@@ -11,6 +11,46 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 
 ---
 
+## Estado de ejecución — actualizar al completar cada paso
+
+> **Protocolo "Continúa":** abre un chat nuevo, selecciona el agente correcto, adjunta este archivo y escribe `Continúa`. El agente leerá el estado, ejecutará el siguiente paso sin completar y se detendrá al terminar.
+
+### Fase 1 — Auditoría de arquitectura
+- [ ] F1-A — Auditoría 12-Factor → backlog (Codex)
+- [ ] F1-B — Validación de backlog (Claude)
+- [ ] F1-C — Implementación de items del backlog (Codex, una iteración por item)
+
+### Fase 2 — Mantenibilidad y refactor estructural
+- [ ] F2-A — Auditoría ln-620 + codebase_audit.md (Codex)
+- [ ] F2-B — Validación de backlog (Claude)
+- [ ] F2-C — Refactor App.tsx (Codex)
+- [ ] F2-D — Refactor processing_runner.py (Codex)
+- [ ] F2-E — Refactor document_service.py (Codex)
+- [ ] F2-F — Redistribución App.test.tsx (Codex)
+
+### Fase 3 — Quick wins de tooling
+- [ ] F3-A — Definir config ESLint + Prettier + pre-commit (Claude)
+- [ ] F3-B — Implementar tooling + coverage (Codex)
+
+### Fase 4 — Calidad de tests
+- [ ] F4-A — Auditoría frontend-testing (Codex)
+- [ ] F4-B — Auditoría python-testing-patterns (Codex)
+- [ ] F4-C — Implementar mejoras de tests (Codex)
+
+### Fase 5 — Documentación
+- [ ] F5-A — Revisión docs con project-guidelines-example (Codex)
+- [ ] F5-B — ADRs de arquitectura: definir contenido (Claude)
+- [ ] F5-C — ADRs de arquitectura: crear ficheros (Codex)
+- [ ] F5-D — FUTURE_IMPROVEMENTS.md (Codex)
+
+### Fase 6 — Smoke test del evaluador
+- [ ] F6-A — Verificar README y flujo end-to-end (Claude + Codex)
+
+### Fase 7 — Cierre global
+- [ ] F7-A — Veredicto final (Claude)
+
+---
+
 ## Skills instaladas y uso recomendado
 
 ### Arquitectura / calidad
@@ -63,6 +103,14 @@ Trabajar por **iteraciones** y no mezclar alcance:
 - **Prompts de auditoría** (Fases 1 y 2): generados en este documento, listos para copiar.
 - **Prompts de implementación** (Fases 3+): generados just-in-time, usando el output de las auditorías como input. Evita obsolescencia por cambios en el código.
 
+### Protocolo "Continúa"
+Cada prompt incluye al final una instrucción para que el agente marque su paso como completado en la sección **Estado de ejecución** (cambiando `[ ]` por `[x]`) antes de detenerse. Esto permite reiniciar cualquier sesión con:
+1. Abre un chat nuevo con el agente indicado para el siguiente paso.
+2. Adjunta este archivo.
+3. Escribe: `Continúa`.
+
+El agente leerá el Estado, identificará el primer ítem sin completar, ejecutará ese paso y se detendrá al terminar.
+
 ---
 
 ## Formato obligatorio de salida (en cada iteración)
@@ -89,6 +137,13 @@ Para cada recomendación/hallazgo:
 ### Prompt para Codex
 
 ```
+--- AGENT IDENTITY CHECK (execute this first, before anything else) ---
+This prompt is designed for GPT-5.3-Codex acting as an agentic coding assistant in VS Code Copilot Chat.
+If you are Claude, Gemini, or any model other than GPT-5.3-Codex:
+  STOP. Do not read or execute any instruction below.
+  Tell the user: "Este prompt está diseñado para GPT-5.3-Codex. Por favor, cambia el agente en el desplegable del chat de Copilot a GPT-5.3-Codex y pega el prompt de nuevo."
+--- END IDENTITY CHECK ---
+
 Use the skill `12-factor-apps` to perform a full 12-Factor compliance audit on this codebase.
 
 codebase_path: d:/Git/veterinary-medical-records
@@ -110,6 +165,13 @@ Audit instructions:
 5. Prioritize findings by impact on code maintainability and evaluator perception.
 6. Do NOT suggest microservices, cloud infrastructure, or distributed systems — out of scope.
 7. End with a prioritized backlog of ≤5 actionable items for Codex to implement.
+
+--- SCOPE BOUNDARY — STOP HERE ---
+Do NOT implement any changes. Your output for this prompt is the audit report + backlog ONLY.
+When done, edit docs/project/AI_ITERATIVE_EXECUTION_PLAN.md:
+  Change `- [ ] F1-A` to `- [x] F1-A` in the Estado de ejecución section.
+Then stop and wait for the user.
+--- END SCOPE BOUNDARY ---
 ```
 
 ### Flujo de ejecución
@@ -143,6 +205,13 @@ Audit instructions:
 ### Prompt para Codex
 
 ```
+--- AGENT IDENTITY CHECK (execute this first, before anything else) ---
+This prompt is designed for GPT-5.3-Codex acting as an agentic coding assistant in VS Code Copilot Chat.
+If you are Claude, Gemini, or any model other than GPT-5.3-Codex:
+  STOP. Do not read or execute any instruction below.
+  Tell the user: "Este prompt está diseñado para GPT-5.3-Codex. Por favor, cambia el agente en el desplegable del chat de Copilot a GPT-5.3-Codex y pega el prompt de nuevo."
+--- END IDENTITY CHECK ---
+
 Use the skill `ln-620-codebase-auditor` to perform a full codebase quality audit on this project.
 
 Project root: d:/Git/veterinary-medical-records
@@ -169,6 +238,13 @@ Do NOT recommend:
 
 Output the audit report to docs/project/codebase_audit.md as the skill specifies.
 Then return a prioritized backlog of the top 10 actionable items for Codex to implement.
+
+--- SCOPE BOUNDARY — STOP HERE ---
+Do NOT implement any changes. Your output for this prompt is the audit report + backlog ONLY.
+When done, edit docs/project/AI_ITERATIVE_EXECUTION_PLAN.md:
+  Change `- [ ] F2-A` to `- [x] F2-A` in the Estado de ejecución section.
+Then stop and wait for the user.
+--- END SCOPE BOUNDARY ---
 ```
 
 ### Flujo de ejecución
