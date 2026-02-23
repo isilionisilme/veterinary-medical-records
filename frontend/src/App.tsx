@@ -5322,6 +5322,7 @@ export function App() {
                                       <IconButton
                                         label="Limpiar búsqueda"
                                         tooltip="Limpiar búsqueda"
+                                        className="border-0 bg-transparent shadow-none hover:bg-transparent"
                                         onClick={() => {
                                           setStructuredSearchInput("");
                                           structuredSearchInputRef.current?.focus();
