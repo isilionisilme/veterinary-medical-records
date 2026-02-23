@@ -123,10 +123,128 @@ _Pendiente. Claude escribirá aquí los items aprobados, la estrategia de descom
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-_Ninguno. Claude rellenará esta sección cuando el siguiente paso sea de Codex y no tenga prompt pre-escrito._
+_F1-C: Implementar los 4 items aprobados del backlog 12-Factor (items 1, 2, 3, 5)._
 
 ### Prompt
-_Vacío. Claude escribirá aquí el prompt completo (con identity check, branch check, pre-flight, task, test gate, scope boundary)._
+```
+--- AGENT IDENTITY CHECK ---
+This prompt is designed for GPT-5.3-Codex in VS Code Copilot Chat.
+If you are not GPT-5.3-Codex: STOP. Tell the user to switch agents.
+--- END IDENTITY CHECK ---
+
+--- BRANCH CHECK ---
+Run: git branch --show-current
+If NOT `improvement/refactor`: STOP. Tell the user: "⚠️ Cambia a la rama improvement/refactor antes de continuar: git checkout improvement/refactor"
+--- END BRANCH CHECK ---
+
+--- SYNC CHECK ---
+Run: git pull origin improvement/refactor
+--- END SYNC CHECK ---
+
+--- PRE-FLIGHT CHECK ---
+1. Verify F1-B has `[x]` in Estado de ejecución. If not: STOP.
+2. Verify `### F1-B — Decisiones de validación` is NOT `_Pendiente_`. If it is: STOP.
+3. Verify these files exist:
+   - backend/app/config.py
+   - backend/app/infra/database.py
+   - backend/app/infra/file_storage.py
+   - backend/app/main.py
+   - docker-compose.yml
+   - Dockerfile.backend
+--- END PRE-FLIGHT CHECK ---
+
+TASK — Implement 4 approved items from the F1-B backlog. Work through them ONE AT A TIME in the order below. After each sub-item, run tests before moving to the next.
+
+**Approved items (from F1-B decisions):**
+- ✅ Item 1 — Centralize config
+- ✅ Item 2 — Release metadata
+- ✅ Item 3 — Decouple scheduler bootstrap
+- ✅ Item 5 — Admin one-off commands
+- ❌ Item 4 — Worker profile (DISCARDED — skip entirely)
+
+---
+
+### Item 1: Centralize env config into a typed Settings class
+
+**Current state:** `os.environ.get()` calls scattered across:
+- `backend/app/config.py` — VET_RECORDS_DISABLE_PROCESSING, VET_RECORDS_EXTRACTION_OBS, confidence policy vars
+- `backend/app/infra/database.py` — VET_RECORDS_DB_PATH
+- `backend/app/infra/file_storage.py` — VET_RECORDS_STORAGE_PATH
+- `backend/app/main.py` — ENV/APP_ENV/VET_RECORDS_ENV, UVICORN_RELOAD, VET_RECORDS_CORS_ORIGINS
+
+**What to do:**
+1. Create `backend/app/settings.py` with a frozen dataclass `Settings` that reads ALL env vars at construction time with typed defaults. Use `__post_init__` for validation (not pydantic — keep deps minimal).
+2. Expose a module-level `get_settings() -> Settings` function using `@lru_cache(maxsize=1)`.
+3. Update `config.py`, `database.py`, `file_storage.py`, and `main.py` to consume `get_settings()` instead of reading `os.environ` directly.
+4. Preserve ALL existing defaults and behavior — this is a refactor, not a behavior change.
+5. Keep `config.py` functions that have business logic (confidence policy parsing) — they should take settings values as parameters instead of reading env directly.
+
+**Acceptance:** `pytest` backend passes. `os.environ.get` no longer appears in config.py, database.py, file_storage.py (except in settings.py itself).
+
+---
+
+### Item 2: Expose release metadata (build-release-run boundary)
+
+**What to do:**
+1. Add `GIT_COMMIT`, `BUILD_DATE`, `APP_VERSION` to `Settings` (default: "dev"/"unknown").
+2. Add a `/version` endpoint in the API that returns `{"version": ..., "commit": ..., "build_date": ...}`.
+3. In `Dockerfile.backend`, add `ARG GIT_COMMIT` and `ARG BUILD_DATE`, pass them as `ENV` to the container.
+4. In `docker-compose.yml`, add `build.args` that populate from shell env (with sensible defaults for local dev).
+
+**Acceptance:** `curl localhost:8000/version` returns JSON with version info. Tests pass.
+
+---
+
+### Item 3: Decouple scheduler bootstrap from HTTP composition root
+
+**Current state:** `main.py` `lifespan()` directly creates an `asyncio.Task` for `processing_scheduler` at lines 128-135. Shutdown is via `stop_event.set()` + `await task`.
+
+**What to do:**
+1. Create `backend/app/infra/scheduler_lifecycle.py` with a class `SchedulerLifecycle` that encapsulates:
+   - `async start(repository, storage) -> None` (creates the task + stop_event)
+   - `async stop() -> None` (sets stop_event, awaits task)
+   - Property `is_running -> bool`
+2. Update `main.py` `lifespan()` to use `SchedulerLifecycle` instead of managing the task directly.
+3. The existing `processing_scheduler` async generator function stays as-is — this is just lifecycle wiring.
+4. Store the lifecycle instance on `app.state.scheduler` instead of separate `processing_stop_event` and `processing_task`.
+
+**Critical:** Do NOT change the behavior of `processing_enabled()`. Do NOT change the scheduler's internal logic. Only move the lifecycle management behind an explicit boundary.
+
+**Acceptance:** `pytest` backend passes. `processing_stop_event` and `processing_task` no longer appear directly in main.py lifespan.
+
+---
+
+### Item 5: Define explicit one-off admin commands
+
+**What to do:**
+1. Create `backend/app/cli.py` with a minimal CLI (using `argparse`, not click — keep deps minimal):
+   - `db-schema` — runs `database.ensure_schema()` and reports success
+   - `db-check` — verifies DB exists and is readable, reports table count
+   - `config-check` — instantiates `Settings`, reports all config values (masking sensitive ones)
+2. Make it runnable as `python -m backend.app.cli <command>`.
+3. Document the commands in the project README under a new "Administrative Commands" section (brief, 5-6 lines).
+
+**Acceptance:** Each command runs successfully locally. Tests pass (no need to add CLI tests — these are operational, not business logic).
+
+---
+
+COMMIT STRATEGY: Make ONE commit for all 4 items together (they're all small and tightly related under "12-factor improvements").
+
+--- TEST GATE ---
+Backend: cd d:/Git/veterinary-medical-records && python -m pytest --tb=short -q
+Frontend: cd d:/Git/veterinary-medical-records/frontend && npm test
+If any test fails: STOP. Report failures. Do NOT commit.
+--- END TEST GATE ---
+
+--- SCOPE BOUNDARY ---
+When done and all tests pass:
+1. Edit AI_ITERATIVE_EXECUTION_PLAN.md: change `- [ ] F1-C` to `- [x] F1-C`.
+2. Clean `## Prompt activo`: replace `### Paso objetivo` content with `_Completado: F1-C_` and `### Prompt` with `_Vacío._`
+3. git add -A && git commit -m "refactor(plan-f1c): centralize config, release metadata, scheduler lifecycle, admin CLI" && git push origin improvement/refactor
+4. Tell the user: "✓ F1-C completado, tests OK, pusheado. Siguiente: abre un chat nuevo en Copilot → selecciona GPT-5.3-Codex → adjunta AI_ITERATIVE_EXECUTION_PLAN.md → escribe Continúa (para F2-A 🔄 auditoría ln-620)."
+5. Stop.
+--- END SCOPE BOUNDARY ---
+```
 
 ---
 
