@@ -2792,6 +2792,125 @@ describe("App upload and list flow", () => {
     );
   });
 
+  it("treats manually edited values as unknown confidence and keeps unknown filter behavior after refresh", async () => {
+    const baseFetch = globalThis.fetch as typeof fetch;
+    let reviewEdited = false;
+
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = input.toString();
+      const method = (init?.method ?? "GET").toUpperCase();
+
+      if (url.includes("/runs/run-doc-ready/interpretations") && method === "POST") {
+        reviewEdited = true;
+        return new Response(
+          JSON.stringify({
+            run_id: "run-doc-ready",
+            interpretation_id: "interp-doc-ready",
+            version_number: 2,
+            data: {
+              document_id: "doc-ready",
+              processing_run_id: "run-doc-ready",
+              created_at: "2026-02-10T10:00:00Z",
+              fields: [
+                {
+                  field_id: "field-pet-name-doc-ready",
+                  key: "pet_name",
+                  value: "Luna editada",
+                  value_type: "string",
+                  field_candidate_confidence: 0.82,
+                  field_mapping_confidence: 0.82,
+                  field_review_history_adjustment: 7,
+                  is_critical: false,
+                  origin: "human",
+                  evidence: { page: 1, snippet: "Paciente: Luna" },
+                },
+              ],
+              confidence_policy: {
+                policy_version: "v1",
+                band_cutoffs: { low_max: 0.5, mid_max: 0.75 },
+              },
+            },
+          }),
+          { status: 200 }
+        );
+      }
+
+      if (url.includes("/documents/doc-ready/review") && method === "GET" && reviewEdited) {
+        const response = await baseFetch(input, init);
+        const payload = await response.json();
+        payload.active_interpretation.version_number = 2;
+        const fields = payload.active_interpretation?.data?.fields;
+        if (Array.isArray(fields)) {
+          const petNameField = fields.find((field: Record<string, unknown>) => field.key === "pet_name");
+          if (petNameField) {
+            petNameField.value = "Luna editada";
+            petNameField.origin = "human";
+            petNameField.field_mapping_confidence = 0.82;
+            petNameField.field_candidate_confidence = 0.82;
+            petNameField.field_review_history_adjustment = 7;
+          }
+        }
+        return new Response(JSON.stringify(payload), { status: 200 });
+      }
+
+      return baseFetch(input, init);
+    }) as typeof fetch;
+
+    renderApp();
+    fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
+    await waitForStructuredDataReady();
+
+    const indicatorBeforeEdit = screen.getByTestId("confidence-indicator-core:pet_name");
+    expect(indicatorBeforeEdit.className).toContain("bg-confidenceHigh");
+
+    const fieldCard = screen.getByTestId("field-trigger-core:pet_name").closest("article");
+    expect(fieldCard).not.toBeNull();
+    fireEvent.click(within(fieldCard as HTMLElement).getByRole("button", { name: /Editar/i }));
+
+    const editDialog = await screen.findByRole("dialog", { name: /Editar/i });
+    fireEvent.change(within(editDialog).getByRole("textbox"), {
+      target: { value: "Luna editada" },
+    });
+    fireEvent.click(within(editDialog).getByRole("button", { name: /^Guardar$/i }));
+
+    await waitFor(() => {
+      const editedIndicator = screen.getByTestId("confidence-indicator-core:pet_name");
+      expect(editedIndicator.className).toContain("bg-missing");
+    });
+
+    const editedIndicator = screen.getByTestId("confidence-indicator-core:pet_name");
+    expect(editedIndicator).toHaveAttribute(
+      "aria-label",
+      expect.stringMatching(
+        /La confianza aplica únicamente al valor originalmente detectado por el sistema\. El valor actual ha sido editado y por eso no tiene confianza asociada\./i
+      )
+    );
+    expect(editedIndicator).toHaveAttribute(
+      "aria-label",
+      expect.not.stringMatching(/Fiabilidad del candidato|Ajuste por histórico|Confianza:\s*\d+%/i)
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /^Sin confianza \(\d+\)$/i }));
+    expect(screen.getByTestId("field-trigger-core:pet_name")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /^Sin confianza \(\d+\)$/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Baja \(\d+\)$/i }));
+    expect(screen.queryByTestId("field-trigger-core:pet_name")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: /^Baja \(\d+\)$/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Actualizar/i }));
+    await waitForStructuredDataReady();
+
+    const indicatorAfterRefresh = screen.getByTestId("confidence-indicator-core:pet_name");
+    expect(indicatorAfterRefresh.className).toContain("bg-missing");
+    expect(indicatorAfterRefresh).toHaveAttribute(
+      "aria-label",
+      expect.stringMatching(
+        /La confianza aplica únicamente al valor originalmente detectado por el sistema\. El valor actual ha sido editado y por eso no tiene confianza asociada\./i
+      )
+    );
+  });
+
   it("does not post extraction snapshots from the UI", async () => {
     const baseFetch = globalThis.fetch as typeof fetch;
     let snapshotPostAttempts = 0;

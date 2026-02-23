@@ -1304,6 +1304,9 @@ function getConfidenceTone(
 }
 
 function resolveMappingConfidence(field: ReviewField): number | null {
+  if (field.origin === "human") {
+    return null;
+  }
   const raw = field.field_mapping_confidence;
   if (typeof raw !== "number" || !Number.isFinite(raw)) {
     return null;
@@ -4115,10 +4118,18 @@ export function App() {
   const buildFieldTooltip = (
     item: ReviewSelectableField
   ): { content: ReactNode; ariaLabel: string } => {
+    const manualOverrideConfidenceMessage =
+      "La confianza aplica únicamente al valor originalmente detectado por el sistema. El valor actual ha sido editado y por eso no tiene confianza asociada.";
     if (!activeConfidencePolicy) {
       return {
         content: "Configuración de confianza no disponible.",
         ariaLabel: "Configuración de confianza no disponible.",
+      };
+    }
+    if (item.rawField?.origin === "human") {
+      return {
+        content: manualOverrideConfidenceMessage,
+        ariaLabel: manualOverrideConfidenceMessage,
       };
     }
     if (!item.hasMappingConfidence) {
