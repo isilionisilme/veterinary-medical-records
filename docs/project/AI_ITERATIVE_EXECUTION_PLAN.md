@@ -104,12 +104,30 @@ Trabajar por **iteraciones** y no mezclar alcance:
 - **Prompts de implementación** (Fases 3+): generados just-in-time, usando el output de las auditorías como input. Evita obsolescencia por cambios en el código.
 
 ### Protocolo "Continúa"
-Cada prompt incluye al final una instrucción para que el agente marque su paso como completado en la sección **Estado de ejecución** (cambiando `[ ]` por `[x]`) antes de detenerse. Esto permite reiniciar cualquier sesión con:
+Cada prompt incluye al final una instrucción para que el agente:
+1. Marque su paso como completado en la sección **Estado de ejecución** (cambiando `[ ]` por `[x]`).
+2. Haga commit automáticamente con el mensaje estandarizado (sin pedir permiso, informando al usuario del commit realizado).
+3. Se detenga.
+
+Esto permite reiniciar cualquier sesión con:
 1. Abre un chat nuevo con el agente indicado para el siguiente paso.
 2. Adjunta este archivo.
 3. Escribe: `Continúa`.
 
 El agente leerá el Estado, identificará el primer ítem sin completar, ejecutará ese paso y se detendrá al terminar.
+
+### Convención de commits
+Todos los commits de este flujo siguen el formato:
+```
+<tipo>(plan-<id>): <descripción corta>
+```
+Ejemplos:
+- `audit(plan-f1a): 12-factor compliance report + backlog`
+- `refactor(plan-f2c): split App.tsx into page and API modules`
+- `test(plan-f4c): add frontend coverage gaps for upload flow`
+- `docs(plan-f5c): add ADR-ARCH-001 through ADR-ARCH-004`
+
+El agente construye el mensaje según el id del paso completado (F1-A → `plan-f1a`, F2-C → `plan-f2c`, etc.).
 
 ---
 
@@ -168,9 +186,11 @@ Audit instructions:
 
 --- SCOPE BOUNDARY — STOP HERE ---
 Do NOT implement any changes. Your output for this prompt is the audit report + backlog ONLY.
-When done, edit docs/project/AI_ITERATIVE_EXECUTION_PLAN.md:
-  Change `- [ ] F1-A` to `- [x] F1-A` in the Estado de ejecución section.
-Then stop and wait for the user.
+When done:
+1. Edit docs/project/AI_ITERATIVE_EXECUTION_PLAN.md: change `- [ ] F1-A` to `- [x] F1-A` in the Estado de ejecución section.
+2. Commit with: `git add -A && git commit -m "audit(plan-f1a): 12-factor compliance report + backlog"`
+3. Tell the user: "✓ F1-A completado y commiteado. Vuelve a Claude (este chat) para validar el backlog (F1-B)."
+4. Stop.
 --- END SCOPE BOUNDARY ---
 ```
 
@@ -241,9 +261,11 @@ Then return a prioritized backlog of the top 10 actionable items for Codex to im
 
 --- SCOPE BOUNDARY — STOP HERE ---
 Do NOT implement any changes. Your output for this prompt is the audit report + backlog ONLY.
-When done, edit docs/project/AI_ITERATIVE_EXECUTION_PLAN.md:
-  Change `- [ ] F2-A` to `- [x] F2-A` in the Estado de ejecución section.
-Then stop and wait for the user.
+When done:
+1. Edit docs/project/AI_ITERATIVE_EXECUTION_PLAN.md: change `- [ ] F2-A` to `- [x] F2-A` in the Estado de ejecución section.
+2. Commit with: `git add -A && git commit -m "audit(plan-f2a): ln-620 codebase audit report + remediation backlog"`
+3. Tell the user: "✓ F2-A completado y commiteado. Vuelve a Claude (este chat) para validar el backlog (F2-B)."
+4. Stop.
 --- END SCOPE BOUNDARY ---
 ```
 
