@@ -239,10 +239,6 @@ function validateAge(value: string): FieldValidationResult {
     return { ok: false, reason: "invalid-age" };
   }
 
-  if (years < 0 || years > 999) {
-    return { ok: false, reason: "invalid-age" };
-  }
-
   return { ok: true, normalized: `${years}` };
 }
 

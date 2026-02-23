@@ -253,4 +253,18 @@ describe("FieldEditDialog age", () => {
 
     expect(onValueChange).toHaveBeenCalledWith("123");
   });
+
+  it("keeps save enabled for valid upper boundary age 999", () => {
+    const { onSave } = renderAgeDialog({
+      value: "999",
+      isSaveDisabled: false,
+      ageErrorMessage: null,
+    });
+
+    const saveButton = screen.getByRole("button", { name: "Guardar" });
+    expect(saveButton).toBeEnabled();
+
+    fireEvent.click(saveButton);
+    expect(onSave).toHaveBeenCalledTimes(1);
+  });
 });
