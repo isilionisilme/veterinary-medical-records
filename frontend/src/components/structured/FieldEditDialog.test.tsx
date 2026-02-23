@@ -65,6 +65,33 @@ function renderSexDialog(options?: {
   return { onValueChange, onOpenChange, onSave };
 }
 
+function renderAgeDialog(options?: {
+  value?: string;
+  isSaveDisabled?: boolean;
+  ageErrorMessage?: string | null;
+}) {
+  const onValueChange = vi.fn();
+  const onOpenChange = vi.fn();
+  const onSave = vi.fn();
+
+  render(
+    <FieldEditDialog
+      open
+      fieldKey="age"
+      fieldLabel="Edad"
+      value={options?.value ?? ""}
+      isSaving={false}
+      isSaveDisabled={options?.isSaveDisabled ?? false}
+      ageErrorMessage={options?.ageErrorMessage ?? null}
+      onValueChange={onValueChange}
+      onOpenChange={onOpenChange}
+      onSave={onSave}
+    />
+  );
+
+  return { onValueChange, onOpenChange, onSave };
+}
+
 describe("FieldEditDialog species", () => {
   it("shows current invalid value as disabled detected option and keeps save blocked", () => {
     const { onSave } = renderSpeciesDialog({
@@ -200,5 +227,30 @@ describe("FieldEditDialog sex", () => {
       screen.getByText("No coincide con las opciones de este campo")
     ).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /sexo incierto/i })).toBeNull();
+  });
+});
+
+describe("FieldEditDialog age", () => {
+  it("keeps save disabled and shows restriction message when age is invalid", () => {
+    const { onSave } = renderAgeDialog({
+      value: "",
+      isSaveDisabled: true,
+      ageErrorMessage: "Introduce una edad entre 0-999 años",
+    });
+
+    expect(screen.getByText("Introduce una edad entre 0-999 años")).toBeInTheDocument();
+    const saveButton = screen.getByRole("button", { name: "Guardar" });
+    expect(saveButton).toBeDisabled();
+
+    fireEvent.click(saveButton);
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
+  it("sanitizes age input to digits only and max three characters", () => {
+    const { onValueChange } = renderAgeDialog({ value: "" });
+
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "12ab34" } });
+
+    expect(onValueChange).toHaveBeenCalledWith("123");
   });
 });

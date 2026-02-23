@@ -37,6 +37,7 @@ type FieldEditDialogProps = {
   isSaveDisabled?: boolean;
   microchipErrorMessage?: string | null;
   weightErrorMessage?: string | null;
+  ageErrorMessage?: string | null;
   dateErrorMessage?: string | null;
   sexErrorMessage?: string | null;
   speciesErrorMessage?: string | null;
@@ -56,6 +57,7 @@ export function FieldEditDialog({
   isSaveDisabled = false,
   microchipErrorMessage = null,
   weightErrorMessage = null,
+  ageErrorMessage = null,
   dateErrorMessage = null,
   sexErrorMessage = null,
   speciesErrorMessage = null,
@@ -112,6 +114,7 @@ export function FieldEditDialog({
   const titleText = fieldLabel.trim().length > 0 ? `Editar "${fieldLabel}"` : "Editar campo";
   const isMicrochipField = fieldKey === "microchip_id";
   const isWeightField = fieldKey === "weight";
+  const isAgeField = fieldKey === "age";
   const isDateField =
     fieldKey === "document_date" ||
     fieldKey === "visit_date" ||
@@ -121,6 +124,7 @@ export function FieldEditDialog({
     Boolean(fieldKey?.startsWith("fecha_"));
   const microchipHintText = "Solo números (9–15 dígitos).";
   const weightHintText = "Ej.: 12,5 kg (0,5–120).";
+  const ageHintText = "Introduce una edad entre 0-999 años";
   const dateHintText = "Formatos: dd/mm/aaaa o aaaa-mm-dd.";
   const sexHintText = "Selecciona macho o hembra.";
   const speciesHintText = "Selecciona canino o felino.";
@@ -174,6 +178,11 @@ export function FieldEditDialog({
       onValueChange(sanitized);
       return;
     }
+    if (isAgeField) {
+      const sanitized = nextValue.replace(/\D/g, "").slice(0, 3);
+      onValueChange(sanitized);
+      return;
+    }
     if (isDateField) {
       const sanitized = nextValue.replace(/[^0-9/-]/g, "");
       onValueChange(sanitized);
@@ -192,6 +201,7 @@ export function FieldEditDialog({
   const shouldHighlightError =
     (isMicrochipField && microchipErrorMessage) ||
     (isWeightField && weightErrorMessage) ||
+    (isAgeField && ageErrorMessage) ||
     (isDateField && dateErrorMessage) ||
     (isSexField && sexErrorMessage) ||
     (isSpeciesField && speciesErrorMessage);
@@ -347,6 +357,12 @@ export function FieldEditDialog({
           <div className="mt-1 space-y-1">
             <p className={weightErrorMessage ? "text-xs text-[var(--status-error)]" : "text-xs text-muted"}>
               {weightErrorMessage ?? weightHintText}
+            </p>
+          </div>
+        ) : isAgeField ? (
+          <div className="mt-1 space-y-1">
+            <p className={ageErrorMessage ? "text-xs text-[var(--status-error)]" : "text-xs text-muted"}>
+              {ageErrorMessage ?? ageHintText}
             </p>
           </div>
         ) : isDateField ? (

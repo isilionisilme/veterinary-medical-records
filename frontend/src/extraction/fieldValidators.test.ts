@@ -103,9 +103,15 @@ describe("validateFieldValue", () => {
     }
   });
 
-  it("normalizes age values", () => {
-    const result = validateFieldValue("age", "7a");
-    expect(result).toEqual({ ok: true, normalized: "7 años" });
+  it("accepts numeric age values between 0 and 999", () => {
+    expect(validateFieldValue("age", "0")).toEqual({ ok: true, normalized: "0" });
+    expect(validateFieldValue("age", "7")).toEqual({ ok: true, normalized: "7" });
+    expect(validateFieldValue("age", "999")).toEqual({ ok: true, normalized: "999" });
+  });
+
+  it("rejects non-numeric or out-of-range age values", () => {
+    expect(validateFieldValue("age", "7a")).toEqual({ ok: false, reason: "invalid-age" });
+    expect(validateFieldValue("age", "1000")).toEqual({ ok: false, reason: "invalid-age" });
   });
 
   it("keeps unsupported keys as non-empty passthrough", () => {
