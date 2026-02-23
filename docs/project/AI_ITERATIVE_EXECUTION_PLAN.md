@@ -52,11 +52,11 @@ Estas áreas puntúan alto con los evaluadores. Todo cambio debe preservarlas:
 ## Regla operativa clave
 
 Trabajar por **iteraciones** y no mezclar alcance:
-1. Claude propone/valida (usando skill correspondiente).
-2. Codex implementa.
-3. Claude evalúa contra criterios de aceptación.
-4. Si hay brechas, Codex corrige y se repite.
-5. Solo cuando Claude confirme **"iteración cerrada"**, pasar a la siguiente.
+1. **Claude (este chat)** propone/valida (usando skill correspondiente).
+2. **Codex** implementa.
+3. **Claude (este chat)** evalúa contra criterios de aceptación.
+4. Si hay brechas, **Codex** corrige y se repite.
+5. Solo cuando **Claude (este chat)** confirme **"iteración cerrada"**, pasar a la siguiente.
 
 ## Estrategia de prompts
 
@@ -78,6 +78,9 @@ Para cada recomendación/hallazgo:
 ---
 
 ## Fase 1 — Auditoría de arquitectura `[PROMPT LISTO]`
+
+> **Modelo para el prompt:** `Codex`
+> **Modelo para validar el backlog:** `Claude (este chat)`
 
 **Skill:** `12-factor-apps`
 **Objetivo:** Identificar brechas de arquitectura cloud-native. La arquitectura ya es sólida; esta fase debe confirmar eso o señalar brechas puntuales.
@@ -110,15 +113,19 @@ Audit instructions:
 ```
 
 ### Flujo de ejecución
-1. Codex ejecuta el prompt de auditoría con `12-factor-apps`.
-2. Claude revisa el backlog producido y elimina items fuera de alcance.
-3. Codex implementa cada item por separado (una iteración por item).
-4. Claude valida cada iteración contra su criterio de aceptación.
+1. `Codex` — ejecuta el prompt de auditoría con `12-factor-apps`.
+2. `Claude (este chat)` — revisa el backlog producido y elimina items fuera de alcance.
+3. `Codex` — implementa cada item por separado (una iteración por item).
+4. `Claude (este chat)` — valida cada iteración contra su criterio de aceptación.
 5. Repetir 3-4 hasta cerrar todos los items del backlog.
 
 ---
 
 ## Fase 2 — Auditoría de mantenibilidad y refactor estructural `[PROMPT LISTO]`
+
+> **Modelo para el prompt de auditoría:** `Codex`
+> **Modelo para revisar el informe y validar iteraciones:** `Claude (este chat)`
+> **Modelo para implementar el refactor:** `Codex`
 
 **Skill:** `ln-620-codebase-auditor`
 **Objetivo:** Identificar deuda técnica, y en especial los archivos monolíticos que un evaluador verá inmediatamente.
@@ -165,17 +172,21 @@ Then return a prioritized backlog of the top 10 actionable items for Codex to im
 ```
 
 ### Flujo de ejecución
-1. Codex ejecuta el prompt con `ln-620-codebase-auditor` → genera `docs/project/codebase_audit.md`.
-2. Claude revisa el informe y valida/ajusta el backlog resultante.
-3. **Iteración 2a — App.tsx**: extraer rutas/páginas, capa API, state management en módulos separados. Criterio: ningún archivo nuevo >500 líneas. Tests siguen pasando (`npm test`).
-4. **Iteración 2b — processing_runner.py**: separar extracción, interpretación, orquestación. Criterio: interfaz pública intacta, tests backend pasan (`pytest`).
-5. **Iteración 2c — document_service.py**: dividir responsabilidades. Criterio: tests pasan, imports en `routes.py` no cambian.
-6. **Iteración 2d — App.test.tsx**: redistribuir tests alineados con nuevos componentes. Criterio: cobertura mantenida o mejorada.
-7. Claude valida cierre de cada iteración antes de pasar a la siguiente.
+1. `Codex` — ejecuta el prompt con `ln-620-codebase-auditor` → genera `docs/project/codebase_audit.md`.
+2. `Claude (este chat)` — revisa el informe y valida/ajusta el backlog resultante.
+3. `Codex` — **Iteración 2a — App.tsx**: extraer rutas/páginas, capa API, state management en módulos separados. Criterio: ningún archivo nuevo >500 líneas. Tests siguen pasando (`npm test`).
+4. `Codex` — **Iteración 2b — processing_runner.py**: separar extracción, interpretación, orquestación. Criterio: interfaz pública intacta, tests backend pasan (`pytest`).
+5. `Codex` — **Iteración 2c — document_service.py**: dividir responsabilidades. Criterio: tests pasan, imports en `routes.py` no cambian.
+6. `Codex` — **Iteración 2d — App.test.tsx**: redistribuir tests alineados con nuevos componentes. Criterio: cobertura mantenida o mejorada.
+7. `Claude (este chat)` — valida cierre de cada iteración antes de pasar a la siguiente.
 
 ---
 
 ## Fase 3 — Quick wins de tooling `[PROMPT: just-in-time]`
+
+> **Modelo para definir la config:** `Claude (este chat)`
+> **Modelo para implementar:** `Codex`
+> **Modelo para verificar:** `Claude (este chat)`
 
 **Objetivo:** Añadir herramientas estándar que los evaluadores esperan ver y que no están configuradas.
 **Esfuerzo total:** S. **Impacto en evaluación:** Alto.
@@ -187,29 +198,38 @@ Then return a prioritized backlog of the top 10 actionable items for Codex to im
 | **`.pre-commit-config.yaml`** | `pre-commit` en deps pero sin config | Hooks: ruff + eslint + prettier |
 
 ### Flujo de ejecución
-1. Claude define la configuración exacta para los tres tools (just-in-time, tras ver output de Fase 2).
-2. Codex implementa los tres en una sola iteración.
-3. Claude verifica: `npm run lint` pasa, `pytest --cov` genera reporte, pre-commit hooks funcionan localmente.
-4. Codex cierra brechas.
+1. `Claude (este chat)` — define la configuración exacta para los tres tools (just-in-time, tras ver output de Fase 2).
+2. `Codex` — implementa los tres en una sola iteración.
+3. `Claude (este chat)` — verifica: `npm run lint` pasa, `pytest --cov` genera reporte, pre-commit hooks funcionan localmente.
+4. `Codex` — cierra brechas.
 
 ---
 
 ## Fase 4 — Calidad de tests `[PROMPT: just-in-time]`
+
+> **Modelo para auditoría de tests:** `Codex` (usa skills `frontend-testing` y `python-testing-patterns`)
+> **Modelo para validar y decidir cierre:** `Claude (este chat)`
+> **Modelo para implementar mejoras:** `Codex`
 
 **Skills:** `frontend-testing`, `python-testing-patterns`
 **Objetivo:** Evaluar cobertura post-refactor, eliminar tests frágiles y cerrar gaps críticos.
 **Nota:** Esta fase ocurre DESPUÉS de Fase 2. Los tests de frontend ya estarán redistribuidos; el foco es calidad, no estructura.
 
 ### Flujo de ejecución
-1. Claude (`frontend-testing`): auditoría de cobertura frontend — gaps críticos, tests frágiles, patrones incorrectos.
-2. Claude (`python-testing-patterns`): auditoría backend — fixtures redundantes, casos sin probar, robustez de integración.
-3. Codex: implementar mejoras priorizadas de tests por separado (frontend / backend).
-4. Claude: revisar resultados y decidir cierre.
-5. Repetir hasta cierre.
+1. `Codex` — auditoría de cobertura frontend con skill `frontend-testing`: gaps críticos, tests frágiles, patrones incorrectos.
+2. `Codex` — auditoría backend con skill `python-testing-patterns`: fixtures redundantes, casos sin probar, robustez de integración.
+3. `Claude (este chat)` — revisar los informes de auditoría y priorizar mejoras.
+4. `Codex` — implementar mejoras priorizadas de tests por separado (frontend / backend).
+5. `Claude (este chat)` — revisar resultados y decidir cierre.
+6. Repetir 4-5 hasta cierre.
 
 ---
 
 ## Fase 5 — Documentación de entrega `[PROMPT: just-in-time]`
+
+> **Modelo para revisar docs existentes:** `Codex` (skill `project-guidelines-example`)
+> **Modelo para definir ADRs y validar formato:** `Claude (este chat)` (skill `architecture-decision-records`)
+> **Modelo para crear los archivos ADR:** `Codex`
 
 **Skills:** `project-guidelines-example`, `architecture-decision-records`
 **Objetivo:** Los evaluadores piden explícitamente "decisiones técnicas documentadas". Ya existen ADRs de extracción; faltan ADRs de arquitectura general.
@@ -222,11 +242,11 @@ ADRs que faltan y que el evaluador espera:
 - **ADR-ARCH-004**: Why in-process async (vs task queue como Celery/RQ)
 
 ### 5b — Estructura documental
-1. Claude (`project-guidelines-example`): revisar y optimizar docs existentes (sin reinventar lo correcto).
-2. Codex: aplicar mejoras puntuales.
-3. Claude (`architecture-decision-records`): validar formato ADR y crear los 4 ADRs de arquitectura.
-4. Codex: crear ADRs y conectar con `docs/README.md`.
-5. Claude: verificación final de claridad, trazabilidad y mantenibilidad.
+1. `Codex` — usar skill `project-guidelines-example` para revisar y optimizar docs existentes (sin reinventar lo correcto).
+2. `Codex` — aplicar mejoras puntuales.
+3. `Claude (este chat)` — usando skill `architecture-decision-records`: validar formato ADR y definir contenido de los 4 ADRs de arquitectura.
+4. `Codex` — crear los ficheros ADR y conectar con `docs/README.md`.
+5. `Claude (este chat)` — verificación final de claridad, trazabilidad y mantenibilidad.
 
 ### 5c — Plan de mejoras futuras
 Crear `docs/project/FUTURE_IMPROVEMENTS.md` con roadmap 2/4/8 semanas (entregable explícito requerido por la prueba).
@@ -235,21 +255,26 @@ Crear `docs/project/FUTURE_IMPROVEMENTS.md` con roadmap 2/4/8 semanas (entregabl
 
 ## Fase 6 — Smoke test del evaluador `[PROMPT: just-in-time]`
 
+> **Modelo para verificar README y revisar la experiencia:** `Claude (este chat)`
+> **Modelo para ejecutar el flujo y corregir fricciones:** `Codex`
+
 **Objetivo:** Garantizar que la experiencia del evaluador sea impecable de principio a fin. Simula exactamente lo que hará el evaluador cuando reciba el repo.
 
 ### Checklist de verificación
-1. Claude: verificar que `README.md` lleva del clone al sistema funcionando en ≤5 comandos / ≤5 minutos.
-2. Codex: ejecutar flujo completo — `docker compose up --build` → todos los servicios healthy → subir un PDF → ver extracción → editar campo → confirmar revisión.
-3. Claude: revisar experiencia de primer uso (mensajes de error claros, estados de carga, feedback visual, edge cases visibles).
-4. Codex: corregir cualquier fricción encontrada.
+1. `Claude (este chat)` — verificar que `README.md` lleva del clone al sistema funcionando en ≤5 comandos / ≤5 minutos.
+2. `Codex` — ejecutar flujo completo: `docker compose up --build` → todos los servicios healthy → subir un PDF → ver extracción → editar campo → confirmar revisión.
+3. `Claude (este chat)` — revisar experiencia de primer uso (mensajes de error claros, estados de carga, feedback visual, edge cases visibles).
+4. `Codex` — corregir cualquier fricción encontrada.
 
 ---
 
 ## Fase 7 — Cierre global
 
-1. Claude: repaso final del delta completo (sin rediseños grandes).
-2. Codex: aplicar correcciones imprescindibles de cierre menores.
-3. Claude: veredicto final **"LISTO PARA ENTREGAR / NO LISTO"** con lista de lo implementado vs pendiente.
+> **Modelo:** `Claude (este chat)` para el repaso y el veredicto — `Codex` para las correcciones.
+
+1. `Claude (este chat)` — repaso final del delta completo (sin rediseños grandes).
+2. `Codex` — aplicar correcciones imprescindibles de cierre menores.
+3. `Claude (este chat)` — veredicto final **"LISTO PARA ENTREGAR / NO LISTO"** con lista de lo implementado vs pendiente.
 
 ---
 
