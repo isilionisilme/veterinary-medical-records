@@ -316,10 +316,15 @@ STEP B — Commit plan update (only after code is committed):
 STEP C — Push both commits:
 1. git push origin improvement/refactor
 
-STEP D — Tell the user:
-"✓ F2-F completado, tests OK, pusheado. Siguiente: vuelve a Claude para F2-G 🚧 — pruebas manuales post-refactor (~10 min: docker compose up, subir PDF, editar, confirmar)."
+STEP D — Update PR #144 description:
+Run `gh pr view 144 --json body -q .body` to read the current body, then run `gh pr edit 144 --body "..."` with the updated body.
+Mark F2-F as [x] in the Phase 2 progress list and add: "Redistribute App.test.tsx (~3,250 → per-component test files + shared helpers)".
+If all F2 sub-steps are now [x], also mark Phase 2 as [x].
 
-5. Stop.
+STEP E — Tell the user:
+"✓ F2-F completado, tests OK, pusheado, PR actualizada. Siguiente: vuelve a Claude para F2-G 🚧 — pruebas manuales post-refactor (~10 min: docker compose up, subir PDF, editar, confirmar)."
+
+6. Stop.
 --- END SCOPE BOUNDARY ---
 ```
 
@@ -397,6 +402,9 @@ Si un paso completado causa un problema no detectado por los tests:
 **El usuario NO edita este archivo manualmente.** Solo los agentes (Claude y Codex) modifican `AI_ITERATIVE_EXECUTION_PLAN.md`. Si el usuario necesita cambiar algo (ej: añadir un paso, corregir un typo), se lo pide a Claude y Claude hace la edición + commit.
 
 Razón: una edición humana accidental (borrar un `[x]`, reformatear una tabla, truncar un prompt) puede corromper el routing y causar que Codex repita o salte pasos.
+
+### PR progress tracking (mandatory)
+**Cada paso completado debe reflejarse en la PR #144.** Al terminar el SCOPE BOUNDARY (después del push), el agente actualiza el body de la PR con `gh pr edit 144 --body "..."`. Esto es obligatorio tanto para Codex como para Claude. Si el comando falla, reportar al usuario pero NO bloquear el paso.
 
 ### Plan-edit-last (hard constraint)
 **Codex NO edita `AI_ITERATIVE_EXECUTION_PLAN.md` hasta que los tests pasen y el código esté commiteado.** La secuencia obligatoria es:
@@ -556,10 +564,20 @@ STEP B — Commit plan update (only after code is committed):
 STEP C — Push both commits:
 1. git push origin improvement/refactor
 
-STEP D — Tell the user:
-"✓ F?-? completado, tests OK, pusheado. [siguiente paso instrucción]."
+STEP D — Update PR #144 description:
+Run the following command, replacing the progress checklist to reflect the newly completed step.
+Use `gh pr edit 144 --body "..."` with the full updated body.
+Rules for the body update:
+- Keep the existing structure (Summary, Progress, Key metrics, How to test).
+- Mark the just-completed step with [x] and add a one-line summary of what was done.
+- If a phase is now fully complete, mark the phase checkbox [x] too.
+- Do NOT remove or alter content from previously completed phases.
+- Keep the body under 3000 chars (GitHub renders poorly above that).
 
-5. Stop.
+STEP E — Tell the user:
+"✓ F?-? completado, tests OK, pusheado, PR actualizada. [siguiente paso instrucción]."
+
+6. Stop.
 --- END SCOPE BOUNDARY ---
 ```
 
