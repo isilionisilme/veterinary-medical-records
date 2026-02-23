@@ -201,10 +201,101 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-_Completado: F2-C_
+_F2-D: Descomponer processing_runner.py en módulos por responsabilidad (scheduler, orchestrator, interpretation, pdf_extraction)._
 
 ### Prompt
-_Vacío._
+```
+--- AGENT IDENTITY CHECK ---
+This prompt is designed for GPT-5.3-Codex in VS Code Copilot Chat.
+If you are not GPT-5.3-Codex: STOP. Tell the user to switch agents.
+--- END IDENTITY CHECK ---
+
+--- BRANCH CHECK ---
+Run: git branch --show-current
+If NOT `improvement/refactor`: STOP. Tell the user: "⚠️ Cambia a la rama improvement/refactor antes de continuar: git checkout improvement/refactor"
+--- END BRANCH CHECK ---
+
+--- SYNC CHECK ---
+Run: git pull origin improvement/refactor
+--- END SYNC CHECK ---
+
+--- PRE-FLIGHT CHECK ---
+1. Verify F2-C has `[x]` in Estado de ejecución. If not: STOP.
+2. Verify these files exist:
+   - backend/app/application/processing_runner.py
+   - backend/app/main.py
+--- END PRE-FLIGHT CHECK ---
+
+TASK — Decompose `backend/app/application/processing_runner.py` (~2,586 lines) into a `backend/app/application/processing/` package following the strategy in `### F2-B — Decisiones de validación y estrategia de descomposición`.
+
+**Target module structure:**
+
+1. **`application/processing/__init__.py`** — Re-export the two public entry points:
+   - `enqueue_processing_run` (from scheduler)
+   - `processing_scheduler` (from scheduler)
+   - `ProcessingError` and `InterpretationBuildError` (exceptions)
+   This preserves the existing import contract: `from backend.app.application.processing_runner import ...` → `from backend.app.application.processing import ...`
+
+2. **`application/processing/scheduler.py`** (~80-100 lines) — Scheduling and queue management:
+   - `EnqueuedRun` dataclass
+   - `enqueue_processing_run()`
+   - `processing_scheduler()` async generator
+   - `_process_queued_runs()`
+   - Imports orchestrator's `_execute_run` to dispatch runs
+
+3. **`application/processing/orchestrator.py`** (~300 lines) — Run execution and step tracking:
+   - `_execute_run()` — the main run lifecycle
+   - `_process_document()` — document processing pipeline
+   - `_persist_observability_snapshot_for_completed_run()`
+   - `_append_step_status()`
+   - Imports from interpretation module and pdf_extraction module
+
+4. **`application/processing/interpretation.py`** (~500 lines) — Interpretation building and candidate processing:
+   - `_build_interpretation_artifact()`
+   - `_should_include_interpretation_candidates()`
+   - `_mine_interpretation_candidates()` (the large ~680 line function)
+   - `_extract_date_candidates_with_classification()`
+   - `_map_candidates_to_global_schema()`
+   - `_candidate_sort_key()`
+   - `_build_date_selection_debug()`, `_build_mvp_coverage_debug_summary()`
+   - `_find_line_number_for_snippet()`
+   - `_build_structured_fields_from_global_schema()`
+   - `_build_field_candidate_suggestions()`, `_candidate_suggestion_sort_key()`
+   - `_build_structured_field()`
+   - All `_sanitize_*`, `_derive_mapping_id`, `_resolve_review_history_adjustment`, `_compose_field_mapping_confidence` functions
+   - NOTE: This module will be ~1200 lines due to `_mine_interpretation_candidates` being ~680 lines internally. That's acceptable — it's cohesive (all interpretation logic). Do NOT split `_mine_interpretation_candidates` itself.
+
+5. **`application/processing/pdf_extraction.py`** (~1040 lines) — PDF text extraction:
+   - `_extract_pdf_text()` — entry point (tries strategies in order)
+   - `_extract_pdf_text_with_extractor()` — pdfminer strategy
+   - `_extract_pdf_text_with_fitz()` — PyMuPDF strategy
+   - `PdfCMap` class
+   - `_extract_pdf_text_without_external_dependencies()` — no-deps fallback
+   - ALL remaining `_parse_pdf_*`, `_tokenize_*`, `_decode_*`, `_stitch_*`, `_sanitize_text_chunks`, `_is_readable_text_chunk`, `_max_consonant_run`, `_should_join_without_space`, `_parse_pdf_literal_string*`, `_looks_textual_bytes`, `_normalize_candidate_text` functions
+
+**CRITICAL RULES:**
+- **Update ALL imports** across the codebase. Search for `from backend.app.application.processing_runner import` and `from backend.app.application import processing_runner` and update them.
+- **Update `main.py`** — it imports `processing_scheduler` from processing_runner. Update to import from the new package.
+- **Update `backend/app/infra/scheduler_lifecycle.py`** if it imports from processing_runner.
+- **Preserve the old `processing_runner.py` as a thin re-export shim** that imports from the new package and re-exports everything. This prevents breaking any imports we might miss. Add a comment: `# Legacy shim — imports moved to backend.app.application.processing/`.
+- **Do NOT change any function signatures, behavior, or logic.** This is a structural move ONLY.
+- **Shared utilities** (`_default_now_iso`, `_default_id`) — put in whichever module uses them most, or in a `_utils.py` within the package if used by multiple modules.
+
+--- TEST GATE ---
+Backend: cd d:/Git/veterinary-medical-records && python -m pytest --tb=short -q
+Frontend: cd d:/Git/veterinary-medical-records/frontend && npm test
+If any test fails: STOP. Report failures. Do NOT commit.
+--- END TEST GATE ---
+
+--- SCOPE BOUNDARY ---
+When done and all tests pass:
+1. Edit AI_ITERATIVE_EXECUTION_PLAN.md: change `- [ ] F2-D` to `- [x] F2-D`.
+2. Clean `## Prompt activo`: replace `### Paso objetivo` content with `_Completado: F2-D_` and `### Prompt` with `_Vacío._`
+3. git add -A && git commit -m "refactor(plan-f2d): decompose processing_runner.py into processing package" && git push origin improvement/refactor
+4. Tell the user: "✓ F2-D completado, tests OK, pusheado. Siguiente: vuelve a Claude (este chat) con el plan adjunto y escribe Continúa para que prepare el prompt de F2-E."
+5. Stop.
+--- END SCOPE BOUNDARY ---
+```
 
 ---
 
