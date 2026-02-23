@@ -343,6 +343,17 @@ Estas áreas puntúan alto con los evaluadores. Todo cambio debe preservarlas:
 ### Iteraciones atómicas
 Nunca mezclar alcance entre pasos. Cada paso del Estado de ejecución es una unidad atómica: se ejecuta, se commitea, se pushea, se marca `[x]`. Si falla, se reporta — no se continúa al siguiente.
 
+### Regla de identidad para Claude (hard rule — se aplica antes que cualquier otra)
+**Si eres Claude** y el usuario escribe `Continúa`:
+1. Lee el Estado de ejecución y encuentra el primer `[ ]`.
+2. Si ese paso está marcado como 🔄 **(Codex)** o el texto del paso incluye "(Codex)":
+   - **STOP inmediatamente. No leas el prompt. No implementes nada.**
+   - Responde EXACTAMENTE: "⚠️ Este paso es de Codex, no de Claude. **STOP.** Abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
+3. Si el paso es 🚧 **(Claude)**: procede normalmente.
+4. Si hay ambigüedad: STOP y pregunta al usuario qué agente corresponde.
+
+> **Razón:** Las disculpas no persisten entre chats. La regla escrita sí.
+
 ### Regla "Continúa-only"
 **Cuando el usuario escribe `Continúa`, el agente ejecuta SOLO lo que dicta el plan (Estado + prompt correspondiente).** Si el mensaje del usuario incluye instrucciones adicionales junto a "Continúa" (ej: "Continúa, pero no toques X" o "Continúa y de paso haz Y"), el agente debe:
 1. **Ignorar las instrucciones extra.**
