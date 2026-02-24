@@ -668,7 +668,45 @@ Below are the 4 architecture ADRs with full arguments, trade-offs, and code evid
   - **Scaling limit:** Single-process means throughput is bounded by one event loop. For multi-clinic SaaS, extracting the scheduler into a Celery worker behind the same `DocumentRepository` Protocol would be the natural evolution.
 - **Code evidence:** `backend/app/infra/scheduler_lifecycle.py` (`asyncio.create_task`), `backend/app/application/processing/scheduler.py` (polling loop), `backend/app/application/processing/orchestrator.py` (`asyncio.wait_for`, `asyncio.to_thread`), `backend/app/main.py` (lifespan wiring, `recover_orphaned_runs`).
 
----
+### F6-A — Smoke test del evaluador (Claude)
+
+**README quickstart verification:**
+- ✅ Prerequisites: Docker Desktop with Compose v2 — 1 line.
+- ✅ Command: `docker compose up --build` — 1 command.
+- ✅ URLs: `http://localhost:5173` + `http://localhost:8000` — immediately visible.
+- ✅ Stop: `docker compose down` — 1 command.
+- ✅ Total: **3 commands** (up, browse, down). Well under the ≤5 limit.
+
+**Test suite verification:**
+- ✅ Backend: 249 passed in 10.27s (87% coverage).
+- ✅ Frontend: 20 files, 162 tests passed in 12.60s.
+
+**Docker Compose setup:**
+- ✅ 2 runtime services (backend + frontend), 2 test profiles.
+- ✅ Healthchecks on both services with reasonable intervals.
+- ✅ Volume mounts for persistence + reset instructions in README.
+- ✅ No database container needed (SQLite file-based).
+
+**First-use UX assessment — evaluator journey:**
+
+| Step | Quality | Notes |
+|---|---|---|
+| Page load | ⚠️ Medium | Blank white page until React hydrates — no CSS spinner in `index.html`. |
+| Empty state | ✅ Good | Clear CTA: "Selecciona un documento…" + clickable upload zone. Sidebar shows 4 skeleton cards during load. |
+| Upload flow | ✅ Excellent | Drag-and-drop + click. Client validation (PDF only, 20 MB). "Subiendo…" spinner. Success/error toasts. |
+| Processing | ✅ Good | Status chip + fast polling (1.5s→5s). Long-processing warning. Failure displayed inline. |
+| Review | ✅ Good | Three-column layout (sidebar, PDF, structured data). Resizable split. Confidence dots. |
+| Edit | ✅ Good | Field edit dialog with validation (microchip digits, weight range, date, sex/species). |
+| Mark reviewed | ✅ Good | Toggle with tooltip, "Marcando…" spinner, reviewed warning banner. |
+| Error handling | ✅ Excellent | Connectivity dedup, graceful degradation, technical details expandable. |
+
+**Frictions found (for Codex to fix):**
+
+| # | Issue | Severity | Fix |
+|---|---|---|---|
+| 1 | **Missing Spanish accents in ~20+ UI strings** | High | `Aun`→`Aún`, `aqui`→`aquí`, `revision`→`revisión`, `interpretacion`→`interpretación`, `tecnicos`→`técnicos`, `notificacion`→`notificación`, `tamano`→`tamaño`, `extraccion`→`extracción`, `volvera`→`volverá`, `valido`→`válido`, `intentalo`→`inténtalo`, `mas`→`más`, `esta`→`está`. Must also update test assertions. |
+| 2 | **No loading indicator in `index.html`** | Medium | Add a CSS-only spinner in `<div id="root">` that disappears when React mounts. |
+| 3 | **`lang="en"` + English page title** | Low | Change to `lang="es"`, title `"Registros Veterinarios"`. |---
 
 ## Prompt activo (just-in-time) — write-then-execute
 
@@ -677,11 +715,145 @@ Below are the 4 architecture ADRs with full arguments, trade-offs, and code evid
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-_Completado: F5-D_
+F6-A 🚧 — Corregir fricciones del smoke test (Codex)
 
 ### Prompt
 
-_Vacío._
+```
+--- AGENT IDENTITY CHECK ---
+This prompt is designed for GPT-5.3-Codex in VS Code Copilot Chat.
+If you are not GPT-5.3-Codex: STOP. Tell the user to switch agents.
+--- END IDENTITY CHECK ---
+
+--- BRANCH CHECK ---
+Run: git branch --show-current
+If NOT `improvement/refactor`: STOP. Tell the user: "⚠️ Cambia a la rama improvement/refactor antes de continuar: git checkout improvement/refactor"
+--- END BRANCH CHECK ---
+
+--- SYNC CHECK ---
+Run: git pull origin improvement/refactor
+--- END SYNC CHECK ---
+
+--- PRE-FLIGHT CHECK ---
+1. Verify F5-D has `[x]` in Estado de ejecución.
+--- END PRE-FLIGHT CHECK ---
+
+[TASK — F6-A: Fix evaluator smoke test frictions]
+
+Project root: d:/Git/veterinary-medical-records
+
+Claude completed the evaluator smoke test and found 3 frictions. Fix them all.
+
+## Friction 1 (HIGH): Missing Spanish accents in UI strings
+
+Many user-visible strings omit Spanish diacritical marks. This is immediately noticeable to a Spanish-speaking evaluator. Fix BOTH production code AND test assertions that match these strings.
+
+### Exact replacements needed (production code):
+
+In `frontend/src/AppWorkspace.tsx`:
+- "revision" → "revisión" (in user-visible strings — ~3 occurrences)
+- "interpretacion" → "interpretación" (~3 occurrences)
+- "tecnicos" → "técnicos" (~2 occurrences)
+- "extraccion" → "extracción" (~2 occurrences)
+- "volvera" → "volverá" (~1 occurrence)
+- "valido" → "válido" (~1 occurrence)
+- "intentalo" → "inténtalo" (~1 occurrence)
+- "esta" → "está" (ONLY in the string "El texto extraido no esta disponible" — DO NOT change variable names or "esta" when it means "this")
+- "extraido" → "extraído" (~1 occurrence)
+
+In `frontend/src/components/DocumentsSidebar.tsx`:
+- "Aun no hay" → "Aún no hay"
+- "Tardando mas de lo esperado" → "Tardando más de lo esperado"
+- "Informacion de formatos y tamano" → "Información de formatos y tamaño"
+
+In `frontend/src/components/toast/ToastHost.tsx`:
+- "notificacion" → "notificación" (~2 occurrences)
+- "tecnicos" → "técnicos" (~2 occurrences)
+
+In `frontend/src/components/UploadDropzone.tsx` (check if "aqui" appears):
+- "aqui" → "aquí" if present in the component
+
+### Test assertions to update:
+
+Search ALL test files (`**/*.test.tsx`) for the OLD strings and update them to match the corrected production code. Key files:
+- `App.test.tsx` — "Aun no hay" → "Aún no hay"
+- `AppShellFlowsA.test.tsx` — "extraccion" → "extracción"
+- `AppShellFlowsB.test.tsx` — "interpretacion" → "interpretación", "extraido…esta" → "extraído…está"
+- `DocumentSidebar.test.tsx` — "mas de lo" → "más de lo"
+- `ReviewWorkspace.test.tsx` — "notificacion de accion" → "notificación de acción"
+- `ToastHost.test.tsx` — "notificacion" → "notificación"
+- `UploadDropzone.test.tsx` — "aqui" → "aquí" if applicable
+
+IMPORTANT RULES:
+- Do NOT change variable names, function names, class names, or identifiers — only user-visible string literals and aria-labels.
+- Do NOT change "esta" when it's a Spanish demonstrative ("esta sección") — only change it in "no está disponible" contexts.
+- "Selecciona" does NOT need an accent — it's correct as-is (present tense imperative).
+- "accion" → "acción" wherever it appears in user-visible strings.
+
+## Friction 2 (MEDIUM): No loading indicator in index.html
+
+Replace the empty `<div id="root"></div>` in `frontend/index.html` with a CSS-only centered spinner that disappears when React mounts (React replaces the inner content automatically).
+
+Example approach:
+```html
+<div id="root">
+  <div style="display:flex;align-items:center;justify-content:center;height:100vh;">
+    <div style="width:32px;height:32px;border:3px solid #e5e7eb;border-top-color:#e5603d;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+  </div>
+  <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+</div>
+```
+
+Use the project's accent color (`#e5603d`) for the spinner.
+
+## Friction 3 (LOW): English page metadata
+
+In `frontend/index.html`:
+- Change `<html lang="en">` → `<html lang="es">`
+- Change `<title>Veterinary Records Preview</title>` → `<title>Registros Veterinarios — Barkibu</title>`
+
+--- TEST GATE ---
+Backend: cd d:/Git/veterinary-medical-records && python -m pytest --tb=short -q
+Frontend: cd d:/Git/veterinary-medical-records/frontend && npm test
+
+CRITICAL: After fixing accents, tests MUST still pass. If a test assertion fails because it still uses the old unaccented string, update that test assertion too.
+--- END TEST GATE ---
+
+--- SCOPE BOUNDARY ---
+
+STEP A — Commit friction fixes:
+1. git add -A -- . ':!docs/project/AI_ITERATIVE_EXECUTION_PLAN.md'
+2. git commit -m "fix(plan-f6a): fix evaluator smoke test frictions
+
+- Fix missing Spanish accents in ~20 UI strings + test assertions
+- Add CSS-only loading spinner in index.html
+- Set lang=es and Spanish page title
+
+Test proof: <pytest summary> | <npm test summary>"
+
+STEP B — Commit plan update:
+1. Mark `- [ ] F6-A` → `- [x] F6-A` in Estado de ejecución.
+2. Clean Prompt activo: `### Paso objetivo` → `_Completado: F6-A_`, `### Prompt` → `_Vacío._`
+3. git add docs/project/AI_ITERATIVE_EXECUTION_PLAN.md
+4. git commit -m "docs(plan-f6a): mark step done"
+
+STEP C — Push:
+1. git push origin improvement/refactor
+
+STEP D — Update PR #145:
+Run `gh pr edit 145 --body "..."` marking F6-A done in the checklist.
+
+STEP E — CI GATE (mandatory):
+1. Run: gh run list --branch improvement/refactor --limit 1 --json status,conclusion,databaseId
+2. Wait for completion. If failure: diagnose, fix, push, retry. Max 2 attempts.
+
+STEP F — Tell the user the NEXT STEP:
+The next step is F7-A (Claude — hard-gate, final verdict). Say:
+"✓ F6-A completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona **Claude** → adjunta AI_ITERATIVE_EXECUTION_PLAN.md → escribe Continúa."
+
+NEVER end without the next-step message. Stop after delivering it.
+--- END SCOPE BOUNDARY ---
+```
 
 ---
 
