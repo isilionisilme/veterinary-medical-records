@@ -17,12 +17,23 @@ Canonical documentation is organized into:
 - **Canonical source docs (human SoT):** `docs/project/*` and `docs/shared/*`.
 - **Directionality rule:** canonical docs are human-facing sources and should remain self-contained.
 
+## Top-level folders policy (normative)
+
+Only these top-level folders are allowed under `docs/`:
+- `docs/shared/` — human-facing, cross-project standards and guidance.
+- `docs/project/` — human-facing, project-specific documentation.
+- one operational router folder — assistant execution/router material (non-canonical).
+
+Classification rule:
+- Human-readable source documentation must live in `docs/shared/` or `docs/project/`.
+- Operational assistant material must live in the operational router folder under `docs/`.
+
 ## Reading order (mandatory)
 ### Evaluator first-pass (recommended, 10-15 min)
 1. [`README.md`](../README.md) — Docker-first quickstart, smoke path, and repository overview.
 2. [`docs/project/PRODUCT_DESIGN.md`](project/PRODUCT_DESIGN.md) — problem framing and intended outcomes.
 3. [`docs/project/TECHNICAL_DESIGN.md`](project/TECHNICAL_DESIGN.md) — architecture, contracts, and invariants.
-4. [`docs/adr/README.md`](adr/README.md) — architecture decision records and trade-off rationale.
+4. [`docs/project/adr/README.md`](project/adr/README.md) — architecture decision records and trade-off rationale.
 5. [`docs/project/UX_DESIGN.md`](project/UX_DESIGN.md) — review workflow and UX interaction guarantees.
 6. [`docs/project/BACKEND_IMPLEMENTATION.md`](project/BACKEND_IMPLEMENTATION.md) and [`docs/project/FRONTEND_IMPLEMENTATION.md`](project/FRONTEND_IMPLEMENTATION.md) — implementation details.
 
@@ -45,14 +56,12 @@ Canonical documentation is organized into:
 - [`docs/project/FUTURE_IMPROVEMENTS.md`](project/FUTURE_IMPROVEMENTS.md) — 2/4/8-week roadmap with prioritized next steps.
 
 ### Audit trail and incremental evidence
-- [`docs/project/DELIVERY_SUMMARY.md`](project/DELIVERY_SUMMARY.md) — quantitative summary of what was delivered (start here for the delta).
-- [`docs/project/12_FACTOR_AUDIT.md`](project/12_FACTOR_AUDIT.md) — architecture and deployment-factor audit findings.
-- [`docs/project/codebase_audit.md`](project/codebase_audit.md) — maintainability and structural quality audit findings.
-- [`docs/project/AI_ITERATIVE_EXECUTION_PLAN.md`](project/AI_ITERATIVE_EXECUTION_PLAN.md) — phase-by-phase execution log and decisions.
+- [`docs/project/refactor/DELIVERY_SUMMARY.md`](project/refactor/DELIVERY_SUMMARY.md) — quantitative summary of what was delivered (start here for the delta).
+- [`docs/project/refactor/12_FACTOR_AUDIT.md`](project/refactor/12_FACTOR_AUDIT.md) — architecture and deployment-factor audit findings.
+- [`docs/project/refactor/codebase_audit.md`](project/refactor/codebase_audit.md) — maintainability and structural quality audit findings.
+- [`docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md`](project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md) — phase-by-phase execution log and decisions.
 - [`docs/project/FUTURE_IMPROVEMENTS.md`](project/FUTURE_IMPROVEMENTS.md) — forward roadmap derived from audits and ADRs.
-- [`docs/adr/README.md`](adr/README.md) — architecture and extraction ADR index.
-- [`docs/extraction/`](extraction/) — extraction ADRs and strategy notes.
-- [`docs/extraction-tracking/`](extraction-tracking/) — field-level tracking, run evidence, and risk matrix.
+- [`docs/project/adr/README.md`](project/adr/README.md) — architecture ADR index.
 
 ## Authority & precedence
 

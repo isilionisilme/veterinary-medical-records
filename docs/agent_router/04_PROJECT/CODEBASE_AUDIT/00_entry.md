@@ -1,3 +1,3 @@
 # CODEBASE_AUDIT — Modules
 
-Owner entry for `docs/project/codebase_audit.md` propagation in DOC_UPDATES workflow.
+Owner entry for `docs/project/refactor/codebase_audit.md` propagation in DOC_UPDATES workflow.

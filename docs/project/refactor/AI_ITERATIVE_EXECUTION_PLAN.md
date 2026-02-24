@@ -726,7 +726,7 @@ _Vacío._
 
 ### Arquitectura / calidad
 - `12-factor-apps` — Auditoría cloud-native, configuración por entorno, acoplamiento y escalabilidad.
-- `ln-620-codebase-auditor` — Auditoría integral con 9 workers especializados (seguridad, build, arquitectura, calidad, dependencias, dead code, observabilidad, concurrencia, lifecycle). Genera `docs/project/codebase_audit.md`.
+- `ln-620-codebase-auditor` — Auditoría integral con 9 workers especializados (seguridad, build, arquitectura, calidad, dependencias, dead code, observabilidad, concurrencia, lifecycle). Genera `docs/project/refactor/codebase_audit.md`.
 
 ### Testing
 - `frontend-testing` — Cobertura y calidad en frontend React/Vitest/RTL, detección de gaps críticos.
@@ -954,7 +954,7 @@ Save the last summary line of each test run (e.g. "246 passed in 10.63s") — yo
 Execute these steps IN THIS EXACT ORDER. Do NOT reorder.
 
 STEP A — Commit code (plan file untouched):
-1. git add -A -- . ':!docs/project/AI_ITERATIVE_EXECUTION_PLAN.md'
+1. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
 2. git commit -m "<tipo>(plan-f?-?): <descripción>
 
 Test proof: <pytest summary line> | <npm test summary line>"
@@ -962,7 +962,7 @@ Test proof: <pytest summary line> | <npm test summary line>"
 STEP B — Commit plan update (only after code is committed):
 1. Edit AI_ITERATIVE_EXECUTION_PLAN.md: change `- [ ] F?-?` to `- [x] F?-?`.
 2. Clean `## Prompt activo`: replace `### Paso objetivo` content with `_Completado: F?-?_` and `### Prompt` with `_Vacío._`
-3. git add docs/project/AI_ITERATIVE_EXECUTION_PLAN.md
+3. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
 4. git commit -m "docs(plan-f?-?): mark step done"
 
 STEP C — Push both commits:
@@ -1085,7 +1085,7 @@ Audit instructions:
 --- SCOPE BOUNDARY — STOP HERE ---
 Do NOT implement any changes. Your output for this prompt is the audit report + backlog ONLY.
 When done:
-1. Write the top-5 backlog items into the `### F1-A — Backlog 12-Factor (top 5)` section of docs/project/AI_ITERATIVE_EXECUTION_PLAN.md (replace the _Pendiente_ placeholder).
+1. Write the top-5 backlog items into the `### F1-A — Backlog 12-Factor (top 5)` section of docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md (replace the _Pendiente_ placeholder).
 2. Change `- [ ] F1-A` to `- [x] F1-A` in the Estado de ejecución section.
 3. git add -A && git commit -m "audit(plan-f1a): 12-factor compliance report + backlog" && git push origin improvement/refactor
 4. Tell the user: "✓ F1-A completado, pusheado. Siguiente: vuelve a Claude (este chat) con el plan adjunto y escribe `Continúa` para validar el backlog (F1-B 🚧)."
@@ -1166,13 +1166,13 @@ Do NOT recommend:
 - Introducing microservices or distributed systems
 - Removing or simplifying the existing documentation system
 
-Output the audit report to docs/project/codebase_audit.md as the skill specifies.
+Output the audit report to docs/project/refactor/codebase_audit.md as the skill specifies.
 Then return a prioritized backlog of the top 10 actionable items for Codex to implement.
 
 --- SCOPE BOUNDARY — STOP HERE ---
 Do NOT implement any changes. Your output for this prompt is the audit report + backlog ONLY.
 When done:
-1. Write the top-5 backlog items into the `### F2-A — Backlog ln-620 codebase audit (top 5)` section of docs/project/AI_ITERATIVE_EXECUTION_PLAN.md (replace the _Pendiente_ placeholder).
+1. Write the top-5 backlog items into the `### F2-A — Backlog ln-620 codebase audit (top 5)` section of docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md (replace the _Pendiente_ placeholder).
 2. Change `- [ ] F2-A` to `- [x] F2-A` in the Estado de ejecución section.
 3. git add -A && git commit -m "audit(plan-f2a): ln-620 codebase audit report + remediation backlog" && git push origin improvement/refactor
 4. Tell the user: "✓ F2-A completado, pusheado. Siguiente: vuelve a Claude (este chat) con el plan adjunto y escribe `Continúa` para validar el backlog (F2-B 🚧)."
@@ -1181,7 +1181,7 @@ When done:
 ```
 
 ### Flujo de ejecución
-1. `Codex` — ejecuta el prompt con `ln-620-codebase-auditor` → genera `docs/project/codebase_audit.md`.
+1. `Codex` — ejecuta el prompt con `ln-620-codebase-auditor` → genera `docs/project/refactor/codebase_audit.md`.
 2. `Claude (este chat)` — revisa el informe y valida/ajusta el backlog resultante.
 3. `Codex` — **Iteración 2a — App.tsx**: extraer rutas/páginas, capa API, state management en módulos separados. Criterio: ningún archivo nuevo >500 líneas. Tests siguen pasando (`npm test`).
 4. `Codex` — **Iteración 2b — processing_runner.py**: separar extracción, interpretación, orquestación. Criterio: interfaz pública intacta, tests backend pasan (`pytest`).

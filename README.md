@@ -61,11 +61,11 @@ Key design references:
 - [`docs/project/UX_DESIGN.md`](docs/project/UX_DESIGN.md)
 
 Key technical decisions (ADRs):
-- [`docs/adr/ADR-ARCH-0001-modular-monolith.md`](docs/adr/ADR-ARCH-0001-modular-monolith.md) — modular monolith over microservices.
-- [`docs/adr/ADR-ARCH-0002-sqlite-database.md`](docs/adr/ADR-ARCH-0002-sqlite-database.md) — SQLite trade-offs and PostgreSQL migration path.
-- [`docs/adr/ADR-ARCH-0003-raw-sql-repository-pattern.md`](docs/adr/ADR-ARCH-0003-raw-sql-repository-pattern.md) — raw SQL + repository pattern, no ORM.
-- [`docs/adr/ADR-ARCH-0004-in-process-async-processing.md`](docs/adr/ADR-ARCH-0004-in-process-async-processing.md) — in-process async scheduler over external queue.
-- ADR index: [`docs/adr/README.md`](docs/adr/README.md)
+- [`docs/project/adr/ADR-ARCH-0001-modular-monolith.md`](docs/project/adr/ADR-ARCH-0001-modular-monolith.md) — modular monolith over microservices.
+- [`docs/project/adr/ADR-ARCH-0002-sqlite-database.md`](docs/project/adr/ADR-ARCH-0002-sqlite-database.md) — SQLite trade-offs and PostgreSQL migration path.
+- [`docs/project/adr/ADR-ARCH-0003-raw-sql-repository-pattern.md`](docs/project/adr/ADR-ARCH-0003-raw-sql-repository-pattern.md) — raw SQL + repository pattern, no ORM.
+- [`docs/project/adr/ADR-ARCH-0004-in-process-async-processing.md`](docs/project/adr/ADR-ARCH-0004-in-process-async-processing.md) — in-process async scheduler over external queue.
+- ADR index: [`docs/project/adr/README.md`](docs/project/adr/README.md)
 
 ---
 
@@ -128,13 +128,12 @@ Shared UX principles referenced by project UX design.
 
 ### Delivery evidence and audit trail
 
-- **Delivery summary (start here):** [`docs/project/DELIVERY_SUMMARY.md`](docs/project/DELIVERY_SUMMARY.md)
-- 12-factor architecture audit: [`docs/project/12_FACTOR_AUDIT.md`](docs/project/12_FACTOR_AUDIT.md)
-- Maintainability/codebase audit: [`docs/project/codebase_audit.md`](docs/project/codebase_audit.md)
-- Iterative execution log and decisions: [`docs/project/AI_ITERATIVE_EXECUTION_PLAN.md`](docs/project/AI_ITERATIVE_EXECUTION_PLAN.md)
+- **Delivery summary (start here):** [`docs/project/refactor/DELIVERY_SUMMARY.md`](docs/project/refactor/DELIVERY_SUMMARY.md)
+- 12-factor architecture audit: [`docs/project/refactor/12_FACTOR_AUDIT.md`](docs/project/refactor/12_FACTOR_AUDIT.md)
+- Maintainability/codebase audit: [`docs/project/refactor/codebase_audit.md`](docs/project/refactor/codebase_audit.md)
+- Iterative execution log and decisions: [`docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md`](docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md)
 - Future roadmap (2/4/8 weeks): [`docs/project/FUTURE_IMPROVEMENTS.md`](docs/project/FUTURE_IMPROVEMENTS.md)
-- Extraction strategy and ADRs: [`docs/extraction/`](docs/extraction/)
-- Extraction tracking and risk matrix: [`docs/extraction-tracking/`](docs/extraction-tracking/)
+- Project ADR index: [`docs/project/adr/README.md`](docs/project/adr/README.md)
 
 ---
 
