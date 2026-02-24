@@ -39,7 +39,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 
 ### Fase 4 — Calidad de tests
 - [x] F4-A 🔄 — Auditoría frontend-testing (Codex)
-- [ ] F4-B 🔄 — Auditoría python-testing-patterns (Codex)
+- [x] F4-B 🔄 — Auditoría python-testing-patterns (Codex)
 - [ ] F4-C 🔄 — Implementar mejoras de tests (Codex)
 
 ### Fase 5 — Documentación
@@ -470,6 +470,59 @@ All files          |   77.67 |    68.66 |   84.59 |   77.74 |
 4. Collapse duplicated `processingHistory` suites into one source of truth and keep non-overlapping cases only.
 5. Refactor style-coupled assertions (especially in `App.test.tsx` and `StructuredDataView.test.tsx`) toward behavior-first checks.
 
+### F4-B — Python testing patterns audit
+
+**Execution evidence:**
+
+```text
+pytest --cov=backend/app --cov-report=term-missing
+246 passed in 11.72s
+TOTAL coverage: 86% (4530 statements, 653 misses)
+```
+
+**Coverage summary (backend):**
+
+| Area | Coverage % | Notes |
+|---|---|---|
+| `backend/app/application/*` | Mostly 82-100% | Strong service-level coverage in document flows and interpretation logic. |
+| `backend/app/api/routes.py` | 92% | HTTP contracts largely protected with integration tests. |
+| `backend/app/application/processing/orchestrator.py` | 76% | Failure/timeout and branchy orchestration paths still under-tested. |
+| `backend/app/application/processing/pdf_extraction.py` | 78% | Multiple extractor fallbacks/edge branches remain uncovered. |
+| `backend/app/infra/database.py` | 73% | DB initialization/retry/error branches have meaningful gaps. |
+| `backend/app/application/documents/_edit_helpers.py` | 60% | Edit-helper edge paths and guard clauses insufficiently tested. |
+| `backend/app/cli.py` | 0% | No direct tests for admin one-off commands. |
+
+**Critical gaps (files ≤76% coverage):**
+| File | Coverage % | What's missing |
+|---|---|---|
+| `backend/app/cli.py` | 0% | No tests for parser routing (`db-schema`, `db-check`, `config-check`) and exit-code contracts. |
+| `backend/app/application/documents/_edit_helpers.py` | 60% | Sparse assertions on normalization/merge edge-cases and defensive branches. |
+| `backend/app/infra/database.py` | 73% | Limited coverage for failure/retry paths and sqlite operational edge handling. |
+| `backend/app/application/processing/orchestrator.py` | 76% | Missing branch tests for run-state transitions on partial failures and exception paths. |
+
+**Fragile/anti-pattern tests:**
+| File | Line(s) | Issue | Suggested fix |
+|---|---|---|---|
+| `backend/tests/integration/test_extraction_observability_api.py` | 396-399 | Polling with `time.sleep(0.05)` introduces timing flakiness and slows suite under load. | Replace with deterministic synchronization hook (event/callback or bounded helper with mocked scheduler tick). |
+| `backend/tests/unit/test_doc_router_parity_contract.py` | 61-69 | Cleanup loop uses repeated `time.sleep(0.2)` retries on Windows lock; non-deterministic and slow. | Use `tmp_path` fixture ownership and deterministic cleanup strategy; isolate fs writes in temp dir fixture. |
+| `backend/tests/integration/*` (`test_upload.py`, `test_document_list.py`, `test_document_download.py`, `test_processing_history.py`, `test_raw_text_artifact.py`, `test_document_review.py`) | fixture blocks | Repeated `test_db` env/bootstrap fixture logic across files increases drift risk. | Extract shared fixture in `backend/tests/conftest.py` (`db_path`, `storage_path`, `test_client_factory`). |
+
+**Missing test scenarios (python-testing-patterns):**
+| Component/Flow | What should be tested | Priority |
+|---|---|---|
+| CLI admin commands | Parser dispatch + stdout contract + non-happy command handling for `db-schema`, `db-check`, `config-check`. | P1 |
+| DB resilience (`infra/database.py`) | Simulated sqlite lock / connection errors and retry/exception policy expectations. | P1 |
+| Processing orchestrator | Run transitions when extraction fails mid-run, step artifact persistence in failure branches, idempotent reruns. | P1 |
+| Edit helpers | Edge-cases for field merge/normalization and invalid user edit payloads. | P1 |
+| PDF extraction strategies | Branches for forced extractor modes and malformed PDF content in no-deps fallback. | P2 |
+
+**Top 5 actionable improvements (prioritized):**
+1. Add a dedicated `test_cli.py` suite validating command routing, output contracts, and return codes for all admin one-off commands.
+2. Introduce shared backend fixtures in `backend/tests/conftest.py` to remove repeated env/db/bootstrap setup from integration files.
+3. Replace sleep-based polling in tests with deterministic synchronization helpers to reduce flakiness and runtime variance.
+4. Expand branch-focused tests for `processing/orchestrator.py` and `infra/database.py` covering failure/retry/state-transition scenarios.
+5. Add targeted edge-case tests for `documents/_edit_helpers.py` to protect normalization/merge behavior during review edits.
+
 ---
 
 ## Prompt activo (just-in-time) — write-then-execute
@@ -479,11 +532,131 @@ All files          |   77.67 |    68.66 |   84.59 |   77.74 |
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-_Completado: F4-A_
+F4-C 🔄 — Implementar mejoras de tests (Codex)
 
 ### Prompt
 
-_Vacío._
+```
+--- AGENT IDENTITY CHECK ---
+This prompt is designed for GPT-5.3-Codex in VS Code Copilot Chat.
+If you are not GPT-5.3-Codex: STOP. Tell the user to switch agents.
+--- END IDENTITY CHECK ---
+
+--- BRANCH CHECK ---
+Run: git branch --show-current
+If NOT `improvement/refactor`: STOP. Tell the user: "⚠️ Cambia a la rama improvement/refactor antes de continuar: git checkout improvement/refactor"
+--- END BRANCH CHECK ---
+
+--- SYNC CHECK ---
+Run: git pull origin improvement/refactor
+--- END SYNC CHECK ---
+
+--- PRE-FLIGHT CHECK ---
+1. Verify F4-A and F4-B both have `[x]` in Estado de ejecución.
+2. Verify sections `### F4-A` and `### F4-B` exist in Resultados de auditorías and are not empty.
+--- END PRE-FLIGHT CHECK ---
+
+[TASK — F4-C: Implementar mejoras de tests]
+
+Based on the F4-A (frontend) and F4-B (backend) audit results in this file, implement the following HIGH-PRIORITY test improvements. Read the audit sections carefully — they contain the exact gaps, files, and suggestions.
+
+SCOPE: Only the items below. Do NOT refactor production code. Do NOT add features. Tests only.
+
+--- FRONTEND (based on F4-A audit) ---
+
+1. **NEW: `src/components/SourcePanel.test.tsx`** — Add focused tests for SourcePanel (currently 0% coverage):
+   - Pin/unpin button behavior
+   - Close action callback
+   - Evidence fallback text when snippet is null
+   - Import component, render with minimal props, assert user-visible behavior.
+
+2. **NEW: `src/components/UploadDropzone.test.tsx`** — Add tests for UploadDropzone (currently 50%):
+   - Keyboard activation (Enter/Space triggers file dialog)
+   - Drag overlay visibility toggling
+   - Compact vs non-compact aria-label differences
+
+3. **NEW: `src/hooks/useSourcePanelState.test.ts`** — Add unit tests for the hook (currently 45%):
+   - Use `@testing-library/react` renderHook
+   - Test openFromEvidence, Escape key close, reset, pin rules
+
+4. **NEW: `src/lib/utils.test.ts`** — Add tests for API helpers (currently 24%):
+   - `apiFetchJson` error parsing: non-JSON response, malformed JSON, network error
+   - `apiFetchBlob` error path
+   - `parseError` fallback behavior
+
+5. **FIX: `src/components/UploadPanel.test.tsx`** — Replace real-time `setTimeout` waits with `vi.useFakeTimers()` + `vi.advanceTimersByTime()`. Remove long test-level timeouts.
+
+6. **CLEANUP: Consolidate `src/lib/processingHistory.test.ts` and `src/lib/__tests__/processingHistoryView.test.ts`** — Merge into one canonical suite. Remove the duplicate file. Keep non-overlapping test cases.
+
+--- BACKEND (based on F4-B audit) ---
+
+7. **NEW: `backend/tests/unit/test_cli.py`** — Add tests for admin CLI commands (currently 0%):
+   - Test `db-schema` command outputs schema SQL to stdout
+   - Test `db-check` command returns 0 when DB is healthy
+   - Test `config-check` command prints resolved config
+   - Use subprocess or import `cli.main()` and capture output
+
+8. **IMPROVE: `backend/tests/conftest.py`** — Consolidate shared fixtures:
+   - Add `db_path` and `storage_path` fixtures using `tmp_path`
+   - Add `test_client_factory` fixture that accepts `db_path` and returns a TestClient
+   - Refactor integration tests that duplicate this setup to use the shared fixtures
+   - Only refactor if the change is safe and tests stay green. If risky, skip.
+
+9. **FIX: Replace sleep-based polling** in `test_extraction_observability_api.py` (line ~396) and `test_doc_router_parity_contract.py` (line ~61):
+   - Use bounded retry helpers instead of bare `time.sleep()` loops
+   - If the fix is non-trivial, add a `# TODO: replace sleep-based polling` comment and move on
+
+--- CONSTRAINTS ---
+- Do NOT touch production code (only test files, conftest, and test helpers).
+- Each new test file should have ≥3 meaningful test cases.
+- Use existing patterns from `src/test/helpers.tsx` for frontend test setup.
+- Keep all existing tests passing — zero regressions.
+- If a specific improvement risks breaking other tests, skip it and note why.
+
+--- TEST GATE ---
+Backend: cd d:/Git/veterinary-medical-records && python -m pytest --tb=short -q
+Frontend: cd d:/Git/veterinary-medical-records/frontend && npm test
+Also run: cd d:/Git/veterinary-medical-records/frontend && npm run test:coverage
+Save summary lines for commit messages.
+--- END TEST GATE ---
+
+--- SCOPE BOUNDARY ---
+
+STEP A — Commit frontend test improvements:
+1. git add -A -- frontend/ ':!docs/project/AI_ITERATIVE_EXECUTION_PLAN.md'
+2. git commit -m "test(plan-f4c): frontend test coverage improvements (SourcePanel, UploadDropzone, hooks, utils, fake timers)
+
+Test proof: <npm test summary> | coverage: <overall % stmts>"
+
+STEP B — Commit backend test improvements:
+1. git add -A -- backend/ ':!docs/project/AI_ITERATIVE_EXECUTION_PLAN.md'
+2. git commit -m "test(plan-f4c): backend test coverage improvements (CLI, conftest fixtures, polling fixes)
+
+Test proof: <pytest summary>"
+
+STEP C — Commit plan update:
+1. Mark `- [ ] F4-C` → `- [x] F4-C` in Estado de ejecución.
+2. Clean Prompt activo: `### Paso objetivo` → `_Completado: F4-C_`, `### Prompt` → `_Vacío._`
+3. git add docs/project/AI_ITERATIVE_EXECUTION_PLAN.md
+4. git commit -m "docs(plan-f4c): mark step done"
+
+STEP D — Push:
+1. git push origin improvement/refactor
+
+STEP E — Update PR #145:
+Run `gh pr edit 145 --body "..."` marking F4-C done with coverage improvement summary.
+
+STEP F — CI GATE (mandatory):
+1. Run: gh run list --branch improvement/refactor --limit 1 --json status,conclusion,databaseId
+2. Wait for completion. If failure: diagnose, fix, push, retry. Max 2 attempts.
+
+STEP G — Tell the user the NEXT STEP:
+The next step is F5-A (Codex — docs audit). Say:
+"✓ F4-C completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona Claude → adjunta AI_ITERATIVE_EXECUTION_PLAN.md → escribe Continúa (Claude preparará el prompt de F5-A)."
+
+NEVER end without the next-step message. Stop after delivering it.
+--- END SCOPE BOUNDARY ---
+```
 
 ---
 
