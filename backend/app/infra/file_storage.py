@@ -6,7 +6,6 @@ import os
 from pathlib import Path
 
 from backend.app.ports.file_storage import FileStorage, StoredFile
-from backend.app.settings import get_settings
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 DEFAULT_STORAGE_ROOT = BASE_DIR / "storage"
@@ -19,8 +18,8 @@ def get_storage_root() -> Path:
     variable. The directory is created if it does not exist.
     """
 
-    settings = get_settings()
-    root = Path(settings.vet_records_storage_path or str(DEFAULT_STORAGE_ROOT))
+    env_override = os.environ.get("VET_RECORDS_STORAGE_PATH")
+    root = Path(env_override) if env_override else DEFAULT_STORAGE_ROOT
     root.mkdir(parents=True, exist_ok=True)
     return root
 

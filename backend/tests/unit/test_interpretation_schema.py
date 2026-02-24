@@ -147,7 +147,7 @@ def test_candidate_bundle_is_persisted_when_debug_flag_enabled(monkeypatch) -> N
 
 def test_candidate_suggestions_are_ordered_and_capped_to_top_five(monkeypatch) -> None:
     monkeypatch.setattr(
-        "backend.app.application.processing.interpretation._mine_interpretation_candidates",
+        "backend.app.application.processing_runner._mine_interpretation_candidates",
         lambda _raw_text: {
             "pet_name": [
                 {"value": "Milo", "confidence": 0.72, "evidence": {"page": 1, "snippet": "Milo"}},
@@ -179,11 +179,11 @@ def test_candidate_suggestions_are_ordered_and_capped_to_top_five(monkeypatch) -
 
 def test_candidate_suggestions_are_omitted_when_field_has_no_candidates(monkeypatch) -> None:
     monkeypatch.setattr(
-        "backend.app.application.processing.interpretation._mine_interpretation_candidates",
+        "backend.app.application.processing_runner._mine_interpretation_candidates",
         lambda _raw_text: {},
     )
     monkeypatch.setattr(
-        "backend.app.application.processing.interpretation._map_candidates_to_global_schema",
+        "backend.app.application.processing_runner._map_candidates_to_global_schema",
         lambda _bundle: ({"pet_name": "Luna"}, {"pet_name": []}),
     )
 

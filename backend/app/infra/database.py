@@ -6,13 +6,12 @@ minimal schema used for the current release.
 
 from __future__ import annotations
 
+import os
 import sqlite3
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from uuid import uuid4
-
-from backend.app.settings import get_settings
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 DEFAULT_DB_PATH = BASE_DIR / "data" / "documents.db"
@@ -31,7 +30,8 @@ def get_database_path() -> Path:
         Creates the parent directory for the database file when missing.
     """
 
-    path = Path(get_settings().vet_records_db_path or str(DEFAULT_DB_PATH))
+    env_override = os.environ.get("VET_RECORDS_DB_PATH")
+    path = Path(env_override) if env_override else DEFAULT_DB_PATH
     path.parent.mkdir(parents=True, exist_ok=True)
     return path
 

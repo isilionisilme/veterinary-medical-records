@@ -29,12 +29,10 @@ def test_persist_observability_snapshot_for_completed_run_persists_when_enabled(
 
     captured_snapshots: list[dict[str, object]] = []
 
+    monkeypatch.setattr(processing_runner, "extraction_observability_enabled", lambda: True)
     monkeypatch.setattr(
-        "backend.app.application.processing.orchestrator.extraction_observability_enabled",
-        lambda: True,
-    )
-    monkeypatch.setattr(
-        "backend.app.application.processing.orchestrator.persist_extraction_run_snapshot",
+        processing_runner,
+        "persist_extraction_run_snapshot",
         lambda snapshot: captured_snapshots.append(snapshot),
     )
 
@@ -64,12 +62,10 @@ def test_persist_observability_snapshot_for_completed_run_skips_when_disabled(
 
     captured_snapshots: list[dict[str, object]] = []
 
+    monkeypatch.setattr(processing_runner, "extraction_observability_enabled", lambda: False)
     monkeypatch.setattr(
-        "backend.app.application.processing.orchestrator.extraction_observability_enabled",
-        lambda: False,
-    )
-    monkeypatch.setattr(
-        "backend.app.application.processing.orchestrator.persist_extraction_run_snapshot",
+        processing_runner,
+        "persist_extraction_run_snapshot",
         lambda snapshot: captured_snapshots.append(snapshot),
     )
 

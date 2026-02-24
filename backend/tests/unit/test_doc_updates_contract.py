@@ -146,8 +146,6 @@ def test_doc_test_sync_map_has_minimum_rules() -> None:
     assert '"fail_on_unmapped_docs": true' in text
     assert "\"doc_glob\": \"docs/agent_router/*.md\"" in text
     assert "\"doc_glob\": \"docs/agent_router/**/*.md\"" in text
-    assert "\"doc_glob\": \"docs/project/AI_ITERATIVE_EXECUTION_PLAN.md\"" in text
-    assert "\"doc_glob\": \"docs/project/12_FACTOR_AUDIT.md\"" in text
     assert "\"doc_glob\": \"docs/shared/ENGINEERING_PLAYBOOK.md\"" in text
     assert "\"doc_glob\": \"docs/project/BACKEND_IMPLEMENTATION.md\"" in text
     assert "\"doc_glob\": \"docs/project/UX_DESIGN.md\"" in text
@@ -166,8 +164,6 @@ def test_router_parity_map_has_product_design_rule() -> None:
     assert '"required_source_globs"' in text
     assert '"docs/project/*.md"' in text
     assert '"docs/shared/*.md"' in text
-    assert '"source_doc": "docs/project/AI_ITERATIVE_EXECUTION_PLAN.md"' in text
-    assert '"source_doc": "docs/project/12_FACTOR_AUDIT.md"' in text
     assert '"source_doc": "docs/project/PRODUCT_DESIGN.md"' in text
     assert '"source_doc": "docs/project/TECHNICAL_DESIGN.md"' in text
     assert '"source_doc": "docs/shared/ENGINEERING_PLAYBOOK.md"' in text

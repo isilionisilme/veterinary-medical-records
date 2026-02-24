@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from backend.app.application import extraction_observability
+from backend.app.application import extraction_observability, processing_runner
 from backend.app.main import create_app
 
 
@@ -367,7 +367,8 @@ def test_debug_extraction_summary_endpoint_reads_auto_persisted_snapshot_after_p
     monkeypatch.setenv("VET_RECORDS_EXTRACTION_OBS", "1")
     monkeypatch.setattr(extraction_observability, "_OBSERVABILITY_DIR", tmp_path / "obs")
     monkeypatch.setattr(
-        "backend.app.application.processing.pdf_extraction._extract_pdf_text_with_extractor",
+        processing_runner,
+        "_extract_pdf_text_with_extractor",
         lambda _path: (
             "Paciente: Luna\nEspecie: canino\nRaza: mestizo\nDiagnostico: control",
             "test",
