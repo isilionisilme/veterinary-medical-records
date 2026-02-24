@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { expect, vi } from "vitest";
@@ -12,7 +11,7 @@ export function renderApp() {
   return render(
     <QueryClientProvider client={queryClient}>
       <App />
-    </QueryClientProvider>
+    </QueryClientProvider>,
   );
 }
 
@@ -127,7 +126,7 @@ export function installCanonicalUs44FetchMock(options?: CanonicalUs44FetchMockOp
           offset: 0,
           total: 1,
         }),
-        { status: 200 }
+        { status: 200 },
       );
     }
 
@@ -148,7 +147,7 @@ export function installCanonicalUs44FetchMock(options?: CanonicalUs44FetchMockOp
           reviewed_by: null,
           latest_run: { run_id: "run-doc-canonical", state: "COMPLETED", failure_type: null },
         }),
-        { status: 200 }
+        { status: 200 },
       );
     }
 
@@ -375,12 +374,14 @@ export function installCanonicalUs44FetchMock(options?: CanonicalUs44FetchMockOp
           reviewed_at: null,
           reviewed_by: null,
         }),
-        { status: 200 }
+        { status: 200 },
       );
     }
 
     if (url.includes("/processing-history") && method === "GET") {
-      return new Response(JSON.stringify({ document_id: "doc-canonical", runs: [] }), { status: 200 });
+      return new Response(JSON.stringify({ document_id: "doc-canonical", runs: [] }), {
+        status: 200,
+      });
     }
 
     if (url.includes("/download") && method === "GET") {
@@ -395,7 +396,7 @@ export function installCanonicalUs44FetchMock(options?: CanonicalUs44FetchMockOp
           content_type: "text/plain",
           text: "texto",
         }),
-        { status: 200 }
+        { status: 200 },
       );
     }
 
@@ -439,7 +440,7 @@ export function installReviewedModeFetchMock() {
     if (url.includes("/documents?") && method === "GET") {
       return new Response(
         JSON.stringify({ items: docs, limit: 50, offset: 0, total: docs.length }),
-        { status: 200 }
+        { status: 200 },
       );
     }
 
@@ -460,7 +461,7 @@ export function installReviewedModeFetchMock() {
           reviewed_at: activeDoc.reviewed_at,
           reviewed_by: activeDoc.reviewed_by,
         }),
-        { status: 200 }
+        { status: 200 },
       );
     }
 
@@ -475,7 +476,7 @@ export function installReviewedModeFetchMock() {
           reviewed_at: activeDoc.reviewed_at,
           reviewed_by: activeDoc.reviewed_by,
         }),
-        { status: 200 }
+        { status: 200 },
       );
     }
 
@@ -496,7 +497,7 @@ export function installReviewedModeFetchMock() {
           reviewed_by: activeDoc.reviewed_by,
           latest_run: { run_id: "run-doc-ready", state: "COMPLETED", failure_type: null },
         }),
-        { status: 200 }
+        { status: 200 },
       );
     }
 
@@ -554,7 +555,7 @@ export function installReviewedModeFetchMock() {
           reviewed_at: activeDoc.reviewed_at,
           reviewed_by: activeDoc.reviewed_by,
         }),
-        { status: 200 }
+        { status: 200 },
       );
     }
 
@@ -580,264 +581,265 @@ export function getPetNameFieldButton() {
   return trigger as HTMLElement;
 }
 
-
-
 export function installDefaultAppFetchMock() {
-const docs = [
-      {
-        document_id: "doc-processing",
-        original_filename: "processing.pdf",
-        created_at: "2026-02-09T10:00:00Z",
-        status: "PROCESSING",
-        status_label: "Processing",
-        failure_type: null,
-      },
-      {
-        document_id: "doc-ready",
-        original_filename: "ready.pdf",
-        created_at: "2026-02-09T10:00:00Z",
+  const docs = [
+    {
+      document_id: "doc-processing",
+      original_filename: "processing.pdf",
+      created_at: "2026-02-09T10:00:00Z",
+      status: "PROCESSING",
+      status_label: "Processing",
+      failure_type: null,
+    },
+    {
+      document_id: "doc-ready",
+      original_filename: "ready.pdf",
+      created_at: "2026-02-09T10:00:00Z",
+      status: "COMPLETED",
+      status_label: "Completed",
+      failure_type: null,
+    },
+    {
+      document_id: "doc-failed",
+      original_filename: "failed.pdf",
+      created_at: "2026-02-09T10:00:00Z",
+      status: "FAILED",
+      status_label: "Failed",
+      failure_type: "EXTRACTION_FAILED",
+    },
+  ];
+
+  globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = input.toString();
+    const method = (init?.method ?? "GET").toUpperCase();
+
+    if (url.includes("/documents?") && method === "GET") {
+      return new Response(
+        JSON.stringify({ items: docs, limit: 50, offset: 0, total: docs.length }),
+        { status: 200 },
+      );
+    }
+
+    if (url.endsWith("/documents/upload") && method === "POST") {
+      docs.unshift({
+        document_id: "doc-new",
+        original_filename: "nuevo.pdf",
+        created_at: "2026-02-10T10:00:00Z",
         status: "COMPLETED",
         status_label: "Completed",
         failure_type: null,
-      },
-      {
-        document_id: "doc-failed",
-        original_filename: "failed.pdf",
-        created_at: "2026-02-09T10:00:00Z",
-        status: "FAILED",
-        status_label: "Failed",
-        failure_type: "EXTRACTION_FAILED",
-      },
-    ];
-
-    globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = input.toString();
-      const method = (init?.method ?? "GET").toUpperCase();
-
-      if (url.includes("/documents?") && method === "GET") {
-        return new Response(
-          JSON.stringify({ items: docs, limit: 50, offset: 0, total: docs.length }),
-          { status: 200 }
-        );
-      }
-
-      if (url.endsWith("/documents/upload") && method === "POST") {
-        docs.unshift({
+      });
+      return new Response(
+        JSON.stringify({
           document_id: "doc-new",
-          original_filename: "nuevo.pdf",
-          created_at: "2026-02-10T10:00:00Z",
           status: "COMPLETED",
-          status_label: "Completed",
-          failure_type: null,
-        });
-        return new Response(
-          JSON.stringify({
-            document_id: "doc-new",
-            status: "COMPLETED",
-            created_at: "2026-02-10T10:00:00Z",
-          }),
-          { status: 201 }
-        );
-      }
+          created_at: "2026-02-10T10:00:00Z",
+        }),
+        { status: 201 },
+      );
+    }
 
-      if (url.includes("/download") && method === "GET") {
-        return new Response(new Blob(["pdf"], { type: "application/pdf" }), {
-          status: 200,
-          headers: { "content-disposition": 'inline; filename="record.pdf"' },
-        });
-      }
+    if (url.includes("/download") && method === "GET") {
+      return new Response(new Blob(["pdf"], { type: "application/pdf" }), {
+        status: 200,
+        headers: { "content-disposition": 'inline; filename="record.pdf"' },
+      });
+    }
 
-      const detailMatch = url.match(/\/documents\/([^/]+)$/);
-      if (detailMatch && method === "GET") {
-        const docId = detailMatch[1];
-        const found = docs.find((doc) => doc.document_id === docId);
-        return new Response(
-          JSON.stringify({
-            document_id: docId,
-            original_filename: found?.original_filename ?? "record.pdf",
-            content_type: "application/pdf",
-            file_size: 10,
-            created_at: found?.created_at ?? "2026-02-09T10:00:00Z",
-            updated_at: "2026-02-10T10:00:00Z",
-            status: found?.status ?? "PROCESSING",
-            status_message: "Processing is in progress.",
-            failure_type: found?.failure_type ?? null,
-            latest_run: { run_id: `run-${docId}`, state: found?.status ?? "PROCESSING", failure_type: null },
-          }),
-          { status: 200 }
-        );
-      }
+    const detailMatch = url.match(/\/documents\/([^/]+)$/);
+    if (detailMatch && method === "GET") {
+      const docId = detailMatch[1];
+      const found = docs.find((doc) => doc.document_id === docId);
+      return new Response(
+        JSON.stringify({
+          document_id: docId,
+          original_filename: found?.original_filename ?? "record.pdf",
+          content_type: "application/pdf",
+          file_size: 10,
+          created_at: found?.created_at ?? "2026-02-09T10:00:00Z",
+          updated_at: "2026-02-10T10:00:00Z",
+          status: found?.status ?? "PROCESSING",
+          status_message: "Processing is in progress.",
+          failure_type: found?.failure_type ?? null,
+          latest_run: {
+            run_id: `run-${docId}`,
+            state: found?.status ?? "PROCESSING",
+            failure_type: null,
+          },
+        }),
+        { status: 200 },
+      );
+    }
 
-      const reviewMatch = url.match(/\/documents\/([^/]+)\/review$/);
-      if (reviewMatch && method === "GET") {
-        const docId = reviewMatch[1];
-        return new Response(
-          JSON.stringify({
-            document_id: docId,
-            latest_completed_run: {
-              run_id: `run-${docId}`,
-              state: "COMPLETED",
-              completed_at: "2026-02-10T10:00:00Z",
-              failure_type: null,
-            },
-            active_interpretation: {
-              interpretation_id: `interp-${docId}`,
-              version_number: 1,
-              data: {
-                document_id: docId,
-                processing_run_id: `run-${docId}`,
-                created_at: "2026-02-10T10:00:00Z",
-                fields: [
-                  {
-                    field_id: `field-document-date-${docId}`,
-                    key: "document_date",
-                    value: null,
-                    value_type: "date",
-                    field_mapping_confidence: 0.32,
-                    is_critical: false,
-                    origin: "machine",
-                  },
-                  {
-                    field_id: `field-visit-date-${docId}`,
-                    key: "visit_date",
-                    value: "2026-02-11T00:00:00Z",
-                    value_type: "date",
-                    field_mapping_confidence: 0.74,
-                    is_critical: true,
-                    origin: "machine",
-                  },
-                  {
-                    field_id: `field-pet-name-${docId}`,
-                    key: "pet_name",
-                    value: "Luna",
-                    value_type: "string",
-                    field_mapping_confidence: 0.82,
-                    field_candidate_confidence: 0.65,
-                    field_review_history_adjustment: 7,
-                    is_critical: false,
-                    origin: "machine",
-                    evidence: { page: 1, snippet: "Paciente: Luna" },
-                  },
-                  {
-                    field_id: `field-diagnosis-${docId}`,
-                    key: "diagnosis",
-                    value: "Gastroenteritis",
-                    value_type: "string",
-                    field_mapping_confidence: 0.62,
-                    field_candidate_confidence: 0.71,
-                    field_review_history_adjustment: -4,
-                    is_critical: false,
-                    origin: "machine",
-                    evidence: { page: 2, snippet: "Diagnostico: Gastroenteritis" },
-                  },
-                  {
-                    field_id: `field-treatment-${docId}`,
-                    key: "treatment_plan",
-                    value:
-                      "Reposo relativo durante 7 días.\nDieta blanda en 3 tomas al día y control de hidratación.",
-                    value_type: "string",
-                    field_mapping_confidence: 0.72,
-                    is_critical: false,
-                    origin: "machine",
-                  },
-                  {
-                    field_id: `field-extra-${docId}`,
-                    key: "custom_tag",
-                    value: "Prioridad",
-                    value_type: "string",
-                    field_mapping_confidence: 0.88,
-                    is_critical: false,
-                    origin: "machine",
-                    evidence: { page: 1, snippet: "Prioridad: Alta" },
-                  },
-                  {
-                    field_id: `field-imagen-${docId}`,
-                    key: "imagen",
-                    value: "Rx abdomen",
-                    value_type: "string",
-                    field_mapping_confidence: 0.61,
-                    is_critical: false,
-                    origin: "machine",
-                  },
-                  {
-                    field_id: `field-imagine-${docId}`,
-                    key: "imagine",
-                    value: "Eco",
-                    value_type: "string",
-                    field_mapping_confidence: 0.58,
-                    is_critical: false,
-                    origin: "machine",
-                  },
-                  {
-                    field_id: `field-owner-name-${docId}`,
-                    key: "owner_name",
-                    value: "BEATRIZ ABARCA",
-                    value_type: "string",
-                    field_mapping_confidence: 0.84,
-                    field_candidate_confidence: null,
-                    field_review_history_adjustment: 0,
-                    is_critical: false,
-                    origin: "machine",
-                  },
-                  {
-                    field_id: `field-owner-address-${docId}`,
-                    key: "owner_address",
-                    value: "Calle Mayor 10, Madrid",
-                    value_type: "string",
-                    field_mapping_confidence: 0.77,
-                    field_candidate_confidence: 0.77,
-                    field_review_history_adjustment: -4,
-                    is_critical: false,
-                    origin: "machine",
-                  },
-                  {
-                    field_id: `field-imaging-${docId}`,
-                    key: "IMAGING:",
-                    value: "Radiografia lateral",
-                    value_type: "string",
-                    field_mapping_confidence: 0.57,
-                    is_critical: false,
-                    origin: "machine",
-                  },
-                ],
-                confidence_policy: {
-                  policy_version: "v1",
-                  band_cutoffs: { low_max: 0.5, mid_max: 0.75 },
+    const reviewMatch = url.match(/\/documents\/([^/]+)\/review$/);
+    if (reviewMatch && method === "GET") {
+      const docId = reviewMatch[1];
+      return new Response(
+        JSON.stringify({
+          document_id: docId,
+          latest_completed_run: {
+            run_id: `run-${docId}`,
+            state: "COMPLETED",
+            completed_at: "2026-02-10T10:00:00Z",
+            failure_type: null,
+          },
+          active_interpretation: {
+            interpretation_id: `interp-${docId}`,
+            version_number: 1,
+            data: {
+              document_id: docId,
+              processing_run_id: `run-${docId}`,
+              created_at: "2026-02-10T10:00:00Z",
+              fields: [
+                {
+                  field_id: `field-document-date-${docId}`,
+                  key: "document_date",
+                  value: null,
+                  value_type: "date",
+                  field_mapping_confidence: 0.32,
+                  is_critical: false,
+                  origin: "machine",
                 },
+                {
+                  field_id: `field-visit-date-${docId}`,
+                  key: "visit_date",
+                  value: "2026-02-11T00:00:00Z",
+                  value_type: "date",
+                  field_mapping_confidence: 0.74,
+                  is_critical: true,
+                  origin: "machine",
+                },
+                {
+                  field_id: `field-pet-name-${docId}`,
+                  key: "pet_name",
+                  value: "Luna",
+                  value_type: "string",
+                  field_mapping_confidence: 0.82,
+                  field_candidate_confidence: 0.65,
+                  field_review_history_adjustment: 7,
+                  is_critical: false,
+                  origin: "machine",
+                  evidence: { page: 1, snippet: "Paciente: Luna" },
+                },
+                {
+                  field_id: `field-diagnosis-${docId}`,
+                  key: "diagnosis",
+                  value: "Gastroenteritis",
+                  value_type: "string",
+                  field_mapping_confidence: 0.62,
+                  field_candidate_confidence: 0.71,
+                  field_review_history_adjustment: -4,
+                  is_critical: false,
+                  origin: "machine",
+                  evidence: { page: 2, snippet: "Diagnostico: Gastroenteritis" },
+                },
+                {
+                  field_id: `field-treatment-${docId}`,
+                  key: "treatment_plan",
+                  value:
+                    "Reposo relativo durante 7 días.\nDieta blanda en 3 tomas al día y control de hidratación.",
+                  value_type: "string",
+                  field_mapping_confidence: 0.72,
+                  is_critical: false,
+                  origin: "machine",
+                },
+                {
+                  field_id: `field-extra-${docId}`,
+                  key: "custom_tag",
+                  value: "Prioridad",
+                  value_type: "string",
+                  field_mapping_confidence: 0.88,
+                  is_critical: false,
+                  origin: "machine",
+                  evidence: { page: 1, snippet: "Prioridad: Alta" },
+                },
+                {
+                  field_id: `field-imagen-${docId}`,
+                  key: "imagen",
+                  value: "Rx abdomen",
+                  value_type: "string",
+                  field_mapping_confidence: 0.61,
+                  is_critical: false,
+                  origin: "machine",
+                },
+                {
+                  field_id: `field-imagine-${docId}`,
+                  key: "imagine",
+                  value: "Eco",
+                  value_type: "string",
+                  field_mapping_confidence: 0.58,
+                  is_critical: false,
+                  origin: "machine",
+                },
+                {
+                  field_id: `field-owner-name-${docId}`,
+                  key: "owner_name",
+                  value: "BEATRIZ ABARCA",
+                  value_type: "string",
+                  field_mapping_confidence: 0.84,
+                  field_candidate_confidence: null,
+                  field_review_history_adjustment: 0,
+                  is_critical: false,
+                  origin: "machine",
+                },
+                {
+                  field_id: `field-owner-address-${docId}`,
+                  key: "owner_address",
+                  value: "Calle Mayor 10, Madrid",
+                  value_type: "string",
+                  field_mapping_confidence: 0.77,
+                  field_candidate_confidence: 0.77,
+                  field_review_history_adjustment: -4,
+                  is_critical: false,
+                  origin: "machine",
+                },
+                {
+                  field_id: `field-imaging-${docId}`,
+                  key: "IMAGING:",
+                  value: "Radiografia lateral",
+                  value_type: "string",
+                  field_mapping_confidence: 0.57,
+                  is_critical: false,
+                  origin: "machine",
+                },
+              ],
+              confidence_policy: {
+                policy_version: "v1",
+                band_cutoffs: { low_max: 0.5, mid_max: 0.75 },
               },
             },
-            raw_text_artifact: {
-              run_id: `run-${docId}`,
-              available: true,
-            },
-          }),
-          { status: 200 }
-        );
-      }
+          },
+          raw_text_artifact: {
+            run_id: `run-${docId}`,
+            available: true,
+          },
+        }),
+        { status: 200 },
+      );
+    }
 
-      if (url.includes("/processing-history") && method === "GET") {
-        return new Response(JSON.stringify({ document_id: "doc-any", runs: [] }), {
-          status: 200,
-        });
-      }
+    if (url.includes("/processing-history") && method === "GET") {
+      return new Response(JSON.stringify({ document_id: "doc-any", runs: [] }), {
+        status: 200,
+      });
+    }
 
-      if (url.includes("/reprocess") && method === "POST") {
-        return new Response(
-          JSON.stringify({ run_id: "run-new", state: "QUEUED", created_at: "2026-02-10T10:00:00Z" }),
-          { status: 201 }
-        );
-      }
+    if (url.includes("/reprocess") && method === "POST") {
+      return new Response(
+        JSON.stringify({ run_id: "run-new", state: "QUEUED", created_at: "2026-02-10T10:00:00Z" }),
+        { status: 201 },
+      );
+    }
 
-      return new Response(JSON.stringify({ error_code: "NOT_FOUND" }), { status: 404 });
-    }) as typeof fetch;
+    return new Response(JSON.stringify({ error_code: "NOT_FOUND" }), { status: 404 });
+  }) as typeof fetch;
 
-    globalThis.URL.createObjectURL = vi.fn(() => "blob://mock");
-    globalThis.URL.revokeObjectURL = vi.fn();
+  globalThis.URL.createObjectURL = vi.fn(() => "blob://mock");
+  globalThis.URL.revokeObjectURL = vi.fn();
 }
 
 export function resetAppTestEnvironment() {
-
-    vi.restoreAllMocks();
-    window.localStorage.clear();
-    window.history.replaceState({}, "", "/");
+  vi.restoreAllMocks();
+  window.localStorage.clear();
+  window.history.replaceState({}, "", "/");
 }

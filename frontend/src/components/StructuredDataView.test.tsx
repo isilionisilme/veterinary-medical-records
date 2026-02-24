@@ -41,7 +41,7 @@ describe("App upload and list flow", () => {
     installDefaultAppFetchMock();
   });
 
-it("renders the full Global Schema template with explicit missing states", async () => {
+  it("renders the full Global Schema template with explicit missing states", async () => {
     renderApp();
     const panel = await openReadyDocumentAndGetPanel();
 
@@ -91,7 +91,7 @@ it("renders the full Global Schema template with explicit missing states", async
     expect(within(panel).getAllByText("Prioridad").length).toBeGreaterThan(0);
   });
 
-it("hides configured extracted fields from the extra section", async () => {
+  it("hides configured extracted fields from the extra section", async () => {
     renderApp();
     const panel = await openReadyDocumentAndGetPanel();
     const extraSection = within(panel).getByTestId("other-extracted-fields-section");
@@ -102,7 +102,7 @@ it("hides configured extracted fields from the extra section", async () => {
     expect(within(extraSection).queryByText(/Imaging/i)).toBeNull();
   });
 
-it("uses structured owner/visit rows and long-text wrappers", async () => {
+  it("uses structured owner/visit rows and long-text wrappers", async () => {
     renderApp();
     const panel = await openReadyDocumentAndGetPanel();
 
@@ -143,7 +143,9 @@ it("uses structured owner/visit rows and long-text wrappers", async () => {
     expect(ownerNameRow).toHaveClass("grid-cols-[var(--field-row-label-col)_minmax(0,1fr)]");
     expect(ownerNameRow).toHaveClass("gap-x-[var(--field-row-gap-x)]");
 
-    const ownerNameLabel = within(ownerSection as HTMLElement).getByTestId("owner-label-owner_name");
+    const ownerNameLabel = within(ownerSection as HTMLElement).getByTestId(
+      "owner-label-owner_name",
+    );
     expect(ownerNameLabel).toHaveClass("self-start");
     const ownerNameDot = within(ownerSection as HTMLElement).getByTestId("owner-dot-owner_name");
     expect(ownerNameDot).toHaveClass("self-start");
@@ -178,7 +180,9 @@ it("uses structured owner/visit rows and long-text wrappers", async () => {
     expect(visitGrid).toHaveClass("lg:grid-cols-2");
 
     const visitDateRow = within(visitSection as HTMLElement).getByTestId("visit-row-visit_date");
-    const visitReasonRow = within(visitSection as HTMLElement).getByTestId("visit-row-reason_for_visit");
+    const visitReasonRow = within(visitSection as HTMLElement).getByTestId(
+      "visit-row-reason_for_visit",
+    );
     expect(visitDateRow).toHaveClass("grid");
     expect(visitReasonRow).toHaveClass("grid");
     expect(visitDateRow).toHaveClass("grid-cols-[var(--field-row-label-col)_minmax(0,1fr)]");
@@ -186,14 +190,22 @@ it("uses structured owner/visit rows and long-text wrappers", async () => {
     expect(visitReasonRow).toHaveClass("grid-cols-[var(--field-row-label-col)_minmax(0,1fr)]");
     expect(visitReasonRow).toHaveClass("gap-x-[var(--field-row-gap-x)]");
 
-    const visitReasonLabel = within(visitSection as HTMLElement).getByTestId("visit-label-reason_for_visit");
+    const visitReasonLabel = within(visitSection as HTMLElement).getByTestId(
+      "visit-label-reason_for_visit",
+    );
     expect(visitReasonLabel).toHaveClass("self-start");
-    const visitReasonDot = within(visitSection as HTMLElement).getByTestId("visit-dot-reason_for_visit");
+    const visitReasonDot = within(visitSection as HTMLElement).getByTestId(
+      "visit-dot-reason_for_visit",
+    );
     expect(visitReasonDot).toHaveClass("self-start");
     expect(visitReasonDot).toHaveClass("mt-[var(--dot-offset)]");
 
-    const visitDateValue = within(visitSection as HTMLElement).getByTestId("visit-value-visit_date");
-    const visitReasonValue = within(visitSection as HTMLElement).getByTestId("field-value-reason_for_visit");
+    const visitDateValue = within(visitSection as HTMLElement).getByTestId(
+      "visit-value-visit_date",
+    );
+    const visitReasonValue = within(visitSection as HTMLElement).getByTestId(
+      "field-value-reason_for_visit",
+    );
     expect(visitDateValue).toHaveClass("w-full");
     expect(visitReasonValue).toHaveClass("w-full");
     expect(visitReasonValue).toHaveClass("min-h-[var(--long-text-min-height)]");
@@ -207,7 +219,7 @@ it("uses structured owner/visit rows and long-text wrappers", async () => {
     expect(editButtons[0]).toHaveClass("hover:border-borderSubtle");
   });
 
-it("shows subtle CRÍTICO marker and confidence tooltip for core fields", async () => {
+  it("shows subtle CRÍTICO marker and confidence tooltip for core fields", async () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
@@ -231,36 +243,39 @@ it("shows subtle CRÍTICO marker and confidence tooltip for core fields", async 
       .closest("article");
     expect(petNameCard).not.toBeNull();
     const petNameCritical = within(petNameCard as HTMLElement).getByTestId(
-      "critical-indicator-pet_name"
+      "critical-indicator-pet_name",
     );
     expect(petNameCritical).toBeInTheDocument();
     const petNameConfidence = within(petNameCard as HTMLElement).getByTestId(
-      "confidence-indicator-core:pet_name"
-    );
-    expect(petNameConfidence).toHaveAttribute("aria-label", expect.stringMatching(/Confianza:\s*\d+%/i));
-    expect(petNameConfidence).toHaveAttribute(
-      "aria-label",
-      expect.not.stringMatching(/\((Alta|Media|Baja)\)/i)
+      "confidence-indicator-core:pet_name",
     );
     expect(petNameConfidence).toHaveAttribute(
       "aria-label",
-      expect.stringMatching(/Fiabilidad del candidato:\s*65%/i)
+      expect.stringMatching(/Confianza:\s*\d+%/i),
     );
     expect(petNameConfidence).toHaveAttribute(
       "aria-label",
-      expect.stringMatching(/Ajuste por histórico de revisiones:\s*\+7%/i)
+      expect.not.stringMatching(/\((Alta|Media|Baja)\)/i),
+    );
+    expect(petNameConfidence).toHaveAttribute(
+      "aria-label",
+      expect.stringMatching(/Fiabilidad del candidato:\s*65%/i),
+    );
+    expect(petNameConfidence).toHaveAttribute(
+      "aria-label",
+      expect.stringMatching(/Ajuste por histórico de revisiones:\s*\+7%/i),
     );
 
     const clinicalRecordCard = within(panel).getByTestId("core-row-clinic_name").closest("article");
     expect(clinicalRecordCard).not.toBeNull();
     const clinicalRecordConfidence = within(clinicalRecordCard as HTMLElement).getByTestId(
-      "confidence-indicator-core:clinic_name"
+      "confidence-indicator-core:clinic_name",
     );
     expect(clinicalRecordConfidence).toHaveAttribute("aria-label", "Campo vacío");
     expect(within(panel).queryByTestId("critical-indicator-diagnosis")).toBeInTheDocument();
   });
 
-it("renders canonical sections in US-44 fixed order", async () => {
+  it("renders canonical sections in US-44 fixed order", async () => {
     installCanonicalUs44FetchMock();
     renderApp();
     const panel = await openReadyDocumentAndGetPanel();
@@ -284,7 +299,7 @@ it("renders canonical sections in US-44 fixed order", async () => {
     });
   });
 
-it("uses canonical field_slots for required placeholders (NHC missing renders —)", async () => {
+  it("uses canonical field_slots for required placeholders (NHC missing renders —)", async () => {
     installCanonicalUs44FetchMock();
     renderApp();
     const panel = await openReadyDocumentAndGetPanel();
@@ -301,7 +316,7 @@ it("uses canonical field_slots for required placeholders (NHC missing renders �
     expect(nhcIndicator.className).not.toContain("bg-missing");
   });
 
-it("keeps critical badges in canonical Datos extraídos for critical document fields", async () => {
+  it("keeps critical badges in canonical Datos extraídos for critical document fields", async () => {
     installCanonicalUs44FetchMock();
     renderApp();
     const panel = await openReadyDocumentAndGetPanel();
@@ -310,7 +325,7 @@ it("keeps critical badges in canonical Datos extraídos for critical document fi
     expect(within(panel).queryByTestId("critical-indicator-clinic_name")).toBeNull();
   });
 
-it("shows explicit canonical contract error when field_slots are malformed", async () => {
+  it("shows explicit canonical contract error when field_slots are malformed", async () => {
     installCanonicalUs44FetchMock({
       schemaContract: "visit-grouped-canonical",
       fieldSlots: { malformed: true } as unknown as Array<Record<string, unknown>>,
@@ -325,7 +340,7 @@ it("shows explicit canonical contract error when field_slots are malformed", asy
     expect(within(panel).queryByText(/Identificaci[oó]n del caso/i)).toBeNull();
   });
 
-it("shows Visitas empty state in canonical contract when visits=[]", async () => {
+  it("shows Visitas empty state in canonical contract when visits=[]", async () => {
     installCanonicalUs44FetchMock({ visits: [] });
     renderApp();
     const panel = await openReadyDocumentAndGetPanel();
@@ -334,7 +349,7 @@ it("shows Visitas empty state in canonical contract when visits=[]", async () =>
     expect(within(panel).getByText("Sin visitas detectadas.")).toBeInTheDocument();
   });
 
-it("renders Visitas grouped by episode with chronological numbering and reverse visual order", async () => {
+  it("renders Visitas grouped by episode with chronological numbering and reverse visual order", async () => {
     installCanonicalUs44FetchMock({
       visits: [
         {
@@ -394,9 +409,21 @@ it("renders Visitas grouped by episode with chronological numbering and reverse 
     expect(within(middleEpisode).getByTestId("visit-row-visit_date")).toBeInTheDocument();
     expect(within(oldestEpisode).getByTestId("visit-row-visit_date")).toBeInTheDocument();
 
-    expect(within(newestEpisode).getAllByText(new Date("2026-02-20T00:00:00Z").toLocaleDateString("es-ES")).length).toBeGreaterThan(0);
-    expect(within(middleEpisode).getAllByText(new Date("2026-02-15T00:00:00Z").toLocaleDateString("es-ES")).length).toBeGreaterThan(0);
-    expect(within(oldestEpisode).getAllByText(new Date("2026-02-10T00:00:00Z").toLocaleDateString("es-ES")).length).toBeGreaterThan(0);
+    expect(
+      within(newestEpisode).getAllByText(
+        new Date("2026-02-20T00:00:00Z").toLocaleDateString("es-ES"),
+      ).length,
+    ).toBeGreaterThan(0);
+    expect(
+      within(middleEpisode).getAllByText(
+        new Date("2026-02-15T00:00:00Z").toLocaleDateString("es-ES"),
+      ).length,
+    ).toBeGreaterThan(0);
+    expect(
+      within(oldestEpisode).getAllByText(
+        new Date("2026-02-10T00:00:00Z").toLocaleDateString("es-ES"),
+      ).length,
+    ).toBeGreaterThan(0);
 
     expect(within(oldestEpisode).getByText("Diagnóstico")).toBeInTheDocument();
     expect(within(oldestEpisode).getByText("Procedimiento")).toBeInTheDocument();
@@ -406,7 +433,7 @@ it("renders Visitas grouped by episode with chronological numbering and reverse 
     expect(within(oldestEpisode).getAllByText("Sin elementos").length).toBeGreaterThan(0);
   });
 
-it("shows unassigned helper text in canonical contract when unassigned visit group is present", async () => {
+  it("shows unassigned helper text in canonical contract when unassigned visit group is present", async () => {
     installCanonicalUs44FetchMock({
       visits: [
         {
@@ -446,11 +473,13 @@ it("shows unassigned helper text in canonical contract when unassigned visit gro
     expect(hints).toHaveLength(1);
     expect(within(panel).getByTestId("visit-unassigned-group")).toBeInTheDocument();
     expect(hints[0]).toHaveTextContent("Elementos detectados sin fecha/visita asociada.");
-    expect(within(panel).queryAllByText("Elementos detectados sin fecha/visita asociada.")).toHaveLength(1);
+    expect(
+      within(panel).queryAllByText("Elementos detectados sin fecha/visita asociada."),
+    ).toHaveLength(1);
     expect(within(panel).queryByText("Sin visitas detectadas.")).toBeNull();
   });
 
-it("suppresses Visitas empty state when only unassigned visit group exists", async () => {
+  it("suppresses Visitas empty state when only unassigned visit group exists", async () => {
     installCanonicalUs44FetchMock({
       visits: [
         {
@@ -470,7 +499,7 @@ it("suppresses Visitas empty state when only unassigned visit group exists", asy
     expect(within(panel).queryByText("Sin visitas detectadas.")).toBeNull();
   });
 
-it("does not show unassigned helper when all visit groups are assigned", async () => {
+  it("does not show unassigned helper when all visit groups are assigned", async () => {
     installCanonicalUs44FetchMock({
       visits: [
         {

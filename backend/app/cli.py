@@ -40,10 +40,7 @@ def command_db_check() -> int:
 
 def command_config_check() -> int:
     settings = get_settings()
-    payload = {
-        key: _mask_config(key, value)
-        for key, value in settings.__dict__.items()
-    }
+    payload = {key: _mask_config(key, value) for key, value in settings.__dict__.items()}
     print(json.dumps(payload, indent=2, sort_keys=True))
     return 0
 

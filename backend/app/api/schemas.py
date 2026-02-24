@@ -60,9 +60,7 @@ class DocumentListItemResponse(BaseModel):
     original_filename: str = Field(..., description="Original filename recorded at upload time.")
     created_at: str = Field(..., description="UTC ISO timestamp when the document was registered.")
     status: str = Field(..., description="Current processing status of the document.")
-    status_label: str = Field(
-        ..., description="User-facing status label for list display."
-    )
+    status_label: str = Field(..., description="User-facing status label for list display.")
     failure_type: str | None = Field(
         None, description="Failure category when processing failed or timed out."
     )
@@ -98,9 +96,7 @@ class ProcessingHistoryRunResponse(BaseModel):
     state: str = Field(..., description="Processing run state.")
     failure_type: str | None = Field(None, description="Run-level failure category.")
     started_at: str | None = Field(None, description="UTC ISO timestamp when the run started.")
-    completed_at: str | None = Field(
-        None, description="UTC ISO timestamp when the run completed."
-    )
+    completed_at: str | None = Field(None, description="UTC ISO timestamp when the run completed.")
     steps: list[ProcessingStepResponse] = Field(
         ..., description="Step statuses derived from STEP_STATUS artifacts."
     )
@@ -123,9 +119,7 @@ class RawTextArtifactResponse(BaseModel):
 class LatestCompletedRunReviewResponse(BaseModel):
     run_id: str = Field(..., description="Unique identifier of the latest completed run.")
     state: str = Field(..., description="Processing run state.")
-    completed_at: str | None = Field(
-        None, description="UTC ISO timestamp when the run completed."
-    )
+    completed_at: str | None = Field(None, description="UTC ISO timestamp when the run completed.")
     failure_type: str | None = Field(None, description="Run-level failure category.")
 
 
@@ -163,26 +157,18 @@ class DocumentReviewResponse(BaseModel):
 class ReviewStatusToggleResponse(BaseModel):
     document_id: str = Field(..., description="Unique identifier of the document.")
     review_status: str = Field(..., description="Updated human review state.")
-    reviewed_at: str | None = Field(
-        None, description="UTC ISO timestamp for reviewed state."
-    )
+    reviewed_at: str | None = Field(None, description="UTC ISO timestamp for reviewed state.")
     reviewed_by: str | None = Field(
         None, description="Optional user identifier that marked the document as reviewed."
     )
 
 
 class InterpretationChangeRequest(BaseModel):
-    op: Literal["ADD", "UPDATE", "DELETE"] = Field(
-        ..., description="Change operation to apply."
-    )
-    field_id: str | None = Field(
-        None, description="Existing field identifier for UPDATE/DELETE."
-    )
+    op: Literal["ADD", "UPDATE", "DELETE"] = Field(..., description="Change operation to apply.")
+    field_id: str | None = Field(None, description="Existing field identifier for UPDATE/DELETE.")
     key: str | None = Field(None, description="Field key for ADD operations.")
     value: object | None = Field(None, description="Field value for ADD/UPDATE operations.")
-    value_type: str | None = Field(
-        None, description="Field value type for ADD/UPDATE operations."
-    )
+    value_type: str | None = Field(None, description="Field value type for ADD/UPDATE operations.")
 
 
 class InterpretationEditRequest(BaseModel):

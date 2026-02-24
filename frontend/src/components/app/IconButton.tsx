@@ -17,16 +17,19 @@ type IconButtonProps = Omit<
   className?: string;
 };
 
-export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(function IconButton({
-  label,
-  tooltip,
-  type = "button",
-  disabled = false,
-  pressed = false,
-  children,
-  className,
-  ...props
-}, ref) {
+export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(function IconButton(
+  {
+    label,
+    tooltip,
+    type = "button",
+    disabled = false,
+    pressed = false,
+    children,
+    className,
+    ...props
+  },
+  ref,
+) {
   const tooltipText = tooltip ?? label;
   return (
     <Tooltip content={tooltipText} disabled={disabled}>
@@ -41,7 +44,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
         className={cn(
           "border border-border bg-surface text-text hover:bg-surfaceMuted",
           pressed && "border-borderSubtle bg-surfaceMuted text-text",
-          className
+          className,
         )}
         {...props}
       >

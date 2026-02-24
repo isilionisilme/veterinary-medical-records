@@ -67,25 +67,25 @@ export function groupProcessingSteps(events: RawStepEvent[]): StepGroup[] {
       startedTimestamps.length > 0
         ? new Date(Math.min(...startedTimestamps)).toISOString()
         : endedTimestamps.length > 0
-        ? new Date(Math.min(...endedTimestamps)).toISOString()
-        : null;
+          ? new Date(Math.min(...endedTimestamps)).toISOString()
+          : null;
 
     const hasFailure = raw_events.some((event) => event.step_status === FAILED_STATUS);
     const hasSuccess = raw_events.some((event) => event.step_status === SUCCEEDED_STATUS);
     const status: StepGroup["status"] = hasFailure
       ? "FAILED"
       : hasSuccess
-      ? "COMPLETED"
-      : "RUNNING";
+        ? "COMPLETED"
+        : "RUNNING";
 
     const end_time =
       status === "RUNNING" || (endedTimestamps.length === 0 && startedTimestamps.length === 0)
         ? null
         : endedTimestamps.length > 0
-        ? new Date(Math.max(...endedTimestamps)).toISOString()
-        : startedTimestamps.length > 0
-        ? new Date(Math.max(...startedTimestamps)).toISOString()
-        : null;
+          ? new Date(Math.max(...endedTimestamps)).toISOString()
+          : startedTimestamps.length > 0
+            ? new Date(Math.max(...startedTimestamps)).toISOString()
+            : null;
 
     const ordered_raw = [...raw_events].sort((a, b) => {
       const timeA = eventTimestamp(a) ?? 0;

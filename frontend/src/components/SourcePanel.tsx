@@ -28,7 +28,9 @@ export function SourcePanel({
     <div className="panel-shell flex h-full min-h-0 flex-col p-4 shadow-subtle">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-textSecondary">Fuente</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-textSecondary">
+            Fuente
+          </p>
           <p className="mt-1 text-xs text-textSecondary">
             {sourcePage ? `Página ${sourcePage}` : "Sin página seleccionada"}
           </p>

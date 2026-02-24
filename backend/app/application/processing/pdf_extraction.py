@@ -16,9 +16,7 @@ PROCESSING_TICK_SECONDS = 0.5
 PROCESSING_TIMEOUT_SECONDS = 120.0
 MAX_RUNS_PER_TICK = 10
 PDF_EXTRACTOR_FORCE_ENV = "PDF_EXTRACTOR_FORCE"
-INTERPRETATION_DEBUG_INCLUDE_CANDIDATES_ENV = (
-    "VET_RECORDS_INCLUDE_INTERPRETATION_CANDIDATES"
-)
+INTERPRETATION_DEBUG_INCLUDE_CANDIDATES_ENV = "VET_RECORDS_INCLUDE_INTERPRETATION_CANDIDATES"
 COVERAGE_CONFIDENCE_LABEL = 0.66
 COVERAGE_CONFIDENCE_FALLBACK = 0.50
 MVP_COVERAGE_DEBUG_KEYS: tuple[str, ...] = (
@@ -44,9 +42,7 @@ MVP_COVERAGE_DEBUG_KEYS: tuple[str, ...] = (
     "hair_length",
     "repro_status",
 )
-DATE_TARGET_KEYS = frozenset(
-    {"visit_date", "document_date", "admission_date", "discharge_date"}
-)
+DATE_TARGET_KEYS = frozenset({"visit_date", "document_date", "admission_date", "discharge_date"})
 _DATE_CANDIDATE_PATTERN = re.compile(
     r"\b(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}|\d{4}[\/\-.]\d{1,2}[\/\-.]\d{1,2})\b"
 )
@@ -107,9 +103,7 @@ _PHONE_LIKE_PATTERN = re.compile(r"\+?\d[\d\s().-]{6,}")
 _LICENSE_ONLY_PATTERN = re.compile(
     r"(?i)^\s*(?:col(?:egiad[oa])?\.?|n[º°o]?\s*col\.?|lic(?:encia)?\.?|cmp\.?|nif\b|dni\b)\s*[:\-]?\s*[A-Za-z0-9\-./\s]{3,}$"
 )
-_OWNER_CONTEXT_PATTERN = re.compile(
-    r"(?i)\b(?:propietari(?:o|a)|titular|dueñ(?:o|a)|owner)\b"
-)
+_OWNER_CONTEXT_PATTERN = re.compile(r"(?i)\b(?:propietari(?:o|a)|titular|dueñ(?:o|a)|owner)\b")
 _OWNER_PATIENT_LABEL_PATTERN = re.compile(r"(?i)\bpaciente\b\s*[:\-]")
 _VET_OR_CLINIC_CONTEXT_PATTERN = re.compile(
     r"(?i)\b(?:veterinari[oa]|vet\b|doctor(?:a)?\b|dra\.?\b|dr\.?\b|cl[ií]nica|hospital|centro\s+veterinario)\b"
@@ -149,6 +143,7 @@ def _extract_pdf_text(file_path: Path) -> str:
     text, _ = _extract_pdf_text_with_extractor(file_path)
     return text
 
+
 def _extract_pdf_text_with_extractor(file_path: Path) -> tuple[str, str]:
     forced = os.getenv(PDF_EXTRACTOR_FORCE_ENV, "").strip().lower()
     if forced not in ("", "auto", "fitz", "fallback"):
@@ -175,6 +170,7 @@ def _extract_pdf_text_with_extractor(file_path: Path) -> tuple[str, str]:
     except ImportError:
         return _extract_pdf_text_without_external_dependencies(file_path), "fallback"
 
+
 def _extract_pdf_text_with_fitz(file_path: Path) -> str:
     try:
         import fitz  # PyMuPDF
@@ -191,10 +187,12 @@ def _extract_pdf_text_with_fitz(file_path: Path) -> str:
 
     return "\n".join(parts)
 
+
 @dataclass(frozen=True, slots=True)
 class PdfCMap:
     codepoints: dict[int, str]
     code_lengths: tuple[int, ...]
+
 
 def _extract_pdf_text_without_external_dependencies(file_path: Path) -> str:
     started_at = time.monotonic()
@@ -214,9 +212,7 @@ def _extract_pdf_text_without_external_dependencies(file_path: Path) -> str:
 
         objects = _parse_pdf_objects(pdf_bytes)
         cmap_by_object = _extract_cmaps_by_object(objects)
-        page_streams = _collect_page_content_streams(
-            objects=objects, cmap_by_object=cmap_by_object
-        )
+        page_streams = _collect_page_content_streams(objects=objects, cmap_by_object=cmap_by_object)
         text_chunks: list[str] = []
         total_bytes = 0
         for chunk, font_to_cmap in page_streams:
@@ -266,16 +262,19 @@ def _extract_pdf_text_without_external_dependencies(file_path: Path) -> str:
     finally:
         _ACTIVE_EXTRACTION_DEADLINE = None
 
+
 def _deadline_exceeded() -> bool:
     if _ACTIVE_EXTRACTION_DEADLINE is None:
         return False
     return time.monotonic() > _ACTIVE_EXTRACTION_DEADLINE
+
 
 def _inflate_pdf_stream(stream: bytes) -> bytes | None:
     try:
         return zlib.decompress(stream)
     except zlib.error:
         return None
+
 
 def _parse_tounicode_cmap(chunk: bytes) -> PdfCMap | None:
     if b"begincmap" not in chunk:
@@ -350,12 +349,14 @@ def _parse_tounicode_cmap(chunk: bytes) -> PdfCMap | None:
         code_lengths=tuple(sorted(code_lengths, reverse=True)),
     )
 
+
 def _parse_pdf_objects(pdf_bytes: bytes) -> dict[int, bytes]:
     objects: dict[int, bytes] = {}
     for match in _OBJECT_PATTERN.finditer(pdf_bytes):
         object_id = int(match.group(1))
         objects[object_id] = match.group(3)
     return objects
+
 
 def _extract_cmaps_by_object(objects: dict[int, bytes]) -> dict[int, PdfCMap]:
     cmaps: dict[int, PdfCMap] = {}
@@ -369,6 +370,7 @@ def _extract_cmaps_by_object(objects: dict[int, bytes]) -> dict[int, PdfCMap]:
         if cmap is not None:
             cmaps[object_id] = cmap
     return cmaps
+
 
 def _collect_page_content_streams(
     *,
@@ -395,6 +397,7 @@ def _collect_page_content_streams(
             page_streams.append((stream, font_to_cmap))
     return page_streams
 
+
 def _extract_page_content_object_ids(page_payload: bytes) -> list[int]:
     contents_ids: list[int] = []
     array_match = _PAGE_CONTENTS_ARRAY_PATTERN.search(page_payload)
@@ -408,15 +411,14 @@ def _extract_page_content_object_ids(page_payload: bytes) -> list[int]:
         contents_ids.append(int(single_match.group(1)))
     return contents_ids
 
+
 def _extract_font_to_cmap_for_page(
     *,
     page_payload: bytes,
     objects: dict[int, bytes],
     cmap_by_object: dict[int, PdfCMap],
 ) -> dict[str, PdfCMap]:
-    resource_payload = _resolve_page_resources(
-        page_payload=page_payload, objects=objects
-    )
+    resource_payload = _resolve_page_resources(page_payload=page_payload, objects=objects)
     if resource_payload is None:
         return {}
     return _build_font_to_cmap_from_page_resources(
@@ -424,6 +426,7 @@ def _extract_font_to_cmap_for_page(
         objects=objects,
         cmap_by_object=cmap_by_object,
     )
+
 
 def _resolve_page_resources(
     *,
@@ -439,9 +442,8 @@ def _resolve_page_resources(
         return None
     return objects.get(int(ref_match.group(1)))
 
-def _extract_object_stream(
-    object_payload: bytes, max_bytes: int | None = None
-) -> bytes | None:
+
+def _extract_object_stream(object_payload: bytes, max_bytes: int | None = None) -> bytes | None:
     match = re.search(rb"stream\r?\n(.*?)\r?\nendstream", object_payload, re.DOTALL)
     if match is None:
         return None
@@ -456,6 +458,7 @@ def _extract_object_stream(
     if _looks_textual_bytes(raw_stream) and b"BT" in raw_stream and b"ET" in raw_stream:
         return raw_stream
     return None
+
 
 def _build_font_to_cmap_from_page_resources(
     *,
@@ -480,6 +483,7 @@ def _build_font_to_cmap_from_page_resources(
         if cmap is not None:
             mapping[font_name] = cmap
     return mapping
+
 
 def _extract_font_entries_from_resource_payload(
     *,
@@ -507,11 +511,13 @@ def _extract_font_entries_from_resource_payload(
 
     return font_name_to_font_object
 
+
 def _extract_font_events(chunk: bytes) -> list[tuple[int, str]]:
     events: list[tuple[int, str]] = []
     for match in _FONT_SELECTION_PATTERN.finditer(chunk):
         events.append((match.start(), match.group(1).decode("ascii", "ignore")))
     return events
+
 
 def _active_font_name(position: int, font_events: list[tuple[int, str]]) -> str | None:
     active: str | None = None
@@ -520,6 +526,7 @@ def _active_font_name(position: int, font_events: list[tuple[int, str]]) -> str 
             break
         active = font_name
     return active
+
 
 def _decode_unicode_hex(hex_value: bytes) -> str:
     if len(hex_value) % 2 == 1:
@@ -531,6 +538,7 @@ def _decode_unicode_hex(hex_value: bytes) -> str:
         except UnicodeDecodeError:
             pass
     return raw.decode("latin-1", errors="ignore")
+
 
 def _extract_pdf_text_tokens(chunk: bytes) -> list[tuple[int, bytes]]:
     tokens: list[tuple[int, bytes]] = []
@@ -560,6 +568,7 @@ def _extract_pdf_text_tokens(chunk: bytes) -> list[tuple[int, bytes]]:
 
     tokens.sort(key=lambda item: item[0])
     return tokens
+
 
 def _extract_text_chunks_from_content_stream(
     *,
@@ -641,6 +650,7 @@ def _extract_text_chunks_from_content_stream(
 
     return extracted
 
+
 def _decode_token_for_font(
     *,
     token_bytes: bytes,
@@ -670,6 +680,7 @@ def _decode_token_for_font(
             best_text = decoded
             best_cmap = cmap
     return best_text, best_cmap
+
 
 def _decode_tj_array_for_font(
     *,
@@ -714,6 +725,7 @@ def _decode_tj_array_for_font(
             best_cmap = cmap
 
     return best_text, best_cmap
+
 
 def _tokenize_pdf_content(content: bytes) -> list[object]:
     tokens: list[object] = []
@@ -788,6 +800,7 @@ def _tokenize_pdf_content(content: bytes) -> list[object]:
 
     return tokens
 
+
 def _parse_pdf_array(content: bytes, index: int) -> tuple[list[object], int]:
     values: list[object] = []
     length = len(content)
@@ -849,6 +862,7 @@ def _parse_pdf_array(content: bytes, index: int) -> tuple[list[object], int]:
 
     return values, length
 
+
 def _parse_number_token(token: str) -> int | float | None:
     if not token:
         return None
@@ -859,9 +873,11 @@ def _parse_number_token(token: str) -> int | float | None:
     except ValueError:
         return None
 
+
 def _normalize_candidate_text(text: str) -> str:
     normalized = _WHITESPACE_PATTERN.sub(" ", text).strip()
     return normalized
+
 
 def _decode_pdf_text_token(token: bytes, cmaps: list[PdfCMap | None]) -> str:
     # Keep a raw-byte fallback candidate to avoid forcing a bad cmap decode.
@@ -884,6 +900,7 @@ def _decode_pdf_text_token(token: bytes, cmaps: list[PdfCMap | None]) -> str:
             best_score = score
             best_text = candidate
     return best_text
+
 
 def _decode_bytes_with_cmap(token: bytes, cmap: PdfCMap) -> str:
     chars: list[str] = []
@@ -910,6 +927,7 @@ def _decode_bytes_with_cmap(token: bytes, cmap: PdfCMap) -> str:
 
     return "".join(chars)
 
+
 def _decoded_text_score(text: str) -> float:
     letters = sum(char.isalpha() for char in text)
     if letters == 0:
@@ -922,6 +940,7 @@ def _decoded_text_score(text: str) -> float:
     punctuation_ratio = punctuation / length
     space_ratio = spaces / length
     return letters / length + vowel_ratio + space_ratio * 0.5 - punctuation_ratio * 1.5
+
 
 def _sanitize_text_chunks(chunks: list[str]) -> list[str]:
     sanitized: list[str] = []
@@ -939,6 +958,7 @@ def _sanitize_text_chunks(chunks: list[str]) -> list[str]:
         if _is_readable_text_chunk(normalized):
             sanitized.append(normalized)
     return sanitized
+
 
 def _is_readable_text_chunk(chunk: str) -> bool:
     if len(chunk) < 3:
@@ -978,6 +998,7 @@ def _is_readable_text_chunk(chunk: str) -> bool:
         return False
     return True
 
+
 def _max_consonant_run(text: str) -> int:
     max_run = 0
     current_run = 0
@@ -993,6 +1014,7 @@ def _max_consonant_run(text: str) -> int:
         if current_run > max_run:
             max_run = current_run
     return max_run
+
 
 def _stitch_text_chunks(chunks: list[str]) -> str:
     if not chunks:
@@ -1028,6 +1050,7 @@ def _stitch_text_chunks(chunks: list[str]) -> str:
     stitched = _WHITESPACE_PATTERN.sub(" ", stitched).strip()
     return stitched
 
+
 def _should_join_without_space(previous: str, current: str) -> bool:
     if not previous:
         return True
@@ -1053,9 +1076,11 @@ def _should_join_without_space(previous: str, current: str) -> bool:
                 return True
     return False
 
+
 def _parse_pdf_literal_string(blob: bytes, index: int) -> tuple[str, int]:
     raw, next_index = _parse_pdf_literal_string_bytes(blob, index)
     return raw.decode("utf-8", errors="ignore"), next_index
+
 
 def _parse_pdf_literal_string_bytes(blob: bytes, index: int) -> tuple[bytes, int]:
     result = bytearray()
@@ -1117,6 +1142,7 @@ def _parse_pdf_literal_string_bytes(blob: bytes, index: int) -> tuple[bytes, int
         result.append(byte)
 
     return bytes(result), index
+
 
 def _looks_textual_bytes(payload: bytes) -> bool:
     if not payload:

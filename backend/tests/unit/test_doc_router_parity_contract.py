@@ -8,20 +8,13 @@ from uuid import uuid4
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 PARITY_MAP = (
-    REPO_ROOT
-    / "docs"
-    / "agent_router"
-    / "01_WORKFLOW"
-    / "DOC_UPDATES"
-    / "router_parity_map.json"
+    REPO_ROOT / "docs" / "agent_router" / "01_WORKFLOW" / "DOC_UPDATES" / "router_parity_map.json"
 )
 PARITY_SCRIPT = REPO_ROOT / "scripts" / "check_doc_router_parity.py"
 
 
 def _load_evaluate_parity():
-    spec = importlib.util.spec_from_file_location(
-        "check_doc_router_parity", PARITY_SCRIPT
-    )
+    spec = importlib.util.spec_from_file_location("check_doc_router_parity", PARITY_SCRIPT)
     assert spec and spec.loader
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

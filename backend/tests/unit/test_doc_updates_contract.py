@@ -10,31 +10,16 @@ DOC_UPDATES_ENTRY = (
     REPO_ROOT / "docs" / "agent_router" / "01_WORKFLOW" / "DOC_UPDATES" / "00_entry.md"
 )
 DOC_UPDATES_NORMALIZE = (
-    REPO_ROOT
-    / "docs"
-    / "agent_router"
-    / "01_WORKFLOW"
-    / "DOC_UPDATES"
-    / "20_normalize_rules.md"
+    REPO_ROOT / "docs" / "agent_router" / "01_WORKFLOW" / "DOC_UPDATES" / "20_normalize_rules.md"
 )
 DOC_UPDATES_CHECKLIST = (
     REPO_ROOT / "docs" / "agent_router" / "01_WORKFLOW" / "DOC_UPDATES" / "30_checklist.md"
 )
 DOC_UPDATES_TEST_IMPACT_MAP = (
-    REPO_ROOT
-    / "docs"
-    / "agent_router"
-    / "01_WORKFLOW"
-    / "DOC_UPDATES"
-    / "test_impact_map.json"
+    REPO_ROOT / "docs" / "agent_router" / "01_WORKFLOW" / "DOC_UPDATES" / "test_impact_map.json"
 )
 DOC_UPDATES_ROUTER_PARITY_MAP = (
-    REPO_ROOT
-    / "docs"
-    / "agent_router"
-    / "01_WORKFLOW"
-    / "DOC_UPDATES"
-    / "router_parity_map.json"
+    REPO_ROOT / "docs" / "agent_router" / "01_WORKFLOW" / "DOC_UPDATES" / "router_parity_map.json"
 )
 DOC_TEST_SYNC_GUARD = REPO_ROOT / "scripts" / "check_doc_test_sync.py"
 DOC_ROUTER_PARITY_GUARD = REPO_ROOT / "scripts" / "check_doc_router_parity.py"
@@ -119,8 +104,7 @@ def test_normalization_rules_enforce_diff_first_and_owner_updates() -> None:
     assert "routing/intent changes" in text
     assert "source-to-router parity" in text.lower()
     assert (
-        "if Rule change exists with no propagation and no blocker reason, treat as failure"
-        in text
+        "if Rule change exists with no propagation and no blocker reason, treat as failure" in text
     )
     assert "Known mappings" in text
     assert "do not auto-pick silently" in text
@@ -144,18 +128,18 @@ def test_checklist_enforces_discovery_and_anti_loop() -> None:
 def test_doc_test_sync_map_has_minimum_rules() -> None:
     text = _read_text(DOC_UPDATES_TEST_IMPACT_MAP)
     assert '"fail_on_unmapped_docs": true' in text
-    assert "\"doc_glob\": \"docs/agent_router/*.md\"" in text
-    assert "\"doc_glob\": \"docs/agent_router/**/*.md\"" in text
-    assert "\"doc_glob\": \"docs/project/AI_ITERATIVE_EXECUTION_PLAN.md\"" in text
-    assert "\"doc_glob\": \"docs/project/12_FACTOR_AUDIT.md\"" in text
-    assert "\"doc_glob\": \"docs/shared/ENGINEERING_PLAYBOOK.md\"" in text
-    assert "\"doc_glob\": \"docs/project/BACKEND_IMPLEMENTATION.md\"" in text
-    assert "\"doc_glob\": \"docs/project/UX_DESIGN.md\"" in text
-    assert "\"doc_glob\": \"docs/project/TECHNICAL_DESIGN.md\"" in text
-    assert "\"owner_any\"" in text
-    assert "\"docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/*.md\"" in text
-    assert "\"docs/agent_router/04_PROJECT/BACKEND_IMPLEMENTATION/*.md\"" in text
-    assert "\"doc_glob\": \"docs/shared/BRAND_GUIDELINES.md\"" in text
+    assert '"doc_glob": "docs/agent_router/*.md"' in text
+    assert '"doc_glob": "docs/agent_router/**/*.md"' in text
+    assert '"doc_glob": "docs/project/AI_ITERATIVE_EXECUTION_PLAN.md"' in text
+    assert '"doc_glob": "docs/project/12_FACTOR_AUDIT.md"' in text
+    assert '"doc_glob": "docs/shared/ENGINEERING_PLAYBOOK.md"' in text
+    assert '"doc_glob": "docs/project/BACKEND_IMPLEMENTATION.md"' in text
+    assert '"doc_glob": "docs/project/UX_DESIGN.md"' in text
+    assert '"doc_glob": "docs/project/TECHNICAL_DESIGN.md"' in text
+    assert '"owner_any"' in text
+    assert '"docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/*.md"' in text
+    assert '"docs/agent_router/04_PROJECT/BACKEND_IMPLEMENTATION/*.md"' in text
+    assert '"doc_glob": "docs/shared/BRAND_GUIDELINES.md"' in text
     assert "test_doc_updates_contract.py" in text
     assert "check_brand_compliance.py" in text
 
@@ -173,8 +157,7 @@ def test_router_parity_map_has_product_design_rule() -> None:
     assert '"source_doc": "docs/shared/ENGINEERING_PLAYBOOK.md"' in text
     assert (
         '"path": "docs/agent_router/04_PROJECT/PRODUCT_DESIGN/'
-        '76_conceptual-model-local-schema-global-schema-and-mapping.md"'
-        in text
+        '76_conceptual-model-local-schema-global-schema-and-mapping.md"' in text
     )
     assert '"required_terms"' in text
 
@@ -219,10 +202,7 @@ def test_implementation_plan_router_tracks_us46_propagation() -> None:
     release_6_text = _read_text(IMPLEMENTATION_PLAN_ROUTER_RELEASE_6)
 
     assert "## US-46 — Deterministic Visit Assignment Coverage MVP (Schema)" in source_text
-    assert (
-        "279b_us-46-deterministic-visit-assignment-coverage-mvp-schema.md"
-        in entry_text
-    )
+    assert "279b_us-46-deterministic-visit-assignment-coverage-mvp-schema.md" in entry_text
     assert "US-46 — Deterministic Visit Assignment Coverage MVP (Schema)" in release_6_text
 
 

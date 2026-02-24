@@ -37,7 +37,7 @@ describe("App upload and list flow", () => {
     installDefaultAppFetchMock();
   });
 
-it("uploads a document, shows toast and auto-opens the uploaded document", async () => {
+  it("uploads a document, shows toast and auto-opens the uploaded document", async () => {
     renderApp();
 
     const input = screen.getByLabelText(/Archivo PDF/i);
@@ -56,12 +56,12 @@ it("uploads a document, shows toast and auto-opens the uploaded document", async
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /nuevo\.pdf/i })).toHaveAttribute(
         "aria-pressed",
-        "true"
+        "true",
       );
     });
   });
 
-it("shows fallback open action only when auto-open fails", async () => {
+  it("shows fallback open action only when auto-open fails", async () => {
     globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = input.toString();
       const method = (init?.method ?? "GET").toUpperCase();
@@ -83,7 +83,7 @@ it("shows fallback open action only when auto-open fails", async () => {
             offset: 0,
             total: 1,
           }),
-          { status: 200 }
+          { status: 200 },
         );
       }
 
@@ -94,7 +94,7 @@ it("shows fallback open action only when auto-open fails", async () => {
             status: "COMPLETED",
             created_at: "2026-02-10T10:00:00Z",
           }),
-          { status: 201 }
+          { status: 201 },
         );
       }
 
@@ -116,7 +116,7 @@ it("shows fallback open action only when auto-open fails", async () => {
             failure_type: null,
             latest_run: { run_id: "run-doc-new", state: "COMPLETED", failure_type: null },
           }),
-          { status: 200 }
+          { status: 200 },
         );
       }
 
@@ -139,11 +139,11 @@ it("shows fallback open action only when auto-open fails", async () => {
       () => {
         expect(screen.getByRole("button", { name: /Ver documento/i })).toBeInTheDocument();
       },
-      { timeout: 3000 }
+      { timeout: 3000 },
     );
   });
 
-it("auto-dismisses upload toast", async () => {
+  it("auto-dismisses upload toast", async () => {
     renderApp();
 
     const input = screen.getByLabelText(/Archivo PDF/i);
@@ -160,7 +160,7 @@ it("auto-dismisses upload toast", async () => {
     });
   }, 10000);
 
-it("shows a clear error when selected file exceeds 20 MB", async () => {
+  it("shows a clear error when selected file exceeds 20 MB", async () => {
     renderApp();
 
     const input = screen.getByLabelText(/Archivo PDF/i);
@@ -170,7 +170,7 @@ it("shows a clear error when selected file exceeds 20 MB", async () => {
     fireEvent.change(input, { target: { files: [oversizedFile] } });
 
     expect(
-      await screen.findByText(/El archivo supera el tamaño máximo \(20 MB\)\./i)
+      await screen.findByText(/El archivo supera el tamaño máximo \(20 MB\)\./i),
     ).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Reintentar/i })).toBeNull();
 
@@ -182,7 +182,7 @@ it("shows a clear error when selected file exceeds 20 MB", async () => {
     });
   }, 12000);
 
-it("uploads from collapsed sidebar dropzone without auto-expanding", async () => {
+  it("uploads from collapsed sidebar dropzone without auto-expanding", async () => {
     await withDesktopHoverMatchMedia(async () => {
       renderApp();
       const sidebar = await screen.findByTestId("documents-sidebar");
@@ -209,7 +209,7 @@ it("uploads from collapsed sidebar dropzone without auto-expanding", async () =>
     });
   });
 
-it("supports drag and drop upload from the viewer empty state", async () => {
+  it("supports drag and drop upload from the viewer empty state", async () => {
     renderApp();
 
     const emptyState = screen.getByTestId("viewer-empty-state");
@@ -230,7 +230,7 @@ it("supports drag and drop upload from the viewer empty state", async () => {
     });
   });
 
-it("opens the file picker when clicking anywhere in empty viewer", async () => {
+  it("opens the file picker when clicking anywhere in empty viewer", async () => {
     renderApp();
 
     const input = screen.getByLabelText(/Archivo PDF/i) as HTMLInputElement;
@@ -241,7 +241,7 @@ it("opens the file picker when clicking anywhere in empty viewer", async () => {
     expect(clickSpy).toHaveBeenCalledTimes(1);
   });
 
-it("supports drag and drop upload when a document is already open", async () => {
+  it("supports drag and drop upload when a document is already open", async () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
@@ -264,7 +264,7 @@ it("supports drag and drop upload when a document is already open", async () => 
     });
   });
 
-it("shows validation error when dropping a non-PDF file", async () => {
+  it("shows validation error when dropping a non-PDF file", async () => {
     renderApp();
 
     const emptyState = screen.getByTestId("viewer-empty-state");
@@ -279,7 +279,7 @@ it("shows validation error when dropping a non-PDF file", async () => {
     expect(calls.some(([url]) => String(url).includes("/documents/upload"))).toBe(false);
   });
 
-it("shows size validation error when dropping a PDF over 20 MB", async () => {
+  it("shows size validation error when dropping a PDF over 20 MB", async () => {
     renderApp();
 
     const emptyState = screen.getByTestId("viewer-empty-state");
@@ -291,7 +291,7 @@ it("shows size validation error when dropping a PDF over 20 MB", async () => {
     fireEvent.drop(emptyState, { dataTransfer });
 
     expect(
-      await screen.findByText(/El archivo supera el tamaño máximo \(20 MB\)\./i)
+      await screen.findByText(/El archivo supera el tamaño máximo \(20 MB\)\./i),
     ).toBeInTheDocument();
 
     const calls = (globalThis.fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls;

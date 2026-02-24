@@ -64,11 +64,7 @@ function getNumberGroupCount(value: string): number {
 }
 
 function isGarbageDetectedCandidate(value: string): boolean {
-  return (
-    value.length > 60 ||
-    getSeparatorCount(value) >= 2 ||
-    getNumberGroupCount(value) >= 2
-  );
+  return value.length > 60 || getSeparatorCount(value) >= 2 || getNumberGroupCount(value) >= 2;
 }
 
 type ParsedCandidate = {
@@ -137,7 +133,7 @@ function parseRawCandidates(rawSuggestions: unknown): ParsedCandidate[] {
 
 function resolveControlledVocabNormalization(
   fieldKey: string,
-  rawValue: string
+  rawValue: string,
 ): ControlledVocabNormalization | null {
   const direct = normalizeControlledVocabValue(fieldKey, rawValue);
   if (direct) {
@@ -164,7 +160,7 @@ export function resolveCandidateSuggestionSections(
   fieldKey: string,
   rawSuggestions: unknown,
   maxSuggestions = 5,
-  maxDetected = 3
+  maxDetected = 3,
 ): CandidateSuggestionSections {
   const parsedCandidates = parseRawCandidates(rawSuggestions);
   if (parsedCandidates.length === 0) {
@@ -197,7 +193,12 @@ export function resolveCandidateSuggestionSections(
   const validOptionSet = new Set(validOptionValues.map((value) => value.toLowerCase()));
   const normalizedSuggestionMap = new Map<
     string,
-    { value: string; confidence: number; evidence: CandidateSuggestionEvidence | undefined; index: number }
+    {
+      value: string;
+      confidence: number;
+      evidence: CandidateSuggestionEvidence | undefined;
+      index: number;
+    }
   >();
   const detectedMap = new Map<
     string,
@@ -265,7 +266,10 @@ export function resolveCandidateSuggestionSections(
       continue;
     }
 
-    if (candidate.confidence !== null && (current.confidence === null || candidate.confidence > current.confidence)) {
+    if (
+      candidate.confidence !== null &&
+      (current.confidence === null || candidate.confidence > current.confidence)
+    ) {
       detectedMap.set(key, {
         value: candidate.rawValue,
         confidence: candidate.confidence,
@@ -313,7 +317,8 @@ export function resolveCandidateSuggestionSections(
 export function toApplicableCandidateSuggestions(
   fieldKey: string,
   rawSuggestions: unknown,
-  maxLength = 5
+  maxLength = 5,
 ): CandidateSuggestion[] {
-  return resolveCandidateSuggestionSections(fieldKey, rawSuggestions, maxLength).applicableSuggestions;
+  return resolveCandidateSuggestionSections(fieldKey, rawSuggestions, maxLength)
+    .applicableSuggestions;
 }

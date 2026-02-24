@@ -80,7 +80,7 @@ export function ToastHost({
         >
           <div
             className={`${TOAST_BASE_CLASS} text-base ${getToastKindClass(
-              uploadFeedback.kind === "success" ? "success" : "error"
+              uploadFeedback.kind === "success" ? "success" : "error",
             )}`}
             style={getToastKindBackground(uploadFeedback.kind === "success" ? "success" : "error")}
             role={uploadFeedback.kind === "error" ? "alert" : "status"}
@@ -129,14 +129,14 @@ export function ToastHost({
                 ? "success"
                 : actionFeedback.kind === "info"
                   ? "info"
-                  : "error"
+                  : "error",
             )}`}
             style={getToastKindBackground(
               actionFeedback.kind === "success"
                 ? "success"
                 : actionFeedback.kind === "info"
                   ? "info"
-                  : "error"
+                  : "error",
             )}
             role={actionFeedback.kind === "error" ? "alert" : "status"}
           >

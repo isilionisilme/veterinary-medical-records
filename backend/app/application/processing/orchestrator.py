@@ -33,9 +33,7 @@ PROCESSING_TICK_SECONDS = 0.5
 PROCESSING_TIMEOUT_SECONDS = 120.0
 MAX_RUNS_PER_TICK = 10
 PDF_EXTRACTOR_FORCE_ENV = "PDF_EXTRACTOR_FORCE"
-INTERPRETATION_DEBUG_INCLUDE_CANDIDATES_ENV = (
-    "VET_RECORDS_INCLUDE_INTERPRETATION_CANDIDATES"
-)
+INTERPRETATION_DEBUG_INCLUDE_CANDIDATES_ENV = "VET_RECORDS_INCLUDE_INTERPRETATION_CANDIDATES"
 COVERAGE_CONFIDENCE_LABEL = 0.66
 COVERAGE_CONFIDENCE_FALLBACK = 0.50
 MVP_COVERAGE_DEBUG_KEYS: tuple[str, ...] = (
@@ -61,9 +59,7 @@ MVP_COVERAGE_DEBUG_KEYS: tuple[str, ...] = (
     "hair_length",
     "repro_status",
 )
-DATE_TARGET_KEYS = frozenset(
-    {"visit_date", "document_date", "admission_date", "discharge_date"}
-)
+DATE_TARGET_KEYS = frozenset({"visit_date", "document_date", "admission_date", "discharge_date"})
 _DATE_CANDIDATE_PATTERN = re.compile(
     r"\b(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}|\d{4}[\/\-.]\d{1,2}[\/\-.]\d{1,2})\b"
 )
@@ -124,9 +120,7 @@ _PHONE_LIKE_PATTERN = re.compile(r"\+?\d[\d\s().-]{6,}")
 _LICENSE_ONLY_PATTERN = re.compile(
     r"(?i)^\s*(?:col(?:egiad[oa])?\.?|n[º°o]?\s*col\.?|lic(?:encia)?\.?|cmp\.?|nif\b|dni\b)\s*[:\-]?\s*[A-Za-z0-9\-./\s]{3,}$"
 )
-_OWNER_CONTEXT_PATTERN = re.compile(
-    r"(?i)\b(?:propietari(?:o|a)|titular|dueñ(?:o|a)|owner)\b"
-)
+_OWNER_CONTEXT_PATTERN = re.compile(r"(?i)\b(?:propietari(?:o|a)|titular|dueñ(?:o|a)|owner)\b")
 _OWNER_PATIENT_LABEL_PATTERN = re.compile(r"(?i)\bpaciente\b\s*[:\-]")
 _VET_OR_CLINIC_CONTEXT_PATTERN = re.compile(
     r"(?i)\b(?:veterinari[oa]|vet\b|doctor(?:a)?\b|dra\.?\b|dr\.?\b|cl[ií]nica|hospital|centro\s+veterinario)\b"
@@ -139,6 +133,7 @@ REVIEW_SCHEMA_CONTRACT = "visit-grouped-canonical"
 def _default_now_iso() -> str:
     return datetime.now(UTC).isoformat()
 
+
 class ProcessingError(Exception):
     """Processing failure with a failure_type mapping."""
 
@@ -146,15 +141,15 @@ class ProcessingError(Exception):
         super().__init__(failure_type)
         self.failure_type = failure_type
 
+
 class InterpretationBuildError(Exception):
     """Raised when interpretation cannot be built into the canonical schema shape."""
 
-    def __init__(
-        self, *, error_code: str, details: dict[str, object] | None = None
-    ) -> None:
+    def __init__(self, *, error_code: str, details: dict[str, object] | None = None) -> None:
         super().__init__(error_code)
         self.error_code = error_code
         self.details = details
+
 
 async def _execute_run(
     *, run: ProcessingRun, repository: DocumentRepository, storage: FileStorage
@@ -169,7 +164,7 @@ async def _execute_run(
             ),
             timeout=PROCESSING_TIMEOUT_SECONDS,
         )
-    except asyncio.TimeoutError:
+    except TimeoutError:
         repository.complete_run(
             run_id=run.run_id,
             state=ProcessingRunState.TIMED_OUT,
@@ -209,6 +204,7 @@ async def _execute_run(
         created_at=completed_at,
     )
 
+
 def _persist_observability_snapshot_for_completed_run(
     *,
     repository: DocumentRepository,
@@ -242,6 +238,7 @@ def _persist_observability_snapshot_for_completed_run(
             "Failed to persist extraction observability snapshot for completed run",
             extra={"document_id": document_id, "run_id": run_id},
         )
+
 
 async def _process_document(
     *,
@@ -306,9 +303,7 @@ async def _process_document(
     raw_text, extractor_used = await asyncio.to_thread(
         pdf_extraction._extract_pdf_text_with_extractor, file_path
     )
-    quality_score, quality_pass, quality_reasons = evaluate_extracted_text_quality(
-        raw_text
-    )
+    quality_score, quality_pass, quality_reasons = evaluate_extracted_text_quality(raw_text)
     logger.info(
         (
             "PDF extraction finished run_id=%s document_id=%s extractor=%s chars=%d "
@@ -423,6 +418,7 @@ async def _process_document(
         ended_at=_default_now_iso(),
         error_code=None,
     )
+
 
 def _append_step_status(
     *,

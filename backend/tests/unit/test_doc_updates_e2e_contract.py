@@ -8,31 +8,16 @@ DOC_UPDATES_ENTRY = (
     REPO_ROOT / "docs" / "agent_router" / "01_WORKFLOW" / "DOC_UPDATES" / "00_entry.md"
 )
 DOC_UPDATES_NORMALIZE = (
-    REPO_ROOT
-    / "docs"
-    / "agent_router"
-    / "01_WORKFLOW"
-    / "DOC_UPDATES"
-    / "20_normalize_rules.md"
+    REPO_ROOT / "docs" / "agent_router" / "01_WORKFLOW" / "DOC_UPDATES" / "20_normalize_rules.md"
 )
 DOC_UPDATES_CHECKLIST = (
     REPO_ROOT / "docs" / "agent_router" / "01_WORKFLOW" / "DOC_UPDATES" / "30_checklist.md"
 )
 DOC_UPDATES_TEST_IMPACT_MAP = (
-    REPO_ROOT
-    / "docs"
-    / "agent_router"
-    / "01_WORKFLOW"
-    / "DOC_UPDATES"
-    / "test_impact_map.json"
+    REPO_ROOT / "docs" / "agent_router" / "01_WORKFLOW" / "DOC_UPDATES" / "test_impact_map.json"
 )
 DOC_UPDATES_ROUTER_PARITY_MAP = (
-    REPO_ROOT
-    / "docs"
-    / "agent_router"
-    / "01_WORKFLOW"
-    / "DOC_UPDATES"
-    / "router_parity_map.json"
+    REPO_ROOT / "docs" / "agent_router" / "01_WORKFLOW" / "DOC_UPDATES" / "router_parity_map.json"
 )
 RULES_INDEX = REPO_ROOT / "docs" / "agent_router" / "00_RULES_INDEX.md"
 SCENARIOS = REPO_ROOT / "metrics" / "llm_benchmarks" / "SCENARIOS.md"
@@ -160,8 +145,7 @@ def test_router_parity_map_covers_product_design_module_76() -> None:
     assert '"source_doc": "docs/shared/ENGINEERING_PLAYBOOK.md"' in text
     assert (
         '"path": "docs/agent_router/04_PROJECT/PRODUCT_DESIGN/'
-        '76_conceptual-model-local-schema-global-schema-and-mapping.md"'
-        in text
+        '76_conceptual-model-local-schema-global-schema-and-mapping.md"' in text
     )
 
 

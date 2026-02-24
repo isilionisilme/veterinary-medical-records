@@ -23,9 +23,7 @@ PROCESSING_TICK_SECONDS = 0.5
 PROCESSING_TIMEOUT_SECONDS = 120.0
 MAX_RUNS_PER_TICK = 10
 PDF_EXTRACTOR_FORCE_ENV = "PDF_EXTRACTOR_FORCE"
-INTERPRETATION_DEBUG_INCLUDE_CANDIDATES_ENV = (
-    "VET_RECORDS_INCLUDE_INTERPRETATION_CANDIDATES"
-)
+INTERPRETATION_DEBUG_INCLUDE_CANDIDATES_ENV = "VET_RECORDS_INCLUDE_INTERPRETATION_CANDIDATES"
 COVERAGE_CONFIDENCE_LABEL = 0.66
 COVERAGE_CONFIDENCE_FALLBACK = 0.50
 MVP_COVERAGE_DEBUG_KEYS: tuple[str, ...] = (
@@ -51,9 +49,7 @@ MVP_COVERAGE_DEBUG_KEYS: tuple[str, ...] = (
     "hair_length",
     "repro_status",
 )
-DATE_TARGET_KEYS = frozenset(
-    {"visit_date", "document_date", "admission_date", "discharge_date"}
-)
+DATE_TARGET_KEYS = frozenset({"visit_date", "document_date", "admission_date", "discharge_date"})
 _DATE_CANDIDATE_PATTERN = re.compile(
     r"\b(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}|\d{4}[\/\-.]\d{1,2}[\/\-.]\d{1,2})\b"
 )
@@ -114,9 +110,7 @@ _PHONE_LIKE_PATTERN = re.compile(r"\+?\d[\d\s().-]{6,}")
 _LICENSE_ONLY_PATTERN = re.compile(
     r"(?i)^\s*(?:col(?:egiad[oa])?\.?|n[º°o]?\s*col\.?|lic(?:encia)?\.?|cmp\.?|nif\b|dni\b)\s*[:\-]?\s*[A-Za-z0-9\-./\s]{3,}$"
 )
-_OWNER_CONTEXT_PATTERN = re.compile(
-    r"(?i)\b(?:propietari(?:o|a)|titular|dueñ(?:o|a)|owner)\b"
-)
+_OWNER_CONTEXT_PATTERN = re.compile(r"(?i)\b(?:propietari(?:o|a)|titular|dueñ(?:o|a)|owner)\b")
 _OWNER_PATIENT_LABEL_PATTERN = re.compile(r"(?i)\bpaciente\b\s*[:\-]")
 _VET_OR_CLINIC_CONTEXT_PATTERN = re.compile(
     r"(?i)\b(?:veterinari[oa]|vet\b|doctor(?:a)?\b|dra\.?\b|dr\.?\b|cl[ií]nica|hospital|centro\s+veterinario)\b"
@@ -129,14 +123,17 @@ REVIEW_SCHEMA_CONTRACT = "visit-grouped-canonical"
 def _default_now_iso() -> str:
     return datetime.now(UTC).isoformat()
 
+
 def _default_id() -> str:
     return str(uuid4())
+
 
 @dataclass(frozen=True, slots=True)
 class EnqueuedRun:
     run_id: str
     created_at: str
     state: ProcessingRunState
+
 
 def enqueue_processing_run(
     *,
@@ -155,9 +152,8 @@ def enqueue_processing_run(
         state=ProcessingRunState.QUEUED,
         created_at=created_at,
     )
-    return EnqueuedRun(
-        run_id=run_id, created_at=created_at, state=ProcessingRunState.QUEUED
-    )
+    return EnqueuedRun(run_id=run_id, created_at=created_at, state=ProcessingRunState.QUEUED)
+
 
 async def processing_scheduler(
     *,
@@ -172,12 +168,11 @@ async def processing_scheduler(
         await _process_queued_runs(repository=repository, storage=storage)
         try:
             await asyncio.wait_for(stop_event.wait(), timeout=tick_seconds)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             continue
 
-async def _process_queued_runs(
-    *, repository: DocumentRepository, storage: FileStorage
-) -> None:
+
+async def _process_queued_runs(*, repository: DocumentRepository, storage: FileStorage) -> None:
     queued_runs = repository.list_queued_runs(limit=MAX_RUNS_PER_TICK)
     for run in queued_runs:
         started = repository.try_start_run(

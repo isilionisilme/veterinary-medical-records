@@ -27,7 +27,7 @@ function renderToastHost(options?: {
       onCloseUploadFeedback={onCloseUploadFeedback}
       onCloseActionFeedback={onCloseActionFeedback}
       onOpenUploadedDocument={onOpenUploadedDocument}
-    />
+    />,
   );
 
   return {
@@ -54,11 +54,15 @@ describe("ToastHost", () => {
       },
     });
 
-    const connectivityStatus = screen.getByText("No se pudo conectar con el servidor.").closest('[role="alert"]');
+    const connectivityStatus = screen
+      .getByText("No se pudo conectar con el servidor.")
+      .closest('[role="alert"]');
     expect(connectivityStatus).toHaveClass("border-statusError");
     expect(connectivityStatus?.parentElement).toHaveClass("top-10");
 
-    const uploadStatus = screen.getByText("Documento cargado correctamente.").closest('[role="status"]');
+    const uploadStatus = screen
+      .getByText("Documento cargado correctamente.")
+      .closest('[role="status"]');
     expect(uploadStatus).toHaveClass("border-statusSuccess");
     expect(uploadStatus?.parentElement).toHaveClass("top-28");
 
@@ -81,11 +85,15 @@ describe("ToastHost", () => {
       },
     });
 
-    const uploadStatus = screen.getByText("El archivo supera el tamaño máximo.").closest('[role="alert"]');
+    const uploadStatus = screen
+      .getByText("El archivo supera el tamaño máximo.")
+      .closest('[role="alert"]');
     expect(uploadStatus).toHaveClass("border-statusError");
     expect(uploadStatus?.parentElement).toHaveClass("top-10");
 
-    const actionStatus = screen.getByText("Documento reabierto para revisión.").closest('[role="status"]');
+    const actionStatus = screen
+      .getByText("Documento reabierto para revisión.")
+      .closest('[role="status"]');
     expect(actionStatus).toHaveClass("border-statusSuccess");
     expect(actionStatus?.parentElement).toHaveClass("top-28");
   });

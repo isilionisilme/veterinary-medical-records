@@ -35,7 +35,7 @@ describe("App upload and list flow", () => {
     installDefaultAppFetchMock();
   });
 
-it("rolls back optimistic processing state when reprocess fails", async () => {
+  it("rolls back optimistic processing state when reprocess fails", async () => {
     globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = input.toString();
       const method = (init?.method ?? "GET").toUpperCase();
@@ -57,7 +57,7 @@ it("rolls back optimistic processing state when reprocess fails", async () => {
             offset: 0,
             total: 1,
           }),
-          { status: 200 }
+          { status: 200 },
         );
       }
 
@@ -79,7 +79,7 @@ it("rolls back optimistic processing state when reprocess fails", async () => {
             failure_type: null,
             latest_run: { run_id: "run-doc-ready", state: "COMPLETED", failure_type: null },
           }),
-          { status: 200 }
+          { status: 200 },
         );
       }
 
@@ -107,12 +107,12 @@ it("rolls back optimistic processing state when reprocess fails", async () => {
     expect((await screen.findAllByText(/reprocess failed/i)).length).toBeGreaterThan(0);
     await waitFor(() => {
       expect(
-        within(screen.getByRole("button", { name: /ready\.pdf/i })).getByText("Listo")
+        within(screen.getByRole("button", { name: /ready\.pdf/i })).getByText("Listo"),
       ).toBeInTheDocument();
     });
   });
 
-it("does not show stale empty-search warning when there is no text", async () => {
+  it("does not show stale empty-search warning when there is no text", async () => {
     globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = input.toString();
       const method = (init?.method ?? "GET").toUpperCase();
@@ -134,7 +134,7 @@ it("does not show stale empty-search warning when there is no text", async () =>
             offset: 0,
             total: 1,
           }),
-          { status: 200 }
+          { status: 200 },
         );
       }
 
@@ -152,7 +152,7 @@ it("does not show stale empty-search warning when there is no text", async () =>
             failure_type: null,
             latest_run: { run_id: "run-empty", state: "COMPLETED", failure_type: null },
           }),
-          { status: 200 }
+          { status: 200 },
         );
       }
 
@@ -176,7 +176,7 @@ it("does not show stale empty-search warning when there is no text", async () =>
             message: "Not available",
             details: { reason: "RAW_TEXT_NOT_AVAILABLE" },
           }),
-          { status: 404 }
+          { status: 404 },
         );
       }
 
@@ -192,10 +192,12 @@ it("does not show stale empty-search warning when there is no text", async () =>
     expect(screen.getByRole("button", { name: /^Buscar$/i })).toBeDisabled();
     expect(screen.getByText(/Sin texto extraido\./i)).toBeInTheDocument();
     expect(screen.queryByText(/No hay texto disponible para buscar/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/El texto extraido no esta disponible para este run\./i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/El texto extraido no esta disponible para este run\./i),
+    ).not.toBeInTheDocument();
   });
 
-it("does not post extraction snapshots from the UI", async () => {
+  it("does not post extraction snapshots from the UI", async () => {
     const baseFetch = globalThis.fetch as typeof fetch;
     let snapshotPostAttempts = 0;
 
@@ -221,7 +223,7 @@ it("does not post extraction snapshots from the UI", async () => {
     });
   });
 
-it("keeps right panel mounted and shows skeleton while loading interpretation", async () => {
+  it("keeps right panel mounted and shows skeleton while loading interpretation", async () => {
     const baseFetch = globalThis.fetch as typeof fetch;
     let releaseReviewRequest!: () => void;
 
@@ -255,7 +257,7 @@ it("keeps right panel mounted and shows skeleton while loading interpretation", 
     expect(await screen.findByRole("heading", { name: /Datos extraídos/i })).toBeInTheDocument();
   });
 
-it("shows centered interpretation empty state, retries with loading button, and recovers on success", async () => {
+  it("shows centered interpretation empty state, retries with loading button, and recovers on success", async () => {
     let reviewAttempts = 0;
     let resolveRetryReview!: () => void;
     globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -279,7 +281,7 @@ it("shows centered interpretation empty state, retries with loading button, and 
             offset: 0,
             total: 1,
           }),
-          { status: 200 }
+          { status: 200 },
         );
       }
 
@@ -301,7 +303,7 @@ it("shows centered interpretation empty state, retries with loading button, and 
             failure_type: null,
             latest_run: { run_id: "run-doc-ready", state: "COMPLETED", failure_type: null },
           }),
-          { status: 200 }
+          { status: 200 },
         );
       }
 
@@ -353,14 +355,16 @@ it("shows centered interpretation empty state, retries with loading button, and 
                     available: true,
                   },
                 }),
-                { status: 200 }
-              )
+                { status: 200 },
+              ),
             );
         });
       }
 
       if (url.includes("/processing-history") && method === "GET") {
-        return new Response(JSON.stringify({ document_id: "doc-ready", runs: [] }), { status: 200 });
+        return new Response(JSON.stringify({ document_id: "doc-ready", runs: [] }), {
+          status: 200,
+        });
       }
 
       return new Response(JSON.stringify({ error_code: "NOT_FOUND" }), { status: 404 });
@@ -375,8 +379,8 @@ it("shows centered interpretation empty state, retries with loading button, and 
     expect(unavailableCard).not.toBeNull();
     expect(
       within(unavailableCard as HTMLElement).getByText(
-        /No se pudo cargar la interpretación\. Comprueba tu conexión y vuelve a intentarlo\./i
-      )
+        /No se pudo cargar la interpretación\. Comprueba tu conexión y vuelve a intentarlo\./i,
+      ),
     ).toBeInTheDocument();
     expect(screen.queryByText(/Error loading interpretation/i)).toBeNull();
     expect(screen.queryByText(/No completed run found/i)).toBeNull();
@@ -392,7 +396,7 @@ it("shows centered interpretation empty state, retries with loading button, and 
     await waitFor(() => {
       expect(
         screen.queryByRole("button", { name: /Reintentando\.\.\./i }) ??
-          screen.queryByText(/Cargando interpretacion estructurada\.\.\./i)
+          screen.queryByText(/Cargando interpretacion estructurada\.\.\./i),
       ).toBeTruthy();
     });
     expect(screen.queryByRole("button", { name: /Ver detalles técnicos/i })).toBeNull();

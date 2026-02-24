@@ -87,7 +87,7 @@ def _run_git_diff(base_ref: str) -> list[str]:
 def _normalize_hex(hex_token: str) -> str:
     token = hex_token.lower()
     if len(token) == 4:
-        return f"#{token[1]*2}{token[2]*2}{token[3]*2}"
+        return f"#{token[1] * 2}{token[2] * 2}{token[3] * 2}"
     return token
 
 
@@ -122,9 +122,7 @@ def main() -> int:
         added = line[1:]
 
         if FONT_FAMILY_RE.search(added) and not INTER_RE.search(added):
-            findings.append(
-                f"{current_file}: added font-family without Inter -> `{added.strip()}`"
-            )
+            findings.append(f"{current_file}: added font-family without Inter -> `{added.strip()}`")
 
         for token in HEX_RE.findall(added):
             normalized = _normalize_hex(token)

@@ -1,7 +1,11 @@
 import type { ReactNode } from "react";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { MIN_PDF_PANEL_WIDTH_PX, REVIEW_SPLIT_MIN_WIDTH_PX, SPLITTER_COLUMN_WIDTH_PX } from "../App";
+import {
+  MIN_PDF_PANEL_WIDTH_PX,
+  REVIEW_SPLIT_MIN_WIDTH_PX,
+  SPLITTER_COLUMN_WIDTH_PX,
+} from "../App";
 import {
   clickPetNameField,
   createDataTransfer,
@@ -43,7 +47,7 @@ describe("App upload and list flow", () => {
     installDefaultAppFetchMock();
   });
 
-it("renders review split grid with draggable handle", async () => {
+  it("renders review split grid with draggable handle", async () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
@@ -53,12 +57,12 @@ it("renders review split grid with draggable handle", async () => {
     expect(layoutGrid).toBeInTheDocument();
     expect(screen.getByTestId("review-split-grid")).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /Redimensionar paneles de revisión/i })
+      screen.getByRole("button", { name: /Redimensionar paneles de revisión/i }),
     ).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Restablecer ancho de paneles/i })).toBeNull();
   });
 
-it("updates split ratio on drag and persists snapped value", async () => {
+  it("updates split ratio on drag and persists snapped value", async () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
@@ -90,7 +94,7 @@ it("updates split ratio on drag and persists snapped value", async () => {
     });
   });
 
-it("clamps split drag to current container width when sidebar is collapsed", async () => {
+  it("clamps split drag to current container width when sidebar is collapsed", async () => {
     const INITIAL_GRID_WIDTH_PX = 1380;
     const NARROW_GRID_WIDTH_PX = 1030;
     await withDesktopHoverMatchMedia(async () => {
@@ -115,7 +119,7 @@ it("clamps split drag to current container width when sidebar is collapsed", asy
             x: 0,
             y: 0,
             toJSON: () => ({}),
-          }) as DOMRect
+          }) as DOMRect,
       );
 
       const handle = screen.getByTestId("review-split-handle");
@@ -136,7 +140,7 @@ it("clamps split drag to current container width when sidebar is collapsed", asy
     });
   });
 
-it("re-clamps split ratio after expanding sidebar when splitter was dragged to minimum", async () => {
+  it("re-clamps split ratio after expanding sidebar when splitter was dragged to minimum", async () => {
     const COLLAPSED_GRID_WIDTH_PX = 1380;
     const EXPANDED_GRID_WIDTH_PX = 1030;
     await withDesktopHoverMatchMedia(async () => {
@@ -161,7 +165,7 @@ it("re-clamps split ratio after expanding sidebar when splitter was dragged to m
             x: 0,
             y: 0,
             toJSON: () => ({}),
-          }) as DOMRect
+          }) as DOMRect,
       );
 
       const handle = screen.getByTestId("review-split-handle");
@@ -182,7 +186,7 @@ it("re-clamps split ratio after expanding sidebar when splitter was dragged to m
     });
   });
 
-it("keeps stable split bounds when expanded width is narrower than the split min width", async () => {
+  it("keeps stable split bounds when expanded width is narrower than the split min width", async () => {
     const COLLAPSED_GRID_WIDTH_PX = 1380;
     const EXPANDED_GRID_WIDTH_PX = 900;
     await withDesktopHoverMatchMedia(async () => {
@@ -207,7 +211,7 @@ it("keeps stable split bounds when expanded width is narrower than the split min
             x: 0,
             y: 0,
             toJSON: () => ({}),
-          }) as DOMRect
+          }) as DOMRect,
       );
       Object.defineProperty(splitGrid, "scrollWidth", {
         configurable: true,
@@ -233,7 +237,7 @@ it("keeps stable split bounds when expanded width is narrower than the split min
     });
   });
 
-it("restores default split ratio on handle double-click", async () => {
+  it("restores default split ratio on handle double-click", async () => {
     window.localStorage.setItem("reviewSplitRatio", "0.5");
     renderApp();
 
@@ -263,7 +267,7 @@ it("restores default split ratio on handle double-click", async () => {
     });
   });
 
-it("navigates PDF from row click without opening source drawer", async () => {
+  it("navigates PDF from row click without opening source drawer", async () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
@@ -281,7 +285,7 @@ it("navigates PDF from row click without opening source drawer", async () => {
     }
   });
 
-it("keeps independent scroll containers and preserves right panel scroll on row clicks", async () => {
+  it("keeps independent scroll containers and preserves right panel scroll on row clicks", async () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
@@ -303,7 +307,7 @@ it("keeps independent scroll containers and preserves right panel scroll on row 
     expect(rightPanelScroll.scrollTop).toBe(140);
   });
 
-it("keeps evidence behavior deterministic with tooltip fallback and row navigation", async () => {
+  it("keeps evidence behavior deterministic with tooltip fallback and row navigation", async () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
@@ -313,7 +317,7 @@ it("keeps evidence behavior deterministic with tooltip fallback and row navigati
     expect(confidenceIndicator).toHaveAttribute("aria-label", expect.stringMatching(/Página 1/i));
     expect(confidenceIndicator).toHaveAttribute(
       "aria-label",
-      expect.stringMatching(/Ajuste por histórico de revisiones:\s*\+7%/i)
+      expect.stringMatching(/Ajuste por histórico de revisiones:\s*\+7%/i),
     );
 
     clickPetNameField();
@@ -327,7 +331,7 @@ it("keeps evidence behavior deterministic with tooltip fallback and row navigati
     expect(screen.queryByTestId("source-drawer")).toBeNull();
   });
 
-it("hides inline Fuente rows and keeps evidence details in confidence tooltip", async () => {
+  it("hides inline Fuente rows and keeps evidence details in confidence tooltip", async () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
@@ -338,33 +342,33 @@ it("hides inline Fuente rows and keeps evidence details in confidence tooltip", 
     expect(withEvidence).toHaveAttribute("aria-label", expect.stringMatching(/Página 1/i));
     expect(withEvidence).toHaveAttribute(
       "aria-label",
-      expect.stringMatching(/Fiabilidad del candidato:\s*65%/i)
+      expect.stringMatching(/Fiabilidad del candidato:\s*65%/i),
     );
 
     const withoutEvidence = screen.getByTestId("confidence-indicator-core:owner_name");
     expect(withoutEvidence).toHaveAttribute("aria-label", expect.not.stringMatching(/Página/i));
     expect(withoutEvidence).toHaveAttribute(
       "aria-label",
-      expect.stringMatching(/Ajuste por histórico de revisiones:\s*0%/i)
+      expect.stringMatching(/Ajuste por histórico de revisiones:\s*0%/i),
     );
     expect(withoutEvidence).toHaveAttribute(
       "aria-label",
-      expect.stringMatching(/Fiabilidad del candidato:\s*No disponible/i)
+      expect.stringMatching(/Fiabilidad del candidato:\s*No disponible/i),
     );
     const fieldTrigger = screen.getByTestId("field-trigger-core:pet_name");
     fireEvent.focus(fieldTrigger);
     await waitFor(() => {
       expect(
         Array.from(document.body.querySelectorAll("p")).some((node) =>
-          /Fiabilidad del candidato:\s*65%/i.test(node.textContent ?? "")
-        )
+          /Fiabilidad del candidato:\s*65%/i.test(node.textContent ?? ""),
+        ),
       ).toBe(true);
     });
     fireEvent.blur(fieldTrigger);
     expect(screen.queryByTestId("source-drawer")).toBeNull();
   });
 
-it("hands off tooltip visibility between field row and critical badge hover", async () => {
+  it("hands off tooltip visibility between field row and critical badge hover", async () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
@@ -374,11 +378,11 @@ it("hands off tooltip visibility between field row and critical badge hover", as
     const criticalIndicator = screen.getByTestId("critical-indicator-pet_name");
     const hasFieldTooltipContent = () =>
       Array.from(document.body.querySelectorAll("p")).some((node) =>
-        /Fiabilidad del candidato:/i.test(node.textContent ?? "")
+        /Fiabilidad del candidato:/i.test(node.textContent ?? ""),
       );
     const hasCriticalTooltip = () =>
       Array.from(document.body.querySelectorAll('[role="tooltip"]')).some((node) =>
-        /CRÍTICO/i.test(node.textContent ?? "")
+        /CRÍTICO/i.test(node.textContent ?? ""),
       );
 
     fireEvent.mouseEnter(fieldTrigger);
@@ -406,7 +410,7 @@ it("hands off tooltip visibility between field row and critical badge hover", as
     });
   });
 
-it("applies semantic styling for positive, negative and neutral adjustment values in tooltip", async () => {
+  it("applies semantic styling for positive, negative and neutral adjustment values in tooltip", async () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
@@ -415,7 +419,7 @@ it("applies semantic styling for positive, negative and neutral adjustment value
       let line: HTMLElement | undefined;
       await waitFor(() => {
         line = Array.from(document.body.querySelectorAll("p")).find((node) =>
-          pattern.test(node.textContent ?? "")
+          pattern.test(node.textContent ?? ""),
         ) as HTMLElement | undefined;
         expect(line).toBeDefined();
       });
@@ -432,13 +436,11 @@ it("applies semantic styling for positive, negative and neutral adjustment value
     const positiveIndicator = screen.getByTestId("confidence-indicator-core:pet_name");
     expect(positiveIndicator).toHaveAttribute(
       "aria-label",
-      expect.stringMatching(/Ajuste por histórico de revisiones:\s*\+7%/i)
+      expect.stringMatching(/Ajuste por histórico de revisiones:\s*\+7%/i),
     );
     const positive = resolveTriggerFromIndicator(positiveIndicator);
     fireEvent.focus(positive);
-    const positiveLine = await findAdjustmentLine(
-      /Ajuste por histórico de revisiones:\s*\+7%/i
-    );
+    const positiveLine = await findAdjustmentLine(/Ajuste por histórico de revisiones:\s*\+7%/i);
     const positiveValue = positiveLine.querySelector("span");
     expect(positiveValue).not.toBeNull();
     expect(positiveValue).toHaveClass("text-[var(--status-success)]");
@@ -447,7 +449,7 @@ it("applies semantic styling for positive, negative and neutral adjustment value
     const negativeIndicator = screen
       .getAllByTestId(/confidence-indicator-/)
       .find((element) =>
-        element.getAttribute("aria-label")?.includes("Ajuste por histórico de revisiones: -4%")
+        element.getAttribute("aria-label")?.includes("Ajuste por histórico de revisiones: -4%"),
       );
     expect(negativeIndicator).toBeDefined();
     if (!negativeIndicator) {
@@ -455,13 +457,11 @@ it("applies semantic styling for positive, negative and neutral adjustment value
     }
     expect(negativeIndicator).toHaveAttribute(
       "aria-label",
-      expect.stringMatching(/Ajuste por histórico de revisiones:\s*-4%/i)
+      expect.stringMatching(/Ajuste por histórico de revisiones:\s*-4%/i),
     );
     const negative = resolveTriggerFromIndicator(negativeIndicator);
     fireEvent.focus(negative);
-    const negativeLine = await findAdjustmentLine(
-      /Ajuste por histórico de revisiones:\s*-4%/i
-    );
+    const negativeLine = await findAdjustmentLine(/Ajuste por histórico de revisiones:\s*-4%/i);
     const negativeValue = negativeLine.querySelector("span");
     expect(negativeValue).not.toBeNull();
     expect(negativeValue).toHaveClass("text-[var(--status-error)]");
@@ -470,19 +470,17 @@ it("applies semantic styling for positive, negative and neutral adjustment value
     const neutralIndicator = screen.getByTestId("confidence-indicator-core:owner_name");
     expect(neutralIndicator).toHaveAttribute(
       "aria-label",
-      expect.stringMatching(/Ajuste por histórico de revisiones:\s*0%/i)
+      expect.stringMatching(/Ajuste por histórico de revisiones:\s*0%/i),
     );
     const neutral = resolveTriggerFromIndicator(neutralIndicator);
     fireEvent.focus(neutral);
-    const neutralLine = await findAdjustmentLine(
-      /Ajuste por histórico de revisiones:\s*0%/i
-    );
+    const neutralLine = await findAdjustmentLine(/Ajuste por histórico de revisiones:\s*0%/i);
     const neutralValue = neutralLine.querySelector("span");
     expect(neutralValue).not.toBeNull();
     expect(neutralValue).toHaveClass("text-muted");
   });
 
-it("synchronizes selected field with viewer context repeatedly, including repeated same-field clicks", async () => {
+  it("synchronizes selected field with viewer context repeatedly, including repeated same-field clicks", async () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
@@ -508,7 +506,7 @@ it("synchronizes selected field with viewer context repeatedly, including repeat
     expect(screen.queryByTestId("source-drawer")).toBeNull();
   });
 
-it("keeps source drawer closed on plain field click", async () => {
+  it("keeps source drawer closed on plain field click", async () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
@@ -518,7 +516,7 @@ it("keeps source drawer closed on plain field click", async () => {
     expect(screen.queryByTestId("source-drawer")).toBeNull();
   });
 
-it("shows destructive blocked-edit toast on first reviewed-mode click", async () => {
+  it("shows destructive blocked-edit toast on first reviewed-mode click", async () => {
     installReviewedModeFetchMock();
     renderApp();
 
@@ -534,7 +532,7 @@ it("shows destructive blocked-edit toast on first reviewed-mode click", async ()
     expect(status).toHaveClass("border-statusError", "text-statusError");
   });
 
-it("does not show blocked-edit toast while selecting text in reviewed mode", async () => {
+  it("does not show blocked-edit toast while selecting text in reviewed mode", async () => {
     installReviewedModeFetchMock();
     const getSelectionSpy = vi
       .spyOn(window, "getSelection")
@@ -553,7 +551,7 @@ it("does not show blocked-edit toast while selecting text in reviewed mode", asy
     getSelectionSpy.mockRestore();
   });
 
-it("renders reviewed warning banner with amber border styling", async () => {
+  it("renders reviewed warning banner with amber border styling", async () => {
     installReviewedModeFetchMock();
     renderApp();
 
@@ -566,7 +564,7 @@ it("renders reviewed warning banner with amber border styling", async () => {
     expect(banner).toHaveClass("border", "border-statusWarn", "bg-surface", "text-text");
   });
 
-it("toggles reviewed action visual state and supports keyboard blocked-edit feedback", async () => {
+  it("toggles reviewed action visual state and supports keyboard blocked-edit feedback", async () => {
     installReviewedModeFetchMock();
     renderApp();
 

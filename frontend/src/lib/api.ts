@@ -28,16 +28,25 @@ export async function fetchDocumentDetails(documentId: string): Promise<Document
   return fetchJson<DocumentDetailResponse>(`${API_BASE}/documents/${documentId}`);
 }
 
-export async function fetchProcessingHistory(documentId: string): Promise<ProcessingHistoryResponse> {
-  return fetchJson<ProcessingHistoryResponse>(`${API_BASE}/documents/${documentId}/processing-history`);
+export async function fetchProcessingHistory(
+  documentId: string,
+): Promise<ProcessingHistoryResponse> {
+  return fetchJson<ProcessingHistoryResponse>(
+    `${API_BASE}/documents/${documentId}/processing-history`,
+  );
 }
 
 export async function fetchDocumentReview(documentId: string): Promise<DocumentReviewResponse> {
   return fetchJson<DocumentReviewResponse>(`${API_BASE}/documents/${documentId}/review`);
 }
 
-export async function fetchRawText(documentId: string, runId: string): Promise<RawTextArtifactResponse> {
-  return fetchJson<RawTextArtifactResponse>(`${API_BASE}/documents/${documentId}/artifacts/${runId}/raw-text`);
+export async function fetchRawText(
+  documentId: string,
+  runId: string,
+): Promise<RawTextArtifactResponse> {
+  return fetchJson<RawTextArtifactResponse>(
+    `${API_BASE}/documents/${documentId}/artifacts/${runId}/raw-text`,
+  );
 }
 
 export function useDocumentList() {
@@ -84,7 +93,9 @@ export function useLoadPdfMutation() {
         throw new Error(`HTTP ${response.status}`);
       }
       const blob = await response.blob();
-      const filename = /filename="?([^";]+)"?/i.exec(response.headers.get("content-disposition") ?? "")?.[1] ?? null;
+      const filename =
+        /filename="?([^";]+)"?/i.exec(response.headers.get("content-disposition") ?? "")?.[1] ??
+        null;
       return { url: URL.createObjectURL(blob), filename };
     },
   });
@@ -96,7 +107,10 @@ export function useUploadMutation() {
     mutationFn: async (file: File) => {
       const form = new FormData();
       form.append("file", file);
-      return fetchJson<DocumentUploadResponse>(`${API_BASE}/documents/upload`, { method: "POST", body: form });
+      return fetchJson<DocumentUploadResponse>(`${API_BASE}/documents/upload`, {
+        method: "POST",
+        body: form,
+      });
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["documentList"] });
@@ -108,7 +122,9 @@ export function useReprocessMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (documentId: string) =>
-      fetchJson<{ run_id: string }>(`${API_BASE}/documents/${documentId}/reprocess`, { method: "POST" }),
+      fetchJson<{ run_id: string }>(`${API_BASE}/documents/${documentId}/reprocess`, {
+        method: "POST",
+      }),
     onSuccess: async (_value, documentId) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["documentDetails", documentId] }),

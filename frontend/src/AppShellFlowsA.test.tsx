@@ -35,7 +35,7 @@ describe("App upload and list flow", () => {
     installDefaultAppFetchMock();
   });
 
-it("uses polished structured header actions without Documento original button", async () => {
+  it("uses polished structured header actions without Documento original button", async () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
@@ -46,12 +46,14 @@ it("uses polished structured header actions without Documento original button", 
     expect(activeViewerTool).toHaveClass("bg-surfaceMuted");
 
     expect(screen.getByRole("heading", { name: /Datos extraídos/i })).toBeInTheDocument();
-    expect(screen.queryByText(/La confianza guia la atencion, no bloquea decisiones\./i)).toBeNull();
+    expect(
+      screen.queryByText(/La confianza guia la atencion, no bloquea decisiones\./i),
+    ).toBeNull();
     expect(screen.queryByRole("button", { name: /Abrir texto/i })).toBeNull();
     expect(screen.queryByRole("button", { name: /Documento original/i })).toBeNull();
   });
 
-it("shows only connectivity toast when preview download fails (no global red banner)", async () => {
+  it("shows only connectivity toast when preview download fails (no global red banner)", async () => {
     globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = input.toString();
       const method = (init?.method ?? "GET").toUpperCase();
@@ -73,7 +75,7 @@ it("shows only connectivity toast when preview download fails (no global red ban
             offset: 0,
             total: 1,
           }),
-          { status: 200 }
+          { status: 200 },
         );
       }
 
@@ -95,7 +97,7 @@ it("shows only connectivity toast when preview download fails (no global red ban
             failure_type: null,
             latest_run: { run_id: "run-doc-ready", state: "COMPLETED", failure_type: null },
           }),
-          { status: 200 }
+          { status: 200 },
         );
       }
 
@@ -128,12 +130,14 @@ it("shows only connectivity toast when preview download fails (no global red ban
               available: false,
             },
           }),
-          { status: 200 }
+          { status: 200 },
         );
       }
 
       if (url.includes("/processing-history") && method === "GET") {
-        return new Response(JSON.stringify({ document_id: "doc-ready", runs: [] }), { status: 200 });
+        return new Response(JSON.stringify({ document_id: "doc-ready", runs: [] }), {
+          status: 200,
+        });
       }
 
       return new Response(JSON.stringify({ error_code: "NOT_FOUND" }), { status: 404 });
@@ -148,7 +152,7 @@ it("shows only connectivity toast when preview download fails (no global red ban
     expect(screen.queryByText(/No se pudo cargar la vista previa del documento\./i)).toBeNull();
   });
 
-it("deduplicates connectivity toasts when preview and review fail in the same attempt", async () => {
+  it("deduplicates connectivity toasts when preview and review fail in the same attempt", async () => {
     globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = input.toString();
       const method = (init?.method ?? "GET").toUpperCase();
@@ -170,7 +174,7 @@ it("deduplicates connectivity toasts when preview and review fail in the same at
             offset: 0,
             total: 1,
           }),
-          { status: 200 }
+          { status: 200 },
         );
       }
 
@@ -188,7 +192,7 @@ it("deduplicates connectivity toasts when preview and review fail in the same at
             failure_type: null,
             latest_run: { run_id: "run-doc-ready", state: "COMPLETED", failure_type: null },
           }),
-          { status: 200 }
+          { status: 200 },
         );
       }
 
@@ -201,7 +205,9 @@ it("deduplicates connectivity toasts when preview and review fail in the same at
       }
 
       if (url.includes("/processing-history") && method === "GET") {
-        return new Response(JSON.stringify({ document_id: "doc-ready", runs: [] }), { status: 200 });
+        return new Response(JSON.stringify({ document_id: "doc-ready", runs: [] }), {
+          status: 200,
+        });
       }
 
       return new Response(JSON.stringify({ error_code: "NOT_FOUND" }), { status: 404 });
@@ -216,7 +222,7 @@ it("deduplicates connectivity toasts when preview and review fail in the same at
     });
   });
 
-it("copies the full extracted text with Copy all", async () => {
+  it("copies the full extracted text with Copy all", async () => {
     const rawText = "Linea uno\nLinea dos\nLinea tres";
     globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = input.toString();
@@ -239,7 +245,7 @@ it("copies the full extracted text with Copy all", async () => {
             offset: 0,
             total: 1,
           }),
-          { status: 200 }
+          { status: 200 },
         );
       }
 
@@ -261,7 +267,7 @@ it("copies the full extracted text with Copy all", async () => {
             failure_type: null,
             latest_run: { run_id: "run-doc-ready", state: "COMPLETED", failure_type: null },
           }),
-          { status: 200 }
+          { status: 200 },
         );
       }
 
@@ -279,7 +285,7 @@ it("copies the full extracted text with Copy all", async () => {
             content_type: "text/plain",
             text: rawText,
           }),
-          { status: 200 }
+          { status: 200 },
         );
       }
 
@@ -306,7 +312,7 @@ it("copies the full extracted text with Copy all", async () => {
     expect(screen.getByText(/Texto copiado\./i)).toBeInTheDocument();
   });
 
-it("refreshes extracted text after reprocess without switching tabs", async () => {
+  it("refreshes extracted text after reprocess without switching tabs", async () => {
     let phase: "initial" | "processing" | "completed" = "initial";
     let processingPollCount = 0;
     const oldText = "Texto antiguo";
@@ -333,7 +339,7 @@ it("refreshes extracted text after reprocess without switching tabs", async () =
             offset: 0,
             total: 1,
           }),
-          { status: 200 }
+          { status: 200 },
         );
       }
 
@@ -370,7 +376,7 @@ it("refreshes extracted text after reprocess without switching tabs", async () =
             failure_type: null,
             latest_run: { run_id: "run-doc-ready", state: latestState, failure_type: null },
           }),
-          { status: 200 }
+          { status: 200 },
         );
       }
 
@@ -389,7 +395,7 @@ it("refreshes extracted text after reprocess without switching tabs", async () =
             state: "QUEUED",
             created_at: "2026-02-10T10:00:00Z",
           }),
-          { status: 201 }
+          { status: 201 },
         );
       }
 
@@ -401,7 +407,7 @@ it("refreshes extracted text after reprocess without switching tabs", async () =
               message: "Not ready",
               details: { reason: "RAW_TEXT_NOT_READY" },
             }),
-            { status: 409 }
+            { status: 409 },
           );
         }
         return new Response(
@@ -411,7 +417,7 @@ it("refreshes extracted text after reprocess without switching tabs", async () =
             content_type: "text/plain",
             text: phase === "initial" ? oldText : newText,
           }),
-          { status: 200 }
+          { status: 200 },
         );
       }
 
@@ -423,7 +429,9 @@ it("refreshes extracted text after reprocess without switching tabs", async () =
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
     fireEvent.click(screen.getByRole("button", { name: /Texto extraido/i }));
     expect(
-      screen.getByText(/¿El texto no es correcto\? Puedes reprocesarlo para regenerar la extraccion\./i)
+      screen.getByText(
+        /¿El texto no es correcto\? Puedes reprocesarlo para regenerar la extraccion\./i,
+      ),
     ).toBeInTheDocument();
 
     await screen.findByText(oldText);
@@ -436,17 +444,17 @@ it("refreshes extracted text after reprocess without switching tabs", async () =
     expect(screen.queryByText(/Procesamiento reiniciado/i)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Reprocesando\.\.\./i })).toBeDisabled();
     expect(
-      within(screen.getByRole("button", { name: /ready\.pdf/i })).getByText("Procesando")
+      within(screen.getByRole("button", { name: /ready\.pdf/i })).getByText("Procesando"),
     ).toBeInTheDocument();
 
     await waitFor(
       () => {
         expect(screen.getByText(newText)).toBeInTheDocument();
         expect(
-          within(screen.getByRole("button", { name: /ready\.pdf/i })).getByText("Listo")
+          within(screen.getByRole("button", { name: /ready\.pdf/i })).getByText("Listo"),
         ).toBeInTheDocument();
       },
-      { timeout: 10000 }
+      { timeout: 10000 },
     );
   }, 12000);
 });

@@ -26,6 +26,7 @@ def _emit_info(message: str) -> None:
         return
     logger.info(message)
 
+
 _MAX_RUNS_PER_DOCUMENT = 20
 _PROJECT_ROOT = Path(__file__).resolve().parents[3]
 _OBSERVABILITY_DIR = _PROJECT_ROOT / ".local" / "extraction_runs"
@@ -83,11 +84,7 @@ def build_extraction_snapshot_from_interpretation(
     if not document_id.strip() or not run_id.strip() or not created_at.strip():
         return None
 
-    data = (
-        interpretation_payload.get("data")
-        if isinstance(interpretation_payload, dict)
-        else None
-    )
+    data = interpretation_payload.get("data") if isinstance(interpretation_payload, dict) else None
     if not isinstance(data, dict):
         return None
 
@@ -149,18 +146,14 @@ def build_extraction_snapshot_from_interpretation(
 
         if normalized_value:
             confidence = (
-                _coerce_confidence(top1.get("confidence"))
-                if isinstance(top1, dict)
-                else None
+                _coerce_confidence(top1.get("confidence")) if isinstance(top1, dict) else None
             )
             fields[field_key] = {
                 "status": "accepted",
                 "confidence": _confidence_to_band(confidence),
                 "valueNormalized": normalized_value,
                 "valueRaw": (
-                    _as_text(top1.get("value"))
-                    if isinstance(top1, dict)
-                    else normalized_value
+                    _as_text(top1.get("value")) if isinstance(top1, dict) else normalized_value
                 ),
                 "rawCandidate": _as_text(top1.get("value")) if isinstance(top1, dict) else None,
                 "sourceHint": _as_text(top1.get("sourceHint")) if isinstance(top1, dict) else None,
@@ -393,9 +386,7 @@ def _log_goal_fields_report(
     current: dict[str, Any],
     previous: dict[str, Any] | None,
 ) -> None:
-    current_fields = (
-        current.get("fields") if isinstance(current.get("fields"), dict) else {}
-    )
+    current_fields = current.get("fields") if isinstance(current.get("fields"), dict) else {}
     previous_fields = (
         previous.get("fields")
         if isinstance(previous, dict) and isinstance(previous.get("fields"), dict)
@@ -553,13 +544,11 @@ def _log_triage_report(document_id: str, triage: dict[str, Any]) -> None:
                 continue
             field = item.get("field")
             candidates = (
-                item.get("topCandidates")
-                if isinstance(item.get("topCandidates"), list)
-                else []
+                item.get("topCandidates") if isinstance(item.get("topCandidates"), list) else []
             )
             top1 = candidates[0] if candidates else None
             missing_lines.append(f"- {field}: {_format_top_candidate_for_log(top1)}")
-        lines[len(lines) - 1:len(lines) - 1] = missing_lines
+        lines[len(lines) - 1 : len(lines) - 1] = missing_lines
 
     if not rejected:
         lines.append("- none")
@@ -571,9 +560,7 @@ def _log_triage_report(document_id: str, triage: dict[str, Any]) -> None:
             reason = item.get("reason")
             raw_candidate = _preview(_as_text(item.get("rawCandidate")))
             candidates = (
-                item.get("topCandidates")
-                if isinstance(item.get("topCandidates"), list)
-                else []
+                item.get("topCandidates") if isinstance(item.get("topCandidates"), list) else []
             )
             top1 = candidates[0] if candidates else None
             line = f"- {field}: reason={reason} {_format_top_candidate_for_log(top1)}"
@@ -784,13 +771,9 @@ def summarize_extraction_runs(
 
     selected_runs: list[dict[str, Any]]
     if run_id:
-        selected_runs = [
-            run
-            for run in runs
-            if str(run.get("runId", "")).strip() == run_id
-        ]
+        selected_runs = [run for run in runs if str(run.get("runId", "")).strip() == run_id]
     else:
-        selected_runs = runs[-max(1, limit):]
+        selected_runs = runs[-max(1, limit) :]
 
     if not selected_runs:
         return None
@@ -831,9 +814,7 @@ def summarize_extraction_runs(
             if status in {"missing", "rejected"} and top1_value:
                 field_stats["top1_counter"][top1_value] += 1
                 top1_conf = (
-                    _coerce_confidence(top1.get("confidence"))
-                    if isinstance(top1, dict)
-                    else None
+                    _coerce_confidence(top1.get("confidence")) if isinstance(top1, dict) else None
                 )
                 if top1_conf is not None:
                     field_stats["top1_confidences"].append(top1_conf)
@@ -848,9 +829,7 @@ def summarize_extraction_runs(
                         else None
                     )
                     if missing_top1_conf is not None:
-                        field_stats["missing_top1_confidences"].append(
-                            missing_top1_conf
-                        )
+                        field_stats["missing_top1_confidences"].append(missing_top1_conf)
                 else:
                     field_stats["missing_without_candidates_count"] += 1
 
@@ -885,9 +864,7 @@ def summarize_extraction_runs(
             avg_top1_conf = round(sum(missing_confidences) / len(missing_confidences), 2)
 
         missing_with_candidates_count = int(field_stats["missing_with_candidates_count"])
-        missing_without_candidates_count = int(
-            field_stats["missing_without_candidates_count"]
-        )
+        missing_without_candidates_count = int(field_stats["missing_without_candidates_count"])
         has_candidates = missing_with_candidates_count > 0
 
         field_rows.append(
@@ -937,14 +914,10 @@ def summarize_extraction_runs(
     )
 
     missing_fields_with_candidates = sum(
-        1
-        for item in most_missing
-        if bool(item.get("has_candidates"))
+        1 for item in most_missing if bool(item.get("has_candidates"))
     )
     missing_fields_without_candidates = sum(
-        1
-        for item in most_missing
-        if not bool(item.get("has_candidates"))
+        1 for item in most_missing if not bool(item.get("has_candidates"))
     )
 
     summary = {

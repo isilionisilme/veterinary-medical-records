@@ -42,9 +42,7 @@ PROCESSING_TICK_SECONDS = 0.5
 PROCESSING_TIMEOUT_SECONDS = 120.0
 MAX_RUNS_PER_TICK = 10
 PDF_EXTRACTOR_FORCE_ENV = "PDF_EXTRACTOR_FORCE"
-INTERPRETATION_DEBUG_INCLUDE_CANDIDATES_ENV = (
-    "VET_RECORDS_INCLUDE_INTERPRETATION_CANDIDATES"
-)
+INTERPRETATION_DEBUG_INCLUDE_CANDIDATES_ENV = "VET_RECORDS_INCLUDE_INTERPRETATION_CANDIDATES"
 COVERAGE_CONFIDENCE_LABEL = 0.66
 COVERAGE_CONFIDENCE_FALLBACK = 0.50
 MVP_COVERAGE_DEBUG_KEYS: tuple[str, ...] = (
@@ -70,9 +68,7 @@ MVP_COVERAGE_DEBUG_KEYS: tuple[str, ...] = (
     "hair_length",
     "repro_status",
 )
-DATE_TARGET_KEYS = frozenset(
-    {"visit_date", "document_date", "admission_date", "discharge_date"}
-)
+DATE_TARGET_KEYS = frozenset({"visit_date", "document_date", "admission_date", "discharge_date"})
 _DATE_CANDIDATE_PATTERN = re.compile(
     r"\b(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}|\d{4}[\/\-.]\d{1,2}[\/\-.]\d{1,2})\b"
 )
@@ -133,9 +129,7 @@ _PHONE_LIKE_PATTERN = re.compile(r"\+?\d[\d\s().-]{6,}")
 _LICENSE_ONLY_PATTERN = re.compile(
     r"(?i)^\s*(?:col(?:egiad[oa])?\.?|n[º°o]?\s*col\.?|lic(?:encia)?\.?|cmp\.?|nif\b|dni\b)\s*[:\-]?\s*[A-Za-z0-9\-./\s]{3,}$"
 )
-_OWNER_CONTEXT_PATTERN = re.compile(
-    r"(?i)\b(?:propietari(?:o|a)|titular|dueñ(?:o|a)|owner)\b"
-)
+_OWNER_CONTEXT_PATTERN = re.compile(r"(?i)\b(?:propietari(?:o|a)|titular|dueñ(?:o|a)|owner)\b")
 _OWNER_PATIENT_LABEL_PATTERN = re.compile(r"(?i)\bpaciente\b\s*[:\-]")
 _VET_OR_CLINIC_CONTEXT_PATTERN = re.compile(
     r"(?i)\b(?:veterinari[oa]|vet\b|doctor(?:a)?\b|dra\.?\b|dr\.?\b|cl[ií]nica|hospital|centro\s+veterinario)\b"
@@ -164,9 +158,7 @@ def _build_interpretation_artifact(
 
     if compact_text:
         candidate_bundle = _mine_interpretation_candidates(raw_text)
-        canonical_values, canonical_evidence = _map_candidates_to_global_schema(
-            candidate_bundle
-        )
+        canonical_values, canonical_evidence = _map_candidates_to_global_schema(candidate_bundle)
         canonical_values = normalize_canonical_fields(
             canonical_values,
             canonical_evidence,
@@ -212,13 +204,9 @@ def _build_interpretation_artifact(
         key
         for key in GLOBAL_SCHEMA_KEYS
         if (
-            isinstance(normalized_values.get(key), list)
-            and len(normalized_values.get(key, [])) > 0
+            isinstance(normalized_values.get(key), list) and len(normalized_values.get(key, [])) > 0
         )
-        or (
-            isinstance(normalized_values.get(key), str)
-            and bool(normalized_values.get(key))
-        )
+        or (isinstance(normalized_values.get(key), str) and bool(normalized_values.get(key)))
     ]
     now_iso = _default_now_iso()
     policy_version = confidence_policy_version_or_none()
@@ -256,8 +244,7 @@ def _build_interpretation_artifact(
             },
         }
         logger.info(
-            "confidence_policy included in interpretation payload "
-            "policy_version=%s",
+            "confidence_policy included in interpretation payload policy_version=%s",
             policy_version,
         )
     else:
@@ -284,13 +271,13 @@ def _build_interpretation_artifact(
         "data": data,
     }
 
+
 def _should_include_interpretation_candidates() -> bool:
     raw = os.getenv(INTERPRETATION_DEBUG_INCLUDE_CANDIDATES_ENV, "").strip().lower()
     return raw in {"1", "true", "yes", "on"}
 
-def _mine_interpretation_candidates(
-    raw_text: str
-) -> dict[str, list[dict[str, object]]]:
+
+def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, object]]]:
     compact_text = _WHITESPACE_PATTERN.sub(" ", raw_text).strip()
     candidates: dict[str, list[dict[str, object]]] = defaultdict(list)
     seen_values: dict[str, set[str]] = defaultdict(set)
@@ -702,12 +689,8 @@ def _mine_interpretation_candidates(
             snippet=match.group(0),
         )
 
-    for match in re.finditer(
-        r"\b([0-9]{1,2}[\/\-.][0-9]{1,2}[\/\-.][0-9]{2,4})\b", raw_text
-    ):
-        snippet = raw_text[
-            max(0, match.start() - 36) : min(len(raw_text), match.end() + 36)
-        ]
+    for match in re.finditer(r"\b([0-9]{1,2}[\/\-.][0-9]{1,2}[\/\-.][0-9]{2,4})\b", raw_text):
+        snippet = raw_text[max(0, match.start() - 36) : min(len(raw_text), match.end() + 36)]
         add_candidate(
             key="document_date",
             value=match.group(1),
@@ -722,9 +705,7 @@ def _mine_interpretation_candidates(
             confidence=float(date_candidate["confidence"]),
             snippet=str(date_candidate["snippet"]),
             page=1,
-            anchor=(
-                str(date_candidate["anchor"]) if date_candidate.get("anchor") else None
-            ),
+            anchor=(str(date_candidate["anchor"]) if date_candidate.get("anchor") else None),
             anchor_priority=int(date_candidate["anchor_priority"]),
             target_reason=str(date_candidate["target_reason"]),
         )
@@ -770,22 +751,15 @@ def _mine_interpretation_candidates(
                     confidence=COVERAGE_CONFIDENCE_LABEL,
                     snippet=line,
                 )
-            if any(
-                token in lower_header
-                for token in ("trat", "medic", "prescrip", "receta")
-            ):
+            if any(token in lower_header for token in ("trat", "medic", "prescrip", "receta")):
                 add_candidate(
                     key="medication",
                     value=value,
                     confidence=COVERAGE_CONFIDENCE_LABEL,
                     snippet=line,
                 )
-                add_candidate(
-                    key="treatment_plan", value=value, confidence=0.7, snippet=line
-                )
-            if any(
-                token in lower_header for token in ("proced", "interv", "cirug", "quir")
-            ):
+                add_candidate(key="treatment_plan", value=value, confidence=0.7, snippet=line)
+            if any(token in lower_header for token in ("proced", "interv", "cirug", "quir")):
                 add_candidate(
                     key="procedure",
                     value=value,
@@ -814,8 +788,7 @@ def _mine_interpretation_candidates(
                     snippet=line,
                 )
             if any(
-                token in lower_header
-                for token in ("radiograf", "ecograf", "imagen", "tac", "rm")
+                token in lower_header for token in ("radiograf", "ecograf", "imagen", "tac", "rm")
             ):
                 add_candidate(
                     key="imaging",
@@ -848,10 +821,7 @@ def _mine_interpretation_candidates(
                     snippet=line,
                 )
 
-        if (
-            any(token in lower_line for token in ("diagn", "impresi"))
-            and ":" not in line
-        ):
+        if any(token in lower_line for token in ("diagn", "impresi")) and ":" not in line:
             add_candidate(key="diagnosis", value=line, confidence=0.64, snippet=line)
         if any(
             token in lower_line
@@ -913,20 +883,14 @@ def _mine_interpretation_candidates(
             )
 
         if normalized_single in {"m", "macho", "male", "h", "hembra", "female"}:
-            window = " ".join(
-                lines[max(0, index - 1) : min(len(lines), index + 2)]
-            ).casefold()
+            window = " ".join(lines[max(0, index - 1) : min(len(lines), index + 2)]).casefold()
             if "sexo" in window:
-                sex_value = (
-                    "macho" if normalized_single in {"m", "macho", "male"} else "hembra"
-                )
+                sex_value = "macho" if normalized_single in {"m", "macho", "male"} else "hembra"
                 add_candidate(
                     key="sex",
                     value=sex_value,
                     confidence=COVERAGE_CONFIDENCE_FALLBACK,
-                    snippet=" ".join(
-                        lines[max(0, index - 1) : min(len(lines), index + 2)]
-                    ),
+                    snippet=" ".join(lines[max(0, index - 1) : min(len(lines), index + 2)]),
                 )
 
         if (
@@ -936,10 +900,7 @@ def _mine_interpretation_candidates(
             and " " not in line
         ):
             nearby = " ".join(lines[index : min(len(lines), index + 4)]).casefold()
-            if any(
-                token in nearby
-                for token in ("canino", "felino", "raza", "chip", "especie")
-            ):
+            if any(token in nearby for token in ("canino", "felino", "raza", "chip", "especie")):
                 add_candidate(
                     key="pet_name",
                     value=line.title(),
@@ -951,8 +912,7 @@ def _mine_interpretation_candidates(
         compact_text
         and "language" not in candidates
         and any(
-            token in compact_text.casefold()
-            for token in ("paciente", "diagnost", "tratamiento")
+            token in compact_text.casefold() for token in ("paciente", "diagnost", "tratamiento")
         )
     ):
         add_candidate(
@@ -964,6 +924,7 @@ def _mine_interpretation_candidates(
         )
 
     return dict(candidates)
+
 
 def _extract_date_candidates_with_classification(
     raw_text: str,
@@ -996,9 +957,7 @@ def _extract_date_candidates_with_classification(
                 chosen_reason = f"anchor:{matched_anchor}"
 
         confidence = (
-            COVERAGE_CONFIDENCE_LABEL
-            if chosen_priority > 1
-            else COVERAGE_CONFIDENCE_FALLBACK
+            COVERAGE_CONFIDENCE_LABEL if chosen_priority > 1 else COVERAGE_CONFIDENCE_FALLBACK
         )
         candidates.append(
             {
@@ -1014,8 +973,9 @@ def _extract_date_candidates_with_classification(
 
     return candidates
 
+
 def _map_candidates_to_global_schema(
-    candidate_bundle: Mapping[str, list[dict[str, object]]]
+    candidate_bundle: Mapping[str, list[dict[str, object]]],
 ) -> tuple[dict[str, object], dict[str, list[dict[str, object]]]]:
     mapped: dict[str, object] = {}
     evidence_map: dict[str, list[dict[str, object]]] = {}
@@ -1047,6 +1007,7 @@ def _map_candidates_to_global_schema(
 
     return mapped, evidence_map
 
+
 def _candidate_sort_key(item: dict[str, object], key: str) -> tuple[float, float]:
     confidence = float(item.get("confidence", 0.0))
     if key in DATE_TARGET_KEYS:
@@ -1061,6 +1022,7 @@ def _candidate_sort_key(item: dict[str, object], key: str) -> tuple[float, float
         return 0.0, confidence
 
     return 0.0, confidence
+
 
 def _build_date_selection_debug(
     evidence_map: Mapping[str, list[dict[str, object]]],
@@ -1079,6 +1041,7 @@ def _build_date_selection_debug(
         }
     return payload
 
+
 def _build_mvp_coverage_debug_summary(
     *,
     raw_text: str,
@@ -1089,12 +1052,8 @@ def _build_mvp_coverage_debug_summary(
     summary: dict[str, dict[str, object] | None] = {}
     for key in MVP_COVERAGE_DEBUG_KEYS:
         raw_value = normalized_values.get(key)
-        accepted = (
-            isinstance(raw_value, str)
-            and bool(raw_value.strip())
-        ) or (
-            isinstance(raw_value, list)
-            and len(raw_value) > 0
+        accepted = (isinstance(raw_value, str) and bool(raw_value.strip())) or (
+            isinstance(raw_value, list) and len(raw_value) > 0
         )
 
         key_candidates = sorted(
@@ -1103,26 +1062,18 @@ def _build_mvp_coverage_debug_summary(
             reverse=True,
         )
         top1 = key_candidates[0] if key_candidates else None
-        top1_value = (
-            str(top1.get("value", "")).strip() if isinstance(top1, dict) else None
-        )
-        top1_conf = (
-            float(top1.get("confidence", 0.0)) if isinstance(top1, dict) else None
-        )
+        top1_value = str(top1.get("value", "")).strip() if isinstance(top1, dict) else None
+        top1_conf = float(top1.get("confidence", 0.0)) if isinstance(top1, dict) else None
 
         line_number: int | None = None
         if accepted:
             key_evidence = evidence_map.get(key, [])
             top_evidence = key_evidence[0] if key_evidence else None
             evidence_payload = (
-                top_evidence.get("evidence")
-                if isinstance(top_evidence, dict)
-                else None
+                top_evidence.get("evidence") if isinstance(top_evidence, dict) else None
             )
             snippet = (
-                evidence_payload.get("snippet")
-                if isinstance(evidence_payload, dict)
-                else None
+                evidence_payload.get("snippet") if isinstance(evidence_payload, dict) else None
             )
             if isinstance(snippet, str) and snippet.strip():
                 line_number = _find_line_number_for_snippet(raw_text, snippet)
@@ -1135,6 +1086,7 @@ def _build_mvp_coverage_debug_summary(
         }
 
     return summary
+
 
 def _find_line_number_for_snippet(raw_text: str, snippet: str) -> int | None:
     lines = raw_text.splitlines()
@@ -1150,6 +1102,7 @@ def _find_line_number_for_snippet(raw_text: str, snippet: str) -> int | None:
             return index
 
     return None
+
 
 def _build_structured_fields_from_global_schema(
     *,
@@ -1179,9 +1132,7 @@ def _build_structured_fields_from_global_schema(
                 if not isinstance(item, str) or not item:
                     continue
                 candidate = key_evidence[index] if index < len(key_evidence) else None
-                evidence = (
-                    candidate.get("evidence") if isinstance(candidate, dict) else None
-                )
+                evidence = candidate.get("evidence") if isinstance(candidate, dict) else None
                 confidence = (
                     float(candidate.get("confidence", 0.65))
                     if isinstance(candidate, dict)
@@ -1193,15 +1144,9 @@ def _build_structured_fields_from_global_schema(
                         key=key,
                         value=item,
                         confidence=confidence,
-                        snippet=(
-                            evidence.get("snippet")
-                            if isinstance(evidence, dict)
-                            else item
-                        ),
+                        snippet=(evidence.get("snippet") if isinstance(evidence, dict) else item),
                         value_type=VALUE_TYPE_BY_KEY.get(key, "string"),
-                        page=(
-                            evidence.get("page") if isinstance(evidence, dict) else None
-                        ),
+                        page=(evidence.get("page") if isinstance(evidence, dict) else None),
                         mapping_id=mapping_id,
                         context_key=context_key,
                         context_key_aliases=context_key_aliases,
@@ -1217,9 +1162,7 @@ def _build_structured_fields_from_global_schema(
         candidate = key_evidence[0] if key_evidence else None
         evidence = candidate.get("evidence") if isinstance(candidate, dict) else None
         confidence = (
-            float(candidate.get("confidence", 0.65))
-            if isinstance(candidate, dict)
-            else 0.65
+            float(candidate.get("confidence", 0.65)) if isinstance(candidate, dict) else 0.65
         )
         mapping_id = _derive_mapping_id(key=key, candidate=candidate)
         fields.append(
@@ -1227,9 +1170,7 @@ def _build_structured_fields_from_global_schema(
                 key=key,
                 value=value,
                 confidence=confidence,
-                snippet=(
-                    evidence.get("snippet") if isinstance(evidence, dict) else value
-                ),
+                snippet=(evidence.get("snippet") if isinstance(evidence, dict) else value),
                 value_type=VALUE_TYPE_BY_KEY.get(key, "string"),
                 page=(evidence.get("page") if isinstance(evidence, dict) else None),
                 mapping_id=mapping_id,
@@ -1242,6 +1183,7 @@ def _build_structured_fields_from_global_schema(
         )
 
     return fields
+
 
 def _build_field_candidate_suggestions(
     *, key: str, candidate_bundle: Mapping[str, list[dict[str, object]]]
@@ -1287,6 +1229,7 @@ def _build_field_candidate_suggestions(
 
     return suggestions
 
+
 def _candidate_suggestion_sort_key(item: dict[str, object]) -> tuple[float, str, str, int]:
     raw_evidence = item.get("evidence")
     evidence_snippet = ""
@@ -1305,6 +1248,7 @@ def _candidate_suggestion_sort_key(item: dict[str, object]) -> tuple[float, str,
         evidence_snippet,
         evidence_page,
     )
+
 
 def _build_structured_field(
     *,
@@ -1361,6 +1305,7 @@ def _build_structured_field(
         payload["candidate_suggestions"] = candidate_suggestions
     return payload
 
+
 def _sanitize_text_extraction_reliability(value: object) -> float | None:
     if isinstance(value, bool):
         return None
@@ -1369,6 +1314,7 @@ def _sanitize_text_extraction_reliability(value: object) -> float | None:
         if math.isfinite(numeric) and 0.0 <= numeric <= 1.0:
             return numeric
     return None
+
 
 def _sanitize_field_review_history_adjustment(value: object) -> float:
     if isinstance(value, bool):
@@ -1379,6 +1325,7 @@ def _sanitize_field_review_history_adjustment(value: object) -> float:
             return numeric
     return 0.0
 
+
 def _sanitize_field_candidate_confidence(value: object) -> float:
     if isinstance(value, bool):
         return 0.0
@@ -1387,6 +1334,7 @@ def _sanitize_field_candidate_confidence(value: object) -> float:
         if math.isfinite(numeric):
             return min(max(numeric, 0.0), 1.0)
     return 0.0
+
 
 def _derive_mapping_id(*, key: str, candidate: dict[str, object] | None) -> str | None:
     if not isinstance(candidate, dict):
@@ -1404,6 +1352,7 @@ def _derive_mapping_id(*, key: str, candidate: dict[str, object] | None) -> str 
     if isinstance(reason, str) and reason.startswith("fallback"):
         return f"fallback::{key}"
     return None
+
 
 def _resolve_review_history_adjustment(
     *,
@@ -1435,11 +1384,13 @@ def _resolve_review_history_adjustment(
         )
     )
 
+
 def _compose_field_mapping_confidence(
     *, candidate_confidence: float, review_history_adjustment: float
 ) -> float:
     composed = candidate_confidence + (review_history_adjustment / 100.0)
     return min(max(composed, 0.0), 1.0)
+
 
 def _normalize_candidate_text(text: str) -> str:
     normalized = _WHITESPACE_PATTERN.sub(" ", text).strip()

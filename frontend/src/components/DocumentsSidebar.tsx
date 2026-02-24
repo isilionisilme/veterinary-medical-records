@@ -115,7 +115,9 @@ export function DocumentsSidebar({
                   B
                 </span>
                 <div>
-                  <p className="font-display text-lg font-semibold leading-none text-accent">Barkibu</p>
+                  <p className="font-display text-lg font-semibold leading-none text-accent">
+                    Barkibu
+                  </p>
                   <p className="mt-1 text-xs text-textMuted">Revisión de reembolsos</p>
                 </div>
               </div>
@@ -126,7 +128,11 @@ export function DocumentsSidebar({
                   pressed={isDocsSidebarPinned}
                   onClick={onTogglePin}
                 >
-                  {isDocsSidebarPinned ? <PinOff size={16} aria-hidden="true" /> : <Pin size={16} aria-hidden="true" />}
+                  {isDocsSidebarPinned ? (
+                    <PinOff size={16} aria-hidden="true" />
+                  ) : (
+                    <Pin size={16} aria-hidden="true" />
+                  )}
                 </IconButton>
                 <IconButton
                   label="Actualizar"
@@ -134,7 +140,11 @@ export function DocumentsSidebar({
                   onClick={onRefresh}
                   disabled={isRefreshingDocuments}
                 >
-                  <RefreshCw size={16} aria-hidden="true" className={isRefreshingDocuments ? "animate-spin" : ""} />
+                  <RefreshCw
+                    size={16}
+                    aria-hidden="true"
+                    className={isRefreshingDocuments ? "animate-spin" : ""}
+                  />
                 </IconButton>
               </div>
             </div>
@@ -186,7 +196,11 @@ export function DocumentsSidebar({
                     onChange={onSidebarFileInputChange}
                   />
                   {isUploadPending && (
-                    <div className="flex items-center gap-2 text-xs text-textSecondary" role="status" aria-live="polite">
+                    <div
+                      className="flex items-center gap-2 text-xs text-textSecondary"
+                      role="status"
+                      aria-live="polite"
+                    >
                       <RefreshCw size={14} className="animate-spin" />
                       <span>Subiendo...</span>
                     </div>
@@ -194,7 +208,10 @@ export function DocumentsSidebar({
                 </div>
               </div>
             ) : (
-              <div data-testid="sidebar-collapsed-dropzone" className="flex w-full items-center justify-center py-1">
+              <div
+                data-testid="sidebar-collapsed-dropzone"
+                className="flex w-full items-center justify-center py-1"
+              >
                 <UploadDropzone
                   compact
                   ariaLabel="Cargar documento"
@@ -235,13 +252,17 @@ export function DocumentsSidebar({
 
             {isDocumentListError && documentListErrorMessage && (
               <div className="panel-shell p-[var(--canvas-gap)]">
-                <p className="rounded-control border border-statusError bg-surface px-3 py-2 text-sm text-ink" role="alert">
+                <p
+                  className="rounded-control border border-statusError bg-surface px-3 py-2 text-sm text-ink"
+                  role="alert"
+                >
                   {documentListErrorMessage}
                 </p>
               </div>
             )}
 
-            {!isDocumentListLoading && !isDocumentListError &&
+            {!isDocumentListLoading &&
+              !isDocumentListError &&
               (isListRefreshing ? (
                 <div className="panel-shell flex flex-col gap-[var(--canvas-gap)] p-[var(--canvas-gap)]">
                   {Array.from({ length: 6 }).map((_, index) => (
@@ -255,7 +276,9 @@ export function DocumentsSidebar({
                   ))}
                 </div>
               ) : (
-                <div className={`panel-shell flex flex-col p-[var(--canvas-gap)] ${isDocsSidebarExpanded ? "gap-2 pr-3" : "gap-[var(--canvas-gap)]"}`}>
+                <div
+                  className={`panel-shell flex flex-col p-[var(--canvas-gap)] ${isDocsSidebarExpanded ? "gap-2 pr-3" : "gap-[var(--canvas-gap)]"}`}
+                >
                   {documents.length === 0 ? (
                     isDocsSidebarExpanded ? (
                       <p className="rounded-control border border-borderSubtle bg-surface px-3 py-2 text-sm text-textSecondary">
@@ -269,111 +292,118 @@ export function DocumentsSidebar({
                       }
 
                       const sectionItems = group.items.map((item) => {
-                      const isActive = activeId === item.document_id;
-                      const status = mapDocumentStatus(item);
-                      const expandedRowClass = isActive
-                        ? "rounded-card bg-surfaceMuted text-ink shadow-subtle"
-                        : `rounded-card bg-surface text-ink hover:bg-surfaceMuted ${group.reviewed ? "opacity-80" : ""}`;
-                      const collapsedRowClass = isActive
-                        ? "rounded-lg border border-transparent bg-surfaceMuted text-ink ring-1 ring-borderSubtle"
-                        : `rounded-lg border border-transparent bg-transparent text-ink hover:border-borderSubtle hover:bg-surface ${
-                          group.reviewed ? "opacity-80" : ""
-                          }`;
-                      const collapsedIconClass = isActive
-                        ? "relative flex h-10 w-10 items-center justify-center rounded-full border border-transparent bg-surface text-ink ring-1 ring-borderSubtle ring-2 ring-border shadow-subtle transition"
-                        : "relative flex h-10 w-10 items-center justify-center rounded-full border border-transparent bg-transparent transition hover:border-borderSubtle hover:bg-surface";
-                      const button = (
-                        <button
-                          key={item.document_id}
-                          data-testid={`doc-row-${item.document_id}`}
-                          type="button"
-                          onClick={() => onSelectDocument(item.document_id)}
-                          aria-pressed={isActive}
-                          aria-current={isActive ? "true" : undefined}
-                          aria-label={`${item.original_filename} (${status.label})`}
-                          className={`relative w-full overflow-visible text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
-                            isDocsSidebarExpanded
-                              ? expandedRowClass
-                              : collapsedRowClass
-                          } ${isDocsSidebarExpanded ? "min-h-[72px] px-3 py-2" : "px-0 py-1"} ${
-                            !isDocsSidebarExpanded ? "shadow-none" : ""
-                          }`}
-                        >
-                          {isDocsSidebarExpanded && isActive && (
-                            <span
-                              aria-hidden="true"
-                              className="absolute bottom-2 left-1 top-2 w-0.5 rounded-full bg-accent"
-                            />
-                          )}
-                          <div
-                            className={`flex items-center ${
-                              isDocsSidebarExpanded
-                                ? "items-start justify-between gap-3"
-                                : "mx-auto w-full justify-center"
+                        const isActive = activeId === item.document_id;
+                        const status = mapDocumentStatus(item);
+                        const expandedRowClass = isActive
+                          ? "rounded-card bg-surfaceMuted text-ink shadow-subtle"
+                          : `rounded-card bg-surface text-ink hover:bg-surfaceMuted ${group.reviewed ? "opacity-80" : ""}`;
+                        const collapsedRowClass = isActive
+                          ? "rounded-lg border border-transparent bg-surfaceMuted text-ink ring-1 ring-borderSubtle"
+                          : `rounded-lg border border-transparent bg-transparent text-ink hover:border-borderSubtle hover:bg-surface ${
+                              group.reviewed ? "opacity-80" : ""
+                            }`;
+                        const collapsedIconClass = isActive
+                          ? "relative flex h-10 w-10 items-center justify-center rounded-full border border-transparent bg-surface text-ink ring-1 ring-borderSubtle ring-2 ring-border shadow-subtle transition"
+                          : "relative flex h-10 w-10 items-center justify-center rounded-full border border-transparent bg-transparent transition hover:border-borderSubtle hover:bg-surface";
+                        const button = (
+                          <button
+                            key={item.document_id}
+                            data-testid={`doc-row-${item.document_id}`}
+                            type="button"
+                            onClick={() => onSelectDocument(item.document_id)}
+                            aria-pressed={isActive}
+                            aria-current={isActive ? "true" : undefined}
+                            aria-label={`${item.original_filename} (${status.label})`}
+                            className={`relative w-full overflow-visible text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+                              isDocsSidebarExpanded ? expandedRowClass : collapsedRowClass
+                            } ${isDocsSidebarExpanded ? "min-h-[72px] px-3 py-2" : "px-0 py-1"} ${
+                              !isDocsSidebarExpanded ? "shadow-none" : ""
                             }`}
                           >
+                            {isDocsSidebarExpanded && isActive && (
+                              <span
+                                aria-hidden="true"
+                                className="absolute bottom-2 left-1 top-2 w-0.5 rounded-full bg-accent"
+                              />
+                            )}
                             <div
-                              className={
+                              className={`flex items-center ${
                                 isDocsSidebarExpanded
-                                  ? "min-w-0"
-                                  : collapsedIconClass
-                              }
+                                  ? "items-start justify-between gap-3"
+                                  : "mx-auto w-full justify-center"
+                              }`}
                             >
+                              <div
+                                className={isDocsSidebarExpanded ? "min-w-0" : collapsedIconClass}
+                              >
+                                {isDocsSidebarExpanded ? (
+                                  <>
+                                    <p
+                                      className={`truncate text-sm leading-5 ${
+                                        isActive
+                                          ? "font-semibold text-text"
+                                          : "font-medium text-textBody"
+                                      }`}
+                                    >
+                                      {item.original_filename}
+                                    </p>
+                                    {isActive && (
+                                      <span className="sr-only">Documento seleccionado</span>
+                                    )}
+                                    <p className="mt-1 text-[11px] leading-4 text-textMuted">
+                                      Subido: {formatTimestamp(item.created_at)}
+                                    </p>
+                                  </>
+                                ) : (
+                                  <>
+                                    <FileText size={15} aria-hidden="true" />
+                                    {isActive && (
+                                      <span className="sr-only">Documento seleccionado</span>
+                                    )}
+                                  </>
+                                )}
+                                {!isDocsSidebarExpanded && (
+                                  <>
+                                    <DocumentStatusChip
+                                      status={status}
+                                      compact
+                                      className="absolute right-0.5 top-0.5"
+                                    />
+                                  </>
+                                )}
+                              </div>
                               {isDocsSidebarExpanded ? (
-                                <>
-                                  <p
-                                    className={`truncate text-sm leading-5 ${
-                                      isActive ? "font-semibold text-text" : "font-medium text-textBody"
-                                    }`}
-                                  >
-                                    {item.original_filename}
-                                  </p>
-                                  {isActive && <span className="sr-only">Documento seleccionado</span>}
-                                  <p className="mt-1 text-[11px] leading-4 text-textMuted">Subido: {formatTimestamp(item.created_at)}</p>
-                                </>
-                              ) : (
-                                <>
-                                  <FileText size={15} aria-hidden="true" />
-                                  {isActive && <span className="sr-only">Documento seleccionado</span>}
-                                </>
-                              )}
-                              {!isDocsSidebarExpanded && (
-                                <>
-                                  <DocumentStatusChip
-                                    status={status}
-                                    compact
-                                    className="absolute right-0.5 top-0.5"
-                                  />
-                                </>
-                              )}
+                                <DocumentStatusChip status={status} />
+                              ) : null}
                             </div>
-                            {isDocsSidebarExpanded ? (
-                              <DocumentStatusChip status={status} />
-                            ) : null}
-                          </div>
-                          {isDocsSidebarExpanded && isProcessingTooLong(item.created_at, item.status) && (
-                            <p className="mt-2 text-xs text-textSecondary">Tardando mas de lo esperado</p>
-                          )}
-                          {isDocsSidebarExpanded && item.failure_type && (
-                            <p className="mt-2 text-xs text-statusError">Error: {item.failure_type}</p>
-                          )}
-                        </button>
-                      );
+                            {isDocsSidebarExpanded &&
+                              isProcessingTooLong(item.created_at, item.status) && (
+                                <p className="mt-2 text-xs text-textSecondary">
+                                  Tardando mas de lo esperado
+                                </p>
+                              )}
+                            {isDocsSidebarExpanded && item.failure_type && (
+                              <p className="mt-2 text-xs text-statusError">
+                                Error: {item.failure_type}
+                              </p>
+                            )}
+                          </button>
+                        );
 
-                      if (isDocsSidebarExpanded) {
-                        return button;
-                      }
+                        if (isDocsSidebarExpanded) {
+                          return button;
+                        }
 
-                      return (
-                        <Tooltip
-                          key={`${item.document_id}-tooltip`}
-                          content={`${item.original_filename} · ${status.label}`}
-                          triggerClassName="flex w-full"
-                        >
-                          {button}
-                        </Tooltip>
-                      );
-                    });
+                        return (
+                          <Tooltip
+                            key={`${item.document_id}-tooltip`}
+                            content={`${item.original_filename} · ${status.label}`}
+                            triggerClassName="flex w-full"
+                          >
+                            {button}
+                          </Tooltip>
+                        );
+                      });
 
                       if (!isDocsSidebarExpanded) {
                         return sectionItems;

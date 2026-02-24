@@ -30,9 +30,7 @@ describe("processingHistoryView helpers", () => {
   });
 
   it("returns <1s for short durations", () => {
-    expect(
-      formatDuration("2026-02-09T23:52:00Z", "2026-02-09T23:52:00Z")
-    ).toBe("<1s");
+    expect(formatDuration("2026-02-09T23:52:00Z", "2026-02-09T23:52:00Z")).toBe("<1s");
   });
 
   it("returns status icons", () => {

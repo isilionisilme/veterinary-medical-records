@@ -62,7 +62,7 @@ function matchesConfidence(field: StructuredFilterField, selected: ConfidenceBuc
 
 export function matchesStructuredDataFilters(
   field: StructuredFilterField,
-  filters: StructuredDataFilters
+  filters: StructuredDataFilters,
 ): boolean {
   if (filters.onlyCritical && !field.isCritical) {
     return false;

@@ -193,20 +193,14 @@ describe("processingHistoryView helpers", () => {
   });
 
   it("formats duration with <1s and second buckets", () => {
-    expect(
-      formatDuration("2026-02-21T10:00:00.000Z", "2026-02-21T10:00:00.500Z"),
-    ).toBe("<1s");
-    expect(
-      formatDuration("2026-02-21T10:00:00.000Z", "2026-02-21T10:00:07.000Z"),
-    ).toBe("7s");
+    expect(formatDuration("2026-02-21T10:00:00.000Z", "2026-02-21T10:00:00.500Z")).toBe("<1s");
+    expect(formatDuration("2026-02-21T10:00:00.000Z", "2026-02-21T10:00:07.000Z")).toBe("7s");
   });
 
   it("returns null for invalid duration inputs", () => {
     expect(formatDuration(null, "2026-02-21T10:00:01.000Z")).toBeNull();
     expect(formatDuration("invalid", "2026-02-21T10:00:01.000Z")).toBeNull();
-    expect(
-      formatDuration("2026-02-21T10:00:02.000Z", "2026-02-21T10:00:01.000Z"),
-    ).toBeNull();
+    expect(formatDuration("2026-02-21T10:00:02.000Z", "2026-02-21T10:00:01.000Z")).toBeNull();
   });
 
   it("maps icons and details visibility consistently", () => {

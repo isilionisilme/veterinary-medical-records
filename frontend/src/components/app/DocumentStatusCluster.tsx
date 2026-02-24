@@ -33,7 +33,7 @@ export function DocumentStatusChip({
         className={cn(
           "inline-flex items-center gap-1.5 rounded-control bg-surfaceMuted px-2 py-1 text-[11px] font-semibold text-textSecondary",
           compact && "h-4 min-w-4 justify-center border-0 bg-transparent p-0",
-          className
+          className,
         )}
       >
         <span
@@ -41,7 +41,7 @@ export function DocumentStatusChip({
           className={cn(
             "inline-flex h-2 w-2 items-center justify-center rounded-full",
             compact && "ring-2 ring-surface",
-            toneClass(status.tone)
+            toneClass(status.tone),
           )}
         >
           {status.icon === "check" ? <Check size={8} className="text-white" /> : null}

@@ -35,17 +35,17 @@ function buildField(partial: Partial<StructuredFilterField>): StructuredFilterFi
 describe("structuredDataFilters", () => {
   it("matches search case-insensitively against label, key and rendered value", () => {
     expect(
-      matchesStructuredDataFilters(
-        buildField({ label: "Nombre del paciente" }),
-        { ...baseFilters, searchTerm: "PACIENTE" }
-      )
+      matchesStructuredDataFilters(buildField({ label: "Nombre del paciente" }), {
+        ...baseFilters,
+        searchTerm: "PACIENTE",
+      }),
     ).toBe(true);
 
     expect(
       matchesStructuredDataFilters(buildField({ key: "pet_name" }), {
         ...baseFilters,
         searchTerm: "PET_NAME",
-      })
+      }),
     ).toBe(true);
 
     expect(
@@ -60,8 +60,8 @@ describe("structuredDataFilters", () => {
             },
           ],
         }),
-        { ...baseFilters, searchTerm: "pancrea" }
-      )
+        { ...baseFilters, searchTerm: "pancrea" },
+      ),
     ).toBe(true);
   });
 
@@ -74,19 +74,21 @@ describe("structuredDataFilters", () => {
         {
           ...baseFilters,
           selectedConfidence: ["low"],
-        }
-      )
+        },
+      ),
     ).toBe(true);
     expect(
       matchesStructuredDataFilters(
         buildField({
-          items: [{ displayValue: "x", confidence: 0.75, confidenceBand: "high", isMissing: false }],
+          items: [
+            { displayValue: "x", confidence: 0.75, confidenceBand: "high", isMissing: false },
+          ],
         }),
         {
           ...baseFilters,
           selectedConfidence: ["medium"],
-        }
-      )
+        },
+      ),
     ).toBe(false);
 
     expect(
@@ -97,32 +99,36 @@ describe("structuredDataFilters", () => {
         {
           ...baseFilters,
           selectedConfidence: ["low"],
-        }
-      )
+        },
+      ),
     ).toBe(false);
 
     expect(
       matchesStructuredDataFilters(
         buildField({
-          items: [{ displayValue: "sin score", confidence: 0, confidenceBand: null, isMissing: false }],
+          items: [
+            { displayValue: "sin score", confidence: 0, confidenceBand: null, isMissing: false },
+          ],
         }),
         {
           ...baseFilters,
           selectedConfidence: ["unknown"],
-        }
-      )
+        },
+      ),
     ).toBe(true);
 
     expect(
       matchesStructuredDataFilters(
         buildField({
-          items: [{ displayValue: "sin score", confidence: 0, confidenceBand: null, isMissing: false }],
+          items: [
+            { displayValue: "sin score", confidence: 0, confidenceBand: null, isMissing: false },
+          ],
         }),
         {
           ...baseFilters,
           selectedConfidence: ["medium"],
-        }
-      )
+        },
+      ),
     ).toBe(false);
   });
 
@@ -138,19 +144,19 @@ describe("structuredDataFilters", () => {
     });
 
     expect(
-      matchesStructuredDataFilters(repeatableField, { ...baseFilters, searchTerm: "meloxi" })
+      matchesStructuredDataFilters(repeatableField, { ...baseFilters, searchTerm: "meloxi" }),
     ).toBe(true);
     expect(
       matchesStructuredDataFilters(repeatableField, {
         ...baseFilters,
         selectedConfidence: ["high"],
-      })
+      }),
     ).toBe(true);
     expect(
       matchesStructuredDataFilters(repeatableField, {
         ...baseFilters,
         onlyWithValue: true,
-      })
+      }),
     ).toBe(true);
 
     expect(
@@ -162,8 +168,8 @@ describe("structuredDataFilters", () => {
         {
           ...baseFilters,
           onlyWithValue: true,
-        }
-      )
+        },
+      ),
     ).toBe(false);
   });
 
@@ -181,26 +187,26 @@ describe("structuredDataFilters", () => {
       matchesStructuredDataFilters(nonEmptyField, {
         ...baseFilters,
         onlyWithValue: true,
-      })
+      }),
     ).toBe(true);
     expect(
       matchesStructuredDataFilters(emptyField, {
         ...baseFilters,
         onlyWithValue: true,
-      })
+      }),
     ).toBe(false);
 
     expect(
       matchesStructuredDataFilters(nonEmptyField, {
         ...baseFilters,
         onlyEmpty: true,
-      })
+      }),
     ).toBe(false);
     expect(
       matchesStructuredDataFilters(emptyField, {
         ...baseFilters,
         onlyEmpty: true,
-      })
+      }),
     ).toBe(true);
 
     expect(
@@ -208,14 +214,14 @@ describe("structuredDataFilters", () => {
         ...baseFilters,
         onlyWithValue: true,
         onlyEmpty: true,
-      })
+      }),
     ).toBe(true);
     expect(
       matchesStructuredDataFilters(emptyField, {
         ...baseFilters,
         onlyWithValue: true,
         onlyEmpty: true,
-      })
+      }),
     ).toBe(true);
   });
 });

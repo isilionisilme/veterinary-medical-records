@@ -36,7 +36,7 @@ describe("App upload and list flow", () => {
     installDefaultAppFetchMock();
   });
 
-it("shows required list status labels", async () => {
+  it("shows required list status labels", async () => {
     renderApp();
     expect(await screen.findByText("Procesando")).toBeInTheDocument();
     expect(screen.getByText("Listo")).toBeInTheDocument();
@@ -44,7 +44,7 @@ it("shows required list status labels", async () => {
     expect(screen.getByText("Tardando mas de lo esperado")).toBeInTheDocument();
   });
 
-it("updates PROCESSING to Listo after refresh", async () => {
+  it("updates PROCESSING to Listo after refresh", async () => {
     const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
     const processingDoc = {
       document_id: "doc-transition",
@@ -62,7 +62,7 @@ it("updates PROCESSING to Listo after refresh", async () => {
       if (url.includes("/documents?") && method === "GET") {
         return new Response(
           JSON.stringify({ items: [processingDoc], limit: 50, offset: 0, total: 1 }),
-          { status: 200 }
+          { status: 200 },
         );
       }
       if (url.includes("/download")) {
@@ -80,9 +80,13 @@ it("updates PROCESSING to Listo after refresh", async () => {
             status: processingDoc.status,
             status_message: "state",
             failure_type: null,
-            latest_run: { run_id: "run-transition", state: processingDoc.status, failure_type: null },
+            latest_run: {
+              run_id: "run-transition",
+              state: processingDoc.status,
+              failure_type: null,
+            },
           }),
-          { status: 200 }
+          { status: 200 },
         );
       }
       if (url.includes("/processing-history")) {
@@ -97,7 +101,7 @@ it("updates PROCESSING to Listo after refresh", async () => {
     await screen.findByText("Procesando");
 
     expect(
-      within(screen.getByRole("button", { name: /transition\.pdf/i })).getByText("Procesando")
+      within(screen.getByRole("button", { name: /transition\.pdf/i })).getByText("Procesando"),
     ).toBeInTheDocument();
 
     processingDoc.status = "COMPLETED";
@@ -105,14 +109,12 @@ it("updates PROCESSING to Listo after refresh", async () => {
 
     await waitFor(() => {
       expect(
-        within(screen.getByRole("button", { name: /transition\.pdf/i })).getByText(
-          "Listo"
-        )
+        within(screen.getByRole("button", { name: /transition\.pdf/i })).getByText("Listo"),
       ).toBeInTheDocument();
     });
   });
 
-it("shows branding and actions inside expanded sidebar and no global brand header", async () => {
+  it("shows branding and actions inside expanded sidebar and no global brand header", async () => {
     renderApp();
 
     const sidebar = await screen.findByTestId("documents-sidebar");
@@ -134,7 +136,7 @@ it("shows branding and actions inside expanded sidebar and no global brand heade
     expect(pinButton).toHaveClass("bg-surface");
   });
 
-it("auto-collapses docs sidebar on desktop after selecting a document and expands on hover", async () => {
+  it("auto-collapses docs sidebar on desktop after selecting a document and expands on hover", async () => {
     await withDesktopHoverMatchMedia(async () => {
       renderApp();
 
@@ -189,7 +191,7 @@ it("auto-collapses docs sidebar on desktop after selecting a document and expand
     });
   });
 
-it("keeps sidebar open on mouse leave when pinned, and collapses again after unpin", async () => {
+  it("keeps sidebar open on mouse leave when pinned, and collapses again after unpin", async () => {
     await withDesktopHoverMatchMedia(async () => {
       renderApp();
       const sidebar = await screen.findByTestId("documents-sidebar");
@@ -213,7 +215,7 @@ it("keeps sidebar open on mouse leave when pinned, and collapses again after unp
     });
   });
 
-it("shows clear search control and keeps focus after clearing", async () => {
+  it("shows clear search control and keeps focus after clearing", async () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));

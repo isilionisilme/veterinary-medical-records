@@ -357,6 +357,8 @@ def test_debug_extraction_summary_endpoint_returns_not_found_for_unknown_run_id(
         "error_code": "NOT_FOUND",
         "message": "No extraction snapshots found for this document.",
     }
+
+
 def test_debug_extraction_summary_endpoint_reads_auto_persisted_snapshot_after_processing(
     monkeypatch,
     tmp_path: Path,

@@ -1013,4 +1013,3 @@ def _log_event(
     if count_returned is not None:
         payload["count_returned"] = count_returned
     logger.info(json.dumps(payload))
-

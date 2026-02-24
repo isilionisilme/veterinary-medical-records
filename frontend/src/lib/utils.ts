@@ -45,10 +45,7 @@ const parseError = async (response: Response): Promise<ApiError> => {
   };
 };
 
-export const apiFetchJson = async <T>(
-  input: RequestInfo,
-  init?: RequestInit,
-): Promise<T> => {
+export const apiFetchJson = async <T>(input: RequestInfo, init?: RequestInit): Promise<T> => {
   const response = await fetch(input, init);
   if (!response.ok) {
     throw await parseError(response);

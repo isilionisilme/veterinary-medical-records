@@ -41,7 +41,7 @@ describe("App upload and list flow", () => {
     installDefaultAppFetchMock();
   });
 
-it("uses canonical detected summary as X/30 and increments X with visit concepts", async () => {
+  it("uses canonical detected summary as X/30 and increments X with visit concepts", async () => {
     const controlledFields = [
       {
         field_id: "f-nhc-alias",
@@ -132,7 +132,7 @@ it("uses canonical detected summary as X/30 and increments X with visit concepts
     expect(low + medium + high + unknown).toBe(expectedDetected);
   });
 
-it("keeps canonical total at 30 and counts only document concepts when visits=[]", async () => {
+  it("keeps canonical total at 30 and counts only document concepts when visits=[]", async () => {
     const documentOnlyFields = [
       {
         field_id: "f-pet-name",
@@ -167,7 +167,7 @@ it("keeps canonical total at 30 and counts only document concepts when visits=[]
     expect(low + medium + high + unknown).toBe(expectedDetected);
   });
 
-it("shows Spanish confidence labels in header dots and unknown tooltip", async () => {
+  it("shows Spanish confidence labels in header dots and unknown tooltip", async () => {
     installCanonicalUs44FetchMock();
     renderApp();
     await openReadyDocumentAndGetPanel();
@@ -178,7 +178,7 @@ it("shows Spanish confidence labels in header dots and unknown tooltip", async (
     expect(screen.getByRole("button", { name: /^Sin confianza \(\d+\)$/i })).toBeInTheDocument();
   });
 
-it("renders Otros campos detectados only from other_fields[] in canonical contract", async () => {
+  it("renders Otros campos detectados only from other_fields[] in canonical contract", async () => {
     installCanonicalUs44FetchMock();
     renderApp();
     const panel = await openReadyDocumentAndGetPanel();
@@ -190,7 +190,7 @@ it("renders Otros campos detectados only from other_fields[] in canonical contra
     expect(within(extraSection).queryByText("NO")).toBeNull();
   });
 
-it("hides billing keys in canonical contract even when contract/data include them", async () => {
+  it("hides billing keys in canonical contract even when contract/data include them", async () => {
     installCanonicalUs44FetchMock();
     renderApp();
     const panel = await openReadyDocumentAndGetPanel();
@@ -199,7 +199,7 @@ it("hides billing keys in canonical contract even when contract/data include the
     expect(within(panel).queryByText("123.00")).toBeNull();
   });
 
-it("keeps canonical medical record panel clinical-only even when invoice_total is injected in field_slots and fields", async () => {
+  it("keeps canonical medical record panel clinical-only even when invoice_total is injected in field_slots and fields", async () => {
     installCanonicalUs44FetchMock({
       fieldSlots: [
         {
@@ -250,7 +250,7 @@ it("keeps canonical medical record panel clinical-only even when invoice_total i
     expect(within(panel).queryByText("123.00")).toBeNull();
   });
 
-it("shows an empty list state for repeatable fields", async () => {
+  it("shows an empty list state for repeatable fields", async () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
@@ -258,12 +258,14 @@ it("shows an empty list state for repeatable fields", async () => {
     await waitForStructuredDataReady();
 
     const panel = screen.getByTestId("right-panel-scroll");
-    const medicationCard = within(panel).getByText(/Medicaci[oó]n/i).closest("article");
+    const medicationCard = within(panel)
+      .getByText(/Medicaci[oó]n/i)
+      .closest("article");
     expect(medicationCard).not.toBeNull();
     expect(within(medicationCard as HTMLElement).getByText("Sin elementos")).toBeInTheDocument();
   });
 
-it("uses empty indicator for missing fields and keeps low-confidence filter scoped to non-empty values", async () => {
+  it("uses empty indicator for missing fields and keeps low-confidence filter scoped to non-empty values", async () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
@@ -279,14 +281,22 @@ it("uses empty indicator for missing fields and keeps low-confidence filter scop
     expect(missingIndicator.className).not.toContain("bg-missing");
 
     fireEvent.click(screen.getByRole("button", { name: /^Baja/i }));
-    expect(within(screen.getByTestId("right-panel-scroll")).queryByTestId("field-trigger-core:clinic_name")).toBeNull();
+    expect(
+      within(screen.getByTestId("right-panel-scroll")).queryByTestId(
+        "field-trigger-core:clinic_name",
+      ),
+    ).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: /^Baja/i }));
     fireEvent.click(screen.getByRole("button", { name: "Mostrar solo campos vacíos" }));
-    expect(within(screen.getByTestId("right-panel-scroll")).getByTestId("field-trigger-core:clinic_name")).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("right-panel-scroll")).getByTestId(
+        "field-trigger-core:clinic_name",
+      ),
+    ).toBeInTheDocument();
   });
 
-it("shows degraded confidence mode and emits a diagnostic event when policy config is missing", async () => {
+  it("shows degraded confidence mode and emits a diagnostic event when policy config is missing", async () => {
     const baseFetch = globalThis.fetch as typeof fetch;
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
@@ -315,11 +325,11 @@ it("shows degraded confidence mode and emits a diagnostic event when policy conf
       expect.objectContaining({
         event_type: "CONFIDENCE_POLICY_CONFIG_MISSING",
         reason: "missing_policy_version",
-      })
+      }),
     );
   });
 
-it("does not show degraded confidence mode when policy config is valid", async () => {
+  it("does not show degraded confidence mode when policy config is valid", async () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
@@ -328,7 +338,7 @@ it("does not show degraded confidence mode when policy config is valid", async (
     expect(screen.queryByTestId("confidence-policy-degraded")).toBeNull();
   });
 
-it("does not fallback to deprecated confidence when field_mapping_confidence is missing", async () => {
+  it("does not fallback to deprecated confidence when field_mapping_confidence is missing", async () => {
     const baseFetch = globalThis.fetch as typeof fetch;
 
     globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -358,11 +368,11 @@ it("does not fallback to deprecated confidence when field_mapping_confidence is 
     expect(indicator.className).toContain("bg-missing");
     expect(indicator).toHaveAttribute(
       "aria-label",
-      expect.stringMatching(/Confianza de mapeo no disponible/i)
+      expect.stringMatching(/Confianza de mapeo no disponible/i),
     );
   });
 
-it("treats manually edited values as unknown confidence and keeps unknown filter behavior after refresh", async () => {
+  it("treats manually edited values as unknown confidence and keeps unknown filter behavior after refresh", async () => {
     const baseFetch = globalThis.fetch as typeof fetch;
     let reviewEdited = false;
 
@@ -401,7 +411,7 @@ it("treats manually edited values as unknown confidence and keeps unknown filter
               },
             },
           }),
-          { status: 200 }
+          { status: 200 },
         );
       }
 
@@ -411,7 +421,9 @@ it("treats manually edited values as unknown confidence and keeps unknown filter
         payload.active_interpretation.version_number = 2;
         const fields = payload.active_interpretation?.data?.fields;
         if (Array.isArray(fields)) {
-          const petNameField = fields.find((field: Record<string, unknown>) => field.key === "pet_name");
+          const petNameField = fields.find(
+            (field: Record<string, unknown>) => field.key === "pet_name",
+          );
           if (petNameField) {
             petNameField.value = "Luna editada";
             petNameField.origin = "human";
@@ -452,12 +464,12 @@ it("treats manually edited values as unknown confidence and keeps unknown filter
     expect(editedIndicator).toHaveAttribute(
       "aria-label",
       expect.stringMatching(
-        /La confianza aplica únicamente al valor originalmente detectado por el sistema\. El valor actual ha sido editado y por eso no tiene confianza asociada\./i
-      )
+        /La confianza aplica únicamente al valor originalmente detectado por el sistema\. El valor actual ha sido editado y por eso no tiene confianza asociada\./i,
+      ),
     );
     expect(editedIndicator).toHaveAttribute(
       "aria-label",
-      expect.not.stringMatching(/Fiabilidad del candidato|Ajuste por histórico|Confianza:\s*\d+%/i)
+      expect.not.stringMatching(/Fiabilidad del candidato|Ajuste por histórico|Confianza:\s*\d+%/i),
     );
 
     fireEvent.click(screen.getByRole("button", { name: /^Sin confianza \(\d+\)$/i }));
@@ -476,12 +488,12 @@ it("treats manually edited values as unknown confidence and keeps unknown filter
     expect(indicatorAfterRefresh).toHaveAttribute(
       "aria-label",
       expect.stringMatching(
-        /La confianza aplica únicamente al valor originalmente detectado por el sistema\. El valor actual ha sido editado y por eso no tiene confianza asociada\./i
-      )
+        /La confianza aplica únicamente al valor originalmente detectado por el sistema\. El valor actual ha sido editado y por eso no tiene confianza asociada\./i,
+      ),
     );
   });
 
-it("shows visit date value when present", async () => {
+  it("shows visit date value when present", async () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));

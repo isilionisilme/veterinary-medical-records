@@ -67,7 +67,8 @@ describe("PdfViewer", () => {
       })),
     };
     lastObserver = null;
-    globalThis.IntersectionObserver = MockIntersectionObserver as unknown as typeof IntersectionObserver;
+    globalThis.IntersectionObserver =
+      MockIntersectionObserver as unknown as typeof IntersectionObserver;
   });
 
   it("renders all pages in a continuous scroll", async () => {
@@ -89,7 +90,8 @@ describe("PdfViewer", () => {
     const pages = await screen.findAllByTestId("pdf-page");
     const container = screen.getByTestId("pdf-scroll-container");
     const containerScrollTo = vi.fn();
-    (container as HTMLElement & { scrollTo: typeof container.scrollTo }).scrollTo = containerScrollTo;
+    (container as HTMLElement & { scrollTo: typeof container.scrollTo }).scrollTo =
+      containerScrollTo;
     Object.defineProperty(container, "scrollTop", { value: 10, writable: true });
     vi.spyOn(container, "getBoundingClientRect").mockReturnValue({
       x: 0,
@@ -273,5 +275,3 @@ describe("PdfViewer", () => {
     expect(screen.getByTestId("pdf-zoom-indicator")).toHaveTextContent("130%");
   });
 });
-
-

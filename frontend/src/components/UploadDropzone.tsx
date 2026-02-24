@@ -30,7 +30,8 @@ export function UploadDropzone({
   compact = false,
   ariaLabel,
 }: UploadDropzoneProps) {
-  const resolvedAriaLabel = ariaLabel ?? (compact ? "Cargar documento" : `${title} ${subtitle}`.trim());
+  const resolvedAriaLabel =
+    ariaLabel ?? (compact ? "Cargar documento" : `${title} ${subtitle}`.trim());
   const isOverlayActive = showDropOverlay && isDragOver;
 
   return (
@@ -63,7 +64,11 @@ export function UploadDropzone({
           <p className="text-sm font-semibold text-ink">Suelta el PDF para subirlo</p>
         </div>
       )}
-      <Upload size={compact ? 16 : 18} className="pointer-events-none text-ink" aria-hidden="true" />
+      <Upload
+        size={compact ? 16 : 18}
+        className="pointer-events-none text-ink"
+        aria-hidden="true"
+      />
       {!compact && (
         <>
           <p className="mt-2 text-sm font-semibold text-ink">{title}</p>
@@ -73,4 +78,3 @@ export function UploadDropzone({
     </div>
   );
 }
-
