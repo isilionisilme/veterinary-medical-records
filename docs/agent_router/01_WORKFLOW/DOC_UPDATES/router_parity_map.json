@@ -19,6 +19,18 @@
       ]
     },
     {
+      "source_doc": "docs/project/FUTURE_IMPROVEMENTS.md",
+      "description": "Project FUTURE_IMPROVEMENTS must map to project owner entry module.",
+      "router_modules": [
+        {
+          "path": "docs/agent_router/04_PROJECT/FUTURE_IMPROVEMENTS/00_entry.md",
+          "required_terms": [
+            "FUTURE_IMPROVEMENTS — Modules"
+          ]
+        }
+      ]
+    },
+    {
       "source_doc": "docs/project/12_FACTOR_AUDIT.md",
       "description": "Project 12_FACTOR_AUDIT must map to project owner entry module.",
       "router_modules": [

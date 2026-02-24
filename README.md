@@ -131,6 +131,7 @@ Shared UX principles referenced by project UX design.
 - 12-factor architecture audit: [`docs/project/12_FACTOR_AUDIT.md`](docs/project/12_FACTOR_AUDIT.md)
 - Maintainability/codebase audit: [`docs/project/codebase_audit.md`](docs/project/codebase_audit.md)
 - Iterative execution log and decisions: [`docs/project/AI_ITERATIVE_EXECUTION_PLAN.md`](docs/project/AI_ITERATIVE_EXECUTION_PLAN.md)
+- Future roadmap (2/4/8 weeks): [`docs/project/FUTURE_IMPROVEMENTS.md`](docs/project/FUTURE_IMPROVEMENTS.md)
 - Extraction strategy and ADRs: [`docs/extraction/`](docs/extraction/)
 - Extraction tracking and risk matrix: [`docs/extraction-tracking/`](docs/extraction-tracking/)
 
