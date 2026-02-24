@@ -44,7 +44,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 
 ### Fase 5 — Documentación
 - [x] F5-A 🔄 — Revisión docs con project-guidelines-example (Codex)
-- [ ] F5-B 🚧 — ADRs de arquitectura: **TÚ defines los argumentos** (Claude)
+- [x] F5-B 🚧 — ADRs de arquitectura: **TÚ defines los argumentos** (Claude)
 - [ ] F5-C 🔄 — ADRs de arquitectura: crear ficheros (Codex)
 - [ ] F5-D 🔄 — FUTURE_IMPROVEMENTS.md (Codex)
 
@@ -550,6 +550,124 @@ TOTAL coverage: 86% (4530 statements, 653 misses)
 4. Mantener una sección "Current known limitations" en `docs/project/TECHNICAL_DESIGN.md` para transparencia evaluable.
 5. Añadir sección "How to review this PR/storyline" en docs para navegar evidencia incremental más rápido.
 
+### F5-B — ADR arguments (defined by Claude)
+
+Below are the 4 architecture ADRs with full arguments, trade-offs, and code evidence. Codex will create the files in F5-C.
+
+#### ADR-ARCH-0001: Modular Monolith over Microservices
+
+- **Status:** Accepted
+- **Date:** 2026-02-24
+- **Context:** The system processes veterinary medical records for a single clinic — upload PDFs, extract structured data, allow manual review. The team is small (1–2 developers). The evaluator will assess whether the architecture is appropriate to the problem scale and whether it can evolve.
+- **Decision Drivers:**
+  - Must be deployable with `docker compose up` in ≤5 minutes.
+  - Must maintain clear logical boundaries for future decomposition.
+  - Must minimize operational complexity (no service mesh, no API gateways, no distributed tracing).
+  - Team size is 1–2 — cognitive overhead of microservices is unjustified.
+- **Considered Options:**
+  - **Option A: Modular monolith with hexagonal architecture** — Single deployable, Protocol-based ports (`DocumentRepository`, `FileStorage`), frozen domain models immune to infra, composition root in `main.py`.
+  - **Option B: Microservices** — Separate services for upload, extraction, review. Requires inter-service communication (HTTP/gRPC/events), service discovery, distributed data consistency, and separate deployment pipelines.
+  - **Option C: Traditional monolith (no boundaries)** — Simplest but makes future decomposition expensive; hard to test in isolation.
+- **Decision:** Option A — Modular monolith with hexagonal architecture.
+- **Rationale:**
+  1. Protocol-based ports (`backend/app/ports/`) enforce boundaries at compile-check level without deployment overhead.
+  2. Frozen dataclasses in `domain/` prevent accidental coupling to infra.
+  3. Composition root in `main.py` (lines 86–155) is the only file that knows about concrete implementations — swapping `SqliteDocumentRepository` for a gRPC client requires zero changes to `application/` or `domain/`.
+  4. `docker-compose.yml` runs exactly 2 services (backend + frontend) — evaluators can reproduce the entire system instantly.
+  5. Microservices would add ≥4 containers, an event broker, and retry/saga logic for a system that processes PDFs sequentially.
+- **Consequences:**
+  - **Positive:** Sub-minute startup, trivial debugging (single process), Protocol ports ready for future extraction if needed.
+  - **Negative:** All processing shares one event loop — a CPU-intensive extraction could impact API latency (mitigated by `asyncio.to_thread`).
+  - **Risk:** If the system grows to multi-clinic with horizontal scaling needs, the monolith would require refactoring toward service extraction — but the Protocol boundaries make this a controlled migration, not a rewrite.
+- **Code evidence:** `backend/app/ports/document_repository.py` (Protocol with 16+ methods), `backend/app/domain/models.py` (7 frozen dataclasses), `backend/app/main.py` (composition root), `docker-compose.yml` (2 runtime services).
+
+#### ADR-ARCH-0002: SQLite as Primary Database
+
+- **Status:** Accepted
+- **Date:** 2026-02-24
+- **Context:** The system stores veterinary documents, processing run metadata, and calibration aggregates. Expected volume: tens to hundreds of documents per clinic. The evaluator assesses whether infrastructure choices match the problem scale and whether the path to production alternatives is clear.
+- **Decision Drivers:**
+  - Must require zero additional containers (Docker-first simplicity).
+  - Must support `docker compose up` with no database provisioning step.
+  - Must handle concurrent read/write from a single backend process.
+  - Should make the upgrade path to PostgreSQL visible.
+- **Considered Options:**
+  - **Option A: SQLite** — File-based, zero-config, zero-dependency (Python stdlib), volume-mountable.
+  - **Option B: PostgreSQL** — Full RDBMS with connection pooling, concurrent writes, row-level locking. Requires container + driver + migration tool.
+  - **Option C: MongoDB** — Flexible schema, native JSON. Requires container + driver + schema discipline.
+- **Decision:** Option A — SQLite via Python's built-in `sqlite3` module.
+- **Rationale:**
+  1. The system is single-process, single-clinic — SQLite's write serialization is not a bottleneck.
+  2. Zero dependencies: `requirements.txt` has 6 packages, none database-related.
+  3. Data lives in `backend/data/documents.db` — a single file, trivially backed up or restored.
+  4. Docker volume mount (`${BACKEND_DATA_DIR:-./backend/data}:/app/backend/data`) persists data without a database container.
+  5. Schema is code-driven via `ensure_schema()` on startup — no Alembic, no migration files, no migration state to manage.
+  6. 5 tables total — far below the complexity threshold where PostgreSQL's features pay off.
+- **Consequences:**
+  - **Positive:** `docker compose up` runs the entire stack with no DB provisioning. Dev setup is instant. Backups = file copy.
+  - **Negative:** No connection pooling (new `sqlite3.connect()` per operation). `WAL` mode needed for concurrent reads during writes. No `LISTEN/NOTIFY` for push-based changes.
+  - **Risk:** Multi-user or multi-process deployment would hit SQLite's write lock. Mitigation: the Protocol boundary (`DocumentRepository`) means swapping `SqliteDocumentRepository` for `PostgresDocumentRepository` changes exactly one file + one line in `main.py`.
+- **Path to PostgreSQL:** Replace `backend/app/infra/sqlite_document_repository.py` with a `PostgresDocumentRepository` implementing the same `DocumentRepository` Protocol. Update composition root. No application or domain code changes.
+- **Code evidence:** `backend/app/infra/database.py` (stdlib `sqlite3`, `ensure_schema()`), `backend/app/settings.py` (`DEFAULT_DB_PATH`), `docker-compose.yml` (volume mount, no DB container), `backend/requirements.txt` (0 DB packages).
+
+#### ADR-ARCH-0003: Raw SQL with Repository Pattern (No ORM)
+
+- **Status:** Accepted
+- **Date:** 2026-02-24
+- **Context:** The system requires SQL queries ranging from simple CRUD to complex atomic guards (`NOT EXISTS` subqueries), `ON CONFLICT` upserts, and correlated subqueries for document listing. The domain model uses frozen dataclasses that are incompatible with ORM session management.
+- **Decision Drivers:**
+  - Must preserve frozen (`frozen=True, slots=True`) domain models without ORM "managed state".
+  - Must enable idiomatic SQL for complex queries (concurrency guards, upserts).
+  - Must keep the Protocol boundary clean — application code never sees SQL.
+  - Should minimize dependency count.
+- **Considered Options:**
+  - **Option A: Raw SQL + Repository Pattern** — Hand-written SQL in `SqliteDocumentRepository`, explicit Row→Domain mapping, Protocol interface for application layer.
+  - **Option B: SQLAlchemy ORM** — Model classes, session management, migration via Alembic, automatic change tracking.
+  - **Option C: SQLAlchemy Core (query builder)** — SQL expression language without ORM model classes. Still adds dependency + abstraction layer.
+- **Decision:** Option A — Raw SQL with explicit Repository Pattern.
+- **Rationale:**
+  1. Frozen dataclasses are immutable value objects — an ORM's change-tracking and identity-map patterns conflict with this design. The ORM would require separate "entity" classes duplicating the domain models.
+  2. Complex queries are idiomatic SQL: `try_start_run()` uses `UPDATE … WHERE … AND NOT EXISTS (SELECT 1 FROM processing_runs WHERE status='RUNNING')` — an atomic concurrency guard that ORMs express awkwardly.
+  3. `apply_calibration_deltas()` uses `INSERT … ON CONFLICT … DO UPDATE SET accept_count = MAX(0, accept_count + ?)` — upsert with arithmetic that is natural in SQL, verbose in ORM.
+  4. The repository (751 lines) is the **only** file that knows about SQL. Every method maps `sqlite3.Row` → frozen domain dataclass explicitly.
+  5. Zero dependency added: no SQLAlchemy, no Peewee, no Alembic. `requirements.txt` stays at 6 packages.
+- **Consequences:**
+  - **Positive:** Full SQL control per query. No N+1 problems. No ORM session leaks. No impedance mismatch with frozen models.
+  - **Negative:** 751 lines of hand-written SQL in one file. Schema changes require manual migration logic (`ensure_schema()` table-swap pattern). No automatic migration generation.
+  - **Risk:** As the schema grows beyond ~10 tables, the repository file becomes unwieldy. Mitigation: split into per-aggregate repositories, each implementing a focused Protocol.
+- **Code evidence:** `backend/app/infra/sqlite_document_repository.py` (751 lines, all queries), `backend/app/ports/document_repository.py` (Protocol), `backend/app/domain/models.py` (frozen dataclasses), `backend/requirements.txt` (no ORM).
+
+#### ADR-ARCH-0004: In-Process Async Processing (No Task Queue)
+
+- **Status:** Accepted
+- **Date:** 2026-02-24
+- **Context:** PDF processing (text extraction + LLM-based interpretation) is the heaviest workload — up to 120 seconds per document. The system must process documents asynchronously without blocking API responses. The evaluator assesses whether the processing architecture is appropriate to the problem scale.
+- **Decision Drivers:**
+  - Must not block API requests during PDF processing.
+  - Must work within a single Docker service (no additional containers).
+  - Must handle graceful shutdown and crash recovery.
+  - Should minimize infrastructure complexity.
+- **Considered Options:**
+  - **Option A: In-process async scheduler** — `asyncio.create_task` in FastAPI lifespan, DB-backed queue (`processing_runs` table), polling loop.
+  - **Option B: Celery + Redis/RabbitMQ** — Separate worker process(es), broker container, result backend, Flower for monitoring.
+  - **Option C: RQ (Redis Queue)** — Simpler than Celery but still requires Redis container + worker process.
+  - **Option D: arq / Dramatiq** — Modern async-native alternatives. Still require broker infrastructure.
+- **Decision:** Option A — In-process async scheduler with DB-backed queue.
+- **Rationale:**
+  1. Zero additional infrastructure: no Redis, no RabbitMQ, no worker process. `docker-compose.yml` stays at 2 services.
+  2. The scheduler is an `asyncio.Task` in the FastAPI lifespan — shares the event loop, starts/stops with the app.
+  3. DB-backed queue (`processing_runs` table with status `QUEUED→RUNNING→COMPLETED/FAILED`) provides persistence and observability without a broker.
+  4. Concurrency guard via SQL: `try_start_run()` atomically prevents parallel runs on the same document using `NOT EXISTS` — no distributed locks needed.
+  5. CPU-bound PDF extraction is offloaded via `asyncio.to_thread()` — the event loop stays responsive for API requests.
+  6. Configurable throughput: `PROCESSING_TICK_SECONDS=0.5`, `MAX_RUNS_PER_TICK=10`.
+  7. Graceful shutdown via `asyncio.Event`: lifespan manager calls `stop()`, scheduler finishes current work and exits cleanly.
+- **Consequences:**
+  - **Positive:** Zero-ops processing pipeline. Instant startup. Full observability via DB queries. Timeout per-run (120s) via `asyncio.wait_for`.
+  - **Negative:** A process crash loses in-flight work. No automatic retry by a broker.
+  - **Risk:** Crash recovery is explicit: `recover_orphaned_runs()` on startup marks `RUNNING` rows as `FAILED` with reason `PROCESS_TERMINATED`. This is less robust than Celery's `acks_late` retry — acceptable for a single-clinic system where a re-upload is trivial.
+  - **Scaling limit:** Single-process means throughput is bounded by one event loop. For multi-clinic SaaS, extracting the scheduler into a Celery worker behind the same `DocumentRepository` Protocol would be the natural evolution.
+- **Code evidence:** `backend/app/infra/scheduler_lifecycle.py` (`asyncio.create_task`), `backend/app/application/processing/scheduler.py` (polling loop), `backend/app/application/processing/orchestrator.py` (`asyncio.wait_for`, `asyncio.to_thread`), `backend/app/main.py` (lifespan wiring, `recover_orphaned_runs`).
+
 ---
 
 ## Prompt activo (just-in-time) — write-then-execute
@@ -559,11 +677,98 @@ TOTAL coverage: 86% (4530 statements, 653 misses)
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-_Completado: F5-A_
+F5-C 🔄 — Crear ficheros ADR de arquitectura (Codex)
 
 ### Prompt
 
-_Vacío._
+```
+--- AGENT IDENTITY CHECK ---
+This prompt is designed for GPT-5.3-Codex in VS Code Copilot Chat.
+If you are not GPT-5.3-Codex: STOP. Tell the user to switch agents.
+--- END IDENTITY CHECK ---
+
+--- BRANCH CHECK ---
+Run: git branch --show-current
+If NOT `improvement/refactor`: STOP. Tell the user: "⚠️ Cambia a la rama improvement/refactor antes de continuar: git checkout improvement/refactor"
+--- END BRANCH CHECK ---
+
+--- SYNC CHECK ---
+Run: git pull origin improvement/refactor
+--- END SYNC CHECK ---
+
+--- PRE-FLIGHT CHECK ---
+1. Verify F5-A has `[x]` and F5-B has `[x]` in Estado de ejecución.
+--- END PRE-FLIGHT CHECK ---
+
+[TASK — F5-C: Create architecture ADR files]
+
+Project root: d:/Git/veterinary-medical-records
+
+Read the ADR arguments defined in section `### F5-B — ADR arguments (defined by Claude)` in this file. Create 4 ADR markdown files following the project's existing ADR convention (see `docs/extraction/ADR-EXTRACTION-0001.md` for format reference).
+
+Files to create:
+- `docs/adr/ADR-ARCH-0001-modular-monolith.md`
+- `docs/adr/ADR-ARCH-0002-sqlite-database.md`
+- `docs/adr/ADR-ARCH-0003-raw-sql-repository-pattern.md`
+- `docs/adr/ADR-ARCH-0004-in-process-async-processing.md`
+
+Format rules:
+- Use the MADR-inspired format consistent with the existing extraction ADRs.
+- Structure: `# Title`, `## Status`, `## Context`, `## Decision Drivers`, `## Considered Options` (with pros/cons), `## Decision`, `## Rationale`, `## Consequences` (Positive / Negative / Risks), `## Code Evidence`, `## Related Decisions`.
+- Keep each ADR concise (80–120 lines max). Be specific — cite actual file paths and patterns.
+- Date: 2026-02-24. Status: Accepted.
+- Cross-reference between ADRs where relevant (e.g., ADR-0001 references ADR-0002 and ADR-0004).
+
+Additional tasks:
+1. Create `docs/adr/README.md` — ADR index table (ID | Title | Status | Date) listing both architecture ADRs and existing extraction ADRs (linked).
+2. Update `docs/README.md` — add an "Architecture Decision Records" entry in the reading order pointing to `docs/adr/README.md`.
+3. Update root `README.md` — in the "Key technical decisions" or "Architecture at a glance" section, add links to the 4 new ADRs.
+4. Verify the TECHNICAL_DESIGN.md references are consistent with what the ADRs state.
+
+--- TEST GATE ---
+Backend: cd d:/Git/veterinary-medical-records && python -m pytest --tb=short -q
+Frontend: cd d:/Git/veterinary-medical-records/frontend && npm test
+(Tests must still pass — ensure no accidental code changes.)
+--- END TEST GATE ---
+
+--- SCOPE BOUNDARY ---
+
+STEP A — Commit ADR files + doc updates:
+1. git add -A -- . ':!docs/project/AI_ITERATIVE_EXECUTION_PLAN.md'
+2. git commit -m "docs(plan-f5c): create architecture ADRs and update doc index
+
+New files:
+- docs/adr/ADR-ARCH-0001-modular-monolith.md
+- docs/adr/ADR-ARCH-0002-sqlite-database.md
+- docs/adr/ADR-ARCH-0003-raw-sql-repository-pattern.md
+- docs/adr/ADR-ARCH-0004-in-process-async-processing.md
+- docs/adr/README.md
+
+Test proof: <pytest summary> | <npm test summary>"
+
+STEP B — Commit plan update:
+1. Mark `- [ ] F5-C` → `- [x] F5-C` in Estado de ejecución.
+2. Clean Prompt activo: `### Paso objetivo` → `_Completado: F5-C_`, `### Prompt` → `_Vacío._`
+3. git add docs/project/AI_ITERATIVE_EXECUTION_PLAN.md
+4. git commit -m "docs(plan-f5c): mark step done"
+
+STEP C — Push:
+1. git push origin improvement/refactor
+
+STEP D — Update PR #145:
+Run `gh pr edit 145 --body "..."` marking F5-C done in the checklist.
+
+STEP E — CI GATE (mandatory):
+1. Run: gh run list --branch improvement/refactor --limit 1 --json status,conclusion,databaseId
+2. Wait for completion. If failure: diagnose, fix, push, retry. Max 2 attempts.
+
+STEP F — Tell the user the NEXT STEP:
+The next step is F5-D (Codex — FUTURE_IMPROVEMENTS.md). Claude needs to write the prompt first. Say:
+"✓ F5-C completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona **Claude** → adjunta AI_ITERATIVE_EXECUTION_PLAN.md → escribe Continúa (para que Claude escriba el prompt F5-D)."
+
+NEVER end without the next-step message. Stop after delivering it.
+--- END SCOPE BOUNDARY ---
+```
 
 ---
 
