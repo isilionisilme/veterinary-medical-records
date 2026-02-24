@@ -22,11 +22,11 @@ Canonical documentation is organized into:
 Only these top-level folders are allowed under `docs/`:
 - `docs/shared/` — human-facing, cross-project standards and guidance.
 - `docs/project/` — human-facing, project-specific documentation.
-- `docs/agent_router/` — operational assistant/router material.
+- one operational router folder — assistant execution/router material (non-canonical).
 
 Classification rule:
 - Human-readable source documentation must live in `docs/shared/` or `docs/project/`.
-- Operational assistant material must live in `docs/agent_router/`.
+- Operational assistant material must live in the operational router folder under `docs/`.
 
 ## Reading order (mandatory)
 ### Evaluator first-pass (recommended, 10-15 min)
