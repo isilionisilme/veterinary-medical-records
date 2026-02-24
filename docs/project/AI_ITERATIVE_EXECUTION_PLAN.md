@@ -49,7 +49,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [x] F5-D 🔄 — FUTURE_IMPROVEMENTS.md (Codex)
 
 ### Fase 6 — Smoke test del evaluador
-- [ ] F6-A 🚧 — **TÚ pruebas el flujo end-to-end como evaluador** (Claude + Codex)
+- [x] F6-A 🚧 — **TÚ pruebas el flujo end-to-end como evaluador** (Claude + Codex)
 
 ### Fase 7 — Cierre global
 - [ ] F7-A 🚧 — Veredicto final + PR a main (Claude/Codex)
@@ -715,145 +715,10 @@ Below are the 4 architecture ADRs with full arguments, trade-offs, and code evid
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-F6-A 🚧 — Corregir fricciones del smoke test (Codex)
+_Completado: F6-A_
 
 ### Prompt
-
-```
---- AGENT IDENTITY CHECK ---
-This prompt is designed for GPT-5.3-Codex in VS Code Copilot Chat.
-If you are not GPT-5.3-Codex: STOP. Tell the user to switch agents.
---- END IDENTITY CHECK ---
-
---- BRANCH CHECK ---
-Run: git branch --show-current
-If NOT `improvement/refactor`: STOP. Tell the user: "⚠️ Cambia a la rama improvement/refactor antes de continuar: git checkout improvement/refactor"
---- END BRANCH CHECK ---
-
---- SYNC CHECK ---
-Run: git pull origin improvement/refactor
---- END SYNC CHECK ---
-
---- PRE-FLIGHT CHECK ---
-1. Verify F5-D has `[x]` in Estado de ejecución.
---- END PRE-FLIGHT CHECK ---
-
-[TASK — F6-A: Fix evaluator smoke test frictions]
-
-Project root: d:/Git/veterinary-medical-records
-
-Claude completed the evaluator smoke test and found 3 frictions. Fix them all.
-
-## Friction 1 (HIGH): Missing Spanish accents in UI strings
-
-Many user-visible strings omit Spanish diacritical marks. This is immediately noticeable to a Spanish-speaking evaluator. Fix BOTH production code AND test assertions that match these strings.
-
-### Exact replacements needed (production code):
-
-In `frontend/src/AppWorkspace.tsx`:
-- "revision" → "revisión" (in user-visible strings — ~3 occurrences)
-- "interpretacion" → "interpretación" (~3 occurrences)
-- "tecnicos" → "técnicos" (~2 occurrences)
-- "extraccion" → "extracción" (~2 occurrences)
-- "volvera" → "volverá" (~1 occurrence)
-- "valido" → "válido" (~1 occurrence)
-- "intentalo" → "inténtalo" (~1 occurrence)
-- "esta" → "está" (ONLY in the string "El texto extraido no esta disponible" — DO NOT change variable names or "esta" when it means "this")
-- "extraido" → "extraído" (~1 occurrence)
-
-In `frontend/src/components/DocumentsSidebar.tsx`:
-- "Aun no hay" → "Aún no hay"
-- "Tardando mas de lo esperado" → "Tardando más de lo esperado"
-- "Informacion de formatos y tamano" → "Información de formatos y tamaño"
-
-In `frontend/src/components/toast/ToastHost.tsx`:
-- "notificacion" → "notificación" (~2 occurrences)
-- "tecnicos" → "técnicos" (~2 occurrences)
-
-In `frontend/src/components/UploadDropzone.tsx` (check if "aqui" appears):
-- "aqui" → "aquí" if present in the component
-
-### Test assertions to update:
-
-Search ALL test files (`**/*.test.tsx`) for the OLD strings and update them to match the corrected production code. Key files:
-- `App.test.tsx` — "Aun no hay" → "Aún no hay"
-- `AppShellFlowsA.test.tsx` — "extraccion" → "extracción"
-- `AppShellFlowsB.test.tsx` — "interpretacion" → "interpretación", "extraido…esta" → "extraído…está"
-- `DocumentSidebar.test.tsx` — "mas de lo" → "más de lo"
-- `ReviewWorkspace.test.tsx` — "notificacion de accion" → "notificación de acción"
-- `ToastHost.test.tsx` — "notificacion" → "notificación"
-- `UploadDropzone.test.tsx` — "aqui" → "aquí" if applicable
-
-IMPORTANT RULES:
-- Do NOT change variable names, function names, class names, or identifiers — only user-visible string literals and aria-labels.
-- Do NOT change "esta" when it's a Spanish demonstrative ("esta sección") — only change it in "no está disponible" contexts.
-- "Selecciona" does NOT need an accent — it's correct as-is (present tense imperative).
-- "accion" → "acción" wherever it appears in user-visible strings.
-
-## Friction 2 (MEDIUM): No loading indicator in index.html
-
-Replace the empty `<div id="root"></div>` in `frontend/index.html` with a CSS-only centered spinner that disappears when React mounts (React replaces the inner content automatically).
-
-Example approach:
-```html
-<div id="root">
-  <div style="display:flex;align-items:center;justify-content:center;height:100vh;">
-    <div style="width:32px;height:32px;border:3px solid #e5e7eb;border-top-color:#e5603d;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
-  </div>
-  <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
-</div>
-```
-
-Use the project's accent color (`#e5603d`) for the spinner.
-
-## Friction 3 (LOW): English page metadata
-
-In `frontend/index.html`:
-- Change `<html lang="en">` → `<html lang="es">`
-- Change `<title>Veterinary Records Preview</title>` → `<title>Registros Veterinarios — Barkibu</title>`
-
---- TEST GATE ---
-Backend: cd d:/Git/veterinary-medical-records && python -m pytest --tb=short -q
-Frontend: cd d:/Git/veterinary-medical-records/frontend && npm test
-
-CRITICAL: After fixing accents, tests MUST still pass. If a test assertion fails because it still uses the old unaccented string, update that test assertion too.
---- END TEST GATE ---
-
---- SCOPE BOUNDARY ---
-
-STEP A — Commit friction fixes:
-1. git add -A -- . ':!docs/project/AI_ITERATIVE_EXECUTION_PLAN.md'
-2. git commit -m "fix(plan-f6a): fix evaluator smoke test frictions
-
-- Fix missing Spanish accents in ~20 UI strings + test assertions
-- Add CSS-only loading spinner in index.html
-- Set lang=es and Spanish page title
-
-Test proof: <pytest summary> | <npm test summary>"
-
-STEP B — Commit plan update:
-1. Mark `- [ ] F6-A` → `- [x] F6-A` in Estado de ejecución.
-2. Clean Prompt activo: `### Paso objetivo` → `_Completado: F6-A_`, `### Prompt` → `_Vacío._`
-3. git add docs/project/AI_ITERATIVE_EXECUTION_PLAN.md
-4. git commit -m "docs(plan-f6a): mark step done"
-
-STEP C — Push:
-1. git push origin improvement/refactor
-
-STEP D — Update PR #145:
-Run `gh pr edit 145 --body "..."` marking F6-A done in the checklist.
-
-STEP E — CI GATE (mandatory):
-1. Run: gh run list --branch improvement/refactor --limit 1 --json status,conclusion,databaseId
-2. Wait for completion. If failure: diagnose, fix, push, retry. Max 2 attempts.
-
-STEP F — Tell the user the NEXT STEP:
-The next step is F7-A (Claude — hard-gate, final verdict). Say:
-"✓ F6-A completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona **Claude** → adjunta AI_ITERATIVE_EXECUTION_PLAN.md → escribe Continúa."
-
-NEVER end without the next-step message. Stop after delivering it.
---- END SCOPE BOUNDARY ---
-```
+_Vacío._
 
 ---
 
