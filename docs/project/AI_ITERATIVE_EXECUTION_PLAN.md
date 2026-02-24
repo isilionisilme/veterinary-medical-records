@@ -532,11 +532,139 @@ TOTAL coverage: 86% (4530 statements, 653 misses)
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-_Completado: F4-C_
+F5-A 🔄 — Revisión docs con project-guidelines-example (Codex)
 
 ### Prompt
 
-_Vacío._
+```
+--- AGENT IDENTITY CHECK ---
+This prompt is designed for GPT-5.3-Codex in VS Code Copilot Chat.
+If you are not GPT-5.3-Codex: STOP. Tell the user to switch agents.
+--- END IDENTITY CHECK ---
+
+--- BRANCH CHECK ---
+Run: git branch --show-current
+If NOT `improvement/refactor`: STOP. Tell the user: "⚠️ Cambia a la rama improvement/refactor antes de continuar: git checkout improvement/refactor"
+--- END BRANCH CHECK ---
+
+--- SYNC CHECK ---
+Run: git pull origin improvement/refactor
+--- END SYNC CHECK ---
+
+--- PRE-FLIGHT CHECK ---
+1. Verify F4-C has `[x]` in Estado de ejecución.
+--- END PRE-FLIGHT CHECK ---
+
+[TASK — F5-A: Revisión docs con project-guidelines-example]
+
+Use the skill `project-guidelines-example` to review and improve the project's documentation structure.
+
+Project root: d:/Git/veterinary-medical-records
+
+Context:
+- Veterinary medical records processing system (technical exercise for job evaluation).
+- Evaluators explicitly assess: documentation quality, architecture decisions, ease of onboarding.
+- The project already has extensive docs — the goal is to OPTIMIZE, not rewrite.
+
+Current documentation structure:
+```
+docs/
+  README.md                          # Reading order / index
+  project/
+    TECHNICAL_DESIGN.md              # ~1950 lines, core architecture
+    PRODUCT_DESIGN.md                # Product requirements
+    UX_DESIGN.md                     # UX decisions
+    DESIGN_SYSTEM.md                 # Brand/component tokens
+    FRONTEND_IMPLEMENTATION.md       # Frontend tech details
+    BACKEND_IMPLEMENTATION.md        # Backend tech details
+    IMPLEMENTATION_PLAN.md           # Original execution plan
+    12_FACTOR_AUDIT.md               # 12-factor compliance (from F1-A)
+    codebase_audit.md                # ln-620 audit (from F2-A)
+    AI_ITERATIVE_EXECUTION_PLAN.md   # This file (AI execution)
+    extraction/                      # Extraction-specific docs
+  shared/
+    BRAND_GUIDELINES.md
+    ENGINEERING_PLAYBOOK.md
+    UX_GUIDELINES.md
+  extraction/                        # Extraction ADRs and strategy
+  extraction-tracking/               # Field tracking, runs, risk matrix
+```
+
+Also important:
+- `README.md` (root) — project overview, setup instructions, Docker-first
+- `AGENTS.md` (root) — AI assistant routing
+
+Audit instructions:
+1. Use the skill to evaluate the documentation against best practices for a technical interview project.
+2. Focus on what an evaluator sees FIRST: README.md (root), docs/README.md, and the project/ folder.
+3. Identify:
+   - Missing sections that evaluators expect (e.g., "How to contribute", "Architecture overview", "Key decisions")
+   - Unclear or misleading content
+   - Redundant files that could be consolidated
+   - Missing cross-references between docs
+   - README.md gaps (setup clarity, time-to-first-run, overview completeness)
+4. Do NOT recommend removing existing ADRs or extraction-tracking docs — they show evidence of incremental delivery.
+5. Do NOT recommend restructuring the agent_router/ folder — it has a different purpose.
+
+Output format — write findings into a new section `### F5-A — Documentation audit` in Resultados de auditorías (after the F4-B section). Use this structure:
+
+### F5-A — Documentation audit
+
+**README.md (root) assessment:**
+- [list strengths and gaps]
+
+**docs/README.md assessment:**
+- [list strengths and gaps]
+
+**Documentation structure assessment:**
+- [what's good, what's missing, what's redundant]
+
+**Top 5 actionable improvements (prioritized):**
+1. ...
+2. ...
+3. ...
+4. ...
+5. ...
+
+IMPORTANT: Apply non-controversial improvements directly (fixing broken links, adding missing cross-references, improving README clarity). Only flag controversial changes (removing/renaming files, major restructuring) for Claude to decide.
+
+--- TEST GATE ---
+Backend: cd d:/Git/veterinary-medical-records && python -m pytest --tb=short -q
+Frontend: cd d:/Git/veterinary-medical-records/frontend && npm test
+(Tests must still pass even though this is a docs step — ensure no accidental changes.)
+--- END TEST GATE ---
+
+--- SCOPE BOUNDARY ---
+
+STEP A — Commit doc improvements + audit results:
+1. git add -A -- . ':!docs/project/AI_ITERATIVE_EXECUTION_PLAN.md'
+2. git commit -m "docs(plan-f5a): documentation audit and improvements
+
+Test proof: <pytest summary> | <npm test summary>"
+
+STEP B — Commit plan update:
+1. Mark `- [ ] F5-A` → `- [x] F5-A` in Estado de ejecución.
+2. Clean Prompt activo: `### Paso objetivo` → `_Completado: F5-A_`, `### Prompt` → `_Vacío._`
+3. git add docs/project/AI_ITERATIVE_EXECUTION_PLAN.md
+4. git commit -m "docs(plan-f5a): mark step done"
+
+STEP C — Push:
+1. git push origin improvement/refactor
+
+STEP D — Update PR #145:
+Run `gh pr edit 145 --body "..."` marking F5-A done.
+
+STEP E — CI GATE (mandatory):
+1. Run: gh run list --branch improvement/refactor --limit 1 --json status,conclusion,databaseId
+2. Wait for completion. If failure: diagnose, fix, push, retry. Max 2 attempts.
+
+STEP F — Tell the user the NEXT STEP:
+The next step is F5-B (Claude — hard-gate, ADR arguments). Say:
+"✓ F5-A completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona Claude → adjunta AI_ITERATIVE_EXECUTION_PLAN.md → escribe Continúa."
+
+NEVER end without the next-step message. Stop after delivering it.
+--- END SCOPE BOUNDARY ---
+```
 
 ---
 
