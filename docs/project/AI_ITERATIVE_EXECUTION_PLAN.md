@@ -45,7 +45,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 ### Fase 5 — Documentación
 - [x] F5-A 🔄 — Revisión docs con project-guidelines-example (Codex)
 - [x] F5-B 🚧 — ADRs de arquitectura: **TÚ defines los argumentos** (Claude)
-- [ ] F5-C 🔄 — ADRs de arquitectura: crear ficheros (Codex)
+- [x] F5-C 🔄 — ADRs de arquitectura: crear ficheros (Codex)
 - [ ] F5-D 🔄 — FUTURE_IMPROVEMENTS.md (Codex)
 
 ### Fase 6 — Smoke test del evaluador
@@ -677,98 +677,10 @@ Below are the 4 architecture ADRs with full arguments, trade-offs, and code evid
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-F5-C 🔄 — Crear ficheros ADR de arquitectura (Codex)
+_Completado: F5-C_
 
 ### Prompt
-
-```
---- AGENT IDENTITY CHECK ---
-This prompt is designed for GPT-5.3-Codex in VS Code Copilot Chat.
-If you are not GPT-5.3-Codex: STOP. Tell the user to switch agents.
---- END IDENTITY CHECK ---
-
---- BRANCH CHECK ---
-Run: git branch --show-current
-If NOT `improvement/refactor`: STOP. Tell the user: "⚠️ Cambia a la rama improvement/refactor antes de continuar: git checkout improvement/refactor"
---- END BRANCH CHECK ---
-
---- SYNC CHECK ---
-Run: git pull origin improvement/refactor
---- END SYNC CHECK ---
-
---- PRE-FLIGHT CHECK ---
-1. Verify F5-A has `[x]` and F5-B has `[x]` in Estado de ejecución.
---- END PRE-FLIGHT CHECK ---
-
-[TASK — F5-C: Create architecture ADR files]
-
-Project root: d:/Git/veterinary-medical-records
-
-Read the ADR arguments defined in section `### F5-B — ADR arguments (defined by Claude)` in this file. Create 4 ADR markdown files following the project's existing ADR convention (see `docs/extraction/ADR-EXTRACTION-0001.md` for format reference).
-
-Files to create:
-- `docs/adr/ADR-ARCH-0001-modular-monolith.md`
-- `docs/adr/ADR-ARCH-0002-sqlite-database.md`
-- `docs/adr/ADR-ARCH-0003-raw-sql-repository-pattern.md`
-- `docs/adr/ADR-ARCH-0004-in-process-async-processing.md`
-
-Format rules:
-- Use the MADR-inspired format consistent with the existing extraction ADRs.
-- Structure: `# Title`, `## Status`, `## Context`, `## Decision Drivers`, `## Considered Options` (with pros/cons), `## Decision`, `## Rationale`, `## Consequences` (Positive / Negative / Risks), `## Code Evidence`, `## Related Decisions`.
-- Keep each ADR concise (80–120 lines max). Be specific — cite actual file paths and patterns.
-- Date: 2026-02-24. Status: Accepted.
-- Cross-reference between ADRs where relevant (e.g., ADR-0001 references ADR-0002 and ADR-0004).
-
-Additional tasks:
-1. Create `docs/adr/README.md` — ADR index table (ID | Title | Status | Date) listing both architecture ADRs and existing extraction ADRs (linked).
-2. Update `docs/README.md` — add an "Architecture Decision Records" entry in the reading order pointing to `docs/adr/README.md`.
-3. Update root `README.md` — in the "Key technical decisions" or "Architecture at a glance" section, add links to the 4 new ADRs.
-4. Verify the TECHNICAL_DESIGN.md references are consistent with what the ADRs state.
-
---- TEST GATE ---
-Backend: cd d:/Git/veterinary-medical-records && python -m pytest --tb=short -q
-Frontend: cd d:/Git/veterinary-medical-records/frontend && npm test
-(Tests must still pass — ensure no accidental code changes.)
---- END TEST GATE ---
-
---- SCOPE BOUNDARY ---
-
-STEP A — Commit ADR files + doc updates:
-1. git add -A -- . ':!docs/project/AI_ITERATIVE_EXECUTION_PLAN.md'
-2. git commit -m "docs(plan-f5c): create architecture ADRs and update doc index
-
-New files:
-- docs/adr/ADR-ARCH-0001-modular-monolith.md
-- docs/adr/ADR-ARCH-0002-sqlite-database.md
-- docs/adr/ADR-ARCH-0003-raw-sql-repository-pattern.md
-- docs/adr/ADR-ARCH-0004-in-process-async-processing.md
-- docs/adr/README.md
-
-Test proof: <pytest summary> | <npm test summary>"
-
-STEP B — Commit plan update:
-1. Mark `- [ ] F5-C` → `- [x] F5-C` in Estado de ejecución.
-2. Clean Prompt activo: `### Paso objetivo` → `_Completado: F5-C_`, `### Prompt` → `_Vacío._`
-3. git add docs/project/AI_ITERATIVE_EXECUTION_PLAN.md
-4. git commit -m "docs(plan-f5c): mark step done"
-
-STEP C — Push:
-1. git push origin improvement/refactor
-
-STEP D — Update PR #145:
-Run `gh pr edit 145 --body "..."` marking F5-C done in the checklist.
-
-STEP E — CI GATE (mandatory):
-1. Run: gh run list --branch improvement/refactor --limit 1 --json status,conclusion,databaseId
-2. Wait for completion. If failure: diagnose, fix, push, retry. Max 2 attempts.
-
-STEP F — Tell the user the NEXT STEP:
-The next step is F5-D (Codex — FUTURE_IMPROVEMENTS.md). Claude needs to write the prompt first. Say:
-"✓ F5-C completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona **Claude** → adjunta AI_ITERATIVE_EXECUTION_PLAN.md → escribe Continúa (para que Claude escriba el prompt F5-D)."
-
-NEVER end without the next-step message. Stop after delivering it.
---- END SCOPE BOUNDARY ---
-```
+_Vacío._
 
 ---
 
