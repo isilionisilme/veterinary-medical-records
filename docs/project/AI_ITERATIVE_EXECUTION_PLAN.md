@@ -38,7 +38,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [x] F3-B 🔄 — Implementar tooling + coverage (Codex)
 
 ### Fase 4 — Calidad de tests
-- [ ] F4-A 🔄 — Auditoría frontend-testing (Codex)
+- [x] F4-A 🔄 — Auditoría frontend-testing (Codex)
 - [ ] F4-B 🔄 — Auditoría python-testing-patterns (Codex)
 - [ ] F4-C 🔄 — Implementar mejoras de tests (Codex)
 
@@ -370,6 +370,106 @@ cd .. && ruff check --fix . && ruff format .
 ```
 Commitear autofix como commit separado antes del commit de plan.
 
+### F4-A — Frontend testing audit
+
+**Coverage summary:**
+
+```text
+% Coverage report from v8
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   77.67 |    68.66 |   84.59 |   77.74 |
+ src               |   78.37 |    68.45 |   85.23 |   78.33 |
+  App.tsx          |     100 |      100 |     100 |     100 |
+  AppWorkspace.tsx |   78.36 |    68.45 |    85.2 |   78.32 | ...6108,6111-6113
+ src/components    |   66.58 |    58.88 |   80.55 |      67 |
+  ...tsSidebar.tsx |     100 |     94.5 |     100 |     100 | 253,283,299,303
+  PdfViewer.tsx    |   64.82 |    46.06 |      80 |    65.4 | ...68,677,737,740
+  ...Workspace.tsx |     100 |      100 |     100 |     100 |
+  SourcePanel.tsx  |       0 |        0 |       0 |       0 | 27
+  ...dDropzone.tsx |      50 |    82.14 |      50 |      50 | 51-53
+ ...components/app |      95 |    89.74 |   91.66 |      95 |
+  ...icalBadge.tsx |     100 |      100 |     100 |     100 |
+  ...usCluster.tsx |     100 |    94.11 |     100 |     100 | 50
+  Field.tsx        |     100 |       80 |     100 |     100 | 61-74
+  IconButton.tsx   |     100 |      100 |     100 |     100 |
+  Section.tsx      |   66.66 |       50 |   66.66 |   66.66 | 22
+ ...nts/structured |   64.06 |    66.86 |   62.85 |      64 |
+  ...eldDialog.tsx |   28.57 |       10 |   22.22 |      30 | 42-46,50-53,60-92
+  ...ditDialog.tsx |   71.02 |    70.51 |   76.92 |   70.47 | ...93,213-236,282
+ ...mponents/toast |     100 |    97.77 |     100 |     100 |
+  ToastHost.tsx    |     100 |    97.77 |     100 |     100 | 111
+ src/components/ui |   97.36 |    80.64 |   95.83 |   97.36 |
+  badge.tsx        |     100 |      100 |     100 |     100 |
+  button.tsx       |     100 |    66.66 |     100 |     100 | 38
+  card.tsx         |     100 |      100 |     100 |     100 |
+  dialog.tsx       |     100 |      100 |     100 |     100 |
+  input.tsx        |     100 |      100 |     100 |     100 |
+  scroll-area.tsx  |     100 |       80 |     100 |     100 | 34
+  separator.tsx    |     100 |       75 |     100 |     100 | 16
+  toggle-group.tsx |     100 |      100 |     100 |     100 |
+  tooltip.tsx      |   91.66 |    84.21 |   85.71 |   91.66 | 26,107
+ src/extraction    |   81.41 |    69.76 |   97.14 |   81.13 |
+  ...uggestions.ts |    80.9 |       67 |   94.44 |   80.55 | ...86,300-306,322
+  ...ctionDebug.ts |   72.72 |     37.5 |     100 |   72.72 | 19,31-32
+  ...Validators.ts |   82.43 |    74.76 |     100 |   82.19 | ...01,215,229,239
+ src/hooks         |   43.13 |    22.72 |   33.33 |   45.83 |
+  ...PanelState.ts |   43.13 |    22.72 |   33.33 |   45.83 | ...51-54,69,78-85
+ src/lib           |   86.93 |    74.82 |   89.18 |   86.54 |
+  ...mentStatus.ts |     100 |      100 |     100 |     100 |
+  globalSchema.ts  |     100 |      100 |     100 |     100 |
+  ...ingHistory.ts |      96 |    68.08 |     100 |   95.83 | 33,117
+  ...istoryView.ts |     100 |      100 |     100 |     100 |
+  ...ataFilters.ts |   94.44 |    91.17 |     100 |   94.11 | 68,84
+  utils.ts         |      24 |        0 |      20 |      24 | ...41,49-53,60-64
+  ...ervability.ts |     100 |    83.33 |     100 |     100 | 19,37
+ src/test          |    93.8 |    85.08 |     100 |   93.63 |
+  helpers.tsx      |    93.8 |    85.08 |     100 |   93.63 | ...03,566,827-834
+-------------------|---------|----------|---------|---------|-------------------
+```
+
+**Critical gaps (files <60% coverage):**
+| File | Coverage % | What's missing |
+|---|---|---|
+| `src/components/SourcePanel.tsx` | 0% lines | No direct tests for source drawer behavior (pin toggle, close behavior, evidence fallback rendering). |
+| `src/components/UploadDropzone.tsx` | 50% lines | Keyboard activation and overlay branches are only indirectly exercised; several drag state branches remain unverified. |
+| `src/components/structured/AddFieldDialog.tsx` | 30% lines | Missing coverage for save-lock behavior (escape/outside click blocked), open/close transitions, and input focus timing. |
+| `src/hooks/useSourcePanelState.ts` | 45.83% lines | Hook transitions are not unit-tested (non-desktop pin fallback, Escape listener lifecycle, reset semantics). |
+| `src/lib/utils.ts` | 24% lines | Error parsing paths in `apiFetchJson`/`apiFetchBlob` are mostly untested (non-JSON errors, malformed JSON, default fallback). |
+
+**Fragile/anti-pattern tests:**
+| File | Line(s) | Issue | Suggested fix |
+|---|---|---|---|
+| `src/App.test.tsx` | 146-183 | Asserts many Tailwind/token classes (`toHaveClass`) and layout internals, which makes tests brittle to harmless UI refactors. | Prefer user-visible assertions (roles/text/ARIA semantics) and keep only 1-2 structural assertions for contract-critical layout. |
+| `src/components/StructuredDataView.test.tsx` | 116-132 | Heavy style-class assertions on row/value rendering increase maintenance cost and couple tests to CSS utility choices. | Assert semantic behavior (labels, grouped values, fallback text) and reserve visual token checks for a focused styling smoke test. |
+| `src/components/UploadPanel.test.tsx` | 144-177 | Uses real-time `setTimeout` waits (3.6s/5.2s) with long test-level timeouts, causing slower and potentially flaky runs. | Use fake timers (`vi.useFakeTimers`) and advance time deterministically. |
+| `src/lib/processingHistory.test.ts` + `src/lib/__tests__/processingHistory.test.ts` | 1-120 | Duplicated coverage of `groupProcessingSteps` logic across two files creates maintenance drift risk. | Consolidate into one canonical suite and keep complementary cases only. |
+| 8 test files mocking `PdfViewer` | see `vi.mock` at line 11-23 in each file | Repeated mock implementation copy/paste increases drift risk and obscures intent. | Centralize in a shared factory/helper (or `setupTests`) to keep one stub definition. |
+
+**Missing test scenarios:**
+| Component/Flow | What should be tested | Priority (P1/P2/P3) |
+|---|---|---|
+| `SourcePanel` | Pin/unpin button disabled behavior on non-desktop, close action callback, evidence fallback text when snippet is null. | P1 |
+| `UploadDropzone` | Keyboard activation (`Enter`/`Space`), drag overlay visibility toggling, compact vs non-compact aria-label behavior. | P1 |
+| `AddFieldDialog` | Prevent close while `isSaving=true` (Escape/outside click), focus-on-open timing, cancel/save disabled semantics. | P1 |
+| `useSourcePanelState` | `openFromEvidence` notice behavior without page, Escape key close lifecycle, reset and pin rules by viewport. | P1 |
+| API helpers (`lib/utils.ts`) | `parseError` fallback on invalid JSON/content-type mismatch and thrown API errors from `apiFetchJson`/`apiFetchBlob`. | P1 |
+| `PdfViewer` failure/edge states | Missing source/highlight edge behavior and low-branch paths currently near threshold. | P2 |
+
+**Cleanup candidates:**
+- No `.bak` test file found in `frontend/src` (candidate mentioned in prompt appears already cleaned).
+- Consolidate duplicated processing history suites (`src/lib/processingHistory.test.ts` vs `src/lib/__tests__/processingHistory.test.ts`).
+- Extract a shared `PdfViewer` mock to avoid 8 copy/pasted `vi.mock` blocks.
+- Reduce noisy diagnostic stdout assertions side effects in StructuredData tests when not under explicit observability checks.
+
+**Top 5 actionable improvements (prioritized):**
+1. Add focused tests for `SourcePanel`, `UploadDropzone`, and `AddFieldDialog` to eliminate all P1 coverage holes below 60%.
+2. Add unit tests for `useSourcePanelState` and `lib/utils.ts` to harden core interaction/error-path logic.
+3. Replace real-time waits in `UploadPanel.test.tsx` with fake timers to cut flakiness and runtime cost.
+4. Collapse duplicated `processingHistory` suites into one source of truth and keep non-overlapping cases only.
+5. Refactor style-coupled assertions (especially in `App.test.tsx` and `StructuredDataView.test.tsx`) toward behavior-first checks.
+
 ---
 
 ## Prompt activo (just-in-time) — write-then-execute
@@ -379,128 +479,11 @@ Commitear autofix como commit separado antes del commit de plan.
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-F4-A 🔄 — Auditoría frontend-testing (Codex)
+_Completado: F4-A_
 
 ### Prompt
 
-```
---- AGENT IDENTITY CHECK ---
-This prompt is designed for GPT-5.3-Codex in VS Code Copilot Chat.
-If you are not GPT-5.3-Codex: STOP. Tell the user to switch agents.
---- END IDENTITY CHECK ---
-
---- BRANCH CHECK ---
-Run: git branch --show-current
-If NOT `improvement/refactor`: STOP. Tell the user: "⚠️ Cambia a la rama improvement/refactor antes de continuar: git checkout improvement/refactor"
---- END BRANCH CHECK ---
-
---- SYNC CHECK ---
-Run: git pull origin improvement/refactor
---- END SYNC CHECK ---
-
---- PRE-FLIGHT CHECK ---
-1. Verify F3-B has `[x]` in Estado de ejecución.
-2. Verify frontend test files exist: run `Get-ChildItem -Recurse -Filter "*.test.*" frontend/src/ | Measure-Object`. Expect ≥15 files.
---- END PRE-FLIGHT CHECK ---
-
-[TASK — F4-A: Auditoría frontend-testing]
-
-Use the skill `frontend-testing` to perform a full frontend testing audit on this project.
-
-Project root: d:/Git/veterinary-medical-records
-Frontend root: d:/Git/veterinary-medical-records/frontend
-
-Context:
-- Veterinary medical records processing system (technical exercise for job evaluation).
-- Stack: React 18 + TypeScript + Vite + Vitest + @testing-library/react + jsdom.
-- The frontend was recently decomposed (F2-C, F2-F): App.tsx is now a 9-line shell, logic lives in AppWorkspace.tsx and component modules.
-- Tests were redistributed from a monolithic App.test.tsx into per-component files.
-- Coverage was just added (F3-B): @vitest/coverage-v8 + `npm run test:coverage`.
-- Evaluators specifically assess: test quality, meaningful coverage, absence of fragile tests.
-
-Current test files (18 files):
-- src/App.test.tsx, AppShellFlowsA.test.tsx, AppShellFlowsB.test.tsx
-- src/components/DocumentSidebar.test.tsx, PdfViewer.test.tsx, ReviewWorkspace.test.tsx
-- src/components/StructuredDataView.test.tsx, StructuredDataViewConfidence.test.tsx, UploadPanel.test.tsx
-- src/components/structured/FieldEditDialog.test.tsx
-- src/components/toast/ToastHost.test.tsx
-- src/extraction/candidateSuggestions.test.ts, fieldValidators.test.ts (if exists)
-- src/lib/processingHistory.test.ts, structuredDataFilters.test.ts, visitGroupingObservability.test.ts
-- src/lib/__tests__/processingHistoryView.test.ts, processingHistoryView.test.ts.bak (cleanup candidate)
-
-Audit instructions:
-1. Run `cd frontend && npm run test:coverage` to get the current coverage report.
-2. Analyze the coverage output — identify files/modules with <60% coverage (critical gaps).
-3. For each test file, assess:
-   - Are tests testing behavior or implementation details?
-   - Are there fragile patterns (testing internal state, excessive mocking, snapshot-only tests)?
-   - Are there anti-patterns (no assertions, test names that don't describe behavior)?
-   - Are there missing test scenarios for user-visible flows?
-4. Check for duplicated test logic across files (shared helpers in src/test/helpers.tsx — is it used consistently?).
-5. Check for .bak files or dead test code that should be cleaned up.
-
-Output format — write findings into the `### F4-A — Frontend testing audit` section of this plan file (create it after the F3-A section in Resultados de auditorías). Use this structure:
-
-```
-### F4-A — Frontend testing audit
-
-**Coverage summary:** (paste the table from vitest --coverage output)
-
-**Critical gaps (files <60% coverage):**
-| File | Coverage % | What's missing |
-|---|---|---|
-
-**Fragile/anti-pattern tests:**
-| File | Line(s) | Issue | Suggested fix |
-|---|---|---|---|
-
-**Missing test scenarios:**
-| Component/Flow | What should be tested | Priority (P1/P2/P3) |
-|---|---|---|
-
-**Cleanup candidates:**
-- [list any .bak files, dead code, duplicated tests]
-
-**Top 5 actionable improvements (prioritized):**
-1. ...
-2. ...
-3. ...
-4. ...
-5. ...
-```
-
---- SCOPE BOUNDARY ---
-Do NOT implement any fixes. Your output is the audit report ONLY.
-
-STEP A — Commit the audit results:
-1. git add docs/project/AI_ITERATIVE_EXECUTION_PLAN.md
-2. git commit -m "audit(plan-f4a): frontend testing audit with coverage analysis
-
-Test proof: (no code changes — audit only)"
-
-STEP B — Mark step done in plan:
-1. Change `- [ ] F4-A` to `- [x] F4-A` in Estado de ejecución.
-2. Clean Prompt activo: `### Paso objetivo` → `_Completado: F4-A_`, `### Prompt` → `_Vacío._`
-3. git add docs/project/AI_ITERATIVE_EXECUTION_PLAN.md
-4. git commit -m "docs(plan-f4a): mark step done"
-
-STEP C — Push:
-1. git push origin improvement/refactor
-
-STEP D — Update PR #145:
-Run `gh pr edit 145 --body "..."` marking F4-A done with a one-line summary.
-
-STEP E — CI GATE (mandatory):
-1. Run: gh run list --branch improvement/refactor --limit 1 --json status,conclusion,databaseId
-2. Wait for completion. If failure: diagnose, fix, push, retry. Max 2 attempts.
-
-STEP F — Tell the user the NEXT STEP:
-The next step is F4-B (Codex — backend testing audit). Say:
-"✓ F4-A completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona GPT-5.3-Codex → adjunta AI_ITERATIVE_EXECUTION_PLAN.md → escribe Continúa."
-
-NEVER end without the next-step message. Stop after delivering it.
---- END SCOPE BOUNDARY ---
-```
+_Vacío._
 
 ---
 
