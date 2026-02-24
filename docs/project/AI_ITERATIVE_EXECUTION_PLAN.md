@@ -379,10 +379,128 @@ Commitear autofix como commit separado antes del commit de plan.
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-_Completado: F3-B_
+F4-A 🔄 — Auditoría frontend-testing (Codex)
 
 ### Prompt
-_Vacío._
+
+```
+--- AGENT IDENTITY CHECK ---
+This prompt is designed for GPT-5.3-Codex in VS Code Copilot Chat.
+If you are not GPT-5.3-Codex: STOP. Tell the user to switch agents.
+--- END IDENTITY CHECK ---
+
+--- BRANCH CHECK ---
+Run: git branch --show-current
+If NOT `improvement/refactor`: STOP. Tell the user: "⚠️ Cambia a la rama improvement/refactor antes de continuar: git checkout improvement/refactor"
+--- END BRANCH CHECK ---
+
+--- SYNC CHECK ---
+Run: git pull origin improvement/refactor
+--- END SYNC CHECK ---
+
+--- PRE-FLIGHT CHECK ---
+1. Verify F3-B has `[x]` in Estado de ejecución.
+2. Verify frontend test files exist: run `Get-ChildItem -Recurse -Filter "*.test.*" frontend/src/ | Measure-Object`. Expect ≥15 files.
+--- END PRE-FLIGHT CHECK ---
+
+[TASK — F4-A: Auditoría frontend-testing]
+
+Use the skill `frontend-testing` to perform a full frontend testing audit on this project.
+
+Project root: d:/Git/veterinary-medical-records
+Frontend root: d:/Git/veterinary-medical-records/frontend
+
+Context:
+- Veterinary medical records processing system (technical exercise for job evaluation).
+- Stack: React 18 + TypeScript + Vite + Vitest + @testing-library/react + jsdom.
+- The frontend was recently decomposed (F2-C, F2-F): App.tsx is now a 9-line shell, logic lives in AppWorkspace.tsx and component modules.
+- Tests were redistributed from a monolithic App.test.tsx into per-component files.
+- Coverage was just added (F3-B): @vitest/coverage-v8 + `npm run test:coverage`.
+- Evaluators specifically assess: test quality, meaningful coverage, absence of fragile tests.
+
+Current test files (18 files):
+- src/App.test.tsx, AppShellFlowsA.test.tsx, AppShellFlowsB.test.tsx
+- src/components/DocumentSidebar.test.tsx, PdfViewer.test.tsx, ReviewWorkspace.test.tsx
+- src/components/StructuredDataView.test.tsx, StructuredDataViewConfidence.test.tsx, UploadPanel.test.tsx
+- src/components/structured/FieldEditDialog.test.tsx
+- src/components/toast/ToastHost.test.tsx
+- src/extraction/candidateSuggestions.test.ts, fieldValidators.test.ts (if exists)
+- src/lib/processingHistory.test.ts, structuredDataFilters.test.ts, visitGroupingObservability.test.ts
+- src/lib/__tests__/processingHistoryView.test.ts, processingHistoryView.test.ts.bak (cleanup candidate)
+
+Audit instructions:
+1. Run `cd frontend && npm run test:coverage` to get the current coverage report.
+2. Analyze the coverage output — identify files/modules with <60% coverage (critical gaps).
+3. For each test file, assess:
+   - Are tests testing behavior or implementation details?
+   - Are there fragile patterns (testing internal state, excessive mocking, snapshot-only tests)?
+   - Are there anti-patterns (no assertions, test names that don't describe behavior)?
+   - Are there missing test scenarios for user-visible flows?
+4. Check for duplicated test logic across files (shared helpers in src/test/helpers.tsx — is it used consistently?).
+5. Check for .bak files or dead test code that should be cleaned up.
+
+Output format — write findings into the `### F4-A — Frontend testing audit` section of this plan file (create it after the F3-A section in Resultados de auditorías). Use this structure:
+
+```
+### F4-A — Frontend testing audit
+
+**Coverage summary:** (paste the table from vitest --coverage output)
+
+**Critical gaps (files <60% coverage):**
+| File | Coverage % | What's missing |
+|---|---|---|
+
+**Fragile/anti-pattern tests:**
+| File | Line(s) | Issue | Suggested fix |
+|---|---|---|---|
+
+**Missing test scenarios:**
+| Component/Flow | What should be tested | Priority (P1/P2/P3) |
+|---|---|---|
+
+**Cleanup candidates:**
+- [list any .bak files, dead code, duplicated tests]
+
+**Top 5 actionable improvements (prioritized):**
+1. ...
+2. ...
+3. ...
+4. ...
+5. ...
+```
+
+--- SCOPE BOUNDARY ---
+Do NOT implement any fixes. Your output is the audit report ONLY.
+
+STEP A — Commit the audit results:
+1. git add docs/project/AI_ITERATIVE_EXECUTION_PLAN.md
+2. git commit -m "audit(plan-f4a): frontend testing audit with coverage analysis
+
+Test proof: (no code changes — audit only)"
+
+STEP B — Mark step done in plan:
+1. Change `- [ ] F4-A` to `- [x] F4-A` in Estado de ejecución.
+2. Clean Prompt activo: `### Paso objetivo` → `_Completado: F4-A_`, `### Prompt` → `_Vacío._`
+3. git add docs/project/AI_ITERATIVE_EXECUTION_PLAN.md
+4. git commit -m "docs(plan-f4a): mark step done"
+
+STEP C — Push:
+1. git push origin improvement/refactor
+
+STEP D — Update PR #145:
+Run `gh pr edit 145 --body "..."` marking F4-A done with a one-line summary.
+
+STEP E — CI GATE (mandatory):
+1. Run: gh run list --branch improvement/refactor --limit 1 --json status,conclusion,databaseId
+2. Wait for completion. If failure: diagnose, fix, push, retry. Max 2 attempts.
+
+STEP F — Tell the user the NEXT STEP:
+The next step is F4-B (Codex — backend testing audit). Say:
+"✓ F4-A completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona GPT-5.3-Codex → adjunta AI_ITERATIVE_EXECUTION_PLAN.md → escribe Continúa."
+
+NEVER end without the next-step message. Stop after delivering it.
+--- END SCOPE BOUNDARY ---
+```
 
 ---
 
