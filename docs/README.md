@@ -45,10 +45,10 @@ Canonical documentation is organized into:
 - [`docs/project/FUTURE_IMPROVEMENTS.md`](project/FUTURE_IMPROVEMENTS.md) — 2/4/8-week roadmap with prioritized next steps.
 
 ### Audit trail and incremental evidence
-- [`docs/project/DELIVERY_SUMMARY.md`](project/DELIVERY_SUMMARY.md) — quantitative summary of what was delivered (start here for the delta).
-- [`docs/project/12_FACTOR_AUDIT.md`](project/12_FACTOR_AUDIT.md) — architecture and deployment-factor audit findings.
-- [`docs/project/codebase_audit.md`](project/codebase_audit.md) — maintainability and structural quality audit findings.
-- [`docs/project/AI_ITERATIVE_EXECUTION_PLAN.md`](project/AI_ITERATIVE_EXECUTION_PLAN.md) — phase-by-phase execution log and decisions.
+- [`docs/project/refactor/DELIVERY_SUMMARY.md`](project/refactor/DELIVERY_SUMMARY.md) — quantitative summary of what was delivered (start here for the delta).
+- [`docs/project/refactor/12_FACTOR_AUDIT.md`](project/refactor/12_FACTOR_AUDIT.md) — architecture and deployment-factor audit findings.
+- [`docs/project/refactor/codebase_audit.md`](project/refactor/codebase_audit.md) — maintainability and structural quality audit findings.
+- [`docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md`](project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md) — phase-by-phase execution log and decisions.
 - [`docs/project/FUTURE_IMPROVEMENTS.md`](project/FUTURE_IMPROVEMENTS.md) — forward roadmap derived from audits and ADRs.
 - [`docs/adr/README.md`](adr/README.md) — architecture and extraction ADR index.
 - [`docs/extraction/`](extraction/) — extraction ADRs and strategy notes.

@@ -32,7 +32,7 @@ Audited the backend against the 12-Factor App methodology. Implemented 4 of 5 to
 | Admin CLI | New `cli.py` (54 LOC): `db-schema`, `db-check`, `config-check` commands |
 | Discarded: Worker profile | SQLite single-writer prevents reliable multi-process — documented in ADR-ARCH-0002 |
 
-**Audit record:** [`docs/project/12_FACTOR_AUDIT.md`](12_FACTOR_AUDIT.md)
+**Audit record:** [`12_FACTOR_AUDIT.md`](12_FACTOR_AUDIT.md)
 
 ---
 
@@ -75,7 +75,7 @@ Key extracted components: `PdfViewer` (831), `DocumentsSidebar` (430), `FieldEdi
 
 `App.test.tsx` (3,693 LOC monolithic suite) → redistributed across 20 per-component test files matching the new structure.
 
-**Audit record:** [`docs/project/codebase_audit.md`](codebase_audit.md)
+**Audit record:** [`codebase_audit.md`](codebase_audit.md)
 
 ---
 

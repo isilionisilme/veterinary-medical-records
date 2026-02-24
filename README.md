@@ -128,10 +128,10 @@ Shared UX principles referenced by project UX design.
 
 ### Delivery evidence and audit trail
 
-- **Delivery summary (start here):** [`docs/project/DELIVERY_SUMMARY.md`](docs/project/DELIVERY_SUMMARY.md)
-- 12-factor architecture audit: [`docs/project/12_FACTOR_AUDIT.md`](docs/project/12_FACTOR_AUDIT.md)
-- Maintainability/codebase audit: [`docs/project/codebase_audit.md`](docs/project/codebase_audit.md)
-- Iterative execution log and decisions: [`docs/project/AI_ITERATIVE_EXECUTION_PLAN.md`](docs/project/AI_ITERATIVE_EXECUTION_PLAN.md)
+- **Delivery summary (start here):** [`docs/project/refactor/DELIVERY_SUMMARY.md`](docs/project/refactor/DELIVERY_SUMMARY.md)
+- 12-factor architecture audit: [`docs/project/refactor/12_FACTOR_AUDIT.md`](docs/project/refactor/12_FACTOR_AUDIT.md)
+- Maintainability/codebase audit: [`docs/project/refactor/codebase_audit.md`](docs/project/refactor/codebase_audit.md)
+- Iterative execution log and decisions: [`docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md`](docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md)
 - Future roadmap (2/4/8 weeks): [`docs/project/FUTURE_IMPROVEMENTS.md`](docs/project/FUTURE_IMPROVEMENTS.md)
 - Extraction strategy and ADRs: [`docs/extraction/`](docs/extraction/)
 - Extraction tracking and risk matrix: [`docs/extraction-tracking/`](docs/extraction-tracking/)

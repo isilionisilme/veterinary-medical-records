@@ -71,7 +71,7 @@
       ]
     },
     {
-      "doc_glob": "docs/project/AI_ITERATIVE_EXECUTION_PLAN.md",
+      "doc_glob": "docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md",
       "description": "Project AI_ITERATIVE_EXECUTION_PLAN changes require propagation to its owner module.",
       "owner_any": [
         "docs/agent_router/04_PROJECT/AI_ITERATIVE_EXECUTION_PLAN/*.md",
@@ -99,7 +99,7 @@
       ]
     },
     {
-      "doc_glob": "docs/project/DELIVERY_SUMMARY.md",
+      "doc_glob": "docs/project/refactor/DELIVERY_SUMMARY.md",
       "description": "Project DELIVERY_SUMMARY changes require propagation to its owner module and doc-updates guards.",
       "owner_any": [
         "docs/agent_router/04_PROJECT/DELIVERY_SUMMARY/*.md",
@@ -113,7 +113,7 @@
       ]
     },
     {
-      "doc_glob": "docs/project/12_FACTOR_AUDIT.md",
+      "doc_glob": "docs/project/refactor/12_FACTOR_AUDIT.md",
       "description": "Project 12_FACTOR_AUDIT changes require propagation to its owner module.",
       "owner_any": [
         "docs/agent_router/04_PROJECT/12_FACTOR_AUDIT/*.md",
@@ -127,7 +127,7 @@
       ]
     },
     {
-      "doc_glob": "docs/project/codebase_audit.md",
+      "doc_glob": "docs/project/refactor/codebase_audit.md",
       "description": "Project codebase_audit changes require doc sync/parity guard alignment.",
       "owner_any": [
         "docs/agent_router/04_PROJECT/CODEBASE_AUDIT/*.md",

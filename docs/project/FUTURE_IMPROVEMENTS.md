@@ -6,12 +6,12 @@ This roadmap describes prioritized engineering improvements for the next 2, 4, a
 
 | # | Improvement | Source | Effort | Risk |
 | --- | --- | --- | --- | --- |
-| 1 | Enable SQLite WAL mode and busy timeout | [ADR-ARCH-0002](../adr/ADR-ARCH-0002-sqlite-database.md), [codebase_audit.md](codebase_audit.md) | S | Low |
-| 2 | Add CI coverage threshold gates | [codebase_audit.md](codebase_audit.md), [F4-A/F4-B in AI plan](AI_ITERATIVE_EXECUTION_PLAN.md) | S | Low |
-| 3 | Centralize remaining debug env reads in settings | [12_FACTOR_AUDIT.md](12_FACTOR_AUDIT.md), [ADR-ARCH-0001](../adr/ADR-ARCH-0001-modular-monolith.md) | S | Low |
-| 4 | Increase frontend coverage for `lib/utils.ts` error paths | [F4-A in AI plan](AI_ITERATIVE_EXECUTION_PLAN.md) | S | Low |
-| 5 | Increase frontend coverage for AddFieldDialog + source panel hook | [F4-A in AI plan](AI_ITERATIVE_EXECUTION_PLAN.md) | S | Low |
-| 6 | Add known limitations section in technical design | [F5-A in AI plan](AI_ITERATIVE_EXECUTION_PLAN.md), [TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) | S | Low |
+| 1 | Enable SQLite WAL mode and busy timeout | [ADR-ARCH-0002](../adr/ADR-ARCH-0002-sqlite-database.md), [codebase_audit.md](refactor/codebase_audit.md) | S | Low |
+| 2 | Add CI coverage threshold gates | [codebase_audit.md](refactor/codebase_audit.md), [F4-A/F4-B in AI plan](refactor/AI_ITERATIVE_EXECUTION_PLAN.md) | S | Low |
+| 3 | Centralize remaining debug env reads in settings | [12_FACTOR_AUDIT.md](refactor/12_FACTOR_AUDIT.md), [ADR-ARCH-0001](../adr/ADR-ARCH-0001-modular-monolith.md) | S | Low |
+| 4 | Increase frontend coverage for `lib/utils.ts` error paths | [F4-A in AI plan](refactor/AI_ITERATIVE_EXECUTION_PLAN.md) | S | Low |
+| 5 | Increase frontend coverage for AddFieldDialog + source panel hook | [F4-A in AI plan](refactor/AI_ITERATIVE_EXECUTION_PLAN.md) | S | Low |
+| 6 | Add known limitations section in technical design | [F5-A in AI plan](refactor/AI_ITERATIVE_EXECUTION_PLAN.md), [TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) | S | Low |
 
 1. **SQLite WAL mode + busy timeout PRAGMA.** Update SQLite connection setup to apply `PRAGMA journal_mode=WAL` and `PRAGMA busy_timeout=5000`. This addresses concurrent read/write resilience noted in [ADR-ARCH-0002](../adr/ADR-ARCH-0002-sqlite-database.md) and the maintainability audit. **Acceptance criteria:** startup initializes PRAGMAs and concurrent document operations show fewer lock contention failures.
 2. **CI coverage thresholds.** Enforce minimum coverage in backend and frontend quality jobs so regressions fail fast. This closes the audit gap where reporting exists without enforcement. **Acceptance criteria:** CI fails below threshold and passes when suite coverage remains above the configured gates.
@@ -24,12 +24,12 @@ This roadmap describes prioritized engineering improvements for the next 2, 4, a
 
 | # | Improvement | Source | Effort | Risk |
 | --- | --- | --- | --- | --- |
-| 7 | Decompose backend API routes module (`backend/app/api/routes.py`, ~912 lines) | [codebase_audit.md](codebase_audit.md), [ADR-ARCH-0001](../adr/ADR-ARCH-0001-modular-monolith.md) | M | Medium |
-| 8 | Modularize extraction observability module (`backend/app/application/extraction_observability.py`, ~846 lines) | [codebase_audit.md](codebase_audit.md), [TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) | M | Medium |
-| 9 | Add streaming and bounded upload guard | [codebase_audit.md](codebase_audit.md), [BACKEND_IMPLEMENTATION.md](BACKEND_IMPLEMENTATION.md) | M | Medium |
-| 10 | Expand backend failure-path tests | [F4-B in AI plan](AI_ITERATIVE_EXECUTION_PLAN.md), [codebase_audit.md](codebase_audit.md) | M | Low |
-| 11 | Add SourcePanel and UploadDropzone full test suites | [F4-A in AI plan](AI_ITERATIVE_EXECUTION_PLAN.md) | M | Low |
-| 12 | Centralize PdfViewer mock helpers | [F4-A in AI plan](AI_ITERATIVE_EXECUTION_PLAN.md), [FRONTEND_IMPLEMENTATION.md](FRONTEND_IMPLEMENTATION.md) | S | Low |
+| 7 | Decompose backend API routes module (`backend/app/api/routes.py`, ~912 lines) | [codebase_audit.md](refactor/codebase_audit.md), [ADR-ARCH-0001](../adr/ADR-ARCH-0001-modular-monolith.md) | M | Medium |
+| 8 | Modularize extraction observability module (`backend/app/application/extraction_observability.py`, ~846 lines) | [codebase_audit.md](refactor/codebase_audit.md), [TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) | M | Medium |
+| 9 | Add streaming and bounded upload guard | [codebase_audit.md](refactor/codebase_audit.md), [BACKEND_IMPLEMENTATION.md](BACKEND_IMPLEMENTATION.md) | M | Medium |
+| 10 | Expand backend failure-path tests | [F4-B in AI plan](refactor/AI_ITERATIVE_EXECUTION_PLAN.md), [codebase_audit.md](refactor/codebase_audit.md) | M | Low |
+| 11 | Add SourcePanel and UploadDropzone full test suites | [F4-A in AI plan](refactor/AI_ITERATIVE_EXECUTION_PLAN.md) | M | Low |
+| 12 | Centralize PdfViewer mock helpers | [F4-A in AI plan](refactor/AI_ITERATIVE_EXECUTION_PLAN.md), [FRONTEND_IMPLEMENTATION.md](FRONTEND_IMPLEMENTATION.md) | S | Low |
 
 7. **Routes decomposition.** Split API endpoints by bounded context and keep a small router aggregator in `api/routes.py`. This reduces blast radius in one of the largest backend modules and aligns with modular-monolith boundaries from [ADR-ARCH-0001](../adr/ADR-ARCH-0001-modular-monolith.md). **Acceptance criteria:** no route contract changes and each endpoint group module stays under the LOC guideline.
 8. **Extraction observability modularization.** Break observability logic into storage, transform, and aggregate units with explicit interfaces. This improves testability and makes telemetry changes safer to ship. **Acceptance criteria:** all existing observability outputs remain equivalent and unit tests cover each sub-module independently.
@@ -42,9 +42,9 @@ This roadmap describes prioritized engineering improvements for the next 2, 4, a
 
 | # | Improvement | Source | Effort | Risk |
 | --- | --- | --- | --- | --- |
-| 13 | Split SQLite repository by aggregate (`backend/app/infra/sqlite_document_repository.py`, ~684 lines) | [ADR-ARCH-0003](../adr/ADR-ARCH-0003-raw-sql-repository-pattern.md), [codebase_audit.md](codebase_audit.md) | L | Medium |
-| 14 | Optional Compose worker profile for background processing | [ADR-ARCH-0004](../adr/ADR-ARCH-0004-in-process-async-processing.md), [12_FACTOR_AUDIT.md](12_FACTOR_AUDIT.md) | L | High |
-| 15 | Add minimal auth/token boundary | [codebase_audit.md](codebase_audit.md), [PRODUCT_DESIGN.md](PRODUCT_DESIGN.md) | L | Medium |
+| 13 | Split SQLite repository by aggregate (`backend/app/infra/sqlite_document_repository.py`, ~684 lines) | [ADR-ARCH-0003](../adr/ADR-ARCH-0003-raw-sql-repository-pattern.md), [codebase_audit.md](refactor/codebase_audit.md) | L | Medium |
+| 14 | Optional Compose worker profile for background processing | [ADR-ARCH-0004](../adr/ADR-ARCH-0004-in-process-async-processing.md), [12_FACTOR_AUDIT.md](refactor/12_FACTOR_AUDIT.md) | L | High |
+| 15 | Add minimal auth/token boundary | [codebase_audit.md](refactor/codebase_audit.md), [PRODUCT_DESIGN.md](PRODUCT_DESIGN.md) | L | Medium |
 | 16 | Implement persistent event tracing and metrics | [TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md), [extraction/OBSERVABILITY.md](../extraction/OBSERVABILITY.md) | L | Medium |
 | 17 | Add PostgreSQL adapter behind DocumentRepository protocol | [ADR-ARCH-0002](../adr/ADR-ARCH-0002-sqlite-database.md), [ADR-ARCH-0003](../adr/ADR-ARCH-0003-raw-sql-repository-pattern.md) | L | High |
 | 18 | Introduce migration tooling for schema evolution | [ADR-ARCH-0003](../adr/ADR-ARCH-0003-raw-sql-repository-pattern.md), [TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) | M | Medium |
