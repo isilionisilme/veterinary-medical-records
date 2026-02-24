@@ -99,6 +99,20 @@
       ]
     },
     {
+      "doc_glob": "docs/project/DELIVERY_SUMMARY.md",
+      "description": "Project DELIVERY_SUMMARY changes require propagation to its owner module and doc-updates guards.",
+      "owner_any": [
+        "docs/agent_router/04_PROJECT/DELIVERY_SUMMARY/*.md",
+        "docs/agent_router/04_PROJECT/DELIVERY_SUMMARY/**/*.md"
+      ],
+      "required_any": [
+        "docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json",
+        "docs/agent_router/01_WORKFLOW/DOC_UPDATES/router_parity_map.json",
+        "scripts/check_doc_test_sync.py",
+        "scripts/check_doc_router_parity.py"
+      ]
+    },
+    {
       "doc_glob": "docs/project/12_FACTOR_AUDIT.md",
       "description": "Project 12_FACTOR_AUDIT changes require propagation to its owner module.",
       "owner_any": [
