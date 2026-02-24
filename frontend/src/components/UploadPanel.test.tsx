@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createDataTransfer,
   installDefaultAppFetchMock,
@@ -35,6 +35,10 @@ describe("App upload and list flow", () => {
   beforeEach(() => {
     resetAppTestEnvironment();
     installDefaultAppFetchMock();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("uploads a document, shows toast and auto-opens the uploaded document", async () => {
@@ -144,23 +148,27 @@ describe("App upload and list flow", () => {
   });
 
   it("auto-dismisses upload toast", async () => {
+    vi.useFakeTimers();
     renderApp();
 
     const input = screen.getByLabelText(/Archivo PDF/i);
     const file = new File(["pdf"], "nuevo.pdf", { type: "application/pdf" });
     fireEvent.change(input, { target: { files: [file] } });
 
-    expect(await screen.findByText(/Documento subido correctamente/i)).toBeInTheDocument();
+    await act(async () => {
+      await vi.runOnlyPendingTimersAsync();
+    });
+    expect(screen.getByText(/Documento subido correctamente/i)).toBeInTheDocument();
 
     await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 3600));
+      vi.advanceTimersByTime(3600);
+      await vi.runOnlyPendingTimersAsync();
     });
-    await waitFor(() => {
-      expect(screen.queryByText(/Documento subido correctamente/i)).toBeNull();
-    });
-  }, 10000);
+    expect(screen.queryByText(/Documento subido correctamente/i)).toBeNull();
+  });
 
   it("shows a clear error when selected file exceeds 20 MB", async () => {
+    vi.useFakeTimers();
     renderApp();
 
     const input = screen.getByLabelText(/Archivo PDF/i);
@@ -169,18 +177,15 @@ describe("App upload and list flow", () => {
     });
     fireEvent.change(input, { target: { files: [oversizedFile] } });
 
-    expect(
-      await screen.findByText(/El archivo supera el tamaño máximo \(20 MB\)\./i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/El archivo supera el tamaño máximo \(20 MB\)\./i)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Reintentar/i })).toBeNull();
 
     await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 5200));
+      vi.advanceTimersByTime(5200);
+      await vi.runOnlyPendingTimersAsync();
     });
-    await waitFor(() => {
-      expect(screen.queryByText(/El archivo supera el tamaño máximo \(20 MB\)\./i)).toBeNull();
-    });
-  }, 12000);
+    expect(screen.queryByText(/El archivo supera el tamaño máximo \(20 MB\)\./i)).toBeNull();
+  });
 
   it("uploads from collapsed sidebar dropzone without auto-expanding", async () => {
     await withDesktopHoverMatchMedia(async () => {
@@ -296,5 +301,5 @@ describe("App upload and list flow", () => {
 
     const calls = (globalThis.fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls;
     expect(calls.some(([url]) => String(url).includes("/documents/upload"))).toBe(false);
-  }, 12000);
+  });
 });
