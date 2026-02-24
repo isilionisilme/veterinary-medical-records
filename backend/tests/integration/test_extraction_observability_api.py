@@ -13,6 +13,16 @@ from backend.app.application import extraction_observability
 from backend.app.main import create_app
 
 
+def _wait_until(predicate, *, timeout_seconds: float = 4.0, interval_seconds: float = 0.05) -> bool:
+    deadline = time.monotonic() + timeout_seconds
+    while True:
+        if predicate():
+            return True
+        if time.monotonic() >= deadline:
+            return False
+        time.sleep(interval_seconds)
+
+
 @pytest.fixture
 def test_client(monkeypatch, tmp_path: Path):
     monkeypatch.setenv("VET_RECORDS_DB_PATH", str(tmp_path / "documents.db"))
@@ -390,12 +400,16 @@ def test_debug_extraction_summary_endpoint_reads_auto_persisted_snapshot_after_p
         document_id = upload_response.json()["document_id"]
 
         run_id: str | None = None
-        for _ in range(80):
+
+        def _review_ready() -> bool:
+            nonlocal run_id
             review_response = processing_client.get(f"/documents/{document_id}/review")
             if review_response.status_code == 200:
                 run_id = review_response.json()["latest_completed_run"]["run_id"]
-                break
-            time.sleep(0.05)
+                return True
+            return False
+
+        assert _wait_until(_review_ready)
 
         assert run_id is not None
 
