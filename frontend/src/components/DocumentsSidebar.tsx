@@ -168,7 +168,7 @@ export function DocumentsSidebar({
                 <div className="flex items-center gap-[var(--canvas-gap)]">
                   <h3 className="text-base font-semibold text-ink">Cargar documento</h3>
                   <IconButton
-                    label="Informacion de formatos y tamano"
+                    label="Información de formatos y tamaño"
                     tooltip="Formatos permitidos: PDF. Tamaño máximo: 20 MB."
                     className="h-7 w-7 border-0"
                   >
@@ -282,7 +282,7 @@ export function DocumentsSidebar({
                   {documents.length === 0 ? (
                     isDocsSidebarExpanded ? (
                       <p className="rounded-control border border-borderSubtle bg-surface px-3 py-2 text-sm text-textSecondary">
-                        Aun no hay documentos cargados.
+                        Aún no hay documentos cargados.
                       </p>
                     ) : null
                   ) : (
@@ -379,7 +379,7 @@ export function DocumentsSidebar({
                             {isDocsSidebarExpanded &&
                               isProcessingTooLong(item.created_at, item.status) && (
                                 <p className="mt-2 text-xs text-textSecondary">
-                                  Tardando mas de lo esperado
+                                  Tardando más de lo esperado
                                 </p>
                               )}
                             {isDocsSidebarExpanded && item.failure_type && (

@@ -43,12 +43,12 @@ describe("App upload and list flow", () => {
     expect(
       screen.getByText(/Selecciona un documento en la barra lateral o carga uno nuevo\./i),
     ).toBeInTheDocument();
-    expect(screen.getAllByText(/Arrastra un PDF aqui/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Arrastra un PDF aquí/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/o haz clic para cargar/i).length).toBeGreaterThan(0);
     expect(screen.queryByText(/Formatos permitidos: PDF\./i)).toBeNull();
     expect(screen.queryByText(/\(\.pdf \/ application\/pdf\)/i)).toBeNull();
     expect(screen.queryByText(/Tamaño máximo: 20 MB\./i)).toBeNull();
-    expect(screen.getByLabelText(/Informacion de formatos y tamano/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Información de formatos y tamaño/i)).toBeInTheDocument();
     expect(screen.queryByText(/Selecciona un PDF/i)).toBeNull();
   });
 
@@ -68,7 +68,7 @@ describe("App upload and list flow", () => {
 
     renderApp();
 
-    expect(await screen.findByText(/Aun no hay documentos cargados\./i)).toBeInTheDocument();
+    expect(await screen.findByText(/Aún no hay documentos cargados\./i)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Cargar documento/i })).toBeInTheDocument();
     expect(
       screen.getByText(/Selecciona un documento en la barra lateral o carga uno nuevo\./i),

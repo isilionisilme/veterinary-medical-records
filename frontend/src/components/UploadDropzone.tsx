@@ -25,7 +25,7 @@ export function UploadDropzone({
   onDrop,
   showDropOverlay = false,
   className = "",
-  title = "Arrastra un PDF aqui",
+  title = "Arrastra un PDF aquí",
   subtitle = "o haz clic para cargar",
   compact = false,
   ariaLabel,

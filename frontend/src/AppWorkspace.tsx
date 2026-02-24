@@ -221,7 +221,7 @@ const SECTION_LABELS: Record<string, string> = {
   "Datos de la clínica": "Centro Veterinario",
   "Visita / episodio": "Visitas",
   Clinico: "Visitas",
-  "Metadatos / revision": REPORT_INFO_SECTION_TITLE,
+  "Metadatos / revisión": REPORT_INFO_SECTION_TITLE,
 };
 
 const FIELD_LABELS: Record<string, string> = {
@@ -767,7 +767,7 @@ async function fetchDocumentReview(documentId: string): Promise<DocumentReviewRe
   }
 
   if (!response.ok) {
-    let errorMessage = "No se pudo cargar la revision del documento.";
+    let errorMessage = "No se pudo cargar la revisión del documento.";
     let errorCode: string | undefined;
     let reason: string | undefined;
     try {
@@ -1003,7 +1003,7 @@ async function fetchRawText(runId: string): Promise<RawTextArtifactResponse> {
   }
 
   if (!response.ok) {
-    let errorMessage = "No se pudo cargar el texto extraido.";
+    let errorMessage = "No se pudo cargar el texto extraído.";
     let errorCode: string | undefined;
     let reason: string | undefined;
     try {
@@ -1057,9 +1057,9 @@ async function uploadDocument(file: File): Promise<DocumentUploadResponse> {
       if (payload?.error_code === "UNSUPPORTED_MEDIA_TYPE") {
         errorMessage = "Solo se admiten archivos PDF.";
       } else if (payload?.error_code === "FILE_TOO_LARGE") {
-        errorMessage = "El PDF supera el tamano maximo permitido de 20 MB.";
+        errorMessage = "El PDF supera el tamaño máximo permitido de 20 MB.";
       } else if (payload?.error_code === "INVALID_REQUEST") {
-        errorMessage = "El archivo no es valido. Selecciona un PDF e intentalo otra vez.";
+        errorMessage = "El archivo no es válido. Selecciona un PDF e inténtalo otra vez.";
       } else if (payload?.message) {
         errorMessage = payload.message as string;
       }
@@ -2610,7 +2610,7 @@ export function App() {
       }
       return rawTextQuery.error.userMessage;
     }
-    return getUserErrorMessage(rawTextQuery.error, "No se pudo cargar el texto extraido.");
+    return getUserErrorMessage(rawTextQuery.error, "No se pudo cargar el texto extraído.");
   })();
 
   const interpretationData = documentReview.data?.active_interpretation.data;
@@ -3466,16 +3466,16 @@ export function App() {
 
   const reviewPanelMessage = (() => {
     if (reviewPanelState === "idle") {
-      return "Selecciona un documento para empezar la revision.";
+      return "Selecciona un documento para empezar la revisión.";
     }
     if (reviewPanelState === "loading") {
-      return "Cargando interpretacion estructurada...";
+      return "Cargando interpretación estructurada...";
     }
     if (reviewPanelState === "no_completed_run") {
-      return "Interpretacion no disponible";
+      return "Interpretación no disponible";
     }
     if (reviewPanelState === "error") {
-      return "Interpretacion no disponible";
+      return "Interpretación no disponible";
     }
     return null;
   })();
@@ -3818,7 +3818,7 @@ export function App() {
 
   const handleCopyRawText = async () => {
     if (!rawTextContent) {
-      setCopyFeedbackWithTimeout("No hay texto extraido para copiar.");
+      setCopyFeedbackWithTimeout("No hay texto extraído para copiar.");
       return;
     }
     setIsCopyingRawText(true);
@@ -3849,7 +3849,7 @@ export function App() {
         <FileText size={16} aria-hidden="true" />
       </IconButton>
       <IconButton
-        label="Texto extraido"
+        label="Texto extraído"
         tooltip="Texto extraído"
         pressed={activeViewerTab === "raw_text"}
         className={
@@ -3863,7 +3863,7 @@ export function App() {
         <AlignLeft size={16} aria-hidden="true" />
       </IconButton>
       <IconButton
-        label="Detalles tecnicos"
+        label="Detalles técnicos"
         tooltip="Detalles técnicos"
         pressed={activeViewerTab === "technical"}
         className={
@@ -5812,7 +5812,7 @@ export function App() {
                         <div className="flex flex-col gap-2 text-xs text-ink">
                           <span className="text-textSecondary">
                             ¿El texto no es correcto? Puedes reprocesarlo para regenerar la
-                            extraccion.
+                            extracción.
                           </span>
                           <div className="flex flex-wrap items-center gap-2">
                             <Button
@@ -5892,14 +5892,14 @@ export function App() {
                       )}
                       {isRawTextLoading && (
                         <p className="mt-2 text-xs text-textSecondary">
-                          Cargando texto extraido...
+                          Cargando texto extraído...
                         </p>
                       )}
                       {rawTextErrorMessage && (
                         <p className="mt-2 text-xs text-statusError">{rawTextErrorMessage}</p>
                       )}
                       <div className="mt-3 flex-1 overflow-y-auto rounded-card border border-borderSubtle bg-surface p-3 font-mono text-xs text-textSecondary">
-                        {rawTextContent ? <pre>{rawTextContent}</pre> : "Sin texto extraido."}
+                        {rawTextContent ? <pre>{rawTextContent}</pre> : "Sin texto extraído."}
                       </div>
                     </div>
                   )}
@@ -5931,7 +5931,7 @@ export function App() {
                       </div>
                       {!activeId && (
                         <p className="mt-2 text-xs text-muted">
-                          Selecciona un documento para ver los detalles tecnicos.
+                          Selecciona un documento para ver los detalles técnicos.
                         </p>
                       )}
                       {activeId && processingHistory.isLoading && (
@@ -6081,7 +6081,7 @@ export function App() {
             <DialogHeader>
               <DialogTitle>Reprocesar documento</DialogTitle>
               <DialogDescription className="text-xs">
-                Esto volvera a ejecutar extraccion e interpretacion y puede cambiar los resultados.
+                Esto volverá a ejecutar extracción e interpretación y puede cambiar los resultados.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>

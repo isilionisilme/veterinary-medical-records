@@ -99,7 +99,7 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    fireEvent.click(screen.getByRole("button", { name: /Texto extraido/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Texto extraído/i }));
     fireEvent.click(screen.getByRole("button", { name: /^Reprocesar$/i }));
     const reprocessDialog = await screen.findByRole("dialog", { name: /Reprocesar documento/i });
     fireEvent.click(within(reprocessDialog).getByRole("button", { name: /^Reprocesar$/i }));
@@ -186,14 +186,14 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /empty\.pdf/i }));
-    fireEvent.click(screen.getByRole("button", { name: /Texto extraido/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Texto extraído/i }));
 
     expect(screen.getByPlaceholderText(/Buscar en el texto/i)).toBeDisabled();
     expect(screen.getByRole("button", { name: /^Buscar$/i })).toBeDisabled();
-    expect(screen.getByText(/Sin texto extraido\./i)).toBeInTheDocument();
+    expect(screen.getByText(/Sin texto extraído\./i)).toBeInTheDocument();
     expect(screen.queryByText(/No hay texto disponible para buscar/i)).not.toBeInTheDocument();
     expect(
-      screen.queryByText(/El texto extraido no esta disponible para este run\./i),
+      screen.queryByText(/El texto extraído no está disponible para este run\./i),
     ).not.toBeInTheDocument();
   });
 
@@ -246,7 +246,7 @@ describe("App upload and list flow", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
 
-    expect(await screen.findByText("Cargando interpretacion estructurada...")).toBeInTheDocument();
+    expect(await screen.findByText("Cargando interpretación estructurada...")).toBeInTheDocument();
     expect(screen.getByTestId("right-panel-scroll")).toBeInTheDocument();
     expect(screen.getByTestId("review-core-skeleton")).toBeInTheDocument();
     expect(within(screen.getByTestId("right-panel-scroll")).queryByText("—")).toBeNull();
@@ -396,7 +396,7 @@ describe("App upload and list flow", () => {
     await waitFor(() => {
       expect(
         screen.queryByRole("button", { name: /Reintentando\.\.\./i }) ??
-          screen.queryByText(/Cargando interpretacion estructurada\.\.\./i),
+          screen.queryByText(/Cargando interpretación estructurada\.\.\./i),
       ).toBeTruthy();
     });
     expect(screen.queryByRole("button", { name: /Ver detalles técnicos/i })).toBeNull();

@@ -84,7 +84,7 @@ describe("UploadDropzone", () => {
       <UploadDropzone
         isDragOver={false}
         compact={false}
-        title="Arrastra un PDF aqui"
+        title="Arrastra un PDF aquí"
         subtitle="o haz clic para cargar"
         onActivate={noop}
         onDragEnter={noop}
@@ -96,7 +96,7 @@ describe("UploadDropzone", () => {
 
     expect(screen.getByRole("button")).toHaveAttribute(
       "aria-label",
-      "Arrastra un PDF aqui o haz clic para cargar",
+      "Arrastra un PDF aquí o haz clic para cargar",
     );
   });
 });

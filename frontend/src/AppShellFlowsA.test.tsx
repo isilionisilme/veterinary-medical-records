@@ -301,7 +301,7 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    fireEvent.click(screen.getByRole("button", { name: /Texto extraido/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Texto extraído/i }));
 
     await screen.findByText(/Linea uno/i);
     fireEvent.click(screen.getByRole("button", { name: /Copiar todo/i }));
@@ -427,10 +427,10 @@ describe("App upload and list flow", () => {
     renderApp();
 
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
-    fireEvent.click(screen.getByRole("button", { name: /Texto extraido/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Texto extraído/i }));
     expect(
       screen.getByText(
-        /¿El texto no es correcto\? Puedes reprocesarlo para regenerar la extraccion\./i,
+        /¿El texto no es correcto\? Puedes reprocesarlo para regenerar la extracción\./i,
       ),
     ).toBeInTheDocument();
 

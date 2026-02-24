@@ -543,7 +543,7 @@ describe("App upload and list flow", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Marcar revisado/i }));
     await screen.findByRole("button", { name: /^Reabrir$/i });
-    fireEvent.click(screen.getByLabelText(/Cerrar notificacion de accion/i));
+    fireEvent.click(screen.getByLabelText(/Cerrar notificación de acción/i));
 
     fireEvent.mouseUp(getPetNameFieldButton(), { button: 0 });
 

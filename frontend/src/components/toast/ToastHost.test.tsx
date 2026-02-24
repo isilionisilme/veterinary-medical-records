@@ -117,10 +117,10 @@ describe("ToastHost", () => {
     fireEvent.click(screen.getByRole("button", { name: "Cerrar aviso de conexión" }));
     expect(handlers.onCloseConnectivityToast).toHaveBeenCalledTimes(1);
 
-    fireEvent.click(screen.getByRole("button", { name: "Cerrar notificacion" }));
+    fireEvent.click(screen.getByRole("button", { name: "Cerrar notificación" }));
     expect(handlers.onCloseUploadFeedback).toHaveBeenCalledTimes(1);
 
-    fireEvent.click(screen.getByRole("button", { name: "Cerrar notificacion de accion" }));
+    fireEvent.click(screen.getByRole("button", { name: "Cerrar notificación de acción" }));
     expect(handlers.onCloseActionFeedback).toHaveBeenCalledTimes(1);
 
     fireEvent.click(screen.getByRole("button", { name: "Ver documento" }));

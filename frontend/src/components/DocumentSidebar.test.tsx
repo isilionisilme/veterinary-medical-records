@@ -41,7 +41,7 @@ describe("App upload and list flow", () => {
     expect(await screen.findByText("Procesando")).toBeInTheDocument();
     expect(screen.getByText("Listo")).toBeInTheDocument();
     expect(screen.getByText("Error")).toBeInTheDocument();
-    expect(screen.getByText("Tardando mas de lo esperado")).toBeInTheDocument();
+    expect(screen.getByText("Tardando más de lo esperado")).toBeInTheDocument();
   });
 
   it("updates PROCESSING to Listo after refresh", async () => {
