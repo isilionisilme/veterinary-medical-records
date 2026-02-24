@@ -22,8 +22,9 @@ Canonical documentation is organized into:
 1. [`README.md`](../README.md) — Docker-first quickstart, smoke path, and repository overview.
 2. [`docs/project/PRODUCT_DESIGN.md`](project/PRODUCT_DESIGN.md) — problem framing and intended outcomes.
 3. [`docs/project/TECHNICAL_DESIGN.md`](project/TECHNICAL_DESIGN.md) — architecture, contracts, and invariants.
-4. [`docs/project/UX_DESIGN.md`](project/UX_DESIGN.md) — review workflow and UX interaction guarantees.
-5. [`docs/project/BACKEND_IMPLEMENTATION.md`](project/BACKEND_IMPLEMENTATION.md) and [`docs/project/FRONTEND_IMPLEMENTATION.md`](project/FRONTEND_IMPLEMENTATION.md) — implementation details.
+4. [`docs/adr/README.md`](adr/README.md) — architecture decision records and trade-off rationale.
+5. [`docs/project/UX_DESIGN.md`](project/UX_DESIGN.md) — review workflow and UX interaction guarantees.
+6. [`docs/project/BACKEND_IMPLEMENTATION.md`](project/BACKEND_IMPLEMENTATION.md) and [`docs/project/FRONTEND_IMPLEMENTATION.md`](project/FRONTEND_IMPLEMENTATION.md) — implementation details.
 
 ### Documentation shared across projects
 - [`docs/shared/ENGINEERING_PLAYBOOK.md`](shared/ENGINEERING_PLAYBOOK.md) — engineering standards and working agreements.
@@ -46,6 +47,7 @@ Canonical documentation is organized into:
 - [`docs/project/12_FACTOR_AUDIT.md`](project/12_FACTOR_AUDIT.md) — architecture and deployment-factor audit findings.
 - [`docs/project/codebase_audit.md`](project/codebase_audit.md) — maintainability and structural quality audit findings.
 - [`docs/project/AI_ITERATIVE_EXECUTION_PLAN.md`](project/AI_ITERATIVE_EXECUTION_PLAN.md) — phase-by-phase execution log and decisions.
+- [`docs/adr/README.md`](adr/README.md) — architecture and extraction ADR index.
 - [`docs/extraction/`](extraction/) — extraction ADRs and strategy notes.
 - [`docs/extraction-tracking/`](extraction-tracking/) — field-level tracking, run evidence, and risk matrix.
 

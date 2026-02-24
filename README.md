@@ -60,6 +60,13 @@ Key design references:
 - [`docs/project/PRODUCT_DESIGN.md`](docs/project/PRODUCT_DESIGN.md)
 - [`docs/project/UX_DESIGN.md`](docs/project/UX_DESIGN.md)
 
+Key technical decisions (ADRs):
+- [`docs/adr/ADR-ARCH-0001-modular-monolith.md`](docs/adr/ADR-ARCH-0001-modular-monolith.md) — modular monolith over microservices.
+- [`docs/adr/ADR-ARCH-0002-sqlite-database.md`](docs/adr/ADR-ARCH-0002-sqlite-database.md) — SQLite trade-offs and PostgreSQL migration path.
+- [`docs/adr/ADR-ARCH-0003-raw-sql-repository-pattern.md`](docs/adr/ADR-ARCH-0003-raw-sql-repository-pattern.md) — raw SQL + repository pattern, no ORM.
+- [`docs/adr/ADR-ARCH-0004-in-process-async-processing.md`](docs/adr/ADR-ARCH-0004-in-process-async-processing.md) — in-process async scheduler over external queue.
+- ADR index: [`docs/adr/README.md`](docs/adr/README.md)
+
 ---
 
 ## Documentation overview
