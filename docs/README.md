@@ -18,6 +18,13 @@ Canonical documentation is organized into:
 - **Directionality rule:** canonical docs are human-facing sources and should remain self-contained.
 
 ## Reading order (mandatory)
+### Evaluator first-pass (recommended, 10-15 min)
+1. [`README.md`](../README.md) — Docker-first quickstart, smoke path, and repository overview.
+2. [`docs/project/PRODUCT_DESIGN.md`](project/PRODUCT_DESIGN.md) — problem framing and intended outcomes.
+3. [`docs/project/TECHNICAL_DESIGN.md`](project/TECHNICAL_DESIGN.md) — architecture, contracts, and invariants.
+4. [`docs/project/UX_DESIGN.md`](project/UX_DESIGN.md) — review workflow and UX interaction guarantees.
+5. [`docs/project/BACKEND_IMPLEMENTATION.md`](project/BACKEND_IMPLEMENTATION.md) and [`docs/project/FRONTEND_IMPLEMENTATION.md`](project/FRONTEND_IMPLEMENTATION.md) — implementation details.
+
 ### Documentation shared across projects
 - [`docs/shared/ENGINEERING_PLAYBOOK.md`](shared/ENGINEERING_PLAYBOOK.md) — engineering standards and working agreements.
 - [`docs/shared/UX_GUIDELINES.md`](shared/UX_GUIDELINES.md) — global UX principles.
@@ -34,6 +41,13 @@ Canonical documentation is organized into:
 - [`docs/project/BACKEND_IMPLEMENTATION.md`](project/BACKEND_IMPLEMENTATION.md) — backend implementation notes.
 - [`docs/project/FRONTEND_IMPLEMENTATION.md`](project/FRONTEND_IMPLEMENTATION.md) — frontend implementation notes.
 - [`docs/project/IMPLEMENTATION_PLAN.md`](project/IMPLEMENTATION_PLAN.md) — scope, story ordering, and acceptance criteria.
+
+### Audit trail and incremental evidence
+- [`docs/project/12_FACTOR_AUDIT.md`](project/12_FACTOR_AUDIT.md) — architecture and deployment-factor audit findings.
+- [`docs/project/codebase_audit.md`](project/codebase_audit.md) — maintainability and structural quality audit findings.
+- [`docs/project/AI_ITERATIVE_EXECUTION_PLAN.md`](project/AI_ITERATIVE_EXECUTION_PLAN.md) — phase-by-phase execution log and decisions.
+- [`docs/extraction/`](extraction/) — extraction ADRs and strategy notes.
+- [`docs/extraction-tracking/`](extraction-tracking/) — field-level tracking, run evidence, and risk matrix.
 
 ## Authority & precedence
 
@@ -57,3 +71,7 @@ Current extraction and processing stories rely on text extraction; OCR for scann
 ## Running (Evaluator Path)
 
 Follow the run instructions in the repository root [`README.md`](../README.md).
+
+## Contribution and quality gates
+
+For daily development and pull-request readiness checks, use the local quality-gate commands listed in [`README.md`](../README.md#local-quality-gates-before-pushing).

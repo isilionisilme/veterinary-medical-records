@@ -48,6 +48,18 @@ This project explores an approach that assists veterinarians during document rev
 - `frontend/` — React app for document upload/list/review flows
 - [`docs/`](docs/) — authoritative documentation (start at [`docs/README.md`](docs/README.md))
 
+## Architecture at a glance
+
+- Architectural style: modular monolith with clear application/domain/infrastructure boundaries.
+- Backend pattern: ports-and-adapters with explicit use cases and append-only review/processing artifacts.
+- Frontend pattern: feature-oriented React modules centered on upload, review workspace, and structured data editing.
+- Runtime model: Docker-first local environment with deterministic evaluation mode and optional dev overlay.
+
+Key design references:
+- [`docs/project/TECHNICAL_DESIGN.md`](docs/project/TECHNICAL_DESIGN.md)
+- [`docs/project/PRODUCT_DESIGN.md`](docs/project/PRODUCT_DESIGN.md)
+- [`docs/project/UX_DESIGN.md`](docs/project/UX_DESIGN.md)
+
 ---
 
 ## Documentation overview
@@ -106,6 +118,14 @@ Shared UX principles referenced by project UX design.
 
 - Operational router (AI assistants): `docs/agent_router/00_AUTHORITY.md`
 - Token optimization benchmarks: `metrics/llm_benchmarks/`
+
+### Delivery evidence and audit trail
+
+- 12-factor architecture audit: [`docs/project/12_FACTOR_AUDIT.md`](docs/project/12_FACTOR_AUDIT.md)
+- Maintainability/codebase audit: [`docs/project/codebase_audit.md`](docs/project/codebase_audit.md)
+- Iterative execution log and decisions: [`docs/project/AI_ITERATIVE_EXECUTION_PLAN.md`](docs/project/AI_ITERATIVE_EXECUTION_PLAN.md)
+- Extraction strategy and ADRs: [`docs/extraction/`](docs/extraction/)
+- Extraction tracking and risk matrix: [`docs/extraction-tracking/`](docs/extraction-tracking/)
 
 ---
 
@@ -167,6 +187,14 @@ Notes:
   - `docker compose --profile test run --rm backend-tests`
 - Frontend tests:
   - `docker compose --profile test run --rm frontend-tests`
+
+### Local quality gates (before pushing)
+
+- Backend tests: `python -m pytest --tb=short -q`
+- Frontend tests: `cd frontend && npm test`
+- Frontend lint/types: `cd frontend && npm run lint`
+- Frontend format check: `cd frontend && npm run format:check`
+- Optional pre-commit hook run: `pre-commit run --all-files`
 
 ### Administrative commands
 
@@ -243,3 +271,10 @@ This exercise is intentionally structured to show:
 - and how a system can scale safely in a sensitive, regulated context.
 
 The focus is on **clarity, judgment, and maintainability**, rather than feature completeness.
+
+## How to contribute
+
+1. Create a branch from `main` (or continue work in the designated delivery branch).
+2. Keep changes scoped and update docs when behavior/contracts change.
+3. Run local quality gates listed above before opening/updating PR.
+4. Prefer Docker Compose commands in examples to preserve evaluator parity.
