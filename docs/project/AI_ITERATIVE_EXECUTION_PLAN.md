@@ -154,62 +154,57 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 **Decisión del usuario:** Items 1-4 aprobados. Item 5 (quality guards) absorbido en F3.
 
 #### App.tsx (5,998 → ~8 módulos, shell ≤400 LOC)
-_Completado: F2-F_
+| Módulo destino | Responsabilidad |
 |---|---|
 | `src/types/` | Types e interfaces (~25 tipos locales) |
+| `src/lib/api.ts` | API client, queries, mutations (useQuery/useMutation wrappers) |
+| `src/lib/utils.ts` | Funciones utilitarias (formatters, validators, label resolvers) |
+| `src/components/UploadPanel.tsx` | Upload, drag-and-drop, toast management |
+| `src/components/DocumentSidebar.tsx` | Lista de documentos, búsqueda, selección |
+| `src/components/ReviewWorkspace.tsx` | Interpretación, edición, field selection, confidence |
+| `src/components/StructuredDataView.tsx` | Canonical sections, visit grouping, field rows, long-text |
+| `src/App.tsx` (shell) | Layout, split-panel, sidebar state, wiring de componentes |
+
+#### processing_runner.py (2,901 → ~5 módulos)
+| Módulo destino | Responsabilidad |
+|---|---|
+| `application/processing/scheduler.py` | Queue, tick loop, dequeue |
+| `application/processing/orchestrator.py` | `_execute_run`, `_process_document`, step tracking |
+| `application/processing/interpretation.py` | Build artifact, candidate mining, schema mapping, field assembly |
+| `application/processing/pdf_extraction.py` | 3 estrategias PDF (fitz, extractor, no-deps fallback) |
+| `application/processing/__init__.py` | Re-exports públicos: `enqueue_processing_run`, `processing_scheduler` |
+
+#### document_service.py (1,874 → ~5 módulos)
+| Módulo destino | Responsabilidad |
+|---|---|
+| `application/documents/upload_service.py` | `register_document_upload` |
+| `application/documents/query_service.py` | `get_document`, `list_documents`, `get_processing_history`, DTOs |
+| `application/documents/review_service.py` | `get_document_review`, projection, normalization, toggle |
+| `application/documents/edit_service.py` | `apply_interpretation_edits`, helpers, confidence, audit |
+| `application/documents/calibration.py` | Build/apply/revert calibration deltas |
+
+#### App.test.tsx (3,693 → redistribución por componente)
+- Tests de upload → `UploadPanel.test.tsx`
+- Tests de sidebar → `DocumentSidebar.test.tsx`
+- Tests de review/edit → `ReviewWorkspace.test.tsx`
+- Tests de structured data → `StructuredDataView.test.tsx`
+- Tests de layout/shell → `App.test.tsx` (reducido)
+
+**Regla global:** ningún archivo nuevo > 500 LOC.
+
+---
+
+## Prompt activo (just-in-time) — write-then-execute
+
+> **Uso:** Claude escribe aquí el próximo prompt de Codex ANTES de que el usuario cambie de agente. Así Codex lo lee directamente del archivo adjunto — cero copy-paste, cero error humano.
+>
+> **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
+
+### Paso objetivo
+_Completado: F2-G_
+
+### Prompt
 _Vacío._
-
-4. **No test file > 800 LOC.** If a target file would exceed 800 lines, split it further (e.g., `ReviewWorkspace.test.tsx` and `ReviewWorkspaceSplit.test.tsx`, or group by sub-feature).
-
-5. **All tests must pass after the move.** Run `npm test` — if any test breaks, fix it before proceeding. Common issues:
-   - Missing imports from the shared helpers file
-   - Mock setup that was in the old `beforeEach` not being replicated
-   - `vi.mock()` calls that need to be in each test file (they are hoisted per-file)
-
-6. **Keep `vi.mock("./components/PdfViewer", ...)` in each test file that needs it** — Vitest hoists `vi.mock` per file, so it must be declared in the file where it's used, not in a shared helper.
-
-7. **The reduced `App.test.tsx`** should be ≤400 LOC and focus only on tests that exercise the App shell itself (layout, panel wiring, mode switching). It should still import from `./App` and use the shared helpers.
-
-8. **Run ruff/lint checks on frontend** after all moves: `cd frontend && npx tsc --noEmit`
-
---- END TASK ---
-
---- TEST GATE (ejecutar ANTES de tocar el plan o commitear) ---
-Backend: cd d:/Git/veterinary-medical-records && python -m pytest --tb=short -q
-Frontend: cd d:/Git/veterinary-medical-records/frontend && npm test
-Si algún test falla: STOP. Reporta los fallos al usuario. NO commitees. NO edites el plan.
-Save the last summary line of each test run (e.g. "246 passed in 10.63s") — you will need it for the commit message.
---- END TEST GATE ---
-
---- SCOPE BOUNDARY (two-commit strategy) ---
-Execute these steps IN THIS EXACT ORDER. Do NOT reorder.
-
-STEP A — Commit code (plan file untouched):
-1. git add -A -- . ':!docs/project/AI_ITERATIVE_EXECUTION_PLAN.md'
-2. git commit -m "test(plan-f2f): redistribute App.test.tsx into per-component test files
-
-Test proof: <pytest summary line> | <npm test summary line>"
-
-STEP B — Commit plan update (only after code is committed):
-1. Edit AI_ITERATIVE_EXECUTION_PLAN.md: change `- [ ] F2-F` to `- [x] F2-F`.
-2. Clean `## Prompt activo`: replace `### Paso objetivo` content with `_Completado: F2-F_` and `### Prompt` with `_Vacío._`
-3. git add docs/project/AI_ITERATIVE_EXECUTION_PLAN.md
-4. git commit -m "docs(plan-f2f): mark step done"
-
-STEP C — Push both commits:
-1. git push origin improvement/refactor
-
-STEP D — Update PR #144 description:
-Run `gh pr view 144 --json body -q .body` to read the current body, then run `gh pr edit 144 --body "..."` with the updated body.
-Mark F2-F as [x] in the Phase 2 progress list and add: "Redistribute App.test.tsx (~3,250 → per-component test files + shared helpers)".
-If all F2 sub-steps are now [x], also mark Phase 2 as [x].
-
-STEP E — Tell the user:
-"✓ F2-F completado, tests OK, pusheado, PR actualizada. Siguiente: vuelve a Claude para F2-G 🚧 — pruebas manuales post-refactor (~10 min: docker compose up, subir PDF, editar, confirmar)."
-
-6. Stop.
---- END SCOPE BOUNDARY ---
-```
 
 ---
 
