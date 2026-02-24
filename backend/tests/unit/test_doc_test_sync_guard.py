@@ -100,7 +100,7 @@ def test_evaluate_sync_fails_on_unmapped_doc_in_required_scope() -> None:
 def test_evaluate_sync_ignores_unmapped_doc_outside_required_scope() -> None:
     module = _load_guard_module()
     findings = module.evaluate_sync(
-        changed_files=["docs/extraction/STRATEGY.md"],
+        changed_files=["docs/agent_router/extraction/STRATEGY.md"],
         rules=[
             {
                 "doc_glob": "docs/shared/BRAND_GUIDELINES.md",
@@ -116,7 +116,7 @@ def test_evaluate_sync_ignores_unmapped_doc_outside_required_scope() -> None:
 def test_evaluate_sync_fails_on_unmapped_doc_when_fail_closed_enabled() -> None:
     module = _load_guard_module()
     findings = module.evaluate_sync(
-        changed_files=["docs/extraction/STRATEGY.md"],
+        changed_files=["docs/agent_router/extraction/STRATEGY.md"],
         rules=[
             {
                 "doc_glob": "docs/agent_router/**/*.md",
@@ -126,7 +126,7 @@ def test_evaluate_sync_fails_on_unmapped_doc_when_fail_closed_enabled() -> None:
         fail_on_unmapped_docs=True,
     )
     assert len(findings) == 1
-    assert "no mapping coverage" in findings[0]
+    assert "related tests/guards" in findings[0]
 
 
 def test_evaluate_sync_fails_when_owner_propagation_missing() -> None:

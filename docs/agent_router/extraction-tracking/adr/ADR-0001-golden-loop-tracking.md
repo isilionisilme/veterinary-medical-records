@@ -7,7 +7,7 @@
 Extraction quality is being improved field-by-field in small iterations. We run golden fixtures and real-run diagnostics, then apply minimal changes only when evidence is clear. Without a tracking system, evidence and decisions are spread across chat notes and commits, making review and reproducibility difficult.
 
 ## Decision
-Maintain a small documentation system under `docs/extraction-tracking/`:
+Maintain a small documentation system under `docs/agent_router/extraction-tracking/`:
 - `INDEX.md` as the canonical index for golden iterations and parity/debug reports.
 - `fields/*.md` as per-field catalogs (rules, limits, history, test commands).
 - `runs/*.md` as UI/backend parity evidence reports tied to run_id.

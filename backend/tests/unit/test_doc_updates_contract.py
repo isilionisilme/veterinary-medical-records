@@ -23,6 +23,7 @@ DOC_UPDATES_ROUTER_PARITY_MAP = (
 )
 DOC_TEST_SYNC_GUARD = REPO_ROOT / "scripts" / "check_doc_test_sync.py"
 DOC_ROUTER_PARITY_GUARD = REPO_ROOT / "scripts" / "check_doc_router_parity.py"
+DOCS_ROOT = REPO_ROOT / "docs"
 IMPLEMENTATION_PLAN = REPO_ROOT / "docs" / "project" / "IMPLEMENTATION_PLAN.md"
 IMPLEMENTATION_PLAN_ROUTER_ENTRY = (
     REPO_ROOT / "docs" / "agent_router" / "04_PROJECT" / "IMPLEMENTATION_PLAN" / "00_entry.md"
@@ -51,6 +52,15 @@ def test_doc_updates_core_files_exist() -> None:
     assert DOC_TEST_SYNC_GUARD.exists(), "Missing doc/test sync guard script."
     assert DOC_ROUTER_PARITY_GUARD.exists(), "Missing doc/router parity guard script."
     assert RULES_INDEX.exists(), "Missing rules index."
+
+
+def test_docs_top_level_folders_are_limited_to_human_and_router_groups() -> None:
+    actual_dirs = {
+        child.name
+        for child in DOCS_ROOT.iterdir()
+        if child.is_dir() and not child.name.startswith(".")
+    }
+    assert actual_dirs == {"shared", "project", "agent_router"}
 
 
 def test_agents_routes_docs_updated_intent_to_doc_updates() -> None:
@@ -136,6 +146,7 @@ def test_doc_test_sync_map_has_minimum_rules() -> None:
     assert '"doc_glob": "docs/project/BACKEND_IMPLEMENTATION.md"' in text
     assert '"doc_glob": "docs/project/UX_DESIGN.md"' in text
     assert '"doc_glob": "docs/project/TECHNICAL_DESIGN.md"' in text
+    assert '"doc_glob": "docs/project/adr/**/*.md"' in text
     assert '"owner_any"' in text
     assert '"docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/*.md"' in text
     assert '"docs/agent_router/04_PROJECT/BACKEND_IMPLEMENTATION/*.md"' in text

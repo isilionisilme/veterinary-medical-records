@@ -113,15 +113,15 @@ Key improvements: removed duplicated suites, added `cli.py` tests (was 0%), impr
 
 | ADR | Decision | Key trade-off |
 |-----|----------|--------------|
-| [ADR-ARCH-0001](../../adr/ADR-ARCH-0001-modular-monolith.md) | Modular monolith over microservices | Operational simplicity vs horizontal scaling |
-| [ADR-ARCH-0002](../../adr/ADR-ARCH-0002-sqlite-database.md) | SQLite over PostgreSQL | Zero-ops vs multi-process concurrency |
-| [ADR-ARCH-0003](../../adr/ADR-ARCH-0003-raw-sql-repository-pattern.md) | Raw SQL + Repository over ORM | Full SQL control vs maintenance burden |
-| [ADR-ARCH-0004](../../adr/ADR-ARCH-0004-in-process-async-processing.md) | In-process async over Celery/RQ | Zero infrastructure vs automatic retry |
+| [ADR-ARCH-0001](../adr/ADR-ARCH-0001-modular-monolith.md) | Modular monolith over microservices | Operational simplicity vs horizontal scaling |
+| [ADR-ARCH-0002](../adr/ADR-ARCH-0002-sqlite-database.md) | SQLite over PostgreSQL | Zero-ops vs multi-process concurrency |
+| [ADR-ARCH-0003](../adr/ADR-ARCH-0003-raw-sql-repository-pattern.md) | Raw SQL + Repository over ORM | Full SQL control vs maintenance burden |
+| [ADR-ARCH-0004](../adr/ADR-ARCH-0004-in-process-async-processing.md) | In-process async over Celery/RQ | Zero infrastructure vs automatic retry |
 
 ### Other documentation
 
 - [`FUTURE_IMPROVEMENTS.md`](FUTURE_IMPROVEMENTS.md) — 2/4/8 week roadmap (18 items traced to audits and ADRs)
-- [`docs/adr/README.md`](../../adr/README.md) — ADR index linking architecture + extraction ADRs
+- [`docs/project/adr/README.md`](../adr/README.md) — ADR index linking architecture decisions
 - Root `README.md` enriched: architecture overview, ADR links, evaluator quickstart, quality gates, delivery evidence
 - `docs/README.md` updated: evaluator-first reading order, audit trail section
 

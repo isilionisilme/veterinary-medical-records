@@ -99,6 +99,15 @@
       ]
     },
     {
+      "doc_glob": "docs/project/adr/**/*.md",
+      "description": "Project ADR changes require doc-updates guard alignment.",
+      "required_any": [
+        "docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json",
+        "scripts/check_doc_test_sync.py",
+        "backend/tests/unit/test_doc_updates_contract.py"
+      ]
+    },
+    {
       "doc_glob": "docs/project/refactor/DELIVERY_SUMMARY.md",
       "description": "Project DELIVERY_SUMMARY changes require propagation to its owner module and doc-updates guards.",
       "owner_any": [

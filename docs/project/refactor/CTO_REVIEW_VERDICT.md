@@ -86,7 +86,7 @@
 
 1. **README** → runs system in 3 commands → ✅ positive impression
 2. **Opens `frontend/src/`** → sees `AppWorkspace.tsx` at 5,760 LOC → ⚠️ immediate concern
-3. **Opens `docs/adr/`** → sees 4 well-structured ADRs with code evidence → ✅ positive
+3. **Opens `docs/project/adr/`** → sees 4 well-structured ADRs with code evidence → ✅ positive
 4. **Runs tests** → 411 green, 87% backend coverage → ✅ strong signal
 5. **Opens `backend/app/`** → sees hexagonal structure → ✅ positive
 6. **Browses DELIVERY_SUMMARY** → sees quantitative evidence → ✅ strong signal
@@ -113,7 +113,7 @@
 | **Hexagonal architecture** (`domain/`, `ports/`, `infra/`) | Already strong. Any change risks regression with zero upside. |
 | **Docker Compose setup** (`docker-compose.yml`, `docker-compose.dev.yml`) | Working, healthchecked, evaluator-verified. Touching it risks breaking the quickstart. |
 | **CI pipeline** (`.github/workflows/ci.yml`) | 7 jobs, all green. Adding jobs = risk of red CI before submission. |
-| **ADR content** (`docs/adr/ADR-ARCH-*.md`) | Well-written with code evidence. Editing risks introducing inconsistencies. |
+| **ADR content** (`docs/project/adr/ADR-ARCH-*.md`) | Well-written with code evidence. Editing risks introducing inconsistencies. |
 | **Backend structural decomposition** (the 5-module processing, 8-module document_service) | Just completed and verified. Re-touching risks regressions. |
 | **Frontend component decomposition** (37 extracted components) | Same — fresh refactor, tests redistributed. Leave alone. |
 | **`IMPLEMENTATION_PLAN.md`** | Massive file with story definitions — any edit risks breaking cross-references. |
