@@ -28,7 +28,7 @@ function renderSpeciesDialog(options?: {
       onValueChange={onValueChange}
       onOpenChange={onOpenChange}
       onSave={onSave}
-    />
+    />,
   );
 
   return { onValueChange, onOpenChange, onSave };
@@ -59,7 +59,7 @@ function renderSexDialog(options?: {
       onValueChange={onValueChange}
       onOpenChange={onOpenChange}
       onSave={onSave}
-    />
+    />,
   );
 
   return { onValueChange, onOpenChange, onSave };
@@ -86,7 +86,7 @@ function renderAgeDialog(options?: {
       onValueChange={onValueChange}
       onOpenChange={onOpenChange}
       onSave={onSave}
-    />
+    />,
   );
 
   return { onValueChange, onOpenChange, onSave };
@@ -160,7 +160,7 @@ describe("FieldEditDialog species", () => {
     expect(
       screen.getByRole("option", {
         name: "Valor detectado (no coincide con las opciones): canina",
-      })
+      }),
     ).toBeDisabled();
     expect(screen.getByRole("button", { name: "Guardar" })).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "Guardar" }));
@@ -207,7 +207,7 @@ describe("FieldEditDialog sex", () => {
     expect(
       screen.getByRole("option", {
         name: "Valor detectado (no coincide con las opciones): female",
-      })
+      }),
     ).toBeDisabled();
     expect(screen.getByRole("button", { name: "Guardar" })).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "Guardar" }));
@@ -223,9 +223,7 @@ describe("FieldEditDialog sex", () => {
 
     expect(screen.getByText("Detectado en el documento")).toBeInTheDocument();
     expect(screen.getByText("sexo incierto")).toBeInTheDocument();
-    expect(
-      screen.getByText("No coincide con las opciones de este campo")
-    ).toBeInTheDocument();
+    expect(screen.getByText("No coincide con las opciones de este campo")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /sexo incierto/i })).toBeNull();
   });
 });

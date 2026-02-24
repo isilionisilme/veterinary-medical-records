@@ -158,4 +158,3 @@ class DocumentRepository(Protocol):
         policy_version: str,
     ) -> tuple[int, int] | None:
         """Return (accept_count, edit_count) for a calibration scope."""
-

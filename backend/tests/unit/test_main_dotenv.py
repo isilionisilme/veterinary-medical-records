@@ -28,9 +28,7 @@ def test_load_backend_dotenv_for_dev_configures_confidence_policy(
     loaded = _load_backend_dotenv_for_dev(dotenv_path=dotenv_path, dev_runtime=True)
     assert loaded is True
 
-    configured, reason, missing_keys, invalid_keys = (
-        confidence_policy_explicit_config_diagnostics()
-    )
+    configured, reason, missing_keys, invalid_keys = confidence_policy_explicit_config_diagnostics()
     assert configured is True
     assert reason == "policy_configured"
     assert missing_keys == []

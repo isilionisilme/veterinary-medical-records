@@ -1,2 +1,1 @@
 """Ports (interfaces) package."""
-

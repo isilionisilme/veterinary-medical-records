@@ -35,9 +35,7 @@ def normalize_canonical_fields(
     normalized = dict(values)
 
     normalized["species"] = _normalize_species_value(normalized.get("species"))
-    normalized["breed"] = _normalize_scalar_with_labels(
-        normalized.get("breed"), ("raza", "breed")
-    )
+    normalized["breed"] = _normalize_scalar_with_labels(normalized.get("breed"), ("raza", "breed"))
     normalized = _normalize_species_and_breed_pair(normalized, evidence_map)
 
     normalized["sex"] = _normalize_sex_value(normalized.get("sex"))

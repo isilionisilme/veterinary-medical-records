@@ -2,30 +2,30 @@ from __future__ import annotations
 
 import importlib.util
 import os
-import time
 from pathlib import Path
 from uuid import uuid4
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 PARITY_MAP = (
-    REPO_ROOT
-    / "docs"
-    / "agent_router"
-    / "01_WORKFLOW"
-    / "DOC_UPDATES"
-    / "router_parity_map.json"
+    REPO_ROOT / "docs" / "agent_router" / "01_WORKFLOW" / "DOC_UPDATES" / "router_parity_map.json"
 )
 PARITY_SCRIPT = REPO_ROOT / "scripts" / "check_doc_router_parity.py"
 
 
 def _load_evaluate_parity():
-    spec = importlib.util.spec_from_file_location(
-        "check_doc_router_parity", PARITY_SCRIPT
-    )
+    spec = importlib.util.spec_from_file_location("check_doc_router_parity", PARITY_SCRIPT)
     assert spec and spec.loader
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module.evaluate_parity
+
+
+def _unlink_fixture_file(path: Path) -> None:
+    try:
+        path.unlink()
+    except PermissionError:
+        os.chmod(path, 0o666)
+        path.unlink(missing_ok=True)
 
 
 def test_router_parity_map_file_exists() -> None:
@@ -63,14 +63,7 @@ def test_evaluate_parity_reports_missing_terms_when_source_changes() -> None:
         assert "missing required terms" in findings[0]
     finally:
         if fixture.exists():
-            # Windows can keep a transient lock on freshly written temp files.
-            for _ in range(5):
-                try:
-                    fixture.unlink()
-                    break
-                except PermissionError:
-                    os.chmod(fixture, 0o666)
-                    time.sleep(0.2)
+            _unlink_fixture_file(fixture)
             if fixture.exists():
                 print(f"WARNING: could not remove parity fixture file: {fixture}")
 

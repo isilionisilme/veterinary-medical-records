@@ -141,7 +141,7 @@ def test_evaluate_sync_fails_when_owner_propagation_missing() -> None:
             },
             {
                 "doc_glob": "docs/agent_router/**/*.md",
-            }
+            },
         ],
         fail_on_unmapped_docs=True,
     )
@@ -166,7 +166,7 @@ def test_evaluate_sync_passes_when_owner_and_related_files_change() -> None:
             },
             {
                 "doc_glob": "docs/agent_router/**/*.md",
-            }
+            },
         ],
         fail_on_unmapped_docs=True,
     )

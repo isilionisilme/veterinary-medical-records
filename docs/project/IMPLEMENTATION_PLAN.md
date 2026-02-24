@@ -7,7 +7,7 @@ https://docs.google.com/document/d/1b1rvBJu9bGjv8Z42OdDz9qwjecbqDbpilkn0KkYuD-M
 Reading order, document authority, and precedence rules are defined in [`docs/README.md`](../README.md).
 If any conflict is detected, **STOP and ask before proceeding**.
 
-# Implementation Plan
+# Introduction 
 
 ## Purpose
 
@@ -34,7 +34,7 @@ Features or behaviors not explicitly listed here are not part of this plan.
 ## How to use this document
 
 The AI Coding Assistant must:
-- read only the prerequisites required for the current task/story from [`docs/README.md`](../README.md), and consult only the relevant sections,
+- enter via [`AGENTS.md`](../../AGENTS.md) and load only the router module(s) relevant to the current task/story,
 - implement user stories **strictly in the order defined here**,
 - treat acceptance criteria as **exit conditions**, not suggestions.
 
@@ -56,10 +56,8 @@ This plan MUST NOT specify or restate cross-cutting technical contracts, even as
 - logging `event_type` values,
 - library/framework choices, module structure, or code patterns.
 
-If a story depends on any of the above, it MUST reference the authoritative sections in:
-- [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) (Appendices A/B/C/D)
-- [`docs/project/UX_DESIGN.md`](UX_DESIGN.md)
-- [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md)
+If a story depends on any of the above, it MUST include an **Authoritative References** section naming the canonical doc and section (e.g. "TECHNICAL_DESIGN Appendix B3").
+At execution time, the agent MUST NOT open those canonical docs directly; instead, enter via [`AGENTS.md`](../../AGENTS.md) and load only the router module that covers the needed section.
 
 ---
 
@@ -82,6 +80,7 @@ If a behavior is not described by the currently scheduled stories, it should be 
 
 ---
 
+# Implementation Plan
 ## Release 1 — Document upload & access
 
 ### Goal
@@ -95,7 +94,7 @@ Allow users to upload documents and access them reliably, establishing a stable 
 - List uploaded documents with their status
 
 ### User Stories (in order)
-- US-01 — Upload document
+- US-01 — Upload document (API)
 - US-02 — View document status
 - US-03 — Download / preview original document
 - US-04 — List uploaded documents and their status
@@ -119,7 +118,7 @@ Supported upload types are defined by [`docs/project/TECHNICAL_DESIGN.md`](TECHN
 
 ### User Stories (in order)
 - US-05 — Process document
-- US-21 — Upload medical documents
+- US-21 — Upload medical documents (end-user UI)
 - US-11 — View document processing history
 
 ---
@@ -180,7 +179,6 @@ Allow veterinarians to correct structured data naturally, while capturing append
 - US-41 — Show Top-5 candidate suggestions in Field Edit Modal
 - US-39 — Align veterinarian confidence signal with mapping confidence policy
 - US-40 — Implement field-level confidence tooltip breakdown (Implemented 2026-02-18)
-- US-32 — Align review rendering to Global Schema template (Implemented 2026-02-17)
 
 ---
 
@@ -203,7 +201,120 @@ Focus this release on visit-grouped review rendering (contract-driven) and evalu
 
 ---
 
-## Release 7 — Schema evolution (isolated reviewer workflows)
+## Release 7 — Edit workflow hardening
+
+### Goal
+Make field editing robust and predictable, preventing data loss and ensuring correct modification semantics.
+
+### Scope
+- Dirty state tracking and discard confirmation in field edit dialog
+- Reset individual fields or all fields to originally detected values
+- Correct modification tracking when saving the originally suggested value
+- Confidence refresh after editing a reopened reviewed document
+
+### User Stories (in order)
+- US-47 — Prevent losing unsaved field edits (dirty state + confirm discard)
+- US-48 — Reset field(s) to original detected value
+- US-49 — Treat save of originally suggested value as unmodified
+- US-59 — Refresh visible confidence after edits on reopened document
+
+---
+
+## Release 8 — Evidence navigation & document interaction
+
+### Goal
+Enable precise evidence inspection and text search within the document viewer.
+
+### Scope
+- Click-to-navigate from structured field to exact location in document viewer
+- Full-text search within the PDF viewer
+- PDF zoom controls
+
+### User Stories (in order)
+- US-50 — Navigate to and highlight field evidence in document viewer
+- US-51 — Text search in PDF viewer
+- US-33 — PDF Viewer Zoom
+
+---
+
+## Release 9 — Extraction quality & language
+
+### Goal
+Improve extraction coverage, visit detection, clinical utility, and language support.
+
+### Scope
+- Visit detection heuristic improvements
+- General extraction heuristic improvements
+- Patient history summary field (antecedentes)
+- Document language override and reprocessing
+
+### User Stories (in order)
+- US-52 — Improve visit detection heuristics
+- US-53 — Improve general extraction heuristics
+- US-54 — Patient history summary field (antecedentes)
+- US-10 — Change document language and reprocess
+
+---
+
+## Release 10 — UX polish & upload ergonomics
+
+### Goal
+Improve document interaction ergonomics and visual polish without changing core workflow semantics.
+
+### Scope
+- Document list readability and navigation
+- Upload convenience (drag-and-drop + bulk)
+- Toast behavior
+
+### User Stories (in order)
+- US-23 — Improve document list filename visibility and tooltip details
+- US-24 — Support global drag-and-drop PDF upload across relevant screens
+- US-25 — Upload a folder of PDFs (bulk)
+- US-29 — Improve toast queue behavior
+
+---
+
+## Release 11 — Help, content externalization & i18n
+
+### Goal
+Provide comprehensive in-app help, externalize UI texts for editing/translation, and add multilingual UI support.
+
+### Scope
+- Keyboard shortcuts and help modal
+- In-app help wiki and entry point
+- Contextual help icons throughout UI
+- UI text externalization
+- Document lifecycle management (soft-delete)
+- Multilingual UI and externalized settings
+
+### User Stories (in order)
+- US-26 — Add keyboard shortcuts and help modal
+- US-27 — Add in-app help wiki and entry point
+- US-55 — Contextual help icons with wiki links throughout UI
+- US-56 — Externalize UI texts to editable files
+- US-28 — Delete uploaded document from list (soft-delete/archive)
+- US-30 — Change application UI language (multilingual UI)
+- US-31 — Externalize configuration and expose settings in UI
+
+---
+
+## Release 12 — Additional formats & OCR
+
+### Goal
+Expand format support beyond PDF and add optional OCR for scanned documents.
+
+### Scope
+- DOCX and image format end-to-end support
+- Optional OCR for scanned PDFs and images (depends on image support)
+
+### User Stories (in order)
+- US-19 — Add DOCX end-to-end support
+- US-20 — Add Images end-to-end support
+- US-22 — Optional OCR support for scanned medical records (PDF/Image)
+
+---
+
+## Release 13 — Schema evolution (isolated reviewer workflows)
 
 ### Goal
 Introduce reviewer-facing governance for global schema evolution, fully isolated from veterinarian workflows.
@@ -225,59 +336,18 @@ Introduce reviewer-facing governance for global schema evolution, fully isolated
 
 ---
 
-## Release 8 — Additional formats (sequenced last)
+## Release 14 — Research & operational readiness
 
 ### Goal
-Sequence DOCX and image format expansion as explicit, optional stories that are implemented only if/when the project owner chooses to continue.
-
-### User Stories (in order)
-- US-19 — Add DOCX end-to-end support
-- US-20 — Add Images end-to-end support
-
----
-
-## Release 9 — Nice to have (post-MVP enhancements)
-
-### Goal
-Introduce optional capabilities that improve coverage for difficult inputs without expanding core MVP obligations.
-
-### User Stories (in order)
-- US-22 — Optional OCR support for scanned medical records (PDF/Image)
-
----
-
-## Release 10 — Nice to have
-
-### Goal
-Capture optional user-experience and operability improvements that are implemented only if time remains after all prior releases.
+Investigate field standardization opportunities and define operational policies for production readiness.
 
 ### Scope
-- UI polish for document navigation and feedback behavior
-- Upload ergonomics (global drag-and-drop + folder bulk upload)
-- Operator productivity (shortcuts + help surfaces)
-- Optional maintenance and configuration affordances
+- Research ISO and international standards applicability to structured fields
+- Define production DB reset policy for reviewed documents
 
 ### User Stories (in order)
-- US-23 — Improve document list filename visibility and tooltip details
-- US-24 — Support global drag-and-drop PDF upload across relevant screens
-- US-25 — Upload a folder of PDFs (bulk)
-- US-26 — Add keyboard shortcuts and help modal
-- US-27 — Add in-app help entry point
-- US-28 — Delete uploaded document from list (soft-delete/archive)
-- US-29 — Improve toast queue behavior
-- US-30 — Change application UI language (multilingual UI)
-- US-31 — Externalize configuration and expose settings in UI
-- US-33 — PDF Viewer Zoom (Nice to have)
-
----
-
-## Post-MVP / Future (Out of MVP release ordering)
-
-### Goal
-Track approved stories that remain in plan scope but are explicitly out of MVP sequencing.
-
-### User Stories (in order)
-- US-10 — Change document language and reprocess
+- US-57 — Research field standardization (ISO, international recommendations)
+- US-58 — Define production DB reset policy for reviewed documents
 
 ---
 
@@ -294,23 +364,23 @@ All contracts (API map, persistence model, schema, error semantics, invariants, 
 
 ---
 
-## US-01 — Upload document
+## US-01 — Upload document (API)
 
 **Status**: Implemented (2026-02-16)
 
 **User Story**
-As a user, I want to upload a document so that it is stored and available for processing.
+As a developer, I want an API endpoint that accepts and persists a document so that it is stored and available for processing.
 
 **Acceptance Criteria**
-- I can upload a supported document type.
-- I receive immediate confirmation that the document was uploaded (without waiting on processing).
+- A supported document type can be uploaded via the API (e.g. Swagger UI, curl, or developer tools).
+- The API returns immediate confirmation that the document was persisted (without waiting on processing).
 - The document appears in the system with the initial derived status.
 
 **Scope Clarification**
-- This story does not start processing.
-- Background processing is introduced later (US-05).
+- This story delivers the **backend ingestion API only** — no end-user UI. Verification is done through Swagger UI, curl, or equivalent developer tools.
+- This story does not start processing. Background processing is introduced later (US-05).
 - This story supports the upload types defined in [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3; format expansion is introduced via later user stories.
-- This story delivers the backend ingestion capability; user-facing upload UI/UX (including feedback copy) is introduced later (US-21).
+- The end-user upload experience (dropzone, feedback copy, error messages) is introduced in US-21.
 
 **Authoritative References**
 - Tech: API surface + upload requirements + errors: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3/B3.2
@@ -463,47 +533,36 @@ As a veterinarian, I want uploaded PDF documents to be processed automatically s
 
 ---
 
-## US-21 — Upload medical documents
+## US-21 — Upload medical documents (end-user UI)
 
 **Status**: Implemented (2026-02-16)
 
 **User Story**
-As a user, I want to upload a medical document so that the system can start processing it.
+As a veterinarian, I want to upload medical documents through a proper application interface — without needing Swagger, curl, or any developer tool — so that the system can start processing them.
 
 **Acceptance Criteria**
-- I can upload a medical document using the application.
+- The UI provides a clear upload affordance (dropzone / file picker) accessible to non-technical users.
 - The UI clearly communicates which document formats are supported (PDF only for the current scope).
-- After submitting a document, I receive clear feedback indicating whether the upload was successful.
-- If the upload fails, I receive a clear and user-friendly error message (without exposing internal technical details).
+- After submitting a document, the UI provides clear success/failure feedback without exposing internal technical details.
 - The UI communicates that processing is assistive and may be incomplete, without blocking the user.
-- When automatic processing-on-upload is enabled (introduced in US-05), uploading a document via the UI starts that existing processing flow in a non-blocking way; the UI relies only on the API response and derived status rules.
-- I do not need to use technical tools or interfaces to upload documents.
-- I am not shown document previews, extracted text, or review functionality as part of this story.
+- When automatic processing-on-upload is enabled (US-05), uploading via the UI triggers that flow non-blockingly; the UI relies only on the API response and derived status rules.
 
 **Scope Clarification**
-- This story is limited to the user-facing upload experience and feedback states; it reuses the existing upload contract and does not introduce new endpoint surface area.
-- This story does not implement or modify backend ingestion logic; it consumes the existing upload capability (US-01) and respects backend validation rules.
-- This story does not introduce new workflow states, reprocessing semantics, or observability contracts.
-- This story is limited to PDFs; additional formats are introduced only via the dedicated format expansion stories.
-- This story does not add preview/rendering, raw-text visibility, or review/edit experiences.
+- This story is **frontend-only**: it builds the end-user upload experience on top of the API delivered by US-01. No new endpoints or backend ingestion logic.
+- Sequenced in Release 2 (after US-05) so the UI can show processing feedback states that depend on the processing pipeline existing.
+- Limited to PDFs; additional formats are introduced only via dedicated format expansion stories.
+- Does not add preview/rendering, raw-text visibility, or review/edit experiences.
 
 **Authoritative References**
-- Tech: API surface + upload requirements + errors: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3/B3.2
-- Tech: Processing model and run invariants: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Sections 3–4 + Appendix A2
 - UX: Global upload experience and feedback heuristics: [`docs/shared/UX_GUIDELINES.md`](../shared/UX_GUIDELINES.md)
 - UX: Project interaction contract: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) Sections 1–4
 - UX: User-facing copy tone: [`docs/shared/BRAND_GUIDELINES.md`](../shared/BRAND_GUIDELINES.md)
-
-**Story-specific technical requirements**
-- Reuse the existing upload contract and backend validation rules as defined in [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3/B3.2.
-- Do not introduce new ingestion endpoints, domain logic, or workflow states; rely only on the API response for UI behavior.
-- Preserve existing observability contracts (events/metrics/log taxonomy) as defined in [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md).
-- Consult only the relevant sections of [`docs/project/BACKEND_IMPLEMENTATION.md`](BACKEND_IMPLEMENTATION.md) and/or [`docs/project/FRONTEND_IMPLEMENTATION.md`](FRONTEND_IMPLEMENTATION.md) for the layers changed in this story.
+- Tech: API contract consumed by the UI: [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix B3/B3.2
 
 **Test Expectations**
-- Upload succeeds for supported PDFs and provides the expected user-facing feedback states.
-- Upload failure cases map to user-friendly messages without leaking internal details.
-- Upload triggers background processing without blocking the request (per the processing model).
+- Upload via the UI succeeds for supported PDFs and shows the expected feedback states.
+- Upload failure cases render user-friendly messages without leaking internal details.
+- Upload triggers background processing without blocking the UI (per the processing model).
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
@@ -1687,7 +1746,7 @@ As a user, I want optional OCR support for scanned records so that documents wit
 - Logs indicate extraction path and OCR usage (including per-page behavior when available).
 
 **Scope Clarification**
-- This is a post-MVP, low-priority enhancement and is sequenced after the core roadmap.
+- This is a low-priority enhancement.
 - Language default is Spanish (`es`) with future extension for language auto-detection.
 - OCR should be applied at page level where possible (only failing pages), not necessarily entire-document OCR.
 - This story depends on:
@@ -1842,19 +1901,21 @@ As a user, I want keyboard shortcuts for frequent actions so that I can work fas
 
 ---
 
-## US-27 — Add in-app help entry point
+## US-27 — Add in-app help wiki and entry point
 
 **User Story**
-As a user, I want an in-app help entry point so that I can quickly understand key statuses, reprocess behavior, limits, and basic usage.
+As a user, I want an in-app help wiki with a globally accessible entry point so that I can quickly understand key statuses, reprocess behavior, limits, and basic usage.
 
 **Acceptance Criteria**
 - A persistent Help entry point is available from main navigation or other globally discoverable UI.
+- The entry point links to a help wiki (webpage or in-app section) with structured, navigable content.
 - Help content includes minimum guidance for statuses, reprocess, known limits, and how to use the workflow.
 - Help content is readable on desktop and mobile and is accessible by keyboard and screen readers.
 - Help content avoids implementation/internal jargon and aligns with brand voice.
 
 **Scope Clarification**
-- This story introduces lightweight guidance only; it does not require a full documentation portal.
+- This story delivers the help wiki content and a global entry point to access it.
+- Contextual help icons throughout the UI linking to specific wiki sections are delivered separately in US-55.
 
 **Authoritative References**
 - Product/UX language and workflow semantics: [`docs/project/UX_DESIGN.md`](UX_DESIGN.md)
@@ -1995,7 +2056,7 @@ As an operator, I want key runtime configuration externalized and visible in-app
 
 ---
 
-## US-33 — PDF Viewer Zoom (Nice to have)
+## US-33 — PDF Viewer Zoom
 
 **Status**: Implemented (2026-02-13)
 
@@ -2009,7 +2070,6 @@ As a veterinarian reviewer, I want to zoom in/out the PDF viewer so I can read s
 - Zoom does not affect extracted text tab behavior or structured data layout.
 
 **Scope Clarification**
-- This story is optional and scheduled as a post-MVP enhancement.
 - This story only covers in-viewer zoom controls and in-document persistence.
 - Out of scope: pan/hand tool, multi-page thumbnails, and fit-to-width vs fit-to-page refinements.
 
@@ -2027,6 +2087,149 @@ As a veterinarian reviewer, I want to zoom in/out the PDF viewer so I can read s
 - Unit + integration tests per [docs/project/TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) Appendix B7.
 - When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/UX_GUIDELINES.md](UX_GUIDELINES.md) and [docs/project/UX_DESIGN.md](UX_DESIGN.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md).
+
+---
+
+## US-47 — Prevent losing unsaved field edits (dirty state + confirm discard)
+
+**Status:** Planned
+
+**User Story**
+As a veterinarian, I want the field edit dialog to prevent losing unsaved changes so that I don't accidentally discard my work when pressing Escape or navigating away.
+
+_Detailed acceptance criteria pending definition._
+
+---
+
+## US-48 — Reset field(s) to original detected value
+
+**Status:** Planned
+
+**User Story**
+As a veterinarian, I want to reset a field to its originally detected value, or reset all fields of a document at once, so that I can undo my corrections without reprocessing.
+
+_Detailed acceptance criteria pending definition._
+
+---
+
+## US-49 — Treat save of originally suggested value as unmodified
+
+**Status:** Planned
+
+**User Story**
+As a veterinarian, I want saving a field with the originally suggested value to count as unmodified so that modification tracking is accurate.
+
+_Detailed acceptance criteria pending definition._
+
+---
+
+## US-59 — Refresh visible confidence after edits on reopened document
+
+**Status:** Planned
+
+**User Story**
+As a veterinarian, I want that when I reopen a reviewed document, modify fields, and mark it as reviewed again, the confidence displayed on all open documents reflects the updated corrections, so that the confidence signal is coherent with the current state of the data.
+
+_Detailed acceptance criteria pending definition._
+
+---
+
+## US-50 — Navigate to and highlight field evidence in document viewer
+
+**Status:** Planned
+
+**User Story**
+As a veterinarian, I want to click on a structured field and have the document viewer navigate to and highlight the exact location where the text was identified so that I can verify the extraction in context. When a field has been manually edited, the UI should indicate that evidence may no longer match.
+
+_Detailed acceptance criteria pending definition._
+
+---
+
+## US-51 — Text search in PDF viewer
+
+**Status:** Planned
+
+**User Story**
+As a veterinarian, I want to search for text in the PDF viewer so that I can quickly find specific content in the document.
+
+_Detailed acceptance criteria pending definition._
+
+---
+
+## US-52 — Improve visit detection heuristics
+
+**Status:** Planned
+
+**User Story**
+As a developer, I want to improve visit detection heuristics so that more clinical episodes are correctly identified.
+
+_Detailed acceptance criteria pending definition._
+
+---
+
+## US-53 — Improve general extraction heuristics
+
+**Status:** Planned
+
+**User Story**
+As a developer, I want to improve general extraction heuristics so that field detection accuracy increases.
+
+_Detailed acceptance criteria pending definition._
+
+---
+
+## US-54 — Patient history summary field (antecedentes)
+
+**Status:** Planned
+
+**User Story**
+As a veterinarian, I want a patient history summary field (antecedentes) so that I can see vaccination history, deworming, and prior surgeries at a glance.
+
+_Detailed acceptance criteria pending definition._
+
+---
+
+## US-55 — Contextual help icons with wiki links throughout UI
+
+**Status:** Planned
+
+**User Story**
+As a veterinarian, I want contextual help icons throughout the UI with tooltips and links to the help wiki so that I can get guidance where I need it.
+
+_Detailed acceptance criteria pending definition._
+
+---
+
+## US-56 — Externalize UI texts to editable files
+
+**Status:** Planned
+
+**User Story**
+As a content editor/translator, I want UI texts externalized to editable files so that copy can be corrected and translated without code changes.
+
+_Detailed acceptance criteria pending definition._
+
+---
+
+## US-57 — Research field standardization (ISO, international recommendations)
+
+**Status:** Planned
+
+**User Story**
+As a developer, I want to research which structured fields can adopt standards (ISO, international recommendations) so that data quality and interoperability improve.
+
+_Detailed acceptance criteria pending definition._
+
+---
+
+## US-58 — Define production DB reset policy for reviewed documents
+
+**Status:** Planned
+
+**User Story**
+As an operator, I want a defined policy for what happens to reviewed documents if the database is reset in production so that data governance is clear.
+
+_Detailed acceptance criteria pending definition._
 
 ---
 

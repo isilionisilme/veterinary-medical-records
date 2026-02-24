@@ -18,8 +18,12 @@ jobs:
           node-version: 20
       - name: Install frontend dependencies
         run: npm --prefix frontend ci
-      - name: Run frontend tests
-        run: npm --prefix frontend test
+      - name: Run ESLint
+        run: npm --prefix frontend run lint
+      - name: Check Prettier formatting
+        run: npm --prefix frontend run format:check
+      - name: Run frontend tests with coverage
+        run: npm --prefix frontend run test:coverage
       - name: Run frontend build
         run: npm --prefix frontend run build
 
@@ -91,8 +95,10 @@ jobs:
           pip install -r requirements-dev.txt
       - name: Run Ruff
         run: ruff check .
-      - name: Run Pytest
-        run: pytest
+      - name: Check Ruff formatting
+        run: ruff format --check .
+      - name: Run Pytest with coverage
+        run: pytest --cov=backend/app --cov-report=term-missing
 
   docker_packaging_guard:
     runs-on: ubuntu-latest

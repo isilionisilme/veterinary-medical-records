@@ -45,18 +45,16 @@ export function buildVisitGroupingDiagnostics(visits: VisitGroupLike[]): VisitGr
   return {
     visits_count: visits.length,
     unassigned_present: visits.some((visit, index) =>
-      isUnassignedVisitId(normalizeVisitId(visit.visit_id, index))
+      isUnassignedVisitId(normalizeVisitId(visit.visit_id, index)),
     ),
     fields_per_visit: fieldsPerVisit,
     total_visit_scoped_fields_count: totalVisitScopedFieldsCount,
     all_visit_scoped_in_unassigned:
-      totalVisitScopedFieldsCount > 0 && totalVisitScopedFieldsCount === unassignedVisitScopedFieldsCount,
+      totalVisitScopedFieldsCount > 0 &&
+      totalVisitScopedFieldsCount === unassignedVisitScopedFieldsCount,
   };
 }
 
-export function shouldEmitVisitGroupingDiagnostics(env: {
-  DEV?: boolean;
-  MODE?: string;
-}): boolean {
+export function shouldEmitVisitGroupingDiagnostics(env: { DEV?: boolean; MODE?: string }): boolean {
   return Boolean(env.DEV || env.MODE === "test");
 }

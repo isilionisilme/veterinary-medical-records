@@ -27,7 +27,12 @@ type CriticalBadgeProps = {
   onMouseLeave?: (event: ReactMouseEvent<HTMLSpanElement>) => void;
 };
 
-export function CriticalBadge({ testId, tooltipOpen, onMouseEnter, onMouseLeave }: CriticalBadgeProps) {
+export function CriticalBadge({
+  testId,
+  tooltipOpen,
+  onMouseEnter,
+  onMouseLeave,
+}: CriticalBadgeProps) {
   return (
     <Tooltip content="CRÍTICO" open={tooltipOpen}>
       <span onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>

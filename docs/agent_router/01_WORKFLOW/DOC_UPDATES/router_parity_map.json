@@ -6,6 +6,67 @@
   ],
   "rules": [
     {
+      "source_doc": "docs/project/AI_ITERATIVE_EXECUTION_PLAN.md",
+      "description": "Project AI_ITERATIVE_EXECUTION_PLAN must map to project owner entry module.",
+      "router_modules": [
+        {
+          "path": "docs/agent_router/04_PROJECT/AI_ITERATIVE_EXECUTION_PLAN/00_entry.md",
+          "required_terms": [
+            "AI_ITERATIVE_EXECUTION_PLAN — Modules",
+            "F2-D"
+          ]
+        }
+      ]
+    },
+    {
+      "source_doc": "docs/project/FUTURE_IMPROVEMENTS.md",
+      "description": "Project FUTURE_IMPROVEMENTS must map to project owner entry module.",
+      "router_modules": [
+        {
+          "path": "docs/agent_router/04_PROJECT/FUTURE_IMPROVEMENTS/00_entry.md",
+          "required_terms": [
+            "FUTURE_IMPROVEMENTS — Modules"
+          ]
+        }
+      ]
+    },
+    {
+      "source_doc": "docs/project/DELIVERY_SUMMARY.md",
+      "description": "Project DELIVERY_SUMMARY must map to project owner entry module.",
+      "router_modules": [
+        {
+          "path": "docs/agent_router/04_PROJECT/DELIVERY_SUMMARY/00_entry.md",
+          "required_terms": [
+            "DELIVERY_SUMMARY — Modules"
+          ]
+        }
+      ]
+    },
+    {
+      "source_doc": "docs/project/12_FACTOR_AUDIT.md",
+      "description": "Project 12_FACTOR_AUDIT must map to project owner entry module.",
+      "router_modules": [
+        {
+          "path": "docs/agent_router/04_PROJECT/12_FACTOR_AUDIT/00_entry.md",
+          "required_terms": [
+            "12_FACTOR_AUDIT — Modules"
+          ]
+        }
+      ]
+    },
+    {
+      "source_doc": "docs/project/codebase_audit.md",
+      "description": "Project codebase_audit must map to project owner entry module.",
+      "router_modules": [
+        {
+          "path": "docs/agent_router/04_PROJECT/CODEBASE_AUDIT/00_entry.md",
+          "required_terms": [
+            "CODEBASE_AUDIT — Modules"
+          ]
+        }
+      ]
+    },
+    {
       "source_doc": "docs/shared/BRAND_GUIDELINES.md",
       "description": "Shared BRAND_GUIDELINES must map to shared owner entry module.",
       "router_modules": [

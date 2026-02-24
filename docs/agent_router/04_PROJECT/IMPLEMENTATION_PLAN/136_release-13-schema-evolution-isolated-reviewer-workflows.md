@@ -1,4 +1,4 @@
-# Release 7 — Schema evolution (isolated reviewer workflows)
+# Release 13 — Schema evolution (isolated reviewer workflows)
 
 ## Goal
 Introduce reviewer-facing governance for global schema evolution, fully isolated from veterinarian workflows.

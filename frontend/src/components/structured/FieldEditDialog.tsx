@@ -11,10 +11,7 @@ import {
   DialogTitle,
 } from "../ui/dialog";
 import { Input } from "../ui/input";
-import {
-  CANONICAL_SEX_OPTIONS,
-  CANONICAL_SPECIES_OPTIONS,
-} from "../../extraction/fieldValidators";
+import { CANONICAL_SEX_OPTIONS, CANONICAL_SPECIES_OPTIONS } from "../../extraction/fieldValidators";
 
 type CandidateSuggestion = {
   value: string;
@@ -72,7 +69,7 @@ export function FieldEditDialog({
   const isSpeciesField = fieldKey === "species";
   const shouldUseTextarea = useMemo(
     () => !isSexField && !isSpeciesField && (value.includes("\n") || value.length > 60),
-    [isSexField, isSpeciesField, value]
+    [isSexField, isSpeciesField, value],
   );
 
   useEffect(() => {
@@ -132,7 +129,7 @@ export function FieldEditDialog({
   const isKnownSexValue = normalizedSexValue === "macho" || normalizedSexValue === "hembra";
   const normalizedSpeciesValue = value.trim().toLowerCase();
   const isKnownSpeciesValue = CANONICAL_SPECIES_OPTIONS.some(
-    (option) => option.value === normalizedSpeciesValue
+    (option) => option.value === normalizedSpeciesValue,
   );
   const visibleCandidateSuggestions = useMemo(() => {
     const normalizedCurrentValue = value.trim();
@@ -140,16 +137,13 @@ export function FieldEditDialog({
       .filter((suggestion) => suggestion.value.trim().length > 0)
       .slice(0, 5);
     const hasAlternative = normalizedSuggestions.some(
-      (suggestion) => suggestion.value.trim() !== normalizedCurrentValue
+      (suggestion) => suggestion.value.trim() !== normalizedCurrentValue,
     );
     return hasAlternative ? normalizedSuggestions : [];
   }, [candidateSuggestions, value]);
   const visibleDetectedCandidates = useMemo(
-    () =>
-      detectedCandidates
-        .filter((candidate) => candidate.value.trim().length > 0)
-        .slice(0, 3),
-    [detectedCandidates]
+    () => detectedCandidates.filter((candidate) => candidate.value.trim().length > 0).slice(0, 3),
+    [detectedCandidates],
   );
   const invalidCurrentControlledValue = useMemo(() => {
     const trimmed = value.trim();
@@ -166,7 +160,13 @@ export function FieldEditDialog({
   }, [isKnownSexValue, isKnownSpeciesValue, isSexField, isSpeciesField, value]);
   const controlledSelectValue =
     invalidCurrentControlledValue ??
-    (isSexField ? (isKnownSexValue ? normalizedSexValue : "") : isKnownSpeciesValue ? normalizedSpeciesValue : "");
+    (isSexField
+      ? isKnownSexValue
+        ? normalizedSexValue
+        : ""
+      : isKnownSpeciesValue
+        ? normalizedSpeciesValue
+        : "");
   const handleValueChange = (nextValue: string) => {
     if (isMicrochipField) {
       const sanitized = nextValue.replace(/\D/g, "");
@@ -349,37 +349,61 @@ export function FieldEditDialog({
         ) : null}
         {isMicrochipField ? (
           <div className="mt-1 space-y-1">
-            <p className={microchipErrorMessage ? "text-xs text-[var(--status-error)]" : "text-xs text-muted"}>
+            <p
+              className={
+                microchipErrorMessage ? "text-xs text-[var(--status-error)]" : "text-xs text-muted"
+              }
+            >
               {microchipErrorMessage ?? microchipHintText}
             </p>
           </div>
         ) : isWeightField ? (
           <div className="mt-1 space-y-1">
-            <p className={weightErrorMessage ? "text-xs text-[var(--status-error)]" : "text-xs text-muted"}>
+            <p
+              className={
+                weightErrorMessage ? "text-xs text-[var(--status-error)]" : "text-xs text-muted"
+              }
+            >
               {weightErrorMessage ?? weightHintText}
             </p>
           </div>
         ) : isAgeField ? (
           <div className="mt-1 space-y-1">
-            <p className={ageErrorMessage ? "text-xs text-[var(--status-error)]" : "text-xs text-muted"}>
+            <p
+              className={
+                ageErrorMessage ? "text-xs text-[var(--status-error)]" : "text-xs text-muted"
+              }
+            >
               {ageErrorMessage ?? ageHintText}
             </p>
           </div>
         ) : isDateField ? (
           <div className="mt-1 space-y-1">
-            <p className={dateErrorMessage ? "text-xs text-[var(--status-error)]" : "text-xs text-muted"}>
+            <p
+              className={
+                dateErrorMessage ? "text-xs text-[var(--status-error)]" : "text-xs text-muted"
+              }
+            >
               {dateErrorMessage ?? dateHintText}
             </p>
           </div>
         ) : isSexField ? (
           <div className="mt-1 space-y-1">
-            <p className={sexErrorMessage ? "text-xs text-[var(--status-error)]" : "text-xs text-muted"}>
+            <p
+              className={
+                sexErrorMessage ? "text-xs text-[var(--status-error)]" : "text-xs text-muted"
+              }
+            >
               {sexErrorMessage ?? sexHintText}
             </p>
           </div>
         ) : isSpeciesField ? (
           <div className="mt-1 space-y-1">
-            <p className={speciesErrorMessage ? "text-xs text-[var(--status-error)]" : "text-xs text-muted"}>
+            <p
+              className={
+                speciesErrorMessage ? "text-xs text-[var(--status-error)]" : "text-xs text-muted"
+              }
+            >
               {speciesErrorMessage ?? speciesHintText}
             </p>
           </div>

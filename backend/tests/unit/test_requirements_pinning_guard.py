@@ -104,6 +104,5 @@ def test_requirement_files_use_exact_pins_only() -> None:
     assert not violations, (
         "Requirements pinning guard failed.\n"
         "Use exact pins with == for every dependency line; only -r/--requirement and "
-        "-c/--constraint include directives are allowed.\n"
-        + "\n".join(violations)
+        "-c/--constraint include directives are allowed.\n" + "\n".join(violations)
     )

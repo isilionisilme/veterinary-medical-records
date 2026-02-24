@@ -251,9 +251,7 @@ def test_document_review_returns_latest_completed_run_context(test_client):
     field_slots = medical_record_view.get("field_slots")
     assert isinstance(field_slots, list)
     patient_slots = [
-        slot
-        for slot in field_slots
-        if isinstance(slot, dict) and slot.get("section") == "patient"
+        slot for slot in field_slots if isinstance(slot, dict) and slot.get("section") == "patient"
     ]
     patient_slot_keys = {
         slot.get("canonical_key")
@@ -456,8 +454,7 @@ def test_document_review_normalizes_microchip_suffix_to_digits_only(test_client)
     assert response.status_code == 200
     payload = response.json()
     assert (
-        payload["active_interpretation"]["data"]["global_schema"]["microchip_id"]
-        == "00023035139"
+        payload["active_interpretation"]["data"]["global_schema"]["microchip_id"] == "00023035139"
     )
 
 
@@ -579,9 +576,7 @@ def test_document_review_moves_visit_scoped_keys_into_visits_group(test_client):
     data = payload["active_interpretation"]["data"]
 
     top_level_keys = {
-        field.get("key")
-        for field in data.get("fields", [])
-        if isinstance(field, dict)
+        field.get("key") for field in data.get("fields", []) if isinstance(field, dict)
     }
     assert "visit_date" not in top_level_keys
     assert "diagnosis" not in top_level_keys
@@ -783,9 +778,7 @@ def test_document_review_non_visit_dates_do_not_create_assigned_visits(test_clie
     data = response.json()["active_interpretation"]["data"]
 
     top_level_keys = {
-        field.get("key")
-        for field in data.get("fields", [])
-        if isinstance(field, dict)
+        field.get("key") for field in data.get("fields", []) if isinstance(field, dict)
     }
     assert "diagnosis" not in top_level_keys
     assert "procedure" not in top_level_keys
@@ -809,9 +802,7 @@ def test_document_review_non_visit_dates_do_not_create_assigned_visits(test_clie
     )
     assert isinstance(unassigned, dict)
     unassigned_keys = {
-        field.get("key")
-        for field in unassigned.get("fields", [])
-        if isinstance(field, dict)
+        field.get("key") for field in unassigned.get("fields", []) if isinstance(field, dict)
     }
     assert "diagnosis" in unassigned_keys
     assert "procedure" in unassigned_keys
@@ -879,9 +870,7 @@ def test_document_review_ambiguous_second_date_stays_unassigned(test_client):
     assert len(assigned) == 1
     assert assigned[0].get("visit_date") == "2026-02-11"
     assigned_keys = {
-        field.get("key")
-        for field in assigned[0].get("fields", [])
-        if isinstance(field, dict)
+        field.get("key") for field in assigned[0].get("fields", []) if isinstance(field, dict)
     }
     assert "symptoms" in assigned_keys
     assert "medication" not in assigned_keys
@@ -896,9 +885,7 @@ def test_document_review_ambiguous_second_date_stays_unassigned(test_client):
     )
     assert isinstance(unassigned, dict)
     unassigned_keys = {
-        field.get("key")
-        for field in unassigned.get("fields", [])
-        if isinstance(field, dict)
+        field.get("key") for field in unassigned.get("fields", []) if isinstance(field, dict)
     }
     assert "medication" in unassigned_keys
 
@@ -1119,9 +1106,7 @@ def test_document_review_us46_mixed_multi_visit_assignment_regression_guardrail(
     data = response.json()["active_interpretation"]["data"]
 
     top_level_keys = {
-        field.get("key")
-        for field in data.get("fields", [])
-        if isinstance(field, dict)
+        field.get("key") for field in data.get("fields", []) if isinstance(field, dict)
     }
     assert _US46_VISIT_SCOPED_KEYS.isdisjoint(top_level_keys)
 
@@ -1178,8 +1163,7 @@ def test_document_review_keeps_canonical_microchip_digits_unchanged(test_client)
     assert response.status_code == 200
     payload = response.json()
     assert (
-        payload["active_interpretation"]["data"]["global_schema"]["microchip_id"]
-        == "00023035139"
+        payload["active_interpretation"]["data"]["global_schema"]["microchip_id"] == "00023035139"
     )
 
 
@@ -1303,7 +1287,7 @@ def test_cross_document_learning_applies_negative_adjustment_after_edit_signal(t
         _insert_structured_interpretation(
             run_id=run_id,
             data={
-                    "document_id": document_id,
+                "document_id": document_id,
                 "processing_run_id": run_id,
                 "created_at": "2026-02-10T10:00:05+00:00",
                 "global_schema": baseline["data"]["global_schema"],
@@ -1665,9 +1649,7 @@ def test_interpretation_edit_creates_new_version_and_change_logs(test_client):
     edited_pet_name = next(field for field in edited_fields if field["field_id"] == "field-1")
     added_custom_field = next(field for field in edited_fields if field["key"] == "new_custom_key")
     assert any(
-        field["field_id"] == "field-1"
-        and field["value"] == "Nala"
-        and field["origin"] == "human"
+        field["field_id"] == "field-1" and field["value"] == "Nala" and field["origin"] == "human"
         for field in edited_fields
     )
     assert any(

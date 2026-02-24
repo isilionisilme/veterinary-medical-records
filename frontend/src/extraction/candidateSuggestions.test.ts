@@ -96,7 +96,7 @@ describe("resolveCandidateSuggestionSections", () => {
         { value: "C", confidence: 0.3 },
       ],
       2,
-      3
+      3,
     );
 
     expect(sections.applicableSuggestions).toEqual([

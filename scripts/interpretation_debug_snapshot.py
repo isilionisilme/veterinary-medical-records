@@ -152,9 +152,7 @@ def build_snapshot(document_id: str) -> dict[str, Any]:
             "failure_reason": "NO_COMPLETED_RUN",
         }
 
-    raw_text_info = _file_info(
-        storage.resolve_raw_text(document_id=document_id, run_id=run.run_id)
-    )
+    raw_text_info = _file_info(storage.resolve_raw_text(document_id=document_id, run_id=run.run_id))
     interpretation_row = _latest_artifact_row(
         run_id=run.run_id,
         artifact_type="STRUCTURED_INTERPRETATION",
@@ -198,9 +196,7 @@ def build_snapshot(document_id: str) -> dict[str, Any]:
 
         raw_global = data.get("global_schema")
         if raw_global is not None and not isinstance(raw_global, dict):
-            parsing_errors.append(
-                "`data.global_schema` exists but is not an object."
-            )
+            parsing_errors.append("`data.global_schema` exists but is not an object.")
             raw_global = {}
 
         normalized_global = normalize_global_schema(
@@ -216,10 +212,7 @@ def build_snapshot(document_id: str) -> dict[str, Any]:
                 and isinstance(normalized_global.get(key), list)
                 and len(normalized_global.get(key, [])) > 0
             )
-            or (
-                isinstance(normalized_global.get(key), str)
-                and bool(normalized_global.get(key))
-            )
+            or (isinstance(normalized_global.get(key), str) and bool(normalized_global.get(key)))
         ]
         structured_info = {
             "exists": True,

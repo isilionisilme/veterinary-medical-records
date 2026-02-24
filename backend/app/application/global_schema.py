@@ -56,9 +56,7 @@ def _load_schema_contract() -> dict[str, object]:
 
         field_key = str(field.get("key", "")).strip()
         if not field_key:
-            raise RuntimeError(
-                f"Global Schema field at index {index} must define a non-empty key"
-            )
+            raise RuntimeError(f"Global Schema field at index {index} must define a non-empty key")
         if field_key in seen_keys:
             raise RuntimeError(f"Global Schema contains duplicate key: {field_key}")
         seen_keys.add(field_key)
@@ -99,24 +97,18 @@ _CONTRACT_METADATA = _validate_contract_metadata(_SCHEMA_CONTRACT)
 _FIELD_DEFINITIONS = list(_SCHEMA_CONTRACT["fields"])
 
 CONTRACT_NAME: str | None = _CONTRACT_METADATA[0] if _CONTRACT_METADATA is not None else None
-CONTRACT_REVISION: str | None = (
-    _CONTRACT_METADATA[1] if _CONTRACT_METADATA is not None else None
-)
+CONTRACT_REVISION: str | None = _CONTRACT_METADATA[1] if _CONTRACT_METADATA is not None else None
 
 GLOBAL_SCHEMA_KEYS: tuple[str, ...] = tuple(
     str(field["key"]).strip() for field in _FIELD_DEFINITIONS
 )
 
 REPEATABLE_KEYS: frozenset[str] = frozenset(
-    str(field["key"]).strip()
-    for field in _FIELD_DEFINITIONS
-    if bool(field.get("repeatable"))
+    str(field["key"]).strip() for field in _FIELD_DEFINITIONS if bool(field.get("repeatable"))
 )
 
 CRITICAL_KEYS: frozenset[str] = frozenset(
-    str(field["key"]).strip()
-    for field in _FIELD_DEFINITIONS
-    if bool(field.get("critical"))
+    str(field["key"]).strip() for field in _FIELD_DEFINITIONS if bool(field.get("critical"))
 )
 
 VALUE_TYPE_BY_KEY: dict[str, str] = {

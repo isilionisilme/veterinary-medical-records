@@ -748,4 +748,3 @@ class SqliteDocumentRepository:
                 continue
             return str(row["run_id"]), payload
         return None
-

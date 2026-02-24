@@ -80,7 +80,7 @@ export function ToastHost({
         >
           <div
             className={`${TOAST_BASE_CLASS} text-base ${getToastKindClass(
-              uploadFeedback.kind === "success" ? "success" : "error"
+              uploadFeedback.kind === "success" ? "success" : "error",
             )}`}
             style={getToastKindBackground(uploadFeedback.kind === "success" ? "success" : "error")}
             role={uploadFeedback.kind === "error" ? "alert" : "status"}
@@ -88,7 +88,7 @@ export function ToastHost({
             <div className="flex items-center justify-between gap-3">
               <span>{uploadFeedback.message}</span>
               <IconButton
-                label="Cerrar notificacion"
+                label="Cerrar notificación"
                 onClick={onCloseUploadFeedback}
                 className="text-lg font-semibold leading-none text-ink"
               >
@@ -110,7 +110,7 @@ export function ToastHost({
               <div className="mt-2 flex items-center gap-3">
                 {uploadFeedback.technicalDetails && (
                   <details className="text-xs text-muted">
-                    <summary className="cursor-pointer">Ver detalles tecnicos</summary>
+                    <summary className="cursor-pointer">Ver detalles técnicos</summary>
                     <p className="mt-1">{uploadFeedback.technicalDetails}</p>
                   </details>
                 )}
@@ -129,21 +129,21 @@ export function ToastHost({
                 ? "success"
                 : actionFeedback.kind === "info"
                   ? "info"
-                  : "error"
+                  : "error",
             )}`}
             style={getToastKindBackground(
               actionFeedback.kind === "success"
                 ? "success"
                 : actionFeedback.kind === "info"
                   ? "info"
-                  : "error"
+                  : "error",
             )}
             role={actionFeedback.kind === "error" ? "alert" : "status"}
           >
             <div className="flex items-center justify-between gap-3">
               <span>{actionFeedback.message}</span>
               <IconButton
-                label="Cerrar notificacion de accion"
+                label="Cerrar notificación de acción"
                 onClick={onCloseActionFeedback}
                 className="text-lg font-semibold leading-none text-ink"
               >
@@ -153,7 +153,7 @@ export function ToastHost({
             {actionFeedback.kind === "error" && actionFeedback.technicalDetails && (
               <div className="mt-2 flex items-center gap-3">
                 <details className="text-xs text-muted">
-                  <summary className="cursor-pointer">Ver detalles tecnicos</summary>
+                  <summary className="cursor-pointer">Ver detalles técnicos</summary>
                   <p className="mt-1">{actionFeedback.technicalDetails}</p>
                 </details>
               </div>

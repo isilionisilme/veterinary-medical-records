@@ -10,9 +10,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-DEFAULT_MAP_PATH = Path(
-    "docs/agent_router/01_WORKFLOW/DOC_UPDATES/router_parity_map.json"
-)
+DEFAULT_MAP_PATH = Path("docs/agent_router/01_WORKFLOW/DOC_UPDATES/router_parity_map.json")
 
 
 def _run_changed_files(base_ref: str) -> list[str]:
@@ -111,9 +109,7 @@ def evaluate_parity(
 
             module_file = repo_root / module_path
             if not module_file.exists():
-                findings.append(
-                    f"Parity target missing for source `{source_doc}`: `{module_path}`"
-                )
+                findings.append(f"Parity target missing for source `{source_doc}`: `{module_path}`")
                 continue
 
             module_text = module_file.read_text(encoding="utf-8")
@@ -155,9 +151,7 @@ def evaluate_parity(
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--base-ref", required=True, help="Base commit/ref for PR diff."
-    )
+    parser.add_argument("--base-ref", required=True, help="Base commit/ref for PR diff.")
     parser.add_argument(
         "--map-file",
         default=str(DEFAULT_MAP_PATH),

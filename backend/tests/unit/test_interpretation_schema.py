@@ -147,7 +147,7 @@ def test_candidate_bundle_is_persisted_when_debug_flag_enabled(monkeypatch) -> N
 
 def test_candidate_suggestions_are_ordered_and_capped_to_top_five(monkeypatch) -> None:
     monkeypatch.setattr(
-        "backend.app.application.processing_runner._mine_interpretation_candidates",
+        "backend.app.application.processing.interpretation._mine_interpretation_candidates",
         lambda _raw_text: {
             "pet_name": [
                 {"value": "Milo", "confidence": 0.72, "evidence": {"page": 1, "snippet": "Milo"}},
@@ -179,11 +179,11 @@ def test_candidate_suggestions_are_ordered_and_capped_to_top_five(monkeypatch) -
 
 def test_candidate_suggestions_are_omitted_when_field_has_no_candidates(monkeypatch) -> None:
     monkeypatch.setattr(
-        "backend.app.application.processing_runner._mine_interpretation_candidates",
+        "backend.app.application.processing.interpretation._mine_interpretation_candidates",
         lambda _raw_text: {},
     )
     monkeypatch.setattr(
-        "backend.app.application.processing_runner._map_candidates_to_global_schema",
+        "backend.app.application.processing.interpretation._map_candidates_to_global_schema",
         lambda _bundle: ({"pet_name": "Luna"}, {"pet_name": []}),
     )
 
@@ -202,9 +202,7 @@ def test_candidate_suggestions_are_omitted_when_field_has_no_candidates(monkeypa
 
 
 def test_microchip_heuristic_extracts_digits_from_keyworded_line() -> None:
-    candidates = _mine_interpretation_candidates(
-        "Microchip: 00023035139 NHC\nPaciente: Luna"
-    )
+    candidates = _mine_interpretation_candidates("Microchip: 00023035139 NHC\nPaciente: Luna")
 
     microchip_candidates = candidates.get("microchip_id", [])
     assert microchip_candidates
@@ -218,9 +216,7 @@ def test_microchip_heuristic_skips_owner_address_without_chip_digits() -> None:
 
 
 def test_microchip_heuristic_extracts_digits_from_ocr_n_prefix_line() -> None:
-    candidates = _mine_interpretation_candidates(
-        "N�: 941000024967769\nPaciente: Luna"
-    )
+    candidates = _mine_interpretation_candidates("N�: 941000024967769\nPaciente: Luna")
 
     microchip_candidates = candidates.get("microchip_id", [])
     assert microchip_candidates
@@ -228,9 +224,7 @@ def test_microchip_heuristic_extracts_digits_from_ocr_n_prefix_line() -> None:
 
 
 def test_microchip_heuristic_rejects_generic_no_reference_without_chip_context() -> None:
-    candidates = _mine_interpretation_candidates(
-        "No: 941000024967769\nFactura: 2026-02"
-    )
+    candidates = _mine_interpretation_candidates("No: 941000024967769\nFactura: 2026-02")
 
     assert candidates.get("microchip_id", []) == []
 
@@ -246,9 +240,7 @@ def test_vet_name_label_heuristic_extracts_name_candidate() -> None:
 
 
 def test_owner_name_label_heuristic_extracts_owner_candidate() -> None:
-    candidates = _mine_interpretation_candidates(
-        "Propietario: BEATRIZ ABARCA\nPaciente: Luna"
-    )
+    candidates = _mine_interpretation_candidates("Propietario: BEATRIZ ABARCA\nPaciente: Luna")
 
     owner_candidates = candidates.get("owner_name", [])
     assert owner_candidates
@@ -360,9 +352,7 @@ def test_mvp_coverage_labeled_fields_are_extracted_with_label_confidence() -> No
 
 
 def test_mvp_coverage_fallback_candidate_uses_low_medium_confidence() -> None:
-    candidates = _mine_interpretation_candidates(
-        "Amoxicilina 250 mg cada 12h durante 7 dias"
-    )
+    candidates = _mine_interpretation_candidates("Amoxicilina 250 mg cada 12h durante 7 dias")
 
     medication_candidates = candidates.get("medication", [])
     assert medication_candidates
@@ -373,12 +363,7 @@ def test_repeatable_fields_are_capped_to_three_candidates_in_global_schema() -> 
     payload = _build_interpretation_artifact(
         document_id="doc-repeatable-cap",
         run_id="run-repeatable-cap",
-        raw_text=(
-            "Diagnostico: uno\n"
-            "Diagnostico: dos\n"
-            "Diagnostico: tres\n"
-            "Diagnostico: cuatro\n"
-        ),
+        raw_text=("Diagnostico: uno\nDiagnostico: dos\nDiagnostico: tres\nDiagnostico: cuatro\n"),
     )
 
     diagnosis = payload["data"]["global_schema"]["diagnosis"]
@@ -386,9 +371,7 @@ def test_repeatable_fields_are_capped_to_three_candidates_in_global_schema() -> 
     assert len(diagnosis) == 3
 
 
-def test_interpretation_artifact_exposes_confidence_policy_cutoffs(
-    monkeypatch, caplog
-) -> None:
+def test_interpretation_artifact_exposes_confidence_policy_cutoffs(monkeypatch, caplog) -> None:
     caplog.set_level("INFO")
     monkeypatch.setenv("VET_RECORDS_CONFIDENCE_POLICY_VERSION", "v1-test")
     monkeypatch.setenv("VET_RECORDS_CONFIDENCE_LOW_MAX", "0.5")

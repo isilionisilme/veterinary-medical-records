@@ -10,9 +10,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-DEFAULT_MAP_PATH = Path(
-    "docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json"
-)
+DEFAULT_MAP_PATH = Path("docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json")
 
 
 def _run_changed_files(base_ref: str) -> list[str]:
@@ -84,9 +82,7 @@ def evaluate_sync(
     required_doc_globs: list[str] | None = None,
 ) -> list[str]:
     changed_docs = [
-        path
-        for path in changed_files
-        if path.startswith("docs/") and path.endswith(".md")
+        path for path in changed_files if path.startswith("docs/") and path.endswith(".md")
     ]
     findings: list[str] = []
 
@@ -101,9 +97,7 @@ def evaluate_sync(
     ]
 
     if fail_on_unmapped_docs and normalized_required_globs:
-        scoped_docs = [
-            doc for doc in changed_docs if _matches_any(doc, normalized_required_globs)
-        ]
+        scoped_docs = [doc for doc in changed_docs if _matches_any(doc, normalized_required_globs)]
     else:
         scoped_docs = []
 
@@ -120,9 +114,7 @@ def evaluate_sync(
             findings.append(f"Invalid mapping rule: {raw_rule}")
             continue
 
-        required_patterns = [
-            str(item).strip() for item in required_any if str(item).strip()
-        ]
+        required_patterns = [str(item).strip() for item in required_any if str(item).strip()]
         owner_patterns = [str(item).strip() for item in owner_any if str(item).strip()]
         valid_rules.append(
             {
@@ -213,11 +205,7 @@ def main() -> int:
         )
         return 2
 
-    required_doc_globs = [
-        str(item).strip()
-        for item in required_doc_globs_raw
-        if str(item).strip()
-    ]
+    required_doc_globs = [str(item).strip() for item in required_doc_globs_raw if str(item).strip()]
     findings = evaluate_sync(
         changed_files,
         rules,

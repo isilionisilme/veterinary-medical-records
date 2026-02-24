@@ -100,9 +100,7 @@ def test_operational_modules_do_not_directly_load_human_docs() -> None:
 
 
 def test_project_split_entries_include_new_product_and_ux_modules() -> None:
-    product_entry = _read_text(
-        ROUTER_ROOT / "04_PROJECT" / "PRODUCT_DESIGN" / "00_entry.md"
-    )
+    product_entry = _read_text(ROUTER_ROOT / "04_PROJECT" / "PRODUCT_DESIGN" / "00_entry.md")
     ux_entry = _read_text(ROUTER_ROOT / "04_PROJECT" / "UX_DESIGN" / "00_entry.md")
 
     assert (
@@ -139,9 +137,7 @@ def test_project_split_entry_includes_design_system_module() -> None:
 
 
 def test_project_split_entry_includes_implementation_plan_us32_module() -> None:
-    plan_entry = _read_text(
-        ROUTER_ROOT / "04_PROJECT" / "IMPLEMENTATION_PLAN" / "00_entry.md"
-    )
+    plan_entry = _read_text(ROUTER_ROOT / "04_PROJECT" / "IMPLEMENTATION_PLAN" / "00_entry.md")
     release5 = _read_text(
         ROUTER_ROOT
         / "04_PROJECT"
@@ -157,9 +153,7 @@ def test_project_split_entry_includes_implementation_plan_us32_module() -> None:
 
 
 def test_project_split_entry_includes_implementation_plan_us35_module() -> None:
-    plan_entry = _read_text(
-        ROUTER_ROOT / "04_PROJECT" / "IMPLEMENTATION_PLAN" / "00_entry.md"
-    )
+    plan_entry = _read_text(ROUTER_ROOT / "04_PROJECT" / "IMPLEMENTATION_PLAN" / "00_entry.md")
     release4 = _read_text(
         ROUTER_ROOT
         / "04_PROJECT"
@@ -175,9 +169,7 @@ def test_project_split_entry_includes_implementation_plan_us35_module() -> None:
 
 
 def test_project_split_entry_includes_implementation_plan_us41_module() -> None:
-    plan_entry = _read_text(
-        ROUTER_ROOT / "04_PROJECT" / "IMPLEMENTATION_PLAN" / "00_entry.md"
-    )
+    plan_entry = _read_text(ROUTER_ROOT / "04_PROJECT" / "IMPLEMENTATION_PLAN" / "00_entry.md")
     release5 = _read_text(
         ROUTER_ROOT
         / "04_PROJECT"
@@ -187,16 +179,13 @@ def test_project_split_entry_includes_implementation_plan_us41_module() -> None:
 
     assert (
         "docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/"
-        "277_us-41-show-top-5-candidate-suggestions-in-field-edit-modal.md"
-        in plan_entry
+        "277_us-41-show-top-5-candidate-suggestions-in-field-edit-modal.md" in plan_entry
     )
     assert "US-41 — Show Top-5 Candidate Suggestions in Field Edit Modal" in release5
 
 
 def test_project_split_entry_includes_implementation_plan_us42_module() -> None:
-    plan_entry = _read_text(
-        ROUTER_ROOT / "04_PROJECT" / "IMPLEMENTATION_PLAN" / "00_entry.md"
-    )
+    plan_entry = _read_text(ROUTER_ROOT / "04_PROJECT" / "IMPLEMENTATION_PLAN" / "00_entry.md")
     release6 = _read_text(
         ROUTER_ROOT
         / "04_PROJECT"
@@ -206,8 +195,7 @@ def test_project_split_entry_includes_implementation_plan_us42_module() -> None:
 
     assert (
         "docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/"
-        "278_us-42-provide-evaluator-friendly-installation-execution-docker-first.md"
-        in plan_entry
+        "278_us-42-provide-evaluator-friendly-installation-execution-docker-first.md" in plan_entry
     )
     assert "US-42 — Provide evaluator-friendly installation & execution (Docker-first)" in release6
 
@@ -265,24 +253,16 @@ def test_technical_design_sufficient_evidence_boundary_is_propagated() -> None:
 
 
 def test_user_visible_entry_includes_design_system_module() -> None:
-    user_visible_entry = _read_text(
-        ROUTER_ROOT / "02_PRODUCT" / "USER_VISIBLE" / "00_entry.md"
-    )
-    design_system_entry = _read_text(
-        ROUTER_ROOT / "02_PRODUCT" / "DESIGN_SYSTEM" / "00_entry.md"
-    )
+    user_visible_entry = _read_text(ROUTER_ROOT / "02_PRODUCT" / "USER_VISIBLE" / "00_entry.md")
+    design_system_entry = _read_text(ROUTER_ROOT / "02_PRODUCT" / "DESIGN_SYSTEM" / "00_entry.md")
 
     assert "docs/agent_router/02_PRODUCT/DESIGN_SYSTEM/00_entry.md" in user_visible_entry
     assert "docs/agent_router/04_PROJECT/DESIGN_SYSTEM/00_entry.md" in design_system_entry
 
 
 def test_code_review_protocol_requires_pr_comment_urls_and_follow_up() -> None:
-    code_review_entry = _read_text(
-        ROUTER_ROOT / "01_WORKFLOW" / "CODE_REVIEW" / "00_entry.md"
-    )
-    pr_commenting = _read_text(
-        ROUTER_ROOT / "01_WORKFLOW" / "CODE_REVIEW" / "20_pr_commenting.md"
-    )
+    code_review_entry = _read_text(ROUTER_ROOT / "01_WORKFLOW" / "CODE_REVIEW" / "00_entry.md")
+    pr_commenting = _read_text(ROUTER_ROOT / "01_WORKFLOW" / "CODE_REVIEW" / "20_pr_commenting.md")
 
     assert "Mandatory publication protocol (blocking)" in code_review_entry
     assert "the PR comment URL is returned to the user" in code_review_entry
@@ -293,8 +273,7 @@ def test_code_review_protocol_requires_pr_comment_urls_and_follow_up() -> None:
     assert "Return the follow-up PR comment URL" in pr_commenting
     assert (
         "This follow-up must be published automatically as part of the "
-        "remediation workflow (do not wait for a separate user prompt)."
-        in pr_commenting
+        "remediation workflow (do not wait for a separate user prompt)." in pr_commenting
     )
 
 
@@ -323,14 +302,9 @@ def test_project_owner_modules_include_confidence_tooltip_breakdown_propagation(
     ux_module = _read_text(
         ROUTER_ROOT / "04_PROJECT" / "UX_DESIGN" / "50_4-veterinarian-review-flow.md"
     )
-    design_system_module = _read_text(
-        ROUTER_ROOT / "04_PROJECT" / "DESIGN_SYSTEM" / "00_entry.md"
-    )
+    design_system_module = _read_text(ROUTER_ROOT / "04_PROJECT" / "DESIGN_SYSTEM" / "00_entry.md")
     technical_module = _read_text(
-        ROUTER_ROOT
-        / "04_PROJECT"
-        / "TECHNICAL_DESIGN"
-        / "140_7-confidence-technical-contract.md"
+        ROUTER_ROOT / "04_PROJECT" / "TECHNICAL_DESIGN" / "140_7-confidence-technical-contract.md"
     )
     backend_module = _read_text(
         ROUTER_ROOT
@@ -339,10 +313,7 @@ def test_project_owner_modules_include_confidence_tooltip_breakdown_propagation(
         / "100_structured-interpretation-schema.md"
     )
     frontend_module = _read_text(
-        ROUTER_ROOT
-        / "04_PROJECT"
-        / "FRONTEND_IMPLEMENTATION"
-        / "110_confidence-rendering.md"
+        ROUTER_ROOT / "04_PROJECT" / "FRONTEND_IMPLEMENTATION" / "110_confidence-rendering.md"
     )
     implementation_plan_release = _read_text(
         ROUTER_ROOT
@@ -369,13 +340,9 @@ def test_project_owner_modules_include_confidence_tooltip_breakdown_propagation(
         in implementation_plan_release
     )
     assert (
-        "US-40 — Implement field-level confidence tooltip breakdown"
-        in implementation_plan_release
+        "US-40 — Implement field-level confidence tooltip breakdown" in implementation_plan_release
     )
-    assert (
-        "US-32 — Align review rendering to Global Schema template"
-        in implementation_plan_release
-    )
+    assert "US-32 — Align review rendering to Global Schema template" in implementation_plan_release
     assert (
         "US-41 — Show Top-5 Candidate Suggestions in Field Edit Modal"
         in implementation_plan_release
@@ -384,23 +351,17 @@ def test_project_owner_modules_include_confidence_tooltip_breakdown_propagation(
 
 
 def test_technical_design_entry_includes_d9_visit_grouped_module() -> None:
-    technical_entry = _read_text(
-        ROUTER_ROOT / "04_PROJECT" / "TECHNICAL_DESIGN" / "00_entry.md"
-    )
+    technical_entry = _read_text(ROUTER_ROOT / "04_PROJECT" / "TECHNICAL_DESIGN" / "00_entry.md")
 
     assert (
         "docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/"
-        "505_d9-structured-interpretation-schema-visit-grouped-normative.md"
-        in technical_entry
+        "505_d9-structured-interpretation-schema-visit-grouped-normative.md" in technical_entry
     )
 
 
 def test_product_and_ux_owner_modules_include_visit_grouping_and_copy_updates() -> None:
     product_module = _read_text(
-        ROUTER_ROOT
-        / "04_PROJECT"
-        / "PRODUCT_DESIGN"
-        / "77_global-schema-canonical-field-list.md"
+        ROUTER_ROOT / "04_PROJECT" / "PRODUCT_DESIGN" / "77_global-schema-canonical-field-list.md"
     )
     ux_module = _read_text(
         ROUTER_ROOT
@@ -410,27 +371,22 @@ def test_product_and_ux_owner_modules_include_visit_grouping_and_copy_updates() 
     )
 
     assert "## Visit grouping (MVP)" in product_module
-    assert '`document_date` is removed from the MVP schema' in product_module
-    assert '`claim_id` is removed from the MVP schema' in product_module
+    assert "`document_date` is removed from the MVP schema" in product_module
+    assert "`claim_id` is removed from the MVP schema" in product_module
     assert (
         "owner_id (string) (optional; product semantics in MVP: "
-        "owner address shown as label"
-        in product_module
+        "owner address shown as label" in product_module
     )
     assert "Key -> UI label -> Section (UI)" in product_module
 
     assert (
-        "Render fixed non-visit sections plus a dedicated **Visitas** grouping block."
-        in ux_module
+        "Render fixed non-visit sections plus a dedicated **Visitas** grouping block." in ux_module
     )
     assert (
         "No heuristics grouping in UI; grouping comes from `visits[]` in the canonical contract."
         in ux_module
     )
-    assert (
-        "Synthetic unassigned group copy is fixed: **Sin asignar / Sin fecha**."
-        in ux_module
-    )
+    assert "Synthetic unassigned group copy is fixed: **Sin asignar / Sin fecha**." in ux_module
     assert (
         "Review state remains document-level in MVP, even when multiple visits are present."
         in ux_module
@@ -440,10 +396,7 @@ def test_product_and_ux_owner_modules_include_visit_grouping_and_copy_updates() 
 def test_frontend_implementation_note_includes_build_determinism_and_required_checks() -> None:
     source_doc = _read_text(REPO_ROOT / "docs" / "project" / "FRONTEND_IMPLEMENTATION.md")
     owner_module = _read_text(
-        ROUTER_ROOT
-        / "04_PROJECT"
-        / "FRONTEND_IMPLEMENTATION"
-        / "150_implementation-note.md"
+        ROUTER_ROOT / "04_PROJECT" / "FRONTEND_IMPLEMENTATION" / "150_implementation-note.md"
     )
 
     required_source_terms = (

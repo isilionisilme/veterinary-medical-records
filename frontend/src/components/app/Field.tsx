@@ -27,7 +27,7 @@ export function ValueSurface({
         variant === "long"
           ? "px-[var(--value-padding-long-x)] py-[var(--value-padding-long-y)] leading-6 whitespace-pre-wrap min-h-[var(--long-text-min-height)] max-h-[var(--long-text-max-height)] overflow-auto"
           : "px-[var(--value-padding-short-x)] py-[var(--value-padding-short-y)]",
-        className
+        className,
       )}
     >
       {children}
@@ -65,7 +65,7 @@ export function FieldRow({
       data-testid={leftTestId}
       className={cn(
         "grid w-full items-start grid-cols-[var(--field-row-label-col)_minmax(0,1fr)] gap-x-[var(--field-row-gap-x)]",
-        className
+        className,
       )}
     >
       <div className="min-w-0 self-start">
@@ -83,7 +83,9 @@ export function FieldRow({
               {label}
             </div>
           </div>
-          {labelMeta ? <div className="mt-[1px] inline-flex shrink-0 items-center gap-1.5">{labelMeta}</div> : null}
+          {labelMeta ? (
+            <div className="mt-[1px] inline-flex shrink-0 items-center gap-1.5">{labelMeta}</div>
+          ) : null}
         </div>
       </div>
       <div
@@ -92,7 +94,7 @@ export function FieldRow({
           "min-w-0 w-full self-start",
           resolvedValuePlacement === "below-label"
             ? "col-span-2 pl-[var(--field-row-label-indent)]"
-            : ""
+            : "",
         )}
       >
         {value}
@@ -101,6 +103,12 @@ export function FieldRow({
   );
 }
 
-export function RepeatableList({ children, className }: { children: ReactNode; className?: string }) {
+export function RepeatableList({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   return <div className={cn("mt-1 space-y-1", className)}>{children}</div>;
 }

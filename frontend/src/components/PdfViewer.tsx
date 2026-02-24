@@ -281,7 +281,7 @@ export function PdfViewer({
     debugWindow.__pdfBugSnapshots = store;
 
     console.groupCollapsed(
-      `[PdfBugSnapshot] ${params.reason} | doc=${documentId ?? "unknown"} page=${params.pageIndex}`
+      `[PdfBugSnapshot] ${params.reason} | doc=${documentId ?? "unknown"} page=${params.pageIndex}`,
     );
     console.log(snapshot);
     console.groupEnd();
@@ -354,7 +354,7 @@ export function PdfViewer({
         setPdfDoc(doc);
         setTotalPages(doc.numPages);
         setPageNumber(1);
-      } catch (err) {
+      } catch (_err) {
         if (!cancelled) {
           setError("No pudimos cargar el PDF.");
         }
@@ -592,9 +592,11 @@ export function PdfViewer({
             renderTaskStatus: renderTaskStatusRef.current.get(pageIndex) ?? "unknown",
           });
 
-          const latestSnapshots = (window as Window & {
-            __pdfBugSnapshots?: Array<{ chainHasFlip?: boolean }>;
-          }).__pdfBugSnapshots;
+          const latestSnapshots = (
+            window as Window & {
+              __pdfBugSnapshots?: Array<{ chainHasFlip?: boolean }>;
+            }
+          ).__pdfBugSnapshots;
           const latestSnapshot = latestSnapshots?.[latestSnapshots.length - 1];
           if (latestSnapshot?.chainHasFlip) {
             captureDebugSnapshot({
@@ -687,9 +689,7 @@ export function PdfViewer({
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          const pageIndex = Number(
-            (entry.target as HTMLElement).dataset.pageIndex || "0"
-          );
+          const pageIndex = Number((entry.target as HTMLElement).dataset.pageIndex || "0");
           ratios.set(pageIndex, entry.intersectionRatio);
         });
 
@@ -709,7 +709,7 @@ export function PdfViewer({
       {
         root,
         threshold: [0, 0.25, 0.5, 0.75, 1],
-      }
+      },
     );
 
     pageRefs.current.forEach((page) => {
@@ -725,7 +725,7 @@ export function PdfViewer({
 
   const pages = useMemo(
     () => Array.from({ length: totalPages }, (_, index) => index + 1),
-    [totalPages]
+    [totalPages],
   );
 
   const scrollToPage = (targetPage: number, event?: React.MouseEvent<HTMLButtonElement>) => {
@@ -857,52 +857,50 @@ export function PdfViewer({
           data-testid="pdf-scroll-container"
           className="panel-shell h-full min-h-0 overflow-y-auto p-[var(--canvas-gap)]"
         >
-        <div ref={contentRef} className="mx-auto w-full">
-          {loading && (
-            <div className="flex h-72 items-center justify-center text-sm text-muted">
-              Cargando PDF...
-            </div>
-          )}
-          {error && (
-            <div className="flex h-72 items-center justify-center text-sm text-statusError">
-              {error}
-            </div>
-          )}
-          {!loading &&
-            !error &&
-            fileUrl &&
-            pages.map((page) => (
-              <div
-                key={
-                  debugFlags.enabled && debugFlags.hardRemountCanvas
-                    ? `${documentId ?? fileUrl ?? "unknown"}:${page}:${zoomLevel}:0`
-                    : `${documentId ?? fileUrl ?? "unknown"}:${page}`
-                }
-                ref={(node) => {
-                  pageRefs.current[page - 1] = node;
-                }}
-                data-page-index={page}
-                data-testid="pdf-page"
-                className={`mb-6 last:mb-0 ${
-                  focusPage === page && isSnippetLocated
-                    ? "rounded-card bg-accent/10 p-1"
-                    : ""
-                }`}
-              >
+          <div ref={contentRef} className="mx-auto w-full">
+            {loading && (
+              <div className="flex h-72 items-center justify-center text-sm text-muted">
+                Cargando PDF...
+              </div>
+            )}
+            {error && (
+              <div className="flex h-72 items-center justify-center text-sm text-statusError">
+                {error}
+              </div>
+            )}
+            {!loading &&
+              !error &&
+              fileUrl &&
+              pages.map((page) => (
+                <div
+                  key={
+                    debugFlags.enabled && debugFlags.hardRemountCanvas
+                      ? `${documentId ?? fileUrl ?? "unknown"}:${page}:${zoomLevel}:0`
+                      : `${documentId ?? fileUrl ?? "unknown"}:${page}`
+                  }
+                  ref={(node) => {
+                    pageRefs.current[page - 1] = node;
+                  }}
+                  data-page-index={page}
+                  data-testid="pdf-page"
+                  className={`mb-6 last:mb-0 ${
+                    focusPage === page && isSnippetLocated ? "rounded-card bg-accent/10 p-1" : ""
+                  }`}
+                >
                   <canvas
                     ref={(node) => {
                       canvasRefs.current[page - 1] = node;
                     }}
                     className="mx-auto rounded-card bg-surface"
                   />
+                </div>
+              ))}
+            {!fileUrl && !loading && (
+              <div className="flex h-72 items-center justify-center text-sm text-muted">
+                Selecciona un documento para iniciar la vista previa.
               </div>
-            ))}
-          {!fileUrl && !loading && (
-            <div className="flex h-72 items-center justify-center text-sm text-muted">
-              Selecciona un documento para iniciar la vista previa.
-            </div>
-          )}
-        </div>
+            )}
+          </div>
         </div>
         {isDragOver && (
           <div className="pointer-events-none absolute inset-3 z-10 flex flex-col items-center justify-center gap-2 rounded-card border-2 border-dashed border-statusSuccess bg-surface/75 backdrop-blur-[1px]">

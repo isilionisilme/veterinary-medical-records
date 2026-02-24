@@ -97,9 +97,7 @@ class FakeFileStorage:
     def exists(self, *, storage_path: str) -> bool:
         return True
 
-    def save_raw_text(
-        self, *, document_id: str, run_id: str, text: str
-    ) -> StoredFile:
+    def save_raw_text(self, *, document_id: str, run_id: str, text: str) -> StoredFile:
         return StoredFile(
             storage_path=f"{document_id}/runs/{run_id}/raw-text.txt",
             file_size=len(text),
@@ -432,4 +430,3 @@ def test_project_review_payload_projects_to_canonical_schema_contract() -> None:
 
     assert projected["schema_contract"] == "visit-grouped-canonical"
     assert "schema_version" not in projected
-

@@ -53,7 +53,7 @@ from backend.app.application.extraction_observability import (
     persist_extraction_run_snapshot,
     summarize_extraction_runs,
 )
-from backend.app.application.processing_runner import enqueue_processing_run
+from backend.app.application.processing import enqueue_processing_run
 from backend.app.config import extraction_observability_enabled, processing_enabled
 from backend.app.domain.models import ProcessingRunState, ProcessingStatus
 from backend.app.ports.document_repository import DocumentRepository
@@ -1013,4 +1013,3 @@ def _log_event(
     if count_returned is not None:
         payload["count_returned"] = count_returned
     logger.info(json.dumps(payload))
-
