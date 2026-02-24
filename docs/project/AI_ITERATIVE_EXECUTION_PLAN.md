@@ -52,7 +52,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [x] F6-A 🚧 — **TÚ pruebas el flujo end-to-end como evaluador** (Claude + Codex)
 
 ### Fase 7 — Cierre global
-- [ ] F7-A 🚧 — Veredicto final + PR a main (Claude/Codex)
+- [x] F7-A 🚧 — Veredicto final + PR a main (Claude/Codex)
 
 ---
 
