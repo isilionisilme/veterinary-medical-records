@@ -34,7 +34,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [x] F2-G 🚧 — **TÚ pruebas la app post-refactor** (~10 min: docker compose up, subir PDF, editar, confirmar)
 
 ### Fase 3 — Quick wins de tooling
-- [ ] F3-A 🔄 — Definir config ESLint + Prettier + pre-commit (Claude)
+- [x] F3-A 🔄 — Definir config ESLint + Prettier + pre-commit (Claude)
 - [ ] F3-B 🔄 — Implementar tooling + coverage (Codex)
 
 ### Fase 4 — Calidad de tests
@@ -192,6 +192,184 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 
 **Regla global:** ningún archivo nuevo > 500 LOC.
 
+### F3-A — Configuración de tooling definida por Claude
+
+#### 1. ESLint (`frontend/eslint.config.mjs`) — flat config ESLint 9
+
+Dependencias nuevas (devDependencies):
+```
+eslint@^9
+@eslint/js@^9
+typescript-eslint@^8
+eslint-plugin-react-hooks@^5
+eslint-plugin-react-refresh@^0.4
+eslint-config-prettier@^10
+```
+
+Contenido:
+```js
+import js from "@eslint/js";
+import tseslint from "typescript-eslint";
+import reactHooks from "eslint-plugin-react-hooks";
+import reactRefresh from "eslint-plugin-react-refresh";
+import prettierConfig from "eslint-config-prettier";
+
+export default tseslint.config(
+  { ignores: ["dist/"] },
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    plugins: {
+      "react-hooks": reactHooks,
+      "react-refresh": reactRefresh,
+    },
+    rules: {
+      ...reactHooks.configs.recommended.rules,
+      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
+    },
+  },
+  prettierConfig,
+);
+```
+
+#### 2. Prettier (`frontend/.prettierrc`)
+
+```json
+{
+  "semi": true,
+  "singleQuote": false,
+  "trailingComma": "all",
+  "printWidth": 100,
+  "tabWidth": 2
+}
+```
+Coherente con `line-length = 100` de ruff en backend.
+
+Dependencias nuevas:
+```
+prettier@^3
+```
+
+#### 3. Scripts de package.json
+
+Actualizar/añadir:
+```json
+"lint": "eslint src/ && tsc --noEmit",
+"lint:fix": "eslint src/ --fix",
+"format": "prettier --write 'src/**/*.{ts,tsx,css}'",
+"format:check": "prettier --check 'src/**/*.{ts,tsx,css}'",
+"test:coverage": "vitest run --coverage"
+```
+
+#### 4. Coverage frontend (`@vitest/coverage-v8`)
+
+Dependencia nueva:
+```
+@vitest/coverage-v8@^4
+```
+
+Añadir a `vite.config.ts` dentro de `test`:
+```ts
+coverage: {
+  provider: "v8",
+  reporter: ["text", "lcov"],
+  reportsDirectory: "./coverage",
+},
+```
+
+Añadir `frontend/coverage/` a `.gitignore` (raíz).
+
+#### 5. Coverage backend (`pytest-cov`)
+
+Añadir a `requirements-dev.txt`:
+```
+pytest-cov==6.1.1
+```
+
+Añadir a `pytest.ini`:
+```ini
+addopts = --cov=backend/app --cov-report=term-missing
+```
+
+Añadir `htmlcov/` a `.gitignore` (raíz).
+
+#### 6. Pre-commit (`.pre-commit-config.yaml`)
+
+Actualizar ruff a repo actual + añadir hooks frontend:
+```yaml
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.9
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+  - repo: local
+    hooks:
+      - id: frontend-lint
+        name: frontend lint (eslint + tsc)
+        entry: bash -c 'cd frontend && npx eslint src/ && npx tsc --noEmit'
+        language: system
+        pass_filenames: false
+        files: ^frontend/src/.*\.(ts|tsx)$
+      - id: frontend-format
+        name: frontend format check (prettier)
+        entry: bash -c 'cd frontend && npx prettier --check "src/**/*.{ts,tsx,css}"'
+        language: system
+        pass_filenames: false
+        files: ^frontend/src/.*\.(ts|tsx|css)$
+```
+
+Actualizar ruff en `requirements-dev.txt`:
+```
+ruff==0.9.9
+```
+
+Actualizar `pyproject.toml` al formato ruff moderno:
+```toml
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+exclude = ["**/__pycache__", ".git", ".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+extend-ignore = ["B008"]
+```
+
+#### 7. CI (`.github/workflows/ci.yml`)
+
+Añadir al job `frontend_test_build` (después de "Install frontend dependencies"):
+```yaml
+      - name: Run ESLint
+        run: npm --prefix frontend run lint
+      - name: Check Prettier formatting
+        run: npm --prefix frontend run format:check
+```
+Y cambiar "Run frontend tests" para incluir coverage:
+```yaml
+      - name: Run frontend tests with coverage
+        run: npm --prefix frontend run test:coverage
+```
+
+Añadir al job `quality` (después de "Run Ruff"):
+```yaml
+      - name: Check Ruff formatting
+        run: ruff format --check .
+      - name: Run Pytest with coverage
+        run: pytest --cov=backend/app --cov-report=term-missing
+```
+
+#### 8. Autofix inicial
+
+Después de instalar todo, ejecutar:
+```bash
+cd frontend && npx eslint src/ --fix && npx prettier --write 'src/**/*.{ts,tsx,css}'
+cd .. && ruff check --fix . && ruff format .
+```
+Commitear autofix como commit separado antes del commit de plan.
+
 ---
 
 ## Prompt activo (just-in-time) — write-then-execute
@@ -201,10 +379,99 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-_Completado: F2-G_
+F3-B 🔄 — Implementar tooling + coverage (Codex)
 
 ### Prompt
-_Vacío._
+
+```
+--- AGENT IDENTITY CHECK ---
+This prompt is designed for GPT-5.3-Codex in VS Code Copilot Chat.
+If you are not GPT-5.3-Codex: STOP. Tell the user to switch agents.
+--- END IDENTITY CHECK ---
+
+--- BRANCH CHECK ---
+Run: git branch --show-current
+If NOT `improvement/refactor`: STOP. Tell the user: "⚠️ Cambia a la rama improvement/refactor antes de continuar: git checkout improvement/refactor"
+--- END BRANCH CHECK ---
+
+--- SYNC CHECK ---
+Run: git pull origin improvement/refactor
+--- END SYNC CHECK ---
+
+--- PRE-FLIGHT CHECK ---
+1. Verify F3-A has `[x]` in Estado de ejecución.
+2. Verify section `### F3-A — Configuración de tooling definida por Claude` exists and is not empty.
+--- END PRE-FLIGHT CHECK ---
+
+[TASK — F3-B: Implementar tooling + coverage]
+
+Read section `### F3-A — Configuración de tooling definida por Claude` in this file.
+That section contains the EXACT configuration to implement. Follow it literally:
+
+1. **Frontend dependencies**: cd frontend && npm install -D eslint@^9 @eslint/js@^9 typescript-eslint@^8 eslint-plugin-react-hooks@^5 eslint-plugin-react-refresh@^0.4 eslint-config-prettier@^10 prettier@^3 @vitest/coverage-v8@^4
+
+2. **Create `frontend/eslint.config.mjs`**: copy content from F3-A §1 exactly.
+
+3. **Create `frontend/.prettierrc`**: copy content from F3-A §2 exactly.
+
+4. **Update `frontend/package.json` scripts**: replace/add scripts per F3-A §3. Keep existing scripts (`dev`, `build`, `check:design-system`, `preview`, `test`, `test:watch`).
+
+5. **Update `frontend/vite.config.ts`**: add coverage config per F3-A §4 inside the `test` block.
+
+6. **Backend coverage**: add `pytest-cov==6.1.1` to `requirements-dev.txt`. Add `addopts = --cov=backend/app --cov-report=term-missing` to `pytest.ini` under `[pytest]`.
+
+7. **Update `.pre-commit-config.yaml`**: replace entire file with content from F3-A §6.
+
+8. **Update `pyproject.toml`**: restructure ruff config per F3-A §6 (move select/extend-ignore under `[tool.ruff.lint]`).
+
+9. **Update `requirements-dev.txt`**: change ruff version to `ruff==0.9.9`.
+
+10. **Update `.github/workflows/ci.yml`**: add ESLint, Prettier check, ruff format check, and coverage steps per F3-A §7.
+
+11. **Add to `.gitignore`** (root): `frontend/coverage/` and `htmlcov/`.
+
+12. **Autofix pass**: run the commands from F3-A §8 to auto-format all existing code. Commit autofix SEPARATELY before the main commit.
+
+--- TEST GATE ---
+Backend: cd d:/Git/veterinary-medical-records && python -m pytest --tb=short -q
+Frontend: cd d:/Git/veterinary-medical-records/frontend && npm test
+Also verify: cd d:/Git/veterinary-medical-records/frontend && npm run lint && npm run format:check
+Save summary lines for commit messages.
+--- END TEST GATE ---
+
+--- SCOPE BOUNDARY (three-commit strategy for this step) ---
+
+STEP A — Commit autofix (formatting-only changes):
+1. git add -A -- . ':!docs/project/AI_ITERATIVE_EXECUTION_PLAN.md'
+2. git commit -m "style(plan-f3b): autofix eslint + prettier + ruff format
+
+Test proof: <pytest summary> | <npm test summary>"
+
+STEP B — Commit tooling config (new/modified config files):
+If there are remaining config changes not in the autofix commit:
+1. git add -A -- . ':!docs/project/AI_ITERATIVE_EXECUTION_PLAN.md'
+2. git commit -m "chore(plan-f3b): add eslint, prettier, coverage, pre-commit config
+
+Test proof: <pytest summary> | <npm test summary>"
+
+Or combine A+B if the autofix is done before committing config (your call on ordering).
+
+STEP C — Commit plan update:
+1. Mark `- [ ] F3-B` → `- [x] F3-B` in Estado de ejecución.
+2. Clean Prompt activo: `### Paso objetivo` → `_Completado: F3-B_`, `### Prompt` → `_Vacío._`
+3. git add docs/project/AI_ITERATIVE_EXECUTION_PLAN.md
+4. git commit -m "docs(plan-f3b): mark step done"
+
+STEP D — Push:
+1. git push origin improvement/refactor
+
+STEP E — Update PR #145:
+Run `gh pr edit 145 --body "..."` updating Phase 3 checkbox and adding F3-B details.
+
+STEP F — Tell the user:
+"✓ F3-B completado, tests OK. Siguiente: vuelve a Claude con el plan adjunto y escribe Continúa (F3 verificación)."
+--- END SCOPE BOUNDARY ---
+```
 
 ---
 
@@ -442,9 +709,9 @@ STEP B — Commit plan update (only after code is committed):
 STEP C — Push both commits:
 1. git push origin improvement/refactor
 
-STEP D — Update PR #144 description:
+STEP D — Update PR #145 description:
 Run the following command, replacing the progress checklist to reflect the newly completed step.
-Use `gh pr edit 144 --body "..."` with the full updated body.
+Use `gh pr edit 145 --body "..."` with the full updated body.
 Rules for the body update:
 - Keep the existing structure (Summary, Progress, Key metrics, How to test).
 - Mark the just-completed step with [x] and add a one-line summary of what was done.
