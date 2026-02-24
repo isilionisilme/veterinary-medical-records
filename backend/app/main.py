@@ -7,9 +7,7 @@ business logic lives in the application/domain layers.
 
 from __future__ import annotations
 
-import asyncio
 import logging
-import os
 import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -23,16 +21,17 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.app.api.routes import MAX_UPLOAD_SIZE as ROUTE_MAX_UPLOAD_SIZE
 from backend.app.api.routes import router as api_router
-from backend.app.application.processing_runner import processing_scheduler
 from backend.app.config import (
     confidence_policy_explicit_config_diagnostics,
     processing_enabled,
 )
 from backend.app.infra import database
 from backend.app.infra.file_storage import LocalFileStorage
+from backend.app.infra.scheduler_lifecycle import SchedulerLifecycle
 from backend.app.infra.sqlite_document_repository import SqliteDocumentRepository
 from backend.app.ports.document_repository import DocumentRepository
 from backend.app.ports.file_storage import FileStorage
+from backend.app.settings import clear_settings_cache, get_settings
 
 logger = logging.getLogger(__name__)
 startup_logger = logging.getLogger("uvicorn.error")
@@ -40,15 +39,12 @@ _DEV_ENV_MARKERS = {"dev", "development", "local"}
 
 
 def _is_dev_runtime() -> bool:
-    env_name = (
-        os.environ.get("ENV")
-        or os.environ.get("APP_ENV")
-        or os.environ.get("VET_RECORDS_ENV")
-        or ""
-    ).strip().lower()
+    clear_settings_cache()
+    settings = get_settings()
+    env_name = (settings.env or settings.app_env or settings.vet_records_env or "").strip().lower()
     if env_name in _DEV_ENV_MARKERS:
         return True
-    uvicorn_reload = os.environ.get("UVICORN_RELOAD", "").strip().lower()
+    uvicorn_reload = (settings.uvicorn_reload or "").strip().lower()
     if uvicorn_reload in {"1", "true", "yes", "on"}:
         return True
     if "--reload" in sys.argv:
@@ -70,6 +66,7 @@ def _load_backend_dotenv_for_dev(
         startup_logger.info("backend .env not found for dev auto-load path=%s", target_path)
         return False
     loaded = load_dotenv(dotenv_path=target_path, override=False)
+    clear_settings_cache()
     startup_logger.info(
         "backend .env auto-load path=%s loaded=%s",
         target_path,
@@ -122,23 +119,13 @@ def create_app() -> FastAPI:
         recovered = repository.recover_orphaned_runs(completed_at=_now_iso())
         if recovered:
             logger.info("Recovered %s orphaned runs", recovered)
+        app.state.scheduler = SchedulerLifecycle()
         if processing_enabled():
-            stop_event = asyncio.Event()
-            app.state.processing_stop_event = stop_event
-            app.state.processing_task = asyncio.create_task(
-                processing_scheduler(
-                    repository=repository,
-                    storage=storage,
-                    stop_event=stop_event,
-                )
-            )
-        else:
-            app.state.processing_stop_event = None
-            app.state.processing_task = None
+            await app.state.scheduler.start(repository=repository, storage=storage)
         yield
-        if app.state.processing_stop_event is not None:
-            app.state.processing_stop_event.set()
-            await app.state.processing_task
+        await app.state.scheduler.stop()
+
+    settings = get_settings()
 
     app = FastAPI(
         title="Veterinary Medical Records API",
@@ -146,7 +133,7 @@ def create_app() -> FastAPI:
             "API for registering veterinary medical record documents and tracking their "
             "processing lifecycle (Release 0: metadata only)."
         ),
-        version="0.1",
+        version=settings.app_version,
         lifespan=lifespan,
     )
     cors_origins = _get_cors_origins()
@@ -160,9 +147,19 @@ def create_app() -> FastAPI:
         )
     app.state.document_repository = SqliteDocumentRepository()
     app.state.file_storage = LocalFileStorage()
+    app.state.settings = settings
     global MAX_UPLOAD_SIZE
     MAX_UPLOAD_SIZE = ROUTE_MAX_UPLOAD_SIZE  # re-export for compatibility
     app.include_router(api_router)
+
+    @app.get("/version", summary="Release metadata")
+    def version() -> dict[str, str]:
+        metadata = app.state.settings
+        return {
+            "version": metadata.app_version,
+            "commit": metadata.git_commit,
+            "build_date": metadata.build_date,
+        }
 
     return app
 
@@ -174,7 +171,7 @@ def _get_cors_origins() -> list[str]:
     Defaults to the local Vite dev server origins when unset.
     """
 
-    raw = os.environ.get("VET_RECORDS_CORS_ORIGINS")
+    raw = get_settings().vet_records_cors_origins
     if raw is None:
         return ["http://localhost:5173", "http://127.0.0.1:5173"]
     origins = [origin.strip() for origin in raw.split(",") if origin.strip()]

@@ -74,11 +74,11 @@ def test_extractor_auto_mode_falls_back_when_fitz_is_unavailable(monkeypatch, tm
 
     monkeypatch.delenv(PDF_EXTRACTOR_FORCE_ENV, raising=False)
     monkeypatch.setattr(
-        "backend.app.application.processing_runner._extract_pdf_text_with_fitz",
+        "backend.app.application.processing.pdf_extraction._extract_pdf_text_with_fitz",
         lambda _path: (_ for _ in ()).throw(ImportError("missing fitz")),
     )
     monkeypatch.setattr(
-        "backend.app.application.processing_runner._extract_pdf_text_without_external_dependencies",
+        "backend.app.application.processing.pdf_extraction._extract_pdf_text_without_external_dependencies",
         lambda _path: "fallback text",
     )
 
@@ -93,11 +93,11 @@ def test_extractor_force_modes_choose_expected_path(monkeypatch, tmp_path) -> No
     sample.write_bytes(b"%PDF-1.4\n%%EOF")
 
     monkeypatch.setattr(
-        "backend.app.application.processing_runner._extract_pdf_text_with_fitz",
+        "backend.app.application.processing.pdf_extraction._extract_pdf_text_with_fitz",
         lambda _path: "fitz text",
     )
     monkeypatch.setattr(
-        "backend.app.application.processing_runner._extract_pdf_text_without_external_dependencies",
+        "backend.app.application.processing.pdf_extraction._extract_pdf_text_without_external_dependencies",
         lambda _path: "fallback text",
     )
 
