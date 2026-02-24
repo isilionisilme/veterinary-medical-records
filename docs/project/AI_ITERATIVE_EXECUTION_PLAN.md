@@ -460,7 +460,19 @@ Si un paso completado causa un problema no detectado por los tests:
 Razón: una edición humana accidental (borrar un `[x]`, reformatear una tabla, truncar un prompt) puede corromper el routing y causar que Codex repita o salte pasos.
 
 ### PR progress tracking (mandatory)
-**Cada paso completado debe reflejarse en la PR #144.** Al terminar el SCOPE BOUNDARY (después del push), el agente actualiza el body de la PR con `gh pr edit 144 --body "..."`. Esto es obligatorio tanto para Codex como para Claude. Si el comando falla, reportar al usuario pero NO bloquear el paso.
+**Cada paso completado debe reflejarse en la PR #145.** Al terminar el SCOPE BOUNDARY (después del push), el agente actualiza el body de la PR con `gh pr edit 145 --body "..."`. Esto es obligatorio tanto para Codex como para Claude. Si el comando falla, reportar al usuario pero NO bloquear el paso.
+
+### CI verification (mandatory — hard rule)
+**Ningún paso se considera completado hasta que el CI de GitHub esté verde.** Los tests locales son necesarios pero NO suficientes. Después del push, el agente DEBE:
+1. Esperar a que el CI run termine (`gh run list --branch improvement/refactor --limit 1`).
+2. Si el CI falla: diagnosticar, arreglar, pushear y esperar de nuevo.
+3. Solo después de CI verde: declarar el paso completado al usuario.
+4. Si no puede arreglar el CI tras 2 intentos: STOP y pedir ayuda.
+
+**Razón:** Codex declaró un paso completado con CI rojo. El usuario tuvo que diagnosticar manualmente. Esto no debe repetirse.
+
+### Next-step message (mandatory — hard rule)
+**Al terminar un paso, el agente SIEMPRE indica al usuario el siguiente movimiento con instrucciones concretas.** Nunca terminar sin decir qué agente usar y qué hacer a continuación. Si no hay siguiente paso, decir "Todos los pasos completados." Referencia: sección "Instrucciones de siguiente paso" y STEP F del template SCOPE BOUNDARY.
 
 ### Plan-edit-last (hard constraint)
 **Codex NO edita `AI_ITERATIVE_EXECUTION_PLAN.md` hasta que los tests pasen y el código esté commiteado.** La secuencia obligatoria es:
@@ -630,10 +642,28 @@ Rules for the body update:
 - Do NOT remove or alter content from previously completed phases.
 - Keep the body under 3000 chars (GitHub renders poorly above that).
 
-STEP E — Tell the user:
-"✓ F?-? completado, tests OK, pusheado, PR actualizada. [siguiente paso instrucción]."
+STEP E — CI GATE (mandatory — do NOT skip):
+1. Run: gh run list --branch improvement/refactor --limit 1 --json status,conclusion,databaseId
+2. If status is "in_progress" or "queued": wait 30 seconds and retry (up to 10 retries).
+3. If conclusion is "success": proceed to STEP F.
+4. If conclusion is "failure":
+   a. Run: gh run view <databaseId> --log-failed | Select-Object -Last 50
+   b. Diagnose and fix the failing job(s).
+   c. Commit the fix, push, and repeat from step 1.
+   d. Do NOT declare the step done until CI is green.
+5. If you cannot fix it after 2 attempts: STOP. Tell the user: "⚠️ CI sigue rojo tras 2 intentos de fix. Necesito ayuda para diagnosticar."
 
-6. Stop.
+STEP F — Tell the user the NEXT STEP (mandatory — never omit):
+Look at the Estado de ejecución. Find the next `[ ]` step after the one you just completed.
+Then tell the user EXACTLY one of these messages (pick the one that matches):
+
+- If next step says "(Codex)": "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona GPT-5.3-Codex → adjunta AI_ITERATIVE_EXECUTION_PLAN.md → escribe Continúa."
+- If next step says "(Claude)" and is just-in-time: "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona Claude → adjunta AI_ITERATIVE_EXECUTION_PLAN.md → escribe Continúa."
+- If no more steps remain: "✓ F?-? completado, CI verde, PR actualizada. Todos los pasos completados."
+
+NEVER end without telling the user what to do next. This is a hard rule.
+
+7. Stop.
 --- END SCOPE BOUNDARY ---
 ```
 
