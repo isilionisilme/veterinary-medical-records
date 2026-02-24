@@ -31,7 +31,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [x] F2-D 🔄 — Refactor processing_runner.py (Codex)
 - [x] F2-E 🔄 — Refactor document_service.py (Codex)
 - [x] F2-F 🔄 — Redistribución App.test.tsx (Codex)
-- [ ] F2-G 🚧 — **TÚ pruebas la app post-refactor** (~10 min: docker compose up, subir PDF, editar, confirmar)
+- [x] F2-G 🚧 — **TÚ pruebas la app post-refactor** (~10 min: docker compose up, subir PDF, editar, confirmar)
 
 ### Fase 3 — Quick wins de tooling
 - [ ] F3-A 🔄 — Definir config ESLint + Prettier + pre-commit (Claude)
