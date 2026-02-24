@@ -43,7 +43,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [x] F4-C 🔄 — Implementar mejoras de tests (Codex)
 
 ### Fase 5 — Documentación
-- [ ] F5-A 🔄 — Revisión docs con project-guidelines-example (Codex)
+- [x] F5-A 🔄 — Revisión docs con project-guidelines-example (Codex)
 - [ ] F5-B 🚧 — ADRs de arquitectura: **TÚ defines los argumentos** (Claude)
 - [ ] F5-C 🔄 — ADRs de arquitectura: crear ficheros (Codex)
 - [ ] F5-D 🔄 — FUTURE_IMPROVEMENTS.md (Codex)
@@ -523,6 +523,33 @@ TOTAL coverage: 86% (4530 statements, 653 misses)
 4. Expand branch-focused tests for `processing/orchestrator.py` and `infra/database.py` covering failure/retry/state-transition scenarios.
 5. Add targeted edge-case tests for `documents/_edit_helpers.py` to protect normalization/merge behavior during review edits.
 
+### F5-A — Documentation audit
+
+**README.md (root) assessment:**
+- **Fortalezas:** quickstart Docker-first claro, smoke manual útil, enlaces sólidos a documentación central.
+- **Gap detectado:** faltaba un bloque explícito de arquitectura de alto nivel para evaluadores que no abren primero `TECHNICAL_DESIGN.md`.
+- **Gap detectado:** faltaba una sección explícita de contribución/checklist de calidad para reforzar prácticas de entrega.
+- **Mejora aplicada:** se añadió `Architecture at a glance`, `Delivery evidence and audit trail`, `Local quality gates`, y `How to contribute`.
+
+**docs/README.md assessment:**
+- **Fortalezas:** define gobernanza documental y precedencia de autoridad con claridad.
+- **Gap detectado:** no priorizaba un recorrido evaluador-first (primeros 10-15 minutos).
+- **Gap detectado:** faltaban referencias explícitas a artefactos de auditoría y evidencia incremental.
+- **Mejora aplicada:** se añadió sección de lectura rápida para evaluador y sección de `Audit trail and incremental evidence`.
+
+**Documentation structure assessment:**
+- **Lo que está bien:** separación `docs/shared` vs `docs/project` y carpeta de `extraction-tracking` como evidencia incremental verificable.
+- **Lo que faltaba:** puentes de navegación entre overview (README raíz) y evidencia de auditorías técnicas (`12_FACTOR_AUDIT`, `codebase_audit`).
+- **Redundancia potencial (no aplicada):** hay solapamiento parcial entre narrativa de arquitectura en README y `TECHNICAL_DESIGN`; mantenerlo como resumen + deep dive evita ambigüedad.
+- **Cambio no controversial aplicado:** solo mejoras de navegación/cross-reference, sin renombrar ni consolidar archivos.
+
+**Top 5 actionable improvements (prioritized):**
+1. Publicar ADRs de arquitectura general (modular monolith, SQLite, no ORM, async in-process) y enlazarlos desde `docs/README.md` y README raíz.
+2. Añadir una tabla breve de "Key technical decisions" en README raíz con decisión, trade-off principal y enlace al documento fuente.
+3. Incluir una mini "Evaluator checklist" de 5 pasos en README raíz (run, smoke, tests, arquitectura, decisiones).
+4. Mantener una sección "Current known limitations" en `docs/project/TECHNICAL_DESIGN.md` para transparencia evaluable.
+5. Añadir sección "How to review this PR/storyline" en docs para navegar evidencia incremental más rápido.
+
 ---
 
 ## Prompt activo (just-in-time) — write-then-execute
@@ -532,139 +559,11 @@ TOTAL coverage: 86% (4530 statements, 653 misses)
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-F5-A 🔄 — Revisión docs con project-guidelines-example (Codex)
+_Completado: F5-A_
 
 ### Prompt
 
-```
---- AGENT IDENTITY CHECK ---
-This prompt is designed for GPT-5.3-Codex in VS Code Copilot Chat.
-If you are not GPT-5.3-Codex: STOP. Tell the user to switch agents.
---- END IDENTITY CHECK ---
-
---- BRANCH CHECK ---
-Run: git branch --show-current
-If NOT `improvement/refactor`: STOP. Tell the user: "⚠️ Cambia a la rama improvement/refactor antes de continuar: git checkout improvement/refactor"
---- END BRANCH CHECK ---
-
---- SYNC CHECK ---
-Run: git pull origin improvement/refactor
---- END SYNC CHECK ---
-
---- PRE-FLIGHT CHECK ---
-1. Verify F4-C has `[x]` in Estado de ejecución.
---- END PRE-FLIGHT CHECK ---
-
-[TASK — F5-A: Revisión docs con project-guidelines-example]
-
-Use the skill `project-guidelines-example` to review and improve the project's documentation structure.
-
-Project root: d:/Git/veterinary-medical-records
-
-Context:
-- Veterinary medical records processing system (technical exercise for job evaluation).
-- Evaluators explicitly assess: documentation quality, architecture decisions, ease of onboarding.
-- The project already has extensive docs — the goal is to OPTIMIZE, not rewrite.
-
-Current documentation structure:
-```
-docs/
-  README.md                          # Reading order / index
-  project/
-    TECHNICAL_DESIGN.md              # ~1950 lines, core architecture
-    PRODUCT_DESIGN.md                # Product requirements
-    UX_DESIGN.md                     # UX decisions
-    DESIGN_SYSTEM.md                 # Brand/component tokens
-    FRONTEND_IMPLEMENTATION.md       # Frontend tech details
-    BACKEND_IMPLEMENTATION.md        # Backend tech details
-    IMPLEMENTATION_PLAN.md           # Original execution plan
-    12_FACTOR_AUDIT.md               # 12-factor compliance (from F1-A)
-    codebase_audit.md                # ln-620 audit (from F2-A)
-    AI_ITERATIVE_EXECUTION_PLAN.md   # This file (AI execution)
-    extraction/                      # Extraction-specific docs
-  shared/
-    BRAND_GUIDELINES.md
-    ENGINEERING_PLAYBOOK.md
-    UX_GUIDELINES.md
-  extraction/                        # Extraction ADRs and strategy
-  extraction-tracking/               # Field tracking, runs, risk matrix
-```
-
-Also important:
-- `README.md` (root) — project overview, setup instructions, Docker-first
-- `AGENTS.md` (root) — AI assistant routing
-
-Audit instructions:
-1. Use the skill to evaluate the documentation against best practices for a technical interview project.
-2. Focus on what an evaluator sees FIRST: README.md (root), docs/README.md, and the project/ folder.
-3. Identify:
-   - Missing sections that evaluators expect (e.g., "How to contribute", "Architecture overview", "Key decisions")
-   - Unclear or misleading content
-   - Redundant files that could be consolidated
-   - Missing cross-references between docs
-   - README.md gaps (setup clarity, time-to-first-run, overview completeness)
-4. Do NOT recommend removing existing ADRs or extraction-tracking docs — they show evidence of incremental delivery.
-5. Do NOT recommend restructuring the agent_router/ folder — it has a different purpose.
-
-Output format — write findings into a new section `### F5-A — Documentation audit` in Resultados de auditorías (after the F4-B section). Use this structure:
-
-### F5-A — Documentation audit
-
-**README.md (root) assessment:**
-- [list strengths and gaps]
-
-**docs/README.md assessment:**
-- [list strengths and gaps]
-
-**Documentation structure assessment:**
-- [what's good, what's missing, what's redundant]
-
-**Top 5 actionable improvements (prioritized):**
-1. ...
-2. ...
-3. ...
-4. ...
-5. ...
-
-IMPORTANT: Apply non-controversial improvements directly (fixing broken links, adding missing cross-references, improving README clarity). Only flag controversial changes (removing/renaming files, major restructuring) for Claude to decide.
-
---- TEST GATE ---
-Backend: cd d:/Git/veterinary-medical-records && python -m pytest --tb=short -q
-Frontend: cd d:/Git/veterinary-medical-records/frontend && npm test
-(Tests must still pass even though this is a docs step — ensure no accidental changes.)
---- END TEST GATE ---
-
---- SCOPE BOUNDARY ---
-
-STEP A — Commit doc improvements + audit results:
-1. git add -A -- . ':!docs/project/AI_ITERATIVE_EXECUTION_PLAN.md'
-2. git commit -m "docs(plan-f5a): documentation audit and improvements
-
-Test proof: <pytest summary> | <npm test summary>"
-
-STEP B — Commit plan update:
-1. Mark `- [ ] F5-A` → `- [x] F5-A` in Estado de ejecución.
-2. Clean Prompt activo: `### Paso objetivo` → `_Completado: F5-A_`, `### Prompt` → `_Vacío._`
-3. git add docs/project/AI_ITERATIVE_EXECUTION_PLAN.md
-4. git commit -m "docs(plan-f5a): mark step done"
-
-STEP C — Push:
-1. git push origin improvement/refactor
-
-STEP D — Update PR #145:
-Run `gh pr edit 145 --body "..."` marking F5-A done.
-
-STEP E — CI GATE (mandatory):
-1. Run: gh run list --branch improvement/refactor --limit 1 --json status,conclusion,databaseId
-2. Wait for completion. If failure: diagnose, fix, push, retry. Max 2 attempts.
-
-STEP F — Tell the user the NEXT STEP:
-The next step is F5-B (Claude — hard-gate, ADR arguments). Say:
-"✓ F5-A completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona Claude → adjunta AI_ITERATIVE_EXECUTION_PLAN.md → escribe Continúa."
-
-NEVER end without the next-step message. Stop after delivering it.
---- END SCOPE BOUNDARY ---
-```
+_Vacío._
 
 ---
 
