@@ -35,7 +35,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 
 ### Fase 3 — Quick wins de tooling
 - [x] F3-A 🔄 — Definir config ESLint + Prettier + pre-commit (Claude)
-- [ ] F3-B 🔄 — Implementar tooling + coverage (Codex)
+- [x] F3-B 🔄 — Implementar tooling + coverage (Codex)
 
 ### Fase 4 — Calidad de tests
 - [ ] F4-A 🔄 — Auditoría frontend-testing (Codex)
@@ -379,99 +379,10 @@ Commitear autofix como commit separado antes del commit de plan.
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-F3-B 🔄 — Implementar tooling + coverage (Codex)
+_Completado: F3-B_
 
 ### Prompt
-
-```
---- AGENT IDENTITY CHECK ---
-This prompt is designed for GPT-5.3-Codex in VS Code Copilot Chat.
-If you are not GPT-5.3-Codex: STOP. Tell the user to switch agents.
---- END IDENTITY CHECK ---
-
---- BRANCH CHECK ---
-Run: git branch --show-current
-If NOT `improvement/refactor`: STOP. Tell the user: "⚠️ Cambia a la rama improvement/refactor antes de continuar: git checkout improvement/refactor"
---- END BRANCH CHECK ---
-
---- SYNC CHECK ---
-Run: git pull origin improvement/refactor
---- END SYNC CHECK ---
-
---- PRE-FLIGHT CHECK ---
-1. Verify F3-A has `[x]` in Estado de ejecución.
-2. Verify section `### F3-A — Configuración de tooling definida por Claude` exists and is not empty.
---- END PRE-FLIGHT CHECK ---
-
-[TASK — F3-B: Implementar tooling + coverage]
-
-Read section `### F3-A — Configuración de tooling definida por Claude` in this file.
-That section contains the EXACT configuration to implement. Follow it literally:
-
-1. **Frontend dependencies**: cd frontend && npm install -D eslint@^9 @eslint/js@^9 typescript-eslint@^8 eslint-plugin-react-hooks@^5 eslint-plugin-react-refresh@^0.4 eslint-config-prettier@^10 prettier@^3 @vitest/coverage-v8@^4
-
-2. **Create `frontend/eslint.config.mjs`**: copy content from F3-A §1 exactly.
-
-3. **Create `frontend/.prettierrc`**: copy content from F3-A §2 exactly.
-
-4. **Update `frontend/package.json` scripts**: replace/add scripts per F3-A §3. Keep existing scripts (`dev`, `build`, `check:design-system`, `preview`, `test`, `test:watch`).
-
-5. **Update `frontend/vite.config.ts`**: add coverage config per F3-A §4 inside the `test` block.
-
-6. **Backend coverage**: add `pytest-cov==6.1.1` to `requirements-dev.txt`. Add `addopts = --cov=backend/app --cov-report=term-missing` to `pytest.ini` under `[pytest]`.
-
-7. **Update `.pre-commit-config.yaml`**: replace entire file with content from F3-A §6.
-
-8. **Update `pyproject.toml`**: restructure ruff config per F3-A §6 (move select/extend-ignore under `[tool.ruff.lint]`).
-
-9. **Update `requirements-dev.txt`**: change ruff version to `ruff==0.9.9`.
-
-10. **Update `.github/workflows/ci.yml`**: add ESLint, Prettier check, ruff format check, and coverage steps per F3-A §7.
-
-11. **Add to `.gitignore`** (root): `frontend/coverage/` and `htmlcov/`.
-
-12. **Autofix pass**: run the commands from F3-A §8 to auto-format all existing code. Commit autofix SEPARATELY before the main commit.
-
---- TEST GATE ---
-Backend: cd d:/Git/veterinary-medical-records && python -m pytest --tb=short -q
-Frontend: cd d:/Git/veterinary-medical-records/frontend && npm test
-Also verify: cd d:/Git/veterinary-medical-records/frontend && npm run lint && npm run format:check
-Save summary lines for commit messages.
---- END TEST GATE ---
-
---- SCOPE BOUNDARY (three-commit strategy for this step) ---
-
-STEP A — Commit autofix (formatting-only changes):
-1. git add -A -- . ':!docs/project/AI_ITERATIVE_EXECUTION_PLAN.md'
-2. git commit -m "style(plan-f3b): autofix eslint + prettier + ruff format
-
-Test proof: <pytest summary> | <npm test summary>"
-
-STEP B — Commit tooling config (new/modified config files):
-If there are remaining config changes not in the autofix commit:
-1. git add -A -- . ':!docs/project/AI_ITERATIVE_EXECUTION_PLAN.md'
-2. git commit -m "chore(plan-f3b): add eslint, prettier, coverage, pre-commit config
-
-Test proof: <pytest summary> | <npm test summary>"
-
-Or combine A+B if the autofix is done before committing config (your call on ordering).
-
-STEP C — Commit plan update:
-1. Mark `- [ ] F3-B` → `- [x] F3-B` in Estado de ejecución.
-2. Clean Prompt activo: `### Paso objetivo` → `_Completado: F3-B_`, `### Prompt` → `_Vacío._`
-3. git add docs/project/AI_ITERATIVE_EXECUTION_PLAN.md
-4. git commit -m "docs(plan-f3b): mark step done"
-
-STEP D — Push:
-1. git push origin improvement/refactor
-
-STEP E — Update PR #145:
-Run `gh pr edit 145 --body "..."` updating Phase 3 checkbox and adding F3-B details.
-
-STEP F — Tell the user:
-"✓ F3-B completado, tests OK. Siguiente: vuelve a Claude con el plan adjunto y escribe Continúa (F3 verificación)."
---- END SCOPE BOUNDARY ---
-```
+_Vacío._
 
 ---
 
