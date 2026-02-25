@@ -82,7 +82,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [x] F11-C 🔄 — Dockerfile.backend: solo deps de prod + usuario non-root (Codex)
 - [x] F11-D 🔄 — Multi-stage Dockerfile.frontend con nginx + usuario non-root (Codex)
 - [x] F11-E 🔄 — Tests de `_edit_helpers.py`: coverage de 60% → 85%+ (Codex)
-- [ ] F11-F 🚧 — Smoke test final + commit + PR (Claude)
+- [x] F11-F 🚧 — Smoke test final + commit + PR (Claude)
 
 ---
 
@@ -745,108 +745,10 @@ Below are the 4 architecture ADRs with full arguments, trade-offs, and code evid
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-F11-A → F11-B → F11-C → F11-D → F11-E (auto-chain de 5 pasos, Codex)
+_Completado: F11-F_
 
 ### Prompt
-
-```
---- AGENT IDENTITY CHECK ---
-This prompt is designed for GPT-5.3-Codex in VS Code Copilot Chat.
-If you are not GPT-5.3-Codex: STOP. Tell the user to switch agents.
---- END IDENTITY CHECK ---
-
---- BRANCH CHECK ---
-Run: git branch --show-current
-If NOT `improvement/iteration-5`: STOP. Tell the user to switch to the branch.
---- END BRANCH CHECK ---
-
---- SYNC CHECK ---
-Run: git pull origin improvement/iteration-5
---- END SYNC CHECK ---
-
-You will execute steps F11-A through F11-E sequentially in this single chat session.
-After each step:
-1. Run the TEST GATE.
-2. Commit code (plan untouched) + commit plan update (mark [x]) — two-commit strategy.
-3. Push.
-4. CI GATE: `gh run list --branch improvement/iteration-5 --limit 1 --json status,conclusion,databaseId`. Wait + retry up to 10 times if in_progress. If failure: diagnose via `gh run view <id> --log-failed | Select-Object -Last 50`, fix, push, retry. If 2 consecutive fix attempts fail: STOP and tell the user.
-5. Proceed to the next step.
-
-After completing all 5 steps, tell the user:
-"✓ F11-A..E completados, CI verde. Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
-
---- STEP F11-A: Prettier bulk format ---
-1. cd frontend && npx prettier --write "src/**/*.{ts,tsx,css}"
-2. Verify: npm run format:check → 0 issues.
-3. Verify: npm run lint → 0 problems.
-4. Verify: npm test -- --run → 168+ passed.
-Commit msg: `style(plan-f11a): prettier bulk format 64 frontend files`
-Archivos: ~64 archivos en frontend/src/
-
---- STEP F11-B: Extraer _NAME_TOKEN_PATTERN a constante compartida ---
-1. Create `backend/app/application/processing/constants.py` with the shared constant `_NAME_TOKEN_PATTERN`.
-   - Find the regex value by reading one of the 4 files that define it:
-     `backend/app/application/processing/interpretation.py`
-     `backend/app/application/processing/orchestrator.py`
-     `backend/app/application/processing/pdf_extraction.py`
-     `backend/app/application/processing/scheduler.py`
-2. Replace the 4 local definitions with imports from the new constants module.
-3. Verify: `grep -r "_NAME_TOKEN_PATTERN" backend/` → 1 definition in constants.py + 4 imports.
-4. Verify: cd d:/Git/veterinary-medical-records && python -m pytest --tb=short -q → 264+ passed.
-Commit msg: `refactor(plan-f11b): extract _NAME_TOKEN_PATTERN to shared constant`
-Archivos: constants.py (nuevo), interpretation.py, orchestrator.py, pdf_extraction.py, scheduler.py
-
---- STEP F11-C: Dockerfile.backend prod deps + non-root ---
-1. Edit `Dockerfile.backend`:
-   - Change install from `requirements-dev.txt` to `backend/requirements.txt`.
-   - Add non-root user: `RUN adduser --disabled-password --no-create-home appuser` + `USER appuser`.
-   - Ensure WORKDIR and file permissions are correct for appuser.
-2. Verify: `docker compose up --build -d` → backend healthy.
-3. Verify: `docker exec <backend_container> whoami` → NOT root.
-4. Verify: `docker exec <backend_container> pip list | Select-String pytest` → NOT found.
-5. docker compose down after verification.
-Commit msg: `fix(plan-f11c): dockerfile backend prod-only deps + non-root user`
-Archivos: Dockerfile.backend
-
---- STEP F11-D: Multi-stage Dockerfile.frontend + nginx + non-root ---
-1. Create `frontend/nginx.conf`:
-   - SPA routing: try_files $uri $uri/ /index.html.
-   - Gzip on for js/css/html.
-   - Listen on port 80 (or 8080 for non-root).
-   - Security headers (X-Content-Type-Options, X-Frame-Options).
-2. Rewrite `Dockerfile.frontend` as multi-stage:
-   - Stage 1 (build): FROM node:20-alpine → COPY package*.json → npm ci → COPY . . → npm run build → produces dist/.
-   - Stage 2 (runtime): FROM nginx:alpine → COPY --from=build dist/ to nginx html dir → COPY nginx.conf → non-root user.
-3. Update `docker-compose.yml` if healthcheck or ports need adjustment (frontend was on port 5173, nginx will serve on 80 inside container — verify the port mapping).
-4. Also update `docker-compose.dev.yml` if it references the frontend Dockerfile directly.
-5. Verify: `docker compose up --build -d` → frontend healthy + app loads.
-6. Verify: `docker images` → frontend image < 100MB (ideally < 50MB).
-7. Verify: `docker exec <frontend_container> whoami` → NOT root.
-8. docker compose down after verification.
-Commit msg: `fix(plan-f11d): multi-stage dockerfile frontend with nginx + non-root`
-Archivos: Dockerfile.frontend, frontend/nginx.conf (nuevo), docker-compose.yml, docker-compose.dev.yml (si aplica)
-
---- STEP F11-E: Tests _edit_helpers.py coverage 60% → 85%+ ---
-1. Run: python -m pytest --cov=backend.app.application.documents._edit_helpers --cov-report=term-missing --tb=short -q
-   → Identify uncovered lines.
-2. Read `backend/app/application/documents/_edit_helpers.py` to understand the uncovered branches.
-3. Write/extend `backend/tests/unit/test_edit_helpers.py` with tests covering:
-   - All edit/validation branches
-   - Edge cases (empty values, invalid types, boundary conditions)
-   - Error paths
-4. Do NOT modify `_edit_helpers.py` itself — only add tests.
-5. Verify: coverage ≥ 85%.
-6. Verify: python -m pytest --tb=short -q → 264+ passed (all existing + new).
-Commit msg: `test(plan-f11e): edit_helpers coverage 60% to 85%+`
-Archivos: backend/tests/unit/test_edit_helpers.py
-
---- GLOBAL RULES ---
-- PLAN-EDIT-LAST: never edit AI_ITERATIVE_EXECUTION_PLAN.md until tests pass and code is committed.
-- Two-commit strategy per step: (A) code commit, (B) plan update commit.
-- Do NOT modify business logic, existing tests, CI pipeline, or dependency versions.
-- If any step fails and you cannot fix it in 2 attempts: STOP and tell the user.
---- END GLOBAL RULES ---
-```
+_Vacío._
 
 ---
 
