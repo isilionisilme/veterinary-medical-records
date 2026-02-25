@@ -1,6 +1,6 @@
 # Delivery Summary — `improvement/refactor`
 
-> Quantitative record of what was delivered across 7 phases.  
+> Quantitative record of what was delivered across 7 phases + Iteration 2.  
 > Source of truth for execution details: [`AI_ITERATIVE_EXECUTION_PLAN.md`](AI_ITERATIVE_EXECUTION_PLAN.md).
 
 ---
@@ -145,3 +145,27 @@ Frictions fixed: ~20 missing Spanish accent marks in UI strings, CSS loading spi
 ## Phase 7 — Closeout
 
 Final verification: all 7 CI checks green, PR #145 updated, no regressions. Plan `AI_ITERATIVE_EXECUTION_PLAN.md` fully executed — all steps `[x]`.
+
+---
+
+## Iteration 2 — CTO Verdict Improvements (Phase 8)
+
+Targeted improvements from [`CTO_REVIEW_VERDICT.md`](CTO_REVIEW_VERDICT.md) — all 5 highest-leverage items addressed.
+
+| # | Improvement | Step | Detail |
+|---|---|---|---|
+| 1 | SQLite WAL + busy_timeout | F8-B | `PRAGMA journal_mode=WAL` and `PRAGMA busy_timeout=5000` on every connection in `database.py` |
+| 2 | Security boundary docs | F8-D | New §13 Security Boundary + §14 Known Limitations in `TECHNICAL_DESIGN.md` |
+| 3 | AppWorkspace.tsx header | F8-D | 9-line docstring acknowledging LOC debt and referencing decomposition roadmap |
+| 4 | `lib/utils.ts` coverage | F8-C | Error-path tests added; coverage from 24% to ≥70% |
+| 5 | FUTURE_IMPROVEMENTS AppWorkspace entry | F8-D | Item #7b: decomposition into ReviewWorkspace, StructuredDataView, PdfViewerContainer |
+
+| Metric | Value |
+|--------|-------|
+| Commits | 12 |
+| Files changed | 18 (3 added, 15 modified) |
+| Net delta | +411 / −34 lines |
+| Test suite | **423 tests** (255 backend + 168 frontend), all green |
+| Backend coverage | 87% |
+| CI checks | All green on each step |
+| Guardrails added | Cross-chat agent routing, mandatory new-chat handoff, token-efficiency policy |
