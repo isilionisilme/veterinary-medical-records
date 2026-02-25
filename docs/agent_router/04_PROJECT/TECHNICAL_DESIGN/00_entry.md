@@ -24,6 +24,8 @@ Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for i
 - `docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/170_10-api-notes.md`
 - `docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/180_11-scope-ownership.md`
 - `docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/190_12-data-lifecycle.md`
+- `docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/195_13-security-boundary.md`
+- `docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/197_14-known-limitations.md`
 - `docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/200_13-final-instruction.md`
 - `docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/210_a1-state-model-source-of-truth.md`
 - `docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/220_a2-processing-run-invariants.md`
@@ -63,3 +65,4 @@ Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for i
 ## Propagated updates
 - Context deterministic keying, `mapping_id` learnable-unit identity, and policy thresholds/hysteresis contracts are maintained in technical-design modules.
 - Reviewed signal semantics and calibration observability requirements remain authoritative within this module family.
+- Security Boundary (§13) and Known Limitations (§14) sections added from CTO verdict iteration 2 (F8-D). Auth scope, production path, and limitation table propagated.

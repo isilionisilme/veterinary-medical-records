@@ -54,6 +54,13 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 ### Fase 7 — Cierre global
 - [x] F7-A 🚧 — Veredicto final + PR a main (Claude/Codex)
 
+### Fase 8 — Iteración 2 (CTO verdict)
+- [x] F8-A 🚧 — Setup branch + guardrails + prompt activo (Codex)
+- [x] F8-B 🔄 — SQLite WAL + busy_timeout + test de concurrencia (Codex)
+- [x] F8-C 🔄 — Subir cobertura de `frontend/src/lib/utils.ts` (Codex)
+- [x] F8-D 🚧 — Security boundary docs + nota AppWorkspace + roadmap update (Claude)
+- [x] F8-E 🚧 — Validación final + PR nueva + cierre iteración (Claude)
+
 ---
 
 ## Resultados de auditorías — rellenar automáticamente al completar cada auditoría
@@ -715,7 +722,7 @@ Below are the 4 architecture ADRs with full arguments, trade-offs, and code evid
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-_Completado: F6-A_
+_Completado: F8-E_
 
 ### Prompt
 _Vacío._
@@ -765,14 +772,17 @@ Estas áreas puntúan alto con los evaluadores. Todo cambio debe preservarlas:
 ### Iteraciones atómicas
 Nunca mezclar alcance entre pasos. Cada paso del Estado de ejecución es una unidad atómica: se ejecuta, se commitea, se pushea, se marca `[x]`. Si falla, se reporta — no se continúa al siguiente.
 
-### Regla de identidad para Claude (hard rule — se aplica antes que cualquier otra)
-**Si eres Claude** y el usuario escribe `Continúa`:
+### Regla de identidad por agente activo (hard rule — se aplica antes que cualquier otra)
+**Si el usuario escribe `Continúa`:**
 1. Lee el Estado de ejecución y encuentra el primer `[ ]`.
-2. Si ese paso está marcado como 🔄 **(Codex)** o el texto del paso incluye "(Codex)":
-   - **STOP inmediatamente. No leas el prompt. No implementes nada.**
-   - Responde EXACTAMENTE: "⚠️ Este paso es de Codex, no de Claude. **STOP.** Abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
-3. Si el paso es 🚧 **(Claude)**: procede normalmente.
-4. Si hay ambigüedad: STOP y pregunta al usuario qué agente corresponde.
+2. Identifica el agente asignado a ese paso (🔄 Codex o 🚧 Claude).
+3. Si el paso corresponde al **agente activo de este chat**: procede normalmente.
+4. Si el paso corresponde al **otro agente**:
+  - **STOP inmediatamente. No leas el prompt. No implementes nada.**
+  - Responde EXACTAMENTE con uno de estos mensajes:
+    - Si el siguiente paso es Codex: "⚠️ Este paso no corresponde al agente activo. **STOP.** El siguiente paso es de **GPT-5.3-Codex**. Abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
+    - Si el siguiente paso es Claude: "⚠️ Este paso no corresponde al agente activo. **STOP.** El siguiente paso es de **Claude Opus 4.6**. Abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
+5. Si hay ambigüedad: STOP y pregunta al usuario qué agente corresponde.
 
 > **Razón:** Las disculpas no persisten entre chats. La regla escrita sí.
 
@@ -796,7 +806,7 @@ Si un paso completado causa un problema no detectado por los tests:
 Razón: una edición humana accidental (borrar un `[x]`, reformatear una tabla, truncar un prompt) puede corromper el routing y causar que Codex repita o salte pasos.
 
 ### PR progress tracking (mandatory)
-**Cada paso completado debe reflejarse en la PR #145.** Al terminar el SCOPE BOUNDARY (después del push), el agente actualiza el body de la PR con `gh pr edit 145 --body "..."`. Esto es obligatorio tanto para Codex como para Claude. Si el comando falla, reportar al usuario pero NO bloquear el paso.
+**Cada paso completado debe reflejarse en la PR activa de la iteración actual.** Al terminar el SCOPE BOUNDARY (después del push), el agente actualiza el body de la PR con `gh pr edit <pr_number> --body "..."`. Esto es obligatorio tanto para Codex como para Claude. Si el comando falla, reportar al usuario pero NO bloquear el paso.
 
 ### CI verification (mandatory — hard rule)
 **Ningún paso se considera completado hasta que el CI de GitHub esté verde.** Los tests locales son necesarios pero NO suficientes. Después del push, el agente DEBE:
@@ -809,6 +819,27 @@ Razón: una edición humana accidental (borrar un `[x]`, reformatear una tabla, 
 
 ### Next-step message (mandatory — hard rule)
 **Al terminar un paso, el agente SIEMPRE indica al usuario el siguiente movimiento con instrucciones concretas.** Nunca terminar sin decir qué agente usar y qué hacer a continuación. Si no hay siguiente paso, decir "Todos los pasos completados." Referencia: sección "Instrucciones de siguiente paso" y STEP F del template SCOPE BOUNDARY.
+
+**Formato obligatorio del handoff:** siempre "abre un chat nuevo" y siempre con nombre exacto del agente siguiente (**GPT-5.3-Codex** o **Claude Opus 4.6**). Nunca indicar "vuelve a este chat".
+
+### Token-efficiency policy (mandatory)
+Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
+1. **iterative-retrieval** antes de ejecutar cada paso: cargar solo estado actual (`primer [ ]`), objetivo del paso, archivos target, guardrails y outputs de validación relevantes.
+2. **strategic-compact** al cerrar cada paso: resumir únicamente delta implementado, validación ejecutada, riesgos abiertos y siguiente movimiento.
+3. Prohibido arrastrar histórico completo del chat si no es necesario para el paso activo.
+
+> **Plantilla mínima de compacto (obligatoria):**
+> - Step: F?-?
+> - Delta: <cambios concretos>
+> - Validation: <tests/guards + resultado>
+> - Risks/Open: <si aplica>
+> - Next: <agente exacto + instrucción Continúa>
+
+### F8-A — Setup Iteration 2 (meta)
+- ✅ Rama de trabajo creada desde `main`: `improvement/refactor-iteration-2`.
+- ✅ Estrategia histórica confirmada: este archivo se mantiene **append-only** (F1-F7 intactas).
+- ✅ Routing de identidad actualizado a regla por agente activo (Claude/Codex, bidireccional).
+- ✅ PR de referencia anterior (`#146`) descartada para esta iteración; usar PR nueva al abrirla.
 
 ### Plan-edit-last (hard constraint)
 **Codex NO edita `AI_ITERATIVE_EXECUTION_PLAN.md` hasta que los tests pasen y el código esté commiteado.** La secuencia obligatoria es:
@@ -869,13 +900,13 @@ Claude lee el Estado, ejecuta el paso y al terminar le dice al usuario el siguie
 Al terminar un paso, el agente SIEMPRE indica al usuario el siguiente movimiento con instrucciones concretas:
 
 - **Si el siguiente paso es de Codex (prompt pre-escrito):**
-  → "Abre un chat nuevo en Copilot → selecciona GPT-5.3-Codex → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
+  → "Abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
 - **Si el siguiente paso es de Codex (just-in-time):**
-  → "Vuelve a Claude (este chat) con el plan adjunto y escribe `Continúa`. Claude preparará el prompt."
+  → "Abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`. Claude preparará el prompt just-in-time."
 - **Si el siguiente paso es de Claude (🚧 hard-gate):**
-  → "Vuelve a Claude (este chat) con el plan adjunto y escribe `Continúa`."
+  → "Abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
 - **Si el siguiente paso es de Claude (🔄 auto-chain):**
-  → "Vuelve a Claude (este chat) con el plan adjunto y escribe `Continúa`."
+  → "Abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
 
 Así el usuario nunca necesita consultar el plan para saber qué hacer — simplemente sigue las indicaciones del agente.
 
@@ -885,7 +916,7 @@ Cuando Codex recibe `Continúa` con este archivo adjunto, sigue esta lógica de 
 ```
 1. Lee Estado de ejecución → encuentra el primer `[ ]`.
 2. Si el paso es de Claude (no de Codex):
-   → STOP. Dile al usuario: "Este paso es de Claude. Vuelve al chat de Claude."
+  → STOP. Dile al usuario: "⚠️ Este paso no corresponde al agente activo. **STOP.** El siguiente paso es de **Claude Opus 4.6**. Abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
 3. Si el paso es F1-A:
    → Lee el prompt de la sección "Fase 1 — Prompt para Codex".
 4. Si el paso es F2-A:
@@ -927,11 +958,11 @@ If you are not GPT-5.3-Codex: STOP. Tell the user to switch agents.
 
 --- BRANCH CHECK ---
 Run: git branch --show-current
-If NOT `improvement/refactor`: STOP. Tell the user: "⚠️ Cambia a la rama improvement/refactor antes de continuar: git checkout improvement/refactor"
+If NOT `<active_iteration_branch>`: STOP. Tell the user to switch to the active iteration branch.
 --- END BRANCH CHECK ---
 
 --- SYNC CHECK ---
-Run: git pull origin improvement/refactor
+Run: git pull origin <active_iteration_branch>
 This ensures the local copy has the latest Estado, Resultados, and Prompt activo from previous sessions.
 --- END SYNC CHECK ---
 
@@ -966,11 +997,11 @@ STEP B — Commit plan update (only after code is committed):
 4. git commit -m "docs(plan-f?-?): mark step done"
 
 STEP C — Push both commits:
-1. git push origin improvement/refactor
+1. git push origin <active_iteration_branch>
 
-STEP D — Update PR #145 description:
+STEP D — Update active PR description:
 Run the following command, replacing the progress checklist to reflect the newly completed step.
-Use `gh pr edit 145 --body "..."` with the full updated body.
+Use `gh pr edit <pr_number> --body "..."` with the full updated body.
 Rules for the body update:
 - Keep the existing structure (Summary, Progress, Key metrics, How to test).
 - Mark the just-completed step with [x] and add a one-line summary of what was done.
@@ -979,7 +1010,7 @@ Rules for the body update:
 - Keep the body under 3000 chars (GitHub renders poorly above that).
 
 STEP E — CI GATE (mandatory — do NOT skip):
-1. Run: gh run list --branch improvement/refactor --limit 1 --json status,conclusion,databaseId
+1. Run: gh run list --branch <active_iteration_branch> --limit 1 --json status,conclusion,databaseId
 2. If status is "in_progress" or "queued": wait 30 seconds and retry (up to 10 retries).
 3. If conclusion is "success": proceed to STEP F.
 4. If conclusion is "failure":
@@ -993,8 +1024,8 @@ STEP F — Tell the user the NEXT STEP (mandatory — never omit):
 Look at the Estado de ejecución. Find the next `[ ]` step after the one you just completed.
 Then tell the user EXACTLY one of these messages (pick the one that matches):
 
-- If next step says "(Codex)": "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona GPT-5.3-Codex → adjunta AI_ITERATIVE_EXECUTION_PLAN.md → escribe Continúa."
-- If next step says "(Claude)" and is just-in-time: "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona Claude → adjunta AI_ITERATIVE_EXECUTION_PLAN.md → escribe Continúa."
+- If next step says "(Codex)": "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
+- If next step says "(Claude)": "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
 - If no more steps remain: "✓ F?-? completado, CI verde, PR actualizada. Todos los pasos completados."
 
 NEVER end without telling the user what to do next. This is a hard rule.

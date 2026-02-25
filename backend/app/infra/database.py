@@ -48,6 +48,8 @@ def get_connection() -> Iterator[sqlite3.Connection]:
     """
 
     conn = sqlite3.connect(get_database_path(), detect_types=sqlite3.PARSE_DECLTYPES)
+    conn.execute("PRAGMA journal_mode=WAL;")
+    conn.execute("PRAGMA busy_timeout=5000;")
     conn.row_factory = sqlite3.Row
     try:
         yield conn

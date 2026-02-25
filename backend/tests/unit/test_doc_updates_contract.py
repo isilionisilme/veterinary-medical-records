@@ -21,6 +21,17 @@ DOC_UPDATES_TEST_IMPACT_MAP = (
 DOC_UPDATES_ROUTER_PARITY_MAP = (
     REPO_ROOT / "docs" / "agent_router" / "01_WORKFLOW" / "DOC_UPDATES" / "router_parity_map.json"
 )
+AI_ITERATIVE_EXECUTION_PLAN = (
+    REPO_ROOT / "docs" / "project" / "refactor" / "AI_ITERATIVE_EXECUTION_PLAN.md"
+)
+AI_ITERATIVE_PLAN_ROUTER_ENTRY = (
+    REPO_ROOT
+    / "docs"
+    / "agent_router"
+    / "04_PROJECT"
+    / "AI_ITERATIVE_EXECUTION_PLAN"
+    / "00_entry.md"
+)
 DOC_TEST_SYNC_GUARD = REPO_ROOT / "scripts" / "check_doc_test_sync.py"
 DOC_ROUTER_PARITY_GUARD = REPO_ROOT / "scripts" / "check_doc_router_parity.py"
 DOCS_ROOT = REPO_ROOT / "docs"
@@ -69,6 +80,55 @@ def test_agents_routes_docs_updated_intent_to_doc_updates() -> None:
     assert "docs/agent_router/01_WORKFLOW/DOC_UPDATES/00_entry.md" in text
     assert "documentation was updated" in lower
     assert "run the doc_updates normalization pass once" in lower
+    assert "belongs to the active agent for this chat" in text
+
+
+def test_identity_handoff_message_is_canonical_and_persistent() -> None:
+    codex_message = (
+        '"⚠️ Este paso no corresponde al agente activo. **STOP.** '
+        "El siguiente paso es de **GPT-5.3-Codex**. "
+        "Abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** "
+        '→ adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."'
+    )
+    claude_message = (
+        '"⚠️ Este paso no corresponde al agente activo. **STOP.** '
+        "El siguiente paso es de **Claude Opus 4.6**. "
+        "Abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** "
+        '→ adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."'
+    )
+    ambiguous = "selecciona el agente asignado para ese paso"
+    same_chat_1 = "Vuelve a Claude (este chat)"
+    same_chat_2 = "Vuelve al chat de Claude"
+    codex_new_chat = (
+        "Siguiente: abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** "
+        "→ adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
+    )
+    claude_new_chat = (
+        "Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** "
+        "→ adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
+    )
+    agents_text = _read_text(ROOT_AGENTS)
+    plan_text = _read_text(AI_ITERATIVE_EXECUTION_PLAN)
+    assert codex_message in agents_text
+    assert claude_message in agents_text
+    assert codex_message in plan_text
+    assert claude_message in plan_text
+    assert codex_new_chat in plan_text
+    assert claude_new_chat in plan_text
+    assert ambiguous not in agents_text
+    assert ambiguous not in plan_text
+    assert same_chat_1 not in plan_text
+    assert same_chat_2 not in plan_text
+
+
+def test_token_efficiency_policy_persists_for_continue_flow() -> None:
+    agents_text = _read_text(ROOT_AGENTS)
+    plan_text = _read_text(AI_ITERATIVE_EXECUTION_PLAN)
+
+    assert "iterative-retrieval" in agents_text
+    assert "strategic-compact" in agents_text
+    assert "iterative-retrieval" in plan_text
+    assert "strategic-compact" in plan_text
 
 
 def test_doc_updates_entry_covers_triggers_and_summary_schema() -> None:
@@ -171,6 +231,13 @@ def test_router_parity_map_has_product_design_rule() -> None:
         '76_conceptual-model-local-schema-global-schema-and-mapping.md"' in text
     )
     assert '"required_terms"' in text
+
+
+def test_ai_iterative_plan_owner_entry_tracks_phase_8_append_only_update() -> None:
+    text = _read_text(AI_ITERATIVE_PLAN_ROUTER_ENTRY)
+    assert "AI_ITERATIVE_EXECUTION_PLAN — Modules" in text
+    assert "Phase 8 (Iteration 2) appended" in text
+    assert "improvement/refactor-iteration-2" in text
 
 
 def test_rules_index_contains_known_mapping_hints() -> None:

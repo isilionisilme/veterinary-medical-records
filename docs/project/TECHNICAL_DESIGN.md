@@ -389,7 +389,45 @@ Data lifecycle behaviors (retention, deletion, export) must be introduced by a d
 
 ---
 
-## 13. Final Instruction
+## 13. Security Boundary
+
+Authentication and authorization are **out of scope** for the current exercise.
+
+All API endpoints are unauthenticated by design. The system is intended to run locally or in a trusted, single-user environment during evaluation. No sensitive credentials, patient-identifying information, or regulated data leave the local host.
+
+### Design decisions
+
+- **No auth middleware** is included. Adding a stub would increase surface area without providing real security value in a single-user evaluation context.
+- **Upload validation** enforces file-type checks and content-type verification, but does not enforce authentication.
+- **No rate limiting** is applied. The single-user deployment model makes abuse vectors unlikely.
+
+### Production path
+
+For a production deployment in a regulated veterinary domain, the following would be required:
+
+1. **Token-based authentication** at the API gateway level (e.g., OAuth 2.0 / JWT).
+2. **Role-based authorization** on document and processing endpoints.
+3. **Rate limiting and abuse prevention** middleware.
+4. **Audit logging** of access events on protected resources.
+5. **Streaming upload with early size rejection** to prevent memory-based DoS (see [FUTURE_IMPROVEMENTS.md](FUTURE_IMPROVEMENTS.md) item #9).
+
+The current architecture supports this evolution: the hexagonal design and explicit port/adapter boundaries allow inserting an auth adapter without modifying domain or application layers. See [FUTURE_IMPROVEMENTS.md](FUTURE_IMPROVEMENTS.md) item #15 for the roadmap entry.
+
+---
+
+## 14. Known Limitations
+
+| # | Limitation | Impact | Mitigation / Roadmap |
+|---|---|---|---|
+| 1 | Single-process model — API and scheduler share one event loop | No horizontal scaling for processing | [ADR-ARCH-0004](../adr/ADR-ARCH-0004-in-process-async-processing.md); optional worker profile in [FUTURE_IMPROVEMENTS.md](FUTURE_IMPROVEMENTS.md) #14 |
+| 2 | SQLite — single-writer constraint | Write contention under concurrent uploads | WAL mode + busy timeout applied; PostgreSQL adapter in roadmap (#17) |
+| 3 | No authentication layer | All endpoints publicly accessible | Documented above (§13); auth boundary in roadmap (#15) |
+| 4 | Upload size checked after full read into memory | Memory spike on large files | Streaming guard in roadmap (#9) |
+| 5 | `AppWorkspace.tsx` exceeds 500 LOC target | Maintainability debt in frontend | Decomposition in roadmap ([FUTURE_IMPROVEMENTS.md](FUTURE_IMPROVEMENTS.md) #7b) |
+
+---
+
+## 15. Final Instruction
 
 Follow:
 - this document for **architecture and behavior**
