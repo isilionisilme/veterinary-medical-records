@@ -96,7 +96,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 > completa, deps al día, routes modularizado.
 
 - [x] F12-A 🔄 — Quick-wins: ESLint `.cjs` fix + nginx security headers + CORS restrictivo (Codex)
-- [ ] F12-B 🔄 — Fix `backend-tests` Docker profile: pytest disponible en test stage (Codex)
+- [x] F12-B 🔄 — Fix `backend-tests` Docker profile: pytest disponible en test stage (Codex)
 - [ ] F12-C 🔄 — Tests `SourcePanelContent.tsx` (0%→80%+) + `AddFieldDialog.tsx` (29%→80%+) (Codex)
 - [ ] F12-D 🔄 — Tests `documentApi.ts` (46%→80%+) + `PdfViewer.tsx` (65%→80%+) (Codex)
 - [ ] F12-E 🔄 — Tests `ReviewFieldRenderers.tsx` (76%→85%+) + `ReviewSectionLayout.tsx` (91%→95%+) (Codex)
