@@ -1,11 +1,8 @@
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, ScanLine, Upload, ZoomIn, ZoomOut } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
-import workerSrc from "pdfjs-dist/build/pdf.worker.min?url";
 import { IconButton } from "./app/IconButton";
 import { Tooltip } from "./ui/tooltip";
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 const PDF_ZOOM_STORAGE_KEY = "pdfViewerZoomLevel";
 const MIN_ZOOM_LEVEL = 0.5;
@@ -345,21 +342,18 @@ export function PdfViewer({
       setLoading(true);
       setError(null);
       try {
-        loadingTask = pdfjsLib.getDocument(fileUrl);
-        let doc: pdfjsLib.PDFDocumentProxy;
-        try {
-          doc = await loadingTask.promise;
-        } catch {
-          if (cancelled) {
-            return;
-          }
-          const fallbackSource = {
-            url: fileUrl,
-            disableWorker: true,
-          } as unknown as Parameters<typeof pdfjsLib.getDocument>[0];
-          loadingTask = pdfjsLib.getDocument(fallbackSource);
-          doc = await loadingTask.promise;
+        const response = await fetch(fileUrl);
+        if (!response.ok) {
+          throw new Error("Failed to fetch PDF data.");
         }
+        const arrayBuffer = await response.arrayBuffer();
+        const dataSource = {
+          data: new Uint8Array(arrayBuffer),
+          disableWorker: true,
+          isEvalSupported: false,
+        } as unknown as Parameters<typeof pdfjsLib.getDocument>[0];
+        loadingTask = pdfjsLib.getDocument(dataSource);
+        const doc = await loadingTask.promise;
         if (cancelled) {
           void doc.destroy();
           return;

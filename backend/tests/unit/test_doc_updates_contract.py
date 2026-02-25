@@ -258,6 +258,7 @@ def test_owner_entries_track_iteration_4_doc_propagation() -> None:
     assert "Known Limitations propagation note" in technical_text
     assert "Phase 10 (Iteration 4)" in iterative_text
     assert "Phase 11 (Iteration 5)" in iterative_text
+    assert "Phase 12 (Iteration 6)" in iterative_text
     assert "Checked source->router parity against mapped changed docs" in parity_guard_text
     assert "AI_ITERATIVE_EXECUTION_PLAN updates" in parity_guard_text
 

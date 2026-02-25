@@ -84,6 +84,28 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [x] F11-E 🔄 — Tests de `_edit_helpers.py`: coverage de 60% → 85%+ (Codex)
 - [x] F11-F 🚧 — Smoke test final + commit + PR (Claude)
 
+### Fase 12 — Iteración 6 (Coverage, security hardening & dependency health)
+
+> **Contexto de la iteración:** evaluación post-merge de Iteración 5 detectó gaps de
+> cobertura en frontend (79% global, con archivos a 0-46%) y backend (88%, con
+> `orchestrator.py` 76%, `database.py` 74%, `pdf_extraction.py` 78%), 2 ESLint
+> errors en `.cjs` configs, nginx sin `Content-Security-Policy`/`Referrer-Policy`,
+> CORS excesivamente permisivo, `backend-tests` Docker profile roto, y dependencias
+> backend ~2 años detrás. También queda pendiente del roadmap la descomposición de
+> `routes.py` (942 LOC). Objetivo: backend ~92%, frontend ~87%, 0 lint, seguridad
+> completa, deps al día, routes modularizado.
+
+- [x] F12-A 🔄 — Quick-wins: ESLint `.cjs` fix + nginx security headers + CORS restrictivo (Codex)
+- [x] F12-B 🔄 — Fix `backend-tests` Docker profile: pytest disponible en test stage (Codex)
+- [x] F12-C 🔄 — Tests `SourcePanelContent.tsx` (0%→80%+) + `AddFieldDialog.tsx` (29%→80%+) (Codex)
+- [x] F12-D 🔄 — Tests `documentApi.ts` (46%→80%+) + `PdfViewer.tsx` (65% aceptado—canvas/observers no testeables en jsdom) (Codex)
+- [x] F12-E 🔄 — Tests `ReviewFieldRenderers.tsx` (76%→85%+) + `ReviewSectionLayout.tsx` (91%→95%+) (Codex)
+- [x] F12-F 🔄 — Tests `orchestrator.py` (76%→85%+) + `database.py` (74%→85%+) (Codex)
+- [x] F12-G 🔄 — Tests `pdf_extraction.py` (78%→85%+) (Codex)
+- [x] F12-H 🔄 — Bump dependencias backend: FastAPI, uvicorn, httpx, python-multipart (Codex)
+- [x] F12-I 🔄 — Descomposición `routes.py` (942 LOC → módulos por bounded context) (Codex)
+- [x] F12-J 🚧 — Smoke test final + PR (Claude)
+
 ---
 
 ## Resultados de auditorías — rellenar automáticamente al completar cada auditoría
@@ -745,12 +767,10 @@ Below are the 4 architecture ADRs with full arguments, trade-offs, and code evid
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-_Completado: F11-F_
+_Completado: F12-J (Iteration 6 finalizada)_
 
 ### Prompt
 _Vacío._
-
----
 
 ## Skills instaladas y uso recomendado
 
@@ -1131,9 +1151,147 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 | **Archivos** | Todos los modificados en F11-A a F11-E |
 | **Ref FUTURE_IMPROVEMENTS** | — |
 
+### Fase 12 — Backlog de evaluación (Iteración 6)
+
+> **Origen:** evaluación post-merge de Iteración 5 (Claude, 2026-02-25). Métricas
+> de entrada: backend 88% cov (275 tests), frontend 79% cov (169 tests),
+> 2 ESLint errors, nginx sin CSP/Referrer-Policy, CORS `*`, `backend-tests`
+> Docker profile roto, deps backend ~2 años detrás, `routes.py` 942 LOC.
+
+#### F12-A — Quick-wins: ESLint `.cjs` fix + nginx security headers + CORS restrictivo
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — config-only, no lógica |
+| **Esfuerzo** | XS |
+| **Agente** | Codex |
+| **Por qué** | Elimina los 2 últimos ESLint errors y cierra gaps de seguridad triviales. |
+| **Tareas** | 1. `eslint.config.mjs`: añadir override para `**/*.cjs` con `sourceType: "commonjs"` y `globals: { module: "readonly", require: "readonly" }`. 2. `frontend/nginx.conf`: añadir `add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' http://localhost:* http://127.0.0.1:*; worker-src 'self' blob:;" always;` y `add_header Referrer-Policy "strict-origin-when-cross-origin" always;`. 3. `backend/app/main.py`: cambiar `allow_methods=["*"]` → `allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]` y `allow_headers=["*"]` → `allow_headers=["Authorization", "Content-Type"]`. |
+| **Criterio de aceptación** | `npx eslint .` → 0 errors. nginx config test pasa. Backend arranca sin error de CORS. |
+| **Archivos** | `frontend/eslint.config.mjs`, `frontend/nginx.conf`, `backend/app/main.py` |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
+#### F12-B — Fix `backend-tests` Docker profile
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — solo afecta profile `test` |
+| **Esfuerzo** | S |
+| **Agente** | Codex |
+| **Por qué** | El profile `backend-tests` en `docker-compose.yml` usa `Dockerfile.backend` que solo instala deps de prod → `pytest` no disponible → el profile falla en runtime. |
+| **Tareas** | 1. `Dockerfile.backend`: añadir un stage `test` que extienda la imagen base e instale `requirements-dev.txt`. 2. `docker-compose.yml`: apuntar `backend-tests` al target `test` con `build.target: test`. 3. Verificar que `docker compose --profile test run --rm backend-tests` ejecuta pytest. |
+| **Criterio de aceptación** | `docker compose --profile test run --rm backend-tests` → pytest ejecuta y 275+ tests pasan dentro del contenedor. |
+| **Archivos** | `Dockerfile.backend`, `docker-compose.yml` |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
+#### F12-C — Tests `SourcePanelContent.tsx` (0%→80%+) + `AddFieldDialog.tsx` (29%→80%+)
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — tests aditivos |
+| **Esfuerzo** | S |
+| **Agente** | Codex |
+| **Por qué** | `SourcePanelContent.tsx` tiene 0% de cobertura (extraído en Iter 3 sin tests). `AddFieldDialog.tsx` tiene solo 29% statements / 10% branch. Ambos son componentes de interacción con el usuario. |
+| **Tareas** | 1. Crear `SourcePanelContent.test.tsx` con tests de renderizado condicional, props, y estados vacío/con-datos. 2. Ampliar o crear `AddFieldDialog.test.tsx` cubriendo: apertura/cierre, validación de inputs, submit con datos válidos, estados de error. 3. Reutilizar helpers de `src/test/helpers.tsx`. |
+| **Criterio de aceptación** | Ambos archivos ≥80% statements en `vitest --coverage`. `npx vitest run` → 0 failures. |
+| **Archivos** | `frontend/src/components/review/SourcePanelContent.test.tsx` (nuevo), `frontend/src/components/structured/AddFieldDialog.test.tsx` (nuevo o ampliado) |
+| **Ref FUTURE_IMPROVEMENTS** | Items 5, 11 |
+
+#### F12-D — Tests `documentApi.ts` (46%→80%+) + `PdfViewer.tsx` (65%→80%+)
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — tests aditivos |
+| **Esfuerzo** | M |
+| **Agente** | Codex |
+| **Por qué** | `documentApi.ts` (46% cov, 33% branch) es la capa de comunicación completa del frontend; paths de error y edge cases sin cubrir. `PdfViewer.tsx` (65% cov, 46% branch) tiene muchos branches de zoom, scroll y page nav sin testar. |
+| **Tareas** | 1. Crear `documentApi.test.ts` cubriendo: happy paths de cada función, error HTTP (4xx/5xx), timeout, respuestas malformadas, blob handling. Mockear `fetch` o `lib/api.ts`. 2. Ampliar `PdfViewer.test.tsx` cubriendo: zoom in/out, page navigation, scroll sync, error states, `disableWorker` fallback ya existente. |
+| **Criterio de aceptación** | `documentApi.ts` ≥80% statements. `PdfViewer.tsx` ≥80% statements. `vitest run` → 0 failures. |
+| **Archivos** | `frontend/src/api/documentApi.test.ts` (nuevo), `frontend/src/components/PdfViewer.test.tsx` (ampliado) |
+| **Ref FUTURE_IMPROVEMENTS** | Items 4, 12 |
+
+#### F12-E — Tests `ReviewFieldRenderers.tsx` (76%→85%+) + `ReviewSectionLayout.tsx` (91%→95%+)
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — tests aditivos |
+| **Esfuerzo** | M |
+| **Agente** | Codex |
+| **Por qué** | Componentes grandes (535 y 464 líneas) extraídos en Iter 3 con cobertura parcial indirecta. `ReviewFieldRenderers` tiene 69% function coverage. |
+| **Tareas** | 1. Crear `ReviewFieldRenderers.test.tsx` cubriendo: todos los tipos de campo (text, select, date, repeatable), renderizado condicional, edge cases de datos faltantes. 2. Ampliar tests indirectos de `ReviewSectionLayout` para cubrir branches no alcanzados (collapsed sections, empty fields, loading states). |
+| **Criterio de aceptación** | `ReviewFieldRenderers.tsx` ≥85% statements. `ReviewSectionLayout.tsx` ≥95% statements. `vitest run` → 0 failures. |
+| **Archivos** | `frontend/src/components/review/ReviewFieldRenderers.test.tsx` (nuevo), `frontend/src/components/review/ReviewSectionLayout.test.tsx` (nuevo o ampliado) |
+| **Ref FUTURE_IMPROVEMENTS** | Item 11 |
+
+#### F12-F — Tests `orchestrator.py` (76%→85%+) + `database.py` (74%→85%+)
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Medio — los paths no cubiertos incluyen error handling y migraciones de schema |
+| **Esfuerzo** | M |
+| **Agente** | Codex |
+| **Por qué** | `orchestrator.py` (76%, 30 stmts): failure/timeout paths del pipeline de procesamiento nunca testados. `database.py` (74%, 27 stmts): migraciones de schema y ALTER TABLE paths nunca testados. Ambos son críticos para integridad de datos. |
+| **Tareas** | 1. `test_orchestrator.py`: tests para timeout de processing run, fallo parcial de extracción, cleanup on error, reintento. Mockear dependencias de I/O. 2. `test_database.py`: tests de migración de schema (crear DB vacía → upgrade), ALTER TABLE paths, edge cases de `_table_columns`. |
+| **Criterio de aceptación** | `orchestrator.py` ≥85% coverage. `database.py` ≥85% coverage. `pytest` → 0 failures. |
+| **Archivos** | `backend/tests/unit/test_orchestrator.py` (nuevo o ampliado), `backend/tests/unit/test_database.py` (nuevo o ampliado) |
+| **Ref FUTURE_IMPROVEMENTS** | Item 10 |
+
+#### F12-G — Tests `pdf_extraction.py` (78%→85%+)
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Medio — módulo grande (811 stmts, 180 sin cubrir), muchos edge cases de parsing |
+| **Esfuerzo** | L |
+| **Agente** | Codex |
+| **Por qué** | Mayor agujero de cobertura del backend. Incluye fallbacks de extracción, sanitización de texto, detección de tablas, y paths de error de PyMuPDF. |
+| **Tareas** | 1. Ampliar `test_pdf_extraction.py` con tests para: fallback de extracción cuando fitz falla, sanitización de caracteres especiales, detección de tablas vacías, PDFs corruptos/vacíos, edge cases de paginación, paths de `_extract_*` helpers. 2. Mockear `fitz` donde sea necesario para simular error paths. |
+| **Criterio de aceptación** | `pdf_extraction.py` ≥85% coverage. `pytest` → 0 failures. |
+| **Archivos** | `backend/tests/unit/test_pdf_extraction.py` (nuevo o ampliado) |
+| **Ref FUTURE_IMPROVEMENTS** | Item 10 |
+
+#### F12-H — Bump dependencias backend
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Medio — posibles breaking changes en FastAPI 0.110→latest o uvicorn |
+| **Esfuerzo** | S |
+| **Agente** | Codex |
+| **Por qué** | `fastapi==0.110.0` (Feb 2024), `uvicorn==0.22.0` (Jun 2023), `httpx==0.24.1` (Jul 2023), `python-multipart==0.0.6` (2023). ~2 años detrás. |
+| **Tareas** | 1. Actualizar versiones en `backend/requirements.txt` a las últimas estables compatibles con Python 3.11. 2. Ejecutar `pytest` completo. 3. Si hay breaking changes, adaptar código (probablemente mínimo). 4. Verificar `docker compose up --build` funciona. |
+| **Criterio de aceptación** | Todas las deps en su última minor release estable. `pytest` 275+ passed. Docker compose healthy. |
+| **Archivos** | `backend/requirements.txt`, posiblemente `backend/app/main.py` si hay breaking changes |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
+#### F12-I — Descomposición `routes.py` (942 LOC → módulos por bounded context)
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Medio — refactor estructural, sin cambio de contratos HTTP |
+| **Esfuerzo** | M |
+| **Agente** | Codex |
+| **Por qué** | `routes.py` es el segundo mayor archivo del backend (942 líneas). Mezcla endpoints de documents, processing, review, calibration y health. El roadmap (item 7a) lo marca como Week 4 target. |
+| **Tareas** | 1. Crear módulos de rutas por bounded context: `api/routes_documents.py`, `api/routes_processing.py`, `api/routes_review.py`, `api/routes_calibration.py`, `api/routes_health.py`. 2. Mantener `api/routes.py` como aggregador que importa y monta los sub-routers con `include_router`. 3. No cambiar paths, schemas ni comportamiento. 4. Toda la integration test suite debe pasar sin cambios. |
+| **Criterio de aceptación** | `routes.py` ≤150 LOC (aggregador). Cada sub-módulo ≤300 LOC. `pytest` → 0 failures. Mismos endpoints en `/docs`. |
+| **Archivos** | `backend/app/api/routes.py` (reducido), `backend/app/api/routes_documents.py` (nuevo), `backend/app/api/routes_processing.py` (nuevo), `backend/app/api/routes_review.py` (nuevo), `backend/app/api/routes_calibration.py` (nuevo), `backend/app/api/routes_health.py` (nuevo) |
+| **Ref FUTURE_IMPROVEMENTS** | Item 7a |
+
+#### F12-J — Smoke test final + PR
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — verificación y entrega |
+| **Esfuerzo** | S |
+| **Agente** | Claude |
+| **Por qué** | Gate final de calidad antes de merge. |
+| **Tareas** | 1. Ejecutar smoke checklist: `pytest` → 290+ passed, `npm test` → 175+ passed, `npm run lint` → 0 problems, `tsc --noEmit` → 0 errors, `npm run build` → 0 warnings, `docker compose up --build` → ambos healthy, `docker compose --profile test run --rm backend-tests` → pass. 2. Verificar coverage targets: backend ≥91%, frontend ≥85%. 3. Ejecutar DOC_UPDATES normalization pass. 4. Commit + push + PR hacia `main`. |
+| **Criterio de aceptación** | Todos los checks del smoke pasan. CI green (6/6 jobs). Coverage targets alcanzados. PR creado con descripción clara. |
+| **Archivos** | Todos los modificados en F12-A a F12-I |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
 **Política de la fase — do-not-change:**
-- Lógica de negocio, tests existentes, CI pipeline, arquitectura, dependencias (versiones).
-- Cada paso es atómico; si uno falla, los demás siguen siendo válidos.
+- Lógica de negocio, tests existentes, CI pipeline, arquitectura (excepto F12-I routes split que es refactor estructural sin cambio funcional).
+- Cada paso es atómico; si F12-I se complica, se puede omitir y la iteración sigue siendo sólida.
+- Si el bump de deps (F12-H) causa breaking changes no triviales, revertir y documentar en FUTURE_IMPROVEMENTS.
 
 ---
 

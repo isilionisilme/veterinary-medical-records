@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { waitFor } from "@testing-library/react";
 import * as pdfjsLib from "pdfjs-dist";
 
@@ -70,6 +70,19 @@ describe("PdfViewer", () => {
     lastObserver = null;
     globalThis.IntersectionObserver =
       MockIntersectionObserver as unknown as typeof IntersectionObserver;
+    Object.defineProperty(HTMLElement.prototype, "scrollTo", {
+      configurable: true,
+      writable: true,
+      value: vi.fn(),
+    });
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      arrayBuffer: async () => new Uint8Array([0x25, 0x50, 0x44, 0x46]).buffer,
+    } as Response);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("renders all pages in a continuous scroll", async () => {
@@ -276,26 +289,79 @@ describe("PdfViewer", () => {
     expect(screen.getByTestId("pdf-zoom-indicator")).toHaveTextContent("130%");
   });
 
-  it("retries with disableWorker when initial pdf load fails", async () => {
+  it("loads PDF from fetched data source with worker disabled", async () => {
     const getDocumentMock = vi.mocked(pdfjsLib.getDocument);
     getDocumentMock.mockReset();
-    getDocumentMock
-      .mockImplementationOnce(() => ({
-        promise: Promise.reject(new Error("worker load failed")),
-      }))
-      .mockImplementationOnce(() => ({
-        promise: Promise.resolve(mockDoc),
-      }));
+    getDocumentMock.mockImplementationOnce(() => ({
+      promise: Promise.resolve(mockDoc),
+    }));
 
     render(<PdfViewer fileUrl="blob://sample" filename="record.pdf" />);
 
     await screen.findAllByTestId("pdf-page");
 
-    expect(getDocumentMock).toHaveBeenNthCalledWith(1, "blob://sample");
-    expect(getDocumentMock).toHaveBeenNthCalledWith(2, {
-      url: "blob://sample",
+    expect(globalThis.fetch).toHaveBeenCalledWith("blob://sample");
+    const firstCall = getDocumentMock.mock.calls[0]?.[0] as { data?: Uint8Array };
+    expect(firstCall).toMatchObject({
       disableWorker: true,
+      isEvalSupported: false,
     });
+    expect(firstCall.data).toBeInstanceOf(Uint8Array);
     expect(screen.queryByText("No pudimos cargar el PDF.")).toBeNull();
+  });
+
+  it("shows loading state while document promise is pending", async () => {
+    const getDocumentMock = vi.mocked(pdfjsLib.getDocument);
+    getDocumentMock.mockReset();
+
+    let resolveDoc: ((value: typeof mockDoc) => void) | null = null;
+    const pendingPromise = new Promise<typeof mockDoc>((resolve) => {
+      resolveDoc = resolve;
+    });
+
+    getDocumentMock.mockImplementation(() => ({
+      promise: pendingPromise,
+    }));
+
+    render(<PdfViewer fileUrl="blob://sample" filename="record.pdf" />);
+
+    expect(screen.getByText("Cargando PDF...")).toBeInTheDocument();
+
+    resolveDoc?.(mockDoc);
+    await screen.findAllByTestId("pdf-page");
+    expect(screen.queryByText("Cargando PDF...")).toBeNull();
+  });
+
+  it("shows error state when data-source load fails", async () => {
+    const getDocumentMock = vi.mocked(pdfjsLib.getDocument);
+    getDocumentMock.mockReset();
+    getDocumentMock.mockImplementationOnce(() => ({
+      promise: Promise.reject(new Error("data load failed")),
+    }));
+
+    render(<PdfViewer fileUrl="blob://sample" filename="record.pdf" />);
+
+    expect(await screen.findByText("No pudimos cargar el PDF.")).toBeInTheDocument();
+  });
+
+  it("shows error state when blob fetch fails", async () => {
+    const getDocumentMock = vi.mocked(pdfjsLib.getDocument);
+    getDocumentMock.mockReset();
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: false,
+      arrayBuffer: async () => new ArrayBuffer(0),
+    } as Response);
+
+    render(<PdfViewer fileUrl="blob://sample" filename="record.pdf" />);
+
+    expect(await screen.findByText("No pudimos cargar el PDF.")).toBeInTheDocument();
+    expect(getDocumentMock).not.toHaveBeenCalled();
+  });
+
+  it("renders drag overlay when upload drag state is active", async () => {
+    render(<PdfViewer fileUrl="blob://sample" filename="record.pdf" isDragOver />);
+
+    await screen.findAllByTestId("pdf-page");
+    expect(screen.getByText("Suelta el PDF para subirlo")).toBeInTheDocument();
   });
 });

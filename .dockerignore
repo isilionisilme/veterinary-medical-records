@@ -14,3 +14,10 @@ backend/.pytest_cache
 
 *.log
 .start-all-processes.json
+
+!.github/
+!.github/workflows/
+!.github/workflows/ci.yml
+!metrics/
+!metrics/llm_benchmarks/
+!metrics/llm_benchmarks/SCENARIOS.md

@@ -72,7 +72,7 @@
     },
     {
       "doc_glob": "docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md",
-      "description": "Project AI_ITERATIVE_EXECUTION_PLAN changes (including new execution phases like F8/F9+, canonical STOP handoff guardrails, and token-efficiency policy) require propagation to its owner module.",
+      "description": "Project AI_ITERATIVE_EXECUTION_PLAN changes (including appended execution phases through F12, canonical STOP handoff guardrails, and token-efficiency policy) require propagation to its owner module.",
       "owner_any": [
         "docs/agent_router/04_PROJECT/AI_ITERATIVE_EXECUTION_PLAN/*.md",
         "docs/agent_router/04_PROJECT/AI_ITERATIVE_EXECUTION_PLAN/**/*.md"
