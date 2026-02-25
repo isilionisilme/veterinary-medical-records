@@ -30,5 +30,12 @@ export default tseslint.config(
       "@typescript-eslint/no-this-alias": "off",
     },
   },
+  {
+    files: ["**/*.cjs"],
+    languageOptions: {
+      sourceType: "commonjs",
+      globals: { module: "readonly", require: "readonly", __dirname: "readonly" },
+    },
+  },
   prettierConfig,
 );
