@@ -48,3 +48,4 @@ If the user writes `Continúa` and `docs/project/refactor/AI_ITERATIVE_EXECUTION
 3. If that step belongs to a different agent: STOP. Do not implement anything. Respond EXACTLY with one of these messages:
   - If the next step is Codex: "⚠️ Este paso no corresponde al agente activo. **STOP.** El siguiente paso es de **GPT-5.3-Codex**. Abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
   - If the next step is Claude: "⚠️ Este paso no corresponde al agente activo. **STOP.** El siguiente paso es de **Claude Opus 4.6**. Abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
+4. When proceeding with a valid step, enforce the token-efficiency policy from the plan (`iterative-retrieval` before execution and `strategic-compact` at step close).

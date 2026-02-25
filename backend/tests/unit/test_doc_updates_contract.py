@@ -107,6 +107,16 @@ def test_identity_handoff_message_is_canonical_and_persistent() -> None:
     assert ambiguous not in plan_text
 
 
+def test_token_efficiency_policy_persists_for_continue_flow() -> None:
+    agents_text = _read_text(ROOT_AGENTS)
+    plan_text = _read_text(AI_ITERATIVE_EXECUTION_PLAN)
+
+    assert "iterative-retrieval" in agents_text
+    assert "strategic-compact" in agents_text
+    assert "iterative-retrieval" in plan_text
+    assert "strategic-compact" in plan_text
+
+
 def test_doc_updates_entry_covers_triggers_and_summary_schema() -> None:
     text = _read_text(DOC_UPDATES_ENTRY)
     lower = text.lower()

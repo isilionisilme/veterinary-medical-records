@@ -887,6 +887,19 @@ Razón: una edición humana accidental (borrar un `[x]`, reformatear una tabla, 
 ### Next-step message (mandatory — hard rule)
 **Al terminar un paso, el agente SIEMPRE indica al usuario el siguiente movimiento con instrucciones concretas.** Nunca terminar sin decir qué agente usar y qué hacer a continuación. Si no hay siguiente paso, decir "Todos los pasos completados." Referencia: sección "Instrucciones de siguiente paso" y STEP F del template SCOPE BOUNDARY.
 
+### Token-efficiency policy (mandatory)
+Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
+1. **iterative-retrieval** antes de ejecutar cada paso: cargar solo estado actual (`primer [ ]`), objetivo del paso, archivos target, guardrails y outputs de validación relevantes.
+2. **strategic-compact** al cerrar cada paso: resumir únicamente delta implementado, validación ejecutada, riesgos abiertos y siguiente movimiento.
+3. Prohibido arrastrar histórico completo del chat si no es necesario para el paso activo.
+
+> **Plantilla mínima de compacto (obligatoria):**
+> - Step: F?-?
+> - Delta: <cambios concretos>
+> - Validation: <tests/guards + resultado>
+> - Risks/Open: <si aplica>
+> - Next: <agente exacto + instrucción Continúa>
+
 ### F8-A — Setup Iteration 2 (meta)
 - ✅ Rama de trabajo creada desde `main`: `improvement/refactor-iteration-2`.
 - ✅ Estrategia histórica confirmada: este archivo se mantiene **append-only** (F1-F7 intactas).
