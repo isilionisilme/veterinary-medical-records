@@ -788,10 +788,144 @@ Below are the 4 architecture ADRs with full arguments, trade-offs, and code evid
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-_Completado: F13-B_
+F13-C — Extraer confidence_scoring.py (field building + confidence scoring) + thin interpretation.py < 400 LOC
 
 ### Prompt
-_Vacío._
+
+```
+--- AGENT IDENTITY CHECK ---
+This prompt is designed for GPT-5.3-Codex in VS Code Copilot Chat.
+If you are not GPT-5.3-Codex: STOP. Tell the user to switch agents.
+--- END IDENTITY CHECK ---
+
+--- BRANCH CHECK ---
+Run: git branch --show-current
+If NOT `improvement/iteration-7-pr1`: STOP. Tell the user to switch.
+--- END BRANCH CHECK ---
+
+--- SYNC CHECK ---
+Run: git pull origin improvement/iteration-7-pr1
+--- END SYNC CHECK ---
+
+--- PRE-FLIGHT CHECK ---
+1. Verify F13-B is `[x]` in Estado de ejecución. If not: STOP.
+2. Verify these files exist:
+   - `backend/app/application/processing/interpretation.py`
+   - `backend/app/application/processing/candidate_mining.py`
+   - `backend/app/application/processing/constants.py`
+--- END PRE-FLIGHT CHECK ---
+
+--- TASK: F13-C — Extract confidence_scoring.py from interpretation.py ---
+
+**Goal:** Move field-building and confidence-scoring functions from
+`interpretation.py` into a new `confidence_scoring.py` module, leaving
+`interpretation.py` as a thin orchestrator under 400 LOC.
+This is purely a move — NO logic changes.
+
+**Current state:** `interpretation.py` is ~558 LOC with 17 functions.
+After this extraction it should be ≤250 LOC with only orchestration code.
+
+**What to move to `backend/app/application/processing/confidence_scoring.py`:**
+
+All functions from L251 onwards (the exact line numbers post-F13-B; use
+function names as the canonical reference):
+
+1. `_find_line_number_for_snippet(raw_text, snippet)` (~15 LOC)
+2. `_build_structured_fields_from_global_schema(...)` (~80 LOC) — the main
+   field builder called by `_build_interpretation_artifact`
+3. `_build_field_candidate_suggestions(...)` (~44 LOC)
+4. `_candidate_suggestion_sort_key(item)` (~19 LOC)
+5. `_build_structured_field(...)` (~55 LOC)
+6. `_sanitize_text_extraction_reliability(value)` (~10 LOC)
+7. `_sanitize_field_review_history_adjustment(value)` (~10 LOC)
+8. `_sanitize_field_candidate_confidence(value)` (~10 LOC)
+9. `_derive_mapping_id(*, key, candidate)` (~18 LOC)
+10. `_resolve_review_history_adjustment(...)` (~30 LOC)
+11. `_compose_field_mapping_confidence(...)` (~6 LOC)
+12. `_normalize_candidate_text(text)` (~4 LOC)
+
+**What stays in `interpretation.py` (thin orchestrator):**
+- `_default_now_iso()`
+- `_build_interpretation_artifact()` — the public entry point
+- `_should_include_interpretation_candidates()`
+- `_build_date_selection_debug()`
+- `_build_mvp_coverage_debug_summary()`
+
+**Implementation steps:**
+
+1. Create `backend/app/application/processing/confidence_scoring.py`:
+   - Docstring: `"""Field building, confidence scoring, and review history for interpretation artifacts."""`
+   - Import from standard library: `logging`, `math`
+   - Import from `.constants`: `_WHITESPACE_PATTERN`, `NUMERIC_TYPES`
+   - Import from `.candidate_mining`: `_candidate_sort_key` (used by
+     `_build_field_candidate_suggestions`)
+   - Import from `backend.app.application.confidence_calibration`:
+     `compute_review_history_adjustment`, `normalize_mapping_id`,
+     `resolve_calibration_policy_version`
+   - Import from `backend.app.application.global_schema`:
+     `CRITICAL_KEYS`, `GLOBAL_SCHEMA_KEYS`, `REPEATABLE_KEYS`, `VALUE_TYPE_BY_KEY`
+   - Import from `backend.app.ports.document_repository`: `DocumentRepository`
+   - Move the 12 functions listed above.
+
+2. Update `interpretation.py`:
+   - Remove the 12 moved functions.
+   - Add import:
+     ```python
+     from .confidence_scoring import _build_structured_fields_from_global_schema
+     ```
+   - Remove any imports that are no longer used in interpretation.py after the
+     move (e.g., `math`, `CRITICAL_KEYS`, `REPEATABLE_KEYS`, `VALUE_TYPE_BY_KEY`,
+     `NUMERIC_TYPES`, `_candidate_sort_key`). Check each import carefully against
+     remaining code.
+
+3. **Critical: Do NOT change `_build_interpretation_artifact` or any function
+   signatures. The public API must remain identical.**
+
+4. **Critical: `_build_structured_fields_from_global_schema` calls several of
+   the other moved functions (`_build_structured_field`, `_derive_mapping_id`,
+   `_resolve_review_history_adjustment`, etc). Since they all move to the same
+   module, no cross-module calls needed.**
+
+**Verification:**
+- `(Get-Content backend/app/application/processing/interpretation.py).Count` ≤ 270
+- `python -c "from backend.app.application.processing.interpretation import _build_interpretation_artifact; print('OK')"` → OK
+- `python -c "from backend.app.application.processing.confidence_scoring import _build_structured_fields_from_global_schema; print('OK')"` → OK
+- `python -m pytest --tb=short -q` → 317+ passed
+
+--- END TASK ---
+
+--- TEST GATE ---
+Backend: cd d:/Git/veterinary-medical-records && python -m pytest --tb=short -q
+Frontend: cd d:/Git/veterinary-medical-records/frontend && npm test -- --run
+If any test fails: STOP. Report failures. Do NOT commit. Do NOT edit the plan.
+--- END TEST GATE ---
+
+--- SCOPE BOUNDARY (two-commit strategy) ---
+STEP A — Commit code (plan untouched):
+1. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
+2. git commit -m "refactor(plan-f13c): extract confidence_scoring.py from interpretation.py
+
+Test proof: <pytest summary> | <npm test summary>"
+
+STEP B — Commit plan update:
+1. Change `- [ ] F13-C` to `- [x] F13-C` in Estado de ejecución.
+2. Clean Prompt activo: Paso objetivo → `_Completado: F13-C_`, Prompt → `_Vacío._`
+3. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+4. git commit -m "docs(plan-f13c): mark step done"
+
+STEP C — Push:
+1. git push origin improvement/iteration-7-pr1
+
+STEP D — Update PR description with progress.
+
+STEP E — CI GATE (mandatory):
+1. gh run list --branch improvement/iteration-7-pr1 --limit 1 --json status,conclusion,databaseId
+2. Wait for green. Fix if red.
+
+STEP F — Tell user:
+"✓ F13-C completado, CI verde. Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`. Claude ejecutará F13-D (shim validation + PR 1)."
+--- END SCOPE BOUNDARY ---
+```
 ## Skills instaladas y uso recomendado
 
 ### Arquitectura / calidad
