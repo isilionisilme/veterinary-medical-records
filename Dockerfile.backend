@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.11-slim AS prod
 
 ARG APP_VERSION=dev
 ARG GIT_COMMIT=unknown
@@ -30,3 +30,20 @@ ENV VET_RECORDS_DB_PATH=/app/backend/data/documents.db
 ENV VET_RECORDS_STORAGE_PATH=/app/backend/storage
 
 CMD ["python", "-m", "uvicorn", "backend.app.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]
+
+FROM prod AS test
+
+USER root
+
+COPY requirements-dev.txt /app/requirements-dev.txt
+COPY scripts /app/scripts
+COPY AGENTS.md /app/AGENTS.md
+COPY docs /app/docs
+COPY .github/workflows/ci.yml /app/.github/workflows/ci.yml
+COPY metrics/llm_benchmarks/SCENARIOS.md /app/metrics/llm_benchmarks/SCENARIOS.md
+COPY Dockerfile.backend /app/Dockerfile.backend
+COPY Dockerfile.frontend /app/Dockerfile.frontend
+COPY frontend/src/lib/globalSchema.ts /app/frontend/src/lib/globalSchema.ts
+RUN pip install --no-cache-dir -r /app/requirements-dev.txt
+
+USER appuser

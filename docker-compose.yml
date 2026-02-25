@@ -46,6 +46,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.backend
+      target: test
     profiles: ["test"]
     command: ["pytest", "backend/tests", "-q"]
     environment:
