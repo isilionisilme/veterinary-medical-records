@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 type SourceEvidence = {
   page: number;
@@ -54,12 +54,12 @@ export function useSourcePanelState({ isDesktopForPin, onNotice }: UseSourcePane
     setIsSourceOpen(false);
   };
 
-  const reset = () => {
+  const reset = useCallback(() => {
     setSourcePage(null);
     setSourceSnippet(null);
     setIsSourceOpen(false);
     setIsSourcePinned(false);
-  };
+  }, []);
 
   useEffect(() => {
     if (isDesktopForPin) {

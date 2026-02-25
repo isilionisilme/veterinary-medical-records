@@ -121,7 +121,7 @@ Technical guardrails:
   - `domain`
   - `application`
   - `ports`
-  - `infrastructure`
+  - `infra` (infrastructure)
   - `api`
 - Prefer **explicit, readable code** over abstractions.
 
@@ -425,10 +425,10 @@ The current architecture supports this evolution: the hexagonal design and expli
 | # | Limitation | Impact | Mitigation / Roadmap |
 |---|---|---|---|
 | 1 | Single-process model — API and scheduler share one event loop | No horizontal scaling for processing | [ADR-ARCH-0004](../adr/ADR-ARCH-0004-in-process-async-processing.md); optional worker profile in [FUTURE_IMPROVEMENTS.md](FUTURE_IMPROVEMENTS.md) #14 |
-| 2 | SQLite — single-writer constraint | Write contention under concurrent uploads | WAL mode + busy timeout applied; PostgreSQL adapter in roadmap (#17) |
-| 3 | Minimal authentication boundary | Root endpoints remain open; token auth is optional and static | Documented above (§13); roadmap keeps full authN/authZ evolution (#15) |
-| 4 | Upload size checked after full read into memory | Memory spike on large files | Streaming guard in roadmap (#9) |
-| 5 | `AppWorkspace.tsx` exceeds 500 LOC target | Maintainability debt in frontend | Decomposition in roadmap ([FUTURE_IMPROVEMENTS.md](FUTURE_IMPROVEMENTS.md) #7b) |
+| 2 | SQLite — single-writer constraint | Write contention under concurrent uploads | WAL mode + busy timeout applied (Iteration 2); PostgreSQL adapter in roadmap (#17) |
+| 3 | Minimal authentication boundary | Root endpoints remain open; token auth is optional and static | Optional bearer-token auth implemented (Iteration 3, §13); full authN/authZ is a production evolution |
+| 4 | `AppWorkspace.tsx` at ~3,800 LOC (down from ~5,800) | Maintainability debt partially addressed; further decomposition possible | Initial decomposition done (Iteration 3, [FUTURE_IMPROVEMENTS.md](FUTURE_IMPROVEMENTS.md) #7b ✅); further extraction tracked in roadmap |
+| 5 | `routes.py` at ~940 LOC — all API endpoints in a single file | Blast radius on route changes | Decomposition tracked in [FUTURE_IMPROVEMENTS.md](FUTURE_IMPROVEMENTS.md) #7a |
 
 ---
 
