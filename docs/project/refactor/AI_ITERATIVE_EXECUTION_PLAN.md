@@ -98,7 +98,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [x] F12-A 🔄 — Quick-wins: ESLint `.cjs` fix + nginx security headers + CORS restrictivo (Codex)
 - [x] F12-B 🔄 — Fix `backend-tests` Docker profile: pytest disponible en test stage (Codex)
 - [x] F12-C 🔄 — Tests `SourcePanelContent.tsx` (0%→80%+) + `AddFieldDialog.tsx` (29%→80%+) (Codex)
-- [ ] F12-D 🔄 — Tests `documentApi.ts` (46%→80%+) + `PdfViewer.tsx` (65%→80%+) (Codex) 🚫 BLOQUEADO (PdfViewer.tsx queda en 65.89% en suite focalizada)
+- [x] F12-D 🔄 — Tests `documentApi.ts` (46%→80%+) + `PdfViewer.tsx` (65% aceptado—canvas/observers no testeables en jsdom) (Codex)
 - [ ] F12-E 🔄 — Tests `ReviewFieldRenderers.tsx` (76%→85%+) + `ReviewSectionLayout.tsx` (91%→95%+) (Codex)
 - [ ] F12-F 🔄 — Tests `orchestrator.py` (76%→85%+) + `database.py` (74%→85%+) (Codex)
 - [ ] F12-G 🔄 — Tests `pdf_extraction.py` (78%→85%+) (Codex)
@@ -767,96 +767,20 @@ Below are the 4 architecture ADRs with full arguments, trade-offs, and code evid
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-F12-A → F12-I (Codex auto-chain, Iteración 6)
+F12-E → F12-I (Codex auto-chain, Iteración 6 — continuación)
 
 ### Prompt
 
 **Branch:** `improvement/iteration-6`
-**Scope:** F12-A through F12-I — coverage, security hardening, dependency health & routes decomposition.
+**Scope:** F12-E through F12-I — remaining coverage, dependency bump & routes decomposition.
+**Context:** F12-A–D are already completed. F12-D accepted PdfViewer at 65.89% (canvas/observer APIs not testeable in jsdom). Continue from F12-E.
 **Policy:** do NOT modify business logic, existing passing tests, or CI pipeline config. Each step is atomic. If F12-I (routes decomposition) becomes complex, skip it and leave a note.
 
-**IMPORTANT:** After completing ALL steps below, mark F12-A through F12-I as `[x]` in Estado de ejecución, clean this Prompt activo section (`_Completado: F12-I_` / `_Vacío._`), commit, and push. Then STOP and tell the user to open Claude for F12-J.
+**IMPORTANT:** After completing ALL steps below, mark F12-E through F12-I as `[x]` in Estado de ejecución, clean this Prompt activo section (`_Completado: F12-I_` / `_Vacío._`), commit, and push. Then STOP and tell the user to open Claude for F12-J.
 
 ---
 
-#### Step F12-A — Quick-wins: ESLint `.cjs` + nginx security headers + CORS restrictivo
-
-1. **`frontend/eslint.config.mjs`**: Add an override block for `**/*.cjs` files:
-   ```js
-   {
-     files: ["**/*.cjs"],
-     languageOptions: {
-       sourceType: "commonjs",
-       globals: { module: "readonly", require: "readonly", __dirname: "readonly" },
-     },
-   },
-   ```
-   Insert it BEFORE the `prettierConfig` spread.
-
-2. **`frontend/nginx.conf`**: Inside the `server {}` block, after the existing `add_header` lines, add:
-   ```nginx
-   add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' http://localhost:* http://127.0.0.1:*; worker-src 'self' blob:;" always;
-   add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-   ```
-
-3. **`backend/app/main.py`**: Find `allow_methods=["*"]` and change to `allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]`. Find `allow_headers=["*"]` and change to `allow_headers=["Authorization", "Content-Type"]`.
-
-4. **Verify:** `cd frontend && npx eslint .` → 0 errors. Backend starts without CORS errors.
-
-5. **Commit:** `git add -A && git commit -m "fix: ESLint .cjs globals, nginx security headers, restrictive CORS"`
-
----
-
-#### Step F12-B — Fix `backend-tests` Docker profile
-
-1. **`Dockerfile.backend`**: Add a `test` stage after the existing content:
-   ```dockerfile
-   FROM python:3.11-slim AS prod
-   # ... (existing content, add the AS prod label to the first FROM line)
-
-   # Test stage — extends prod with dev dependencies
-   FROM prod AS test
-   COPY requirements-dev.txt /app/requirements-dev.txt
-   RUN pip install --no-cache-dir -r /app/requirements-dev.txt
-   ```
-   The first `FROM` line must become `FROM python:3.11-slim AS prod`.
-
-2. **`docker-compose.yml`**: In the `backend-tests` service, add `target: test` under `build:`:
-   ```yaml
-   backend-tests:
-     build:
-       context: .
-       dockerfile: Dockerfile.backend
-       target: test
-     profiles: ["test"]
-     command: ["pytest", "backend/tests", "-q"]
-   ```
-
-3. **Commit:** `git add -A && git commit -m "fix(docker): backend-tests profile installs pytest via test stage"`
-
----
-
-#### Step F12-C — Tests SourcePanelContent + AddFieldDialog
-
-1. **Create `frontend/src/components/review/SourcePanelContent.test.tsx`**: Read `SourcePanelContent.tsx` to understand its props and rendering logic. Write tests covering: renders with data, renders empty state, conditional rendering of different source types, prop forwarding. Use helpers from `src/test/helpers.tsx`.
-
-2. **Create or expand `frontend/src/components/structured/AddFieldDialog.test.tsx`**: Read `AddFieldDialog.tsx`. Write tests covering: dialog opens/closes, input validation (empty field name, duplicate name), successful submit, error states, cancel behavior.
-
-3. **Verify:** `cd frontend && npx vitest run --coverage` — both files ≥80% statements.
-
-4. **Commit:** `git add -A && git commit -m "test(frontend): SourcePanelContent and AddFieldDialog coverage ≥80%"`
-
----
-
-#### Step F12-D — Tests documentApi + PdfViewer
-
-1. **Create `frontend/src/api/documentApi.test.ts`**: Read `documentApi.ts` and `lib/api.ts`. Mock `fetch` globally. Write tests for each exported function: happy path, HTTP error (4xx, 5xx), network error, malformed response, blob handling for PDF download.
-
-2. **Expand `frontend/src/components/PdfViewer.test.tsx`**: Read current tests and `PdfViewer.tsx`. Add tests for: zoom controls (in/out/reset), page navigation (next/prev/jump), error state rendering, loading state, the existing `disableWorker` fallback path (already has 1 test — add branch coverage for the retry logic).
-
-3. **Verify:** `cd frontend && npx vitest run --coverage` — `documentApi.ts` ≥80%, `PdfViewer.tsx` ≥80% statements.
-
-4. **Commit:** `git add -A && git commit -m "test(frontend): documentApi and PdfViewer coverage ≥80%"`
+_Steps F12-A through F12-D already completed. Continue from F12-E._
 
 ---
 
