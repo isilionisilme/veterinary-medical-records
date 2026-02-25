@@ -1,4 +1,8 @@
-import type { KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent, ReactNode } from "react";
+import type {
+  KeyboardEvent as ReactKeyboardEvent,
+  MouseEvent as ReactMouseEvent,
+  ReactNode,
+} from "react";
 import { Pencil } from "lucide-react";
 
 import { CriticalBadge } from "../app/CriticalBadge";
@@ -143,10 +147,12 @@ export function createReviewFieldRenderers(ctx: ReviewFieldRenderersContext): {
           <div className="!mt-4 space-y-0.5 text-[12px]">
             <p className="font-medium text-white/80">Desglose:</p>
             <p className="pl-3 text-white/70">
-              - Fiabilidad del candidato: <span className={toneValueClass}>{candidateConfidenceText}</span>
+              - Fiabilidad del candidato:{" "}
+              <span className={toneValueClass}>{candidateConfidenceText}</span>
             </p>
             <p className="pl-3 text-white/70">
-              - Ajuste por histórico de revisiones: <span className={reviewHistoryAdjustmentClass}>{reviewHistoryAdjustmentText}</span>
+              - Ajuste por histórico de revisiones:{" "}
+              <span className={reviewHistoryAdjustmentClass}>{reviewHistoryAdjustmentText}</span>
             </p>
           </div>
         </div>
@@ -289,9 +295,13 @@ export function createReviewFieldRenderers(ctx: ReviewFieldRenderersContext): {
             const isUnassignedVisitGroup =
               shouldShowUnassignedVisitHintForField &&
               item.visitGroupId?.trim().toLowerCase() === "unassigned";
-            const shouldRenderUnassignedHint = isUnassignedVisitGroup && index === firstUnassignedItemIndex;
+            const shouldRenderUnassignedHint =
+              isUnassignedVisitGroup && index === firstUnassignedItemIndex;
             return (
-              <div key={item.id} className={`px-1 py-1 ${isSelected ? "rounded-md bg-accentSoft/50" : ""}`}>
+              <div
+                key={item.id}
+                className={`px-1 py-1 ${isSelected ? "rounded-md bg-accentSoft/50" : ""}`}
+              >
                 {shouldRenderUnassignedHint && (
                   <p
                     className="mb-1 rounded-control bg-surface px-3 py-2 text-xs text-muted"
@@ -302,7 +312,10 @@ export function createReviewFieldRenderers(ctx: ReviewFieldRenderersContext): {
                 )}
                 <Tooltip
                   content={tooltip.content}
-                  open={ctx.hoveredFieldTriggerId === item.id && ctx.hoveredCriticalTriggerId !== item.id}
+                  open={
+                    ctx.hoveredFieldTriggerId === item.id &&
+                    ctx.hoveredCriticalTriggerId !== item.id
+                  }
                 >
                   <div
                     role="button"
@@ -324,8 +337,12 @@ export function createReviewFieldRenderers(ctx: ReviewFieldRenderersContext): {
                       ctx.onSetHoveredFieldTriggerId(item.id);
                     }}
                     onMouseLeave={() => {
-                      ctx.onSetHoveredFieldTriggerId((current) => (current === item.id ? null : current));
-                      ctx.onSetHoveredCriticalTriggerId((current) => (current === item.id ? null : current));
+                      ctx.onSetHoveredFieldTriggerId((current) =>
+                        current === item.id ? null : current,
+                      );
+                      ctx.onSetHoveredCriticalTriggerId((current) =>
+                        current === item.id ? null : current,
+                      );
                     }}
                     onMouseUp={ctx.onReviewedEditAttempt}
                     onFocus={() => {
@@ -335,8 +352,12 @@ export function createReviewFieldRenderers(ctx: ReviewFieldRenderersContext): {
                       if (event.currentTarget.contains(event.relatedTarget as Node | null)) {
                         return;
                       }
-                      ctx.onSetHoveredFieldTriggerId((current) => (current === item.id ? null : current));
-                      ctx.onSetHoveredCriticalTriggerId((current) => (current === item.id ? null : current));
+                      ctx.onSetHoveredFieldTriggerId((current) =>
+                        current === item.id ? null : current,
+                      );
+                      ctx.onSetHoveredCriticalTriggerId((current) =>
+                        current === item.id ? null : current,
+                      );
                     }}
                     onKeyDown={(event) => {
                       ctx.onReviewedKeyboardEditAttempt(event);
@@ -351,11 +372,22 @@ export function createReviewFieldRenderers(ctx: ReviewFieldRenderersContext): {
                   >
                     <FieldRow
                       indicator={renderConfidenceIndicator(item, tooltip.ariaLabel)}
-                      label={<p className={`${STRUCTURED_FIELD_LABEL_CLASS} text-text`} title={field.labelTooltip}>{field.label}</p>}
+                      label={
+                        <p
+                          className={`${STRUCTURED_FIELD_LABEL_CLASS} text-text`}
+                          title={field.labelTooltip}
+                        >
+                          {field.label}
+                        </p>
+                      }
                       labelMeta={null}
                       className={STRUCTURED_FIELD_ROW_CLASS}
                       valuePlacement={isLongText ? "below-label" : "inline"}
-                      value={renderEditableFieldValue({ item, value: item.displayValue, isLongText })}
+                      value={renderEditableFieldValue({
+                        item,
+                        value: item.displayValue,
+                        isLongText,
+                      })}
                     />
                   </div>
                 </Tooltip>
@@ -416,7 +448,9 @@ export function createReviewFieldRenderers(ctx: ReviewFieldRenderersContext): {
             }}
             onMouseLeave={() => {
               ctx.onSetHoveredFieldTriggerId((current) => (current === item.id ? null : current));
-              ctx.onSetHoveredCriticalTriggerId((current) => (current === item.id ? null : current));
+              ctx.onSetHoveredCriticalTriggerId((current) =>
+                current === item.id ? null : current,
+              );
             }}
             onMouseUp={ctx.onReviewedEditAttempt}
             onFocus={() => {
@@ -427,7 +461,9 @@ export function createReviewFieldRenderers(ctx: ReviewFieldRenderersContext): {
                 return;
               }
               ctx.onSetHoveredFieldTriggerId((current) => (current === item.id ? null : current));
-              ctx.onSetHoveredCriticalTriggerId((current) => (current === item.id ? null : current));
+              ctx.onSetHoveredCriticalTriggerId((current) =>
+                current === item.id ? null : current,
+              );
             }}
             onKeyDown={(event) => {
               ctx.onReviewedKeyboardEditAttempt(event);
@@ -444,9 +480,18 @@ export function createReviewFieldRenderers(ctx: ReviewFieldRenderersContext): {
               leftTestId={`${styledPrefix}-row-${field.key}`}
               labelTestId={`${styledPrefix}-label-${field.key}`}
               indicatorTestId={`${styledPrefix}-dot-${field.key}`}
-              valueWrapperTestId={shouldUseLongText ? `field-value-${field.key}-wrapper` : undefined}
+              valueWrapperTestId={
+                shouldUseLongText ? `field-value-${field.key}-wrapper` : undefined
+              }
               indicator={renderConfidenceIndicator(item, tooltip.ariaLabel)}
-              label={<p className={`${STRUCTURED_FIELD_LABEL_CLASS} text-text`} title={field.labelTooltip}>{field.label}</p>}
+              label={
+                <p
+                  className={`${STRUCTURED_FIELD_LABEL_CLASS} text-text`}
+                  title={field.labelTooltip}
+                >
+                  {field.label}
+                </p>
+              }
               labelMeta={
                 field.isCritical ? (
                   <CriticalBadge
@@ -456,7 +501,9 @@ export function createReviewFieldRenderers(ctx: ReviewFieldRenderersContext): {
                       ctx.onSetHoveredCriticalTriggerId(item.id);
                     }}
                     onMouseLeave={() => {
-                      ctx.onSetHoveredCriticalTriggerId((current) => (current === item.id ? null : current));
+                      ctx.onSetHoveredCriticalTriggerId((current) =>
+                        current === item.id ? null : current,
+                      );
                     }}
                   />
                 ) : null

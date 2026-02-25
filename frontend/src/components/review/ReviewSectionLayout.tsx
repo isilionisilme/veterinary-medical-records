@@ -441,12 +441,16 @@ export function createReviewSectionLayoutRenderer(
     const isEmptyExtraSection = isExtraSection && section.fields.length === 0;
     const isVisitsSection = section.title === "Visitas";
     const shouldRenderCanonicalVisitsByEpisode = isVisitsSection && ctx.isCanonicalContract;
-    const isEmptyVisitsSection = isVisitsSection && section.fields.length === 0 && !ctx.hasVisitGroups;
+    const isEmptyVisitsSection =
+      isVisitsSection && section.fields.length === 0 && !ctx.hasVisitGroups;
     const isOwnerSection = section.title === "Propietario";
     const shouldUseSingleColumn = isOwnerSection;
 
     return (
-      <SectionBlock key={section.id} testId={isExtraSection ? "other-extracted-fields-section" : undefined}>
+      <SectionBlock
+        key={section.id}
+        testId={isExtraSection ? "other-extracted-fields-section" : undefined}
+      >
         <SectionHeader title={section.title} />
         <div className="mt-2">
           {isEmptyExtraSection && (
@@ -459,18 +463,22 @@ export function createReviewSectionLayoutRenderer(
               {VISITS_EMPTY_STATE}
             </p>
           )}
-          {!isEmptyExtraSection && !isEmptyVisitsSection && !shouldRenderCanonicalVisitsByEpisode && (
-            <div
-              className={
-                shouldUseSingleColumn
-                  ? `grid grid-cols-1 gap-x-5 ${STRUCTURED_FIELD_STACK_CLASS}`
-                  : `grid gap-x-5 ${STRUCTURED_FIELD_STACK_CLASS} lg:grid-cols-2`
-              }
-            >
-              {scalarFields.map(ctx.renderScalarReviewField)}
-            </div>
-          )}
-          {!isEmptyExtraSection && !isEmptyVisitsSection && shouldRenderCanonicalVisitsByEpisode && <>{renderCanonicalVisitEpisodes()}</>}
+          {!isEmptyExtraSection &&
+            !isEmptyVisitsSection &&
+            !shouldRenderCanonicalVisitsByEpisode && (
+              <div
+                className={
+                  shouldUseSingleColumn
+                    ? `grid grid-cols-1 gap-x-5 ${STRUCTURED_FIELD_STACK_CLASS}`
+                    : `grid gap-x-5 ${STRUCTURED_FIELD_STACK_CLASS} lg:grid-cols-2`
+                }
+              >
+                {scalarFields.map(ctx.renderScalarReviewField)}
+              </div>
+            )}
+          {!isEmptyExtraSection &&
+            !isEmptyVisitsSection &&
+            shouldRenderCanonicalVisitsByEpisode && <>{renderCanonicalVisitEpisodes()}</>}
           {repeatableFields.length > 0 && !shouldRenderCanonicalVisitsByEpisode && (
             <div className={`mt-2 ${STRUCTURED_FIELD_STACK_CLASS}`}>
               {repeatableFields.map((field) => ctx.renderRepeatableReviewField(field))}

@@ -10,16 +10,7 @@ import {
   useRef,
   useState,
 } from "react";
-import {
-  AlignLeft,
-  Download,
-  FileText,
-  FilterX,
-  Info,
-  RefreshCw,
-  Search,
-  X,
-} from "lucide-react";
+import { AlignLeft, Download, FileText, FilterX, Info, RefreshCw, Search, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { CriticalIcon } from "./components/app/CriticalBadge";
@@ -54,9 +45,7 @@ import {
 } from "./components/ui/dialog";
 import { useSourcePanelState } from "./hooks/useSourcePanelState";
 import { logExtractionDebugEvent, type ExtractionDebugEvent } from "./extraction/extractionDebug";
-import {
-  resolveCandidateSuggestionSections,
-} from "./extraction/candidateSuggestions";
+import { resolveCandidateSuggestionSections } from "./extraction/candidateSuggestions";
 import { getControlledVocabOptionValues, validateFieldValue } from "./extraction/fieldValidators";
 import {
   API_BASE_URL,
@@ -130,7 +119,12 @@ import {
   snapReviewSplitRatio,
   splitPxToReviewSplitRatio,
 } from "./lib/appWorkspaceUtils";
-import { formatDuration, formatTime, shouldShowDetails, statusIcon } from "./lib/processingHistoryView";
+import {
+  formatDuration,
+  formatTime,
+  shouldShowDetails,
+  statusIcon,
+} from "./lib/processingHistoryView";
 import { type ConfidenceBucket, matchesStructuredDataFilters } from "./lib/structuredDataFilters";
 import { mapDocumentStatus } from "./lib/documentStatus";
 import {
@@ -150,7 +144,11 @@ import {
   type ReviewVisitGroup,
 } from "./types/appWorkspace";
 
-export { MIN_PDF_PANEL_WIDTH_PX, REVIEW_SPLIT_MIN_WIDTH_PX, SPLITTER_COLUMN_WIDTH_PX } from "./constants/appWorkspace";
+export {
+  MIN_PDF_PANEL_WIDTH_PX,
+  REVIEW_SPLIT_MIN_WIDTH_PX,
+  SPLITTER_COLUMN_WIDTH_PX,
+} from "./constants/appWorkspace";
 
 export function App() {
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -2905,7 +2903,19 @@ export function App() {
         onSetHoveredFieldTriggerId: setHoveredFieldTriggerId,
         onSetHoveredCriticalTriggerId: setHoveredCriticalTriggerId,
       }),
-    [activeConfidencePolicy, isDocumentReviewed, interpretationEditMutation.isPending, selectedFieldId, expandedFieldValues, hoveredFieldTriggerId, hoveredCriticalTriggerId, hasUnassignedVisitGroup, handleSelectReviewItem, handleReviewedEditAttempt, handleReviewedKeyboardEditAttempt],
+    [
+      activeConfidencePolicy,
+      isDocumentReviewed,
+      interpretationEditMutation.isPending,
+      selectedFieldId,
+      expandedFieldValues,
+      hoveredFieldTriggerId,
+      hoveredCriticalTriggerId,
+      hasUnassignedVisitGroup,
+      handleSelectReviewItem,
+      handleReviewedEditAttempt,
+      handleReviewedKeyboardEditAttempt,
+    ],
   );
 
   const renderSectionLayout = useMemo(
@@ -2920,7 +2930,16 @@ export function App() {
         renderScalarReviewField,
         renderRepeatableReviewField,
       }),
-    [isCanonicalContract, hasVisitGroups, validatedReviewFields, reviewVisits, canonicalVisitFieldOrder, buildSelectableField, renderScalarReviewField, renderRepeatableReviewField],
+    [
+      isCanonicalContract,
+      hasVisitGroups,
+      validatedReviewFields,
+      reviewVisits,
+      canonicalVisitFieldOrder,
+      buildSelectableField,
+      renderScalarReviewField,
+      renderRepeatableReviewField,
+    ],
   );
 
   const sourcePanelContent = (

@@ -155,7 +155,9 @@ export async function fetchDocumentReview(documentId: string): Promise<DocumentR
   return response.json();
 }
 
-export async function fetchProcessingHistory(documentId: string): Promise<ProcessingHistoryResponse> {
+export async function fetchProcessingHistory(
+  documentId: string,
+): Promise<ProcessingHistoryResponse> {
   let response: Response;
   try {
     response = await fetch(`${API_BASE_URL}/documents/${documentId}/processing-history`);

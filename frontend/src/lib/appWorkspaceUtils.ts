@@ -410,7 +410,10 @@ export function isFieldValueEmpty(value: unknown): boolean {
   return value === null || value === undefined || value === "";
 }
 
-export function formatFieldValue(value: string | number | boolean | null, valueType: string): string {
+export function formatFieldValue(
+  value: string | number | boolean | null,
+  valueType: string,
+): string {
   if (isFieldValueEmpty(value)) {
     return MISSING_VALUE_PLACEHOLDER;
   }
