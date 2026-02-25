@@ -345,40 +345,18 @@ export function PdfViewer({
       setLoading(true);
       setError(null);
       try {
-        loadingTask = pdfjsLib.getDocument(fileUrl);
-        let doc: pdfjsLib.PDFDocumentProxy;
-        try {
-          doc = await loadingTask.promise;
-        } catch {
-          if (cancelled) {
-            return;
-          }
-          try {
-            const fallbackSource = {
-              url: fileUrl,
-              disableWorker: true,
-              isEvalSupported: false,
-            } as unknown as Parameters<typeof pdfjsLib.getDocument>[0];
-            loadingTask = pdfjsLib.getDocument(fallbackSource);
-            doc = await loadingTask.promise;
-          } catch {
-            if (cancelled) {
-              return;
-            }
-            const response = await fetch(fileUrl);
-            if (!response.ok) {
-              throw new Error("Failed to fetch PDF fallback data.");
-            }
-            const arrayBuffer = await response.arrayBuffer();
-            const dataFallbackSource = {
-              data: new Uint8Array(arrayBuffer),
-              disableWorker: true,
-              isEvalSupported: false,
-            } as unknown as Parameters<typeof pdfjsLib.getDocument>[0];
-            loadingTask = pdfjsLib.getDocument(dataFallbackSource);
-            doc = await loadingTask.promise;
-          }
+        const response = await fetch(fileUrl);
+        if (!response.ok) {
+          throw new Error("Failed to fetch PDF data.");
         }
+        const arrayBuffer = await response.arrayBuffer();
+        const dataSource = {
+          data: new Uint8Array(arrayBuffer),
+          disableWorker: true,
+          isEvalSupported: false,
+        } as unknown as Parameters<typeof pdfjsLib.getDocument>[0];
+        loadingTask = pdfjsLib.getDocument(dataSource);
+        const doc = await loadingTask.promise;
         if (cancelled) {
           void doc.destroy();
           return;
