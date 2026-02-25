@@ -15,7 +15,11 @@ describe("cn", () => {
 describe("isApiErrorPayload", () => {
   it("returns true for valid payload shape", () => {
     expect(
-      isApiErrorPayload({ error_code: "VALIDATION_ERROR", message: "Payload inválido", details: {} }),
+      isApiErrorPayload({
+        error_code: "VALIDATION_ERROR",
+        message: "Payload inválido",
+        details: {},
+      }),
     ).toBe(true);
   });
 
