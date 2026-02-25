@@ -66,7 +66,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [x] F9-B 🔄 — Upload streaming guard + límite temprano + tests (Codex)
 - [x] F9-C 🔄 — Auth boundary mínima opcional por configuración + tests/docs (Codex)
 - [x] F9-D 🔄 — Decomposición inicial de `AppWorkspace.tsx` + tests de regresión (Codex)
-- [ ] F9-E 🚧 — Validación final Iteración 3 + PR + cierre (Claude)
+- [x] F9-E 🚧 — Validación final Iteración 3 + PR + cierre (Claude)
 
 ---
 
