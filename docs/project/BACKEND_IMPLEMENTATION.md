@@ -44,7 +44,7 @@ Use a modular-monolith layered architecture:
   - use cases and orchestration
 - `ports`
   - interfaces for repos, storage, and runner/scheduler
-- `infrastructure`
+- `infra` (infrastructure)
   - SQLite repositories, filesystem adapter, runner/scheduler
 - `api`
   - FastAPI routers, request/response models, error mapping

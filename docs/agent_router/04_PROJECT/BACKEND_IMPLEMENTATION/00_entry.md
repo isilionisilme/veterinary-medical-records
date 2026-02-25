@@ -25,3 +25,4 @@ Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for i
 - Review-event contracts (`mark_reviewed`, `unmark_reviewed`, `field_edited`, `field_reassigned`) are authoritative in this module set.
 - Calibration-store contracts for (`context_key`, `field_key`, `mapping_id`) ownership are maintained under backend implementation modules.
 - Confidence-calibration observability requirements (old/new confidence and policy-state transitions) are owned in backend implementation modules.
+- Naming alignment propagated: canonical layer label is `infra (infrastructure)` and must match code location under `backend/app/infra/`.

@@ -7,7 +7,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - Calidad de tests
 - Prácticas de desarrollo
 - Documentación de entrega
-- Entrega incremental con evidencia verificable
+- Entrega incre S. mental con evidencia verificable
 
 ---
 
@@ -67,6 +67,14 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [x] F9-C 🔄 — Auth boundary mínima opcional por configuración + tests/docs (Codex)
 - [x] F9-D 🔄 — Decomposición inicial de `AppWorkspace.tsx` + tests de regresión (Codex)
 - [x] F9-E 🚧 — Validación final Iteración 3 + PR + cierre (Claude)
+
+### Fase 10 — Iteración 4 (Polish de calidad: docs + lint)
+- [x] F10-A 🔄 — Corregir Known Limitations desactualizadas en TECHNICAL_DESIGN.md §14 (Claude)
+- [x] F10-B 🔄 — Eliminar ESLint warnings → 0 problemas en lint (Claude)
+- [x] F10-C 🔄 — Alinear naming docs↔código: `infrastructure` → `infra` (Claude)
+- [x] F10-D 🔄 — Eliminar warning de chunk vacío en Vite build (Claude)
+- [x] F10-E 🔄 — Corregir instrucciones de quality gates en README (Claude)
+- [x] F10-F 🚧 — Smoke test final + commit + PR (Claude)
 
 ---
 
@@ -920,6 +928,99 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 - ADR content.
 - Backend structural decomposition from Phase 2.
 - Pre-commit hooks configuration.
+
+---
+
+### F10 — Iteración 4: polish de calidad (docs + lint, zero-risk)
+
+> **Objetivo**: Cerrar inconsistencias entre documentación e implementación, eliminar warnings de linting/build, y asegurar que las instrucciones del README funcionan correctamente out-of-the-box.
+> Scope: solo docs y lint — no se toca lógica de negocio, tests ni arquitectura.
+> Budget: < 2 horas total.
+> Base branch: `improvement/iteration-4` (creada desde `main`).
+
+#### F10-A — Corregir Known Limitations desactualizadas en TECHNICAL_DESIGN.md §14
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — solo edición de documentación |
+| **Esfuerzo** | S |
+| **Agente** | Claude |
+| **Por qué** | §14 Known Limitations tiene información desactualizada: la fila #4 dice "Streaming guard in roadmap" pero F9-B ya lo implementó. La fila #5 reporta LOC de AppWorkspace.tsx pre-Iteration 3. Documentación inconsistente con la implementación es deuda técnica. |
+| **Tareas** | 1. Actualizar o eliminar fila #4 (streaming guard ya implementado). 2. Actualizar fila #5: reflejar LOC y estado post-Iteration 3. 3. Verificar que ninguna otra fila referencia work "in roadmap" que ya esté completado. |
+| **Criterio de aceptación** | Cada fila de §14 refleja estado actual de la implementación. No hay referencias a "in roadmap" para features ya implementados. |
+| **Archivos** | `docs/project/TECHNICAL_DESIGN.md` |
+| **Ref FUTURE_IMPROVEMENTS** | #9 ✅, #7b ✅ (ya cerrados — solo sync docs) |
+
+#### F10-B — Eliminar ESLint warnings → 0 problemas en lint
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — correcciones de memoization/deps, sin cambios de comportamiento |
+| **Esfuerzo** | S |
+| **Agente** | Claude |
+| **Por qué** | `npm run lint` muestra 13 warnings (10× `exhaustive-deps` en AppWorkspace.tsx, 2× `react-refresh` en shadcn ui, 1× `exhaustive-deps` en ExtractionDebugPanel). Warnings acumulados indican deuda de calidad. |
+| **Tareas** | 1. Envolver funciones inestables en `useCallback`, corregir deps arrays en AppWorkspace.tsx. 2. Resolver warnings de `react-refresh` en badge.tsx y button.tsx. 3. Corregir `exhaustive-deps` en ExtractionDebugPanel.tsx. 4. Verificar: `npm run lint` → 0 problems, `npm test -- --run` → 168+ tests pasan. |
+| **Criterio de aceptación** | `npm run lint` sale con `0 problems (0 errors, 0 warnings)`. Todos los tests frontend pasan sin regresiones. |
+| **Archivos** | `frontend/src/AppWorkspace.tsx`, `frontend/src/components/ui/badge.tsx`, `frontend/src/components/ui/button.tsx`, `frontend/src/extraction/ExtractionDebugPanel.tsx` |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
+#### F10-C — Alinear naming docs↔código: `infrastructure` → `infra`
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — solo edición de documentación |
+| **Esfuerzo** | S |
+| **Agente** | Claude |
+| **Por qué** | `BACKEND_IMPLEMENTATION.md` dice `infrastructure/` pero el directorio real es `infra/`. Inconsistencia detectable al comparar docs con estructura de archivos. |
+| **Tareas** | 1. Buscar ocurrencias de `infrastructure` en `docs/project/BACKEND_IMPLEMENTATION.md` que se refieran al directorio. 2. Reemplazar por `infra`. 3. Buscar la misma inconsistencia en otros docs del proyecto. 4. Corregir todas las ocurrencias. |
+| **Criterio de aceptación** | Grep de `infrastructure` en docs del proyecto no retorna referencias al directorio `backend/app/infra/` con nombre incorrecto. |
+| **Archivos** | `docs/project/BACKEND_IMPLEMENTATION.md`, posiblemente otros docs |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
+#### F10-D — Eliminar warning de chunk vacío en Vite build
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — cambio de configuración de build, no afecta runtime |
+| **Esfuerzo** | S |
+| **Agente** | Claude |
+| **Por qué** | `npm run build` muestra `Generated an empty chunk: "pdfjs-worker"`. Warning en la salida de build indica configuración subóptima. |
+| **Tareas** | 1. Revisar `manualChunks` en `frontend/vite.config.ts`. 2. Eliminar o corregir la entrada `pdfjs-worker` que genera chunk vacío. 3. Verificar: `npm run build` → 0 warnings, PDF rendering sigue funcionando. |
+| **Criterio de aceptación** | `npm run build` no produce warnings. Bundle output funcional. |
+| **Archivos** | `frontend/vite.config.ts` |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
+#### F10-E — Corregir instrucciones de quality gates en README
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — solo edición de documentación |
+| **Esfuerzo** | S |
+| **Agente** | Claude |
+| **Por qué** | La sección "Local quality gates" del README no menciona instalar dependencias de desarrollo antes de ejecutar ruff. Un desarrollador siguiendo las instrucciones puede tener una versión incompatible y ver errores de parseo. |
+| **Tareas** | 1. Agregar prerequisito explícito: `pip install -r requirements-dev.txt` antes de correr checks de backend. 2. Verificar que `requirements-dev.txt` referencia la versión correcta de ruff. 3. Asegurar que el flujo documentado funciona end-to-end. |
+| **Criterio de aceptación** | Seguir las instrucciones de quality gates del README desde cero no produce errores de herramientas. |
+| **Archivos** | `README.md` |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
+#### F10-F — Smoke test final + commit + PR
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — verificación y entrega |
+| **Esfuerzo** | S |
+| **Agente** | Claude |
+| **Por qué** | Gate final de calidad antes de merge. |
+| **Tareas** | 1. Ejecutar smoke checklist: `pytest` → 263+ passed, `npm test` → 168+ passed, `npm run lint` → 0 problems, `tsc --noEmit` → 0 errors, `npm run build` → 0 warnings. 2. Ejecutar DOC_UPDATES normalization pass (per AGENTS.md). 3. Commit + push. 4. Crear PR hacia `main`. |
+| **Criterio de aceptación** | Todos los checks del smoke pasan. PR creado con descripción clara. |
+| **Archivos** | Todos los modificados en F10-A a F10-E |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
+**Política de la fase — do-not-change:**
+- Lógica de negocio, tests existentes, CI pipeline, arquitectura, dependencias.
+- Cada paso es atómico; si uno falla, los demás siguen siendo válidos.
+
+---
 
 ### Plan-edit-last (hard constraint)
 **Codex NO edita `AI_ITERATIVE_EXECUTION_PLAN.md` hasta que los tests pasen y el código esté commiteado.** La secuencia obligatoria es:

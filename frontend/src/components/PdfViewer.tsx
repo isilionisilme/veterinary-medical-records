@@ -668,6 +668,9 @@ export function PdfViewer({
         window.clearTimeout(retryTimer);
       }
     };
+    // captureDebugSnapshot is intentionally excluded — it depends only on debugFlags.enabled
+    // which is already tracked, and including it would cause expensive full re-renders.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pdfDoc, containerWidth, totalPages, zoomLevel, documentId, debugFlags.enabled]);
 
   useEffect(() => {

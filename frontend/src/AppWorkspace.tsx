@@ -862,13 +862,15 @@ export function App() {
     });
   }, [documentList.data?.items]);
 
+  const resetSourcePanel = sourcePanel.reset;
+
   useEffect(() => {
     setSelectedFieldId(null);
     setFieldNavigationRequestId(0);
     setEvidenceNotice(null);
     setExpandedFieldValues({});
-    sourcePanel.reset();
-  }, [activeId]);
+    resetSourcePanel();
+  }, [activeId, resetSourcePanel]);
 
   useEffect(() => {
     if (!activeId || !documentDetails.data) {
@@ -897,7 +899,11 @@ export function App() {
     documentReview,
   ]);
 
-  const documentListItems = documentList.data?.items ?? [];
+  const documentListItems = useMemo(
+    () => documentList.data?.items ?? [],
+    [documentList.data?.items],
+  );
+  const refetchDocumentList = documentList.refetch;
 
   useEffect(() => {
     const items = documentListItems;
@@ -920,10 +926,10 @@ export function App() {
 
     const intervalMs = elapsedMs < 2 * 60 * 1000 ? 1500 : 5000;
     const intervalId = window.setInterval(() => {
-      documentList.refetch();
+      refetchDocumentList();
     }, intervalMs);
     return () => window.clearInterval(intervalId);
-  }, [documentList.refetch, documentListItems]);
+  }, [refetchDocumentList, documentListItems]);
 
   useEffect(() => {
     if (documentList.status !== "success") {
@@ -1661,30 +1667,33 @@ export function App() {
     return !HIDDEN_REVIEW_FIELDS.has(field.key);
   });
 
-  const buildSelectableField = (
-    base: Omit<
-      ReviewSelectableField,
-      "hasMappingConfidence" | "confidence" | "confidenceBand" | "isMissing" | "rawField"
-    >,
-    rawField: ReviewField | undefined,
-    isMissing: boolean,
-  ): ReviewSelectableField => {
-    const mappingConfidence = rawField ? resolveMappingConfidence(rawField) : null;
-    let confidenceBand: ConfidenceBucket | null = null;
-    if (mappingConfidence !== null && activeConfidencePolicy) {
-      const tone = getConfidenceTone(mappingConfidence, activeConfidencePolicy.band_cutoffs);
-      confidenceBand = tone === "med" ? "medium" : tone;
-    }
-    return {
-      ...base,
-      isMissing,
-      hasMappingConfidence: mappingConfidence !== null,
-      confidence: mappingConfidence ?? 0,
-      confidenceBand,
-      rawField,
-      visitGroupId: rawField?.visit_group_id,
-    };
-  };
+  const buildSelectableField = useCallback(
+    (
+      base: Omit<
+        ReviewSelectableField,
+        "hasMappingConfidence" | "confidence" | "confidenceBand" | "isMissing" | "rawField"
+      >,
+      rawField: ReviewField | undefined,
+      isMissing: boolean,
+    ): ReviewSelectableField => {
+      const mappingConfidence = rawField ? resolveMappingConfidence(rawField) : null;
+      let confidenceBand: ConfidenceBucket | null = null;
+      if (mappingConfidence !== null && activeConfidencePolicy) {
+        const tone = getConfidenceTone(mappingConfidence, activeConfidencePolicy.band_cutoffs);
+        confidenceBand = tone === "med" ? "medium" : tone;
+      }
+      return {
+        ...base,
+        isMissing,
+        hasMappingConfidence: mappingConfidence !== null,
+        confidence: mappingConfidence ?? 0,
+        confidenceBand,
+        rawField,
+        visitGroupId: rawField?.visit_group_id,
+      };
+    },
+    [activeConfidencePolicy],
+  );
 
   const matchesByKey = useMemo(() => {
     const matches = new Map<string, ReviewField[]>();
@@ -1907,6 +1916,7 @@ export function App() {
       })
       .sort((a, b) => a.order - b.order);
   }, [
+    buildSelectableField,
     hasMalformedCanonicalFieldSlots,
     interpretationData?.medical_record_view?.field_slots,
     isCanonicalContract,
@@ -2013,12 +2023,7 @@ export function App() {
         source: "extracted",
       };
     });
-  }, [
-    activeConfidencePolicy,
-    explicitOtherReviewFields,
-    isCanonicalContract,
-    validatedReviewFields,
-  ]);
+  }, [buildSelectableField, explicitOtherReviewFields, isCanonicalContract, validatedReviewFields]);
 
   const groupedCoreFields = useMemo(() => {
     const groups = new Map<string, ReviewDisplayField[]>();
@@ -2135,7 +2140,10 @@ export function App() {
       .filter((group) => group.fields.length > 0);
   }, [groupedCoreFields, hasActiveStructuredFilters, structuredDataFilters]);
 
-  const visibleOtherDisplayFields = hasActiveStructuredFilters ? [] : otherDisplayFields;
+  const visibleOtherDisplayFields = useMemo(
+    () => (hasActiveStructuredFilters ? [] : otherDisplayFields),
+    [hasActiveStructuredFilters, otherDisplayFields],
+  );
 
   const visibleCoreFields = useMemo(
     () => visibleCoreGroups.flatMap((group) => group.fields),
@@ -2422,38 +2430,44 @@ export function App() {
   const isDocumentListConnectivityError =
     documentList.isError && isConnectivityOrServerError(documentList.error);
 
-  const handleSelectReviewItem = (field: ReviewSelectableField) => {
+  const handleSelectReviewItem = useCallback((field: ReviewSelectableField) => {
     setSelectedFieldId(field.id);
     setFieldNavigationRequestId((current) => current + 1);
-  };
+  }, []);
 
-  const handleReviewedEditAttempt = (event: ReactMouseEvent<HTMLElement>) => {
-    if (!isDocumentReviewed || event.button !== 0) {
-      return;
-    }
-    const selectedText = window.getSelection?.()?.toString().trim() ?? "";
-    if (selectedText.length > 0) {
-      return;
-    }
-    setActionFeedback({
-      kind: "error",
-      message: "Documento revisado: edición bloqueada.",
-    });
-  };
+  const handleReviewedEditAttempt = useCallback(
+    (event: ReactMouseEvent<HTMLElement>) => {
+      if (!isDocumentReviewed || event.button !== 0) {
+        return;
+      }
+      const selectedText = window.getSelection?.()?.toString().trim() ?? "";
+      if (selectedText.length > 0) {
+        return;
+      }
+      setActionFeedback({
+        kind: "error",
+        message: "Documento revisado: edición bloqueada.",
+      });
+    },
+    [isDocumentReviewed],
+  );
 
-  const handleReviewedKeyboardEditAttempt = (event: ReactKeyboardEvent<HTMLElement>) => {
-    if (!isDocumentReviewed) {
-      return;
-    }
-    if (event.key !== "Enter" && event.key !== " ") {
-      return;
-    }
-    event.preventDefault();
-    setActionFeedback({
-      kind: "error",
-      message: "Documento revisado: edición bloqueada.",
-    });
-  };
+  const handleReviewedKeyboardEditAttempt = useCallback(
+    (event: ReactKeyboardEvent<HTMLElement>) => {
+      if (!isDocumentReviewed) {
+        return;
+      }
+      if (event.key !== "Enter" && event.key !== " ") {
+        return;
+      }
+      event.preventDefault();
+      setActionFeedback({
+        kind: "error",
+        message: "Documento revisado: edición bloqueada.",
+      });
+    },
+    [isDocumentReviewed],
+  );
 
   const resetReviewSplitRatio = () => {
     const containerWidth = Math.max(getReviewSplitMeasuredWidth(), 0);

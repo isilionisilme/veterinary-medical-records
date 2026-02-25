@@ -198,6 +198,11 @@ Notes:
 
 ### Local quality gates (before pushing)
 
+> **Prerequisite:** install dev tooling once per venv:
+> `pip install -r requirements-dev.txt`
+
+- Backend lint: `ruff check .`
+- Backend format check: `ruff format --check .`
 - Backend tests: `python -m pytest --tb=short -q`
 - Frontend tests: `cd frontend && npm test`
 - Frontend lint/types: `cd frontend && npm run lint`
