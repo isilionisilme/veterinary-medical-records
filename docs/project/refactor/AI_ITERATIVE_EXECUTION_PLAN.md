@@ -56,7 +56,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 
 ### Fase 8 — Iteración 2 (CTO verdict)
 - [x] F8-A 🚧 — Setup branch + guardrails + prompt activo (Codex)
-- [ ] F8-B 🔄 — SQLite WAL + busy_timeout + test de concurrencia (Codex)
+- [x] F8-B 🔄 — SQLite WAL + busy_timeout + test de concurrencia (Codex)
 - [ ] F8-C 🔄 — Subir cobertura de `frontend/src/lib/utils.ts` (Codex)
 - [ ] F8-D 🚧 — Security boundary docs + nota AppWorkspace + roadmap update (Claude)
 - [ ] F8-E 🚧 — Validación final + PR nueva + cierre iteración (Claude)
@@ -722,7 +722,7 @@ Below are the 4 architecture ADRs with full arguments, trade-offs, and code evid
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-F8-B
+F8-C
 
 ### Prompt
 ```md
@@ -740,23 +740,29 @@ If NOT `improvement/refactor-iteration-2`: STOP. Tell the user to switch branch.
 Run: git pull origin improvement/refactor-iteration-2
 --- END SYNC CHECK ---
 
---- TASK (F8-B) ---
-Implement SQLite concurrency hardening and tests:
+--- TASK (F8-C) ---
+Increase coverage for `frontend/src/lib/utils.ts` with targeted tests:
 
-1) Update `backend/app/infra/database.py` so every connection applies:
-  - `PRAGMA journal_mode=WAL`
-  - `PRAGMA busy_timeout=5000`
+1) Extend `frontend/src/lib/utils.test.ts` to cover:
+  - `cn()` behavior with mixed classes and falsy values.
+  - `isApiErrorPayload()` true/false cases (valid shape, missing fields, null/non-object).
+  - `apiFetchJson` error branches: non-JSON response, malformed JSON body, fallback error message.
+  - `apiFetchBlob` error branch parsing.
 
-2) Add integration coverage in backend tests to validate:
-  - WAL mode is enabled (`PRAGMA journal_mode` resolves to `wal`).
-  - A concurrent read during an active write transaction does not fail with `database is locked`.
+2) Keep implementation backward compatible; do not alter runtime behavior in `utils.ts` unless strictly needed.
 
-3) Update `docs/project/refactor/codebase_audit.md` finding #7 from open to resolved with brief evidence note.
+3) Coverage target for `utils.ts`:
+  - Lines >= 70%
+  - Branches >= 60%
+
+4) Capture evidence via targeted coverage run:
+  - `cd d:/Git/veterinary-medical-records/frontend`
+  - `npx vitest run --coverage src/lib/utils.test.ts`
 
 Constraints:
 - Keep behavior backward compatible.
 - Do not refactor unrelated modules.
-- Follow existing pytest integration patterns.
+- Follow existing Vitest test patterns.
 
 --- TEST GATE (mandatory) ---
 Backend: cd d:/Git/veterinary-medical-records && python -m pytest --tb=short -q
@@ -767,16 +773,16 @@ If any test fails: STOP. Report failures. Do NOT commit. Do NOT edit plan.
 --- SCOPE BOUNDARY (two-commit strategy) ---
 STEP A — Commit code first (plan untouched):
 git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
-git commit -m "improvement(plan-f8b): enable sqlite wal+busy timeout and add concurrency integration test
+git commit -m "test(plan-f8c): raise utils.ts error-path coverage with targeted tests
 
 Test proof: <pytest summary> | <npm test summary>"
 
 STEP B — Commit plan update after code commit:
-- Mark `- [ ] F8-B` as `[x]`
-- Set `### Paso objetivo` to `F8-C`
-- Replace `### Prompt` with the just-in-time prompt for F8-C
+- Mark `- [ ] F8-C` as `[x]`
+- Set `### Paso objetivo` to `F8-D`
+- Replace `### Prompt` with `_Vacío._`
 git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
-git commit -m "docs(plan-f8b): mark step done"
+git commit -m "docs(plan-f8c): mark step done"
 
 STEP C — Push:
 git push origin improvement/refactor-iteration-2
@@ -790,7 +796,7 @@ gh run list --branch improvement/refactor-iteration-2 --limit 1 --json status,co
 Wait/retry until completed; do not declare done without green CI.
 
 STEP F — Next-step message:
-Tell user to continue with F8-C in Codex.
+Tell user to continue with F8-D in Claude.
 --- END SCOPE BOUNDARY ---
 ```
 
