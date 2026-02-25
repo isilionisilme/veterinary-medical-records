@@ -780,9 +780,24 @@ Estas áreas puntúan alto con los evaluadores. Todo cambio debe preservarlas:
 ### Iteraciones atómicas
 Nunca mezclar alcance entre pasos. Cada paso del Estado de ejecución es una unidad atómica: se ejecuta, se commitea, se pushea, se marca `[x]`. Si falla, se reporta — no se continúa al siguiente.
 
+### Estado de ejecución extendido (pendiente / en progreso / bloqueado / completado)
+Para visibilidad y trazabilidad, es **obligatorio** marcar el paso activo con `⏳ EN PROGRESO` **sin cambiar el checkbox base**.
+
+- **Pendiente:** `- [ ] F?-? ...`
+- **En progreso:** `- [ ] F?-? ... ⏳ EN PROGRESO (<agente>, <fecha/hora>)`
+- **Bloqueado:** `- [ ] F?-? ... 🚫 BLOQUEADO (<motivo corto>)`
+- **Completado:** `- [x] F?-? ...`
+
+Reglas obligatorias:
+1. No usar `[-]`, `[~]`, `[...]` ni variantes: solo `[ ]` o `[x]`.
+2. Antes de ejecutar un paso `[ ]`, el agente debe marcarlo como `⏳ EN PROGRESO (<agente>, <fecha/hora>)`.
+3. `EN PROGRESO` y `BLOQUEADO` son etiquetas de texto al final de la línea, no estados de checkbox.
+4. Al completar un paso, eliminar cualquier etiqueta (`EN PROGRESO`/`BLOQUEADO`) y marcar `[x]`.
+5. Para `BLOQUEADO`, incluir motivo breve y acción siguiente si aplica.
+
 ### Regla de identidad por agente activo (hard rule — se aplica antes que cualquier otra)
 **Si el usuario escribe `Continúa`:**
-1. Lee el Estado de ejecución y encuentra el primer `[ ]`.
+1. Lee el Estado de ejecución y encuentra el primer `[ ]` (incluye líneas con etiquetas `⏳ EN PROGRESO` o `🚫 BLOQUEADO`).
 2. Identifica el agente asignado a ese paso (🔄 Codex o 🚧 Claude).
 3. Si el paso corresponde al **agente activo de este chat**: procede normalmente.
 4. Si el paso corresponde al **otro agente**:
