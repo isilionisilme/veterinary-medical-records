@@ -1,3 +1,13 @@
+/**
+ * AppWorkspace.tsx — Main workspace component.
+ *
+ * ⚠️ This file (~6 100 LOC) exceeds the project's 500-LOC target.
+ * It was intentionally deprioritized during the Phase 2 refactor, which
+ * focused on the three most critical monolithic files (App.tsx,
+ * processing_runner.py, document_service.py). Decomposing this file into
+ * ReviewWorkspace, StructuredDataView, and PdfViewerContainer is tracked
+ * as a Week 2 item in FUTURE_IMPROVEMENTS.md (#7b).
+ */
 import {
   type ChangeEvent,
   type CSSProperties,
