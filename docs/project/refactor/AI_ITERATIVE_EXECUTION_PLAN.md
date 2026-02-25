@@ -77,7 +77,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [x] F10-F 🚧 — Smoke test final + commit + PR (Claude)
 
 ### Fase 11 — Iteración 5 (Production-readiness: Prettier, Docker, coverage)
-- [ ] F11-A 🔄 — Prettier bulk format de 64 archivos pendientes (Codex)
+- [x] F11-A 🔄 — Prettier bulk format de 64 archivos pendientes (Codex)
 - [ ] F11-B 🔄 — Extraer `_NAME_TOKEN_PATTERN` a constante compartida (Codex)
 - [ ] F11-C 🔄 — Dockerfile.backend: solo deps de prod + usuario non-root (Codex)
 - [ ] F11-D 🔄 — Multi-stage Dockerfile.frontend con nginx + usuario non-root (Codex)
