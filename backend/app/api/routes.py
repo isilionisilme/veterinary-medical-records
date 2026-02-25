@@ -551,7 +551,43 @@ async def upload_document(
         )
         return _error_response(**validation_error)
 
-    contents = await file.read()
+    request_content_length = _request_content_length(request)
+    if request_content_length is not None and request_content_length > MAX_UPLOAD_SIZE:
+        _log_event(
+            event_type="DOCUMENT_UPLOADED",
+            document_id=None,
+            error_code="FILE_TOO_LARGE",
+            failure_reason="Document exceeds the maximum allowed size.",
+        )
+        return _error_response(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            error_code="FILE_TOO_LARGE",
+            message="Document exceeds the maximum allowed size of 20 MB.",
+        )
+
+    max_chunk_size = 64 * 1024
+    total_size = 0
+    content_chunks: list[bytes] = []
+    while True:
+        chunk = await file.read(max_chunk_size)
+        if not chunk:
+            break
+        total_size += len(chunk)
+        if total_size > MAX_UPLOAD_SIZE:
+            _log_event(
+                event_type="DOCUMENT_UPLOADED",
+                document_id=None,
+                error_code="FILE_TOO_LARGE",
+                failure_reason="Document exceeds the maximum allowed size.",
+            )
+            return _error_response(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                error_code="FILE_TOO_LARGE",
+                message="Document exceeds the maximum allowed size of 20 MB.",
+            )
+        content_chunks.append(chunk)
+
+    contents = b"".join(content_chunks)
     if len(contents) == 0:
         _log_event(
             event_type="DOCUMENT_UPLOADED",
@@ -563,18 +599,6 @@ async def upload_document(
             status_code=status.HTTP_400_BAD_REQUEST,
             error_code="INVALID_REQUEST",
             message="The uploaded file is empty.",
-        )
-    if len(contents) > MAX_UPLOAD_SIZE:
-        _log_event(
-            event_type="DOCUMENT_UPLOADED",
-            document_id=None,
-            error_code="FILE_TOO_LARGE",
-            failure_reason="Document exceeds the maximum allowed size.",
-        )
-        return _error_response(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            error_code="FILE_TOO_LARGE",
-            message="Document exceeds the maximum allowed size of 20 MB.",
         )
 
     repository = cast(DocumentRepository, request.app.state.document_repository)
@@ -966,6 +990,16 @@ def _validate_upload(file: UploadFile) -> dict[str, Any] | None:
         }
 
     return None
+
+
+def _request_content_length(request: Request) -> int | None:
+    content_length = request.headers.get("content-length")
+    if content_length is None:
+        return None
+    try:
+        return int(content_length)
+    except ValueError:
+        return None
 
 
 def _error_response(

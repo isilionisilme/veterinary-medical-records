@@ -61,6 +61,13 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [x] F8-D 🚧 — Security boundary docs + nota AppWorkspace + roadmap update (Claude)
 - [x] F8-E 🚧 — Validación final + PR nueva + cierre iteración (Claude)
 
+### Fase 9 — Iteración 3 (Hardening & Maintainability)
+- [x] F9-A 🚧 — Definir backlog ejecutable de Iteración 3 + prompt activo (Claude)
+- [x] F9-B 🔄 — Upload streaming guard + límite temprano + tests (Codex)
+- [x] F9-C 🔄 — Auth boundary mínima opcional por configuración + tests/docs (Codex)
+- [x] F9-D 🔄 — Decomposición inicial de `AppWorkspace.tsx` + tests de regresión (Codex)
+- [x] F9-E 🚧 — Validación final Iteración 3 + PR + cierre (Claude)
+
 ---
 
 ## Resultados de auditorías — rellenar automáticamente al completar cada auditoría
@@ -722,7 +729,7 @@ Below are the 4 architecture ADRs with full arguments, trade-offs, and code evid
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-_Completado: F8-E_
+_Completado: F9-D_
 
 ### Prompt
 _Vacío._
@@ -772,9 +779,24 @@ Estas áreas puntúan alto con los evaluadores. Todo cambio debe preservarlas:
 ### Iteraciones atómicas
 Nunca mezclar alcance entre pasos. Cada paso del Estado de ejecución es una unidad atómica: se ejecuta, se commitea, se pushea, se marca `[x]`. Si falla, se reporta — no se continúa al siguiente.
 
+### Estado de ejecución extendido (pendiente / en progreso / bloqueado / completado)
+Para visibilidad y trazabilidad, es **obligatorio** marcar el paso activo con `⏳ EN PROGRESO` **sin cambiar el checkbox base**.
+
+- **Pendiente:** `- [ ] F?-? ...`
+- **En progreso:** `- [ ] F?-? ... ⏳ EN PROGRESO (<agente>, <fecha/hora>)`
+- **Bloqueado:** `- [ ] F?-? ... 🚫 BLOQUEADO (<motivo corto>)`
+- **Completado:** `- [x] F?-? ...`
+
+Reglas obligatorias:
+1. No usar `[-]`, `[~]`, `[...]` ni variantes: solo `[ ]` o `[x]`.
+2. Antes de ejecutar un paso `[ ]`, el agente debe marcarlo como `⏳ EN PROGRESO (<agente>, <fecha/hora>)`.
+3. `EN PROGRESO` y `BLOQUEADO` son etiquetas de texto al final de la línea, no estados de checkbox.
+4. Al completar un paso, eliminar cualquier etiqueta (`EN PROGRESO`/`BLOQUEADO`) y marcar `[x]`.
+5. Para `BLOQUEADO`, incluir motivo breve y acción siguiente si aplica.
+
 ### Regla de identidad por agente activo (hard rule — se aplica antes que cualquier otra)
 **Si el usuario escribe `Continúa`:**
-1. Lee el Estado de ejecución y encuentra el primer `[ ]`.
+1. Lee el Estado de ejecución y encuentra el primer `[ ]` (incluye líneas con etiquetas `⏳ EN PROGRESO` o `🚫 BLOQUEADO`).
 2. Identifica el agente asignado a ese paso (🔄 Codex o 🚧 Claude).
 3. Si el paso corresponde al **agente activo de este chat**: procede normalmente.
 4. Si el paso corresponde al **otro agente**:
@@ -840,6 +862,64 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 - ✅ Estrategia histórica confirmada: este archivo se mantiene **append-only** (F1-F7 intactas).
 - ✅ Routing de identidad actualizado a regla por agente activo (Claude/Codex, bidireccional).
 - ✅ PR de referencia anterior (`#146`) descartada para esta iteración; usar PR nueva al abrirla.
+
+### F9-A — Iteration 3 backlog and scope definition (Claude)
+
+**Source documents reviewed:**
+- `CTO_REVIEW_VERDICT.md` — all 5 CTO improvements addressed in F8; remaining open findings: #5 upload streaming, #6 auth boundary, #11 extraction observability (deferred).
+- `FUTURE_IMPROVEMENTS.md` — Week 2 items mostly complete; remaining: upload streaming guard (#9), auth boundary (#15). Week 4: AppWorkspace decomposition (#7b).
+- `codebase_audit.md` — 15 findings total. 10 resolved. Open: #5 (upload size), #6 (auth), #11 (observability), #12 (routes.py size), residual.
+- `DELIVERY_SUMMARY.md` — 423 tests (255 backend + 168 frontend), 87% backend coverage, all CI green.
+
+**Current baseline:** 255 backend tests, 168 frontend tests, 87% backend coverage. `AppWorkspace.tsx` at 5,770 LOC.
+
+#### F9-B — Upload streaming guard + early size limit + tests
+| Attribute | Value |
+|---|---|
+| **Risk** | Low — additive change to one function, no contract changes |
+| **Effort** | S |
+| **Agent** | Codex |
+| **Acceptance criteria** | Upload size enforced before full memory read via Content-Length header check + chunked streaming read. ≥3 new integration tests. All existing tests green. |
+| **Test evidence** | `pytest --tb=short -q` green with new test count. |
+| **Do-not-change** | Other endpoints in `routes.py`, `_validate_upload()`, domain/application code, frontend, `MAX_UPLOAD_SIZE` value. |
+
+#### F9-C — Auth boundary minimal (optional by config) + tests/docs
+| Attribute | Value |
+|---|---|
+| **Risk** | Medium — touches middleware layer; must not break evaluator default flow |
+| **Effort** | M |
+| **Agent** | Codex |
+| **Acceptance criteria** | New `AUTH_TOKEN` env var (optional, empty = disabled). When set, all `/api/` endpoints require `Authorization: Bearer <token>` header. When unset/empty, behavior is identical to current (no auth). Integration tests cover both modes. `TECHNICAL_DESIGN.md` §13 updated. |
+| **Test evidence** | `pytest --tb=short -q` green. New tests for auth-enabled and auth-disabled modes. |
+| **Do-not-change** | Domain models, application services, frontend code, Docker Compose defaults (auth stays disabled by default). Evaluator flow (`docker compose up`) must work unchanged. |
+
+#### F9-D — Initial decomposition of `AppWorkspace.tsx` + regression tests
+| Attribute | Value |
+|---|---|
+| **Risk** | Medium-High — largest file in codebase, many internal dependencies |
+| **Effort** | L |
+| **Agent** | Codex |
+| **Acceptance criteria** | Extract ≥3 cohesive modules from `AppWorkspace.tsx` (target: structured data rendering, review workspace logic, utility functions/constants). `AppWorkspace.tsx` reduced by ≥30% LOC (from 5,770 to ≤4,000). No new file >500 LOC. All existing frontend tests pass. No behavioral changes. |
+| **Test evidence** | `npm test` green. Coverage maintained or improved. |
+| **Do-not-change** | Backend code. UI behavior/appearance. Existing component contracts. `App.tsx` shell. |
+
+#### F9-E — Validation + PR + close
+| Attribute | Value |
+|---|---|
+| **Risk** | Low — verification and documentation only |
+| **Effort** | S |
+| **Agent** | Claude |
+| **Acceptance criteria** | All F9-B..D marked `[x]`. CI green. PR body updated with iteration 3 summary. `DELIVERY_SUMMARY.md` updated with iteration 3 metrics. `FUTURE_IMPROVEMENTS.md` items resolved marked. |
+| **Test evidence** | CI green on final push. |
+| **Do-not-change** | Completed code from F9-B..D. |
+
+**Global do-not-change boundaries for Iteration 3:**
+- Hexagonal architecture (`domain/`, `ports/`, `infra/`).
+- Docker Compose setup and healthchecks.
+- CI pipeline structure (only add jobs, never remove).
+- ADR content.
+- Backend structural decomposition from Phase 2.
+- Pre-commit hooks configuration.
 
 ### Plan-edit-last (hard constraint)
 **Codex NO edita `AI_ITERATIVE_EXECUTION_PLAN.md` hasta que los tests pasen y el código esté commiteado.** La secuencia obligatoria es:
@@ -1022,13 +1102,16 @@ STEP E — CI GATE (mandatory — do NOT skip):
 
 STEP F — Tell the user the NEXT STEP (mandatory — never omit):
 Look at the Estado de ejecución. Find the next `[ ]` step after the one you just completed.
-Then tell the user EXACTLY one of these messages (pick the one that matches):
+Then **check the `### Prompt` section inside `## Prompt activo`** to decide the routing.
+Tell the user EXACTLY one of these messages (pick the FIRST that matches):
 
-- If next step says "(Codex)": "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
+- If next step says "(Codex)" AND `### Prompt` contains `_Vacío._`: "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`. Claude preparará el prompt just-in-time para el paso de Codex."
+- If next step says "(Codex)" AND `### Prompt` is NOT `_Vacío._`: "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
 - If next step says "(Claude)": "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
 - If no more steps remain: "✓ F?-? completado, CI verde, PR actualizada. Todos los pasos completados."
 
 NEVER end without telling the user what to do next. This is a hard rule.
+**NEVER direct to Codex when `### Prompt` is `_Vacío._`.** Claude must write the prompt first.
 
 7. Stop.
 --- END SCOPE BOUNDARY ---

@@ -1,6 +1,6 @@
 # Delivery Summary — `improvement/refactor`
 
-> Quantitative record of what was delivered across 7 phases + Iteration 2.  
+> Quantitative record of what was delivered across 7 phases + Iterations 2 & 3.  
 > Source of truth for execution details: [`AI_ITERATIVE_EXECUTION_PLAN.md`](AI_ITERATIVE_EXECUTION_PLAN.md).
 
 ---
@@ -9,10 +9,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Commits | 61 |
-| Files changed | 149 (52 added, 95 modified, 2 deleted) |
-| Net delta | +20,857 / −15,325 lines |
-| Test suite | **411 tests** (249 backend + 162 frontend), all green |
+| Commits | 73 |
+| Files changed | 157 (60 added, 95 modified, 2 deleted) |
+| Net delta | +23,726 / −17,641 lines |
+| Test suite | **431 tests** (263 backend + 168 frontend), all green |
 | Backend coverage | 87% |
 | CI checks | 7 jobs, all passing |
 | New documentation files | 13 |
@@ -169,3 +169,37 @@ Targeted improvements from [`CTO_REVIEW_VERDICT.md`](CTO_REVIEW_VERDICT.md) — 
 | Backend coverage | 87% |
 | CI checks | All green on each step |
 | Guardrails added | Cross-chat agent routing, mandatory new-chat handoff, token-efficiency policy |
+
+---
+
+## Iteration 3 — Hardening & Maintainability (Phase 9)
+
+Targeted hardening: upload safety, security boundary, and frontend decomposition.
+
+| # | Improvement | Step | Detail |
+|---|---|---|---|
+| 1 | Upload streaming guard | F9-B | Early `Content-Length` check + chunked streaming read; rejects oversized uploads before full memory allocation |
+| 2 | Auth boundary (optional) | F9-C | New `AUTH_TOKEN` env var; when set, all `/api/` endpoints require `Authorization: Bearer <token>`; disabled by default for evaluator flow |
+| 3 | AppWorkspace.tsx decomposition | F9-D | Extracted 7 modules from `AppWorkspace.tsx` (5,770 → 3,758 LOC, −35%): `documentApi.ts`, `ReviewFieldRenderers.tsx`, `ReviewSectionLayout.tsx`, `SourcePanelContent.tsx`, `appWorkspace.ts` (constants), `appWorkspaceUtils.ts`, `appWorkspace.ts` (types) |
+
+### AppWorkspace decomposition detail
+
+| Extracted module | Lines | Responsibility |
+|---|---|---|
+| `api/documentApi.ts` | 424 | API client hooks, queries, mutations, polling |
+| `components/review/ReviewFieldRenderers.tsx` | 488 | Field rendering: values, adjustments, confidence badges |
+| `components/review/ReviewSectionLayout.tsx` | 456 | Canonical section layout, visit grouping, field rows |
+| `components/review/SourcePanelContent.tsx` | 55 | Source drawer content panel |
+| `constants/appWorkspace.ts` | 180 | UI constants, labels, configuration maps |
+| `lib/appWorkspaceUtils.ts` | 427 | Pure utility functions (formatters, normalizers, helpers) |
+| `types/appWorkspace.ts` | 249 | TypeScript interfaces and type definitions |
+
+| Metric | Value |
+|--------|-------|
+| Commits | 12 |
+| Files changed | 22 (8 added, 14 modified) |
+| Net delta | +2,869 / −2,316 lines |
+| Test suite | **431 tests** (263 backend + 168 frontend), all green |
+| Backend coverage | 87% |
+| New backend tests | 8 (upload streaming + auth boundary) |
+| AppWorkspace.tsx reduction | 5,770 → 3,758 LOC (−35%) |

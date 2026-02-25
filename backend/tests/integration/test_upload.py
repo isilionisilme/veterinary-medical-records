@@ -77,6 +77,46 @@ def test_upload_limits_size(test_client):
     assert response.json()["error_code"] == "FILE_TOO_LARGE"
 
 
+def test_upload_rejects_oversized_via_content_length_header(test_client, monkeypatch):
+    from backend.app.api import routes
+    from backend.app.main import MAX_UPLOAD_SIZE
+
+    async def fail_if_read(*_args, **_kwargs):
+        pytest.fail("upload endpoint should reject oversized Content-Length before reading body")
+
+    monkeypatch.setattr(routes.UploadFile, "read", fail_if_read)
+    files = {"file": ("record.pdf", io.BytesIO(b"%PDF-1.5 sample"), "application/pdf")}
+    response = test_client.post(
+        "/documents/upload",
+        files=files,
+        headers={"content-length": str(MAX_UPLOAD_SIZE + 1)},
+    )
+    assert response.status_code == 413
+    assert response.json()["error_code"] == "FILE_TOO_LARGE"
+
+
+def test_upload_rejects_oversized_via_streaming(test_client, monkeypatch):
+    from backend.app.api import routes
+    from backend.app.main import MAX_UPLOAD_SIZE
+
+    monkeypatch.setattr(routes, "_request_content_length", lambda _request: None)
+    large_content = b"A" * (MAX_UPLOAD_SIZE + 1)
+    files = {"file": ("record.pdf", io.BytesIO(large_content), "application/pdf")}
+    response = test_client.post("/documents/upload", files=files)
+    assert response.status_code == 413
+    assert response.json()["error_code"] == "FILE_TOO_LARGE"
+
+
+def test_upload_normal_file_still_works(test_client, monkeypatch):
+    from backend.app.api import routes
+
+    monkeypatch.setattr(routes, "_request_content_length", lambda _request: None)
+    files = {"file": ("record.pdf", io.BytesIO(b"%PDF-1.5 sample"), "application/pdf")}
+    response = test_client.post("/documents/upload", files=files)
+    assert response.status_code == 201
+    assert response.json()["status"] == app_models.ProcessingStatus.UPLOADED.value
+
+
 def test_upload_rejects_empty_file(test_client):
     files = {"file": ("record.pdf", io.BytesIO(b""), "application/pdf")}
     response = test_client.post("/documents/upload", files=files)
