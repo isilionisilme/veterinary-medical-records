@@ -729,11 +729,221 @@ Below are the 4 architecture ADRs with full arguments, trade-offs, and code evid
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-_Completado: F9-C_
+F9-D — Decomposición inicial de `AppWorkspace.tsx` + tests de regresión
 
 ### Prompt
 
-_Vacío._
+> **PLAN-EDIT-LAST RULE (hard constraint for Codex):**
+> **NEVER edit AI_ITERATIVE_EXECUTION_PLAN.md until ALL tests pass and code is committed.**
+> The plan file is the source of truth — marking a step `[x]` before tests pass corrupts the entire pipeline.
+> If you run out of context before reaching the test gate: STOP and tell the user. Do NOT edit the plan.
+
+```
+--- AGENT IDENTITY CHECK ---
+This prompt is designed for GPT-5.3-Codex in VS Code Copilot Chat.
+If you are not GPT-5.3-Codex: STOP. Tell the user to switch agents.
+--- END IDENTITY CHECK ---
+
+--- BRANCH CHECK ---
+Run: git branch --show-current
+If NOT `improvement/refactor-iteration-3`: STOP. Tell the user to switch branches.
+--- END BRANCH CHECK ---
+
+--- SYNC CHECK ---
+Run: git pull origin improvement/refactor-iteration-3
+--- END SYNC CHECK ---
+
+--- PRE-FLIGHT CHECK ---
+1. Verify F9-C is `[x]` in Estado de ejecución. If not: STOP.
+2. Verify `frontend/src/AppWorkspace.tsx` exists. If not: STOP and report.
+3. Run: `cd d:/Git/veterinary-medical-records/frontend && npx vitest run --reporter=verbose 2>&1 | Select-Object -Last 5`
+   Confirm all tests pass before starting. If not: STOP.
+--- END PRE-FLIGHT CHECK ---
+
+## TASK — Decompose `AppWorkspace.tsx` into ≥5 cohesive modules
+
+### Goal
+Reduce `AppWorkspace.tsx` from ~6,130 LOC to ≤4,000 LOC (≥30% reduction) by extracting
+pure-logic and self-contained modules. No behavioral changes. All existing tests must pass.
+
+### File structure map (current)
+AppWorkspace.tsx has these logical sections (line numbers approximate):
+- L1–92: Imports
+- L94–196: Constants & config (API_BASE_URL, section labels, layout constants, field key sets)
+- L197–217: Field classification utilities (isLongTextFieldKey, shouldRenderLongTextValue, getStructuredFieldPrefix)
+- L218–284: More constants (HIDDEN_EXTRACTED_FIELDS, SECTION_LABELS, FIELD_LABELS, HIDDEN_REVIEW_FIELDS, BILLING_REVIEW_FIELDS, CRITICAL_GLOBAL_SCHEMA_KEYS)
+- L285–296: ConfidencePolicyDiagnosticEvent type + Window augmentation
+- L297–378: Split-layout utility functions (clamp, snap, split ratio math, renderLongTextValue)
+- L380–588: Type definitions (~209 LOC: DocumentListItem, ReviewField, StructuredInterpretationData, etc.)
+- L590–613: Error classes (UiError, ApiResponseError)
+- L614–666: Error utility functions (isNetworkFetchError, getUserErrorMessage, etc.)
+- L668–1086: API fetch functions (~419 LOC: fetchOriginalPdf, fetchDocuments, fetchDocumentDetails, fetchDocumentReview, fetchProcessingHistory, triggerReprocess, markDocumentReviewed, reopenDocumentReview, editRunInterpretation, fetchRawText, uploadDocument, copyTextToClipboard) — includes inline types ReviewToggleResponse, InterpretationChangePayload, InterpretationEditResponse at ~L854–875
+- L1087–1405: Formatting/display utility functions (~319 LOC: formatTimestamp, isDocumentProcessing, explainFailure, formatReviewKeyLabel, normalizeFieldIdentifier, resolveUiSection, clampConfidence, getConfidenceTone, resolveMappingConfidence, resolveConfidencePolicy, formatFieldValue, etc.)
+- L1407–6130: `export function App()` (the React component, ~4,723 LOC)
+
+Inside App():
+- L1408–1462: 50 useState declarations
+- L1463–1504: 25 useRef declarations
+- L1505–1543: Hooks & derived state
+- L1545–1727: ~10 useEffect blocks (media queries, resize, keyboard, etc.)
+- L1728–1993: Mutations & upload handlers (loadPdf, uploadMutation, drag-and-drop, file picker)
+- L1994–2100: Sidebar + query declarations
+- L2101–2292: Sorted docs, polling, reprocess mutation
+- L2293–2414: Review toggle + interpretation edit mutations
+- L2415–2632: Misc handlers & derived state
+- L2633–2942: Review data processing useMemos
+- L2943–3326: Display field building (coreDisplayFields, otherDisplayFields, groupedCoreFields)
+- L3327–3502: Structured data filters
+- L3503–3684: detectedFieldsSummary
+- L3685–3901: Layout styles & split handlers
+- L3902–4157: Field editing functions
+- L4158–5062: Render helper functions (~905 LOC: buildFieldTooltip, renderConfidenceIndicator, renderEditableFieldValue, renderRepeatableReviewField, renderScalarReviewField, renderCanonicalVisitEpisodes, renderSectionLayout)
+- L5063–5091: sourcePanelContent
+- L5092–6130: JSX return block (~1,039 LOC)
+
+### Extraction plan (execute in this order)
+
+#### Module 1: `frontend/src/types/appWorkspace.ts` (~250 LOC)
+Extract ALL type/interface definitions and error classes:
+- `LoadResult`, `DocumentListItem`, `DocumentListResponse`, `LatestRun`, `DocumentDetailResponse`
+- `ProcessingStep`, `ProcessingHistoryRun`, `ProcessingHistoryResponse`, `RawTextArtifactResponse`
+- `ReviewEvidence`, `ConfidenceBandCutoffs`, `ConfidencePolicyConfig`, `ReviewField`, `ReviewVisitGroup`
+- `MedicalRecordViewFieldSlot`, `MedicalRecordViewTemplate`, `StructuredInterpretationData`
+- `ReviewSelectableField`, `ReviewDisplayField`, `ReviewPanelState`, `DocumentReviewResponse`
+- `DocumentUploadResponse`, `ReviewToggleResponse`, `InterpretationChangePayload`, `InterpretationEditResponse`
+- `ConfidencePolicyDiagnosticEvent` type + `ConfidenceTone` type
+- `UiError` class, `ApiResponseError` class
+- `MedicalRecordSectionId` type
+- Window augmentation (`declare global { interface Window { ... } }`)
+- Export everything as named exports.
+
+#### Module 2: `frontend/src/constants/appWorkspace.ts` (~170 LOC)
+Extract ALL constants:
+- `API_BASE_URL`, `DEBUG_CONFIDENCE_POLICY`, `MAX_UPLOAD_SIZE_BYTES`, `MISSING_VALUE_PLACEHOLDER`
+- `EMPTY_LIST_PLACEHOLDER`, `OTHER_EXTRACTED_FIELDS_SECTION_TITLE`, `OTHER_EXTRACTED_FIELDS_EMPTY_STATE`
+- `VISITS_EMPTY_STATE`, `VISITS_UNASSIGNED_HINT`, `REPORT_INFO_SECTION_TITLE`
+- `MEDICAL_RECORD_SECTION_ID_ORDER`, `MEDICAL_RECORD_SECTION_ID_SET`, `SECTION_ID_TO_UI_LABEL`
+- `MEDICAL_RECORD_SECTION_ORDER`
+- `DOCS_SIDEBAR_PIN_STORAGE_KEY`, `REVIEW_SPLIT_RATIO_STORAGE_KEY`, `DEFAULT_REVIEW_SPLIT_RATIO`
+- `MIN_PDF_PANEL_WIDTH_PX` (keep exported), `MIN_STRUCTURED_PANEL_WIDTH_PX`, `SPLITTER_COLUMN_WIDTH_PX` (keep exported), `REVIEW_SPLIT_RATIO_EPSILON`, `REVIEW_SPLIT_MIN_WIDTH_PX` (keep exported)
+- `SPLIT_SNAP_POINTS`, `STRUCTURED_FIELD_ROW_CLASS`, `STRUCTURED_FIELD_LABEL_CLASS`, `STRUCTURED_FIELD_STACK_CLASS`
+- `LONG_TEXT_FALLBACK_THRESHOLD`, `LONG_TEXT_FIELD_KEYS`, `OWNER_SECTION_FIELD_KEYS`, `VISIT_SECTION_FIELD_KEYS`
+- `CANONICAL_VISIT_SCOPED_FIELD_KEYS`, `CANONICAL_VISIT_METADATA_KEYS`, `CANONICAL_DOCUMENT_CONCEPTS`
+- `HIDDEN_EXTRACTED_FIELDS`, `SECTION_LABELS`, `FIELD_LABELS`, `HIDDEN_REVIEW_FIELDS`, `BILLING_REVIEW_FIELDS`
+- `CRITICAL_GLOBAL_SCHEMA_KEYS`
+- `RUN_STATE_LABELS`, `NON_TECHNICAL_FAILURE`
+- Import `MedicalRecordSectionId` from types module. Import `GLOBAL_SCHEMA` from `../lib/globalSchema`.
+- Export everything as named exports.
+
+#### Module 3: `frontend/src/lib/appWorkspaceUtils.ts` (~475 LOC)
+Extract ALL pure utility/formatting functions (no React dependencies):
+- `isLongTextFieldKey()`, `shouldRenderLongTextValue()`, `getStructuredFieldPrefix()`
+- `clampNumber()`, `getReviewSplitBounds()`, `clampReviewSplitPx()`, `splitPxToReviewSplitRatio()`, `reviewSplitRatioToPx()`, `clampReviewSplitRatio()`, `snapReviewSplitRatio()`
+- `isNetworkFetchError()`, `getUserErrorMessage()`, `getTechnicalDetails()`, `isConnectivityOrServerError()`, `parseFilename()`
+- `formatTimestamp()`, `isDocumentProcessing()`, `isProcessingTooLong()`, `explainFailure()`
+- `formatRunHeader()`, `formatReviewKeyLabel()`, `normalizeFieldIdentifier()`, `shouldHideExtractedField()`
+- `getUiSectionLabelFromSectionId()`, `resolveUiSection()`, `getLabelTooltipText()`
+- `clampConfidence()`, `formatSignedPercent()`, `getConfidenceTone()`, `resolveMappingConfidence()`, `resolveConfidencePolicy()`, `emitConfidencePolicyDiagnosticEvent()`
+- `isFieldValueEmpty()`, `formatFieldValue()`, `getNormalizedVisitId()`, `getVisitTimestamp()`, `truncateText()`
+- Import types from `../types/appWorkspace`, constants from `../constants/appWorkspace`.
+- Export everything as named exports.
+
+#### Module 4: `frontend/src/api/documentApi.ts` (~420 LOC)
+Extract ALL API fetch/mutation functions:
+- `fetchOriginalPdf()`, `fetchDocuments()`, `fetchDocumentDetails()`, `fetchDocumentReview()`
+- `fetchProcessingHistory()`, `triggerReprocess()`
+- `markDocumentReviewed()`, `reopenDocumentReview()`
+- `editRunInterpretation()`, `fetchRawText()`, `uploadDocument()`
+- `copyTextToClipboard()`
+- Import types from `../types/appWorkspace`, constants and error classes as needed.
+- Export everything as named exports.
+
+#### Module 5: `frontend/src/components/review/ReviewFieldRenderers.tsx` (~905 LOC)
+Extract the render helper functions defined inside `App()` into a standalone module:
+- `buildFieldTooltip()` — receives field data + confidence policy, returns tooltip ReactNode
+- `renderConfidenceIndicator()` — renders confidence dot + percent badge
+- `renderEditableFieldValue()` — renders a field value with edit pencil icon
+- `renderRepeatableReviewField()` — renders a repeatable (list) field
+- `renderScalarReviewField()` — renders a single-value field row
+- `renderCanonicalVisitEpisodes()` — renders visit episode sections with all fields
+- `renderSectionLayout()` — renders a section wrapper
+- `renderLongTextValue()` — already defined outside App(), move here too
+
+**Critical:** These render functions currently use closure variables from `App()` (state, callbacks, refs, confidencePolicy, etc.). Extract them as proper functions that receive their dependencies via parameters. Define precise TypeScript interfaces for the parameter objects. Keep the prop interfaces narrow (pass only what each function needs).
+
+**Approach for render function extraction:**
+1. Identify all closure references in each function (state variables, callbacks, constants).
+2. Group the dependencies into a shared context object type if many functions share the same deps.
+3. Convert each function to accept explicit parameters instead of closures.
+4. In `App()`, create the context object once and pass it to each function call.
+5. This is the highest-risk extraction — proceed carefully and verify each function call site.
+
+### Rules
+1. **No behavioral changes.** The UI must work identically before and after.
+2. **No new file > 500 LOC.**
+3. **All existing imports from `AppWorkspace.tsx` by other files must still resolve.** Check who imports from `AppWorkspace.tsx` and ensure re-exports or import path updates.
+4. **Preserve all existing exports** (`App`, `MIN_PDF_PANEL_WIDTH_PX`, `SPLITTER_COLUMN_WIDTH_PX`, `REVIEW_SPLIT_MIN_WIDTH_PX`). Either keep them in `AppWorkspace.tsx` as re-exports or update all import sites.
+5. **Create `frontend/src/types/`, `frontend/src/constants/`, `frontend/src/api/`, `frontend/src/components/review/` directories as needed.**
+6. **Run `npm test` after each module extraction** to catch breakage early. If a test fails, fix it before moving to the next module.
+7. **Track LOC reduction.** After all extractions, run: `(Get-Content frontend/src/AppWorkspace.tsx).Count` — must be ≤ 4,000.
+
+### Verification checklist (execute before committing)
+1. `(Get-Content frontend/src/AppWorkspace.tsx).Count` → must be ≤ 4,000
+2. No new file > 500 LOC: check all new files
+3. `cd frontend && npx vitest run` → all tests pass
+4. `cd frontend && npx tsc --noEmit` → no type errors
+5. `cd frontend && npm run lint` → no lint errors
+6. Verify exports: `MIN_PDF_PANEL_WIDTH_PX`, `SPLITTER_COLUMN_WIDTH_PX`, `REVIEW_SPLIT_MIN_WIDTH_PX` are still importable from where other files expect them.
+
+--- TEST GATE (ejecutar ANTES de tocar el plan o commitear) ---
+Backend: cd d:/Git/veterinary-medical-records && python -m pytest --tb=short -q
+Frontend: cd d:/Git/veterinary-medical-records/frontend && npx vitest run
+TypeScript: cd d:/Git/veterinary-medical-records/frontend && npx tsc --noEmit
+Lint: cd d:/Git/veterinary-medical-records/frontend && npm run lint
+Si algún test falla: STOP. Reporta los fallos al usuario. NO commitees. NO edites el plan.
+Save the last summary line of each test run — you will need it for the commit message.
+--- END TEST GATE ---
+
+--- SCOPE BOUNDARY (two-commit strategy) ---
+Execute these steps IN THIS EXACT ORDER. Do NOT reorder.
+
+STEP A — Commit code (plan file untouched):
+1. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
+2. git commit -m "refactor(plan-f9d): decompose AppWorkspace.tsx into 5 cohesive modules
+
+Extracted: types/appWorkspace.ts, constants/appWorkspace.ts, lib/appWorkspaceUtils.ts,
+api/documentApi.ts, components/review/ReviewFieldRenderers.tsx
+AppWorkspace.tsx reduced from ~6130 to ≤4000 LOC (≥30% reduction).
+No behavioral changes.
+
+Test proof: <pytest summary> | <vitest summary> | tsc --noEmit clean | lint clean"
+
+STEP B — Commit plan update (only after code is committed):
+1. Edit AI_ITERATIVE_EXECUTION_PLAN.md: change `- [ ] F9-D` to `- [x] F9-D`.
+2. Clean `## Prompt activo`: replace `### Paso objetivo` content with `_Completado: F9-D_` and `### Prompt` with `_Vacío._`
+3. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+4. git commit -m "docs(plan-f9d): mark step done"
+
+STEP C — Push both commits:
+1. git push origin improvement/refactor-iteration-3
+
+STEP D — Update active PR description:
+Use `gh pr edit 149 --body "..."` with the updated body reflecting F9-D completion.
+Mark F9-D as `[x]` in the progress checklist and add a one-line summary:
+"AppWorkspace.tsx decomposed from ~6130 to ≤4000 LOC via 5 extracted modules (types, constants, utils, API, render helpers)."
+
+STEP E — CI GATE (mandatory):
+1. Run: gh run list --branch improvement/refactor-iteration-3 --limit 1 --json status,conclusion,databaseId
+2. If in_progress/queued: wait 30s and retry (up to 10 retries).
+3. If conclusion "success": proceed to STEP F.
+4. If conclusion "failure": diagnose, fix, push, retry.
+5. If cannot fix after 2 attempts: STOP and ask for help.
+
+STEP F — Next step message:
+The next step is F9-E (Claude). Tell the user:
+"✓ F9-D completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
+--- END SCOPE BOUNDARY ---
+```
 
 ---
 
