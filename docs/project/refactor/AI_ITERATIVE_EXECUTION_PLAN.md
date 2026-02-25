@@ -98,7 +98,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [x] F12-A 🔄 — Quick-wins: ESLint `.cjs` fix + nginx security headers + CORS restrictivo (Codex)
 - [x] F12-B 🔄 — Fix `backend-tests` Docker profile: pytest disponible en test stage (Codex)
 - [x] F12-C 🔄 — Tests `SourcePanelContent.tsx` (0%→80%+) + `AddFieldDialog.tsx` (29%→80%+) (Codex)
-- [ ] F12-D 🔄 — Tests `documentApi.ts` (46%→80%+) + `PdfViewer.tsx` (65%→80%+) (Codex)
+- [ ] F12-D 🔄 — Tests `documentApi.ts` (46%→80%+) + `PdfViewer.tsx` (65%→80%+) (Codex) 🚫 BLOQUEADO (PdfViewer.tsx queda en 65.89% en suite focalizada)
 - [ ] F12-E 🔄 — Tests `ReviewFieldRenderers.tsx` (76%→85%+) + `ReviewSectionLayout.tsx` (91%→95%+) (Codex)
 - [ ] F12-F 🔄 — Tests `orchestrator.py` (76%→85%+) + `database.py` (74%→85%+) (Codex)
 - [ ] F12-G 🔄 — Tests `pdf_extraction.py` (78%→85%+) (Codex)
