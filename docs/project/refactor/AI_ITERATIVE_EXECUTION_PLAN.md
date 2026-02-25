@@ -1103,13 +1103,16 @@ STEP E — CI GATE (mandatory — do NOT skip):
 
 STEP F — Tell the user the NEXT STEP (mandatory — never omit):
 Look at the Estado de ejecución. Find the next `[ ]` step after the one you just completed.
-Then tell the user EXACTLY one of these messages (pick the one that matches):
+Then **check the `### Prompt` section inside `## Prompt activo`** to decide the routing.
+Tell the user EXACTLY one of these messages (pick the FIRST that matches):
 
-- If next step says "(Codex)": "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
+- If next step says "(Codex)" AND `### Prompt` contains `_Vacío._`: "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`. Claude preparará el prompt just-in-time para el paso de Codex."
+- If next step says "(Codex)" AND `### Prompt` is NOT `_Vacío._`: "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
 - If next step says "(Claude)": "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
 - If no more steps remain: "✓ F?-? completado, CI verde, PR actualizada. Todos los pasos completados."
 
 NEVER end without telling the user what to do next. This is a hard rule.
+**NEVER direct to Codex when `### Prompt` is `_Vacío._`.** Claude must write the prompt first.
 
 7. Stop.
 --- END SCOPE BOUNDARY ---
