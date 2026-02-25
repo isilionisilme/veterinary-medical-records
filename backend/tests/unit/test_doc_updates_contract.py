@@ -32,6 +32,12 @@ AI_ITERATIVE_PLAN_ROUTER_ENTRY = (
     / "AI_ITERATIVE_EXECUTION_PLAN"
     / "00_entry.md"
 )
+BACKEND_IMPLEMENTATION_ROUTER_ENTRY = (
+    REPO_ROOT / "docs" / "agent_router" / "04_PROJECT" / "BACKEND_IMPLEMENTATION" / "00_entry.md"
+)
+TECHNICAL_DESIGN_ROUTER_ENTRY = (
+    REPO_ROOT / "docs" / "agent_router" / "04_PROJECT" / "TECHNICAL_DESIGN" / "00_entry.md"
+)
 DOC_TEST_SYNC_GUARD = REPO_ROOT / "scripts" / "check_doc_test_sync.py"
 DOC_ROUTER_PARITY_GUARD = REPO_ROOT / "scripts" / "check_doc_router_parity.py"
 DOCS_ROOT = REPO_ROOT / "docs"
@@ -238,6 +244,20 @@ def test_ai_iterative_plan_owner_entry_tracks_phase_9_append_only_update() -> No
     assert "AI_ITERATIVE_EXECUTION_PLAN — Modules" in text
     assert "Phase 9 (Iteration 3) appended" in text
     assert "improvement/refactor-iteration-3" in text
+
+
+def test_owner_entries_track_iteration_4_doc_propagation() -> None:
+    backend_text = _read_text(BACKEND_IMPLEMENTATION_ROUTER_ENTRY)
+    technical_text = _read_text(TECHNICAL_DESIGN_ROUTER_ENTRY)
+    iterative_text = _read_text(AI_ITERATIVE_PLAN_ROUTER_ENTRY)
+    parity_guard_text = _read_text(DOC_ROUTER_PARITY_GUARD)
+
+    assert "infra (infrastructure)" in backend_text
+    assert "backend/app/infra/" in backend_text
+    assert "infra (infrastructure)" in technical_text
+    assert "Known Limitations propagation note" in technical_text
+    assert "Phase 10 (Iteration 4)" in iterative_text
+    assert "Checked source->router parity against mapped changed docs." in parity_guard_text
 
 
 def test_rules_index_contains_known_mapping_hints() -> None:
