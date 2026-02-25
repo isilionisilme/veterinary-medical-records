@@ -13,7 +13,7 @@ export type ApiError = {
 
 const DEFAULT_ERROR_MESSAGE = "Ocurrio un error inesperado.";
 
-const isApiErrorPayload = (value: unknown): value is Omit<ApiError, "status"> => {
+export const isApiErrorPayload = (value: unknown): value is Omit<ApiError, "status"> => {
   if (!value || typeof value !== "object") {
     return false;
   }
