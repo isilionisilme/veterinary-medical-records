@@ -13,11 +13,16 @@ ENV BUILD_DATE=${BUILD_DATE}
 WORKDIR /app
 
 COPY backend/requirements.txt /app/backend/requirements.txt
-RUN pip install --no-cache-dir -r /app/backend/requirements.txt \
-    && pip install --no-cache-dir pytest==7.4.1
+RUN pip install --no-cache-dir -r /app/backend/requirements.txt
 
 COPY backend /app/backend
 COPY shared /app/shared
+
+RUN adduser --disabled-password --no-create-home appuser \
+    && mkdir -p /app/backend/data /app/backend/storage \
+    && chown -R appuser:appuser /app
+
+USER appuser
 
 EXPOSE 8000
 
