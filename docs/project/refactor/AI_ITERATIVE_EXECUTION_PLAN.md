@@ -76,6 +76,14 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [x] F10-E 🔄 — Corregir instrucciones de quality gates en README (Claude)
 - [x] F10-F 🚧 — Smoke test final + commit + PR (Claude)
 
+### Fase 11 — Iteración 5 (Production-readiness: Prettier, Docker, coverage)
+- [ ] F11-A 🔄 — Prettier bulk format de 64 archivos pendientes (Codex)
+- [ ] F11-B 🔄 — Extraer `_NAME_TOKEN_PATTERN` a constante compartida (Codex)
+- [ ] F11-C 🔄 — Dockerfile.backend: solo deps de prod + usuario non-root (Codex)
+- [ ] F11-D 🔄 — Multi-stage Dockerfile.frontend con nginx + usuario non-root (Codex)
+- [ ] F11-E 🔄 — Tests de `_edit_helpers.py`: coverage de 60% → 85%+ (Codex)
+- [ ] F11-F 🚧 — Smoke test final + commit + PR (Claude)
+
 ---
 
 ## Resultados de auditorías — rellenar automáticamente al completar cada auditoría
@@ -737,10 +745,108 @@ Below are the 4 architecture ADRs with full arguments, trade-offs, and code evid
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-_Completado: F9-D_
+F11-A → F11-B → F11-C → F11-D → F11-E (auto-chain de 5 pasos, Codex)
 
 ### Prompt
-_Vacío._
+
+```
+--- AGENT IDENTITY CHECK ---
+This prompt is designed for GPT-5.3-Codex in VS Code Copilot Chat.
+If you are not GPT-5.3-Codex: STOP. Tell the user to switch agents.
+--- END IDENTITY CHECK ---
+
+--- BRANCH CHECK ---
+Run: git branch --show-current
+If NOT `improvement/iteration-5`: STOP. Tell the user to switch to the branch.
+--- END BRANCH CHECK ---
+
+--- SYNC CHECK ---
+Run: git pull origin improvement/iteration-5
+--- END SYNC CHECK ---
+
+You will execute steps F11-A through F11-E sequentially in this single chat session.
+After each step:
+1. Run the TEST GATE.
+2. Commit code (plan untouched) + commit plan update (mark [x]) — two-commit strategy.
+3. Push.
+4. CI GATE: `gh run list --branch improvement/iteration-5 --limit 1 --json status,conclusion,databaseId`. Wait + retry up to 10 times if in_progress. If failure: diagnose via `gh run view <id> --log-failed | Select-Object -Last 50`, fix, push, retry. If 2 consecutive fix attempts fail: STOP and tell the user.
+5. Proceed to the next step.
+
+After completing all 5 steps, tell the user:
+"✓ F11-A..E completados, CI verde. Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
+
+--- STEP F11-A: Prettier bulk format ---
+1. cd frontend && npx prettier --write "src/**/*.{ts,tsx,css}"
+2. Verify: npm run format:check → 0 issues.
+3. Verify: npm run lint → 0 problems.
+4. Verify: npm test -- --run → 168+ passed.
+Commit msg: `style(plan-f11a): prettier bulk format 64 frontend files`
+Archivos: ~64 archivos en frontend/src/
+
+--- STEP F11-B: Extraer _NAME_TOKEN_PATTERN a constante compartida ---
+1. Create `backend/app/application/processing/constants.py` with the shared constant `_NAME_TOKEN_PATTERN`.
+   - Find the regex value by reading one of the 4 files that define it:
+     `backend/app/application/processing/interpretation.py`
+     `backend/app/application/processing/orchestrator.py`
+     `backend/app/application/processing/pdf_extraction.py`
+     `backend/app/application/processing/scheduler.py`
+2. Replace the 4 local definitions with imports from the new constants module.
+3. Verify: `grep -r "_NAME_TOKEN_PATTERN" backend/` → 1 definition in constants.py + 4 imports.
+4. Verify: cd d:/Git/veterinary-medical-records && python -m pytest --tb=short -q → 264+ passed.
+Commit msg: `refactor(plan-f11b): extract _NAME_TOKEN_PATTERN to shared constant`
+Archivos: constants.py (nuevo), interpretation.py, orchestrator.py, pdf_extraction.py, scheduler.py
+
+--- STEP F11-C: Dockerfile.backend prod deps + non-root ---
+1. Edit `Dockerfile.backend`:
+   - Change install from `requirements-dev.txt` to `backend/requirements.txt`.
+   - Add non-root user: `RUN adduser --disabled-password --no-create-home appuser` + `USER appuser`.
+   - Ensure WORKDIR and file permissions are correct for appuser.
+2. Verify: `docker compose up --build -d` → backend healthy.
+3. Verify: `docker exec <backend_container> whoami` → NOT root.
+4. Verify: `docker exec <backend_container> pip list | Select-String pytest` → NOT found.
+5. docker compose down after verification.
+Commit msg: `fix(plan-f11c): dockerfile backend prod-only deps + non-root user`
+Archivos: Dockerfile.backend
+
+--- STEP F11-D: Multi-stage Dockerfile.frontend + nginx + non-root ---
+1. Create `frontend/nginx.conf`:
+   - SPA routing: try_files $uri $uri/ /index.html.
+   - Gzip on for js/css/html.
+   - Listen on port 80 (or 8080 for non-root).
+   - Security headers (X-Content-Type-Options, X-Frame-Options).
+2. Rewrite `Dockerfile.frontend` as multi-stage:
+   - Stage 1 (build): FROM node:20-alpine → COPY package*.json → npm ci → COPY . . → npm run build → produces dist/.
+   - Stage 2 (runtime): FROM nginx:alpine → COPY --from=build dist/ to nginx html dir → COPY nginx.conf → non-root user.
+3. Update `docker-compose.yml` if healthcheck or ports need adjustment (frontend was on port 5173, nginx will serve on 80 inside container — verify the port mapping).
+4. Also update `docker-compose.dev.yml` if it references the frontend Dockerfile directly.
+5. Verify: `docker compose up --build -d` → frontend healthy + app loads.
+6. Verify: `docker images` → frontend image < 100MB (ideally < 50MB).
+7. Verify: `docker exec <frontend_container> whoami` → NOT root.
+8. docker compose down after verification.
+Commit msg: `fix(plan-f11d): multi-stage dockerfile frontend with nginx + non-root`
+Archivos: Dockerfile.frontend, frontend/nginx.conf (nuevo), docker-compose.yml, docker-compose.dev.yml (si aplica)
+
+--- STEP F11-E: Tests _edit_helpers.py coverage 60% → 85%+ ---
+1. Run: python -m pytest --cov=backend.app.application.documents._edit_helpers --cov-report=term-missing --tb=short -q
+   → Identify uncovered lines.
+2. Read `backend/app/application/documents/_edit_helpers.py` to understand the uncovered branches.
+3. Write/extend `backend/tests/unit/test_edit_helpers.py` with tests covering:
+   - All edit/validation branches
+   - Edge cases (empty values, invalid types, boundary conditions)
+   - Error paths
+4. Do NOT modify `_edit_helpers.py` itself — only add tests.
+5. Verify: coverage ≥ 85%.
+6. Verify: python -m pytest --tb=short -q → 264+ passed (all existing + new).
+Commit msg: `test(plan-f11e): edit_helpers coverage 60% to 85%+`
+Archivos: backend/tests/unit/test_edit_helpers.py
+
+--- GLOBAL RULES ---
+- PLAN-EDIT-LAST: never edit AI_ITERATIVE_EXECUTION_PLAN.md until tests pass and code is committed.
+- Two-commit strategy per step: (A) code commit, (B) plan update commit.
+- Do NOT modify business logic, existing tests, CI pipeline, or dependency versions.
+- If any step fails and you cannot fix it in 2 attempts: STOP and tell the user.
+--- END GLOBAL RULES ---
+```
 
 ---
 
@@ -1018,6 +1124,113 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 
 **Política de la fase — do-not-change:**
 - Lógica de negocio, tests existentes, CI pipeline, arquitectura, dependencias.
+- Cada paso es atómico; si uno falla, los demás siguen siendo válidos.
+
+---
+
+### Fase 11 — Iteración 5 (Production-readiness: Prettier, Docker, coverage)
+
+**Rama:** `improvement/iteration-5` desde `main`
+**Agente:** Codex (F11-A..E) · Claude (F11-F)
+**Objetivo:** Calidad de entrega — formateo consistente, Docker production-ready, cobertura de módulo crítico.
+
+**Evaluación previa (evidencia):**
+- 264 backend tests (87% coverage), 168 frontend tests, 0 lint warnings, 0 build warnings.
+- 64 archivos frontend fallan Prettier (pre-commit hook roto).
+- `Dockerfile.frontend` sirve Vite dev server en producción.
+- `Dockerfile.backend` incluye pytest/dev deps en imagen de producción.
+- Ambos Dockerfiles corren como root.
+- `_NAME_TOKEN_PATTERN` regex duplicado en 4 archivos.
+- `_edit_helpers.py` al 60% de coverage — peor módulo.
+
+**Descartados con justificación:**
+- CI cache pip/npm: riesgo de cache stale sin ganancia visible para evaluación.
+- Backend deps bump (uvicorn, python-multipart): no impacta evaluación, riesgo innecesario.
+- eslint-plugin-jsx-a11y: riesgo de generar warnings nuevos sobre el lint limpio actual.
+
+**Diferido:**
+- `routes.py` decomposition (942 LOC, 16 endpoints): se hará en iteración posterior para controlar riesgo.
+
+#### F11-A — Prettier bulk format
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — solo reformateo automático |
+| **Esfuerzo** | S |
+| **Agente** | Codex |
+| **Por qué** | 64 archivos frontend no cumplen Prettier. El pre-commit hook `frontend-format` falla en cada commit, obligando a `--no-verify`. |
+| **Tareas** | 1. `cd frontend && npx prettier --write "src/**/*.{ts,tsx,css}"`. 2. Verificar `npm run format:check` = 0 issues. 3. Verificar `npm run lint` = 0 problems. 4. Verificar `npm test -- --run` = 168+ passed. |
+| **Criterio de aceptación** | `npm run format:check` pasa sin errores. Pre-commit hook `frontend-format` no falla. 168+ tests pasan. |
+| **Archivos** | ~64 archivos en `frontend/src/` |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
+#### F11-B — Extraer `_NAME_TOKEN_PATTERN` a constante compartida
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — refactor mecánico de constante |
+| **Esfuerzo** | S |
+| **Agente** | Codex |
+| **Por qué** | Regex idéntico duplicado en 4 archivos: `interpretation.py`, `orchestrator.py`, `pdf_extraction.py`, `scheduler.py`. Violación DRY que dificulta mantenimiento. |
+| **Tareas** | 1. Crear `backend/app/application/processing/constants.py` con la constante. 2. Reemplazar las 4 definiciones locales por imports. 3. Verificar `python -m pytest --tb=short -q` = 264+ passed. |
+| **Criterio de aceptación** | `grep -r "_NAME_TOKEN_PATTERN" backend/` muestra 1 definición y 4 imports. 264+ tests pasan. |
+| **Archivos** | `backend/app/application/processing/constants.py` (nuevo), `interpretation.py`, `orchestrator.py`, `pdf_extraction.py`, `scheduler.py` |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
+#### F11-C — Dockerfile.backend: solo deps de prod + usuario non-root
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — cambio de Dockerfile sin tocar código |
+| **Esfuerzo** | S |
+| **Agente** | Codex |
+| **Por qué** | La imagen de producción incluye pytest y deps de dev (~15MB extra). Corre como root, lo que amplía el blast radius de una vulnerabilidad. |
+| **Tareas** | 1. Cambiar install de `requirements-dev.txt` → `backend/requirements.txt`. 2. Añadir `RUN adduser --disabled-password --no-create-home appuser` + `USER appuser`. 3. Verificar `docker compose up --build` → backend healthcheck OK. 4. Verificar `docker exec <container> whoami` ≠ root. |
+| **Criterio de aceptación** | Backend arranca y responde en `/health`. Container no corre como root. pytest no está instalado en la imagen. |
+| **Archivos** | `Dockerfile.backend` |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
+#### F11-D — Multi-stage Dockerfile.frontend con nginx + usuario non-root
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Medio — cambia servidor de frontend (Vite dev → nginx) |
+| **Esfuerzo** | M |
+| **Agente** | Codex |
+| **Por qué** | El frontend sirve con Vite dev server en producción: hot-reload activo, source maps sin minificar, imagen de ~400MB. Multi-stage con nginx produce imagen <50MB con archivos estáticos minificados. |
+| **Tareas** | 1. Stage 1 (`node:20-alpine`): `npm ci && npm run build` → genera `dist/`. 2. Stage 2 (`nginx:alpine`): copiar `dist/` + config nginx para SPA routing + headers. 3. Añadir usuario non-root. 4. Ajustar healthcheck en `docker-compose.yml` si cambia endpoint. 5. Verificar `docker compose up --build` → frontend healthy, app funcional. |
+| **Criterio de aceptación** | `docker images` muestra imagen frontend < 50MB. No hay Node.js en runtime. `docker exec <container> whoami` ≠ root. App funcional end-to-end via Docker. |
+| **Archivos** | `Dockerfile.frontend`, `docker-compose.yml`, posible `frontend/nginx.conf` (nuevo) |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
+#### F11-E — Tests de `_edit_helpers.py`: coverage de 60% → 85%+
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — solo añade tests, no modifica lógica |
+| **Esfuerzo** | M |
+| **Agente** | Codex |
+| **Por qué** | `_edit_helpers.py` es el módulo con peor coverage (60%, 55 statements sin cubrir). Contiene lógica de edición de campos que afecta integridad de datos. |
+| **Tareas** | 1. Analizar los statements sin cubrir (L20-57, L68, L70, L78, etc.). 2. Escribir tests unitarios que cubran las ramas de edición, validación y edge cases. 3. Verificar `python -m pytest --cov=backend.app.application.documents._edit_helpers -q` ≥ 85%. |
+| **Criterio de aceptación** | Coverage del módulo ≥ 85%. 264+ tests backend siguen pasando. Ningún test existente modificado. |
+| **Archivos** | `backend/tests/unit/test_edit_helpers.py` (nuevo o ampliado) |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
+#### F11-F — Smoke test final + commit + PR
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — verificación y entrega |
+| **Esfuerzo** | S |
+| **Agente** | Claude |
+| **Por qué** | Gate final de calidad antes de merge. |
+| **Tareas** | 1. Ejecutar smoke checklist: `pytest` → 264+ passed, `npm test` → 168+ passed, `npm run lint` → 0 problems, `tsc --noEmit` → 0 errors, `npm run build` → 0 warnings, `docker compose up --build` → ambos healthy. 2. Ejecutar DOC_UPDATES normalization pass (per AGENTS.md). 3. Commit + push. 4. Crear PR hacia `main`. |
+| **Criterio de aceptación** | Todos los checks del smoke pasan. CI green (6/6 jobs). PR creado con descripción clara. |
+| **Archivos** | Todos los modificados en F11-A a F11-E |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
+**Política de la fase — do-not-change:**
+- Lógica de negocio, tests existentes, CI pipeline, arquitectura, dependencias (versiones).
 - Cada paso es atómico; si uno falla, los demás siguen siendo válidos.
 
 ---
