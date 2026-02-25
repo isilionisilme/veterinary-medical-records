@@ -788,10 +788,145 @@ Below are the 4 architecture ADRs with full arguments, trade-offs, and code evid
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-_Completado: F13-A_
+F13-B — Extraer candidate_mining.py de interpretation.py (candidate mining + date extraction + schema mapping)
+
 ### Prompt
 
-_Vacío._
+```
+--- AGENT IDENTITY CHECK ---
+This prompt is designed for GPT-5.3-Codex in VS Code Copilot Chat.
+If you are not GPT-5.3-Codex: STOP. Tell the user to switch agents.
+--- END IDENTITY CHECK ---
+
+--- BRANCH CHECK ---
+Run: git branch --show-current
+If NOT `improvement/iteration-7-pr1`: STOP. Tell the user to switch.
+--- END BRANCH CHECK ---
+
+--- SYNC CHECK ---
+Run: git pull origin improvement/iteration-7-pr1
+--- END SYNC CHECK ---
+
+--- PRE-FLIGHT CHECK ---
+1. Verify F13-A is `[x]` in Estado de ejecución. If not: STOP.
+2. Verify these files exist:
+   - `backend/app/application/processing/interpretation.py`
+   - `backend/app/application/processing/constants.py`
+--- END PRE-FLIGHT CHECK ---
+
+--- TASK: F13-B — Extract candidate_mining.py from interpretation.py ---
+
+**Goal:** Move the candidate mining, date classification, and schema mapping
+functions from `interpretation.py` into a new `candidate_mining.py` module.
+This is purely a move — NO logic changes.
+
+**What to move to `backend/app/application/processing/candidate_mining.py`:**
+
+1. `_mine_interpretation_candidates(raw_text)` (L212-858, ~646 LOC)
+   - Includes 4 nested helper functions defined inside it:
+     - `split_owner_before_address_tokens`
+     - `normalize_person_fragment`
+     - `add_candidate`
+     - `add_labeled_person_candidates`
+   - ALL of these stay nested inside `_mine_interpretation_candidates`.
+
+2. `_extract_date_candidates_with_classification(raw_text)` (L861-905)
+
+3. `_map_candidates_to_global_schema(candidate_bundle)` (L909-941)
+
+4. `_candidate_sort_key(item, key)` (L943-957)
+
+**What stays in `interpretation.py`:**
+- `_default_now_iso()`
+- `_build_interpretation_artifact()` (the main orchestrator)
+- `_should_include_interpretation_candidates()`
+- `_build_date_selection_debug()`
+- `_build_mvp_coverage_debug_summary()`
+- `_find_line_number_for_snippet()`
+- `_build_structured_fields_from_global_schema()`
+- `_build_field_candidate_suggestions()`
+- `_candidate_suggestion_sort_key()`
+- `_build_structured_field()`
+- `_sanitize_text_extraction_reliability()`
+- `_sanitize_field_review_history_adjustment()`
+- `_sanitize_field_candidate_confidence()`
+- `_derive_mapping_id()`
+- `_resolve_review_history_adjustment()`
+- `_compose_field_mapping_confidence()`
+- `_normalize_candidate_text()`
+
+**Implementation steps:**
+
+1. Create `backend/app/application/processing/candidate_mining.py`:
+   - Docstring: `"""Candidate mining: text → structured candidate extraction for interpretation."""`
+   - Add necessary imports from standard library (only what the moved functions use):
+     `logging`, `re`, `collections.defaultdict`
+   - Import constants from `.constants` (only the ones the moved functions reference).
+   - Import from `backend.app.application.global_schema`: `GLOBAL_SCHEMA_KEYS`, `REPEATABLE_KEYS`.
+   - Import from `backend.app.application.field_normalizers`: `SPECIES_TOKEN_TO_CANONICAL`.
+   - Move the 4 functions listed above.
+
+2. Update `interpretation.py`:
+   - Remove the 4 moved functions.
+   - Add import from new module:
+     ```python
+     from .candidate_mining import (
+         _mine_interpretation_candidates,
+         _extract_date_candidates_with_classification,
+         _map_candidates_to_global_schema,
+     )
+     ```
+   - Remove any constants imports that are no longer used in interpretation.py
+     (but be careful — many constants are used by the remaining field-building
+     functions too, so check each one before removing).
+
+3. **Critical: Do NOT change `_build_interpretation_artifact` or any function
+   signatures. The public API must remain identical.**
+
+4. **Critical: `_candidate_sort_key` is used by `_map_candidates_to_global_schema`
+   (as a lambda callback) — it must be in the same module or imported. Since both
+   move to candidate_mining.py, this is automatic.**
+
+**Verification:**
+- `(Get-Content backend/app/application/processing/interpretation.py).Count` < 800
+- `python -c "from backend.app.application.processing.interpretation import _build_interpretation_artifact; print('OK')"` → OK
+- `python -c "from backend.app.application.processing.candidate_mining import _mine_interpretation_candidates; print('OK')"` → OK
+- `python -m pytest --tb=short -q` → 317+ passed
+
+--- END TASK ---
+
+--- TEST GATE ---
+Backend: cd d:/Git/veterinary-medical-records && python -m pytest --tb=short -q
+Frontend: cd d:/Git/veterinary-medical-records/frontend && npm test -- --run
+If any test fails: STOP. Report failures. Do NOT commit. Do NOT edit the plan.
+--- END TEST GATE ---
+
+--- SCOPE BOUNDARY (two-commit strategy) ---
+STEP A — Commit code (plan untouched):
+1. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
+2. git commit -m "refactor(plan-f13b): extract candidate_mining.py from interpretation.py
+
+Test proof: <pytest summary> | <npm test summary>"
+
+STEP B — Commit plan update:
+1. Change `- [ ] F13-B` to `- [x] F13-B` in Estado de ejecución.
+2. Clean Prompt activo: Paso objetivo → `_Completado: F13-B_`, Prompt → `_Vacío._`
+3. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+4. git commit -m "docs(plan-f13b): mark step done"
+
+STEP C — Push:
+1. git push origin improvement/iteration-7-pr1
+
+STEP D — Update PR description with progress.
+
+STEP E — CI GATE (mandatory):
+1. gh run list --branch improvement/iteration-7-pr1 --limit 1 --json status,conclusion,databaseId
+2. Wait for green. Fix if red.
+
+STEP F — Tell user:
+"✓ F13-B completado, CI verde. Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`. Claude preparará el prompt just-in-time para F13-C."
+--- END SCOPE BOUNDARY ---
+```
 ## Skills instaladas y uso recomendado
 
 ### Arquitectura / calidad
