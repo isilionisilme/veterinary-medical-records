@@ -391,13 +391,18 @@ Data lifecycle behaviors (retention, deletion, export) must be introduced by a d
 
 ## 13. Security Boundary
 
-Authentication and authorization are **out of scope** for the current exercise.
+Authentication and authorization are **minimal and optional** for the current exercise.
 
-All API endpoints are unauthenticated by design. The system is intended to run locally or in a trusted, single-user environment during evaluation. No sensitive credentials, patient-identifying information, or regulated data leave the local host.
+The backend supports an optional bearer-token boundary via `AUTH_TOKEN`:
+
+- If `AUTH_TOKEN` is unset or empty, authentication is disabled and behavior remains unchanged for evaluator flows.
+- If `AUTH_TOKEN` is set, endpoints under `/api/*` require `Authorization: Bearer <AUTH_TOKEN>`.
+
+This keeps local evaluation friction low while enabling a minimal protection layer for deployments that need a basic access gate.
 
 ### Design decisions
 
-- **No auth middleware** is included. Adding a stub would increase surface area without providing real security value in a single-user evaluation context.
+- **Optional auth middleware** is included only for `/api/*` routes and is disabled by default.
 - **Upload validation** enforces file-type checks and content-type verification, but does not enforce authentication.
 - **No rate limiting** is applied. The single-user deployment model makes abuse vectors unlikely.
 
@@ -421,7 +426,7 @@ The current architecture supports this evolution: the hexagonal design and expli
 |---|---|---|---|
 | 1 | Single-process model — API and scheduler share one event loop | No horizontal scaling for processing | [ADR-ARCH-0004](../adr/ADR-ARCH-0004-in-process-async-processing.md); optional worker profile in [FUTURE_IMPROVEMENTS.md](FUTURE_IMPROVEMENTS.md) #14 |
 | 2 | SQLite — single-writer constraint | Write contention under concurrent uploads | WAL mode + busy timeout applied; PostgreSQL adapter in roadmap (#17) |
-| 3 | No authentication layer | All endpoints publicly accessible | Documented above (§13); auth boundary in roadmap (#15) |
+| 3 | Minimal authentication boundary | Root endpoints remain open; token auth is optional and static | Documented above (§13); roadmap keeps full authN/authZ evolution (#15) |
 | 4 | Upload size checked after full read into memory | Memory spike on large files | Streaming guard in roadmap (#9) |
 | 5 | `AppWorkspace.tsx` exceeds 500 LOC target | Maintainability debt in frontend | Decomposition in roadmap ([FUTURE_IMPROVEMENTS.md](FUTURE_IMPROVEMENTS.md) #7b) |
 

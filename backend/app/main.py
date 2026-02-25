@@ -16,12 +16,14 @@ from pathlib import Path
 from typing import cast
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from backend.app.api.routes import MAX_UPLOAD_SIZE as ROUTE_MAX_UPLOAD_SIZE
 from backend.app.api.routes import router as api_router
 from backend.app.config import (
+    auth_token,
     confidence_policy_explicit_config_diagnostics,
     processing_enabled,
 )
@@ -148,9 +150,34 @@ def create_app() -> FastAPI:
     app.state.document_repository = SqliteDocumentRepository()
     app.state.file_storage = LocalFileStorage()
     app.state.settings = settings
+    app.state.auth_token = auth_token()
+
+    @app.middleware("http")
+    async def _optional_api_auth_middleware(request: Request, call_next):
+        if not request.url.path.startswith("/api/"):
+            return await call_next(request)
+
+        configured_token = app.state.auth_token
+        if not configured_token:
+            return await call_next(request)
+
+        auth_header = request.headers.get("authorization", "")
+        scheme, _, credentials = auth_header.partition(" ")
+        if scheme.lower() != "bearer" or credentials != configured_token:
+            return JSONResponse(
+                status_code=401,
+                content={
+                    "error_code": "UNAUTHORIZED",
+                    "message": "Missing or invalid bearer token.",
+                },
+            )
+
+        return await call_next(request)
+
     global MAX_UPLOAD_SIZE
     MAX_UPLOAD_SIZE = ROUTE_MAX_UPLOAD_SIZE  # re-export for compatibility
     app.include_router(api_router)
+    app.include_router(api_router, prefix="/api")
 
     @app.get("/version", summary="Release metadata")
     def version() -> dict[str, str]:

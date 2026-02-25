@@ -38,7 +38,10 @@ def test_client_factory(
     clients: list[TestClient] = []
 
     def _factory(
-        *, disable_processing: bool = True, extraction_obs: str | None = None
+        *,
+        disable_processing: bool = True,
+        extraction_obs: str | None = None,
+        auth_token: str | None = None,
     ) -> TestClient:
         monkeypatch.setenv("VET_RECORDS_DB_PATH", str(db_path))
         monkeypatch.setenv("VET_RECORDS_STORAGE_PATH", str(storage_path))
@@ -51,6 +54,11 @@ def test_client_factory(
             monkeypatch.delenv("VET_RECORDS_EXTRACTION_OBS", raising=False)
         else:
             monkeypatch.setenv("VET_RECORDS_EXTRACTION_OBS", extraction_obs)
+
+        if auth_token is None:
+            monkeypatch.delenv("AUTH_TOKEN", raising=False)
+        else:
+            monkeypatch.setenv("AUTH_TOKEN", auth_token)
 
         clear_settings_cache()
         client = TestClient(create_app())

@@ -37,6 +37,16 @@ def extraction_observability_enabled() -> bool:
     return raw.strip().lower() in {"1", "true", "yes", "on"}
 
 
+def auth_token() -> str | None:
+    """Return optional API bearer token; empty values disable auth boundary."""
+
+    raw = _current_settings().auth_token
+    if raw is None:
+        return None
+    token = raw.strip()
+    return token or None
+
+
 def confidence_policy_version() -> str:
     """Return the active confidence policy version for review payloads."""
 

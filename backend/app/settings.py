@@ -34,6 +34,7 @@ class Settings:
     vet_records_confidence_low_max: str | None
     vet_records_confidence_mid_max: str | None
     vet_records_human_edit_neutral_candidate_confidence: str | None
+    auth_token: str | None
     app_version: str
     git_commit: str
     build_date: str
@@ -71,6 +72,7 @@ def get_settings() -> Settings:
         vet_records_human_edit_neutral_candidate_confidence=_getenv(
             "VET_RECORDS_HUMAN_EDIT_NEUTRAL_CANDIDATE_CONFIDENCE"
         ),
+        auth_token=_getenv("AUTH_TOKEN"),
         app_version=_getenv("APP_VERSION") or "dev",
         git_commit=_getenv("GIT_COMMIT") or "unknown",
         build_date=_getenv("BUILD_DATE") or "unknown",
