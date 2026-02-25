@@ -64,7 +64,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 ### Fase 9 — Iteración 3 (Hardening & Maintainability)
 - [x] F9-A 🚧 — Definir backlog ejecutable de Iteración 3 + prompt activo (Claude)
 - [x] F9-B 🔄 — Upload streaming guard + límite temprano + tests (Codex)
-- [ ] F9-C 🔄 — Auth boundary mínima opcional por configuración + tests/docs (Codex)
+- [x] F9-C 🔄 — Auth boundary mínima opcional por configuración + tests/docs (Codex)
 - [ ] F9-D 🔄 — Decomposición inicial de `AppWorkspace.tsx` + tests de regresión (Codex)
 - [ ] F9-E 🚧 — Validación final Iteración 3 + PR + cierre (Claude)
 
@@ -729,7 +729,7 @@ Below are the 4 architecture ADRs with full arguments, trade-offs, and code evid
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-_Completado: F9-B_
+_Completado: F9-C_
 
 ### Prompt
 
