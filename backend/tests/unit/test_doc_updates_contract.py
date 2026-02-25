@@ -97,14 +97,28 @@ def test_identity_handoff_message_is_canonical_and_persistent() -> None:
         '→ adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."'
     )
     ambiguous = "selecciona el agente asignado para ese paso"
+    same_chat_1 = "Vuelve a Claude (este chat)"
+    same_chat_2 = "Vuelve al chat de Claude"
+    codex_new_chat = (
+        "Siguiente: abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** "
+        "→ adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
+    )
+    claude_new_chat = (
+        "Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** "
+        "→ adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
+    )
     agents_text = _read_text(ROOT_AGENTS)
     plan_text = _read_text(AI_ITERATIVE_EXECUTION_PLAN)
     assert codex_message in agents_text
     assert claude_message in agents_text
     assert codex_message in plan_text
     assert claude_message in plan_text
+    assert codex_new_chat in plan_text
+    assert claude_new_chat in plan_text
     assert ambiguous not in agents_text
     assert ambiguous not in plan_text
+    assert same_chat_1 not in plan_text
+    assert same_chat_2 not in plan_text
 
 
 def test_token_efficiency_policy_persists_for_continue_flow() -> None:

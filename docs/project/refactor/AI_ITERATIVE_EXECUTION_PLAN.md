@@ -893,6 +893,8 @@ Razón: una edición humana accidental (borrar un `[x]`, reformatear una tabla, 
 ### Next-step message (mandatory — hard rule)
 **Al terminar un paso, el agente SIEMPRE indica al usuario el siguiente movimiento con instrucciones concretas.** Nunca terminar sin decir qué agente usar y qué hacer a continuación. Si no hay siguiente paso, decir "Todos los pasos completados." Referencia: sección "Instrucciones de siguiente paso" y STEP F del template SCOPE BOUNDARY.
 
+**Formato obligatorio del handoff:** siempre "abre un chat nuevo" y siempre con nombre exacto del agente siguiente (**GPT-5.3-Codex** o **Claude Opus 4.6**). Nunca indicar "vuelve a este chat".
+
 ### Token-efficiency policy (mandatory)
 Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 1. **iterative-retrieval** antes de ejecutar cada paso: cargar solo estado actual (`primer [ ]`), objetivo del paso, archivos target, guardrails y outputs de validación relevantes.
@@ -971,13 +973,13 @@ Claude lee el Estado, ejecuta el paso y al terminar le dice al usuario el siguie
 Al terminar un paso, el agente SIEMPRE indica al usuario el siguiente movimiento con instrucciones concretas:
 
 - **Si el siguiente paso es de Codex (prompt pre-escrito):**
-  → "Abre un chat nuevo en Copilot → selecciona GPT-5.3-Codex → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
+  → "Abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
 - **Si el siguiente paso es de Codex (just-in-time):**
-  → "Vuelve a Claude (este chat) con el plan adjunto y escribe `Continúa`. Claude preparará el prompt."
+  → "Abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`. Claude preparará el prompt just-in-time."
 - **Si el siguiente paso es de Claude (🚧 hard-gate):**
-  → "Vuelve a Claude (este chat) con el plan adjunto y escribe `Continúa`."
+  → "Abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
 - **Si el siguiente paso es de Claude (🔄 auto-chain):**
-  → "Vuelve a Claude (este chat) con el plan adjunto y escribe `Continúa`."
+  → "Abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
 
 Así el usuario nunca necesita consultar el plan para saber qué hacer — simplemente sigue las indicaciones del agente.
 
@@ -987,7 +989,7 @@ Cuando Codex recibe `Continúa` con este archivo adjunto, sigue esta lógica de 
 ```
 1. Lee Estado de ejecución → encuentra el primer `[ ]`.
 2. Si el paso es de Claude (no de Codex):
-   → STOP. Dile al usuario: "Este paso es de Claude. Vuelve al chat de Claude."
+  → STOP. Dile al usuario: "⚠️ Este paso no corresponde al agente activo. **STOP.** El siguiente paso es de **Claude Opus 4.6**. Abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
 3. Si el paso es F1-A:
    → Lee el prompt de la sección "Fase 1 — Prompt para Codex".
 4. Si el paso es F2-A:
@@ -1095,8 +1097,8 @@ STEP F — Tell the user the NEXT STEP (mandatory — never omit):
 Look at the Estado de ejecución. Find the next `[ ]` step after the one you just completed.
 Then tell the user EXACTLY one of these messages (pick the one that matches):
 
-- If next step says "(Codex)": "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona GPT-5.3-Codex → adjunta AI_ITERATIVE_EXECUTION_PLAN.md → escribe Continúa."
-- If next step says "(Claude)" and is just-in-time: "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona Claude → adjunta AI_ITERATIVE_EXECUTION_PLAN.md → escribe Continúa."
+- If next step says "(Codex)": "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
+- If next step says "(Claude)": "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
 - If no more steps remain: "✓ F?-? completado, CI verde, PR actualizada. Todos los pasos completados."
 
 NEVER end without telling the user what to do next. This is a hard rule.
