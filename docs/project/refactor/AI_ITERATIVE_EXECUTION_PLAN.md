@@ -846,7 +846,9 @@ Nunca mezclar alcance entre pasos. Cada paso del Estado de ejecución es una uni
 3. Si el paso corresponde al **agente activo de este chat**: procede normalmente.
 4. Si el paso corresponde al **otro agente**:
   - **STOP inmediatamente. No leas el prompt. No implementes nada.**
-  - Responde EXACTAMENTE: "⚠️ Este paso no corresponde al agente activo. **STOP.** Abre un chat nuevo en Copilot → selecciona el agente asignado para ese paso → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
+  - Responde EXACTAMENTE con uno de estos mensajes:
+    - Si el siguiente paso es Codex: "⚠️ Este paso no corresponde al agente activo. **STOP.** El siguiente paso es de **GPT-5.3-Codex**. Abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
+    - Si el siguiente paso es Claude: "⚠️ Este paso no corresponde al agente activo. **STOP.** El siguiente paso es de **Claude Opus 4.6**. Abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
 5. Si hay ambigüedad: STOP y pregunta al usuario qué agente corresponde.
 
 > **Razón:** Las disculpas no persisten entre chats. La regla escrita sí.

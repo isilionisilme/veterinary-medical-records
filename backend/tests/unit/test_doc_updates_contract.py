@@ -84,15 +84,27 @@ def test_agents_routes_docs_updated_intent_to_doc_updates() -> None:
 
 
 def test_identity_handoff_message_is_canonical_and_persistent() -> None:
-    canonical = (
+    codex_message = (
         '"⚠️ Este paso no corresponde al agente activo. **STOP.** '
-        "Abre un chat nuevo en Copilot → selecciona el agente asignado para ese paso "
+        "El siguiente paso es de **GPT-5.3-Codex**. "
+        "Abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** "
         '→ adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."'
     )
+    claude_message = (
+        '"⚠️ Este paso no corresponde al agente activo. **STOP.** '
+        "El siguiente paso es de **Claude Opus 4.6**. "
+        "Abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** "
+        '→ adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."'
+    )
+    ambiguous = "selecciona el agente asignado para ese paso"
     agents_text = _read_text(ROOT_AGENTS)
     plan_text = _read_text(AI_ITERATIVE_EXECUTION_PLAN)
-    assert canonical in agents_text
-    assert canonical in plan_text
+    assert codex_message in agents_text
+    assert claude_message in agents_text
+    assert codex_message in plan_text
+    assert claude_message in plan_text
+    assert ambiguous not in agents_text
+    assert ambiguous not in plan_text
 
 
 def test_doc_updates_entry_covers_triggers_and_summary_schema() -> None:
