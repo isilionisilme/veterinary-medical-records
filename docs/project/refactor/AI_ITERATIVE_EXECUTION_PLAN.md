@@ -115,7 +115,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 > frontend tests (82.6%), 0 lint, CI green.
 > **Estrategia:** 4 PRs independientes ordenadas por dependencia para aislar riesgo.
 
-- [ ] F13-A 🔄 — Consolidar constants.py: migrar ~97 líneas de constantes compartidas (Codex)
+- [x] F13-A 🔄 — Consolidar constants.py: migrar ~97 líneas de constantes compartidas (Codex)
 - [ ] F13-B 🔄 — Extraer candidate_mining.py de interpretation.py (648+ LOC) (Codex)
 - [ ] F13-C 🔄 — Extraer confidence_scoring.py + thin interpretation.py < 400 LOC (Codex)
 - [ ] F13-D 🚧 — Shim compatibility + test validation + PR 1 → main (Claude)
@@ -788,149 +788,10 @@ Below are the 4 architecture ADRs with full arguments, trade-offs, and code evid
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-F13-A — Consolidar constants.py: migrar constantes compartidas de 4 archivos
-
+_Completado: F13-A_
 ### Prompt
 
-```
---- AGENT IDENTITY CHECK ---
-This prompt is designed for GPT-5.3-Codex in VS Code Copilot Chat.
-If you are not GPT-5.3-Codex: STOP. Tell the user to switch agents.
---- END IDENTITY CHECK ---
-
---- BRANCH CHECK ---
-Run: git branch --show-current
-If NOT `improvement/iteration-7-pr1`: STOP. Tell the user to switch.
---- END BRANCH CHECK ---
-
---- SYNC CHECK ---
-Run: git pull origin improvement/iteration-7-pr1
---- END SYNC CHECK ---
-
---- PRE-FLIGHT CHECK ---
-1. Verify F12-J is `[x]` in Estado de ejecución. If not: STOP.
-2. Verify these files exist:
-   - `backend/app/application/processing/constants.py`
-   - `backend/app/application/processing/interpretation.py`
-   - `backend/app/application/processing/pdf_extraction.py`
-   - `backend/app/application/processing/orchestrator.py`
-   - `backend/app/application/processing/scheduler.py`
---- END PRE-FLIGHT CHECK ---
-
---- TASK: F13-A — Consolidate shared constants into constants.py ---
-
-The following constants are defined identically in 4 files (`interpretation.py`,
-`pdf_extraction.py`, `orchestrator.py`, `scheduler.py`). Move them ALL to
-`backend/app/application/processing/constants.py` and replace the local
-definitions with imports.
-
-**Constants to migrate (exact names):**
-
-1. Scalar constants (defined in all 4 files):
-   - `PROCESSING_TICK_SECONDS = 0.5`
-   - `PROCESSING_TIMEOUT_SECONDS = 120.0`
-   - `MAX_RUNS_PER_TICK = 10`
-   - `PDF_EXTRACTOR_FORCE_ENV = "PDF_EXTRACTOR_FORCE"`
-   - `INTERPRETATION_DEBUG_INCLUDE_CANDIDATES_ENV = "VET_RECORDS_INCLUDE_INTERPRETATION_CANDIDATES"`
-   - `COVERAGE_CONFIDENCE_LABEL = 0.66`
-   - `COVERAGE_CONFIDENCE_FALLBACK = 0.50`
-
-2. Tuple constant (defined in all 4 files):
-   - `MVP_COVERAGE_DEBUG_KEYS` (21-element tuple of field key strings)
-
-3. Date-related constants (defined in `interpretation.py`, `pdf_extraction.py`, `orchestrator.py`):
-   - `DATE_TARGET_KEYS` (frozenset)
-   - `_DATE_CANDIDATE_PATTERN` (compiled regex)
-   - `_DATE_TARGET_ANCHORS` (dict)
-   - `_DATE_TARGET_PRIORITY` (dict)
-
-4. Microchip regex patterns (defined in `interpretation.py`, `pdf_extraction.py`, `orchestrator.py`):
-   - `_MICROCHIP_KEYWORD_WINDOW_PATTERN`
-   - `_MICROCHIP_DIGITS_PATTERN`
-   - `_MICROCHIP_OCR_PREFIX_WINDOW_PATTERN`
-
-5. Vet/owner/address patterns (defined in `interpretation.py`, `pdf_extraction.py`, `orchestrator.py`):
-   - `_VET_LABEL_LINE_PATTERN`
-   - `_OWNER_LABEL_LINE_PATTERN`
-   - `_OWNER_NOMBRE_LINE_PATTERN`
-   - `_OWNER_CLIENT_HEADER_LINE_PATTERN`
-   - `_OWNER_CLIENT_TABULAR_LABEL_LINE_PATTERN`
-   - `_OWNER_INLINE_CONTEXT_WINDOW_LINES = 2`
-   - `_OWNER_HEADER_LOOKBACK_LINES = 8`
-   - `_OWNER_TABULAR_FORWARD_SCAN_LINES = 8`
-   - `_ADDRESS_SPLIT_PATTERN`
-   - `_ADDRESS_LIKE_PATTERN`
-   - `_PHONE_LIKE_PATTERN`
-   - `_LICENSE_ONLY_PATTERN`
-   - `_OWNER_CONTEXT_PATTERN`
-   - `_OWNER_PATIENT_LABEL_PATTERN`
-   - `_VET_OR_CLINIC_CONTEXT_PATTERN`
-   - `_CLINICAL_RECORD_GUARD_PATTERN`
-
-6. Type/contract constants (defined in `interpretation.py`, `pdf_extraction.py`, `orchestrator.py`):
-   - `NUMERIC_TYPES = (int, float)`
-   - `REVIEW_SCHEMA_CONTRACT = "visit-grouped-canonical"`
-   - `_WHITESPACE_PATTERN` (compiled regex)
-
-**Implementation rules:**
-- Keep `_NAME_TOKEN_PATTERN` that already exists in `constants.py`.
-- Add `import re` at the top of `constants.py` (already there).
-- In each consuming file, replace the local definition block with:
-  ```python
-  from .constants import (
-      PROCESSING_TICK_SECONDS,
-      PROCESSING_TIMEOUT_SECONDS,
-      MAX_RUNS_PER_TICK,
-      # ... only import what THIS file actually uses
-  )
-  ```
-- Only import what each file actually uses (grep for usage before importing).
-- `pdf_extraction.py` has ADDITIONAL constants not shared (e.g., `_PDF_STREAM_PATTERN`,
-  `MAX_CONTENT_STREAM_BYTES`, etc.) — leave those in `pdf_extraction.py`.
-- `scheduler.py` only uses `PROCESSING_TICK_SECONDS`, `PROCESSING_TIMEOUT_SECONDS`,
-  `MAX_RUNS_PER_TICK` — small import.
-- Do NOT change any function signatures, logic, or behavior.
-
-**Verification:**
-- `grep -rn "PROCESSING_TICK_SECONDS =" backend/app/application/processing/` → only 1 hit in `constants.py`.
-- Same for every other migrated constant.
-- `python -m pytest --tb=short -q` → 317+ passed.
-
---- END TASK ---
-
---- TEST GATE ---
-Backend: cd d:/Git/veterinary-medical-records && python -m pytest --tb=short -q
-Frontend: cd d:/Git/veterinary-medical-records/frontend && npm test -- --run
-If any test fails: STOP. Report failures. Do NOT commit. Do NOT edit the plan.
---- END TEST GATE ---
-
---- SCOPE BOUNDARY (two-commit strategy) ---
-STEP A — Commit code (plan untouched):
-1. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
-2. git commit -m "refactor(plan-f13a): consolidate shared constants into processing/constants.py
-
-Test proof: <pytest summary> | <npm test summary>"
-
-STEP B — Commit plan update:
-1. Change `- [ ] F13-A` to `- [x] F13-A` in Estado de ejecución.
-2. Clean Prompt activo: Paso objetivo → `_Completado: F13-A_`, Prompt → `_Vacío._`
-3. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
-4. git commit -m "docs(plan-f13a): mark step done"
-
-STEP C — Push:
-1. git push origin improvement/iteration-7-pr1
-
-STEP D — Update PR description with progress.
-
-STEP E — CI GATE (mandatory):
-1. gh run list --branch improvement/iteration-7-pr1 --limit 1 --json status,conclusion,databaseId
-2. Wait for green. Fix if red.
-
-STEP F — Tell user:
-"✓ F13-A completado, CI verde. Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`. Claude preparará el prompt just-in-time para F13-B."
---- END SCOPE BOUNDARY ---
-```
-
+_Vacío._
 ## Skills instaladas y uso recomendado
 
 ### Arquitectura / calidad
@@ -2171,3 +2032,4 @@ All tests pass: \`pytest\` (backend) + \`npm test\` (frontend)."
 | Evidencia de enfoque incremental | PR storyline existente + iteraciones de esta rama |
 | Plan de mejoras futuras | `docs/project/FUTURE_IMPROVEMENTS.md` (2/4/8 semanas) |
 | Toolchain completo | Ruff + ESLint + Prettier + pre-commit + coverage reporting |
+
