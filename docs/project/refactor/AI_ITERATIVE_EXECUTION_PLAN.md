@@ -95,7 +95,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 > `routes.py` (942 LOC). Objetivo: backend ~92%, frontend ~87%, 0 lint, seguridad
 > completa, deps al día, routes modularizado.
 
-- [ ] F12-A 🔄 — Quick-wins: ESLint `.cjs` fix + nginx security headers + CORS restrictivo (Codex)
+- [x] F12-A 🔄 — Quick-wins: ESLint `.cjs` fix + nginx security headers + CORS restrictivo (Codex)
 - [ ] F12-B 🔄 — Fix `backend-tests` Docker profile: pytest disponible en test stage (Codex)
 - [ ] F12-C 🔄 — Tests `SourcePanelContent.tsx` (0%→80%+) + `AddFieldDialog.tsx` (29%→80%+) (Codex)
 - [ ] F12-D 🔄 — Tests `documentApi.ts` (46%→80%+) + `PdfViewer.tsx` (65%→80%+) (Codex)
