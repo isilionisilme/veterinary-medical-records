@@ -106,6 +106,27 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [x] F12-I 🔄 — Descomposición `routes.py` (942 LOC → módulos por bounded context) (Codex)
 - [x] F12-J 🚧 — Smoke test final + PR (Claude)
 
+### Fase 13 — Iteración 7 (Modularización de monolitos + cobertura)
+
+> **Contexto:** post-merge Iteración 6 identificó 4 archivos monolíticos (>2× guía
+> 500 LOC): `interpretation.py` (1,398), `pdf_extraction.py` (1,150),
+> `AppWorkspace.tsx` (4,011), `extraction_observability.py` (995). Constantes
+> duplicadas ~97 líneas. Métricas de entrada: 317 backend tests (90%), 226
+> frontend tests (82.6%), 0 lint, CI green.
+> **Estrategia:** 4 PRs independientes ordenadas por dependencia para aislar riesgo.
+
+- [ ] F13-A 🔄 — Consolidar constants.py: migrar ~97 líneas de constantes compartidas (Claude)
+- [ ] F13-B 🔄 — Extraer candidate_mining.py de interpretation.py (648+ LOC) (Claude)
+- [ ] F13-C 🔄 — Extraer confidence_scoring.py + thin interpretation.py < 400 LOC (Claude)
+- [ ] F13-D 🚧 — Shim compatibility + test validation + PR 1 → main (Claude)
+- [ ] F13-E 🔄 — Extraer pdf_extraction_nodeps.py (~900 LOC fallback sin deps) (Claude)
+- [ ] F13-F 🚧 — Thin dispatcher < 300 LOC + test validation + PR 2 → main (Claude)
+- [ ] F13-G 🔄 — Extraer hooks de estado: useStructuredDataFilters, useFieldEditing, useUploadState (Claude)
+- [ ] F13-H 🚧 — Extraer hooks de UI: useReviewSplitPanel, useDocumentsSidebar + PR 3 → main (Claude)
+- [ ] F13-I 🔄 — Split extraction_observability.py en 4 módulos < 300 LOC (Claude)
+- [ ] F13-J 🔄 — Coverage: PdfViewer 47%→60%+, config.py 83%→90%+, documentApi.ts 67%→80%+ (Claude)
+- [ ] F13-K 🚧 — FUTURE_IMPROVEMENTS refresh + smoke test + PR 4 → main (Claude)
+
 ---
 
 ## Resultados de auditorías — rellenar automáticamente al completar cada auditoría
@@ -1292,6 +1313,178 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 - Lógica de negocio, tests existentes, CI pipeline, arquitectura (excepto F12-I routes split que es refactor estructural sin cambio funcional).
 - Cada paso es atómico; si F12-I se complica, se puede omitir y la iteración sigue siendo sólida.
 - Si el bump de deps (F12-H) causa breaking changes no triviales, revertir y documentar en FUTURE_IMPROVEMENTS.
+
+---
+
+### Fase 13 — Iteración 7: Modularización de monolitos + cobertura
+
+**Rama PR 1:** `improvement/iteration-7-pr1` desde `main`
+**Rama PR 2:** `improvement/iteration-7-pr2` desde `main` (tras merge de PR 1)
+**Rama PR 3:** `improvement/iteration-7-pr3` desde `main` (tras merge de PR 2)
+**Rama PR 4:** `improvement/iteration-7-pr4` desde `main` (tras merge de PR 3)
+**Agente:** Claude (F13-A..K)
+**Objetivo:** Descomponer 4 archivos monolíticos, consolidar constantes DRY, y cerrar gaps de cobertura frontend.
+
+**Evaluación previa (evidencia):**
+- 317 backend tests (90% coverage), 226 frontend tests (82.6% stmts), 0 lint warnings, CI green (6/6 jobs).
+- `interpretation.py` 1,398 LOC (3× guía), `pdf_extraction.py` 1,150 LOC (2×), `AppWorkspace.tsx` 4,011 LOC (8×), `extraction_observability.py` 995 LOC (2×).
+- ~97 líneas de constantes triplicadas en `interpretation.py`, `pdf_extraction.py`, `orchestrator.py`.
+- `constants.py` solo tiene 7 líneas (`_NAME_TOKEN_PATTERN`).
+- `processing_runner.py` es shim de re-exportación; todos los tests importan vía shim.
+
+**Estrategia de PRs (mitigación de riesgo):**
+1. **PR 1 — interpretation.py** (F13-A..D): consolida constants + extrae candidate_mining y confidence_scoring. Menor acoplamiento externo.
+2. **PR 2 — pdf_extraction.py** (F13-E..F): extrae fallback no-deps. Usa constants consolidados de PR 1.
+3. **PR 3 — AppWorkspace.tsx** (F13-G..H): extracción de hooks de estado/UI. Mayor riesgo → base backend estable.
+4. **PR 4 — Suplementario** (F13-I..K): observability split + coverage + docs refresh.
+
+#### F13-A — Consolidar constants.py: migrar constantes compartidas
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — refactor mecánico de constantes, sin cambio de lógica |
+| **Esfuerzo** | S |
+| **Agente** | Claude |
+| **Por qué** | ~97 líneas de constantes (regex de campos, umbrales de confianza, mapeos de secciones, listas de stop-words) están triplicadas en `interpretation.py` (L14-97), `pdf_extraction.py`, y `orchestrator.py`. Violación DRY que complica mantenimiento y es defecto visible para evaluadores. |
+| **Tareas** | 1. Identificar todas las constantes duplicadas entre los 3 archivos. 2. Migrarlas a `processing/constants.py` (que ya tiene `_NAME_TOKEN_PATTERN`). 3. Reemplazar definiciones locales por imports en los 3 archivos. 4. Verificar `pytest` → 317+ passed. |
+| **Criterio de aceptación** | `grep -r` de cada constante migrada muestra 1 definición en `constants.py` y solo imports en los demás. 317+ tests pasan. |
+| **Archivos** | `backend/app/application/processing/constants.py`, `interpretation.py`, `pdf_extraction.py`, `orchestrator.py` |
+| **Ref FUTURE_IMPROVEMENTS** | Item DRY constants |
+
+#### F13-B — Extraer candidate_mining.py de interpretation.py
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Medio — función más grande del codebase (648 LOC), 4 helpers anidados |
+| **Esfuerzo** | M |
+| **Agente** | Claude |
+| **Por qué** | `_mine_interpretation_candidates` (L281-928) representa 46% de interpretation.py. Contiene toda la lógica de extracción de candidatos con 4 helpers anidados. Extraerla reduce interpretation.py de 1,398 a ~750 LOC. |
+| **Tareas** | 1. Crear `processing/candidate_mining.py`. 2. Mover `_mine_interpretation_candidates` + sus helpers + `_extract_date_candidates_with_classification` + funciones auxiliares de parsing. 3. Importar la función desde interpretation.py. 4. Verificar `pytest` → 317+ passed. |
+| **Criterio de aceptación** | `candidate_mining.py` autosuficiente. interpretation.py < 800 LOC. 317+ tests pasan. |
+| **Archivos** | `processing/candidate_mining.py` (nuevo), `processing/interpretation.py` |
+| **Ref FUTURE_IMPROVEMENTS** | Item modularización |
+
+#### F13-C — Extraer confidence_scoring.py + thin interpretation.py
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — funciones bien delimitadas con interfaces claras |
+| **Esfuerzo** | S |
+| **Agente** | Claude |
+| **Por qué** | Confidence scoring y field assembly (L1108-1399, ~290 LOC) son concern independiente. Extraerlas deja interpretation.py como orquestador thin. |
+| **Tareas** | 1. Crear `processing/confidence_scoring.py`. 2. Mover funciones de scoring + ensamblaje de campos. 3. Dejar interpretation.py como orchestration-only. 4. Verificar `pytest` → 317+ passed. |
+| **Criterio de aceptación** | `confidence_scoring.py` independiente. interpretation.py < 400 LOC. 317+ tests pasan. |
+| **Archivos** | `processing/confidence_scoring.py` (nuevo), `processing/interpretation.py` |
+| **Ref FUTURE_IMPROVEMENTS** | Item modularización |
+
+#### F13-D — Shim compatibility + test validation + PR 1
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — verificación y entrega |
+| **Esfuerzo** | S |
+| **Agente** | Claude |
+| **Por qué** | `processing_runner.py` re-exporta símbolos públicos. 6+ test files importan vía shim. Gate final de PR 1. |
+| **Tareas** | 1. Actualizar `processing_runner.py` para re-exportar desde nuevos módulos si necesario. 2. Verificar imports existentes. 3. Smoke: `pytest` → 317+ passed, `npm test` → 226+ passed, lint → 0. 4. Commit + push + crear PR 1 → main. |
+| **Criterio de aceptación** | Shim mantiene API pública intacta. CI green. PR creado. |
+| **Archivos** | `processing_runner.py`, todos los modificados en F13-A..C |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
+#### F13-E — Extraer pdf_extraction_nodeps.py (~900 LOC fallback)
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Medio — parsing PDF bajo nivel, muchos edge cases |
+| **Esfuerzo** | M |
+| **Agente** | Claude |
+| **Por qué** | Estrategia "no-deps" (fallback puro Python) ocupa ~900 LOC. Incluye parser de objetos PDF, tokenizer, font/CMap, text stitching, byte helpers. Autosuficiente. |
+| **Tareas** | 1. Crear `processing/pdf_extraction_nodeps.py`. 2. Mover funciones del fallback no-deps. 3. Dejar pdf_extraction.py como dispatcher < 300 LOC. 4. Verificar `pytest` → 317+ passed. |
+| **Criterio de aceptación** | `pdf_extraction_nodeps.py` autosuficiente. `pdf_extraction.py` < 300 LOC. 317+ tests pasan. |
+| **Archivos** | `processing/pdf_extraction_nodeps.py` (nuevo), `processing/pdf_extraction.py` |
+| **Ref FUTURE_IMPROVEMENTS** | Item modularización |
+
+#### F13-F — Thin dispatcher + test validation + PR 2
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — verificación y entrega |
+| **Esfuerzo** | S |
+| **Agente** | Claude |
+| **Por qué** | Gate final de PR 2. Verificar dispatcher y cobertura. |
+| **Tareas** | 1. Asegurar pdf_extraction.py usa constants de `constants.py`. 2. Actualizar shim si necesario. 3. Smoke: `pytest` → 317+, `npm test` → 226+. 4. Commit + push + PR 2 → main. |
+| **Criterio de aceptación** | Dispatcher < 300 LOC. Sin constantes duplicadas. CI green. PR creado. |
+| **Archivos** | `processing/pdf_extraction.py`, `processing_runner.py` |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
+#### F13-G — Extraer hooks de estado: useStructuredDataFilters, useFieldEditing, useUploadState
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Medio — AppWorkspace.tsx tiene 42 useState, cambios afectan flujo completo |
+| **Esfuerzo** | M |
+| **Agente** | Claude |
+| **Por qué** | AppWorkspace.tsx (4,011 LOC) tiene 42 useState, 22 useRef, ~30 useMemo. Extraer 3 hooks reduce ~17 state variables. |
+| **Tareas** | 1. Crear `hooks/useStructuredDataFilters.ts` (6 state vars). 2. Crear `hooks/useFieldEditing.ts` (5 state vars + mutation). 3. Crear `hooks/useUploadState.ts` (6 state vars + drag). 4. Reemplazar en AppWorkspace. 5. `npm test` → 226+ passed. |
+| **Criterio de aceptación** | 3 hooks creados. Cada hook ≤150 LOC. AppWorkspace reduced ~300+ LOC. 226+ tests pasan. |
+| **Archivos** | `hooks/useStructuredDataFilters.ts`, `hooks/useFieldEditing.ts`, `hooks/useUploadState.ts` (nuevos), `AppWorkspace.tsx` |
+| **Ref FUTURE_IMPROVEMENTS** | Item AppWorkspace decomposition |
+
+#### F13-H — Extraer hooks de UI + validation + PR 3
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Medio — hooks de UI interactúan con eventos de puntero y resize |
+| **Esfuerzo** | M |
+| **Agente** | Claude |
+| **Por qué** | Dos hooks de UI restantes + gate final de PR 3. |
+| **Tareas** | 1. Crear `hooks/useReviewSplitPanel.ts` (4 state vars + pointer). 2. Crear `hooks/useDocumentsSidebar.ts` (4 state vars + resize). 3. Reemplazar en AppWorkspace. 4. Verificar < 2,500 LOC. 5. Smoke + PR 3 → main. |
+| **Criterio de aceptación** | AppWorkspace < 2,500 LOC. 5 hooks en `hooks/`. 226+ tests. CI green. PR creado. |
+| **Archivos** | `hooks/useReviewSplitPanel.ts`, `hooks/useDocumentsSidebar.ts` (nuevos), `AppWorkspace.tsx` |
+| **Ref FUTURE_IMPROVEMENTS** | Item AppWorkspace decomposition |
+
+#### F13-I — Split extraction_observability.py en módulos
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — 4 segmentos naturales bien delimitados |
+| **Esfuerzo** | M |
+| **Agente** | Claude |
+| **Por qué** | `extraction_observability.py` (995 LOC) tiene 4 segmentos: snapshot, persistence, triage, reporting. |
+| **Tareas** | 1. Crear `extraction_observability/` package. 2. Mover: snapshot → `snapshot.py`, persistence → `persistence.py`, triage → `triage.py`, summary → `reporting.py`. 3. `__init__.py` re-exporta API pública. 4. Actualizar imports. 5. `pytest` → 317+ passed. |
+| **Criterio de aceptación** | Cada módulo < 300 LOC. API pública sin cambios. 317+ tests pasan. |
+| **Archivos** | `extraction_observability/` (nuevo package), `extraction_observability.py` (eliminado) |
+| **Ref FUTURE_IMPROVEMENTS** | Item modularización |
+
+#### F13-J — Coverage: PdfViewer branch, config.py, documentApi.ts
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — tests aditivos |
+| **Esfuerzo** | M |
+| **Agente** | Claude |
+| **Por qué** | 3 archivos con gaps: PdfViewer branch 47%, config.py 83%, documentApi.ts branch 67%. |
+| **Tareas** | 1. PdfViewer: branch coverage → 60%+. 2. config.py: paths alternativos → 90%+. 3. documentApi.ts: error paths → 80%+. |
+| **Criterio de aceptación** | PdfViewer branch ≥60%. config.py ≥90%. documentApi.ts branch ≥80%. Tests verdes. |
+| **Archivos** | `PdfViewer.test.tsx`, `test_config.py`, `documentApi.test.ts` |
+| **Ref FUTURE_IMPROVEMENTS** | Items 4, 12 |
+
+#### F13-K — FUTURE_IMPROVEMENTS refresh + smoke test + PR 4
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — docs + verificación |
+| **Esfuerzo** | S |
+| **Agente** | Claude |
+| **Por qué** | FUTURE_IMPROVEMENTS tiene items completados sin marcar. Gate final de Iteración 7. |
+| **Tareas** | 1. Actualizar FUTURE_IMPROVEMENTS.md. 2. Smoke: `pytest` → 317+, `npm test` → 226+, lint → 0, CI green. 3. Commit + push + PR 4 → main. |
+| **Criterio de aceptación** | FUTURE_IMPROVEMENTS actualizado. Todos los checks pasan. CI green. PR 4 creado. |
+| **Archivos** | `FUTURE_IMPROVEMENTS.md`, todos los modificados en F13-I..J |
+| **Ref FUTURE_IMPROVEMENTS** | Refresh completo |
+
+**Política de la fase — do-not-change:**
+- Contratos HTTP, schemas de respuesta, CI pipeline, ADRs.
+- Cada PR es atómica: si una falla, las posteriores pueden proceder si no dependen de ella.
+- AppWorkspace target es < 2,500 LOC (no < 500, ya que la lógica de UI es inherentemente densa).
 
 ---
 
