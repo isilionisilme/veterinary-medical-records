@@ -99,11 +99,11 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [x] F12-B 🔄 — Fix `backend-tests` Docker profile: pytest disponible en test stage (Codex)
 - [x] F12-C 🔄 — Tests `SourcePanelContent.tsx` (0%→80%+) + `AddFieldDialog.tsx` (29%→80%+) (Codex)
 - [x] F12-D 🔄 — Tests `documentApi.ts` (46%→80%+) + `PdfViewer.tsx` (65% aceptado—canvas/observers no testeables en jsdom) (Codex)
-- [ ] F12-E 🔄 — Tests `ReviewFieldRenderers.tsx` (76%→85%+) + `ReviewSectionLayout.tsx` (91%→95%+) (Codex)
-- [ ] F12-F 🔄 — Tests `orchestrator.py` (76%→85%+) + `database.py` (74%→85%+) (Codex)
-- [ ] F12-G 🔄 — Tests `pdf_extraction.py` (78%→85%+) (Codex)
-- [ ] F12-H 🔄 — Bump dependencias backend: FastAPI, uvicorn, httpx, python-multipart (Codex)
-- [ ] F12-I 🔄 — Descomposición `routes.py` (942 LOC → módulos por bounded context) (Codex)
+- [x] F12-E 🔄 — Tests `ReviewFieldRenderers.tsx` (76%→85%+) + `ReviewSectionLayout.tsx` (91%→95%+) (Codex)
+- [x] F12-F 🔄 — Tests `orchestrator.py` (76%→85%+) + `database.py` (74%→85%+) (Codex)
+- [x] F12-G 🔄 — Tests `pdf_extraction.py` (78%→85%+) (Codex)
+- [x] F12-H 🔄 — Bump dependencias backend: FastAPI, uvicorn, httpx, python-multipart (Codex)
+- [ ] F12-I 🔄 — Descomposición `routes.py` (942 LOC → módulos por bounded context) (Codex) 🚫 BLOQUEADO (complejidad estructural; requiere prompt dedicado)
 - [ ] F12-J 🚧 — Smoke test final + PR (Claude)
 
 ---
@@ -767,97 +767,10 @@ Below are the 4 architecture ADRs with full arguments, trade-offs, and code evid
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-F12-E → F12-I (Codex auto-chain, Iteración 6 — continuación)
+_Completado parcial: F12-E…F12-H. Pendiente: F12-I._
 
 ### Prompt
-
-**Branch:** `improvement/iteration-6`
-**Scope:** F12-E through F12-I — remaining coverage, dependency bump & routes decomposition.
-**Context:** F12-A–D are already completed. F12-D accepted PdfViewer at 65.89% (canvas/observer APIs not testeable in jsdom). Continue from F12-E.
-**Policy:** do NOT modify business logic, existing passing tests, or CI pipeline config. Each step is atomic. If F12-I (routes decomposition) becomes complex, skip it and leave a note.
-
-**IMPORTANT:** After completing ALL steps below, mark F12-E through F12-I as `[x]` in Estado de ejecución, clean this Prompt activo section (`_Completado: F12-I_` / `_Vacío._`), commit, and push. Then STOP and tell the user to open Claude for F12-J.
-
----
-
-_Steps F12-A through F12-D already completed. Continue from F12-E._
-
----
-
-#### Step F12-E — Tests ReviewFieldRenderers + ReviewSectionLayout
-
-1. **Create `frontend/src/components/review/ReviewFieldRenderers.test.tsx`**: Read the component. Test each renderer type (text, date, select, repeatable fields), edge cases (missing data, empty arrays), conditional rendering.
-
-2. **Create or expand `frontend/src/components/review/ReviewSectionLayout.test.tsx`**: Test collapsed/expanded states, empty fields, loading states, section header rendering.
-
-3. **Verify:** `cd frontend && npx vitest run --coverage` — `ReviewFieldRenderers.tsx` ≥85%, `ReviewSectionLayout.tsx` ≥95%.
-
-4. **Commit:** `git add -A && git commit -m "test(frontend): ReviewFieldRenderers ≥85% and ReviewSectionLayout ≥95%"`
-
----
-
-#### Step F12-F — Tests orchestrator + database
-
-1. **Create or expand `backend/tests/unit/test_orchestrator.py`**: Read `orchestrator.py`. Mock I/O deps. Test: processing run timeout, partial extraction failure, error cleanup, state transitions on failure. Target ≥85%.
-
-2. **Create or expand `backend/tests/unit/test_database.py`**: Read `database.py`. Test: fresh DB creation (all tables created), schema migration paths (ALTER TABLE), `_table_columns` helper, error paths. Use in-memory SQLite. Target ≥85%.
-
-3. **Verify:** `python -m pytest --cov=backend/app --cov-report=term-missing` — both files ≥85%.
-
-4. **Commit:** `git add -A && git commit -m "test(backend): orchestrator and database coverage ≥85%"`
-
----
-
-#### Step F12-G — Tests pdf_extraction
-
-1. **Create or expand `backend/tests/unit/test_pdf_extraction.py`**: Read `pdf_extraction.py` (1000 lines). Focus on the 180 uncovered statements. Mock `fitz` where needed. Test: extraction fallback when fitz fails, text sanitization edge cases, empty/corrupt PDF handling, table detection with empty cells, pagination edge cases, each `_extract_*` helper. Target ≥85%.
-
-2. **Verify:** `python -m pytest --cov=backend/app/application/processing/pdf_extraction --cov-report=term-missing` — ≥85%.
-
-3. **Commit:** `git add -A && git commit -m "test(backend): pdf_extraction coverage ≥85%"`
-
----
-
-#### Step F12-H — Bump backend dependencies
-
-1. **`backend/requirements.txt`**: Update to latest stable versions compatible with Python 3.11:
-   - `fastapi` → latest 0.115.x or newer
-   - `uvicorn` → latest 0.34.x or newer
-   - `httpx` → latest 0.28.x or newer
-   - `python-multipart` → latest 0.0.x or newer
-   - `PyMuPDF` → keep current or bump if compatible
-   - `python-dotenv` → keep current or bump if compatible
-
-2. **Run:** `pip install -r backend/requirements.txt && python -m pytest backend/tests -q` — all pass.
-
-3. **If breaking changes appear:** fix the minimal code changes needed. If too complex, revert to current version for that dep and add a note in commit message.
-
-4. **Commit:** `git add -A && git commit -m "chore: bump backend dependencies to latest stable"`
-
----
-
-#### Step F12-I — Decompose routes.py
-
-1. **Read `backend/app/api/routes.py`** (942 lines). Identify endpoint groups by bounded context.
-
-2. **Create sub-modules:**
-   - `backend/app/api/routes_documents.py` — document CRUD endpoints
-   - `backend/app/api/routes_processing.py` — processing/extraction endpoints
-   - `backend/app/api/routes_review.py` — review workflow endpoints
-   - `backend/app/api/routes_calibration.py` — calibration endpoints
-   - `backend/app/api/routes_health.py` — health/metadata endpoints
-
-3. **Reduce `routes.py`** to a small aggregator that creates the main router and does `router.include_router(...)` for each sub-module. Target ≤150 LOC.
-
-4. **Do NOT change:** URL paths, HTTP methods, request/response schemas, or behavior.
-
-5. **Verify:** `python -m pytest backend/tests -q` — all 275+ pass. Check `/docs` endpoint still shows all routes.
-
-6. **If this becomes complex (>1h equivalent), SKIP and leave F12-I unchecked.** The iteration is still solid without it.
-
-7. **Commit:** `git add -A && git commit -m "refactor(api): decompose routes.py into bounded-context modules"`
-
----
+_Vacío._
 
 ## Skills instaladas y uso recomendado
 
