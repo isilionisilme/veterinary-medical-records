@@ -21,6 +21,14 @@ DOC_UPDATES_TEST_IMPACT_MAP = (
 DOC_UPDATES_ROUTER_PARITY_MAP = (
     REPO_ROOT / "docs" / "agent_router" / "01_WORKFLOW" / "DOC_UPDATES" / "router_parity_map.json"
 )
+AI_ITERATIVE_PLAN_ROUTER_ENTRY = (
+    REPO_ROOT
+    / "docs"
+    / "agent_router"
+    / "04_PROJECT"
+    / "AI_ITERATIVE_EXECUTION_PLAN"
+    / "00_entry.md"
+)
 DOC_TEST_SYNC_GUARD = REPO_ROOT / "scripts" / "check_doc_test_sync.py"
 DOC_ROUTER_PARITY_GUARD = REPO_ROOT / "scripts" / "check_doc_router_parity.py"
 DOCS_ROOT = REPO_ROOT / "docs"
@@ -69,6 +77,7 @@ def test_agents_routes_docs_updated_intent_to_doc_updates() -> None:
     assert "docs/agent_router/01_WORKFLOW/DOC_UPDATES/00_entry.md" in text
     assert "documentation was updated" in lower
     assert "run the doc_updates normalization pass once" in lower
+    assert "belongs to the active agent for this chat" in text
 
 
 def test_doc_updates_entry_covers_triggers_and_summary_schema() -> None:
@@ -171,6 +180,13 @@ def test_router_parity_map_has_product_design_rule() -> None:
         '76_conceptual-model-local-schema-global-schema-and-mapping.md"' in text
     )
     assert '"required_terms"' in text
+
+
+def test_ai_iterative_plan_owner_entry_tracks_phase_8_append_only_update() -> None:
+    text = _read_text(AI_ITERATIVE_PLAN_ROUTER_ENTRY)
+    assert "AI_ITERATIVE_EXECUTION_PLAN — Modules" in text
+    assert "Phase 8 (Iteration 2) appended" in text
+    assert "improvement/refactor-iteration-2" in text
 
 
 def test_rules_index_contains_known_mapping_hints() -> None:

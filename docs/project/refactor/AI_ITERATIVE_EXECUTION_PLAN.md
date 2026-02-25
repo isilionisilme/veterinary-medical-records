@@ -54,6 +54,13 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 ### Fase 7 — Cierre global
 - [x] F7-A 🚧 — Veredicto final + PR a main (Claude/Codex)
 
+### Fase 8 — Iteración 2 (CTO verdict)
+- [x] F8-A 🚧 — Setup branch + guardrails + prompt activo (Codex)
+- [ ] F8-B 🔄 — SQLite WAL + busy_timeout + test de concurrencia (Codex)
+- [ ] F8-C 🔄 — Subir cobertura de `frontend/src/lib/utils.ts` (Codex)
+- [ ] F8-D 🚧 — Security boundary docs + nota AppWorkspace + roadmap update (Claude)
+- [ ] F8-E 🚧 — Validación final + PR nueva + cierre iteración (Claude)
+
 ---
 
 ## Resultados de auditorías — rellenar automáticamente al completar cada auditoría
@@ -715,10 +722,77 @@ Below are the 4 architecture ADRs with full arguments, trade-offs, and code evid
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-_Completado: F6-A_
+F8-B
 
 ### Prompt
-_Vacío._
+```md
+--- AGENT IDENTITY CHECK ---
+This prompt is designed for GPT-5.3-Codex.
+If you are not GPT-5.3-Codex: STOP and tell the user to switch to GPT-5.3-Codex.
+--- END IDENTITY CHECK ---
+
+--- BRANCH CHECK ---
+Run: git branch --show-current
+If NOT `improvement/refactor-iteration-2`: STOP. Tell the user to switch branch.
+--- END BRANCH CHECK ---
+
+--- SYNC CHECK ---
+Run: git pull origin improvement/refactor-iteration-2
+--- END SYNC CHECK ---
+
+--- TASK (F8-B) ---
+Implement SQLite concurrency hardening and tests:
+
+1) Update `backend/app/infra/database.py` so every connection applies:
+  - `PRAGMA journal_mode=WAL`
+  - `PRAGMA busy_timeout=5000`
+
+2) Add integration coverage in backend tests to validate:
+  - WAL mode is enabled (`PRAGMA journal_mode` resolves to `wal`).
+  - A concurrent read during an active write transaction does not fail with `database is locked`.
+
+3) Update `docs/project/refactor/codebase_audit.md` finding #7 from open to resolved with brief evidence note.
+
+Constraints:
+- Keep behavior backward compatible.
+- Do not refactor unrelated modules.
+- Follow existing pytest integration patterns.
+
+--- TEST GATE (mandatory) ---
+Backend: cd d:/Git/veterinary-medical-records && python -m pytest --tb=short -q
+Frontend: cd d:/Git/veterinary-medical-records/frontend && npm test
+If any test fails: STOP. Report failures. Do NOT commit. Do NOT edit plan.
+--- END TEST GATE ---
+
+--- SCOPE BOUNDARY (two-commit strategy) ---
+STEP A — Commit code first (plan untouched):
+git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
+git commit -m "improvement(plan-f8b): enable sqlite wal+busy timeout and add concurrency integration test
+
+Test proof: <pytest summary> | <npm test summary>"
+
+STEP B — Commit plan update after code commit:
+- Mark `- [ ] F8-B` as `[x]`
+- Set `### Paso objetivo` to `F8-C`
+- Replace `### Prompt` with the just-in-time prompt for F8-C
+git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+git commit -m "docs(plan-f8b): mark step done"
+
+STEP C — Push:
+git push origin improvement/refactor-iteration-2
+
+STEP D — PR update:
+If PR exists, update with `gh pr edit <pr_number> --body-file <file>`.
+If PR does not exist yet, create it with base `main` and head `improvement/refactor-iteration-2`.
+
+STEP E — CI gate:
+gh run list --branch improvement/refactor-iteration-2 --limit 1 --json status,conclusion,databaseId
+Wait/retry until completed; do not declare done without green CI.
+
+STEP F — Next-step message:
+Tell user to continue with F8-C in Codex.
+--- END SCOPE BOUNDARY ---
+```
 
 ---
 
@@ -765,14 +839,15 @@ Estas áreas puntúan alto con los evaluadores. Todo cambio debe preservarlas:
 ### Iteraciones atómicas
 Nunca mezclar alcance entre pasos. Cada paso del Estado de ejecución es una unidad atómica: se ejecuta, se commitea, se pushea, se marca `[x]`. Si falla, se reporta — no se continúa al siguiente.
 
-### Regla de identidad para Claude (hard rule — se aplica antes que cualquier otra)
-**Si eres Claude** y el usuario escribe `Continúa`:
+### Regla de identidad por agente activo (hard rule — se aplica antes que cualquier otra)
+**Si el usuario escribe `Continúa`:**
 1. Lee el Estado de ejecución y encuentra el primer `[ ]`.
-2. Si ese paso está marcado como 🔄 **(Codex)** o el texto del paso incluye "(Codex)":
-   - **STOP inmediatamente. No leas el prompt. No implementes nada.**
-   - Responde EXACTAMENTE: "⚠️ Este paso es de Codex, no de Claude. **STOP.** Abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
-3. Si el paso es 🚧 **(Claude)**: procede normalmente.
-4. Si hay ambigüedad: STOP y pregunta al usuario qué agente corresponde.
+2. Identifica el agente asignado a ese paso (🔄 Codex o 🚧 Claude).
+3. Si el paso corresponde al **agente activo de este chat**: procede normalmente.
+4. Si el paso corresponde al **otro agente**:
+  - **STOP inmediatamente. No leas el prompt. No implementes nada.**
+  - Indica exactamente el handoff al agente correcto: abrir chat nuevo, seleccionar el agente asignado, adjuntar `AI_ITERATIVE_EXECUTION_PLAN.md` y escribir `Continúa`.
+5. Si hay ambigüedad: STOP y pregunta al usuario qué agente corresponde.
 
 > **Razón:** Las disculpas no persisten entre chats. La regla escrita sí.
 
@@ -796,7 +871,7 @@ Si un paso completado causa un problema no detectado por los tests:
 Razón: una edición humana accidental (borrar un `[x]`, reformatear una tabla, truncar un prompt) puede corromper el routing y causar que Codex repita o salte pasos.
 
 ### PR progress tracking (mandatory)
-**Cada paso completado debe reflejarse en la PR #145.** Al terminar el SCOPE BOUNDARY (después del push), el agente actualiza el body de la PR con `gh pr edit 145 --body "..."`. Esto es obligatorio tanto para Codex como para Claude. Si el comando falla, reportar al usuario pero NO bloquear el paso.
+**Cada paso completado debe reflejarse en la PR activa de la iteración actual.** Al terminar el SCOPE BOUNDARY (después del push), el agente actualiza el body de la PR con `gh pr edit <pr_number> --body "..."`. Esto es obligatorio tanto para Codex como para Claude. Si el comando falla, reportar al usuario pero NO bloquear el paso.
 
 ### CI verification (mandatory — hard rule)
 **Ningún paso se considera completado hasta que el CI de GitHub esté verde.** Los tests locales son necesarios pero NO suficientes. Después del push, el agente DEBE:
@@ -809,6 +884,12 @@ Razón: una edición humana accidental (borrar un `[x]`, reformatear una tabla, 
 
 ### Next-step message (mandatory — hard rule)
 **Al terminar un paso, el agente SIEMPRE indica al usuario el siguiente movimiento con instrucciones concretas.** Nunca terminar sin decir qué agente usar y qué hacer a continuación. Si no hay siguiente paso, decir "Todos los pasos completados." Referencia: sección "Instrucciones de siguiente paso" y STEP F del template SCOPE BOUNDARY.
+
+### F8-A — Setup Iteration 2 (meta)
+- ✅ Rama de trabajo creada desde `main`: `improvement/refactor-iteration-2`.
+- ✅ Estrategia histórica confirmada: este archivo se mantiene **append-only** (F1-F7 intactas).
+- ✅ Routing de identidad actualizado a regla por agente activo (Claude/Codex, bidireccional).
+- ✅ PR de referencia anterior (`#146`) descartada para esta iteración; usar PR nueva al abrirla.
 
 ### Plan-edit-last (hard constraint)
 **Codex NO edita `AI_ITERATIVE_EXECUTION_PLAN.md` hasta que los tests pasen y el código esté commiteado.** La secuencia obligatoria es:
@@ -927,11 +1008,11 @@ If you are not GPT-5.3-Codex: STOP. Tell the user to switch agents.
 
 --- BRANCH CHECK ---
 Run: git branch --show-current
-If NOT `improvement/refactor`: STOP. Tell the user: "⚠️ Cambia a la rama improvement/refactor antes de continuar: git checkout improvement/refactor"
+If NOT `<active_iteration_branch>`: STOP. Tell the user to switch to the active iteration branch.
 --- END BRANCH CHECK ---
 
 --- SYNC CHECK ---
-Run: git pull origin improvement/refactor
+Run: git pull origin <active_iteration_branch>
 This ensures the local copy has the latest Estado, Resultados, and Prompt activo from previous sessions.
 --- END SYNC CHECK ---
 
@@ -966,11 +1047,11 @@ STEP B — Commit plan update (only after code is committed):
 4. git commit -m "docs(plan-f?-?): mark step done"
 
 STEP C — Push both commits:
-1. git push origin improvement/refactor
+1. git push origin <active_iteration_branch>
 
-STEP D — Update PR #145 description:
+STEP D — Update active PR description:
 Run the following command, replacing the progress checklist to reflect the newly completed step.
-Use `gh pr edit 145 --body "..."` with the full updated body.
+Use `gh pr edit <pr_number> --body "..."` with the full updated body.
 Rules for the body update:
 - Keep the existing structure (Summary, Progress, Key metrics, How to test).
 - Mark the just-completed step with [x] and add a one-line summary of what was done.
@@ -979,7 +1060,7 @@ Rules for the body update:
 - Keep the body under 3000 chars (GitHub renders poorly above that).
 
 STEP E — CI GATE (mandatory — do NOT skip):
-1. Run: gh run list --branch improvement/refactor --limit 1 --json status,conclusion,databaseId
+1. Run: gh run list --branch <active_iteration_branch> --limit 1 --json status,conclusion,databaseId
 2. If status is "in_progress" or "queued": wait 30 seconds and retry (up to 10 retries).
 3. If conclusion is "success": proceed to STEP F.
 4. If conclusion is "failure":
