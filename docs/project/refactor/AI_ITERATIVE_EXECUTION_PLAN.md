@@ -61,6 +61,13 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [x] F8-D 🚧 — Security boundary docs + nota AppWorkspace + roadmap update (Claude)
 - [x] F8-E 🚧 — Validación final + PR nueva + cierre iteración (Claude)
 
+### Fase 9 — Iteración 3 (Hardening & Maintainability)
+- [ ] F9-A 🚧 — Definir backlog ejecutable de Iteración 3 + prompt activo (Claude)
+- [ ] F9-B 🔄 — Upload streaming guard + límite temprano + tests (Codex)
+- [ ] F9-C 🔄 — Auth boundary mínima opcional por configuración + tests/docs (Codex)
+- [ ] F9-D 🔄 — Decomposición inicial de `AppWorkspace.tsx` + tests de regresión (Codex)
+- [ ] F9-E 🚧 — Validación final Iteración 3 + PR + cierre (Claude)
+
 ---
 
 ## Resultados de auditorías — rellenar automáticamente al completar cada auditoría
@@ -722,10 +729,75 @@ Below are the 4 architecture ADRs with full arguments, trade-offs, and code evid
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-_Completado: F8-E_
+F9-A
 
 ### Prompt
-_Vacío._
+```md
+--- AGENT IDENTITY CHECK ---
+This prompt is designed for Claude Opus 4.6.
+If you are not Claude Opus 4.6: STOP and tell the user to switch to Claude Opus 4.6.
+--- END IDENTITY CHECK ---
+
+--- BRANCH CHECK ---
+Run: git branch --show-current
+If NOT `improvement/refactor-iteration-3`: STOP. Tell the user to switch branch.
+--- END BRANCH CHECK ---
+
+--- SYNC CHECK ---
+Run: git pull origin improvement/refactor-iteration-3
+--- END SYNC CHECK ---
+
+--- TASK (F9-A) ---
+Prepare Iteration 3 execution package in this same plan file (append-only):
+
+1) Mandatory source retrieval (iterative-retrieval, read only what is needed):
+  - `docs/project/refactor/CTO_REVIEW_VERDICT.md`
+  - `docs/project/FUTURE_IMPROVEMENTS.md`
+  - `docs/project/refactor/codebase_audit.md`
+  - `docs/project/refactor/DELIVERY_SUMMARY.md`
+
+2) Define final actionable scope for F9-B..F9-E with:
+  - exact acceptance criteria,
+  - risk level (Low/Medium/High),
+  - test evidence required per step,
+  - hard “do-not-change” boundaries for this iteration.
+
+3) Replace this `### Prompt` block with a just-in-time Codex prompt for F9-B only.
+
+4) Keep two-commit strategy and CI gate language aligned with Phase 8 protocol.
+
+Constraints:
+- Keep changes minimal and append-only.
+- Do not implement product/code changes in F9-A; planning only.
+- Use explicit next-agent handoff wording (new chat + exact agent name).
+
+--- TEST GATE (mandatory) ---
+Run:
+- `python scripts/check_doc_test_sync.py --base-ref origin/main`
+- `python scripts/check_doc_router_parity.py --base-ref origin/main`
+
+If any guard fails: STOP. Report failures. Do NOT commit.
+--- END TEST GATE ---
+
+--- SCOPE BOUNDARY (two-commit strategy) ---
+STEP A — Commit planning updates first (plan file allowed in this step):
+git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md docs/agent_router/04_PROJECT/AI_ITERATIVE_EXECUTION_PLAN/00_entry.md
+git commit -m "docs(plan-f9a): define iteration-3 backlog and activate f9-b prompt"
+
+STEP B — Push:
+git push origin improvement/refactor-iteration-3
+
+STEP C — Open PR to main (if missing), or update existing PR body:
+gh pr create --base main --head improvement/refactor-iteration-3 --title "docs: plan iteration 3 (phase 9)" --body-file tmp/pr_iter3_body.md
+
+STEP D — CI gate:
+gh run list --branch improvement/refactor-iteration-3 --limit 1 --json status,conclusion,databaseId
+Wait/retry until completed; do not declare done without green CI.
+
+STEP E — Next-step message:
+Tell user to continue with F9-B in GPT-5.3-Codex using new chat + attached plan + `Continúa`.
+--- END SCOPE BOUNDARY ---
+```
 
 ---
 

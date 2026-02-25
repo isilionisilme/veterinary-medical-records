@@ -233,11 +233,11 @@ def test_router_parity_map_has_product_design_rule() -> None:
     assert '"required_terms"' in text
 
 
-def test_ai_iterative_plan_owner_entry_tracks_phase_8_append_only_update() -> None:
+def test_ai_iterative_plan_owner_entry_tracks_phase_9_append_only_update() -> None:
     text = _read_text(AI_ITERATIVE_PLAN_ROUTER_ENTRY)
     assert "AI_ITERATIVE_EXECUTION_PLAN — Modules" in text
-    assert "Phase 8 (Iteration 2) appended" in text
-    assert "improvement/refactor-iteration-2" in text
+    assert "Phase 9 (Iteration 3) appended" in text
+    assert "improvement/refactor-iteration-3" in text
 
 
 def test_rules_index_contains_known_mapping_hints() -> None:
