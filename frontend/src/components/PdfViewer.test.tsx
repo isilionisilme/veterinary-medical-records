@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { waitFor } from "@testing-library/react";
+import * as pdfjsLib from "pdfjs-dist";
 
 import { PdfViewer } from "./PdfViewer";
 
@@ -273,5 +274,28 @@ describe("PdfViewer", () => {
 
     await screen.findAllByTestId("pdf-page");
     expect(screen.getByTestId("pdf-zoom-indicator")).toHaveTextContent("130%");
+  });
+
+  it("retries with disableWorker when initial pdf load fails", async () => {
+    const getDocumentMock = vi.mocked(pdfjsLib.getDocument);
+    getDocumentMock.mockReset();
+    getDocumentMock
+      .mockImplementationOnce(() => ({
+        promise: Promise.reject(new Error("worker load failed")),
+      }))
+      .mockImplementationOnce(() => ({
+        promise: Promise.resolve(mockDoc),
+      }));
+
+    render(<PdfViewer fileUrl="blob://sample" filename="record.pdf" />);
+
+    await screen.findAllByTestId("pdf-page");
+
+    expect(getDocumentMock).toHaveBeenNthCalledWith(1, "blob://sample");
+    expect(getDocumentMock).toHaveBeenNthCalledWith(2, {
+      url: "blob://sample",
+      disableWorker: true,
+    });
+    expect(screen.queryByText("No pudimos cargar el PDF.")).toBeNull();
   });
 });
