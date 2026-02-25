@@ -63,7 +63,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 
 ### Fase 9 — Iteración 3 (Hardening & Maintainability)
 - [x] F9-A 🚧 — Definir backlog ejecutable de Iteración 3 + prompt activo (Claude)
-- [ ] F9-B 🔄 — Upload streaming guard + límite temprano + tests (Codex)
+- [x] F9-B 🔄 — Upload streaming guard + límite temprano + tests (Codex)
 - [ ] F9-C 🔄 — Auth boundary mínima opcional por configuración + tests/docs (Codex)
 - [ ] F9-D 🔄 — Decomposición inicial de `AppWorkspace.tsx` + tests de regresión (Codex)
 - [ ] F9-E 🚧 — Validación final Iteración 3 + PR + cierre (Claude)
@@ -729,100 +729,11 @@ Below are the 4 architecture ADRs with full arguments, trade-offs, and code evid
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-F9-B
+_Completado: F9-B_
 
 ### Prompt
 
-> **PLAN-EDIT-LAST RULE (hard constraint for Codex):**
-> **NEVER edit AI_ITERATIVE_EXECUTION_PLAN.md until ALL tests pass and code is committed.**
-
---- AGENT IDENTITY CHECK ---
-This prompt is designed for GPT-5.3-Codex in VS Code Copilot Chat.
-If you are not GPT-5.3-Codex: STOP. Tell the user to switch agents.
---- END IDENTITY CHECK ---
-
---- BRANCH CHECK ---
-Run: git branch --show-current
-If NOT `improvement/refactor-iteration-3`: STOP.
---- END BRANCH CHECK ---
-
---- SYNC CHECK ---
-Run: git pull origin improvement/refactor-iteration-3
---- END SYNC CHECK ---
-
---- PRE-FLIGHT CHECK ---
-1. Verify F9-A has `[x]` in Estado de ejecución. If not: STOP.
-2. Verify `backend/app/api/routes.py` exists.
---- END PRE-FLIGHT CHECK ---
-
---- TASK (F9-B): Upload streaming guard + early size limit + tests ---
-
-**Objective:** Enforce the upload size limit BEFORE reading the full file body into memory.
-Currently `upload_document()` in `backend/app/api/routes.py` calls `await file.read()` and
-only checks `len(contents) > MAX_UPLOAD_SIZE` afterwards. A 100 MB upload is fully buffered
-before being rejected.
-
-**What to implement (3 changes):**
-
-1. **Early size check via Content-Length header (fast path):**
-   In `upload_document()`, BEFORE `await file.read()`, check the request's `Content-Length`
-   header. If it exceeds `MAX_UPLOAD_SIZE`, return 413 immediately without reading the body.
-
-2. **Chunked/streaming size check (robust path):**
-   Replace the single `await file.read()` call with a chunked read loop (64 KB chunks) that
-   enforces the size limit incrementally. This protects against clients that omit Content-Length
-   or lie about it. Remove the now-redundant `len(contents) > MAX_UPLOAD_SIZE` block after the
-   empty-file check.
-
-3. **Tests in `backend/tests/integration/test_upload.py`:**
-   - `test_upload_rejects_oversized_via_content_length_header`: 413 without full body read.
-   - `test_upload_rejects_oversized_via_streaming`: actual oversized body returns 413.
-   - `test_upload_normal_file_still_works`: small PDF upload succeeds (regression guard).
-   - Existing tests must pass without modification.
-
-**Hard boundaries (DO NOT CHANGE):**
-- No changes to any other endpoint in `routes.py`.
-- No changes to `_validate_upload()`.
-- No changes to `register_document_upload()` or domain/application code.
-- No new dependencies. `MAX_UPLOAD_SIZE` stays at 20 MB. No frontend changes.
-
-**Acceptance criteria:**
-- 3+ new test functions in `test_upload.py`.
-- `python -m pytest --tb=short -q` all green.
-- >20 MB upload rejected with 413 without full memory buffering.
-- Normal upload works identically.
-
---- END TASK ---
-
---- TEST GATE ---
-Backend: cd d:/Git/veterinary-medical-records && python -m pytest --tb=short -q
-Frontend: cd d:/Git/veterinary-medical-records/frontend && npm test
-If any test fails: STOP. Do NOT commit. Do NOT edit the plan.
---- END TEST GATE ---
-
---- SCOPE BOUNDARY (two-commit strategy) ---
-
-STEP A — Commit code (plan untouched):
-1. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
-2. git commit -m "feat(plan-f9b): upload streaming guard with early size limit"
-
-STEP B — Commit plan update:
-1. Change `- [ ] F9-B` to `- [x] F9-B`.
-2. Replace Paso objetivo with `_Completado: F9-B_` and Prompt with `_Vacío._`
-3. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
-4. git commit -m "docs(plan-f9b): mark step done"
-
-STEP C — Push: git push origin improvement/refactor-iteration-3
-
-STEP D — Update PR: gh pr edit <number> --body "..." (mark F9-B done)
-
-STEP E — CI GATE: wait for green CI. If failure after 2 fix attempts: STOP.
-
-STEP F — Next step message:
-"F9-B completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot,
-selecciona **Claude Opus 4.6**, adjunta `AI_ITERATIVE_EXECUTION_PLAN.md`, escribe `Continúa`."
-(Claude will prepare the F9-C prompt just-in-time.)
---- END SCOPE BOUNDARY ---
+_Vacío._
 
 ---
 
