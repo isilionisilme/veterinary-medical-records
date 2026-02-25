@@ -81,7 +81,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [x] F11-B 🔄 — Extraer `_NAME_TOKEN_PATTERN` a constante compartida (Codex)
 - [x] F11-C 🔄 — Dockerfile.backend: solo deps de prod + usuario non-root (Codex)
 - [x] F11-D 🔄 — Multi-stage Dockerfile.frontend con nginx + usuario non-root (Codex)
-- [ ] F11-E 🔄 — Tests de `_edit_helpers.py`: coverage de 60% → 85%+ (Codex)
+- [x] F11-E 🔄 — Tests de `_edit_helpers.py`: coverage de 60% → 85%+ (Codex)
 - [ ] F11-F 🚧 — Smoke test final + commit + PR (Claude)
 
 ---
