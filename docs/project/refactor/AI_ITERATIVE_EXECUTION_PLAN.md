@@ -115,16 +115,16 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 > frontend tests (82.6%), 0 lint, CI green.
 > **Estrategia:** 4 PRs independientes ordenadas por dependencia para aislar riesgo.
 
-- [ ] F13-A 🔄 — Consolidar constants.py: migrar ~97 líneas de constantes compartidas (Claude)
-- [ ] F13-B 🔄 — Extraer candidate_mining.py de interpretation.py (648+ LOC) (Claude)
-- [ ] F13-C 🔄 — Extraer confidence_scoring.py + thin interpretation.py < 400 LOC (Claude)
+- [ ] F13-A 🔄 — Consolidar constants.py: migrar ~97 líneas de constantes compartidas (Codex)
+- [ ] F13-B 🔄 — Extraer candidate_mining.py de interpretation.py (648+ LOC) (Codex)
+- [ ] F13-C 🔄 — Extraer confidence_scoring.py + thin interpretation.py < 400 LOC (Codex)
 - [ ] F13-D 🚧 — Shim compatibility + test validation + PR 1 → main (Claude)
-- [ ] F13-E 🔄 — Extraer pdf_extraction_nodeps.py (~900 LOC fallback sin deps) (Claude)
+- [ ] F13-E 🔄 — Extraer pdf_extraction_nodeps.py (~900 LOC fallback sin deps) (Codex)
 - [ ] F13-F 🚧 — Thin dispatcher < 300 LOC + test validation + PR 2 → main (Claude)
-- [ ] F13-G 🔄 — Extraer hooks de estado: useStructuredDataFilters, useFieldEditing, useUploadState (Claude)
+- [ ] F13-G 🔄 — Extraer hooks de estado: useStructuredDataFilters, useFieldEditing, useUploadState (Codex)
 - [ ] F13-H 🚧 — Extraer hooks de UI: useReviewSplitPanel, useDocumentsSidebar + PR 3 → main (Claude)
-- [ ] F13-I 🔄 — Split extraction_observability.py en 4 módulos < 300 LOC (Claude)
-- [ ] F13-J 🔄 — Coverage: PdfViewer 47%→60%+, config.py 83%→90%+, documentApi.ts 67%→80%+ (Claude)
+- [ ] F13-I 🔄 — Split extraction_observability.py en 4 módulos < 300 LOC (Codex)
+- [ ] F13-J 🔄 — Coverage: PdfViewer 47%→60%+, config.py 83%→90%+, documentApi.ts 67%→80%+ (Codex)
 - [ ] F13-K 🚧 — FUTURE_IMPROVEMENTS refresh + smoke test + PR 4 → main (Claude)
 
 ---
@@ -788,10 +788,148 @@ Below are the 4 architecture ADRs with full arguments, trade-offs, and code evid
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-_Completado: F12-J (Iteration 6 finalizada)_
+F13-A — Consolidar constants.py: migrar constantes compartidas de 4 archivos
 
 ### Prompt
-_Vacío._
+
+```
+--- AGENT IDENTITY CHECK ---
+This prompt is designed for GPT-5.3-Codex in VS Code Copilot Chat.
+If you are not GPT-5.3-Codex: STOP. Tell the user to switch agents.
+--- END IDENTITY CHECK ---
+
+--- BRANCH CHECK ---
+Run: git branch --show-current
+If NOT `improvement/iteration-7-pr1`: STOP. Tell the user to switch.
+--- END BRANCH CHECK ---
+
+--- SYNC CHECK ---
+Run: git pull origin improvement/iteration-7-pr1
+--- END SYNC CHECK ---
+
+--- PRE-FLIGHT CHECK ---
+1. Verify F12-J is `[x]` in Estado de ejecución. If not: STOP.
+2. Verify these files exist:
+   - `backend/app/application/processing/constants.py`
+   - `backend/app/application/processing/interpretation.py`
+   - `backend/app/application/processing/pdf_extraction.py`
+   - `backend/app/application/processing/orchestrator.py`
+   - `backend/app/application/processing/scheduler.py`
+--- END PRE-FLIGHT CHECK ---
+
+--- TASK: F13-A — Consolidate shared constants into constants.py ---
+
+The following constants are defined identically in 4 files (`interpretation.py`,
+`pdf_extraction.py`, `orchestrator.py`, `scheduler.py`). Move them ALL to
+`backend/app/application/processing/constants.py` and replace the local
+definitions with imports.
+
+**Constants to migrate (exact names):**
+
+1. Scalar constants (defined in all 4 files):
+   - `PROCESSING_TICK_SECONDS = 0.5`
+   - `PROCESSING_TIMEOUT_SECONDS = 120.0`
+   - `MAX_RUNS_PER_TICK = 10`
+   - `PDF_EXTRACTOR_FORCE_ENV = "PDF_EXTRACTOR_FORCE"`
+   - `INTERPRETATION_DEBUG_INCLUDE_CANDIDATES_ENV = "VET_RECORDS_INCLUDE_INTERPRETATION_CANDIDATES"`
+   - `COVERAGE_CONFIDENCE_LABEL = 0.66`
+   - `COVERAGE_CONFIDENCE_FALLBACK = 0.50`
+
+2. Tuple constant (defined in all 4 files):
+   - `MVP_COVERAGE_DEBUG_KEYS` (21-element tuple of field key strings)
+
+3. Date-related constants (defined in `interpretation.py`, `pdf_extraction.py`, `orchestrator.py`):
+   - `DATE_TARGET_KEYS` (frozenset)
+   - `_DATE_CANDIDATE_PATTERN` (compiled regex)
+   - `_DATE_TARGET_ANCHORS` (dict)
+   - `_DATE_TARGET_PRIORITY` (dict)
+
+4. Microchip regex patterns (defined in `interpretation.py`, `pdf_extraction.py`, `orchestrator.py`):
+   - `_MICROCHIP_KEYWORD_WINDOW_PATTERN`
+   - `_MICROCHIP_DIGITS_PATTERN`
+   - `_MICROCHIP_OCR_PREFIX_WINDOW_PATTERN`
+
+5. Vet/owner/address patterns (defined in `interpretation.py`, `pdf_extraction.py`, `orchestrator.py`):
+   - `_VET_LABEL_LINE_PATTERN`
+   - `_OWNER_LABEL_LINE_PATTERN`
+   - `_OWNER_NOMBRE_LINE_PATTERN`
+   - `_OWNER_CLIENT_HEADER_LINE_PATTERN`
+   - `_OWNER_CLIENT_TABULAR_LABEL_LINE_PATTERN`
+   - `_OWNER_INLINE_CONTEXT_WINDOW_LINES = 2`
+   - `_OWNER_HEADER_LOOKBACK_LINES = 8`
+   - `_OWNER_TABULAR_FORWARD_SCAN_LINES = 8`
+   - `_ADDRESS_SPLIT_PATTERN`
+   - `_ADDRESS_LIKE_PATTERN`
+   - `_PHONE_LIKE_PATTERN`
+   - `_LICENSE_ONLY_PATTERN`
+   - `_OWNER_CONTEXT_PATTERN`
+   - `_OWNER_PATIENT_LABEL_PATTERN`
+   - `_VET_OR_CLINIC_CONTEXT_PATTERN`
+   - `_CLINICAL_RECORD_GUARD_PATTERN`
+
+6. Type/contract constants (defined in `interpretation.py`, `pdf_extraction.py`, `orchestrator.py`):
+   - `NUMERIC_TYPES = (int, float)`
+   - `REVIEW_SCHEMA_CONTRACT = "visit-grouped-canonical"`
+   - `_WHITESPACE_PATTERN` (compiled regex)
+
+**Implementation rules:**
+- Keep `_NAME_TOKEN_PATTERN` that already exists in `constants.py`.
+- Add `import re` at the top of `constants.py` (already there).
+- In each consuming file, replace the local definition block with:
+  ```python
+  from .constants import (
+      PROCESSING_TICK_SECONDS,
+      PROCESSING_TIMEOUT_SECONDS,
+      MAX_RUNS_PER_TICK,
+      # ... only import what THIS file actually uses
+  )
+  ```
+- Only import what each file actually uses (grep for usage before importing).
+- `pdf_extraction.py` has ADDITIONAL constants not shared (e.g., `_PDF_STREAM_PATTERN`,
+  `MAX_CONTENT_STREAM_BYTES`, etc.) — leave those in `pdf_extraction.py`.
+- `scheduler.py` only uses `PROCESSING_TICK_SECONDS`, `PROCESSING_TIMEOUT_SECONDS`,
+  `MAX_RUNS_PER_TICK` — small import.
+- Do NOT change any function signatures, logic, or behavior.
+
+**Verification:**
+- `grep -rn "PROCESSING_TICK_SECONDS =" backend/app/application/processing/` → only 1 hit in `constants.py`.
+- Same for every other migrated constant.
+- `python -m pytest --tb=short -q` → 317+ passed.
+
+--- END TASK ---
+
+--- TEST GATE ---
+Backend: cd d:/Git/veterinary-medical-records && python -m pytest --tb=short -q
+Frontend: cd d:/Git/veterinary-medical-records/frontend && npm test -- --run
+If any test fails: STOP. Report failures. Do NOT commit. Do NOT edit the plan.
+--- END TEST GATE ---
+
+--- SCOPE BOUNDARY (two-commit strategy) ---
+STEP A — Commit code (plan untouched):
+1. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
+2. git commit -m "refactor(plan-f13a): consolidate shared constants into processing/constants.py
+
+Test proof: <pytest summary> | <npm test summary>"
+
+STEP B — Commit plan update:
+1. Change `- [ ] F13-A` to `- [x] F13-A` in Estado de ejecución.
+2. Clean Prompt activo: Paso objetivo → `_Completado: F13-A_`, Prompt → `_Vacío._`
+3. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+4. git commit -m "docs(plan-f13a): mark step done"
+
+STEP C — Push:
+1. git push origin improvement/iteration-7-pr1
+
+STEP D — Update PR description with progress.
+
+STEP E — CI GATE (mandatory):
+1. gh run list --branch improvement/iteration-7-pr1 --limit 1 --json status,conclusion,databaseId
+2. Wait for green. Fix if red.
+
+STEP F — Tell user:
+"✓ F13-A completado, CI verde. Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`. Claude preparará el prompt just-in-time para F13-B."
+--- END SCOPE BOUNDARY ---
+```
 
 ## Skills instaladas y uso recomendado
 
@@ -1322,7 +1460,7 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 **Rama PR 2:** `improvement/iteration-7-pr2` desde `main` (tras merge de PR 1)
 **Rama PR 3:** `improvement/iteration-7-pr3` desde `main` (tras merge de PR 2)
 **Rama PR 4:** `improvement/iteration-7-pr4` desde `main` (tras merge de PR 3)
-**Agente:** Claude (F13-A..K)
+**Agente:** Codex (F13-A/B/C/E/G/I/J) · Claude (F13-D/F/H/K)
 **Objetivo:** Descomponer 4 archivos monolíticos, consolidar constantes DRY, y cerrar gaps de cobertura frontend.
 
 **Evaluación previa (evidencia):**
@@ -1344,7 +1482,7 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 |---|---|
 | **Riesgo** | Bajo — refactor mecánico de constantes, sin cambio de lógica |
 | **Esfuerzo** | S |
-| **Agente** | Claude |
+| **Agente** | Codex |
 | **Por qué** | ~97 líneas de constantes (regex de campos, umbrales de confianza, mapeos de secciones, listas de stop-words) están triplicadas en `interpretation.py` (L14-97), `pdf_extraction.py`, y `orchestrator.py`. Violación DRY que complica mantenimiento y es defecto visible para evaluadores. |
 | **Tareas** | 1. Identificar todas las constantes duplicadas entre los 3 archivos. 2. Migrarlas a `processing/constants.py` (que ya tiene `_NAME_TOKEN_PATTERN`). 3. Reemplazar definiciones locales por imports en los 3 archivos. 4. Verificar `pytest` → 317+ passed. |
 | **Criterio de aceptación** | `grep -r` de cada constante migrada muestra 1 definición en `constants.py` y solo imports en los demás. 317+ tests pasan. |
@@ -1357,7 +1495,7 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 |---|---|
 | **Riesgo** | Medio — función más grande del codebase (648 LOC), 4 helpers anidados |
 | **Esfuerzo** | M |
-| **Agente** | Claude |
+| **Agente** | Codex |
 | **Por qué** | `_mine_interpretation_candidates` (L281-928) representa 46% de interpretation.py. Contiene toda la lógica de extracción de candidatos con 4 helpers anidados. Extraerla reduce interpretation.py de 1,398 a ~750 LOC. |
 | **Tareas** | 1. Crear `processing/candidate_mining.py`. 2. Mover `_mine_interpretation_candidates` + sus helpers + `_extract_date_candidates_with_classification` + funciones auxiliares de parsing. 3. Importar la función desde interpretation.py. 4. Verificar `pytest` → 317+ passed. |
 | **Criterio de aceptación** | `candidate_mining.py` autosuficiente. interpretation.py < 800 LOC. 317+ tests pasan. |
@@ -1370,7 +1508,7 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 |---|---|
 | **Riesgo** | Bajo — funciones bien delimitadas con interfaces claras |
 | **Esfuerzo** | S |
-| **Agente** | Claude |
+| **Agente** | Codex |
 | **Por qué** | Confidence scoring y field assembly (L1108-1399, ~290 LOC) son concern independiente. Extraerlas deja interpretation.py como orquestador thin. |
 | **Tareas** | 1. Crear `processing/confidence_scoring.py`. 2. Mover funciones de scoring + ensamblaje de campos. 3. Dejar interpretation.py como orchestration-only. 4. Verificar `pytest` → 317+ passed. |
 | **Criterio de aceptación** | `confidence_scoring.py` independiente. interpretation.py < 400 LOC. 317+ tests pasan. |
@@ -1396,7 +1534,7 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 |---|---|
 | **Riesgo** | Medio — parsing PDF bajo nivel, muchos edge cases |
 | **Esfuerzo** | M |
-| **Agente** | Claude |
+| **Agente** | Codex |
 | **Por qué** | Estrategia "no-deps" (fallback puro Python) ocupa ~900 LOC. Incluye parser de objetos PDF, tokenizer, font/CMap, text stitching, byte helpers. Autosuficiente. |
 | **Tareas** | 1. Crear `processing/pdf_extraction_nodeps.py`. 2. Mover funciones del fallback no-deps. 3. Dejar pdf_extraction.py como dispatcher < 300 LOC. 4. Verificar `pytest` → 317+ passed. |
 | **Criterio de aceptación** | `pdf_extraction_nodeps.py` autosuficiente. `pdf_extraction.py` < 300 LOC. 317+ tests pasan. |
@@ -1422,7 +1560,7 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 |---|---|
 | **Riesgo** | Medio — AppWorkspace.tsx tiene 42 useState, cambios afectan flujo completo |
 | **Esfuerzo** | M |
-| **Agente** | Claude |
+| **Agente** | Codex |
 | **Por qué** | AppWorkspace.tsx (4,011 LOC) tiene 42 useState, 22 useRef, ~30 useMemo. Extraer 3 hooks reduce ~17 state variables. |
 | **Tareas** | 1. Crear `hooks/useStructuredDataFilters.ts` (6 state vars). 2. Crear `hooks/useFieldEditing.ts` (5 state vars + mutation). 3. Crear `hooks/useUploadState.ts` (6 state vars + drag). 4. Reemplazar en AppWorkspace. 5. `npm test` → 226+ passed. |
 | **Criterio de aceptación** | 3 hooks creados. Cada hook ≤150 LOC. AppWorkspace reduced ~300+ LOC. 226+ tests pasan. |
@@ -1448,7 +1586,7 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 |---|---|
 | **Riesgo** | Bajo — 4 segmentos naturales bien delimitados |
 | **Esfuerzo** | M |
-| **Agente** | Claude |
+| **Agente** | Codex |
 | **Por qué** | `extraction_observability.py` (995 LOC) tiene 4 segmentos: snapshot, persistence, triage, reporting. |
 | **Tareas** | 1. Crear `extraction_observability/` package. 2. Mover: snapshot → `snapshot.py`, persistence → `persistence.py`, triage → `triage.py`, summary → `reporting.py`. 3. `__init__.py` re-exporta API pública. 4. Actualizar imports. 5. `pytest` → 317+ passed. |
 | **Criterio de aceptación** | Cada módulo < 300 LOC. API pública sin cambios. 317+ tests pasan. |
@@ -1461,7 +1599,7 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 |---|---|
 | **Riesgo** | Bajo — tests aditivos |
 | **Esfuerzo** | M |
-| **Agente** | Claude |
+| **Agente** | Codex |
 | **Por qué** | 3 archivos con gaps: PdfViewer branch 47%, config.py 83%, documentApi.ts branch 67%. |
 | **Tareas** | 1. PdfViewer: branch coverage → 60%+. 2. config.py: paths alternativos → 90%+. 3. documentApi.ts: error paths → 80%+. |
 | **Criterio de aceptación** | PdfViewer branch ≥60%. config.py ≥90%. documentApi.ts branch ≥80%. Tests verdes. |
