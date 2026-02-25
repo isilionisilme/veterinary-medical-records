@@ -62,7 +62,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [x] F8-E 🚧 — Validación final + PR nueva + cierre iteración (Claude)
 
 ### Fase 9 — Iteración 3 (Hardening & Maintainability)
-- [ ] F9-A 🚧 — Definir backlog ejecutable de Iteración 3 + prompt activo (Claude)
+- [x] F9-A 🚧 — Definir backlog ejecutable de Iteración 3 + prompt activo (Claude)
 - [ ] F9-B 🔄 — Upload streaming guard + límite temprano + tests (Codex)
 - [ ] F9-C 🔄 — Auth boundary mínima opcional por configuración + tests/docs (Codex)
 - [ ] F9-D 🔄 — Decomposición inicial de `AppWorkspace.tsx` + tests de regresión (Codex)
@@ -729,75 +729,100 @@ Below are the 4 architecture ADRs with full arguments, trade-offs, and code evid
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-F9-A
+F9-B
 
 ### Prompt
-```md
+
+> **PLAN-EDIT-LAST RULE (hard constraint for Codex):**
+> **NEVER edit AI_ITERATIVE_EXECUTION_PLAN.md until ALL tests pass and code is committed.**
+
 --- AGENT IDENTITY CHECK ---
-This prompt is designed for Claude Opus 4.6.
-If you are not Claude Opus 4.6: STOP and tell the user to switch to Claude Opus 4.6.
+This prompt is designed for GPT-5.3-Codex in VS Code Copilot Chat.
+If you are not GPT-5.3-Codex: STOP. Tell the user to switch agents.
 --- END IDENTITY CHECK ---
 
 --- BRANCH CHECK ---
 Run: git branch --show-current
-If NOT `improvement/refactor-iteration-3`: STOP. Tell the user to switch branch.
+If NOT `improvement/refactor-iteration-3`: STOP.
 --- END BRANCH CHECK ---
 
 --- SYNC CHECK ---
 Run: git pull origin improvement/refactor-iteration-3
 --- END SYNC CHECK ---
 
---- TASK (F9-A) ---
-Prepare Iteration 3 execution package in this same plan file (append-only):
+--- PRE-FLIGHT CHECK ---
+1. Verify F9-A has `[x]` in Estado de ejecución. If not: STOP.
+2. Verify `backend/app/api/routes.py` exists.
+--- END PRE-FLIGHT CHECK ---
 
-1) Mandatory source retrieval (iterative-retrieval, read only what is needed):
-  - `docs/project/refactor/CTO_REVIEW_VERDICT.md`
-  - `docs/project/FUTURE_IMPROVEMENTS.md`
-  - `docs/project/refactor/codebase_audit.md`
-  - `docs/project/refactor/DELIVERY_SUMMARY.md`
+--- TASK (F9-B): Upload streaming guard + early size limit + tests ---
 
-2) Define final actionable scope for F9-B..F9-E with:
-  - exact acceptance criteria,
-  - risk level (Low/Medium/High),
-  - test evidence required per step,
-  - hard “do-not-change” boundaries for this iteration.
+**Objective:** Enforce the upload size limit BEFORE reading the full file body into memory.
+Currently `upload_document()` in `backend/app/api/routes.py` calls `await file.read()` and
+only checks `len(contents) > MAX_UPLOAD_SIZE` afterwards. A 100 MB upload is fully buffered
+before being rejected.
 
-3) Replace this `### Prompt` block with a just-in-time Codex prompt for F9-B only.
+**What to implement (3 changes):**
 
-4) Keep two-commit strategy and CI gate language aligned with Phase 8 protocol.
+1. **Early size check via Content-Length header (fast path):**
+   In `upload_document()`, BEFORE `await file.read()`, check the request's `Content-Length`
+   header. If it exceeds `MAX_UPLOAD_SIZE`, return 413 immediately without reading the body.
 
-Constraints:
-- Keep changes minimal and append-only.
-- Do not implement product/code changes in F9-A; planning only.
-- Use explicit next-agent handoff wording (new chat + exact agent name).
+2. **Chunked/streaming size check (robust path):**
+   Replace the single `await file.read()` call with a chunked read loop (64 KB chunks) that
+   enforces the size limit incrementally. This protects against clients that omit Content-Length
+   or lie about it. Remove the now-redundant `len(contents) > MAX_UPLOAD_SIZE` block after the
+   empty-file check.
 
---- TEST GATE (mandatory) ---
-Run:
-- `python scripts/check_doc_test_sync.py --base-ref origin/main`
-- `python scripts/check_doc_router_parity.py --base-ref origin/main`
+3. **Tests in `backend/tests/integration/test_upload.py`:**
+   - `test_upload_rejects_oversized_via_content_length_header`: 413 without full body read.
+   - `test_upload_rejects_oversized_via_streaming`: actual oversized body returns 413.
+   - `test_upload_normal_file_still_works`: small PDF upload succeeds (regression guard).
+   - Existing tests must pass without modification.
 
-If any guard fails: STOP. Report failures. Do NOT commit.
+**Hard boundaries (DO NOT CHANGE):**
+- No changes to any other endpoint in `routes.py`.
+- No changes to `_validate_upload()`.
+- No changes to `register_document_upload()` or domain/application code.
+- No new dependencies. `MAX_UPLOAD_SIZE` stays at 20 MB. No frontend changes.
+
+**Acceptance criteria:**
+- 3+ new test functions in `test_upload.py`.
+- `python -m pytest --tb=short -q` all green.
+- >20 MB upload rejected with 413 without full memory buffering.
+- Normal upload works identically.
+
+--- END TASK ---
+
+--- TEST GATE ---
+Backend: cd d:/Git/veterinary-medical-records && python -m pytest --tb=short -q
+Frontend: cd d:/Git/veterinary-medical-records/frontend && npm test
+If any test fails: STOP. Do NOT commit. Do NOT edit the plan.
 --- END TEST GATE ---
 
 --- SCOPE BOUNDARY (two-commit strategy) ---
-STEP A — Commit planning updates first (plan file allowed in this step):
-git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md docs/agent_router/04_PROJECT/AI_ITERATIVE_EXECUTION_PLAN/00_entry.md
-git commit -m "docs(plan-f9a): define iteration-3 backlog and activate f9-b prompt"
 
-STEP B — Push:
-git push origin improvement/refactor-iteration-3
+STEP A — Commit code (plan untouched):
+1. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
+2. git commit -m "feat(plan-f9b): upload streaming guard with early size limit"
 
-STEP C — Open PR to main (if missing), or update existing PR body:
-gh pr create --base main --head improvement/refactor-iteration-3 --title "docs: plan iteration 3 (phase 9)" --body-file tmp/pr_iter3_body.md
+STEP B — Commit plan update:
+1. Change `- [ ] F9-B` to `- [x] F9-B`.
+2. Replace Paso objetivo with `_Completado: F9-B_` and Prompt with `_Vacío._`
+3. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+4. git commit -m "docs(plan-f9b): mark step done"
 
-STEP D — CI gate:
-gh run list --branch improvement/refactor-iteration-3 --limit 1 --json status,conclusion,databaseId
-Wait/retry until completed; do not declare done without green CI.
+STEP C — Push: git push origin improvement/refactor-iteration-3
 
-STEP E — Next-step message:
-Tell user to continue with F9-B in GPT-5.3-Codex using new chat + attached plan + `Continúa`.
+STEP D — Update PR: gh pr edit <number> --body "..." (mark F9-B done)
+
+STEP E — CI GATE: wait for green CI. If failure after 2 fix attempts: STOP.
+
+STEP F — Next step message:
+"F9-B completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot,
+selecciona **Claude Opus 4.6**, adjunta `AI_ITERATIVE_EXECUTION_PLAN.md`, escribe `Continúa`."
+(Claude will prepare the F9-C prompt just-in-time.)
 --- END SCOPE BOUNDARY ---
-```
 
 ---
 
@@ -912,6 +937,64 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 - ✅ Estrategia histórica confirmada: este archivo se mantiene **append-only** (F1-F7 intactas).
 - ✅ Routing de identidad actualizado a regla por agente activo (Claude/Codex, bidireccional).
 - ✅ PR de referencia anterior (`#146`) descartada para esta iteración; usar PR nueva al abrirla.
+
+### F9-A — Iteration 3 backlog and scope definition (Claude)
+
+**Source documents reviewed:**
+- `CTO_REVIEW_VERDICT.md` — all 5 CTO improvements addressed in F8; remaining open findings: #5 upload streaming, #6 auth boundary, #11 extraction observability (deferred).
+- `FUTURE_IMPROVEMENTS.md` — Week 2 items mostly complete; remaining: upload streaming guard (#9), auth boundary (#15). Week 4: AppWorkspace decomposition (#7b).
+- `codebase_audit.md` — 15 findings total. 10 resolved. Open: #5 (upload size), #6 (auth), #11 (observability), #12 (routes.py size), residual.
+- `DELIVERY_SUMMARY.md` — 423 tests (255 backend + 168 frontend), 87% backend coverage, all CI green.
+
+**Current baseline:** 255 backend tests, 168 frontend tests, 87% backend coverage. `AppWorkspace.tsx` at 5,770 LOC.
+
+#### F9-B — Upload streaming guard + early size limit + tests
+| Attribute | Value |
+|---|---|
+| **Risk** | Low — additive change to one function, no contract changes |
+| **Effort** | S |
+| **Agent** | Codex |
+| **Acceptance criteria** | Upload size enforced before full memory read via Content-Length header check + chunked streaming read. ≥3 new integration tests. All existing tests green. |
+| **Test evidence** | `pytest --tb=short -q` green with new test count. |
+| **Do-not-change** | Other endpoints in `routes.py`, `_validate_upload()`, domain/application code, frontend, `MAX_UPLOAD_SIZE` value. |
+
+#### F9-C — Auth boundary minimal (optional by config) + tests/docs
+| Attribute | Value |
+|---|---|
+| **Risk** | Medium — touches middleware layer; must not break evaluator default flow |
+| **Effort** | M |
+| **Agent** | Codex |
+| **Acceptance criteria** | New `AUTH_TOKEN` env var (optional, empty = disabled). When set, all `/api/` endpoints require `Authorization: Bearer <token>` header. When unset/empty, behavior is identical to current (no auth). Integration tests cover both modes. `TECHNICAL_DESIGN.md` §13 updated. |
+| **Test evidence** | `pytest --tb=short -q` green. New tests for auth-enabled and auth-disabled modes. |
+| **Do-not-change** | Domain models, application services, frontend code, Docker Compose defaults (auth stays disabled by default). Evaluator flow (`docker compose up`) must work unchanged. |
+
+#### F9-D — Initial decomposition of `AppWorkspace.tsx` + regression tests
+| Attribute | Value |
+|---|---|
+| **Risk** | Medium-High — largest file in codebase, many internal dependencies |
+| **Effort** | L |
+| **Agent** | Codex |
+| **Acceptance criteria** | Extract ≥3 cohesive modules from `AppWorkspace.tsx` (target: structured data rendering, review workspace logic, utility functions/constants). `AppWorkspace.tsx` reduced by ≥30% LOC (from 5,770 to ≤4,000). No new file >500 LOC. All existing frontend tests pass. No behavioral changes. |
+| **Test evidence** | `npm test` green. Coverage maintained or improved. |
+| **Do-not-change** | Backend code. UI behavior/appearance. Existing component contracts. `App.tsx` shell. |
+
+#### F9-E — Validation + PR + close
+| Attribute | Value |
+|---|---|
+| **Risk** | Low — verification and documentation only |
+| **Effort** | S |
+| **Agent** | Claude |
+| **Acceptance criteria** | All F9-B..D marked `[x]`. CI green. PR body updated with iteration 3 summary. `DELIVERY_SUMMARY.md` updated with iteration 3 metrics. `FUTURE_IMPROVEMENTS.md` items resolved marked. |
+| **Test evidence** | CI green on final push. |
+| **Do-not-change** | Completed code from F9-B..D. |
+
+**Global do-not-change boundaries for Iteration 3:**
+- Hexagonal architecture (`domain/`, `ports/`, `infra/`).
+- Docker Compose setup and healthchecks.
+- CI pipeline structure (only add jobs, never remove).
+- ADR content.
+- Backend structural decomposition from Phase 2.
+- Pre-commit hooks configuration.
 
 ### Plan-edit-last (hard constraint)
 **Codex NO edita `AI_ITERATIVE_EXECUTION_PLAN.md` hasta que los tests pasen y el código esté commiteado.** La secuencia obligatoria es:
