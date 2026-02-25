@@ -146,7 +146,7 @@
     },
     {
       "doc_glob": "docs/project/refactor/codebase_audit.md",
-      "description": "Project codebase_audit changes require doc sync/parity guard alignment.",
+      "description": "Project codebase_audit changes (including finding status updates such as SQLite concurrency remediation) require doc sync/parity guard alignment.",
       "owner_any": [
         "docs/agent_router/04_PROJECT/CODEBASE_AUDIT/*.md",
         "docs/agent_router/04_PROJECT/CODEBASE_AUDIT/**/*.md"
