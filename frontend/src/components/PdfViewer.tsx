@@ -1,11 +1,8 @@
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, ScanLine, Upload, ZoomIn, ZoomOut } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
-import workerSrc from "pdfjs-dist/build/pdf.worker.min?url";
 import { IconButton } from "./app/IconButton";
 import { Tooltip } from "./ui/tooltip";
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 const PDF_ZOOM_STORAGE_KEY = "pdfViewerZoomLevel";
 const MIN_ZOOM_LEVEL = 0.5;

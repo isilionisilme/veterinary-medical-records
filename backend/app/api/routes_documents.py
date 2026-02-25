@@ -31,7 +31,7 @@ from backend.app.domain.models import ProcessingStatus
 from backend.app.ports.document_repository import DocumentRepository
 from backend.app.ports.file_storage import FileStorage
 
-from .routes_common import error_response, log_event
+from .routes_common import _request_content_length, error_response, log_event
 
 router = APIRouter()
 
@@ -339,9 +339,7 @@ async def upload_document(
         )
         return error_response(**validation_error)
 
-    from backend.app.api import routes as routes_module
-
-    request_content_length = routes_module._request_content_length(request)
+    request_content_length = _request_content_length(request)
     if request_content_length is not None and request_content_length > MAX_UPLOAD_SIZE:
         log_event(
             event_type="DOCUMENT_UPLOADED",
@@ -452,13 +450,3 @@ def _validate_upload(file: UploadFile) -> dict[str, Any] | None:
         }
 
     return None
-
-
-def _request_content_length(request: Request) -> int | None:
-    content_length = request.headers.get("content-length")
-    if content_length is None:
-        return None
-    try:
-        return int(content_length)
-    except ValueError:
-        return None

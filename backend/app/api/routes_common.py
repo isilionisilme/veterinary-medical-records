@@ -7,7 +7,7 @@ import logging
 from datetime import UTC, datetime
 from typing import Any
 
-from fastapi import status
+from fastapi import Request, status
 from fastapi.responses import JSONResponse
 
 logger = logging.getLogger(__name__)
@@ -58,3 +58,13 @@ def log_event(
     if count_returned is not None:
         payload["count_returned"] = count_returned
     logger.info(json.dumps(payload))
+
+
+def _request_content_length(request: Request) -> int | None:
+    content_length = request.headers.get("content-length")
+    if content_length is None:
+        return None
+    try:
+        return int(content_length)
+    except ValueError:
+        return None
