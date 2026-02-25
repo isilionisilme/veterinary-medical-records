@@ -72,10 +72,11 @@
     },
     {
       "doc_glob": "docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md",
-      "description": "Project AI_ITERATIVE_EXECUTION_PLAN changes (including appended execution phases through F12, canonical STOP handoff guardrails, and token-efficiency policy) require propagation to its owner module.",
+      "description": "Project AI_ITERATIVE_EXECUTION_PLAN changes (including appended execution phases through F13, canonical STOP handoff guardrails, token-efficiency policy, and Iteration 7 planning split into 4 PRs / 11 steps) require propagation to its owner module.",
       "owner_any": [
         "docs/agent_router/04_PROJECT/AI_ITERATIVE_EXECUTION_PLAN/*.md",
-        "docs/agent_router/04_PROJECT/AI_ITERATIVE_EXECUTION_PLAN/**/*.md"
+        "docs/agent_router/04_PROJECT/AI_ITERATIVE_EXECUTION_PLAN/**/*.md",
+        "docs/agent_router/01_WORKFLOW/DOC_UPDATES/router_parity_map.json"
       ],
       "required_any": [
         "docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json",
