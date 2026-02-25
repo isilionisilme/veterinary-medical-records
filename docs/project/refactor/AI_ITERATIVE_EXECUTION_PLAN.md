@@ -58,7 +58,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [x] F8-A 🚧 — Setup branch + guardrails + prompt activo (Codex)
 - [x] F8-B 🔄 — SQLite WAL + busy_timeout + test de concurrencia (Codex)
 - [x] F8-C 🔄 — Subir cobertura de `frontend/src/lib/utils.ts` (Codex)
-- [ ] F8-D 🚧 — Security boundary docs + nota AppWorkspace + roadmap update (Claude)
+- [x] F8-D 🚧 — Security boundary docs + nota AppWorkspace + roadmap update (Claude)
 - [ ] F8-E 🚧 — Validación final + PR nueva + cierre iteración (Claude)
 
 ---
@@ -722,7 +722,7 @@ Below are the 4 architecture ADRs with full arguments, trade-offs, and code evid
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-F8-D
+F8-E
 
 ### Prompt
 _Vacío._
