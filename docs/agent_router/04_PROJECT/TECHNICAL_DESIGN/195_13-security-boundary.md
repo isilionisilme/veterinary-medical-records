@@ -1,11 +1,16 @@
 # 13. Security Boundary
 
-Authentication and authorization are **out of scope** for the current exercise.
+Authentication and authorization are **minimal and optional** for the current exercise.
 
-All API endpoints are unauthenticated by design. The system runs locally in a trusted, single-user evaluation environment.
+The backend supports an optional bearer-token boundary via `AUTH_TOKEN`:
+
+- If `AUTH_TOKEN` is unset or empty, authentication is disabled and evaluator behavior is unchanged.
+- If `AUTH_TOKEN` is set, endpoints under `/api/*` require `Authorization: Bearer <AUTH_TOKEN>`.
+
+This preserves low-friction local evaluation while enabling a minimal access gate.
 
 ## Design decisions
-- No auth middleware — single-user context makes stubs misleading.
+- Optional auth middleware only for `/api/*`, disabled by default.
 - Upload validation covers file-type and content-type, not identity.
 - No rate limiting — single-user model.
 
