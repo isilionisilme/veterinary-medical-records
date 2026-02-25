@@ -99,7 +99,6 @@ _OWNER_CLIENT_TABULAR_LABEL_LINE_PATTERN = re.compile(
 _OWNER_INLINE_CONTEXT_WINDOW_LINES = 2
 _OWNER_HEADER_LOOKBACK_LINES = 8
 _OWNER_TABULAR_FORWARD_SCAN_LINES = 8
-_NAME_TOKEN_PATTERN = re.compile(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ][A-Za-zÁÉÍÓÚÜÑáéíóúüñ'\.-]*$")
 _ADDRESS_SPLIT_PATTERN = re.compile(
     r"(?i)\b(?:c/|calle|av\.?|avenida|cp\b|n[º°o]\.?|num\.?|número|plaza|pte\.?|portal|piso|puerta)\b"
 )
