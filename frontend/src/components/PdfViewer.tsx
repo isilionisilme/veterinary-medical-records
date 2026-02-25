@@ -346,7 +346,20 @@ export function PdfViewer({
       setError(null);
       try {
         loadingTask = pdfjsLib.getDocument(fileUrl);
-        const doc = await loadingTask.promise;
+        let doc: pdfjsLib.PDFDocumentProxy;
+        try {
+          doc = await loadingTask.promise;
+        } catch {
+          if (cancelled) {
+            return;
+          }
+          const fallbackSource = {
+            url: fileUrl,
+            disableWorker: true,
+          } as unknown as Parameters<typeof pdfjsLib.getDocument>[0];
+          loadingTask = pdfjsLib.getDocument(fallbackSource);
+          doc = await loadingTask.promise;
+        }
         if (cancelled) {
           void doc.destroy();
           return;

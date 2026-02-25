@@ -76,6 +76,14 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [x] F10-E 🔄 — Corregir instrucciones de quality gates en README (Claude)
 - [x] F10-F 🚧 — Smoke test final + commit + PR (Claude)
 
+### Fase 11 — Iteración 5 (Production-readiness: Prettier, Docker, coverage)
+- [x] F11-A 🔄 — Prettier bulk format de 64 archivos pendientes (Codex)
+- [x] F11-B 🔄 — Extraer `_NAME_TOKEN_PATTERN` a constante compartida (Codex)
+- [x] F11-C 🔄 — Dockerfile.backend: solo deps de prod + usuario non-root (Codex)
+- [x] F11-D 🔄 — Multi-stage Dockerfile.frontend con nginx + usuario non-root (Codex)
+- [x] F11-E 🔄 — Tests de `_edit_helpers.py`: coverage de 60% → 85%+ (Codex)
+- [x] F11-F 🚧 — Smoke test final + commit + PR (Claude)
+
 ---
 
 ## Resultados de auditorías — rellenar automáticamente al completar cada auditoría
@@ -737,7 +745,7 @@ Below are the 4 architecture ADRs with full arguments, trade-offs, and code evid
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-_Completado: F9-D_
+_Completado: F11-F_
 
 ### Prompt
 _Vacío._
@@ -1018,6 +1026,113 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 
 **Política de la fase — do-not-change:**
 - Lógica de negocio, tests existentes, CI pipeline, arquitectura, dependencias.
+- Cada paso es atómico; si uno falla, los demás siguen siendo válidos.
+
+---
+
+### Fase 11 — Iteración 5 (Production-readiness: Prettier, Docker, coverage)
+
+**Rama:** `improvement/iteration-5` desde `main`
+**Agente:** Codex (F11-A..E) · Claude (F11-F)
+**Objetivo:** Calidad de entrega — formateo consistente, Docker production-ready, cobertura de módulo crítico.
+
+**Evaluación previa (evidencia):**
+- 264 backend tests (87% coverage), 168 frontend tests, 0 lint warnings, 0 build warnings.
+- 64 archivos frontend fallan Prettier (pre-commit hook roto).
+- `Dockerfile.frontend` sirve Vite dev server en producción.
+- `Dockerfile.backend` incluye pytest/dev deps en imagen de producción.
+- Ambos Dockerfiles corren como root.
+- `_NAME_TOKEN_PATTERN` regex duplicado en 4 archivos.
+- `_edit_helpers.py` al 60% de coverage — peor módulo.
+
+**Descartados con justificación:**
+- CI cache pip/npm: riesgo de cache stale sin ganancia visible para evaluación.
+- Backend deps bump (uvicorn, python-multipart): no impacta evaluación, riesgo innecesario.
+- eslint-plugin-jsx-a11y: riesgo de generar warnings nuevos sobre el lint limpio actual.
+
+**Diferido:**
+- `routes.py` decomposition (942 LOC, 16 endpoints): se hará en iteración posterior para controlar riesgo.
+
+#### F11-A — Prettier bulk format
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — solo reformateo automático |
+| **Esfuerzo** | S |
+| **Agente** | Codex |
+| **Por qué** | 64 archivos frontend no cumplen Prettier. El pre-commit hook `frontend-format` falla en cada commit, obligando a `--no-verify`. |
+| **Tareas** | 1. `cd frontend && npx prettier --write "src/**/*.{ts,tsx,css}"`. 2. Verificar `npm run format:check` = 0 issues. 3. Verificar `npm run lint` = 0 problems. 4. Verificar `npm test -- --run` = 168+ passed. |
+| **Criterio de aceptación** | `npm run format:check` pasa sin errores. Pre-commit hook `frontend-format` no falla. 168+ tests pasan. |
+| **Archivos** | ~64 archivos en `frontend/src/` |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
+#### F11-B — Extraer `_NAME_TOKEN_PATTERN` a constante compartida
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — refactor mecánico de constante |
+| **Esfuerzo** | S |
+| **Agente** | Codex |
+| **Por qué** | Regex idéntico duplicado en 4 archivos: `interpretation.py`, `orchestrator.py`, `pdf_extraction.py`, `scheduler.py`. Violación DRY que dificulta mantenimiento. |
+| **Tareas** | 1. Crear `backend/app/application/processing/constants.py` con la constante. 2. Reemplazar las 4 definiciones locales por imports. 3. Verificar `python -m pytest --tb=short -q` = 264+ passed. |
+| **Criterio de aceptación** | `grep -r "_NAME_TOKEN_PATTERN" backend/` muestra 1 definición y 4 imports. 264+ tests pasan. |
+| **Archivos** | `backend/app/application/processing/constants.py` (nuevo), `interpretation.py`, `orchestrator.py`, `pdf_extraction.py`, `scheduler.py` |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
+#### F11-C — Dockerfile.backend: solo deps de prod + usuario non-root
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — cambio de Dockerfile sin tocar código |
+| **Esfuerzo** | S |
+| **Agente** | Codex |
+| **Por qué** | La imagen de producción incluye pytest y deps de dev (~15MB extra). Corre como root, lo que amplía el blast radius de una vulnerabilidad. |
+| **Tareas** | 1. Cambiar install de `requirements-dev.txt` → `backend/requirements.txt`. 2. Añadir `RUN adduser --disabled-password --no-create-home appuser` + `USER appuser`. 3. Verificar `docker compose up --build` → backend healthcheck OK. 4. Verificar `docker exec <container> whoami` ≠ root. |
+| **Criterio de aceptación** | Backend arranca y responde en `/health`. Container no corre como root. pytest no está instalado en la imagen. |
+| **Archivos** | `Dockerfile.backend` |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
+#### F11-D — Multi-stage Dockerfile.frontend con nginx + usuario non-root
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Medio — cambia servidor de frontend (Vite dev → nginx) |
+| **Esfuerzo** | M |
+| **Agente** | Codex |
+| **Por qué** | El frontend sirve con Vite dev server en producción: hot-reload activo, source maps sin minificar, imagen de ~400MB. Multi-stage con nginx produce imagen <50MB con archivos estáticos minificados. |
+| **Tareas** | 1. Stage 1 (`node:20-alpine`): `npm ci && npm run build` → genera `dist/`. 2. Stage 2 (`nginx:alpine`): copiar `dist/` + config nginx para SPA routing + headers. 3. Añadir usuario non-root. 4. Ajustar healthcheck en `docker-compose.yml` si cambia endpoint. 5. Verificar `docker compose up --build` → frontend healthy, app funcional. |
+| **Criterio de aceptación** | `docker images` muestra imagen frontend < 50MB. No hay Node.js en runtime. `docker exec <container> whoami` ≠ root. App funcional end-to-end via Docker. |
+| **Archivos** | `Dockerfile.frontend`, `docker-compose.yml`, posible `frontend/nginx.conf` (nuevo) |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
+#### F11-E — Tests de `_edit_helpers.py`: coverage de 60% → 85%+
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — solo añade tests, no modifica lógica |
+| **Esfuerzo** | M |
+| **Agente** | Codex |
+| **Por qué** | `_edit_helpers.py` es el módulo con peor coverage (60%, 55 statements sin cubrir). Contiene lógica de edición de campos que afecta integridad de datos. |
+| **Tareas** | 1. Analizar los statements sin cubrir (L20-57, L68, L70, L78, etc.). 2. Escribir tests unitarios que cubran las ramas de edición, validación y edge cases. 3. Verificar `python -m pytest --cov=backend.app.application.documents._edit_helpers -q` ≥ 85%. |
+| **Criterio de aceptación** | Coverage del módulo ≥ 85%. 264+ tests backend siguen pasando. Ningún test existente modificado. |
+| **Archivos** | `backend/tests/unit/test_edit_helpers.py` (nuevo o ampliado) |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
+#### F11-F — Smoke test final + commit + PR
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — verificación y entrega |
+| **Esfuerzo** | S |
+| **Agente** | Claude |
+| **Por qué** | Gate final de calidad antes de merge. |
+| **Tareas** | 1. Ejecutar smoke checklist: `pytest` → 264+ passed, `npm test` → 168+ passed, `npm run lint` → 0 problems, `tsc --noEmit` → 0 errors, `npm run build` → 0 warnings, `docker compose up --build` → ambos healthy. 2. Ejecutar DOC_UPDATES normalization pass (per AGENTS.md). 3. Commit + push. 4. Crear PR hacia `main`. |
+| **Criterio de aceptación** | Todos los checks del smoke pasan. CI green (6/6 jobs). PR creado con descripción clara. |
+| **Archivos** | Todos los modificados en F11-A a F11-E |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
+**Política de la fase — do-not-change:**
+- Lógica de negocio, tests existentes, CI pipeline, arquitectura, dependencias (versiones).
 - Cada paso es atómico; si uno falla, los demás siguen siendo válidos.
 
 ---
