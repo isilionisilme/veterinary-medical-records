@@ -104,7 +104,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [x] F12-G 🔄 — Tests `pdf_extraction.py` (78%→85%+) (Codex)
 - [x] F12-H 🔄 — Bump dependencias backend: FastAPI, uvicorn, httpx, python-multipart (Codex)
 - [x] F12-I 🔄 — Descomposición `routes.py` (942 LOC → módulos por bounded context) (Codex)
-- [ ] F12-J 🚧 — Smoke test final + PR (Claude)
+- [x] F12-J 🚧 — Smoke test final + PR (Claude)
 
 ---
 
@@ -767,7 +767,7 @@ Below are the 4 architecture ADRs with full arguments, trade-offs, and code evid
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-_Completado: F12-I_
+_Completado: F12-J (Iteration 6 finalizada)_
 
 ### Prompt
 _Vacío._
