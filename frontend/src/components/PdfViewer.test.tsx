@@ -300,6 +300,7 @@ describe("PdfViewer", () => {
     expect(getDocumentMock).toHaveBeenNthCalledWith(2, {
       url: "blob://sample",
       disableWorker: true,
+      isEvalSupported: false,
     });
     expect(screen.queryByText("No pudimos cargar el PDF.")).toBeNull();
   });
@@ -340,6 +341,43 @@ describe("PdfViewer", () => {
     render(<PdfViewer fileUrl="blob://sample" filename="record.pdf" />);
 
     expect(await screen.findByText("No pudimos cargar el PDF.")).toBeInTheDocument();
+  });
+
+  it("loads from fetched arrayBuffer when url-based fallbacks fail", async () => {
+    const getDocumentMock = vi.mocked(pdfjsLib.getDocument);
+    getDocumentMock.mockReset();
+    getDocumentMock
+      .mockImplementationOnce(() => ({
+        promise: Promise.reject(new Error("worker load failed")),
+      }))
+      .mockImplementationOnce(() => ({
+        promise: Promise.reject(new Error("disableWorker fallback failed")),
+      }))
+      .mockImplementationOnce(() => ({
+        promise: Promise.resolve(mockDoc),
+      }));
+
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      arrayBuffer: async () => new Uint8Array([0x25, 0x50, 0x44, 0x46]).buffer,
+    } as Response);
+
+    render(<PdfViewer fileUrl="blob://sample" filename="record.pdf" />);
+
+    await screen.findAllByTestId("pdf-page");
+
+    expect(getDocumentMock).toHaveBeenNthCalledWith(1, "blob://sample");
+    expect(getDocumentMock).toHaveBeenNthCalledWith(2, {
+      url: "blob://sample",
+      disableWorker: true,
+      isEvalSupported: false,
+    });
+    expect(fetchMock).toHaveBeenCalledWith("blob://sample");
+    const thirdCall = getDocumentMock.mock.calls[2]?.[0] as { data?: Uint8Array };
+    expect(thirdCall).toMatchObject({ disableWorker: true, isEvalSupported: false });
+    expect(thirdCall.data).toBeInstanceOf(Uint8Array);
+
+    fetchMock.mockRestore();
   });
 
   it("renders drag overlay when upload drag state is active", async () => {

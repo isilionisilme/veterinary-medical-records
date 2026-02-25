@@ -353,12 +353,31 @@ export function PdfViewer({
           if (cancelled) {
             return;
           }
-          const fallbackSource = {
-            url: fileUrl,
-            disableWorker: true,
-          } as unknown as Parameters<typeof pdfjsLib.getDocument>[0];
-          loadingTask = pdfjsLib.getDocument(fallbackSource);
-          doc = await loadingTask.promise;
+          try {
+            const fallbackSource = {
+              url: fileUrl,
+              disableWorker: true,
+              isEvalSupported: false,
+            } as unknown as Parameters<typeof pdfjsLib.getDocument>[0];
+            loadingTask = pdfjsLib.getDocument(fallbackSource);
+            doc = await loadingTask.promise;
+          } catch {
+            if (cancelled) {
+              return;
+            }
+            const response = await fetch(fileUrl);
+            if (!response.ok) {
+              throw new Error("Failed to fetch PDF fallback data.");
+            }
+            const arrayBuffer = await response.arrayBuffer();
+            const dataFallbackSource = {
+              data: new Uint8Array(arrayBuffer),
+              disableWorker: true,
+              isEvalSupported: false,
+            } as unknown as Parameters<typeof pdfjsLib.getDocument>[0];
+            loadingTask = pdfjsLib.getDocument(dataFallbackSource);
+            doc = await loadingTask.promise;
+          }
         }
         if (cancelled) {
           void doc.destroy();
