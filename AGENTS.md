@@ -45,4 +45,4 @@ If no intent matches, read `docs/agent_router/00_FALLBACK.md` and ask for clarif
 If the user writes `Continúa` and `docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md` is attached:
 1. Read Estado de ejecución → find the first `[ ]` step.
 2. If that step belongs to the active agent for this chat: proceed normally following the plan.
-3. If that step belongs to a different agent: STOP. Do not implement anything. Tell the user to open a new chat in Copilot, select the assigned agent, attach `AI_ITERATIVE_EXECUTION_PLAN.md`, and write `Continúa`.
+3. If that step belongs to a different agent: STOP. Do not implement anything. Respond EXACTLY: "⚠️ Este paso no corresponde al agente activo. **STOP.** Abre un chat nuevo en Copilot → selecciona el agente asignado para ese paso → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."

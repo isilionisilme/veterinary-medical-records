@@ -21,6 +21,9 @@ DOC_UPDATES_TEST_IMPACT_MAP = (
 DOC_UPDATES_ROUTER_PARITY_MAP = (
     REPO_ROOT / "docs" / "agent_router" / "01_WORKFLOW" / "DOC_UPDATES" / "router_parity_map.json"
 )
+AI_ITERATIVE_EXECUTION_PLAN = (
+    REPO_ROOT / "docs" / "project" / "refactor" / "AI_ITERATIVE_EXECUTION_PLAN.md"
+)
 AI_ITERATIVE_PLAN_ROUTER_ENTRY = (
     REPO_ROOT
     / "docs"
@@ -78,6 +81,18 @@ def test_agents_routes_docs_updated_intent_to_doc_updates() -> None:
     assert "documentation was updated" in lower
     assert "run the doc_updates normalization pass once" in lower
     assert "belongs to the active agent for this chat" in text
+
+
+def test_identity_handoff_message_is_canonical_and_persistent() -> None:
+    canonical = (
+        '"⚠️ Este paso no corresponde al agente activo. **STOP.** '
+        "Abre un chat nuevo en Copilot → selecciona el agente asignado para ese paso "
+        '→ adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."'
+    )
+    agents_text = _read_text(ROOT_AGENTS)
+    plan_text = _read_text(AI_ITERATIVE_EXECUTION_PLAN)
+    assert canonical in agents_text
+    assert canonical in plan_text
 
 
 def test_doc_updates_entry_covers_triggers_and_summary_schema() -> None:
