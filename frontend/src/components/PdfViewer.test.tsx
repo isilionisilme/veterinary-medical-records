@@ -70,6 +70,11 @@ describe("PdfViewer", () => {
     lastObserver = null;
     globalThis.IntersectionObserver =
       MockIntersectionObserver as unknown as typeof IntersectionObserver;
+    Object.defineProperty(HTMLElement.prototype, "scrollTo", {
+      configurable: true,
+      writable: true,
+      value: vi.fn(),
+    });
   });
 
   it("renders all pages in a continuous scroll", async () => {
@@ -297,5 +302,50 @@ describe("PdfViewer", () => {
       disableWorker: true,
     });
     expect(screen.queryByText("No pudimos cargar el PDF.")).toBeNull();
+  });
+
+  it("shows loading state while document promise is pending", async () => {
+    const getDocumentMock = vi.mocked(pdfjsLib.getDocument);
+    getDocumentMock.mockReset();
+
+    let resolveDoc: ((value: typeof mockDoc) => void) | null = null;
+    const pendingPromise = new Promise<typeof mockDoc>((resolve) => {
+      resolveDoc = resolve;
+    });
+
+    getDocumentMock.mockImplementation(() => ({
+      promise: pendingPromise,
+    }));
+
+    render(<PdfViewer fileUrl="blob://sample" filename="record.pdf" />);
+
+    expect(screen.getByText("Cargando PDF...")).toBeInTheDocument();
+
+    resolveDoc?.(mockDoc);
+    await screen.findAllByTestId("pdf-page");
+    expect(screen.queryByText("Cargando PDF...")).toBeNull();
+  });
+
+  it("shows error state when both initial and fallback load attempts fail", async () => {
+    const getDocumentMock = vi.mocked(pdfjsLib.getDocument);
+    getDocumentMock.mockReset();
+    getDocumentMock
+      .mockImplementationOnce(() => ({
+        promise: Promise.reject(new Error("worker load failed")),
+      }))
+      .mockImplementationOnce(() => ({
+        promise: Promise.reject(new Error("fallback also failed")),
+      }));
+
+    render(<PdfViewer fileUrl="blob://sample" filename="record.pdf" />);
+
+    expect(await screen.findByText("No pudimos cargar el PDF.")).toBeInTheDocument();
+  });
+
+  it("renders drag overlay when upload drag state is active", async () => {
+    render(<PdfViewer fileUrl="blob://sample" filename="record.pdf" isDragOver />);
+
+    await screen.findAllByTestId("pdf-page");
+    expect(screen.getByText("Suelta el PDF para subirlo")).toBeInTheDocument();
   });
 });
