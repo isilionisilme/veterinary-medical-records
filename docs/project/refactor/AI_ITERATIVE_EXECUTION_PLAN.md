@@ -57,7 +57,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 ### Fase 8 — Iteración 2 (CTO verdict)
 - [x] F8-A 🚧 — Setup branch + guardrails + prompt activo (Codex)
 - [x] F8-B 🔄 — SQLite WAL + busy_timeout + test de concurrencia (Codex)
-- [ ] F8-C 🔄 — Subir cobertura de `frontend/src/lib/utils.ts` (Codex)
+- [x] F8-C 🔄 — Subir cobertura de `frontend/src/lib/utils.ts` (Codex)
 - [ ] F8-D 🚧 — Security boundary docs + nota AppWorkspace + roadmap update (Claude)
 - [ ] F8-E 🚧 — Validación final + PR nueva + cierre iteración (Claude)
 
@@ -722,83 +722,10 @@ Below are the 4 architecture ADRs with full arguments, trade-offs, and code evid
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-F8-C
+F8-D
 
 ### Prompt
-```md
---- AGENT IDENTITY CHECK ---
-This prompt is designed for GPT-5.3-Codex.
-If you are not GPT-5.3-Codex: STOP and tell the user to switch to GPT-5.3-Codex.
---- END IDENTITY CHECK ---
-
---- BRANCH CHECK ---
-Run: git branch --show-current
-If NOT `improvement/refactor-iteration-2`: STOP. Tell the user to switch branch.
---- END BRANCH CHECK ---
-
---- SYNC CHECK ---
-Run: git pull origin improvement/refactor-iteration-2
---- END SYNC CHECK ---
-
---- TASK (F8-C) ---
-Increase coverage for `frontend/src/lib/utils.ts` with targeted tests:
-
-1) Extend `frontend/src/lib/utils.test.ts` to cover:
-  - `cn()` behavior with mixed classes and falsy values.
-  - `isApiErrorPayload()` true/false cases (valid shape, missing fields, null/non-object).
-  - `apiFetchJson` error branches: non-JSON response, malformed JSON body, fallback error message.
-  - `apiFetchBlob` error branch parsing.
-
-2) Keep implementation backward compatible; do not alter runtime behavior in `utils.ts` unless strictly needed.
-
-3) Coverage target for `utils.ts`:
-  - Lines >= 70%
-  - Branches >= 60%
-
-4) Capture evidence via targeted coverage run:
-  - `cd d:/Git/veterinary-medical-records/frontend`
-  - `npx vitest run --coverage src/lib/utils.test.ts`
-
-Constraints:
-- Keep behavior backward compatible.
-- Do not refactor unrelated modules.
-- Follow existing Vitest test patterns.
-
---- TEST GATE (mandatory) ---
-Backend: cd d:/Git/veterinary-medical-records && python -m pytest --tb=short -q
-Frontend: cd d:/Git/veterinary-medical-records/frontend && npm test
-If any test fails: STOP. Report failures. Do NOT commit. Do NOT edit plan.
---- END TEST GATE ---
-
---- SCOPE BOUNDARY (two-commit strategy) ---
-STEP A — Commit code first (plan untouched):
-git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
-git commit -m "test(plan-f8c): raise utils.ts error-path coverage with targeted tests
-
-Test proof: <pytest summary> | <npm test summary>"
-
-STEP B — Commit plan update after code commit:
-- Mark `- [ ] F8-C` as `[x]`
-- Set `### Paso objetivo` to `F8-D`
-- Replace `### Prompt` with `_Vacío._`
-git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
-git commit -m "docs(plan-f8c): mark step done"
-
-STEP C — Push:
-git push origin improvement/refactor-iteration-2
-
-STEP D — PR update:
-If PR exists, update with `gh pr edit <pr_number> --body-file <file>`.
-If PR does not exist yet, create it with base `main` and head `improvement/refactor-iteration-2`.
-
-STEP E — CI gate:
-gh run list --branch improvement/refactor-iteration-2 --limit 1 --json status,conclusion,databaseId
-Wait/retry until completed; do not declare done without green CI.
-
-STEP F — Next-step message:
-Tell user to continue with F8-D in Claude.
---- END SCOPE BOUNDARY ---
-```
+_Vacío._
 
 ---
 
