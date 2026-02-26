@@ -105,3 +105,106 @@ _CLINICAL_RECORD_GUARD_PATTERN = re.compile(r"(?i)\b(?:\d{1,2}[\/\-.]\d{1,2}[\/\
 NUMERIC_TYPES = (int, float)
 REVIEW_SCHEMA_CONTRACT = "visit-grouped-canonical"
 _WHITESPACE_PATTERN = re.compile(r"\s+")
+
+_LABELED_PATTERNS: tuple[tuple[str, str, float], ...] = (
+    (
+        "pet_name",
+        r"(?:paciente|nombre(?:\s+del\s+paciente)?|patient)\s*[:\-]\s*([^\n;]{2,100})",
+        COVERAGE_CONFIDENCE_LABEL,
+    ),
+    (
+        "species",
+        r"(?:especie\s*/\s*raza|raza\s*/\s*especie)\s*[:\-]\s*([^\n;]{2,120})",
+        COVERAGE_CONFIDENCE_LABEL,
+    ),
+    (
+        "breed",
+        r"(?:especie\s*/\s*raza|raza\s*/\s*especie)\s*[:\-]\s*([^\n;]{2,120})",
+        COVERAGE_CONFIDENCE_LABEL,
+    ),
+    ("species", r"(?:especie|species)\s*[:\-]\s*([^\n;]{2,80})", COVERAGE_CONFIDENCE_LABEL),
+    ("breed", r"(?:raza|breed)\s*[:\-]\s*([^\n;]{2,80})", COVERAGE_CONFIDENCE_LABEL),
+    ("sex", r"(?:sexo|sex)\s*[:\-]\s*([^\n;]{1,40})", COVERAGE_CONFIDENCE_LABEL),
+    ("age", r"(?:edad|age)\s*[:\-]\s*([^\n;]{1,60})", COVERAGE_CONFIDENCE_LABEL),
+    (
+        "dob",
+        r"(?:f(?:echa)?\s*(?:de\s*)?(?:nacimiento|nac\.|nac)|dob|birth\s*date)\s*[:\-]\s*([0-9]{1,2}[\/\-.][0-9]{1,2}[\/\-.][0-9]{2,4})",
+        COVERAGE_CONFIDENCE_LABEL,
+    ),
+    (
+        "weight",
+        r"(?:peso|weight)\s*[:\-]?\s*([0-9]+(?:[\.,][0-9]+)?\s*(?:kg|kgs|g)?)",
+        COVERAGE_CONFIDENCE_LABEL,
+    ),
+    (
+        "microchip_id",
+        r"(?:microchip|chip)\s*(?:n[ºo°\uFFFD]\.?|nro\.?|id)?\s*[:\-]?\s*([A-Za-z0-9][A-Za-z0-9./_\-]{1,30}(?:\s+[A-Za-z0-9][A-Za-z0-9./_\-]{0,20}){0,3})",
+        COVERAGE_CONFIDENCE_LABEL,
+    ),
+    (
+        "clinical_record_number",
+        r"(?:nhc|n[ºo°]?\s*(?:historial|historia\s*cl[ií]nica)|historial\s*cl[ií]nico|n[uú]mero\s*de\s*historial)\s*[:\-]?\s*([A-Za-z0-9./_\-]{2,40})",
+        COVERAGE_CONFIDENCE_LABEL,
+    ),
+    (
+        "visit_date",
+        r"(?:fecha\s+de\s+visita|visita|consulta|visit\s+date)\s*[:\-]\s*([0-9]{1,2}[\/\-.][0-9]{1,2}[\/\-.][0-9]{2,4})",
+        COVERAGE_CONFIDENCE_LABEL,
+    ),
+    (
+        "document_date",
+        r"(?:fecha\s+documento|fecha|date)\s*[:\-]\s*([0-9]{1,2}[\/\-.][0-9]{1,2}[\/\-.][0-9]{2,4})",
+        COVERAGE_CONFIDENCE_LABEL,
+    ),
+    (
+        "clinic_name",
+        r"(?:cl[ií]nica|centro\s+veterinario|hospital\s+veterinario)\s*[:\-]\s*([^\n;]{3,120})",
+        COVERAGE_CONFIDENCE_LABEL,
+    ),
+    (
+        "clinic_address",
+        r"(?:direcci[oó]n\s*(?:de\s*la\s*cl[ií]nica)?|domicilio\s*(?:de\s*la\s*cl[ií]nica)?)\s*[:\-]\s*([^\n;]{4,160})",
+        COVERAGE_CONFIDENCE_LABEL,
+    ),
+    (
+        "vet_name",
+        r"(?:veterinari[oa]|dr\.?|dra\.?)\s*[:\-]\s*([^\n;]{3,120})",
+        COVERAGE_CONFIDENCE_LABEL,
+    ),
+    (
+        "owner_name",
+        r"(?:propietari[oa]|tutor)\s*[:\-]\s*([^\n;]{3,120})",
+        COVERAGE_CONFIDENCE_LABEL,
+    ),
+    (
+        "owner_address",
+        (
+            r"(?:direcci[oó]n\s*(?:del\s*propietari[oa])?|domicilio\s*"
+            r"(?:del\s*propietari[oa])?)\s*[:\-]\s*([^\n;]{4,160})"
+        ),
+        COVERAGE_CONFIDENCE_LABEL,
+    ),
+    (
+        "coat_color",
+        r"(?:capa|color\s*(?:del\s*(?:pelaje|pelo))?)\s*[:\-]\s*([^\n;]{2,100})",
+        COVERAGE_CONFIDENCE_LABEL,
+    ),
+    (
+        "hair_length",
+        r"(?:pelo|longitud\s*del\s*pelo)\s*[:\-]\s*([^\n;]{2,100})",
+        COVERAGE_CONFIDENCE_LABEL,
+    ),
+    (
+        "repro_status",
+        (
+            r"(?:estado\s*reproductivo|repro(?:ductivo)?|esterilizad[oa]|"
+            r"castrad[oa]|f[eé]rtil)\s*[:\-]\s*([^\n;]{2,80})"
+        ),
+        COVERAGE_CONFIDENCE_LABEL,
+    ),
+    (
+        "reason_for_visit",
+        r"(?:motivo(?:\s+de\s+consulta)?|reason\s+for\s+visit)\s*[:\-]\s*([^\n]{3,200})",
+        COVERAGE_CONFIDENCE_LABEL,
+    ),
+)

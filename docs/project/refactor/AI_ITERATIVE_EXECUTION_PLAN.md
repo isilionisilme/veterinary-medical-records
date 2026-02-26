@@ -137,15 +137,15 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [x] F14-C 🔄 — Clasificador de cambios de docs: script + integración CI (Codex) ✅ DONE (Codex, 2026-02-26)
 - [x] F14-D 🔄 — Exención Navigation + modo relajado Clarification en `check_doc_test_sync.py` (Codex) ✅ DONE (Codex, 2026-02-26)
 - [x] F14-E 🔄 — Tests unitarios del clasificador + calibración (Codex) ✅ DONE (Codex, 2026-02-26)
-- [ ] F14-L 🚧 — Smoke test PR A + merge `improvement/iteration-8-ci` → main (Claude)
+- [x] F14-L 🚧 — Smoke test PR A + merge `improvement/iteration-8-ci` → main (Claude) ✅ DONE (Claude, 2026-02-27) — PR #156 merged (squash). 372 backend, 241 frontend, 0 lint, 3 doc jobs green, classifier verified, owner module propagated.
 **PR B — `improvement/iteration-8-refactor` (F14-F..F14-K + F14-M)**
-- [ ] F14-F 🔄 — Extraer render sections de AppWorkspace.tsx: <UploadPanel>, <ReviewPanel>, <SidebarPanel>, <PdfViewerPanel> (Codex)
-- [ ] F14-G 🔄 — Tests para hooks extraídos en Iter 7: useFieldEditing, useUploadState, useReviewSplitPanel, useDocumentsSidebar, useStructuredDataFilters (Codex)
-- [ ] F14-H 🔄 — PdfViewer branch coverage 47%→65%+ (Codex)
-- [ ] F14-I 🔄 — documentApi branch coverage 67%→80%+ (Codex)
-- [ ] F14-J 🔄 — config.py coverage 83%→90%+ (Codex)
-- [ ] F14-K 🔄 — Split candidate_mining.py (789 LOC → 2 módulos < 400 LOC) (Codex)
-- [ ] F14-M 🚧 — FUTURE_IMPROVEMENTS refresh + smoke test PR B + merge → main (Claude)
+- [x] F14-F 🔄 — Extraer render sections de AppWorkspace.tsx: <UploadPanel>, <ReviewPanel>, <SidebarPanel>, <PdfViewerPanel> (Codex)
+- [x] F14-G 🔄 — Tests para hooks extraídos en Iter 7: useFieldEditing, useUploadState, useReviewSplitPanel, useDocumentsSidebar, useStructuredDataFilters (Codex)
+- [x] F14-H 🔄 — PdfViewer branch coverage 47%→65%+ (Codex)
+- [x] F14-I 🔄 — documentApi branch coverage 67%→80%+ (Codex)
+- [x] F14-J 🔄 — config.py coverage 83%→90%+ (Codex)
+- [x] F14-K 🔄 — Split candidate_mining.py (789 LOC → 2 módulos < 400 LOC) (Codex)
+- [x] F14-M 🚧 — FUTURE_IMPROVEMENTS refresh + smoke test PR B + merge → main (Claude) ✅ DONE (Claude, 2026-02-28) — 372 backend, 263 frontend tests pass. Ruff/ESLint/tsc clean. 3 doc guards green. FUTURE_IMPROVEMENTS.md refreshed with Iteration 8 completion status.
 
 ---
 
@@ -1435,6 +1435,340 @@ Target files: `backend/tests/unit/test_classify_doc_change.py` (new)
 Do NOT change: `classify_doc_change.py`, `check_doc_test_sync.py` (test them as-is).
 Acceptance: ≥7 test cases. ≥90% coverage of classifier. All tests green.
 --- END TASK ---
+```
+
+### F14-F — Extraer render sections de AppWorkspace.tsx
+
+```
+--- TASK ---
+Step: F14-F — Extract render sections from AppWorkspace.tsx
+Branch: improvement/iteration-8-refactor
+
+--- MANDATORY: MARK IN PROGRESS (before any code change) ---
+1. Edit plan: append ` ⏳ EN PROGRESO (Codex, <UTC date>)` to `- [ ] F14-F`
+2. git add + commit -m "docs(plan-f14f): mark step in progress" + push
+--- END MARK IN PROGRESS ---
+
+Context: AppWorkspace.tsx is 2999 LOC. Target < 1,500 LOC. The JSX return
+statement (~L2015-L2999) has large inline sections that must be extracted into
+sub-components. DocumentsSidebar is already extracted.
+
+Objective: Extract 3 sub-components from AppWorkspace's JSX into
+`frontend/src/components/workspace/`:
+
+1. **StructuredDataPanel.tsx** (~L2247-L2654, ~407 lines):
+   The `<aside data-testid="structured-column-stack">` section. Includes:
+   - Review toggle header + button
+   - Search & filter bar (confidence buckets, toggles, clear button)
+   - Review panel content area (loading/empty/ready states)
+   Props it will need: consult the state variables and handlers used in that
+   section. Group them into a typed Props interface. Max 400 LOC.
+
+2. **PdfViewerPanel.tsx** — the center column viewer area:
+   Merge 3 tab-dependent sections into one component:
+   - PDF viewer + heading (~L2176-L2228, ~52 lines)
+   - Raw text tab (~L2691-L2818, ~127 lines)
+   - Technical/processing history tab (~L2819-L2971, ~152 lines)
+   - Retry/reprocess modal (~L2972-L2992, ~20 lines)
+   - Split handle (~L2229-L2246, ~18 lines)
+   The component receives `activeViewerTab` and renders the correct content.
+   Max 450 LOC.
+
+3. **UploadPanel.tsx** (~L2110-L2159, ~50 lines):
+   The empty state / upload dropzone shown when `!activeId`.
+   Small but clean extraction. Max 100 LOC.
+
+Implementation steps:
+1. Read `frontend/src/AppWorkspace.tsx` fully.
+2. Create `frontend/src/components/workspace/` directory.
+3. Create each sub-component with typed Props interface + extracted JSX.
+4. In AppWorkspace, replace inline JSX with `<StructuredDataPanel .../>`,
+   `<PdfViewerPanel .../>`, `<UploadPanel .../>`.
+5. Verify AppWorkspace < 1,500 LOC after extraction.
+6. `npm test -- --run` → 241+ passed. `npm run lint` → 0 errors.
+7. Proceed to TEST GATE.
+
+--- MANDATORY: COMMIT + MARK DONE (after TEST GATE passes) ---
+1. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
+2. git commit -m "refactor(plan-f14f): extract render sections from AppWorkspace"
+3. Edit plan: `- [ ] F14-F` → `- [x] F14-F` (remove EN PROGRESO)
+4. git add plan + commit -m "docs(plan-f14f): mark step done"
+5. git push (first push: `git push -u origin improvement/iteration-8-refactor`)
+6. CI GATE: sha=$(git rev-parse HEAD); sleep 15; gh run list --commit $sha --json status,conclusion,databaseId --jq '.[0]'; poll until conclusion=success (max 10 retries, 30s apart). If red: fix + re-push.
+--- END COMMIT + MARK DONE ---
+
+Target files: `frontend/src/components/workspace/StructuredDataPanel.tsx`,
+`frontend/src/components/workspace/PdfViewerPanel.tsx`,
+`frontend/src/components/workspace/UploadPanel.tsx` (all new),
+`frontend/src/AppWorkspace.tsx`
+Do NOT change: hooks (useFieldEditing, etc.), DocumentsSidebar, PdfViewer, tests.
+Acceptance: AppWorkspace < 1,500 LOC. 3 sub-components created. 241+ tests pass.
+0 lint errors.
+--- END TASK ---
+⚠️ AUTO-CHAIN: CI green → read F14-G prompt below and execute it. DO NOT stop.
+```
+
+### F14-G — Tests para hooks extraídos en Iter 7
+
+```
+--- TASK ---
+Step: F14-G — Tests for hooks extracted in Iteration 7
+Branch: improvement/iteration-8-refactor
+
+--- MANDATORY: MARK IN PROGRESS (before any code change) ---
+1. Edit plan: append ` ⏳ EN PROGRESO (Codex, <UTC date>)` to `- [ ] F14-G`
+2. git add + commit -m "docs(plan-f14g): mark step in progress" + push
+--- END MARK IN PROGRESS ---
+
+Objective: Add unit tests for the 5 custom hooks extracted in Iteration 7.
+These hooks currently have zero dedicated tests — they're only tested indirectly.
+
+Hooks to test (all in `frontend/src/hooks/`):
+1. `useFieldEditing.ts` (163 LOC) — field editing state (editing field, value, pending edits)
+2. `useUploadState.ts` (94 LOC) — file upload + drag-and-drop state
+3. `useReviewSplitPanel.ts` (218 LOC) — split panel resize + pointer events
+4. `useDocumentsSidebar.ts` (187 LOC) — sidebar width, collapsed state, resize
+5. `useStructuredDataFilters.ts` (115 LOC) — search, confidence filters, toggles
+
+For each hook, create `frontend/src/hooks/<hookName>.test.ts`:
+
+Per-hook test approach:
+a. Import hook, wrap with `renderHook` from `@testing-library/react`.
+   If hook requires React Query context, wrap in `QueryClientProvider`.
+b. Test initial state: verify default values.
+c. Test state transitions: call returned handlers, assert updated state.
+d. Test edge cases: empty inputs, rapid toggles, boundary values.
+e. Test cleanup: if hook uses effects with cleanup, verify no leaks.
+
+Minimum test count per hook:
+- useFieldEditing: 5 tests (start/cancel/confirm edit, pending edits, clear)
+- useUploadState: 4 tests (initial, drag events, file selection, reset)
+- useReviewSplitPanel: 4 tests (initial ratio, drag start/move/end, keyboard)
+- useDocumentsSidebar: 4 tests (initial width, collapse/expand, resize, bounds)
+- useStructuredDataFilters: 4 tests (initial filters, set search, toggle buckets, reset)
+
+After creating all 5 test files:
+1. `npm test -- --run` → 260+ passed (241 existing + ~20 new).
+2. `npm run lint` → 0 errors.
+3. Proceed to TEST GATE.
+
+--- MANDATORY: COMMIT + MARK DONE (after TEST GATE passes) ---
+1. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
+2. git commit -m "test(plan-f14g): add unit tests for extracted hooks"
+3. Edit plan: `- [ ] F14-G` → `- [x] F14-G` (remove EN PROGRESO)
+4. git add plan + commit -m "docs(plan-f14g): mark step done"
+5. git push
+6. CI GATE: sha=$(git rev-parse HEAD); sleep 15; gh run list --commit $sha --json status,conclusion,databaseId --jq '.[0]'; poll until conclusion=success (max 10 retries, 30s apart). If red: fix + re-push.
+--- END COMMIT + MARK DONE ---
+
+Target files: `frontend/src/hooks/useFieldEditing.test.ts`,
+`frontend/src/hooks/useUploadState.test.ts`,
+`frontend/src/hooks/useReviewSplitPanel.test.ts`,
+`frontend/src/hooks/useDocumentsSidebar.test.ts`,
+`frontend/src/hooks/useStructuredDataFilters.test.ts` (all new)
+Do NOT change: The hooks themselves (test them as-is).
+Acceptance: 5 test files. ≥21 test cases total. 260+ frontend tests pass.
+--- END TASK ---
+⚠️ AUTO-CHAIN: CI green → read F14-H prompt below and execute it. DO NOT stop.
+```
+
+### F14-H — PdfViewer branch coverage 47%→65%+
+
+```
+--- TASK ---
+Step: F14-H — PdfViewer branch coverage 47%→65%+
+Branch: improvement/iteration-8-refactor
+
+--- MANDATORY: MARK IN PROGRESS (before any code change) ---
+1. Edit plan: append ` ⏳ EN PROGRESO (Codex, <UTC date>)` to `- [ ] F14-H`
+2. git add + commit -m "docs(plan-f14h): mark step in progress" + push
+--- END MARK IN PROGRESS ---
+
+Objective: Increase PdfViewer branch coverage from 47% to ≥65%.
+
+1. Read `frontend/src/components/PdfViewer.tsx` and `PdfViewer.test.tsx`.
+2. Run `npm test -- --run --coverage` and check PdfViewer branch %.
+3. Identify uncovered branches: error states, loading states, zoom in/out,
+   page navigation (prev/next), toolbar modes, empty fileData, fileData change.
+4. Add tests to `PdfViewer.test.tsx`:
+   - Error state: mock pdfjs.getDocument to reject → verify error UI.
+   - Loading state: verify loading spinner while document loads.
+   - Zoom controls: test zoom in / zoom out buttons update scale.
+   - Page navigation: next/prev page when multi-page doc.
+   - FileData change: rerender with new ArrayBuffer → verify re-render.
+   - Toolbar modes: test different viewer mode buttons.
+   NOTE: canvas/ResizeObserver APIs are unavailable in jsdom. Mock them:
+   `HTMLCanvasElement.prototype.getContext = vi.fn(() => mockContext)`.
+   Use `vi.fn()` for IntersectionObserver/ResizeObserver if needed.
+5. `npm test -- --run --coverage` → PdfViewer branch ≥65%.
+6. `npm run lint` → 0 errors.
+7. Proceed to TEST GATE.
+
+--- MANDATORY: COMMIT + MARK DONE (after TEST GATE passes) ---
+1. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
+2. git commit -m "test(plan-f14h): PdfViewer branch coverage to 65%+"
+3. Edit plan: `- [ ] F14-H` → `- [x] F14-H` (remove EN PROGRESO)
+4. git add plan + commit -m "docs(plan-f14h): mark step done"
+5. git push
+6. CI GATE: sha=$(git rev-parse HEAD); sleep 15; gh run list --commit $sha --json status,conclusion,databaseId --jq '.[0]'; poll until conclusion=success (max 10 retries, 30s apart). If red: fix + re-push.
+--- END COMMIT + MARK DONE ---
+
+Target files: `frontend/src/components/PdfViewer.test.tsx`
+Do NOT change: `PdfViewer.tsx` (only add tests).
+Acceptance: PdfViewer branch ≥65%. All frontend tests pass.
+--- END TASK ---
+⚠️ AUTO-CHAIN: CI green → read F14-I prompt below and execute it. DO NOT stop.
+```
+
+### F14-I — documentApi branch coverage 67%→80%+
+
+```
+--- TASK ---
+Step: F14-I — documentApi branch coverage 67%→80%+
+Branch: improvement/iteration-8-refactor
+
+--- MANDATORY: MARK IN PROGRESS (before any code change) ---
+1. Edit plan: append ` ⏳ EN PROGRESO (Codex, <UTC date>)` to `- [ ] F14-I`
+2. git add + commit -m "docs(plan-f14i): mark step in progress" + push
+--- END MARK IN PROGRESS ---
+
+Objective: Increase documentApi branch coverage from 67% to ≥80%.
+
+1. Read `frontend/src/api/documentApi.ts` and `documentApi.test.ts`.
+2. Run `npm test -- --run --coverage` and check documentApi branch %.
+3. Identify uncovered error paths: network errors, HTTP 4xx/5xx responses,
+   malformed JSON, empty body responses, timeout scenarios.
+4. Add tests to `documentApi.test.ts`:
+   - Network error: mock fetch to throw TypeError → verify error handling.
+   - HTTP 500: mock fetch with status 500 → verify error propagation.
+   - HTTP 404: mock fetch with status 404 → verify specific handling.
+   - HTTP 422: mock fetch with validation error body → verify parsing.
+   - Malformed response: mock fetch with invalid JSON → verify graceful fail.
+   - Empty response body: verify handling of null/undefined data.
+   - Each API function (upload, list, delete, download, etc.) should have
+     at least one error path test.
+5. `npm test -- --run --coverage` → documentApi branch ≥80%.
+6. `npm run lint` → 0 errors.
+7. Proceed to TEST GATE.
+
+--- MANDATORY: COMMIT + MARK DONE (after TEST GATE passes) ---
+1. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
+2. git commit -m "test(plan-f14i): documentApi branch coverage to 80%+"
+3. Edit plan: `- [ ] F14-I` → `- [x] F14-I` (remove EN PROGRESO)
+4. git add plan + commit -m "docs(plan-f14i): mark step done"
+5. git push
+6. CI GATE: sha=$(git rev-parse HEAD); sleep 15; gh run list --commit $sha --json status,conclusion,databaseId --jq '.[0]'; poll until conclusion=success (max 10 retries, 30s apart). If red: fix + re-push.
+--- END COMMIT + MARK DONE ---
+
+Target files: `frontend/src/api/documentApi.test.ts`
+Do NOT change: `documentApi.ts` (only add tests).
+Acceptance: documentApi branch ≥80%. All frontend tests pass.
+--- END TASK ---
+⚠️ AUTO-CHAIN: CI green → read F14-J prompt below and execute it. DO NOT stop.
+```
+
+### F14-J — config.py coverage 83%→90%+
+
+```
+--- TASK ---
+Step: F14-J — config.py coverage 83%→90%+
+Branch: improvement/iteration-8-refactor
+
+--- MANDATORY: MARK IN PROGRESS (before any code change) ---
+1. Edit plan: append ` ⏳ EN PROGRESO (Codex, <UTC date>)` to `- [ ] F14-J`
+2. git add + commit -m "docs(plan-f14j): mark step in progress" + push
+--- END MARK IN PROGRESS ---
+
+Objective: Increase config.py coverage from 83% to ≥90%.
+
+1. Read `backend/app/config.py` (~192 LOC) and `backend/tests/unit/test_config.py`.
+2. Run `python -m pytest --cov=backend.app.config --cov-report=term-missing backend/tests/unit/test_config.py`
+   and identify uncovered lines.
+3. Add tests for uncovered paths:
+   - Missing environment variables (unset critical vars) → verify defaults.
+   - Invalid environment variable values → verify fallback or error.
+   - Edge cases in path resolution (relative vs absolute paths).
+   - Storage dir creation logic (if any).
+   - Any conditional import paths or feature flag branches.
+4. `python -m pytest --cov=backend.app.config --cov-report=term-missing backend/tests/unit/test_config.py`
+   → config.py ≥90%.
+5. Full test suite: `python -m pytest --tb=short -q` → 372+ passed.
+6. Proceed to TEST GATE.
+
+--- MANDATORY: COMMIT + MARK DONE (after TEST GATE passes) ---
+1. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
+2. git commit -m "test(plan-f14j): config.py coverage to 90%+"
+3. Edit plan: `- [ ] F14-J` → `- [x] F14-J` (remove EN PROGRESO)
+4. git add plan + commit -m "docs(plan-f14j): mark step done"
+5. git push
+6. CI GATE: sha=$(git rev-parse HEAD); sleep 15; gh run list --commit $sha --json status,conclusion,databaseId --jq '.[0]'; poll until conclusion=success (max 10 retries, 30s apart). If red: fix + re-push.
+--- END COMMIT + MARK DONE ---
+
+Target files: `backend/tests/unit/test_config.py`
+Do NOT change: `config.py` (only add tests).
+Acceptance: config.py ≥90%. 372+ backend tests pass.
+--- END TASK ---
+⚠️ AUTO-CHAIN: CI green → read F14-K prompt below and execute it. DO NOT stop.
+```
+
+### F14-K — Split candidate_mining.py (789 LOC → 2 módulos < 400 LOC)
+
+```
+--- TASK ---
+Step: F14-K — Split candidate_mining.py into 2 modules
+Branch: improvement/iteration-8-refactor
+
+--- MANDATORY: MARK IN PROGRESS (before any code change) ---
+1. Edit plan: append ` ⏳ EN PROGRESO (Codex, <UTC date>)` to `- [ ] F14-K`
+2. git add + commit -m "docs(plan-f14k): mark step in progress" + push
+--- END MARK IN PROGRESS ---
+
+Context: `candidate_mining.py` (789 LOC) was extracted from `interpretation.py`
+in Iter 7 but remains above 500 LOC. Contains 2 concerns: candidate mining and
+date parsing/normalization.
+
+Objective: Split `candidate_mining.py` into two modules, each < 400 LOC.
+
+1. Read `backend/app/application/processing/candidate_mining.py` fully.
+2. Identify date-related functions: date extraction, classification, normalization,
+   parsing helpers (likely `_extract_date_candidates_with_classification` + related).
+3. Create `backend/app/application/processing/date_parsing.py`:
+   - Move all date extraction/parsing/normalization functions.
+   - Import shared constants from `constants.py`.
+   - Module must be self-contained (only stdlib + constants imports).
+4. In `candidate_mining.py`:
+   - Replace moved functions with imports from `date_parsing`.
+   - Keep the main mining function + non-date helpers.
+   - Must be < 400 LOC after split.
+5. Update `backend/app/application/processing/__init__.py` if it re-exports
+   any moved symbols.
+6. Update `backend/app/application/processing_runner.py` shim if it re-exports
+   any date-related symbols.
+7. Search for all imports: `grep -rn "from.*candidate_mining import\|import.*candidate_mining" backend/`
+   Fix any broken imports.
+8. Run: `python -c "from backend.app.application.processing.date_parsing import *; print('OK')"`
+9. `python -m pytest --tb=short -q` → 372+ passed.
+10. `npm test -- --run` → 241+ passed (sanity check for full suite).
+11. Proceed to TEST GATE.
+
+--- MANDATORY: COMMIT + MARK DONE (after TEST GATE passes) ---
+1. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
+2. git commit -m "refactor(plan-f14k): split candidate_mining into date_parsing"
+3. Edit plan: `- [ ] F14-K` → `- [x] F14-K` (remove EN PROGRESO)
+4. git add plan + commit -m "docs(plan-f14k): mark step done"
+5. git push
+6. CI GATE: sha=$(git rev-parse HEAD); sleep 15; gh run list --commit $sha --json status,conclusion,databaseId --jq '.[0]'; poll until conclusion=success (max 10 retries, 30s apart). If red: fix + re-push.
+--- END COMMIT + MARK DONE ---
+
+Target files: `processing/candidate_mining.py`, `processing/date_parsing.py` (new),
+`processing_runner.py` (if shim update needed)
+Do NOT change: Public API (function names/signatures consumed by other modules).
+Acceptance: Both modules < 400 LOC. API unchanged. 372+ backend tests pass.
+--- END TASK ---
+⚠️ STOP: F14-K is the last Codex step. After CI green, emit handoff:
+"⚠️ Este paso no corresponde al agente activo. **STOP.** El siguiente paso es de
+**Claude Opus 4.6**. Abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6**
+→ adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
 ```
 
 ---

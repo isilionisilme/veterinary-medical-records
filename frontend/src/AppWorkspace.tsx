@@ -1,12 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FilterX, RefreshCw, Search, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CriticalIcon } from "./components/app/CriticalBadge";
-import { IconButton } from "./components/app/IconButton";
 import { DocumentsSidebar } from "./components/DocumentsSidebar";
-import { PdfViewer } from "./components/PdfViewer";
 import { buildViewerToolbarContent } from "./components/viewer/viewerToolbarContent";
-import { UploadDropzone } from "./components/UploadDropzone";
+import { PdfViewerPanel } from "./components/workspace/PdfViewerPanel";
+import { StructuredDataPanel } from "./components/workspace/StructuredDataPanel";
 import { ToastHost } from "./components/toast/ToastHost";
 import { createReviewFieldRenderers } from "./components/review/ReviewFieldRenderers";
 import { createReviewSectionLayoutRenderer } from "./components/review/ReviewSectionLayout";
@@ -17,20 +14,6 @@ import {
   type ConnectivityToast,
   type UploadFeedback,
 } from "./components/toast/toast-types";
-import { Button } from "./components/ui/button";
-import { Input } from "./components/ui/input";
-import { ScrollArea } from "./components/ui/scroll-area";
-import { ToggleGroup, ToggleGroupItem } from "./components/ui/toggle-group";
-import { Tooltip } from "./components/ui/tooltip";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "./components/ui/dialog";
 import { useFieldEditing } from "./hooks/useFieldEditing";
 import { useDocumentsSidebar } from "./hooks/useDocumentsSidebar";
 import { useReviewSplitPanel } from "./hooks/useReviewSplitPanel";
@@ -74,12 +57,10 @@ import {
   triggerReprocess,
   uploadDocument,
 } from "./api/documentApi";
-import { groupProcessingSteps } from "./lib/processingHistory";
 import { GLOBAL_SCHEMA } from "./lib/globalSchema";
 import {
   clampConfidence,
   emitConfidencePolicyDiagnosticEvent,
-  explainFailure,
   formatFieldValue,
   formatReviewKeyLabel,
   formatRunHeader,
@@ -100,12 +81,6 @@ import {
   resolveUiSection,
   shouldHideExtractedField,
 } from "./lib/appWorkspaceUtils";
-import {
-  formatDuration,
-  formatTime,
-  shouldShowDetails,
-  statusIcon,
-} from "./lib/processingHistoryView";
 import { type ConfidenceBucket, matchesStructuredDataFilters } from "./lib/structuredDataFilters";
 import { mapDocumentStatus } from "./lib/documentStatus";
 import {
@@ -1894,6 +1869,25 @@ export function App() {
       onChangeTab: setActiveViewerTab,
       downloadUrl,
     });
+  const handleRetryInterpretation = useCallback(async () => {
+    const retryStartedAt = Date.now();
+    setIsRetryingInterpretation(true);
+    await documentReview.refetch();
+    const minVisibleMs = 250;
+    const elapsedMs = Date.now() - retryStartedAt;
+    const remainingMs = Math.max(0, minVisibleMs - elapsedMs);
+    if (remainingMs === 0) {
+      setIsRetryingInterpretation(false);
+      return;
+    }
+    if (interpretationRetryMinTimerRef.current) {
+      window.clearTimeout(interpretationRetryMinTimerRef.current);
+    }
+    interpretationRetryMinTimerRef.current = window.setTimeout(() => {
+      interpretationRetryMinTimerRef.current = null;
+      setIsRetryingInterpretation(false);
+    }, remainingMs);
+  }, [documentReview]);
   const submitInterpretationChanges = (
     changes: InterpretationChangePayload[],
     successMessage: string,
@@ -2012,6 +2006,61 @@ export function App() {
       focusRequestId={sourcePanel.focusRequestId}
     />
   );
+  const loadPdfErrorMessage = getUserErrorMessage(
+    loadPdf.error,
+    "No se pudo cargar la vista previa del documento.",
+  );
+  const processingHistoryErrorMessage = getUserErrorMessage(
+    processingHistory.error,
+    "No se pudo cargar el historial de procesamiento.",
+  );
+  const structuredDataPanel = (
+    <StructuredDataPanel
+      activeId={activeId}
+      isActiveDocumentProcessing={isActiveDocumentProcessing}
+      isDocumentReviewed={isDocumentReviewed}
+      reviewTogglePending={reviewToggleMutation.isPending}
+      onToggleReviewStatus={() => {
+        if (!activeId) {
+          return;
+        }
+        reviewToggleMutation.mutate({
+          docId: activeId,
+          target: isDocumentReviewed ? "in_review" : "reviewed",
+        });
+      }}
+      reviewPanelState={reviewPanelState}
+      structuredSearchInput={structuredSearchInput}
+      structuredSearchInputRef={
+        structuredSearchInputRef as import("react").RefObject<HTMLInputElement>
+      }
+      setStructuredSearchInput={setStructuredSearchInput}
+      selectedConfidenceBuckets={selectedConfidenceBuckets}
+      setSelectedConfidenceBuckets={setSelectedConfidenceBuckets}
+      activeConfidencePolicy={activeConfidencePolicy}
+      detectedFieldsSummary={detectedFieldsSummary}
+      showOnlyCritical={showOnlyCritical}
+      showOnlyWithValue={showOnlyWithValue}
+      showOnlyEmpty={showOnlyEmpty}
+      setShowOnlyCritical={setShowOnlyCritical}
+      setShowOnlyWithValue={setShowOnlyWithValue}
+      setShowOnlyEmpty={setShowOnlyEmpty}
+      getFilterToggleItemClass={getFilterToggleItemClass}
+      resetStructuredFilters={resetStructuredFilters}
+      reviewMessageInfoClass={reviewMessageInfoClass}
+      reviewMessageMutedClass={reviewMessageMutedClass}
+      reviewMessageWarningClass={reviewMessageWarningClass}
+      reviewPanelMessage={reviewPanelMessage}
+      shouldShowReviewEmptyState={shouldShowReviewEmptyState}
+      isRetryingInterpretation={isRetryingInterpretation}
+      onRetryInterpretation={handleRetryInterpretation}
+      hasMalformedCanonicalFieldSlots={hasMalformedCanonicalFieldSlots}
+      hasNoStructuredFilterResults={hasNoStructuredFilterResults}
+      reportSections={reportSections}
+      renderSectionLayout={renderSectionLayout}
+      evidenceNotice={evidenceNotice}
+    />
+  );
   return (
     <div className="min-h-screen bg-page px-4 py-3 md:px-6 lg:px-8 xl:px-10">
       <WorkspaceDialogs
@@ -2087,899 +2136,72 @@ export function App() {
               onSelectDocument={handleSelectDocument}
             />
             <section className={`flex min-w-0 flex-1 flex-col ${panelHeightClass}`}>
-              {shouldShowLoadPdfErrorBanner && (
-                <div className="rounded-card border border-statusError bg-surface px-4 py-3 text-sm text-text">
-                  {getUserErrorMessage(
-                    loadPdf.error,
-                    "No se pudo cargar la vista previa del documento.",
-                  )}
-                </div>
-              )}
-              <div className="flex min-h-0 flex-1 flex-col">
-                <div className="min-h-0 flex-1">
-                  {activeViewerTab === "document" && (
-                    <div
-                      data-testid="viewer-dropzone"
-                      className="h-full min-h-0"
-                      onDragEnter={handleViewerDragEnter}
-                      onDragOver={handleViewerDragOver}
-                      onDragLeave={handleViewerDragLeave}
-                      onDrop={handleViewerDrop}
-                    >
-                      {!activeId ? (
-                        documentList.isError ? (
-                          <div className="flex h-full flex-col rounded-card bg-surface p-6">
-                            <div className="flex flex-1 items-center justify-center text-center">
-                              <p className="text-sm text-muted">
-                                Revisa la lista lateral para reintentar la carga de documentos.
-                              </p>
-                            </div>
-                          </div>
-                        ) : (
-                          <div
-                            data-testid="viewer-empty-state"
-                            className="relative flex h-full flex-col rounded-card bg-surfaceMuted p-6 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-                            role="button"
-                            aria-label="Cargar documento"
-                            tabIndex={0}
-                            onClick={handleOpenUploadArea}
-                            onKeyDown={(event) => {
-                              if (event.key === "Enter" || event.key === " ") {
-                                event.preventDefault();
-                                handleOpenUploadArea();
-                              }
-                            }}
-                          >
-                            <div className="flex flex-1 flex-col items-center justify-center text-center">
-                              <p className="text-sm text-muted">
-                                Selecciona un documento en la barra lateral o carga uno nuevo.
-                              </p>
-                              <UploadDropzone
-                                className="mt-4 w-full max-w-sm"
-                                isDragOver={isDragOverViewer}
-                                onActivate={handleOpenUploadArea}
-                                onDragEnter={handleViewerDragEnter}
-                                onDragOver={handleViewerDragOver}
-                                onDragLeave={handleViewerDragLeave}
-                                onDrop={handleViewerDrop}
-                                showDropOverlay
-                              />
-                            </div>
-                          </div>
-                        )
-                      ) : (
-                        <div className="h-full min-h-0">
-                          <div
-                            data-testid="document-layout-grid"
-                            className={`h-full min-h-0 overflow-x-auto ${
-                              isPinnedSourcePanelVisible
-                                ? "grid grid-cols-[minmax(0,1fr)_minmax(320px,400px)] gap-4"
-                                : ""
-                            }`}
-                          >
-                            <div
-                              ref={handleReviewSplitGridRef}
-                              data-testid="review-split-grid"
-                              className="grid h-full min-h-0 overflow-x-auto"
-                              style={reviewSplitLayoutStyle}
-                            >
-                              <aside
-                                data-testid="center-panel-scroll"
-                                className="panel-shell-muted flex h-full min-h-0 min-w-[560px] flex-col gap-[var(--canvas-gap)] p-[var(--canvas-gap)]"
-                              >
-                                <div>
-                                  <h3 className="text-lg font-semibold text-textSecondary">
-                                    Informe
-                                  </h3>
-                                  <p className="mt-0.5 text-xs text-textSecondary">
-                                    Consulta el documento y navega por la evidencia asociada.
-                                  </p>
-                                </div>
-                                {fileUrl ? (
-                                  <PdfViewer
-                                    key={`${effectiveViewMode}-${activeId ?? "empty"}`}
-                                    documentId={activeId}
-                                    fileUrl={fileUrl}
-                                    filename={filename}
-                                    isDragOver={isDragOverViewer}
-                                    focusPage={selectedReviewField?.evidence?.page ?? null}
-                                    highlightSnippet={
-                                      selectedReviewField?.evidence?.snippet ?? null
-                                    }
-                                    focusRequestId={fieldNavigationRequestId}
-                                    toolbarLeftContent={viewerModeToolbarIcons}
-                                    toolbarRightExtra={viewerDownloadIcon}
-                                  />
-                                ) : (
-                                  <div className="flex h-full min-h-0 flex-col">
-                                    <div className="relative z-20 flex items-center justify-between gap-4 pb-3">
-                                      <div className="flex items-center gap-1">
-                                        {viewerModeToolbarIcons}
-                                      </div>
-                                      <div className="flex items-center gap-1">
-                                        {viewerDownloadIcon}
-                                      </div>
-                                    </div>
-                                    <div className="flex flex-1 items-center justify-center text-sm text-muted">
-                                      No hay PDF disponible para este documento.
-                                    </div>
-                                  </div>
-                                )}
-                              </aside>
-                              <div className="relative flex h-full min-h-0 items-stretch justify-center">
-                                <button
-                                  type="button"
-                                  data-testid="review-split-handle"
-                                  aria-label="Redimensionar paneles de revisión"
-                                  title="Redimensionar paneles de revisión"
-                                  onMouseDown={startReviewSplitDragging}
-                                  onDoubleClick={resetReviewSplitRatio}
-                                  onKeyDown={handleReviewSplitKeyboard}
-                                  className="group flex h-full w-full cursor-col-resize items-center justify-center rounded-full bg-transparent transition hover:bg-surfaceMuted focus-visible:bg-surfaceMuted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-accent"
-                                >
-                                  <span
-                                    aria-hidden="true"
-                                    className="h-24 w-[2px] rounded-full bg-borderSubtle transition group-hover:bg-border"
-                                  />
-                                </button>
-                              </div>
-                              <aside
-                                data-testid="structured-column-stack"
-                                className="panel-shell-muted flex h-full w-full min-h-0 min-w-[420px] flex-1 flex-col gap-[var(--canvas-gap)] p-[var(--canvas-gap)]"
-                              >
-                                <div className="flex w-full flex-wrap items-center justify-between gap-3">
-                                  <div className="min-w-[220px]">
-                                    <h3 className="text-lg font-semibold text-textSecondary">
-                                      Datos extraídos
-                                    </h3>
-                                    <p className="mt-0.5 text-xs text-textSecondary">
-                                      Revisa y confirma los campos antes de marcar el documento como
-                                      revisado.
-                                    </p>
-                                  </div>
-                                  <Tooltip
-                                    content={
-                                      isDocumentReviewed
-                                        ? "Reabre el documento para continuar la revisión. Puedes volver a marcarlo como revisado cuando termines."
-                                        : "Marca este documento como revisado cuando confirmes los datos. Si lo necesitas, luego puedes reabrirlo sin problema."
-                                    }
-                                  >
-                                    <span className="inline-flex">
-                                      <Button
-                                        type="button"
-                                        variant={isDocumentReviewed ? "outline" : "primary"}
-                                        size="toolbar"
-                                        className="min-w-[168px]"
-                                        disabled={
-                                          !activeId ||
-                                          isActiveDocumentProcessing ||
-                                          reviewToggleMutation.isPending
-                                        }
-                                        onClick={() => {
-                                          if (!activeId) {
-                                            return;
-                                          }
-                                          reviewToggleMutation.mutate({
-                                            docId: activeId,
-                                            target: isDocumentReviewed ? "in_review" : "reviewed",
-                                          });
-                                        }}
-                                      >
-                                        {reviewToggleMutation.isPending ? (
-                                          <>
-                                            <RefreshCw
-                                              size={14}
-                                              className="animate-spin"
-                                              aria-hidden="true"
-                                            />
-                                            {isDocumentReviewed ? "Reabriendo..." : "Marcando..."}
-                                          </>
-                                        ) : isDocumentReviewed ? (
-                                          <>
-                                            <RefreshCw size={14} aria-hidden="true" />
-                                            Reabrir
-                                          </>
-                                        ) : (
-                                          "Marcar revisado"
-                                        )}
-                                      </Button>
-                                    </span>
-                                  </Tooltip>
-                                </div>
-                                <div
-                                  data-testid="structured-search-shell"
-                                  className="panel-shell px-3 py-2"
-                                >
-                                  <div className="flex flex-wrap items-center gap-2">
-                                    <label className="relative min-w-[220px] flex-1">
-                                      <Search
-                                        size={14}
-                                        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-textSecondary"
-                                        aria-hidden="true"
-                                      />
-                                      <Input
-                                        ref={structuredSearchInputRef}
-                                        type="text"
-                                        aria-label="Buscar en datos extraídos"
-                                        value={structuredSearchInput}
-                                        disabled={reviewPanelState !== "ready"}
-                                        onChange={(event) =>
-                                          setStructuredSearchInput(event.target.value)
-                                        }
-                                        placeholder="Buscar campo, clave o valor"
-                                        className="w-full rounded-control border border-borderSubtle bg-surface py-1.5 pl-9 pr-9 text-xs"
-                                      />
-                                      {structuredSearchInput.trim().length > 0 && (
-                                        <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                                          <IconButton
-                                            label="Limpiar búsqueda"
-                                            tooltip="Limpiar búsqueda"
-                                            className="border-0 bg-transparent shadow-none hover:bg-transparent"
-                                            onClick={() => {
-                                              setStructuredSearchInput("");
-                                              structuredSearchInputRef.current?.focus();
-                                            }}
-                                          >
-                                            <X size={12} aria-hidden="true" />
-                                          </IconButton>
-                                        </div>
-                                      )}
-                                    </label>
-                                    <ToggleGroup
-                                      type="multiple"
-                                      value={selectedConfidenceBuckets}
-                                      disabled={
-                                        reviewPanelState !== "ready" || !activeConfidencePolicy
-                                      }
-                                      onValueChange={(values) =>
-                                        setSelectedConfidenceBuckets(
-                                          values.filter(
-                                            (value): value is ConfidenceBucket =>
-                                              value === "low" ||
-                                              value === "medium" ||
-                                              value === "high" ||
-                                              value === "unknown",
-                                          ),
-                                        )
-                                      }
-                                      aria-label="Filtros de confianza"
-                                      className="p-0"
-                                    >
-                                      <Tooltip content="Valor detectado con baja fiabilidad.">
-                                        <ToggleGroupItem
-                                          value="low"
-                                          aria-label={`Baja (${detectedFieldsSummary.low})`}
-                                          className={`h-7 rounded-control border-0 px-2.5 text-xs shadow-none ${
-                                            selectedConfidenceBuckets.includes("low")
-                                              ? "bg-surfaceMuted text-text ring-1 ring-borderSubtle"
-                                              : "bg-surface text-textSecondary"
-                                          }`}
-                                        >
-                                          <span className="inline-flex items-center gap-1.5">
-                                            <span
-                                              aria-hidden="true"
-                                              className="inline-block h-3 w-3 shrink-0 rounded-full bg-confidenceLow"
-                                            />
-                                            <span className="tabular-nums">
-                                              {detectedFieldsSummary.low}
-                                            </span>
-                                          </span>
-                                        </ToggleGroupItem>
-                                      </Tooltip>
-                                      <Tooltip content="Valor detectado con fiabilidad media.">
-                                        <ToggleGroupItem
-                                          value="medium"
-                                          aria-label={`Media (${detectedFieldsSummary.medium})`}
-                                          className={`h-7 rounded-control border-0 px-2.5 text-xs shadow-none ${
-                                            selectedConfidenceBuckets.includes("medium")
-                                              ? "bg-surfaceMuted text-text ring-1 ring-borderSubtle"
-                                              : "bg-surface text-textSecondary"
-                                          }`}
-                                        >
-                                          <span className="inline-flex items-center gap-1.5">
-                                            <span
-                                              aria-hidden="true"
-                                              className="inline-block h-3 w-3 shrink-0 rounded-full bg-confidenceMed"
-                                            />
-                                            <span className="tabular-nums">
-                                              {detectedFieldsSummary.medium}
-                                            </span>
-                                          </span>
-                                        </ToggleGroupItem>
-                                      </Tooltip>
-                                      <Tooltip content="Valor detectado con alta fiabilidad.">
-                                        <ToggleGroupItem
-                                          value="high"
-                                          aria-label={`Alta (${detectedFieldsSummary.high})`}
-                                          className={`h-7 rounded-control border-0 px-2.5 text-xs shadow-none ${
-                                            selectedConfidenceBuckets.includes("high")
-                                              ? "bg-surfaceMuted text-text ring-1 ring-borderSubtle"
-                                              : "bg-surface text-textSecondary"
-                                          }`}
-                                        >
-                                          <span className="inline-flex items-center gap-1.5">
-                                            <span
-                                              aria-hidden="true"
-                                              className="inline-block h-3 w-3 shrink-0 rounded-full bg-confidenceHigh"
-                                            />
-                                            <span className="tabular-nums">
-                                              {detectedFieldsSummary.high}
-                                            </span>
-                                          </span>
-                                        </ToggleGroupItem>
-                                      </Tooltip>
-                                      <Tooltip content="Valor presente, sin confianza automática asignada.">
-                                        <ToggleGroupItem
-                                          value="unknown"
-                                          aria-label={`Sin confianza (${detectedFieldsSummary.unknown})`}
-                                          className={`h-7 rounded-control border-0 px-2.5 text-xs shadow-none ${
-                                            selectedConfidenceBuckets.includes("unknown")
-                                              ? "bg-surfaceMuted text-text ring-1 ring-borderSubtle"
-                                              : "bg-surface text-textSecondary"
-                                          }`}
-                                        >
-                                          <span className="inline-flex items-center gap-1.5">
-                                            <span
-                                              aria-hidden="true"
-                                              className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-missing"
-                                            />
-                                            <span className="tabular-nums">
-                                              {detectedFieldsSummary.unknown}
-                                            </span>
-                                          </span>
-                                        </ToggleGroupItem>
-                                      </Tooltip>
-                                    </ToggleGroup>
-                                    <div
-                                      aria-hidden="true"
-                                      className="mx-1 h-6 w-px shrink-0 self-center bg-border"
-                                    />
-                                    <ToggleGroup
-                                      type="multiple"
-                                      value={[
-                                        ...(showOnlyCritical ? ["critical"] : []),
-                                        ...(showOnlyWithValue ? ["nonEmpty"] : []),
-                                        ...(showOnlyEmpty ? ["empty"] : []),
-                                      ]}
-                                      disabled={reviewPanelState !== "ready"}
-                                      onValueChange={(values) => {
-                                        const hasNonEmpty = values.includes("nonEmpty");
-                                        const hasEmpty = values.includes("empty");
-                                        setShowOnlyCritical(values.includes("critical"));
-                                        setShowOnlyWithValue(hasNonEmpty && !hasEmpty);
-                                        setShowOnlyEmpty(hasEmpty && !hasNonEmpty);
-                                      }}
-                                      aria-label="Filtros adicionales"
-                                      className="p-0"
-                                    >
-                                      <Tooltip content="Mostrar campos marcados como críticos.">
-                                        <ToggleGroupItem
-                                          value="critical"
-                                          aria-label="Mostrar solo campos críticos"
-                                          className={getFilterToggleItemClass(showOnlyCritical)}
-                                        >
-                                          <CriticalIcon compact />
-                                        </ToggleGroupItem>
-                                      </Tooltip>
-                                      <Tooltip content="Mostrar campos con algún valor.">
-                                        <ToggleGroupItem
-                                          value="nonEmpty"
-                                          aria-label="Mostrar solo campos no vacíos"
-                                          className={getFilterToggleItemClass(showOnlyWithValue)}
-                                        >
-                                          <span
-                                            aria-hidden="true"
-                                            className="inline-block h-3 w-3 shrink-0 rounded-full bg-text"
-                                          />
-                                        </ToggleGroupItem>
-                                      </Tooltip>
-                                      <Tooltip content="Mostrar campos vacíos.">
-                                        <ToggleGroupItem
-                                          value="empty"
-                                          aria-label="Mostrar solo campos vacíos"
-                                          className={getFilterToggleItemClass(showOnlyEmpty)}
-                                        >
-                                          <span
-                                            aria-hidden="true"
-                                            className="inline-block h-3 w-3 shrink-0 rounded-full border border-muted bg-surface"
-                                          />
-                                        </ToggleGroupItem>
-                                      </Tooltip>
-                                    </ToggleGroup>
-                                    <div
-                                      aria-hidden="true"
-                                      className="mx-1 h-6 w-px shrink-0 self-center bg-border"
-                                    />
-                                    <IconButton
-                                      label="Limpiar filtros"
-                                      tooltip="Borrar filtros."
-                                      className="border-0 bg-transparent shadow-none hover:bg-transparent"
-                                      disabled={
-                                        reviewPanelState !== "ready" ||
-                                        (structuredSearchInput.trim().length === 0 &&
-                                          selectedConfidenceBuckets.length === 0 &&
-                                          !showOnlyCritical &&
-                                          !showOnlyWithValue &&
-                                          !showOnlyEmpty)
-                                      }
-                                      onClick={resetStructuredFilters}
-                                    >
-                                      <FilterX size={14} aria-hidden="true" />
-                                    </IconButton>
-                                  </div>
-                                </div>
-                                {reviewPanelState === "ready" && !activeConfidencePolicy && (
-                                  <p
-                                    data-testid="confidence-policy-degraded"
-                                    className={reviewMessageInfoClass}
-                                    role="status"
-                                    aria-live="polite"
-                                  >
-                                    Configuración de confianza no disponible para este documento. La
-                                    señal visual de confianza está en modo degradado.
-                                  </p>
-                                )}
-                                <div className="flex-1 min-h-0">
-                                  {reviewPanelState === "loading" && (
-                                    <div
-                                      data-testid="right-panel-scroll"
-                                      aria-live="polite"
-                                      className="h-full min-h-0 overflow-y-auto pr-1 space-y-2"
-                                    >
-                                      <p className={reviewMessageInfoClass}>{reviewPanelMessage}</p>
-                                      <div data-testid="review-core-skeleton" className="space-y-2">
-                                        {Array.from({ length: 6 }).map((_, index) => (
-                                          <div
-                                            key={`review-skeleton-${index}`}
-                                            className="animate-pulse rounded-card bg-surface p-3"
-                                          >
-                                            <div className="h-3 w-1/2 rounded bg-borderSubtle" />
-                                            <div className="mt-2 h-2.5 w-5/6 rounded bg-borderSubtle" />
-                                            <div className="mt-3 h-2 w-1/3 rounded bg-borderSubtle" />
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
-                                  {shouldShowReviewEmptyState && (
-                                    <div
-                                      data-testid="right-panel-scroll"
-                                      className="h-full min-h-0 flex items-center justify-center"
-                                    >
-                                      <div className="mx-auto w-full max-w-md px-4">
-                                        <div className="mx-auto max-w-sm text-center">
-                                          <p className="text-base font-semibold text-ink">
-                                            Interpretación no disponible
-                                          </p>
-                                          <p className="mt-2 text-xs text-textSecondary">
-                                            No se pudo cargar la interpretación. Comprueba tu
-                                            conexión y vuelve a intentarlo.
-                                          </p>
-                                          <div className="mt-4 flex justify-center">
-                                            <Button
-                                              type="button"
-                                              disabled={!activeId || isRetryingInterpretation}
-                                              onClick={async () => {
-                                                const retryStartedAt = Date.now();
-                                                setIsRetryingInterpretation(true);
-                                                await documentReview.refetch();
-                                                const minVisibleMs = 250;
-                                                const elapsedMs = Date.now() - retryStartedAt;
-                                                const remainingMs = Math.max(
-                                                  0,
-                                                  minVisibleMs - elapsedMs,
-                                                );
-                                                if (remainingMs === 0) {
-                                                  setIsRetryingInterpretation(false);
-                                                  return;
-                                                }
-                                                if (interpretationRetryMinTimerRef.current) {
-                                                  window.clearTimeout(
-                                                    interpretationRetryMinTimerRef.current,
-                                                  );
-                                                }
-                                                interpretationRetryMinTimerRef.current =
-                                                  window.setTimeout(() => {
-                                                    interpretationRetryMinTimerRef.current = null;
-                                                    setIsRetryingInterpretation(false);
-                                                  }, remainingMs);
-                                              }}
-                                            >
-                                              {isRetryingInterpretation
-                                                ? "Reintentando..."
-                                                : "Reintentar"}
-                                            </Button>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
-                                  {reviewPanelState === "ready" && (
-                                    <ScrollArea
-                                      data-testid="right-panel-scroll"
-                                      className={`h-full min-h-0 pr-1 ${isDocumentReviewed ? "opacity-80" : ""}`}
-                                    >
-                                      <div className="space-y-3">
-                                        {isDocumentReviewed && (
-                                          <p className={reviewMessageWarningClass}>
-                                            Documento marcado como revisado. Los datos están en modo
-                                            de solo lectura.
-                                          </p>
-                                        )}
-                                        {hasMalformedCanonicalFieldSlots && (
-                                          <p
-                                            data-testid="canonical-contract-error"
-                                            className="rounded-control border border-statusWarn bg-surface px-3 py-2 text-xs text-text"
-                                          >
-                                            No se puede renderizar la plantilla canónica:
-                                            `medical_record_view.field_slots` es inválido.
-                                          </p>
-                                        )}
-                                        {!hasMalformedCanonicalFieldSlots &&
-                                          hasNoStructuredFilterResults && (
-                                            <div
-                                              className={reviewMessageMutedClass}
-                                              role="status"
-                                              aria-live="polite"
-                                            >
-                                              <p>No hay resultados con los filtros actuales.</p>
-                                              <div className="mt-2">
-                                                <Button
-                                                  type="button"
-                                                  variant="ghost"
-                                                  size="toolbar"
-                                                  onClick={resetStructuredFilters}
-                                                >
-                                                  Limpiar filtros
-                                                </Button>
-                                              </div>
-                                            </div>
-                                          )}
-                                        {!hasMalformedCanonicalFieldSlots &&
-                                          reportSections.map((section) =>
-                                            renderSectionLayout(section),
-                                          )}
-                                      </div>
-                                    </ScrollArea>
-                                  )}
-                                </div>
-                                {evidenceNotice && (
-                                  <p className={reviewMessageMutedClass}>{evidenceNotice}</p>
-                                )}
-                              </aside>
-                            </div>
-                            {isPinnedSourcePanelVisible && (
-                              <aside data-testid="source-pinned-panel" className="min-h-0">
-                                {sourcePanelContent}
-                              </aside>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  {activeViewerTab === "document" &&
-                    sourcePanel.isSourceOpen &&
-                    (isReviewMode || !sourcePanel.isSourcePinned || !isDesktopForPin) && (
-                      <>
-                        <button
-                          type="button"
-                          data-testid="source-drawer-backdrop"
-                          className="fixed inset-0 z-40 bg-text/20"
-                          aria-label="Cerrar fuente"
-                          onClick={sourcePanel.closeOverlay}
-                        />
-                        <div
-                          data-testid="source-drawer"
-                          className="fixed inset-y-0 right-0 z-50 w-full max-w-xl p-4"
-                          role="dialog"
-                          aria-modal="true"
-                          aria-label="Fuente"
-                        >
-                          {sourcePanelContent}
-                        </div>
-                      </>
-                    )}
-                  {activeViewerTab === "raw_text" && (
-                    <div className="flex h-full flex-col rounded-card border border-borderSubtle bg-surface p-4">
-                      <div className="rounded-control border border-borderSubtle bg-surface px-2 py-2">
-                        <div className="flex items-center justify-between gap-4">
-                          <div className="flex items-center gap-1">{viewerModeToolbarIcons}</div>
-                          <div className="flex items-center gap-1">{viewerDownloadIcon}</div>
-                        </div>
-                      </div>
-                      <div className="rounded-card border border-borderSubtle bg-surface p-3">
-                        <div className="flex flex-col gap-2 text-xs text-ink">
-                          <span className="text-textSecondary">
-                            ¿El texto no es correcto? Puedes reprocesarlo para regenerar la
-                            extracción.
-                          </span>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <Button
-                              type="button"
-                              disabled={
-                                !activeId ||
-                                isActiveDocumentProcessing ||
-                                reprocessMutation.isPending
-                              }
-                              onClick={() => setShowRetryModal(true)}
-                            >
-                              {reprocessMutation.isPending ||
-                              (Boolean(activeId) &&
-                                reprocessingDocumentId === activeId &&
-                                (!hasObservedProcessingAfterReprocess ||
-                                  isActiveDocumentProcessing))
-                                ? "Reprocesando..."
-                                : isActiveDocumentProcessing
-                                  ? "Procesando..."
-                                  : "Reprocesar"}
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <input
-                          className="w-full rounded-control border border-borderSubtle bg-surface px-3 py-2 text-xs text-text outline-none placeholder:text-textSecondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:w-64"
-                          placeholder="Buscar en el texto"
-                          value={rawSearch}
-                          disabled={!canSearchRawText}
-                          onChange={(event) => setRawSearch(event.target.value)}
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter") {
-                              handleRawSearch();
-                            }
-                          }}
-                        />
-                        <Button
-                          type="button"
-                          disabled={!canSearchRawText}
-                          onClick={handleRawSearch}
-                        >
-                          Buscar
-                        </Button>
-                        <Button
-                          type="button"
-                          disabled={!canCopyRawText || isCopyingRawText}
-                          onClick={() => {
-                            void handleCopyRawText();
-                          }}
-                        >
-                          {isCopyingRawText
-                            ? "Copiando..."
-                            : copyFeedback === "Texto copiado."
-                              ? "Copiado"
-                              : "Copiar todo"}
-                        </Button>
-                        <Button
-                          type="button"
-                          disabled={!rawTextContent}
-                          onClick={handleDownloadRawText}
-                        >
-                          Descargar texto (.txt)
-                        </Button>
-                      </div>
-                      {copyFeedback && (
-                        <p
-                          className="mt-2 text-xs text-textSecondary"
-                          role="status"
-                          aria-live="polite"
-                        >
-                          {copyFeedback}
-                        </p>
-                      )}
-                      {hasRawText && rawSearchNotice && (
-                        <p className="mt-2 text-xs text-textSecondary">{rawSearchNotice}</p>
-                      )}
-                      {isRawTextLoading && (
-                        <p className="mt-2 text-xs text-textSecondary">
-                          Cargando texto extraído...
-                        </p>
-                      )}
-                      {rawTextErrorMessage && (
-                        <p className="mt-2 text-xs text-statusError">{rawTextErrorMessage}</p>
-                      )}
-                      <div className="mt-3 flex-1 overflow-y-auto rounded-card border border-borderSubtle bg-surface p-3 font-mono text-xs text-textSecondary">
-                        {rawTextContent ? <pre>{rawTextContent}</pre> : "Sin texto extraído."}
-                      </div>
-                    </div>
-                  )}
-                  {activeViewerTab === "technical" && (
-                    <div className="h-full overflow-y-auto rounded-card border border-borderSubtle bg-surface p-3">
-                      <div className="rounded-control border border-borderSubtle bg-surface px-2 py-2">
-                        <div className="flex items-center justify-between gap-4">
-                          <div className="flex items-center gap-1">{viewerModeToolbarIcons}</div>
-                          <div className="flex items-center gap-1">{viewerDownloadIcon}</div>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
-                          Historial de procesamiento
-                        </p>
-                        <Button
-                          type="button"
-                          disabled={
-                            !activeId || isActiveDocumentProcessing || reprocessMutation.isPending
-                          }
-                          onClick={() => setShowRetryModal(true)}
-                        >
-                          {isActiveDocumentProcessing
-                            ? "Procesando..."
-                            : reprocessMutation.isPending
-                              ? "Reprocesando..."
-                              : "Reprocesar"}
-                        </Button>
-                      </div>
-                      {!activeId && (
-                        <p className="mt-2 text-xs text-muted">
-                          Selecciona un documento para ver los detalles técnicos.
-                        </p>
-                      )}
-                      {activeId && processingHistory.isLoading && (
-                        <p className="mt-2 text-xs text-muted">Cargando historial...</p>
-                      )}
-                      {activeId && processingHistory.isError && (
-                        <p className="mt-2 text-xs text-statusError">
-                          {getUserErrorMessage(
-                            processingHistory.error,
-                            "No se pudo cargar el historial de procesamiento.",
-                          )}
-                        </p>
-                      )}
-                      {activeId &&
-                        processingHistory.data &&
-                        processingHistory.data.runs.length === 0 && (
-                          <p className="mt-2 text-xs text-muted">
-                            No hay ejecuciones registradas para este documento.
-                          </p>
-                        )}
-                      {activeId &&
-                        processingHistory.data &&
-                        processingHistory.data.runs.length > 0 && (
-                          <div className="mt-2 space-y-2">
-                            {processingHistory.data.runs.map((run) => (
-                              <div
-                                key={run.run_id}
-                                className="rounded-card border border-borderSubtle bg-surface p-2"
-                              >
-                                <div className="text-xs font-semibold text-ink">
-                                  {formatRunHeader(run)}
-                                </div>
-                                {run.failure_type && (
-                                  <p className="mt-1 text-xs text-statusError">
-                                    {explainFailure(run.failure_type)}
-                                  </p>
-                                )}
-                                <div className="mt-2 space-y-1">
-                                  {run.steps.length === 0 && (
-                                    <p className="text-xs text-muted">Sin pasos registrados.</p>
-                                  )}
-                                  {run.steps.length > 0 &&
-                                    groupProcessingSteps(run.steps).map((step, index) => {
-                                      const stepKey = `${run.run_id}-${step.step_name}-${step.attempt}-${index}`;
-                                      const duration = formatDuration(
-                                        step.start_time,
-                                        step.end_time,
-                                      );
-                                      const startTime = formatTime(step.start_time);
-                                      const endTime = formatTime(step.end_time);
-                                      const timeRange =
-                                        startTime && endTime
-                                          ? `${startTime} \u2192 ${endTime}`
-                                          : (startTime ?? "--:--");
-                                      return (
-                                        <div
-                                          key={stepKey}
-                                          className="rounded-control bg-surface p-2"
-                                        >
-                                          <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
-                                            <span
-                                              className={
-                                                step.status === "FAILED"
-                                                  ? "text-statusError"
-                                                  : step.status === "COMPLETED"
-                                                    ? "text-statusSuccess"
-                                                    : "text-statusWarn"
-                                              }
-                                            >
-                                              {statusIcon(step.status)}
-                                            </span>
-                                            <span className="font-semibold text-ink">
-                                              {step.step_name}
-                                            </span>
-                                            <span>intento {step.attempt}</span>
-                                            <span>{timeRange}</span>
-                                            {duration && <span>{duration}</span>}
-                                          </div>
-                                          {step.status === "FAILED" && (
-                                            <p className="mt-1 text-xs text-statusError">
-                                              {explainFailure(
-                                                step.raw_events.find(
-                                                  (event) => event.step_status === "FAILED",
-                                                )?.error_code,
-                                              )}
-                                            </p>
-                                          )}
-                                          {shouldShowDetails(step) && (
-                                            <div className="mt-1">
-                                              <button
-                                                type="button"
-                                                className="text-xs font-semibold text-muted"
-                                                onClick={() => toggleStepDetails(stepKey)}
-                                              >
-                                                {expandedSteps[stepKey]
-                                                  ? "Ocultar detalles"
-                                                  : "Ver detalles"}
-                                              </button>
-                                            </div>
-                                          )}
-                                          {shouldShowDetails(step) && expandedSteps[stepKey] && (
-                                            <div className="mt-2 space-y-1 rounded-control bg-surface p-2">
-                                              {step.raw_events.map((event, eventIndex) => (
-                                                <div
-                                                  key={`${stepKey}-event-${eventIndex}`}
-                                                  className="text-xs text-muted"
-                                                >
-                                                  <span className="font-semibold text-ink">
-                                                    {event.step_status}
-                                                  </span>
-                                                  <span>
-                                                    {event.started_at
-                                                      ? ` · Inicio: ${formatTime(event.started_at) ?? "--:--"}`
-                                                      : ""}
-                                                  </span>
-                                                  <span>
-                                                    {event.ended_at
-                                                      ? ` · Fin: ${formatTime(event.ended_at) ?? "--:--"}`
-                                                      : ""}
-                                                  </span>
-                                                  {event.error_code && (
-                                                    <span className="text-statusError">
-                                                      {` · ${explainFailure(event.error_code)}`}
-                                                    </span>
-                                                  )}
-                                                </div>
-                                              ))}
-                                            </div>
-                                          )}
-                                        </div>
-                                      );
-                                    })}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                    </div>
-                  )}
-                </div>
-              </div>
+              <PdfViewerPanel
+                activeViewerTab={activeViewerTab}
+                activeId={activeId}
+                fileUrl={fileUrl}
+                filename={filename}
+                isDragOverViewer={isDragOverViewer}
+                onViewerDragEnter={handleViewerDragEnter}
+                onViewerDragOver={handleViewerDragOver}
+                onViewerDragLeave={handleViewerDragLeave}
+                onViewerDrop={handleViewerDrop}
+                onOpenUploadArea={handleOpenUploadArea}
+                isDocumentListError={documentList.isError}
+                shouldShowLoadPdfErrorBanner={shouldShowLoadPdfErrorBanner}
+                loadPdfErrorMessage={loadPdfErrorMessage}
+                reviewSplitLayoutStyle={reviewSplitLayoutStyle}
+                onReviewSplitGridRef={handleReviewSplitGridRef}
+                onStartReviewSplitDragging={startReviewSplitDragging}
+                onResetReviewSplitRatio={resetReviewSplitRatio}
+                onHandleReviewSplitKeyboard={handleReviewSplitKeyboard}
+                effectiveViewMode={effectiveViewMode}
+                selectedReviewFieldEvidencePage={selectedReviewField?.evidence?.page ?? null}
+                selectedReviewFieldEvidenceSnippet={selectedReviewField?.evidence?.snippet ?? null}
+                fieldNavigationRequestId={fieldNavigationRequestId}
+                viewerModeToolbarIcons={viewerModeToolbarIcons}
+                viewerDownloadIcon={viewerDownloadIcon}
+                structuredDataPanel={structuredDataPanel}
+                isPinnedSourcePanelVisible={isPinnedSourcePanelVisible}
+                sourcePanelContent={sourcePanelContent}
+                isSourceOpen={sourcePanel.isSourceOpen}
+                isSourcePinned={sourcePanel.isSourcePinned}
+                isDesktopForPin={isDesktopForPin}
+                isReviewMode={isReviewMode}
+                onCloseSourceOverlay={sourcePanel.closeOverlay}
+                rawSearch={rawSearch}
+                setRawSearch={setRawSearch}
+                canSearchRawText={canSearchRawText}
+                hasRawText={hasRawText}
+                rawSearchNotice={rawSearchNotice}
+                isRawTextLoading={isRawTextLoading}
+                rawTextErrorMessage={rawTextErrorMessage}
+                rawTextContent={rawTextContent ?? ""}
+                onRawSearch={handleRawSearch}
+                canCopyRawText={canCopyRawText}
+                isCopyingRawText={isCopyingRawText}
+                copyFeedback={copyFeedback}
+                onCopyRawText={handleCopyRawText}
+                onDownloadRawText={handleDownloadRawText}
+                isActiveDocumentProcessing={isActiveDocumentProcessing}
+                reprocessPending={reprocessMutation.isPending}
+                reprocessingDocumentId={reprocessingDocumentId}
+                hasObservedProcessingAfterReprocess={hasObservedProcessingAfterReprocess}
+                onOpenRetryModal={() => setShowRetryModal(true)}
+                showRetryModal={showRetryModal}
+                onShowRetryModalChange={setShowRetryModal}
+                onConfirmRetry={handleConfirmRetry}
+                processingHistoryIsLoading={processingHistory.isLoading}
+                processingHistoryIsError={processingHistory.isError}
+                processingHistoryErrorMessage={processingHistoryErrorMessage}
+                processingHistoryRuns={processingHistory.data?.runs ?? []}
+                expandedSteps={expandedSteps}
+                onToggleStepDetails={toggleStepDetails}
+                formatRunHeader={formatRunHeader}
+              />
             </section>
           </div>
         </main>
-        <Dialog open={showRetryModal} onOpenChange={setShowRetryModal}>
-          <DialogContent className="max-w-sm">
-            <DialogHeader>
-              <DialogTitle>Reprocesar documento</DialogTitle>
-              <DialogDescription className="text-xs">
-                Esto volverá a ejecutar extracción e interpretación y puede cambiar los resultados.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button type="button" variant="ghost" disabled={reprocessMutation.isPending}>
-                  Cancelar
-                </Button>
-              </DialogClose>
-              <Button
-                type="button"
-                onClick={handleConfirmRetry}
-                disabled={reprocessMutation.isPending}
-              >
-                {reprocessMutation.isPending ? "Reprocesando..." : "Reprocesar"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
         <ToastHost
           connectivityToast={connectivityToast}
           uploadFeedback={uploadFeedback}

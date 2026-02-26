@@ -5,7 +5,7 @@ import * as pdfjsLib from "pdfjs-dist";
 
 import { PdfViewer } from "./PdfViewer";
 
-vi.mock("pdfjs-dist/build/pdf.worker.min?url", () => ({
+vi.mock("pdfjs-dist/build/pdf.worker.mjs?url", () => ({
   default: "pdf-worker",
 }));
 
@@ -83,6 +83,14 @@ describe("PdfViewer", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  it("sets GlobalWorkerOptions.workerSrc at module level", () => {
+    // pdfjs-dist v4 requires workerSrc before any getDocument() call.
+    // Without it, PDFWorker.workerSrc getter throws synchronously and
+    // the PDF silently fails to render. This guard catches regressions
+    // if the import or assignment is accidentally removed.
+    expect(pdfjsLib.GlobalWorkerOptions.workerSrc).toBeTruthy();
   });
 
   it("renders all pages in a continuous scroll", async () => {
@@ -289,7 +297,7 @@ describe("PdfViewer", () => {
     expect(screen.getByTestId("pdf-zoom-indicator")).toHaveTextContent("130%");
   });
 
-  it("loads PDF from fetched data source with worker disabled", async () => {
+  it("loads PDF from fetched data source with eval disabled", async () => {
     const getDocumentMock = vi.mocked(pdfjsLib.getDocument);
     getDocumentMock.mockReset();
     getDocumentMock.mockImplementationOnce(() => ({
@@ -303,9 +311,9 @@ describe("PdfViewer", () => {
     expect(globalThis.fetch).toHaveBeenCalledWith("blob://sample");
     const firstCall = getDocumentMock.mock.calls[0]?.[0] as { data?: Uint8Array };
     expect(firstCall).toMatchObject({
-      disableWorker: true,
       isEvalSupported: false,
     });
+    expect(firstCall).not.toHaveProperty("disableWorker");
     expect(firstCall.data).toBeInstanceOf(Uint8Array);
     expect(screen.queryByText("No pudimos cargar el PDF.")).toBeNull();
   });
@@ -326,9 +334,9 @@ describe("PdfViewer", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
     const firstCall = getDocumentMock.mock.calls[0]?.[0] as { data?: Uint8Array };
     expect(firstCall).toMatchObject({
-      disableWorker: true,
       isEvalSupported: false,
     });
+    expect(firstCall).not.toHaveProperty("disableWorker");
     expect(firstCall.data).toBeInstanceOf(Uint8Array);
     expect(firstCall.data?.byteLength).toBe(4);
   });
