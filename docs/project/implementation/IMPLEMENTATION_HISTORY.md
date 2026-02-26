@@ -29,3 +29,7 @@
 ## Active iteration
 
 See [PLAN_2026-02-26_ITER-9-E2E.md](PLAN_2026-02-26_ITER-9-E2E.md) — Iteration 9: E2E testing + evaluator experience polish.
+
+## Next iteration (pending Iter 9 completion)
+
+See [PLAN_2026-02-26_ITER-10-HARDENING.md](PLAN_2026-02-26_ITER-10-HARDENING.md) — Iteration 10: Security, resilience & performance hardening.

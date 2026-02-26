@@ -37,6 +37,7 @@ If no intent matches, read `docs/agent_router/00_FALLBACK.md` and ask for clarif
 
 ## Plan execution (hard rule)
 - Operational rules: load `docs/project/implementation/EXECUTION_RULES.md`.
+- **Step completion integrity:** before any handoff or auto-chain, enforce § "Step completion integrity" (NO-BATCH, CI-FIRST-BEFORE-HANDOFF, PLAN-UPDATE-IMMEDIATO, STEP-LOCK, EVIDENCE BLOCK, AUTO-HANDOFF GUARD).
 - Active plans in `docs/project/implementation/PLAN_*.md`.
 - Completed in `docs/project/implementation/completed/`.
 

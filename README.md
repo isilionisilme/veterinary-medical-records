@@ -196,6 +196,28 @@ Notes:
 - Frontend tests:
   - `docker compose --profile test run --rm frontend-tests`
 
+### End-to-end tests (Playwright)
+
+E2E tests run against the full Docker stack (frontend + backend + DB). They cover the 4 critical user flows: upload, review, field editing, and mark-reviewed.
+
+```bash
+# 1. Start the application stack
+docker compose up -d --build
+
+# 2. Run all E2E tests (headless Chromium)
+cd frontend && npx playwright test
+
+# 3. Run a specific spec
+npx playwright test e2e/upload-smoke.spec.ts
+
+# 4. Open interactive UI mode (useful for debugging)
+npx playwright test --ui
+```
+
+**CI:** E2E tests run automatically in the `e2e` GitHub Actions job on every PR. Failure artifacts (screenshots, traces) are uploaded for debugging.
+
+**Specs:** `app-loads`, `upload-smoke`, `review-flow`, `edit-flow`, `mark-reviewed` — see `frontend/e2e/`.
+
 ### Local quality gates (before pushing)
 
 > **Prerequisite:** install dev tooling once per venv:

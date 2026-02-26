@@ -427,8 +427,10 @@ The current architecture supports this evolution: the hexagonal design and expli
 | 1 | Single-process model — API and scheduler share one event loop | No horizontal scaling for processing | [ADR-ARCH-0004](../adr/ADR-ARCH-0004-in-process-async-processing.md); optional worker profile in [FUTURE_IMPROVEMENTS.md](FUTURE_IMPROVEMENTS.md) #14 |
 | 2 | SQLite — single-writer constraint | Write contention under concurrent uploads | WAL mode + busy timeout applied (Iteration 2); PostgreSQL adapter in roadmap (#17) |
 | 3 | Minimal authentication boundary | Root endpoints remain open; token auth is optional and static | Optional bearer-token auth implemented (Iteration 3, §13); full authN/authZ is a production evolution |
-| 4 | `AppWorkspace.tsx` at ~3,800 LOC (down from ~5,800) | Maintainability debt partially addressed; further decomposition possible | Initial decomposition done (Iteration 3, [FUTURE_IMPROVEMENTS.md](FUTURE_IMPROVEMENTS.md) #7b ✅); further extraction tracked in roadmap |
-| 5 | `routes.py` at ~940 LOC — all API endpoints in a single file | Blast radius on route changes | Decomposition tracked in [FUTURE_IMPROVEMENTS.md](FUTURE_IMPROVEMENTS.md) #7a |
+| 4 | `AppWorkspace.tsx` at ~2,200 LOC (down from ~5,800) | Core orchestrator still large; 5 hooks + 3 panel components extracted (−62%) | Decomposition across Iterations 3, 7, 8 ([FUTURE_IMPROVEMENTS.md](FUTURE_IMPROVEMENTS.md) #7b ✅); remaining LOC is render orchestration — further splits yield diminishing returns |
+| 5 | ~~`routes.py` at ~940 LOC~~ **✅ Resolved** | Routes fully decomposed into 5 domain modules (all < 420 LOC) + 18-LOC aggregator | Done (Iteration 6); [FUTURE_IMPROVEMENTS.md](FUTURE_IMPROVEMENTS.md) #7a ✅ |
+| 6 | No rate limiting on API endpoints | Vulnerable to abuse on upload and extraction paths | Tracked for Iteration 10 (F16-D); `slowapi` middleware planned |
+| 7 | No DB indexes on FK columns | Full table scans on joins involving `processing_runs`, `artifacts`, `document_status_history` | Tracked for Iteration 10 (F16-A) |
 
 ---
 
