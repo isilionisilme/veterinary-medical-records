@@ -20,7 +20,7 @@ Focos:
 - 🚧 **hard-gate** — requiere decisión/validación humana antes de continuar.
 
 ### Fase P1 — Integración Playwright E2E
-- [ ] P1-A 🔄 — Verificación de estado actual y gap analysis (Codex)
+- [x] P1-A 🔄 — Verificación de estado actual y gap analysis (Codex)
 - [ ] P1-B 🔄 — Setup Playwright en `frontend/` (dependencia, config, scripts, fixture) (Codex)
 - [ ] P1-C 🔄 — Selectores `data-testid` E2E estables (Codex)
 - [ ] P1-D 🔄 — Smoke `app-loads` verde y estable (Codex)
