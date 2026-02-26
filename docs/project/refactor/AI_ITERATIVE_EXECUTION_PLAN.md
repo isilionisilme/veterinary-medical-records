@@ -1952,6 +1952,13 @@ This ensures the local copy has the latest Estado, Resultados, and Prompt activo
 3. Target files exist: for any file path mentioned in the TASK section below, run `Test-Path <path>`. If any file does NOT exist: STOP. Tell the user which file is missing — it may have been renamed in a prior refactor step.
 --- END PRE-FLIGHT CHECK ---
 
+--- MARK IN PROGRESS (mandatory — before starting TASK) ---
+Edit AI_ITERATIVE_EXECUTION_PLAN.md: append ` ⏳ EN PROGRESO (<your agent name>, <current UTC date>)` to the `- [ ] F?-?` line you are about to execute.
+git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+git commit -m "docs(plan-f?-?): mark step in progress"
+git push origin <active_iteration_branch>
+--- END MARK IN PROGRESS ---
+
 [TASK — rellenado por Claude con instrucciones específicas del paso]
 
 --- TEST GATE (ejecutar ANTES de tocar el plan o commitear) ---
