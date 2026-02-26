@@ -122,12 +122,12 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [x] F13-C 🔄 — Extraer confidence_scoring.py + thin interpretation.py < 400 LOC (Codex)
 - [x] F13-D 🔄 — Shim compatibility: verificar re-exports en processing_runner.py (Codex)
 - [x] F13-E 🔄 — Extraer pdf_extraction_nodeps.py (~900 LOC fallback sin deps) (Codex)
-- [ ] F13-F 🔄 — Thin dispatcher < 300 LOC + verificar shim pdf_extraction (Codex)
-- [ ] F13-G 🔄 — Extraer hooks de estado: useStructuredDataFilters, useFieldEditing, useUploadState (Codex)
-- [ ] F13-H 🔄 — Extraer hooks de UI: useReviewSplitPanel, useDocumentsSidebar (Codex)
-- [ ] F13-I 🔄 — Split extraction_observability.py en 4 módulos < 300 LOC (Codex)
-- [ ] F13-J 🔄 — Coverage: PdfViewer 47%→60%+, config.py 83%→90%+, documentApi.ts 67%→80%+ (Codex)
-- [ ] F13-K 🚧 — FUTURE_IMPROVEMENTS refresh + smoke test + PR → main (Claude)
+- [x] F13-F 🔄 — Thin dispatcher < 300 LOC + verificar shim pdf_extraction (Codex)
+- [x] F13-G 🔄 — Extraer hooks de estado: useStructuredDataFilters, useFieldEditing, useUploadState (Codex)
+- [x] F13-H 🔄 — Extraer hooks de UI: useReviewSplitPanel, useDocumentsSidebar (Codex)
+- [x] F13-I 🔄 — Split extraction_observability.py en 4 módulos < 300 LOC (Codex)
+- [x] F13-J 🔄 — Coverage: PdfViewer 47%→60%+, config.py 83%→90%+, documentApi.ts 67%→80%+ (Codex)
+- [ ] F13-K 🚧 — FUTURE_IMPROVEMENTS refresh + smoke test + PR → main (Claude) ⏳ EN PROGRESO (Claude, 2026-02-26)
 
 ---
 
