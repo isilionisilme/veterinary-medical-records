@@ -131,7 +131,7 @@ export {
 } from "./constants/appWorkspace";
 export function App() {
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [fileUrl, setFileUrl] = useState<string | null>(null);
+  const [fileUrl, setFileUrl] = useState<string | ArrayBuffer | null>(null);
   const [filename, setFilename] = useState<string | null>(null);
   const [activeViewerTab, setActiveViewerTab] = useState<"document" | "raw_text" | "technical">(
     "document",
@@ -192,16 +192,12 @@ export function App() {
       if (interpretationRetryMinTimerRef.current) {
         window.clearTimeout(interpretationRetryMinTimerRef.current);
       }
-      if (fileUrl) {
-        URL.revokeObjectURL(fileUrl);
-      }
     };
-  }, [fileUrl]);
+  }, []);
   const loadPdf = useMutation({
     mutationFn: async (docId: string) => fetchOriginalPdf(docId),
     onSuccess: (result, docId) => {
       if (latestLoadRequestIdRef.current !== docId) {
-        URL.revokeObjectURL(result.url);
         return;
       }
       if (pendingAutoOpenDocumentIdRef.current === docId) {
@@ -219,12 +215,7 @@ export function App() {
         });
       }
       setActiveId(docId);
-      setFileUrl((currentUrl) => {
-        if (currentUrl) {
-          URL.revokeObjectURL(currentUrl);
-        }
-        return result.url;
-      });
+      setFileUrl(result.data);
       setFilename(result.filename);
     },
     onError: (_, docId) => {

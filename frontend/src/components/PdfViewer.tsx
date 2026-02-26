@@ -15,7 +15,7 @@ function clampZoomLevel(value: number): number {
 
 type PdfViewerProps = {
   documentId?: string | null;
-  fileUrl: string | null;
+  fileUrl: string | ArrayBuffer | null;
   filename?: string | null;
   isDragOver?: boolean;
   focusPage?: number | null;
@@ -231,7 +231,7 @@ export function PdfViewer({
       chainHasFlip,
       viewer: {
         documentId,
-        fileUrl,
+        fileUrl: typeof fileUrl === "string" ? fileUrl : "[array-buffer]",
         filename,
         pageNumber,
         renderedPageIndex: params.pageIndex,
@@ -344,11 +344,16 @@ export function PdfViewer({
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(fileUrl);
-        if (!response.ok) {
-          throw new Error("Failed to fetch PDF data.");
+        let arrayBuffer: ArrayBuffer;
+        if (typeof fileUrl === "string") {
+          const response = await fetch(fileUrl);
+          if (!response.ok) {
+            throw new Error("Failed to fetch PDF data.");
+          }
+          arrayBuffer = await response.arrayBuffer();
+        } else {
+          arrayBuffer = fileUrl;
         }
-        const arrayBuffer = await response.arrayBuffer();
         const dataSource = {
           data: new Uint8Array(arrayBuffer),
           disableWorker: true,

@@ -42,9 +42,9 @@ export async function fetchOriginalPdf(documentId: string): Promise<LoadResult> 
       `HTTP ${response.status} calling ${API_BASE_URL}/documents/${documentId}/download`,
     );
   }
-  const blob = await response.blob();
+  const data = await response.arrayBuffer();
   const filename = parseFilename(response.headers.get("content-disposition"));
-  return { url: URL.createObjectURL(blob), filename };
+  return { data, filename };
 }
 
 export async function fetchDocuments(): Promise<DocumentListResponse> {

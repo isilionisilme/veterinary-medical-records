@@ -39,7 +39,7 @@ jobs:
       - name: Run frontend build
         run: npm --prefix frontend run build
 
-  doc_test_sync_guard:
+  doc_canonical_router_guard:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
@@ -54,9 +54,38 @@ jobs:
       - name: Run canonical docs guard
         run: |
           python scripts/check_no_canonical_router_refs.py
+
+  doc_test_sync_guard:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+      - name: Classify doc changes
+        run: |
+          python scripts/classify_doc_change.py --base-ref "${{ github.event.pull_request.base.sha }}"
       - name: Run doc/test sync guard
         run: |
           python scripts/check_doc_test_sync.py --base-ref "${{ github.event.pull_request.base.sha }}"
+
+  doc_router_parity_guard:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
       - name: Run doc/router parity guard
         run: |
           python scripts/check_doc_router_parity.py --base-ref "${{ github.event.pull_request.base.sha }}"

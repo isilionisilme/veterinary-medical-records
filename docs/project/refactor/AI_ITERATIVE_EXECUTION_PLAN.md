@@ -131,22 +131,21 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 
 ### Fase 14 — Iteración 8 (Bugs + CI governance + AppWorkspace round 3 + cobertura)
 
-**Bloque 1 — Bugs y CI**
+**PR A — `improvement/iteration-8-ci` (F14-A..F14-E + F14-L)**
 - [x] F14-A 🔄 — Hotfix PdfViewer: aceptar ArrayBuffer, eliminar fetch indirection (Codex) ✅ DONE (Codex, 2026-02-26)
-- [ ] F14-B 🔄 — Separar job `doc_test_sync_guard` en 3 jobs CI independientes (Codex)
-- [ ] F14-C 🔄 — Clasificador de cambios de docs: script + integración CI (Codex)
-- [ ] F14-D 🔄 — Exención Navigation + modo relajado Clarification en `check_doc_test_sync.py` (Codex)
-- [ ] F14-E 🔄 — Tests unitarios del clasificador + calibración (Codex)
-**Bloque 2 — AppWorkspace round 3**
+- [x] F14-B 🔄 — Separar job `doc_test_sync_guard` en 3 jobs CI independientes (Codex) ✅ DONE (Codex, 2026-02-26)
+- [x] F14-C 🔄 — Clasificador de cambios de docs: script + integración CI (Codex) ✅ DONE (Codex, 2026-02-26)
+- [x] F14-D 🔄 — Exención Navigation + modo relajado Clarification en `check_doc_test_sync.py` (Codex) ✅ DONE (Codex, 2026-02-26)
+- [x] F14-E 🔄 — Tests unitarios del clasificador + calibración (Codex) ✅ DONE (Codex, 2026-02-26)
+- [ ] F14-L 🚧 — Smoke test PR A + merge `improvement/iteration-8-ci` → main (Claude)
+**PR B — `improvement/iteration-8-refactor` (F14-F..F14-K + F14-M)**
 - [ ] F14-F 🔄 — Extraer render sections de AppWorkspace.tsx: <UploadPanel>, <ReviewPanel>, <SidebarPanel>, <PdfViewerPanel> (Codex)
 - [ ] F14-G 🔄 — Tests para hooks extraídos en Iter 7: useFieldEditing, useUploadState, useReviewSplitPanel, useDocumentsSidebar, useStructuredDataFilters (Codex)
-**Bloque 3 — Cobertura**
 - [ ] F14-H 🔄 — PdfViewer branch coverage 47%→65%+ (Codex)
 - [ ] F14-I 🔄 — documentApi branch coverage 67%→80%+ (Codex)
 - [ ] F14-J 🔄 — config.py coverage 83%→90%+ (Codex)
-**Bloque 4 — Limpieza y cierre**
 - [ ] F14-K 🔄 — Split candidate_mining.py (789 LOC → 2 módulos < 400 LOC) (Codex)
-- [ ] F14-L 🚧 — FUTURE_IMPROVEMENTS refresh + smoke test + PR → main (Claude)
+- [ ] F14-M 🚧 — FUTURE_IMPROVEMENTS refresh + smoke test PR B + merge → main (Claude)
 
 ---
 
@@ -1175,6 +1174,269 @@ Objective: Final gate for Iteration 7. Update docs, full smoke, close PR.
 --- END TASK ---
 ```
 
+### F14-B — Separar `doc_test_sync_guard` en 3 jobs CI independientes
+
+```
+--- TASK ---
+Step: F14-B — Split doc_test_sync_guard into 3 independent CI jobs
+Branch: improvement/iteration-8-ci
+PR: #156
+
+--- MANDATORY: MARK IN PROGRESS (before any code change) ---
+1. Edit plan: append ` ⏳ EN PROGRESO (Codex, <UTC date>)` to `- [ ] F14-B`
+2. git add + commit -m "docs(plan-f14b): mark step in progress" + push
+--- END MARK IN PROGRESS ---
+
+Objective: Replace the single `doc_test_sync_guard` CI job with 3 independent
+jobs so that failures are immediately attributable to the specific guard.
+
+1. Read `.github/workflows/ci.yml` fully.
+
+2. Find the `doc_test_sync_guard` job. It currently runs 3 steps sequentially:
+   - `check_no_canonical_router_refs.py`
+   - `check_doc_test_sync.py --base-ref ...`
+   - `check_doc_router_parity.py --base-ref ...`
+
+3. Replace it with 3 separate jobs:
+
+   **Job 1: `doc_canonical_router_guard`**
+   - `if: github.event_name == 'pull_request'`
+   - Steps: checkout (fetch-depth: 0), setup Python 3.11, run `check_no_canonical_router_refs.py`
+
+   **Job 2: `doc_test_sync_guard`** (same name keeps branch protection rules working)
+   - `if: github.event_name == 'pull_request'`
+   - Steps: checkout (fetch-depth: 0), setup Python 3.11, run `check_doc_test_sync.py --base-ref "${{ github.event.pull_request.base.sha }}"`
+
+   **Job 3: `doc_router_parity_guard`**
+   - `if: github.event_name == 'pull_request'`
+   - Steps: checkout (fetch-depth: 0), setup Python 3.11, run `check_doc_router_parity.py --base-ref "${{ github.event.pull_request.base.sha }}"`
+
+4. Do NOT modify any Python scripts. Only `.github/workflows/ci.yml` changes.
+5. Verify YAML is valid: `python -c "import yaml; yaml.safe_load(open('.github/workflows/ci.yml'))"` (install PyYAML if needed).
+6. Proceed to TEST GATE.
+
+--- MANDATORY: COMMIT + MARK DONE (after TEST GATE passes) ---
+1. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
+2. git commit -m "ci(plan-f14b): split doc_test_sync_guard into 3 independent jobs"
+3. Edit plan: `- [ ] F14-B` → `- [x] F14-B` (remove EN PROGRESO)
+4. git add plan + commit -m "docs(plan-f14b): mark step done"
+5. git push
+6. CI GATE: wait for green, fix if red (max 2 attempts)
+--- END COMMIT + MARK DONE ---
+
+Target files: `.github/workflows/ci.yml`
+Do NOT change: Any Python scripts. Any other CI jobs.
+Acceptance: 3 separate doc guard jobs in CI. YAML valid. Existing tests still pass.
+--- END TASK ---
+⚠️ AUTO-CHAIN: CI green → read F14-C prompt below and execute it. DO NOT stop.
+```
+
+### F14-C — Clasificador de cambios de docs (`classify_doc_change.py`)
+
+```
+--- TASK ---
+Step: F14-C — Create doc change classifier script
+Branch: improvement/iteration-8-ci
+PR: #156
+
+--- MANDATORY: MARK IN PROGRESS (before any code change) ---
+1. Edit plan: append ` ⏳ EN PROGRESO (Codex, <UTC date>)` to `- [ ] F14-C`
+2. git add + commit -m "docs(plan-f14c): mark step in progress" + push
+--- END MARK IN PROGRESS ---
+
+Objective: Create `scripts/classify_doc_change.py` that classifies doc changes
+as Rule, Clarification, or Navigation to enable differential CI enforcement.
+
+1. Create `scripts/classify_doc_change.py`:
+
+   **Input:** reads git diff (uses `--base-ref` argument like the other guards).
+   **Output:** writes `doc_change_classification.json` to repo root:
+   ```json
+   {
+     "files": {"docs/path/file.md": "Rule|Clarification|Navigation"},
+     "overall": "Rule|Clarification|Navigation"
+   }
+   ```
+
+   **Classification logic (per file):**
+   a. If commit message contains `[doc:rule]` → Rule.
+   b. If commit message contains `[doc:nav]` → Navigation.
+   c. If commit message contains `[doc:clar]` → Clarification.
+   d. Get the diff hunks for the file. Check added/modified lines for:
+      - `RULE_SIGNALS` regex: `\b(MUST|SHALL|REQUIRED|SHOULD NOT|MUST NOT|threshold|policy|mandatory|hard rule|fail-closed)\b` (case-insensitive).
+      - `NAV_PATTERNS` regex: lines that are ONLY links `[text](url)`, heading changes `^#{1,6}\s`, ToC entries `^\s*-\s*\[`, or import/re-export lines.
+   e. If any RULE_SIGNALS match → Rule.
+   f. If ALL changed lines match NAV_PATTERNS → Navigation.
+   g. Otherwise → Clarification.
+
+   **Overall classification:** most restrictive wins (Rule > Clarification > Navigation).
+
+   **Fail-closed:** on any error (bad diff, no files, exception) → output `"overall": "Rule"`.
+
+2. Make the script executable via `python scripts/classify_doc_change.py --base-ref <sha>`.
+
+3. Add a classification step in CI:
+   In `.github/workflows/ci.yml`, in the `doc_test_sync_guard` job, add a NEW
+   FIRST step before the existing `check_doc_test_sync.py` step:
+   ```yaml
+   - name: Classify doc changes
+     run: |
+       python scripts/classify_doc_change.py --base-ref "${{ github.event.pull_request.base.sha }}"
+   ```
+
+4. The classification JSON is written but NOT consumed yet (F14-D will wire it).
+
+5. Proceed to TEST GATE.
+
+--- MANDATORY: COMMIT + MARK DONE (after TEST GATE passes) ---
+1. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
+2. git commit -m "feat(plan-f14c): doc change classifier script"
+3. Edit plan: `- [ ] F14-C` → `- [x] F14-C` (remove EN PROGRESO)
+4. git add plan + commit -m "docs(plan-f14c): mark step done"
+5. git push
+6. CI GATE: wait for green, fix if red (max 2 attempts)
+--- END COMMIT + MARK DONE ---
+
+Target files: `scripts/classify_doc_change.py` (new), `.github/workflows/ci.yml`
+Do NOT change: `check_doc_test_sync.py`, `check_doc_router_parity.py`, `check_no_canonical_router_refs.py`.
+Acceptance: Script produces valid JSON. Fail-closed on error. YAML valid. Tests pass.
+--- END TASK ---
+⚠️ AUTO-CHAIN: CI green → read F14-D prompt below and execute it. DO NOT stop.
+```
+
+### F14-D — Exención Navigation + modo relajado Clarification
+
+```
+--- TASK ---
+Step: F14-D — Navigation exemption + Clarification relaxed mode
+Branch: improvement/iteration-8-ci
+PR: #156
+
+--- MANDATORY: MARK IN PROGRESS (before any code change) ---
+1. Edit plan: append ` ⏳ EN PROGRESO (Codex, <UTC date>)` to `- [ ] F14-D`
+2. git add + commit -m "docs(plan-f14d): mark step in progress" + push
+--- END MARK IN PROGRESS ---
+
+Objective: Wire `classify_doc_change.py` output into `check_doc_test_sync.py`
+so Navigation changes skip the guard entirely and Clarification changes only
+require owner propagation (skip `required_any` checks).
+
+1. Read `scripts/check_doc_test_sync.py` fully.
+
+2. In `main()`, BEFORE calling `evaluate_sync()`, add:
+   ```python
+   classification_path = Path("doc_change_classification.json")
+   if classification_path.exists():
+       try:
+           classification = json.loads(classification_path.read_text(encoding="utf-8"))
+           overall = classification.get("overall", "Rule")
+       except (json.JSONDecodeError, KeyError):
+           overall = "Rule"  # fail-closed
+
+       if overall == "Navigation":
+           print("Doc/test sync guard: Navigation-only changes detected. Skipping.")
+           return 0
+
+       if overall == "Clarification":
+           # Set flag to relax required_any checks
+           os.environ["DOC_SYNC_RELAXED"] = "1"
+   ```
+   Add `import os` at the top if not already present.
+
+3. In `evaluate_sync()`, when checking `required_patterns`:
+   - If `os.environ.get("DOC_SYNC_RELAXED") == "1"`: skip the `required_any`
+     check (don't add finding for missing test changes).
+   - Owner checks (`owner_any`) still apply in relaxed mode.
+
+4. Do NOT change the behavior when `doc_change_classification.json` does not
+   exist — full validation applies (fail-closed).
+
+5. Add `rule_change_only: true` as an optional field in relevant
+   `test_impact_map.json` entries where only Rule changes require sync
+   (informational — not consumed in this step, reserved for future use).
+
+6. Proceed to TEST GATE.
+
+Target files: `scripts/check_doc_test_sync.py`, `test_impact_map.json` (under DOC_UPDATES)
+
+--- MANDATORY: COMMIT + MARK DONE (after TEST GATE passes) ---
+1. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
+2. git commit -m "feat(plan-f14d): navigation exemption + clarification relaxed mode"
+3. Edit plan: `- [ ] F14-D` → `- [x] F14-D` (remove EN PROGRESO)
+4. git add plan + commit -m "docs(plan-f14d): mark step done"
+5. git push
+6. CI GATE: wait for green, fix if red (max 2 attempts)
+--- END COMMIT + MARK DONE ---
+
+Do NOT change: `classify_doc_change.py`, `check_no_canonical_router_refs.py`, `check_doc_router_parity.py`.
+Acceptance: Navigation changes exit 0 immediately. Clarification skips required_any but enforces owner_any.
+Rule changes unchanged. Missing classification file → full check. Tests pass.
+--- END TASK ---
+⚠️ AUTO-CHAIN: CI green → read F14-E prompt below and execute it. DO NOT stop.
+```
+
+### F14-E — Tests unitarios del clasificador + calibración
+
+```
+--- TASK ---
+Step: F14-E — Unit tests for classify_doc_change.py + calibration
+Branch: improvement/iteration-8-ci
+PR: #156
+
+--- MANDATORY: MARK IN PROGRESS (before any code change) ---
+1. Edit plan: append ` ⏳ EN PROGRESO (Codex, <UTC date>)` to `- [ ] F14-E`
+2. git add + commit -m "docs(plan-f14e): mark step in progress" + push
+--- END MARK IN PROGRESS ---
+
+Objective: Write unit tests for the doc change classifier and calibrate against
+known diff patterns.
+
+1. Create `backend/tests/unit/test_classify_doc_change.py`:
+
+   **Test cases (minimum 7):**
+   a. `test_rule_signal_must`: diff contains "MUST" → Rule.
+   b. `test_rule_signal_threshold`: diff contains "threshold" → Rule.
+   c. `test_navigation_links_only`: diff only adds markdown links → Navigation.
+   d. `test_navigation_heading_change`: diff only changes heading level → Navigation.
+   e. `test_clarification_rewording`: diff changes prose without rule signals → Clarification.
+   f. `test_fallback_on_error`: invalid/missing diff → Rule (fail-closed).
+   g. `test_commit_tag_override_nav`: commit `[doc:nav]` overrides to Navigation.
+   h. `test_commit_tag_override_rule`: commit `[doc:rule]` overrides to Rule.
+   i. `test_overall_most_restrictive`: mixed file classifications → overall = most restrictive.
+
+   **Implementation approach:**
+   - Import the classifier functions/module (add `sys.path` manipulation if
+     needed since `scripts/` is not a package).
+   - Mock `subprocess.run` to provide controlled git diff output.
+   - Mock file writes to capture JSON output.
+
+2. Also test `check_doc_test_sync.py` integration with classification:
+   a. `test_navigation_skips_guard`: create `doc_change_classification.json`
+      with `"overall": "Navigation"` → guard returns 0.
+   b. `test_clarification_relaxes_required`: classification = Clarification →
+      guard skips `required_any` findings but still checks `owner_any`.
+   c. `test_rule_full_enforcement`: classification = Rule → full check applies.
+   d. `test_missing_classification_full_check`: no JSON file → full check (fail-closed).
+
+3. Verify: `pytest backend/tests/unit/test_classify_doc_change.py -v` → all pass.
+4. Check coverage: `pytest --cov=scripts/classify_doc_change --cov-report=term-missing backend/tests/unit/test_classify_doc_change.py` → ≥90%.
+5. Proceed to TEST GATE.
+
+--- MANDATORY: COMMIT + MARK DONE (after TEST GATE passes) ---
+1. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
+2. git commit -m "test(plan-f14e): unit tests for doc change classifier"
+3. Edit plan: `- [ ] F14-E` → `- [x] F14-E` (remove EN PROGRESO)
+4. git add plan + commit -m "docs(plan-f14e): mark step done"
+5. git push
+6. CI GATE: wait for green, fix if red (max 2 attempts)
+--- END COMMIT + MARK DONE ---
+
+Target files: `backend/tests/unit/test_classify_doc_change.py` (new)
+Do NOT change: `classify_doc_change.py`, `check_doc_test_sync.py` (test them as-is).
+Acceptance: ≥7 test cases. ≥90% coverage of classifier. All tests green.
+--- END TASK ---
+```
+
 ---
 
 ## Skills instaladas y uso recomendado
@@ -1750,13 +2012,14 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 > hooks extraídos sin tests propios, candidate_mining.py 789 LOC (>500 guía),
 > coverage gaps en PdfViewer/documentApi/config.py.
 >
-> **Estrategia:** 4 bloques secuenciales. Bloque 1 (bugs+CI) desbloquea testing
-> manual y reduce fricción. Bloque 2 (AppWorkspace) reduce el mayor archivo
-> frontend. Bloque 3 (cobertura) es mecánico. Bloque 4 (limpieza) cierra la
-> iteración. 1 PR única. Ejecución semi-desatendida con Cola de prompts.
+> **Estrategia:** 4 bloques en 2 PRs. PR A (bugs+CI, F14-A..E+L) desbloquea
+> testing manual y reduce fricción CI. PR B (refactor+cobertura, F14-F..K+M)
+> reduce AppWorkspace y cierra gaps de cobertura. Ejecución semi-desatendida
+> con Cola de prompts. PR A se mergea antes de empezar PR B.
 
-**Rama:** `improvement/iteration-8-pr1` desde `main`
-**Agente:** Codex (F14-A..K) · Claude (F14-L)
+**Rama PR A:** `improvement/iteration-8-ci` desde `main`
+**Rama PR B:** `improvement/iteration-8-refactor` desde `main` (tras merge de PR A)
+**Agente:** Codex (F14-A..K) · Claude (F14-L, F14-M)
 **Objetivo:** Fix de PdfViewer, reducir fricción CI docs, AppWorkspace < 1,500 LOC, cerrar gaps de cobertura.
 
 #### F14-A — Hotfix PdfViewer: aceptar ArrayBuffer, eliminar fetch indirection
@@ -1902,7 +2165,20 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 | **Archivos** | `processing/candidate_mining.py`, `processing/date_parsing.py` (nuevo), `processing_runner.py` |
 | **Ref FUTURE_IMPROVEMENTS** | Item modularización |
 
-#### F14-L — FUTURE_IMPROVEMENTS refresh + smoke test + PR → main
+#### F14-L — Smoke test PR A + merge `improvement/iteration-8-ci` → main
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — verificación + merge |
+| **Esfuerzo** | S |
+| **Agente** | Claude |
+| **Por qué** | Gate de calidad para PR A (bugs + CI governance). Mergear antes de empezar PR B para que el refactor se base en main limpio con CI mejorado. |
+| **Tareas** | 1. Smoke: `pytest` → 350+, `npm test` → 241+, lint → 0, CI green. 2. Verificar que un cambio Navigation-only pasa CI sin tests contractuales. 3. Verificar 3 doc jobs separados visibles en CI. 4. DOC_UPDATES normalization pass. 5. Merge PR A → main. 6. Crear rama `improvement/iteration-8-refactor` desde `main` actualizado. |
+| **Criterio de aceptación** | PR A mergeada. CI green con 3 doc jobs separados. Clasificador produce output correcto. Rama PR B creada. |
+| **Archivos** | Todos los modificados en F14-A a F14-E |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
+#### F14-M — FUTURE_IMPROVEMENTS refresh + smoke test PR B + merge → main
 
 | Atributo | Valor |
 |---|---|
@@ -1910,16 +2186,16 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 | **Esfuerzo** | S |
 | **Agente** | Claude |
 | **Por qué** | Gate final de calidad Iteración 8. |
-| **Tareas** | 1. Actualizar FUTURE_IMPROVEMENTS.md con items completados. 2. Smoke: `pytest` → 350+, `npm test` → 250+, lint → 0, CI green. 3. Verificar AppWorkspace < 1,500 LOC. 4. Verificar que un cambio Navigation-only pasa CI sin tests contractuales. 5. DOC_UPDATES normalization pass. 6. Commit + push + PR. |
-| **Criterio de aceptación** | Todos los smoke pasan. CI green con 3 doc jobs separados. AppWorkspace < 1,500 LOC. PR lista para merge. |
-| **Archivos** | `FUTURE_IMPROVEMENTS.md`, todos los modificados en F14-A a F14-K |
+| **Tareas** | 1. Actualizar FUTURE_IMPROVEMENTS.md con items completados. 2. Smoke: `pytest` → 350+, `npm test` → 250+, lint → 0, CI green. 3. Verificar AppWorkspace < 1,500 LOC. 4. DOC_UPDATES normalization pass. 5. Merge PR B → main. |
+| **Criterio de aceptación** | Todos los smoke pasan. AppWorkspace < 1,500 LOC. PR B mergeada. Iteración 8 cerrada. |
+| **Archivos** | `FUTURE_IMPROVEMENTS.md`, todos los modificados en F14-F a F14-K |
 | **Ref FUTURE_IMPROVEMENTS** | Refresh completo |
 
 **Política de la fase — do-not-change:**
 - Contratos HTTP, schemas de respuesta, lógica de negocio, tests existentes (salvo actualización de prop en PdfViewer).
 - Fail-closed mantenido para clasificador de docs: si `doc_change_classification.json` no existe, `check_doc_test_sync.py` aplica validación completa (Rule).
 - AppWorkspace target < 1,500 LOC (stretch: < 1,200). La lógica de UI es densa; no forzar extracciones artificiales.
-- 1 PR única (`improvement/iteration-8-pr1` → `main`).
+- 2 PRs: PR A (`improvement/iteration-8-ci` → `main`), PR B (`improvement/iteration-8-refactor` → `main`). PR A se mergea antes de crear PR B.
 
 ---
 
@@ -2150,6 +2426,12 @@ STEP E — CI GATE (mandatory — do NOT skip):
 5. If you cannot fix it after 2 attempts: STOP. Tell the user: "⚠️ CI sigue rojo tras 2 intentos de fix. Necesito ayuda para diagnosticar."
 
 STEP F — CHAIN OR HANDOFF (mandatory):
+
+⚠️ **PRE-CONDITION (hard rule):** STEP F may ONLY execute if STEP A completed
+successfully (i.e., `git log -1 --oneline` shows the code commit from this task).
+If STEP A was NOT executed (no code commit exists for the current task): STOP.
+Do NOT emit a handoff. Report: "⚠️ La tarea no fue commiteada. Revisa los
+errores anteriores antes de continuar."
 
 ⚠️ **ITERATION BOUNDARY (hard rule):** Before evaluating auto-chain, check if the
 NEXT unchecked `[ ]` step belongs to the **same Fase/iteration** as the step you
@@ -2547,3 +2829,4 @@ All tests pass: \`pytest\` (backend) + \`npm test\` (frontend)."
 | Plan de mejoras futuras | `docs/project/FUTURE_IMPROVEMENTS.md` (2/4/8 semanas) |
 | Toolchain completo | Ruff + ESLint + Prettier + pre-commit + coverage reporting |
 
+Secch and Child.

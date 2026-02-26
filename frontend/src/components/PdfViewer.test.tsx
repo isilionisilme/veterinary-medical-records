@@ -310,6 +310,29 @@ describe("PdfViewer", () => {
     expect(screen.queryByText("No pudimos cargar el PDF.")).toBeNull();
   });
 
+  it("loads PDF directly from ArrayBuffer without fetching", async () => {
+    const getDocumentMock = vi.mocked(pdfjsLib.getDocument);
+    getDocumentMock.mockReset();
+    getDocumentMock.mockImplementationOnce(() => ({
+      promise: Promise.resolve(mockDoc),
+    }));
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const pdfBytes = new Uint8Array([0x25, 0x50, 0x44, 0x46]).buffer;
+
+    render(<PdfViewer fileUrl={pdfBytes} filename="record.pdf" />);
+
+    await screen.findAllByTestId("pdf-page");
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+    const firstCall = getDocumentMock.mock.calls[0]?.[0] as { data?: Uint8Array };
+    expect(firstCall).toMatchObject({
+      disableWorker: true,
+      isEvalSupported: false,
+    });
+    expect(firstCall.data).toBeInstanceOf(Uint8Array);
+    expect(firstCall.data?.byteLength).toBe(4);
+  });
+
   it("shows loading state while document promise is pending", async () => {
     const getDocumentMock = vi.mocked(pdfjsLib.getDocument);
     getDocumentMock.mockReset();

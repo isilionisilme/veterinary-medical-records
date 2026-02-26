@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import fnmatch
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -100,6 +101,7 @@ def evaluate_sync(
         scoped_docs = [doc for doc in changed_docs if _matches_any(doc, normalized_required_globs)]
     else:
         scoped_docs = []
+    relaxed_mode = os.environ.get("DOC_SYNC_RELAXED") == "1"
 
     mapped_scoped_docs: set[str] = set()
     for raw_rule in rules:
@@ -161,7 +163,11 @@ def evaluate_sync(
             doc_glob = str(rule["doc_glob"])
             description_suffix = f" ({description})" if description else ""
 
-            if required_patterns and not _matches_any_from_files(changed_files, required_patterns):
+            if (
+                not relaxed_mode
+                and required_patterns
+                and not _matches_any_from_files(changed_files, required_patterns)
+            ):
                 findings.append(
                     f"Doc `{doc}` matched `{doc_glob}`{description_suffix}, "
                     "but none of the related tests/guards changed: "
@@ -204,6 +210,21 @@ def main() -> int:
             file=sys.stderr,
         )
         return 2
+
+    classification_path = Path("doc_change_classification.json")
+    if classification_path.exists():
+        try:
+            classification = json.loads(classification_path.read_text(encoding="utf-8"))
+            overall = classification.get("overall", "Rule")
+        except (json.JSONDecodeError, KeyError):
+            overall = "Rule"
+
+        if overall == "Navigation":
+            print("Doc/test sync guard: Navigation-only changes detected. Skipping.")
+            return 0
+
+        if overall == "Clarification":
+            os.environ["DOC_SYNC_RELAXED"] = "1"
 
     required_doc_globs = [str(item).strip() for item in required_doc_globs_raw if str(item).strip()]
     findings = evaluate_sync(
