@@ -22,7 +22,7 @@ Focos:
 ### Fase P1 — Integración Playwright E2E
 - [x] P1-A 🔄 — Verificación de estado actual y gap analysis (Codex)
 - [x] P1-B 🔄 — Setup Playwright en `frontend/` (dependencia, config, scripts, fixture) (Codex)
-- [ ] P1-C 🔄 — Selectores `data-testid` E2E estables (Codex)
+- [x] P1-C 🔄 — Selectores `data-testid` E2E estables (Codex)
 - [ ] P1-D 🔄 — Smoke `app-loads` verde y estable (Codex)
 - [ ] P1-E 🔄 — Smoke `upload` robusto por `document_id` (Codex)
 - [ ] P1-F 🔄 — Job `CI / e2e` con artifacts en fallo (Codex)
@@ -111,45 +111,216 @@ Estas reglas son de cumplimiento estricto para este plan y replican la política
 
 ## Prompt activo
 
-_Completado: P1-B._
+_Completado: P1-C._
 
 ---
 
 ## Cola de prompts
 
-### P1-C — Selectores `data-testid` E2E estables (Codex)
-Pendiente de prompt — pedir a Claude cuando P1-B esté completado.
-
 ### P1-D — Smoke `app-loads` verde y estable (Codex)
-Pendiente de prompt — pedir a Claude cuando P1-C esté completado.
+
+**Objetivo:** Verificar que `app-loads.spec.ts` pasa de forma estable contra el stack Docker en `localhost:80`.
+
+**Instrucciones operativas:**
+
+1. **Branch check:** `git branch --show-current` → debe ser `improvement/playwright`. Si no, STOP.
+2. **Sync check:** `git fetch origin && git pull` (si hay upstream).
+3. **Precondición:** Docker stack corriendo en `localhost:80` (`$env:FRONTEND_PORT='80'; docker compose up -d --build --wait`).
+4. Ejecutar: `cd frontend && npx playwright test e2e/app-loads.spec.ts`
+5. Si falla:
+   - Revisar si es un problema de timing → añadir `await page.waitForLoadState('networkidle')` antes de las assertions si es necesario.
+   - Revisar que los `data-testid` del paso P1-C estén correctamente aplicados.
+   - No aumentar `timeout` global — usar waits explícitos si es necesario.
+6. Ejecutar 3 veces consecutivas para verificar estabilidad (no flaky).
+7. Si ya pasa de forma estable, solo documentar evidencia.
+8. Commit (solo si hay cambios): `test(plan-p1d): stabilize app-loads smoke test`
+
+**Criterio de aceptación:**
+- `npx playwright test e2e/app-loads.spec.ts` pasa 3/3 veces consecutivas.
+- Sin waits arbitrarios (hardcoded sleep).
+
+---
 
 ### P1-E — Stabilizar `upload-smoke` (Codex)
-Objetivo: hacer el smoke de upload determinístico.
 
-Instrucciones operativas:
-1. Esperar respuesta `POST /documents/upload` (201).
-2. Extraer `document_id` de la respuesta.
-3. Asertar presencia de `data-testid="doc-row-${document_id}"` en sidebar.
-4. Evitar assertions basadas solo en texto filename.
-5. Mantener timeout razonable por test, sin aumentar globalmente toda la suite.
+**Objetivo:** Hacer el smoke de upload determinístico usando `document_id` de la respuesta API en vez de texto.
 
-Criterio de aceptación:
-- `cd frontend && npm run test:e2e` en verde local con Docker en `localhost:80`.
+**Contexto técnico:**
+- `POST /documents/upload` responde HTTP 201 con `{ document_id: string, status: string, created_at: string }`.
+- El sidebar ya renderiza `data-testid="doc-row-${item.document_id}"` por cada documento.
+- El test actual usa `toContainText("sample.pdf")` que es frágil si hay documentos previos con el mismo nombre.
 
-### P1-F (Codex)
-Endurecer CI `CI / e2e` y artifacts. Pendiente de prompt.
+**Instrucciones operativas:**
 
-### P1-G (Codex)
-Ejecutar quality gates y consolidar evidencia. Pendiente de prompt.
+1. **Branch check:** `git branch --show-current` → debe ser `improvement/playwright`. Si no, STOP.
+2. **Sync check:** `git fetch origin && git pull` (si hay upstream).
+3. **Precondición:** Docker stack corriendo en `localhost:80`.
+4. Reescribir `e2e/upload-smoke.spec.ts`:
+   - Interceptar la respuesta de `POST /documents/upload` con `page.waitForResponse()`.
+   - Extraer `document_id` del JSON de respuesta.
+   - Asertar visibilidad de `data-testid="doc-row-${document_id}"` en el sidebar.
+   - Mantener `test.setTimeout(90_000)` para este test específico (upload + procesamiento backend es lento).
+   - No usar assertions basadas en texto del filename.
+5. Ejecutar: `cd frontend && npx playwright test e2e/upload-smoke.spec.ts`
+6. Ejecutar 3 veces consecutivas para verificar estabilidad.
+7. Commit: `test(plan-p1e): stabilize upload smoke by document_id assertion`
 
-### P1-H (Claude/Usuario)
-Validación manual headed. Pendiente de prompt.
+**Criterio de aceptación:**
+- `npx playwright test e2e/upload-smoke.spec.ts` pasa 3/3 veces.
+- La assertion usa `document_id` del response, no texto de filename.
+- `cd frontend && npm run test:e2e` (suite completa) en verde.
 
-### P1-I (Codex)
-Commit + push + PR. Pendiente de prompt.
+---
 
-### P1-J (Claude/Usuario)
-Veredicto final de merge. Pendiente de prompt.
+### P1-F — Job `CI / e2e` con artifacts en fallo (Codex)
+
+**Objetivo:** Añadir un job `e2e` al CI que ejecute los tests de Playwright y preserve artifacts (traces, screenshots, video) en caso de fallo.
+
+**Contexto técnico:**
+- CI en `.github/workflows/ci.yml`.
+- Jobs actuales: `frontend_test_build`, `quality`, `docker_packaging_guard`, más guards de PR.
+- El job `docker_packaging_guard` ya hace `docker compose build` y valida contratos — reutilizar patrón.
+
+**Instrucciones operativas:**
+
+1. **Branch check:** `git branch --show-current` → debe ser `improvement/playwright`. Si no, STOP.
+2. **Sync check:** `git fetch origin && git pull` (si hay upstream).
+3. Añadir job `e2e` en `.github/workflows/ci.yml`:
+   - `needs: [docker_packaging_guard]` o equivalente para tener imágenes Docker construidas.
+   - Steps:
+     1. Checkout.
+     2. Setup Node (misma versión que `frontend_test_build`).
+     3. `npm ci` en `frontend/`.
+     4. `npx playwright install --with-deps chromium`.
+     5. Start Docker stack: `docker compose up -d --wait` (o similar; `FRONTEND_PORT=80`).
+     6. Run: `cd frontend && npx playwright test`.
+     7. Upload artifact on failure: `playwright-report/`, `test-results/` con `actions/upload-artifact@v4`.
+   - Trigger: mismos triggers que el job principal (push + PR).
+4. **No modificar otros jobs existentes.**
+5. Validar: revisar YAML con lint mental; no se requiere ejecución CI real en este paso.
+6. Commit: `ci(plan-p1f): add e2e job with playwright artifacts on failure`
+
+**Criterio de aceptación:**
+- Job `e2e` presente en `ci.yml`.
+- Artifacts configurados para `playwright-report/` y `test-results/` solo en fallo.
+- `npx playwright install chromium` en el pipeline.
+- Job depende de imágenes Docker construidas.
+
+---
+
+### P1-G — Validación técnica: quality gates (Codex)
+
+**Objetivo:** Ejecutar todos los quality gates locales y consolidar evidencia antes de la validación manual.
+
+**Instrucciones operativas:**
+
+1. **Branch check:** `git branch --show-current` → debe ser `improvement/playwright`. Si no, STOP.
+2. **Sync check:** `git fetch origin && git pull` (si hay upstream).
+3. **Precondición:** Docker stack corriendo en `localhost:80`.
+4. Ejecutar en orden y capturar salida:
+   - `cd frontend && npm run test:e2e` → debe pasar (todos los spec verdes).
+   - `cd frontend && npx tsc --noEmit` → 0 errores.
+   - `cd frontend && npx eslint .` → 0 errores (warnings aceptables si pre-existentes).
+5. Si algún check falla:
+   - Corregir solo si es un problema introducido por este plan (P1-B a P1-F).
+   - Si es pre-existente, documentar como hallazgo y continuar.
+6. Consolidar evidencia: lista de comandos + resultados en el handoff.
+7. Commit (solo si hay fixes): `fix(plan-p1g): resolve quality gate findings`
+
+**Criterio de aceptación:**
+- `npm run test:e2e` verde.
+- `tsc --noEmit` limpio.
+- `eslint .` limpio (o solo warnings pre-existentes documentados).
+- Evidencia de los 3 comandos capturada.
+
+---
+
+### P1-H — Validación manual headed + checklist funcional (Claude/Usuario)
+
+**Objetivo:** Validación humana de los tests E2E en modo visible (headed) y checklist funcional mínimo.
+
+**Instrucciones para el usuario:**
+
+1. **Prerequisito:** Docker stack corriendo en `localhost:80`:
+   ```bash
+   $env:FRONTEND_PORT='80'; docker compose up -d --build --wait
+   ```
+2. Ejecutar tests en modo headed:
+   ```bash
+   cd frontend
+   npm run test:e2e:headed
+   ```
+3. **Checklist funcional (verificar visualmente):**
+   - [ ] `app-loads`: el navegador abre y se ven el sidebar y la zona de upload.
+   - [ ] `upload-smoke`: se sube un PDF, aparece el toast de progreso, y el documento aparece en el sidebar.
+   - [ ] Los tests no tienen delays artificiales visibles (no hay `waitForTimeout(5000)` tipo hacks).
+   - [ ] Los tests corren en < 2 minutos totales.
+4. **Decisión:**
+   - Si todo pasa → marcar P1-H como completado y continuar a P1-I.
+   - Si algo falla → describir el problema específico; Claude propondrá fix y se iterará.
+
+**Criterio de aceptación:**
+- Checklist 4/4 marcado.
+- Sin hallazgos bloqueantes.
+
+---
+
+### P1-I — Commit, push y PR hacia `main` (Codex)
+
+**Objetivo:** Asegurar que todos los cambios están commiteados, pushear la rama y abrir PR hacia `main`.
+
+**Instrucciones operativas:**
+
+1. **Branch check:** `git branch --show-current` → debe ser `improvement/playwright`. Si no, STOP.
+2. **Sync check:** `git fetch origin && git pull` (si hay upstream).
+3. Verificar estado limpio: `git status` → no debe haber cambios sin commitear.
+   - Si los hay, commitear con mensaje descriptivo siguiendo convención del plan.
+4. Push: `git push origin improvement/playwright` (o `--set-upstream` si es primera vez).
+5. Crear PR con `gh pr create`:
+   - Title: `test: integrate Playwright E2E smoke tests`
+   - Body debe incluir:
+     - **Qué cambia:** setup Playwright, 2 smoke tests, job CI e2e.
+     - **How to test:**
+       ```bash
+       $env:FRONTEND_PORT='80'; docker compose up -d --build --wait
+       cd frontend
+       npm run test:e2e
+       npx tsc --noEmit
+       npx eslint .
+       ```
+     - **Checklist:** links a criterios de aceptación global del plan.
+   - Base: `main`.
+   - Labels: si disponibles, `test`, `e2e`.
+6. Capturar URL de la PR creada.
+7. **No hacer merge** — eso es decisión de P1-J.
+
+**Criterio de aceptación:**
+- `git status` limpio.
+- PR abierta hacia `main` con sección `How to test`.
+- URL de PR capturada en evidencia.
+
+---
+
+### P1-J — Veredicto final y decisión de merge (Claude/Usuario)
+
+**Objetivo:** Revisión final de la PR y decisión de merge.
+
+**Instrucciones para Claude:**
+
+1. Leer la PR abierta en P1-I (usar `gh pr view`).
+2. Verificar:
+   - [ ] CI pasa (job `e2e` verde en la PR).
+   - [ ] CI jobs existentes no se rompieron.
+   - [ ] Diff es limpio y acotado al scope del plan.
+   - [ ] `How to test` está presente y es correcto.
+   - [ ] No se introdujeron dependencias innecesarias.
+3. **Si todo OK:** recomendar merge al usuario con `gh pr merge --squash`.
+4. **Si hay problemas:** listar hallazgos con formato estándar del plan y proponer iteración.
+
+**Criterio de aceptación:**
+- PR revisada con veredicto explícito (APPROVE / REQUEST_CHANGES).
+- Si APPROVE: merge ejecutado o autorizado por usuario.
+- Plan marcado como completado.
 
 ---
 
