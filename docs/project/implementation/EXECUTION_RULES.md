@@ -107,6 +107,20 @@ If a completed step causes an issue not detected by tests:
 ### Plan = agents only
 **The user does NOT edit plan files manually.** Only the agents (Claude and Codex) modify `PLAN_*.md` files. If the user needs to change something (e.g. add a step, fix a typo), they ask Claude and Claude makes the edit + commit.
 
+### Plan scope principle (hard rule)
+**Plans (`PLAN_*.md`) contain ONLY product/engineering tasks** — the work that produces deliverable value (code, tests, configuration, documentation content). **Operational protocol is NEVER a plan step.**
+
+| ✅ Valid plan step | ❌ NOT a plan step |
+|---|---|
+| "Add Playwright smoke test for upload flow" | "Commit and push" |
+| "Configure CI job for E2E tests" | "Create PR" |
+| "Add data-testid attributes to components" | "Merge PR" |
+| "Write ADR for architecture decision" | "Post-merge cleanup" |
+
+Operational protocol (commit, push, PR creation, merge, post-merge cleanup, branch management) is defined exclusively in this file (`EXECUTION_RULES.md`) and agents execute it automatically as part of SCOPE BOUNDARY and iteration lifecycle.
+
+**Why:** When operational steps appear in a plan, agents treat them as tasks requiring explicit prompts and checkboxes, which conflicts with the automatic protocol in SCOPE BOUNDARY. This causes duplication, skipped protocol steps, and confusion about when to execute operational procedures.
+
 ### PR progress tracking (mandatory)
 **Every completed step must be reflected in the active PR for the current iteration.** After finishing the SCOPE BOUNDARY (after push), the agent updates the PR body with `gh pr edit <pr_number> --body "..."`. This is mandatory for both Codex and Claude. If the command fails, report to the user but do NOT block the step.
 
@@ -291,6 +305,45 @@ Update with `gh pr edit <pr_number> --body "..."`. Keep existing structure, mark
 
 **Context safety valve:** if context exhausted, complete current step cleanly and handoff.
 NEVER end without telling the user what to do next.
+
+---
+
+## Iteration lifecycle protocol
+
+The lifecycle of an iteration follows this sequence. All operational steps after SCOPE BOUNDARY are automatic — they are NOT plan tasks.
+
+```
+Plan steps (product work)  →  PR creation  →  User approval  →  Merge + cleanup
+     [SCOPE BOUNDARY]         [automatic]     [hard-gate]       [automatic]
+```
+
+### PR creation (automatic — not a plan step)
+When all steps of an iteration are `[x]` and CI is green on the last push:
+1. The agent creates a PR following `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/210_pull-requests.md`.
+2. PR title, body, classification, and UX/Brand compliance (if applicable) follow that document.
+3. The agent reports the PR number and URL to the user.
+4. This triggers a **hard-gate**: the user decides when to merge.
+
+### Merge + post-merge cleanup (automatic — not a plan step)
+When the user says "merge" (or equivalent), the agent executes the full protocol from `210_pull-requests.md` § "Merge Execution + Post-merge Cleanup":
+
+**Pre-merge checks (mandatory):**
+1. Working tree is clean (`git status`).
+2. `git fetch --prune` to sync refs.
+3. PR is mergeable: CI green, no conflicts.
+
+**Merge:**
+4. Squash merge (default) via `gh pr merge <number> --squash --delete-branch`.
+
+**Post-merge cleanup:**
+5. Ensure working tree is clean (STOP if not).
+6. Check stashes (`git stash list`): drop branch-related stashes, ask about ambiguous ones.
+7. Switch to `main` and pull (`git checkout main && git pull`).
+8. Delete local branch if still exists (safe delete first, force only if verified no unique commits).
+9. Archive the plan file: move from `PLAN_*.md` to `completed/COMPLETED_*.md`.
+10. Commit and push the archive move.
+
+**If any pre-merge check fails:** STOP and report to the user. Do not attempt to fix merge issues autonomously.
 
 ---
 
