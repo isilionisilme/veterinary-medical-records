@@ -25,7 +25,7 @@ Focos:
 - [x] P1-C 🔄 — Selectores `data-testid` E2E estables (Codex)
 - [x] P1-D 🔄 — Smoke `app-loads` verde y estable (Codex)
 - [x] P1-E 🔄 — Smoke `upload` robusto por `document_id` (Codex)
-- [ ] P1-F 🔄 — Job `CI / e2e` con artifacts en fallo (Codex)
+- [x] P1-F 🔄 — Job `CI / e2e` con artifacts en fallo (Codex)
 - [ ] P1-G 🔄 — Validación técnica: `test:e2e`, `tsc --noEmit`, `eslint .` (Codex)
 - [ ] P1-H 🚧 — Validación manual en headed + checklist funcional mínimo (Usuario/Claude)
 - [ ] P1-I 🔄 — Commit, push y PR hacia `main` (Codex)
