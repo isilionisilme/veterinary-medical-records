@@ -1954,6 +1954,16 @@ STEP A — Commit code (plan file untouched):
 
 Test proof: <pytest summary line> | <npm test summary line>"
 
+STEP A.1 — DOC NORMALIZATION (conditional — only if .md files were changed):
+1. Run: git diff --name-only HEAD~1 HEAD -- '*.md'
+2. If no .md files appear: skip to STEP B.
+3. If .md files appear: load `docs/agent_router/01_WORKFLOW/DOC_UPDATES/00_entry.md`
+   and execute the normalization pass on every changed .md file.
+4. If normalization produced changes:
+   git add -A -- '*.md' ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
+   git commit --amend --no-edit
+   (amend into the code commit — keeps the two-commit strategy clean)
+
 STEP B — Commit plan update (only after code is committed):
 1. Edit AI_ITERATIVE_EXECUTION_PLAN.md: change `- [ ] F?-?` to `- [x] F?-?`.
 2. Clean `## Prompt activo`: replace `### Paso objetivo` content with `_Completado: F?-?_` and `### Prompt` with `_Vacío._`
