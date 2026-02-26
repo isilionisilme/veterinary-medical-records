@@ -891,6 +891,12 @@ PR: #153
 
 Objective: Verify `pdf_extraction.py` is a clean thin dispatcher after F13-E.
 
+**STEP 0 — MARK IN PROGRESS (do this FIRST):**
+a. Edit this plan: append ` ⏳ EN PROGRESO (Codex, <today UTC>)` to the `- [ ] F13-F` line.
+b. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+c. git commit -m "docs(plan-f13f): mark step in progress"
+d. git push origin improvement/iteration-7-pr1
+
 1. Count lines: `pdf_extraction.py` must be < 300 LOC.
    If > 300: identify remaining movable code and extract to `pdf_extraction_nodeps.py`.
 2. Check for duplicated constants: any constant defined in both `pdf_extraction.py`
@@ -898,13 +904,22 @@ Objective: Verify `pdf_extraction.py` is a clean thin dispatcher after F13-E.
 3. Verify `processing_runner.py` re-exports PDF extraction symbols correctly.
 4. Verify no circular imports:
    Run: python -c "from backend.app.application.processing.pdf_extraction import extract_text_from_pdf; print('OK')"
-5. Proceed to TEST GATE.
+5. Run TEST GATE (pytest + npm test). If fail: STOP.
+
+**STEP 6 — COMMIT + MARK DONE (do this AFTER tests pass):**
+a. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
+b. git commit -m "refactor(plan-f13f): <description>"
+c. Edit this plan: change `- [ ] F13-F` to `- [x] F13-F` (remove EN PROGRESO tag).
+d. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+e. git commit -m "docs(plan-f13f): mark step done"
+f. git push origin improvement/iteration-7-pr1
+g. Wait for CI green (gh run list, retry up to 10x). If CI red: fix, re-push.
 
 Target files: `processing/pdf_extraction.py`, `processing_runner.py`
 Do NOT change: `pdf_extraction_nodeps.py` unless deduplicating constants.
 Acceptance: `pdf_extraction.py` < 300 LOC. No duplicated constants. 317+ tests pass.
 --- END TASK ---
-⚠️ AUTO-CHAIN: after TEST GATE + SCOPE BOUNDARY + CI green → read F13-G prompt below and execute it. DO NOT stop.
+⚠️ AUTO-CHAIN: CI green → read F13-G prompt below and execute it. DO NOT stop.
 ```
 
 ### F13-G — Extraer hooks de estado de AppWorkspace
@@ -916,6 +931,12 @@ Branch: improvement/iteration-7-pr1
 PR: #153
 
 Objective: Extract 3 custom hooks from `AppWorkspace.tsx` to reduce state complexity.
+
+**STEP 0 — MARK IN PROGRESS (do this FIRST):**
+a. Edit this plan: append ` ⏳ EN PROGRESO (Codex, <today UTC>)` to the `- [ ] F13-G` line.
+b. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+c. git commit -m "docs(plan-f13g): mark step in progress"
+d. git push origin improvement/iteration-7-pr1
 
 1. Read `frontend/src/AppWorkspace.tsx` fully.
 2. Create `frontend/src/hooks/useStructuredDataFilters.ts`:
@@ -934,7 +955,16 @@ Objective: Extract 3 custom hooks from `AppWorkspace.tsx` to reduce state comple
 5. In `AppWorkspace.tsx`: replace extracted useState/useMemo/useCallback with
    hook calls. Pass any cross-hook dependencies as parameters.
 6. Verify AppWorkspace reduced by ~300+ LOC.
-7. Proceed to TEST GATE (both backend and frontend).
+7. Run TEST GATE (pytest + npm test). If fail: STOP.
+
+**STEP 8 — COMMIT + MARK DONE (do this AFTER tests pass):**
+a. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
+b. git commit -m "refactor(plan-f13g): extract state hooks from AppWorkspace"
+c. Edit this plan: change `- [ ] F13-G` to `- [x] F13-G` (remove EN PROGRESO tag).
+d. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+e. git commit -m "docs(plan-f13g): mark step done"
+f. git push origin improvement/iteration-7-pr1
+g. Wait for CI green (gh run list, retry up to 10x). If CI red: fix, re-push.
 
 Target files: `frontend/src/hooks/useStructuredDataFilters.ts`,
 `frontend/src/hooks/useFieldEditing.ts`, `frontend/src/hooks/useUploadState.ts`
@@ -942,7 +972,7 @@ Target files: `frontend/src/hooks/useStructuredDataFilters.ts`,
 Acceptance: 3 hooks created, each ≤ 150 LOC. AppWorkspace reduced ~300+ LOC.
 226+ frontend tests pass. 0 lint errors.
 --- END TASK ---
-⚠️ AUTO-CHAIN: after TEST GATE + SCOPE BOUNDARY + CI green → read F13-H prompt below and execute it. DO NOT stop.
+⚠️ AUTO-CHAIN: CI green → read F13-H prompt below and execute it. DO NOT stop.
 ```
 
 ### F13-H — Extraer hooks de UI de AppWorkspace
@@ -955,6 +985,12 @@ PR: #153
 
 Objective: Extract 2 UI interaction hooks from `AppWorkspace.tsx`.
 
+**STEP 0 — MARK IN PROGRESS (do this FIRST):**
+a. Edit this plan: append ` ⏳ EN PROGRESO (Codex, <today UTC>)` to the `- [ ] F13-H` line.
+b. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+c. git commit -m "docs(plan-f13h): mark step in progress"
+d. git push origin improvement/iteration-7-pr1
+
 1. Read `frontend/src/AppWorkspace.tsx` (after F13-G changes).
 2. Create `frontend/src/hooks/useReviewSplitPanel.ts`:
    - Extract state variables + pointer/mouse event logic for the review split
@@ -966,14 +1002,23 @@ Objective: Extract 2 UI interaction hooks from `AppWorkspace.tsx`.
    - Hook ≤ 150 LOC.
 4. In `AppWorkspace.tsx`: replace extracted code with hook calls.
 5. Count lines: AppWorkspace must be < 3,000 LOC (stretch target: < 2,500).
-6. Proceed to TEST GATE (both backend and frontend).
+6. Run TEST GATE (pytest + npm test). If fail: STOP.
+
+**STEP 7 — COMMIT + MARK DONE (do this AFTER tests pass):**
+a. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
+b. git commit -m "refactor(plan-f13h): extract UI hooks from AppWorkspace"
+c. Edit this plan: change `- [ ] F13-H` to `- [x] F13-H` (remove EN PROGRESO tag).
+d. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+e. git commit -m "docs(plan-f13h): mark step done"
+f. git push origin improvement/iteration-7-pr1
+g. Wait for CI green (gh run list, retry up to 10x). If CI red: fix, re-push.
 
 Target files: `frontend/src/hooks/useReviewSplitPanel.ts`,
 `frontend/src/hooks/useDocumentsSidebar.ts` (new), `frontend/src/AppWorkspace.tsx`
 Acceptance: AppWorkspace < 3,000 LOC. 5 hooks total in hooks/.
 226+ frontend tests pass. 0 lint errors.
 --- END TASK ---
-⚠️ AUTO-CHAIN: after TEST GATE + SCOPE BOUNDARY + CI green → read F13-I prompt below and execute it. DO NOT stop.
+⚠️ AUTO-CHAIN: CI green → read F13-I prompt below and execute it. DO NOT stop.
 ```
 
 ### F13-I — Split extraction_observability.py
@@ -985,6 +1030,12 @@ Branch: improvement/iteration-7-pr1
 PR: #153
 
 Objective: Decompose `extraction_observability.py` (995 LOC) into 4 focused modules.
+
+**STEP 0 — MARK IN PROGRESS (do this FIRST):**
+a. Edit this plan: append ` ⏳ EN PROGRESO (Codex, <today UTC>)` to the `- [ ] F13-I` line.
+b. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+c. git commit -m "docs(plan-f13i): mark step in progress"
+d. git push origin improvement/iteration-7-pr1
 
 1. Read `backend/app/application/extraction_observability.py` fully.
 2. Identify the 4 natural segments:
@@ -1004,14 +1055,23 @@ Objective: Decompose `extraction_observability.py` (995 LOC) into 4 focused modu
    Update every import to use the package (or rely on __init__.py re-exports).
 6. Delete the original `extraction_observability.py` file.
 7. Verify each module < 300 LOC.
-8. Proceed to TEST GATE.
+8. Run TEST GATE (pytest + npm test). If fail: STOP.
+
+**STEP 9 — COMMIT + MARK DONE (do this AFTER tests pass):**
+a. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
+b. git commit -m "refactor(plan-f13i): split extraction_observability into package"
+c. Edit this plan: change `- [ ] F13-I` to `- [x] F13-I` (remove EN PROGRESO tag).
+d. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+e. git commit -m "docs(plan-f13i): mark step done"
+f. git push origin improvement/iteration-7-pr1
+g. Wait for CI green (gh run list, retry up to 10x). If CI red: fix, re-push.
 
 Target files: `extraction_observability/` (new package),
 `extraction_observability.py` (to be deleted)
 Acceptance: Each module < 300 LOC. Public API unchanged via __init__.py.
 317+ backend tests pass.
 --- END TASK ---
-⚠️ AUTO-CHAIN: after TEST GATE + SCOPE BOUNDARY + CI green → read F13-J prompt below and execute it. DO NOT stop.
+⚠️ AUTO-CHAIN: CI green → read F13-J prompt below and execute it. DO NOT stop.
 ```
 
 ### F13-J — Coverage improvements
@@ -1023,6 +1083,12 @@ Branch: improvement/iteration-7-pr1
 PR: #153
 
 Objective: Close 3 specific coverage gaps.
+
+**STEP 0 — MARK IN PROGRESS (do this FIRST):**
+a. Edit this plan: append ` ⏳ EN PROGRESO (Codex, <today UTC>)` to the `- [ ] F13-J` line.
+b. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+c. git commit -m "docs(plan-f13j): mark step in progress"
+d. git push origin improvement/iteration-7-pr1
 
 1. **PdfViewer branch coverage → 60%+**:
    - Read `frontend/src/PdfViewer.tsx` and its test file.
@@ -1044,7 +1110,16 @@ Objective: Close 3 specific coverage gaps.
      failures, timeout handling, malformed responses.
    - Target: branch coverage ≥ 80% (current: ~67%).
 
-4. Proceed to TEST GATE.
+4. Run TEST GATE (pytest + npm test). If fail: STOP.
+
+**STEP 5 — COMMIT + MARK DONE (do this AFTER tests pass):**
+a. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
+b. git commit -m "test(plan-f13j): close coverage gaps for PdfViewer, config, documentApi"
+c. Edit this plan: change `- [ ] F13-J` to `- [x] F13-J` (remove EN PROGRESO tag).
+d. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+e. git commit -m "docs(plan-f13j): mark step done"
+f. git push origin improvement/iteration-7-pr1
+g. Wait for CI green (gh run list, retry up to 10x). If CI red: fix, re-push.
 
 Target files: Test files for PdfViewer, config.py, documentApi.ts
 Acceptance: PdfViewer branch ≥ 60%. config.py ≥ 90%. documentApi.ts branch ≥ 80%.
