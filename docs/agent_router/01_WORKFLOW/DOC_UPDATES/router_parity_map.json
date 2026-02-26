@@ -5,8 +5,8 @@
     "docs/shared/*.md"
   ],
   "exclude_source_globs": [
-    "docs/project/production/*",
-    "docs/project/production/**/*"
+    "docs/project/implementation/*",
+    "docs/project/implementation/**/*"
   ],
   "rules": [
     {
@@ -66,6 +66,18 @@
           "path": "docs/agent_router/04_PROJECT/CTO_REVIEW_VERDICT/00_entry.md",
           "required_terms": [
             "CTO_REVIEW_VERDICT — Modules"
+          ]
+        }
+      ]
+    },
+    {
+      "source_doc": "docs/project/testing/PLAN_E2E_TEST_COVERAGE.md",
+      "description": "Project testing plans must remain routed under project modules.",
+      "router_modules": [
+        {
+          "path": "docs/agent_router/04_PROJECT/00_entry.md",
+          "required_terms": [
+            "Project Docs (Modules)"
           ]
         }
       ]

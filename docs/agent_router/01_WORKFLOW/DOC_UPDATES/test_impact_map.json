@@ -7,8 +7,8 @@
     "docs/shared/**/*.md"
   ],
   "exclude_doc_globs": [
-    "docs/project/production/*",
-    "docs/project/production/**/*"
+    "docs/project/implementation/*",
+    "docs/project/implementation/**/*"
   ],
   "rules": [
     {
@@ -158,6 +158,16 @@
         "docs/agent_router/04_PROJECT/CTO_REVIEW_VERDICT/*.md",
         "docs/agent_router/04_PROJECT/CTO_REVIEW_VERDICT/**/*.md"
       ],
+      "required_any": [
+        "docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json",
+        "docs/agent_router/01_WORKFLOW/DOC_UPDATES/router_parity_map.json",
+        "scripts/check_doc_test_sync.py",
+        "scripts/check_doc_router_parity.py"
+      ]
+    },
+    {
+      "doc_glob": "docs/project/testing/PLAN_E2E_TEST_COVERAGE.md",
+      "description": "Project testing plans require doc-updates mapping/guard alignment.",
       "required_any": [
         "docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json",
         "docs/agent_router/01_WORKFLOW/DOC_UPDATES/router_parity_map.json",
