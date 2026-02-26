@@ -6,6 +6,10 @@
     "docs/shared/*.md",
     "docs/shared/**/*.md"
   ],
+  "exclude_doc_globs": [
+    "docs/project/production/*",
+    "docs/project/production/**/*"
+  ],
   "rules": [
     {
       "doc_glob": "docs/agent_router/*.md",

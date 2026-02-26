@@ -4,6 +4,10 @@
     "docs/project/*.md",
     "docs/shared/*.md"
   ],
+  "exclude_source_globs": [
+    "docs/project/production/*",
+    "docs/project/production/**/*"
+  ],
   "rules": [
     {
 

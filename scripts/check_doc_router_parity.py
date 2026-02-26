@@ -77,6 +77,7 @@ def evaluate_parity(
     repo_root: Path,
     fail_on_unmapped_sources: bool,
     required_source_globs: list[str],
+    exclude_source_globs: list[str] | None = None,
 ) -> list[str]:
     findings: list[str] = []
     matched_sources: set[str] = set()
@@ -131,10 +132,12 @@ def evaluate_parity(
             )
 
     if fail_on_unmapped_sources and required_source_globs:
+        _excludes = exclude_source_globs or []
         required_sources_changed = [
             path
             for path in changed_files
             if any(fnmatch.fnmatch(path, pattern) for pattern in required_source_globs)
+            and not any(fnmatch.fnmatch(path, ex) for ex in _excludes)
         ]
         unmapped_sources = sorted(
             source for source in required_sources_changed if source not in matched_sources
@@ -170,12 +173,19 @@ def main() -> int:
         if isinstance(required_source_globs_raw, list)
         else []
     )
+    exclude_source_globs_raw = config.get("exclude_source_globs", [])
+    exclude_source_globs = (
+        [str(item).strip() for item in exclude_source_globs_raw if str(item).strip()]
+        if isinstance(exclude_source_globs_raw, list)
+        else []
+    )
     findings = evaluate_parity(
         changed_files,
         rules,
         repo_root,
         fail_on_unmapped_sources,
         required_source_globs,
+        exclude_source_globs=exclude_source_globs,
     )
 
     if findings:
