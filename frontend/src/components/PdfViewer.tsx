@@ -1,8 +1,11 @@
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, ScanLine, Upload, ZoomIn, ZoomOut } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
+import pdfjsWorkerUrl from "pdfjs-dist/build/pdf.worker.mjs?url";
 import { IconButton } from "./app/IconButton";
 import { Tooltip } from "./ui/tooltip";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
 
 const PDF_ZOOM_STORAGE_KEY = "pdfViewerZoomLevel";
 const MIN_ZOOM_LEVEL = 0.5;
@@ -354,12 +357,10 @@ export function PdfViewer({
         } else {
           arrayBuffer = fileUrl;
         }
-        const dataSource = {
+        loadingTask = pdfjsLib.getDocument({
           data: new Uint8Array(arrayBuffer),
-          disableWorker: true,
           isEvalSupported: false,
-        } as unknown as Parameters<typeof pdfjsLib.getDocument>[0];
-        loadingTask = pdfjsLib.getDocument(dataSource);
+        });
         const doc = await loadingTask.promise;
         if (cancelled) {
           void doc.destroy();
