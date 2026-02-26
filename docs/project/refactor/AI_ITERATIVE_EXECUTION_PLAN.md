@@ -1182,6 +1182,12 @@ Step: F14-B — Split doc_test_sync_guard into 3 independent CI jobs
 Branch: improvement/iteration-8-ci
 PR: #156
 
+**STEP 0 — MARK IN PROGRESS (do this FIRST):**
+a. Edit AI_ITERATIVE_EXECUTION_PLAN.md: append ` ⏳ EN PROGRESO (Codex, <today UTC>)` to the `- [ ] F14-B` line.
+b. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+c. git commit -m "docs(plan-f14b): mark step in progress"
+d. git push origin improvement/iteration-8-ci
+
 Objective: Replace the single `doc_test_sync_guard` CI job with 3 independent
 jobs so that failures are immediately attributable to the specific guard.
 
@@ -1210,6 +1216,15 @@ jobs so that failures are immediately attributable to the specific guard.
 5. Verify YAML is valid: `python -c "import yaml; yaml.safe_load(open('.github/workflows/ci.yml'))"` (install PyYAML if needed).
 6. Proceed to TEST GATE.
 
+**STEP N — COMMIT + MARK DONE (do this AFTER tests pass):**
+a. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
+b. git commit -m "ci(plan-f14b): split doc_test_sync_guard into 3 independent jobs"
+c. Edit AI_ITERATIVE_EXECUTION_PLAN.md: change `- [ ] F14-B` to `- [x] F14-B` (remove EN PROGRESO tag).
+d. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+e. git commit -m "docs(plan-f14b): mark step done"
+f. git push origin improvement/iteration-8-ci
+g. Wait for CI green (gh run list, retry up to 10x). If CI red: fix, re-push.
+
 Target files: `.github/workflows/ci.yml`
 Do NOT change: Any Python scripts. Any other CI jobs.
 Acceptance: 3 separate doc guard jobs in CI. YAML valid. Existing tests still pass.
@@ -1224,6 +1239,12 @@ Acceptance: 3 separate doc guard jobs in CI. YAML valid. Existing tests still pa
 Step: F14-C — Create doc change classifier script
 Branch: improvement/iteration-8-ci
 PR: #156
+
+**STEP 0 — MARK IN PROGRESS (do this FIRST):**
+a. Edit AI_ITERATIVE_EXECUTION_PLAN.md: append ` ⏳ EN PROGRESO (Codex, <today UTC>)` to the `- [ ] F14-C` line.
+b. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+c. git commit -m "docs(plan-f14c): mark step in progress"
+d. git push origin improvement/iteration-8-ci
 
 Objective: Create `scripts/classify_doc_change.py` that classifies doc changes
 as Rule, Clarification, or Navigation to enable differential CI enforcement.
@@ -1269,6 +1290,15 @@ as Rule, Clarification, or Navigation to enable differential CI enforcement.
 
 5. Proceed to TEST GATE.
 
+**STEP N — COMMIT + MARK DONE (do this AFTER tests pass):**
+a. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
+b. git commit -m "feat(plan-f14c): doc change classifier script"
+c. Edit AI_ITERATIVE_EXECUTION_PLAN.md: change `- [ ] F14-C` to `- [x] F14-C` (remove EN PROGRESO tag).
+d. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+e. git commit -m "docs(plan-f14c): mark step done"
+f. git push origin improvement/iteration-8-ci
+g. Wait for CI green (gh run list, retry up to 10x). If CI red: fix, re-push.
+
 Target files: `scripts/classify_doc_change.py` (new), `.github/workflows/ci.yml`
 Do NOT change: `check_doc_test_sync.py`, `check_doc_router_parity.py`, `check_no_canonical_router_refs.py`.
 Acceptance: Script produces valid JSON. Fail-closed on error. YAML valid. Tests pass.
@@ -1283,6 +1313,12 @@ Acceptance: Script produces valid JSON. Fail-closed on error. YAML valid. Tests 
 Step: F14-D — Navigation exemption + Clarification relaxed mode
 Branch: improvement/iteration-8-ci
 PR: #156
+
+**STEP 0 — MARK IN PROGRESS (do this FIRST):**
+a. Edit AI_ITERATIVE_EXECUTION_PLAN.md: append ` ⏳ EN PROGRESO (Codex, <today UTC>)` to the `- [ ] F14-D` line.
+b. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+c. git commit -m "docs(plan-f14d): mark step in progress"
+d. git push origin improvement/iteration-8-ci
 
 Objective: Wire `classify_doc_change.py` output into `check_doc_test_sync.py`
 so Navigation changes skip the guard entirely and Clarification changes only
@@ -1324,7 +1360,16 @@ require owner propagation (skip `required_any` checks).
 
 6. Proceed to TEST GATE.
 
-Target files: `scripts/check_doc_test_sync.py`, `docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json`
+Target files: `scripts/check_doc_test_sync.py`, `test_impact_map.json` (under DOC_UPDATES)
+**STEP N — COMMIT + MARK DONE (do this AFTER tests pass):**
+a. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
+b. git commit -m "feat(plan-f14d): navigation exemption + clarification relaxed mode"
+c. Edit AI_ITERATIVE_EXECUTION_PLAN.md: change `- [ ] F14-D` to `- [x] F14-D` (remove EN PROGRESO tag).
+d. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+e. git commit -m "docs(plan-f14d): mark step done"
+f. git push origin improvement/iteration-8-ci
+g. Wait for CI green (gh run list, retry up to 10x). If CI red: fix, re-push.
+
 Do NOT change: `classify_doc_change.py`, `check_no_canonical_router_refs.py`, `check_doc_router_parity.py`.
 Acceptance: Navigation changes exit 0 immediately. Clarification skips required_any but enforces owner_any.
 Rule changes unchanged. Missing classification file → full check. Tests pass.
@@ -1339,6 +1384,12 @@ Rule changes unchanged. Missing classification file → full check. Tests pass.
 Step: F14-E — Unit tests for classify_doc_change.py + calibration
 Branch: improvement/iteration-8-ci
 PR: #156
+
+**STEP 0 — MARK IN PROGRESS (do this FIRST):**
+a. Edit AI_ITERATIVE_EXECUTION_PLAN.md: append ` ⏳ EN PROGRESO (Codex, <today UTC>)` to the `- [ ] F14-E` line.
+b. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+c. git commit -m "docs(plan-f14e): mark step in progress"
+d. git push origin improvement/iteration-8-ci
 
 Objective: Write unit tests for the doc change classifier and calibrate against
 known diff patterns.
@@ -1373,6 +1424,15 @@ known diff patterns.
 3. Verify: `pytest backend/tests/unit/test_classify_doc_change.py -v` → all pass.
 4. Check coverage: `pytest --cov=scripts/classify_doc_change --cov-report=term-missing backend/tests/unit/test_classify_doc_change.py` → ≥90%.
 5. Proceed to TEST GATE.
+
+**STEP N — COMMIT + MARK DONE (do this AFTER tests pass):**
+a. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
+b. git commit -m "test(plan-f14e): unit tests for doc change classifier"
+c. Edit AI_ITERATIVE_EXECUTION_PLAN.md: change `- [ ] F14-E` to `- [x] F14-E` (remove EN PROGRESO tag).
+d. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+e. git commit -m "docs(plan-f14e): mark step done"
+f. git push origin improvement/iteration-8-ci
+g. Wait for CI green (gh run list, retry up to 10x). If CI red: fix, re-push.
 
 Target files: `backend/tests/unit/test_classify_doc_change.py` (new)
 Do NOT change: `classify_doc_change.py`, `check_doc_test_sync.py` (test them as-is).
@@ -2369,6 +2429,12 @@ STEP E — CI GATE (mandatory — do NOT skip):
 5. If you cannot fix it after 2 attempts: STOP. Tell the user: "⚠️ CI sigue rojo tras 2 intentos de fix. Necesito ayuda para diagnosticar."
 
 STEP F — CHAIN OR HANDOFF (mandatory):
+
+⚠️ **PRE-CONDITION (hard rule):** STEP F may ONLY execute if STEP A completed
+successfully (i.e., `git log -1 --oneline` shows the code commit from this task).
+If STEP A was NOT executed (no code commit exists for the current task): STOP.
+Do NOT emit a handoff. Report: "⚠️ La tarea no fue commiteada. Revisa los
+errores anteriores antes de continuar."
 
 ⚠️ **ITERATION BOUNDARY (hard rule):** Before evaluating auto-chain, check if the
 NEXT unchecked `[ ]` step belongs to the **same Fase/iteration** as the step you
