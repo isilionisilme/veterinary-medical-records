@@ -67,6 +67,9 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.11
+      - name: Classify doc changes
+        run: |
+          python scripts/classify_doc_change.py --base-ref "${{ github.event.pull_request.base.sha }}"
       - name: Run doc/test sync guard
         run: |
           python scripts/check_doc_test_sync.py --base-ref "${{ github.event.pull_request.base.sha }}"
