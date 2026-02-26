@@ -38,6 +38,12 @@ def _extract_pdf_text(file_path: Path) -> str:
     return text
 
 
+def extract_text_from_pdf(file_path: Path) -> str:
+    """Public compatibility alias used by legacy imports/checks."""
+
+    return _extract_pdf_text(file_path)
+
+
 def _extract_pdf_text_with_extractor(file_path: Path) -> tuple[str, str]:
     forced = os.getenv(PDF_EXTRACTOR_FORCE_ENV, "").strip().lower()
     if forced not in ("", "auto", "fitz", "fallback"):
