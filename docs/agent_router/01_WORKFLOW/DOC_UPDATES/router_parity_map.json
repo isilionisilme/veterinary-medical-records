@@ -71,6 +71,18 @@
       ]
     },
     {
+      "source_doc": "docs/project/testing/PLAN_E2E_TEST_COVERAGE.md",
+      "description": "Project testing plans must remain routed under project modules.",
+      "router_modules": [
+        {
+          "path": "docs/agent_router/04_PROJECT/00_entry.md",
+          "required_terms": [
+            "Project Docs (Modules)"
+          ]
+        }
+      ]
+    },
+    {
       "source_doc": "docs/project/adr/*.md",
       "description": "Project ADR docs must map to project owner entry module.",
       "router_modules": [
