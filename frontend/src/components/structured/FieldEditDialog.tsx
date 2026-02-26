@@ -209,6 +209,7 @@ export function FieldEditDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
+        data-testid="field-edit-dialog"
         onEscapeKeyDown={(event) => {
           if (!isSaving) {
             return;
@@ -231,6 +232,7 @@ export function FieldEditDialog({
 
         {isSexField ? (
           <select
+            data-testid="field-edit-input"
             ref={selectRef}
             value={controlledSelectValue}
             onChange={(event) => handleValueChange(event.target.value)}
@@ -254,6 +256,7 @@ export function FieldEditDialog({
           </select>
         ) : isSpeciesField ? (
           <select
+            data-testid="field-edit-input"
             ref={selectRef}
             value={controlledSelectValue}
             onChange={(event) => handleValueChange(event.target.value)}
@@ -277,6 +280,7 @@ export function FieldEditDialog({
           </select>
         ) : shouldUseTextarea ? (
           <textarea
+            data-testid="field-edit-input"
             ref={textareaRef}
             value={value}
             onChange={(event) => handleValueChange(event.target.value)}
@@ -289,6 +293,7 @@ export function FieldEditDialog({
           />
         ) : (
           <Input
+            data-testid="field-edit-input"
             ref={inputRef}
             value={value}
             onChange={(event) => handleValueChange(event.target.value)}
@@ -412,6 +417,7 @@ export function FieldEditDialog({
         <DialogFooter>
           <DialogClose asChild>
             <Button
+              data-testid="field-edit-cancel"
               type="button"
               variant="ghost"
               className="border border-border bg-surface text-text hover:bg-surfaceMuted"
@@ -420,7 +426,12 @@ export function FieldEditDialog({
               Cancelar
             </Button>
           </DialogClose>
-          <Button type="button" onClick={onSave} disabled={isSaving || isSaveDisabled}>
+          <Button
+            data-testid="field-edit-save"
+            type="button"
+            onClick={onSave}
+            disabled={isSaving || isSaveDisabled}
+          >
             Guardar
           </Button>
         </DialogFooter>

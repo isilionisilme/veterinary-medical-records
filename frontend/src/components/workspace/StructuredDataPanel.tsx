@@ -104,6 +104,7 @@ export function StructuredDataPanel<TSection>({
           <span className="inline-flex">
             <Button
               type="button"
+              data-testid="review-toggle-btn"
               variant={isDocumentReviewed ? "outline" : "primary"}
               size="toolbar"
               className="min-w-[168px]"
