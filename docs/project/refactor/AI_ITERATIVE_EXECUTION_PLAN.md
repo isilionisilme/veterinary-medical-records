@@ -113,19 +113,21 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 > `AppWorkspace.tsx` (4,011), `extraction_observability.py` (995). Constantes
 > duplicadas ~97 líneas. Métricas de entrada: 317 backend tests (90%), 226
 > frontend tests (82.6%), 0 lint, CI green.
-> **Estrategia:** 4 PRs independientes ordenadas por dependencia para aislar riesgo.
+> **Estrategia:** 1 PR única (`improvement/iteration-7-pr1` → `main`). Ejecución
+> semi-desatendida: Codex encadena D→J; Claude cierra con K. Prompts pre-escritos
+> en la Cola de prompts.
 
 - [x] F13-A 🔄 — Consolidar constants.py: migrar ~97 líneas de constantes compartidas (Codex)
 - [x] F13-B 🔄 — Extraer candidate_mining.py de interpretation.py (648+ LOC) (Codex)
 - [x] F13-C 🔄 — Extraer confidence_scoring.py + thin interpretation.py < 400 LOC (Codex)
-- [ ] F13-D 🚧 — Shim compatibility + test validation + PR 1 → main (Claude)
+- [ ] F13-D 🔄 — Shim compatibility: verificar re-exports en processing_runner.py (Codex)
 - [ ] F13-E 🔄 — Extraer pdf_extraction_nodeps.py (~900 LOC fallback sin deps) (Codex)
-- [ ] F13-F 🚧 — Thin dispatcher < 300 LOC + test validation + PR 2 → main (Claude)
+- [ ] F13-F 🔄 — Thin dispatcher < 300 LOC + verificar shim pdf_extraction (Codex)
 - [ ] F13-G 🔄 — Extraer hooks de estado: useStructuredDataFilters, useFieldEditing, useUploadState (Codex)
-- [ ] F13-H 🚧 — Extraer hooks de UI: useReviewSplitPanel, useDocumentsSidebar + PR 3 → main (Claude)
+- [ ] F13-H 🔄 — Extraer hooks de UI: useReviewSplitPanel, useDocumentsSidebar (Codex)
 - [ ] F13-I 🔄 — Split extraction_observability.py en 4 módulos < 300 LOC (Codex)
 - [ ] F13-J 🔄 — Coverage: PdfViewer 47%→60%+, config.py 83%→90%+, documentApi.ts 67%→80%+ (Codex)
-- [ ] F13-K 🚧 — FUTURE_IMPROVEMENTS refresh + smoke test + PR 4 → main (Claude)
+- [ ] F13-K 🚧 — FUTURE_IMPROVEMENTS refresh + smoke test + PR → main (Claude)
 
 ---
 
@@ -793,6 +795,283 @@ _Completado: F13-C_
 ### Prompt
 
 _Vacío._
+
+---
+
+## Cola de prompts (pre-escritos)
+
+> **Uso:** Claude pre-escribe aquí los prompts de todas las tareas cuyo contenido no
+> depende del resultado de tareas anteriores. Cada entrada contiene solo la sección
+> `--- TASK ---` específica del paso; el agente la ejecuta envolviéndola en el
+> template estándar (IDENTITY CHECK → BRANCH CHECK → SYNC CHECK → PRE-FLIGHT →
+> TASK → TEST GATE → SCOPE BOUNDARY → CI GATE → SEMI-UNATTENDED CHECK).
+>
+> **Resolución de prompts (orden de prioridad):**
+> 1. Buscar en esta Cola una entrada que coincida con el paso actual → usarla.
+> 2. Si no hay entrada en la Cola: buscar en `## Prompt activo` → usarlo.
+> 3. Si ninguno tiene prompt: STOP → pedir al usuario que vaya a Claude.
+
+### F13-D — Shim compatibility: verificar re-exports
+
+```
+--- TASK ---
+Step: F13-D — Shim compatibility verification
+Branch: improvement/iteration-7-pr1
+PR: #153
+
+Objective: Verify `processing_runner.py` correctly re-exports all public symbols
+from the 3 new modules created in F13-A through F13-C: `constants.py`,
+`candidate_mining.py`, `confidence_scoring.py`.
+
+1. Read `backend/app/application/processing_runner.py`.
+2. Verify it imports from the `processing/` subpackage and re-exports all public
+   symbols that external code (tests, other modules) consumes.
+3. Search for all test files that import from `processing_runner`:
+   Run: grep -r "from.*processing_runner import\|import.*processing_runner" backend/tests/
+4. For each symbol imported by tests: confirm it is accessible via `processing_runner`.
+5. If any symbol is missing: add the re-export to `processing_runner.py`.
+6. If processing_runner uses dynamic __dict__ re-export: verify the new modules
+   are included in the import list.
+7. Proceed to TEST GATE.
+
+Target files: `backend/app/application/processing_runner.py`
+Do NOT change: The new processing/ modules (constants.py, candidate_mining.py,
+confidence_scoring.py, interpretation.py). Only touch processing_runner.py if
+re-exports are missing.
+Acceptance: All existing test imports resolve. 317+ backend tests pass.
+--- END TASK ---
+```
+
+### F13-E — Extraer pdf_extraction_nodeps.py
+
+```
+--- TASK ---
+Step: F13-E — Extract pdf_extraction_nodeps.py
+Branch: improvement/iteration-7-pr1
+PR: #153
+
+Objective: Extract the no-deps fallback strategy (~900 LOC pure-Python PDF parser)
+from `pdf_extraction.py` into a new `pdf_extraction_nodeps.py` module.
+
+1. Read `backend/app/application/processing/pdf_extraction.py` fully.
+2. Identify ALL functions belonging to the "no-deps fallback" strategy:
+   - Pure Python PDF object parser, tokenizer, stream decompression
+   - Font/CMap handling, text stitching, byte-level helpers
+   - Look for the entry point (likely `_extract_text_no_deps` or similar)
+   - Include all private helpers called exclusively by the no-deps path
+3. Create `backend/app/application/processing/pdf_extraction_nodeps.py`:
+   - Move all identified functions.
+   - Add necessary imports (only stdlib — no external deps by definition).
+   - Import shared constants from `constants.py` if any are used.
+4. Update `pdf_extraction.py`:
+   - Replace moved functions with imports from `pdf_extraction_nodeps`.
+   - Keep the strategy dispatcher and fitz-based strategy in pdf_extraction.py.
+5. Verify `pdf_extraction.py` is now a thin dispatcher (target < 300 LOC).
+6. Update `processing_runner.py` shim if needed (re-export new module symbols).
+7. Proceed to TEST GATE.
+
+Target files: `processing/pdf_extraction_nodeps.py` (new), `processing/pdf_extraction.py`
+Acceptance: `pdf_extraction_nodeps.py` self-contained (only stdlib imports).
+`pdf_extraction.py` < 300 LOC. 317+ backend tests pass.
+--- END TASK ---
+```
+
+### F13-F — Thin dispatcher verification
+
+```
+--- TASK ---
+Step: F13-F — Thin dispatcher verification
+Branch: improvement/iteration-7-pr1
+PR: #153
+
+Objective: Verify `pdf_extraction.py` is a clean thin dispatcher after F13-E.
+
+1. Count lines: `pdf_extraction.py` must be < 300 LOC.
+   If > 300: identify remaining movable code and extract to `pdf_extraction_nodeps.py`.
+2. Check for duplicated constants: any constant defined in both `pdf_extraction.py`
+   and `constants.py` must be deduplicated (use `constants.py` as source of truth).
+3. Verify `processing_runner.py` re-exports PDF extraction symbols correctly.
+4. Verify no circular imports:
+   Run: python -c "from backend.app.application.processing.pdf_extraction import extract_text_from_pdf; print('OK')"
+5. Proceed to TEST GATE.
+
+Target files: `processing/pdf_extraction.py`, `processing_runner.py`
+Do NOT change: `pdf_extraction_nodeps.py` unless deduplicating constants.
+Acceptance: `pdf_extraction.py` < 300 LOC. No duplicated constants. 317+ tests pass.
+--- END TASK ---
+```
+
+### F13-G — Extraer hooks de estado de AppWorkspace
+
+```
+--- TASK ---
+Step: F13-G — Extract state hooks from AppWorkspace
+Branch: improvement/iteration-7-pr1
+PR: #153
+
+Objective: Extract 3 custom hooks from `AppWorkspace.tsx` to reduce state complexity.
+
+1. Read `frontend/src/AppWorkspace.tsx` fully.
+2. Create `frontend/src/hooks/useStructuredDataFilters.ts`:
+   - Extract state variables related to structured data filtering (visit filter,
+     section filter, search query, expanded sections, etc. — ~6 useState).
+   - Include associated useMemo/useCallback that depend only on those state vars.
+   - Hook ≤ 150 LOC. Export typed return value.
+3. Create `frontend/src/hooks/useFieldEditing.ts`:
+   - Extract state variables related to field editing (editing field, edit value,
+     pending edits, edit confirmation, etc. — ~5 useState + mutation logic).
+   - Hook ≤ 150 LOC.
+4. Create `frontend/src/hooks/useUploadState.ts`:
+   - Extract state variables related to file upload and drag-and-drop (files,
+     uploading flag, drag over, upload progress, error, etc. — ~6 useState).
+   - Hook ≤ 150 LOC.
+5. In `AppWorkspace.tsx`: replace extracted useState/useMemo/useCallback with
+   hook calls. Pass any cross-hook dependencies as parameters.
+6. Verify AppWorkspace reduced by ~300+ LOC.
+7. Proceed to TEST GATE (both backend and frontend).
+
+Target files: `frontend/src/hooks/useStructuredDataFilters.ts`,
+`frontend/src/hooks/useFieldEditing.ts`, `frontend/src/hooks/useUploadState.ts`
+(all new), `frontend/src/AppWorkspace.tsx`
+Acceptance: 3 hooks created, each ≤ 150 LOC. AppWorkspace reduced ~300+ LOC.
+226+ frontend tests pass. 0 lint errors.
+--- END TASK ---
+```
+
+### F13-H — Extraer hooks de UI de AppWorkspace
+
+```
+--- TASK ---
+Step: F13-H — Extract UI hooks from AppWorkspace
+Branch: improvement/iteration-7-pr1
+PR: #153
+
+Objective: Extract 2 UI interaction hooks from `AppWorkspace.tsx`.
+
+1. Read `frontend/src/AppWorkspace.tsx` (after F13-G changes).
+2. Create `frontend/src/hooks/useReviewSplitPanel.ts`:
+   - Extract state variables + pointer/mouse event logic for the review split
+     panel (split position, dragging flag, pointer handlers — ~4 useState).
+   - Hook ≤ 150 LOC.
+3. Create `frontend/src/hooks/useDocumentsSidebar.ts`:
+   - Extract state variables + resize logic for the documents sidebar
+     (sidebar width, collapsed state, resize handlers — ~4 useState).
+   - Hook ≤ 150 LOC.
+4. In `AppWorkspace.tsx`: replace extracted code with hook calls.
+5. Count lines: AppWorkspace must be < 3,000 LOC (stretch target: < 2,500).
+6. Proceed to TEST GATE (both backend and frontend).
+
+Target files: `frontend/src/hooks/useReviewSplitPanel.ts`,
+`frontend/src/hooks/useDocumentsSidebar.ts` (new), `frontend/src/AppWorkspace.tsx`
+Acceptance: AppWorkspace < 3,000 LOC. 5 hooks total in hooks/.
+226+ frontend tests pass. 0 lint errors.
+--- END TASK ---
+```
+
+### F13-I — Split extraction_observability.py
+
+```
+--- TASK ---
+Step: F13-I — Split extraction_observability.py into modules
+Branch: improvement/iteration-7-pr1
+PR: #153
+
+Objective: Decompose `extraction_observability.py` (995 LOC) into 4 focused modules.
+
+1. Read `backend/app/application/extraction_observability.py` fully.
+2. Identify the 4 natural segments:
+   - **Snapshot**: functions that capture extraction state at a point in time.
+   - **Persistence**: functions that save/load observability data to/from storage.
+   - **Triage**: functions that classify extraction quality/issues.
+   - **Reporting**: functions that generate summary reports/metrics.
+3. Create `backend/app/application/extraction_observability/` package:
+   - `__init__.py` — re-exports all public API symbols (preserve backward compat).
+   - `snapshot.py` — snapshot segment.
+   - `persistence.py` — persistence segment.
+   - `triage.py` — triage/classification segment.
+   - `reporting.py` — summary/reporting segment.
+4. Move functions to corresponding modules. Resolve internal cross-references.
+5. Search ALL files that import from `extraction_observability`:
+   Run: grep -rn "from.*extraction_observability import\|import.*extraction_observability" backend/
+   Update every import to use the package (or rely on __init__.py re-exports).
+6. Delete the original `extraction_observability.py` file.
+7. Verify each module < 300 LOC.
+8. Proceed to TEST GATE.
+
+Target files: `extraction_observability/` (new package),
+`extraction_observability.py` (to be deleted)
+Acceptance: Each module < 300 LOC. Public API unchanged via __init__.py.
+317+ backend tests pass.
+--- END TASK ---
+```
+
+### F13-J — Coverage improvements
+
+```
+--- TASK ---
+Step: F13-J — Coverage improvements
+Branch: improvement/iteration-7-pr1
+PR: #153
+
+Objective: Close 3 specific coverage gaps.
+
+1. **PdfViewer branch coverage → 60%+**:
+   - Read `frontend/src/PdfViewer.tsx` and its test file.
+   - Add tests for untested conditional branches: error states, loading states,
+     resize/scroll handlers, page navigation edge cases.
+   - Target: branch coverage ≥ 60% (current: ~47%).
+   - Note: canvas/observer APIs are not available in jsdom — mock what you can,
+     skip what requires real DOM. Do NOT set aggressive targets for browser-only code.
+
+2. **config.py → 90%+**:
+   - Read `backend/app/config.py` and its test file.
+   - Add tests for alternative paths: missing env vars, invalid values, fallback
+     defaults, edge cases in path resolution.
+   - Target: line coverage ≥ 90% (current: ~83%).
+
+3. **documentApi.ts → 80%+**:
+   - Read `frontend/src/lib/documentApi.ts` and its test file.
+   - Add tests for error paths: network errors, HTTP error codes, validation
+     failures, timeout handling, malformed responses.
+   - Target: branch coverage ≥ 80% (current: ~67%).
+
+4. Proceed to TEST GATE.
+
+Target files: Test files for PdfViewer, config.py, documentApi.ts
+Acceptance: PdfViewer branch ≥ 60%. config.py ≥ 90%. documentApi.ts branch ≥ 80%.
+All tests pass.
+--- END TASK ---
+```
+
+### F13-K — FUTURE_IMPROVEMENTS refresh + smoke + PR (Claude)
+
+```
+--- TASK ---
+Step: F13-K — FUTURE_IMPROVEMENTS refresh + smoke test + PR → main
+Agent: Claude Opus 4.6
+Branch: improvement/iteration-7-pr1
+PR: #153
+
+Objective: Final gate for Iteration 7. Update docs, full smoke, close PR.
+
+1. Update `docs/project/FUTURE_IMPROVEMENTS.md`:
+   - Mark completed items: modularization of interpretation.py, pdf_extraction.py,
+     AppWorkspace.tsx hooks, extraction_observability.py.
+   - Update LOC counts, coverage metrics, module counts.
+   - Remove or update any "in roadmap" items that are now done.
+2. Full smoke test:
+   - `pytest --tb=short -q` → 317+ passed
+   - `cd frontend && npm test -- --run` → 226+ passed
+   - `npm run lint` → 0 problems
+   - `ruff check backend/` → 0 errors
+3. Update PR #153 body with final iteration 7 summary.
+4. Commit + push.
+5. Request merge review or merge PR → main.
+--- END TASK ---
+```
+
+---
+
 ## Skills instaladas y uso recomendado
 
 ### Arquitectura / calidad
@@ -832,6 +1111,33 @@ Estas áreas puntúan alto con los evaluadores. Todo cambio debe preservarlas:
 ---
 
 ## Reglas operativas
+
+### Ejecución semi-desatendida (modo por defecto)
+
+El modo por defecto de ejecución es **semi-desatendido**. Tras completar una tarea
+(CI verde, paso marcado `[x]`, PR actualizada), el agente activo evalúa si puede
+continuar automáticamente con la siguiente tarea **sin intervención del usuario**.
+
+**Condiciones para encadenar (ambas deben cumplirse):**
+1. La siguiente tarea está asignada al **mismo agente** que la que acaba de completarse.
+2. Existe un **prompt pre-escrito** para la siguiente tarea en la sección `## Cola de prompts`.
+
+**Si se cumplen ambas:** el agente lee el prompt de la Cola, lo ejecuta siguiendo el
+template estándar (SCOPE BOUNDARY), y repite la evaluación al terminar.
+
+**Si falla alguna:** el agente se detiene y genera el mensaje de handoff estándar
+(STEP F del SCOPE BOUNDARY) para que el usuario abra un nuevo chat con el agente
+correcto o para que Claude escriba el prompt just-in-time.
+
+**Límite de seguridad:** si el agente detecta que su contexto se está agotando
+(respuestas truncadas, pérdida de estado), debe detenerse en el paso actual,
+completarlo limpiamente (SCOPE BOUNDARY completo) y generar el handoff. El
+siguiente chat retomará desde el primer `[ ]`.
+
+> **Nota:** este modo es compatible con el protocolo `Continúa` existente. Si el
+> usuario abre un chat nuevo y escribe `Continúa`, el agente ejecuta un solo paso
+> y luego evalúa si puede encadenar. La diferencia es que el agente ya no se
+> detiene obligatoriamente tras cada paso.
 
 ### Iteraciones atómicas
 Nunca mezclar alcance entre pasos. Cada paso del Estado de ejecución es una unidad atómica: se ejecuta, se commitea, se pushea, se marca `[x]`. Si falla, se reporta — no se continúa al siguiente.
@@ -1377,17 +1683,17 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 | **Archivos** | `processing/confidence_scoring.py` (nuevo), `processing/interpretation.py` |
 | **Ref FUTURE_IMPROVEMENTS** | Item modularización |
 
-#### F13-D — Shim compatibility + test validation + PR 1
+#### F13-D — Shim compatibility verification
 
 | Atributo | Valor |
 |---|---|
-| **Riesgo** | Bajo — verificación y entrega |
+| **Riesgo** | Bajo — solo verificación/ajuste de re-exports |
 | **Esfuerzo** | S |
-| **Agente** | Claude |
-| **Por qué** | `processing_runner.py` re-exporta símbolos públicos. 6+ test files importan vía shim. Gate final de PR 1. |
-| **Tareas** | 1. Actualizar `processing_runner.py` para re-exportar desde nuevos módulos si necesario. 2. Verificar imports existentes. 3. Smoke: `pytest` → 317+ passed, `npm test` → 226+ passed, lint → 0. 4. Commit + push + crear PR 1 → main. |
-| **Criterio de aceptación** | Shim mantiene API pública intacta. CI green. PR creado. |
-| **Archivos** | `processing_runner.py`, todos los modificados en F13-A..C |
+| **Agente** | Codex |
+| **Por qué** | `processing_runner.py` re-exporta símbolos públicos. 6+ test files importan vía shim. Verificar que los nuevos módulos (F13-A..C) están integrados. |
+| **Tareas** | 1. Actualizar `processing_runner.py` para re-exportar desde nuevos módulos si necesario. 2. Verificar imports de tests existentes. 3. `pytest` → 317+ passed. |
+| **Criterio de aceptación** | Shim mantiene API pública intacta. 317+ tests pasan. |
+| **Archivos** | `processing_runner.py` |
 | **Ref FUTURE_IMPROVEMENTS** | — |
 
 #### F13-E — Extraer pdf_extraction_nodeps.py (~900 LOC fallback)
@@ -1403,16 +1709,16 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 | **Archivos** | `processing/pdf_extraction_nodeps.py` (nuevo), `processing/pdf_extraction.py` |
 | **Ref FUTURE_IMPROVEMENTS** | Item modularización |
 
-#### F13-F — Thin dispatcher + test validation + PR 2
+#### F13-F — Thin dispatcher verification
 
 | Atributo | Valor |
 |---|---|
-| **Riesgo** | Bajo — verificación y entrega |
+| **Riesgo** | Bajo — verificación post-extracción |
 | **Esfuerzo** | S |
-| **Agente** | Claude |
-| **Por qué** | Gate final de PR 2. Verificar dispatcher y cobertura. |
-| **Tareas** | 1. Asegurar pdf_extraction.py usa constants de `constants.py`. 2. Actualizar shim si necesario. 3. Smoke: `pytest` → 317+, `npm test` → 226+. 4. Commit + push + PR 2 → main. |
-| **Criterio de aceptación** | Dispatcher < 300 LOC. Sin constantes duplicadas. CI green. PR creado. |
+| **Agente** | Codex |
+| **Por qué** | Verificar que pdf_extraction.py es un dispatcher limpio tras F13-E. |
+| **Tareas** | 1. Asegurar pdf_extraction.py usa constants de `constants.py`. 2. Verificar < 300 LOC. 3. Actualizar shim si necesario. 4. `pytest` → 317+. |
+| **Criterio de aceptación** | Dispatcher < 300 LOC. Sin constantes duplicadas. 317+ tests pasan. |
 | **Archivos** | `processing/pdf_extraction.py`, `processing_runner.py` |
 | **Ref FUTURE_IMPROVEMENTS** | — |
 
@@ -1429,16 +1735,16 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 | **Archivos** | `hooks/useStructuredDataFilters.ts`, `hooks/useFieldEditing.ts`, `hooks/useUploadState.ts` (nuevos), `AppWorkspace.tsx` |
 | **Ref FUTURE_IMPROVEMENTS** | Item AppWorkspace decomposition |
 
-#### F13-H — Extraer hooks de UI + validation + PR 3
+#### F13-H — Extraer hooks de UI de AppWorkspace
 
 | Atributo | Valor |
 |---|---|
 | **Riesgo** | Medio — hooks de UI interactúan con eventos de puntero y resize |
 | **Esfuerzo** | M |
-| **Agente** | Claude |
-| **Por qué** | Dos hooks de UI restantes + gate final de PR 3. |
-| **Tareas** | 1. Crear `hooks/useReviewSplitPanel.ts` (4 state vars + pointer). 2. Crear `hooks/useDocumentsSidebar.ts` (4 state vars + resize). 3. Reemplazar en AppWorkspace. 4. Verificar < 2,500 LOC. 5. Smoke + PR 3 → main. |
-| **Criterio de aceptación** | AppWorkspace < 2,500 LOC. 5 hooks en `hooks/`. 226+ tests. CI green. PR creado. |
+| **Agente** | Codex |
+| **Por qué** | Dos hooks de UI restantes para reducir AppWorkspace significativamente. |
+| **Tareas** | 1. Crear `hooks/useReviewSplitPanel.ts` (4 state vars + pointer). 2. Crear `hooks/useDocumentsSidebar.ts` (4 state vars + resize). 3. Reemplazar en AppWorkspace. 4. Verificar < 3,000 LOC. |
+| **Criterio de aceptación** | AppWorkspace < 3,000 LOC. 5 hooks en `hooks/`. 226+ tests pasan. 0 lint. |
 | **Archivos** | `hooks/useReviewSplitPanel.ts`, `hooks/useDocumentsSidebar.ts` (nuevos), `AppWorkspace.tsx` |
 | **Ref FUTURE_IMPROVEMENTS** | Item AppWorkspace decomposition |
 
@@ -1468,7 +1774,7 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 | **Archivos** | `PdfViewer.test.tsx`, `test_config.py`, `documentApi.test.ts` |
 | **Ref FUTURE_IMPROVEMENTS** | Items 4, 12 |
 
-#### F13-K — FUTURE_IMPROVEMENTS refresh + smoke test + PR 4
+#### F13-K — FUTURE_IMPROVEMENTS refresh + smoke test + PR → main
 
 | Atributo | Valor |
 |---|---|
@@ -1476,15 +1782,15 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 | **Esfuerzo** | S |
 | **Agente** | Claude |
 | **Por qué** | FUTURE_IMPROVEMENTS tiene items completados sin marcar. Gate final de Iteración 7. |
-| **Tareas** | 1. Actualizar FUTURE_IMPROVEMENTS.md. 2. Smoke: `pytest` → 317+, `npm test` → 226+, lint → 0, CI green. 3. Commit + push + PR 4 → main. |
-| **Criterio de aceptación** | FUTURE_IMPROVEMENTS actualizado. Todos los checks pasan. CI green. PR 4 creado. |
-| **Archivos** | `FUTURE_IMPROVEMENTS.md`, todos los modificados en F13-I..J |
+| **Tareas** | 1. Actualizar FUTURE_IMPROVEMENTS.md. 2. Smoke: `pytest` → 317+, `npm test` → 226+, lint → 0, CI green. 3. Commit + push. 4. Actualizar PR #153 con resumen final. |
+| **Criterio de aceptación** | FUTURE_IMPROVEMENTS actualizado. Todos los checks pasan. CI green. PR lista para merge. |
+| **Archivos** | `FUTURE_IMPROVEMENTS.md`, todos los modificados en F13-D..J |
 | **Ref FUTURE_IMPROVEMENTS** | Refresh completo |
 
 **Política de la fase — do-not-change:**
 - Contratos HTTP, schemas de respuesta, CI pipeline, ADRs.
-- Cada PR es atómica: si una falla, las posteriores pueden proceder si no dependen de ella.
-- AppWorkspace target es < 2,500 LOC (no < 500, ya que la lógica de UI es inherentemente densa).
+- Una sola PR (`#153`): todos los pasos se acumulan en `improvement/iteration-7-pr1`.
+- AppWorkspace target es < 3,000 LOC (stretch: < 2,500; no < 500, la lógica de UI es inherentemente densa).
 
 ---
 
@@ -1520,7 +1826,9 @@ Así las decisiones quedan en el archivo y sobreviven a la pérdida del chat.
 ## Estrategia de prompts
 
 - **Prompts de auditoría** (Fases 1 y 2): pre-escritos en las secciones de cada fase. Codex los lee directamente del archivo.
-- **Prompts de implementación** (Fases 3+): generados just-in-time por Claude. **Claude los escribe en la sección `## Prompt activo`** de este archivo, commitea y pushea. Luego el usuario abre Codex, adjunta el archivo y escribe `Continúa`. Codex lee el prompt de la sección `Prompt activo`. **El usuario nunca copia ni pega prompts manualmente.**
+- **Prompts pre-escritos** (Cola de prompts): al iniciar una iteración, Claude escribe los prompts de **todas las tareas cuyo contenido no depende del resultado de tareas anteriores** en la sección `## Cola de prompts`. Esto permite la ejecución semi-desatendida: Codex encadena pasos consecutivos leyendo directamente de la Cola.
+- **Prompts just-in-time** (Prompt activo): para tareas cuyo prompt sí depende del resultado de una tarea anterior, Claude los escribe en `## Prompt activo` cuando corresponda.
+- **Resolución de prompts** (orden de prioridad): Cola de prompts → Prompt activo → STOP (pedir a Claude).
 
 ### Protocolo "Continúa"
 Cada prompt incluye al final una instrucción para que el agente:
@@ -1563,15 +1871,24 @@ Cuando Codex recibe `Continúa` con este archivo adjunto, sigue esta lógica de 
 ```
 1. Lee Estado de ejecución → encuentra el primer `[ ]`.
 2. Si el paso es de Claude (no de Codex):
-  → STOP. Dile al usuario: "⚠️ Este paso no corresponde al agente activo. **STOP.** El siguiente paso es de **Claude Opus 4.6**. Abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
+  → STOP. Dile al usuario: "⚠️ Este paso no corresponde al agente activo. **STOP.**
+    El siguiente paso es de **Claude Opus 4.6**. Abre un chat nuevo en Copilot →
+    selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` →
+    escribe `Continúa`."
 3. Si el paso es F1-A:
    → Lee el prompt de la sección "Fase 1 — Prompt para Codex".
 4. Si el paso es F2-A:
    → Lee el prompt de la sección "Fase 2 — Prompt para Codex".
 5. Para cualquier otro paso de Codex:
-   → Lee el prompt de la sección "## Prompt activo".
-   → Si `### Prompt` contiene `_Vacío._`: STOP.
-     Dile al usuario: "⚠️ No hay prompt activo. Vuelve a Claude para que lo genere."
+   → Buscar prompt en este orden de prioridad:
+     a. `## Cola de prompts` → entrada con el ID del paso actual.
+     b. `## Prompt activo` → sección `### Prompt`.
+   → Si ninguno tiene prompt (Cola vacía para ese step Y Prompt activo es
+     `_Vacío._`): STOP.
+     Dile al usuario: "⚠️ No hay prompt. Vuelve a Claude para que lo genere."
+6. Tras completar el paso → ejecutar STEP F del SCOPE BOUNDARY
+   (semi-unattended chain check). Si las condiciones se cumplen, encadenar
+   al siguiente paso automáticamente.
 ```
 ### Auto-chain vs Hard-gate
 
@@ -1667,18 +1984,35 @@ STEP E — CI GATE (mandatory — do NOT skip):
    d. Do NOT declare the step done until CI is green.
 5. If you cannot fix it after 2 attempts: STOP. Tell the user: "⚠️ CI sigue rojo tras 2 intentos de fix. Necesito ayuda para diagnosticar."
 
-STEP F — Tell the user the NEXT STEP (mandatory — never omit):
+STEP F — SEMI-UNATTENDED CHAIN CHECK (mandatory — replaces old STEP F):
 Look at the Estado de ejecución. Find the next `[ ]` step after the one you just completed.
-Then **check the `### Prompt` section inside `## Prompt activo`** to decide the routing.
-Tell the user EXACTLY one of these messages (pick the FIRST that matches):
 
-- If next step says "(Codex)" AND `### Prompt` contains `_Vacío._`: "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`. Claude preparará el prompt just-in-time para el paso de Codex."
-- If next step says "(Codex)" AND `### Prompt` is NOT `_Vacío._`: "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
-- If next step says "(Claude)": "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
-- If no more steps remain: "✓ F?-? completado, CI verde, PR actualizada. Todos los pasos completados."
+**Check ALL of these conditions:**
+1. The next step is assigned to the **same agent** as you (Codex checks for 🔄 Codex steps).
+2. A prompt for that step exists in `## Cola de prompts`.
+
+**If BOTH conditions are met → AUTO-CHAIN:**
+- Print: "✓ F?-? completado, CI verde. Encadenando → F?-? (semi-desatendido)."
+- Read the prompt from `## Cola de prompts` for the next step.
+- Execute it from the beginning (PRE-FLIGHT → TASK → TEST GATE → SCOPE BOUNDARY).
+- After completing, repeat this STEP F evaluation for the step after that.
+
+**If EITHER condition fails → HANDOFF (pick the FIRST message that matches):**
+- If next step says "(Codex)" AND no prompt in Cola AND `### Prompt` in Prompt activo is `_Vacío._`:
+  "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`. Claude preparará el prompt just-in-time."
+- If next step says "(Codex)" AND prompt exists in Cola OR Prompt activo:
+  "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
+- If next step says "(Claude)":
+  "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
+- If no more steps remain:
+  "✓ F?-? completado, CI verde, PR actualizada. Todos los pasos completados."
+
+**Context safety valve:** if you detect your context is running low (responses getting
+truncated, losing track of state), complete the current step cleanly and generate
+the HANDOFF message instead of auto-chaining.
 
 NEVER end without telling the user what to do next. This is a hard rule.
-**NEVER direct to Codex when `### Prompt` is `_Vacío._`.** Claude must write the prompt first.
+**NEVER direct to Codex when no prompt exists (neither Cola nor Prompt activo).** Claude must write one first.
 
 7. Stop.
 --- END SCOPE BOUNDARY ---
