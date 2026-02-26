@@ -28,7 +28,7 @@ Focos:
 - [x] P1-F 🔄 — Job `CI / e2e` con artifacts en fallo (Codex)
 - [x] P1-G 🔄 — Validación técnica: `test:e2e`, `tsc --noEmit`, `eslint .` (Codex)
 - [x] P1-H 🚧 — Validación manual en headed + checklist funcional mínimo (Usuario/Claude)
-- [ ] P1-I 🔄 — Commit, push y PR hacia `main` (Codex) ⏳ EN PROGRESO (Codex, 2026-02-26)
+- [x] P1-I 🔄 — Commit, push y PR hacia `main` (Codex)
 - [ ] P1-J 🚧 — Veredicto final y decisión de merge (Claude/Usuario)
 
 ---
@@ -122,29 +122,9 @@ Estas reglas son de cumplimiento estricto para este plan y replican la política
 
 ## Prompt activo
 
-### P1-I — Commit, push y PR hacia `main` (Codex)
+_Completado: P1-I_
 
-**Objetivo:** Asegurar que todos los cambios están commiteados, pushear la rama y actualizar la PR hacia `main`.
-
-**Instrucciones operativas:**
-
-1. **Branch check:** `git branch --show-current` → debe ser `improvement/playwright`. Si no, STOP.
-2. **Sync check:** `git fetch origin && git pull` (si hay upstream).
-3. Verificar estado limpio: `git status` → no debe haber cambios sin commitear.
-   - Si los hay, commitear con mensaje descriptivo siguiendo convención del plan.
-4. Actualizar checkbox `[x]` de P1-H en el plan (ya validado manualmente).
-5. Commit del plan: `docs(plan): mark P1-H complete after manual headed validation`
-6. Push: `git push origin improvement/playwright`.
-7. Actualizar PR #159 con `gh pr edit 159`:
-   - Title: `test: integrate Playwright E2E smoke tests`
-   - Body: actualizar checkboxes P1-H como completado.
-8. **No hacer merge** — eso es decisión de P1-J.
-
-**Criterio de aceptación:**
-- `git status` limpio.
-- `git push` exitoso.
-- PR #159 actualizada con P1-H marcado.
-- Handoff a P1-J (hard-gate → Claude/Usuario).
+_Vacío._
 
 ---
 
