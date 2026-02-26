@@ -29,7 +29,7 @@ Focos:
 - [x] P1-G 🔄 — Validación técnica: `test:e2e`, `tsc --noEmit`, `eslint .` (Codex)
 - [x] P1-H 🚧 — Validación manual en headed + checklist funcional mínimo (Usuario/Claude)
 - [x] P1-I 🔄 — Commit, push y PR hacia `main` (Codex)
-- [ ] P1-J 🚧 — Veredicto final y decisión de merge (Claude/Usuario)
+- [x] P1-J 🚧 — Veredicto final y decisión de merge (Claude/Usuario) ✅ PR #159 merged 2026-02-26
 
 ---
 
