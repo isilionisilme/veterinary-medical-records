@@ -33,11 +33,7 @@ test("selecting a document shows PDF viewer and structured panel", async ({ page
 
   await row.click();
 
-  await expect(
-    page
-      .getByTestId("document-layout-grid")
-      .or(page.getByTestId("review-split-grid")),
-  ).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId("review-split-grid")).toBeVisible({ timeout: 30_000 });
   await expect(page.getByTestId("pdf-toolbar-shell")).toBeVisible({ timeout: 30_000 });
   await expect(page.getByTestId("pdf-scroll-container")).toBeVisible();
   await expect(page.getByTestId("pdf-page").first()).toBeVisible({ timeout: 30_000 });

@@ -37,11 +37,7 @@ test("uploading a PDF adds it to documents sidebar", async ({ page }) => {
   await expect(documentRow).toBeVisible({ timeout: 90_000 });
 
   await documentRow.click();
-  await expect(
-    page
-      .getByTestId("document-layout-grid")
-      .or(page.getByTestId("review-split-grid")),
-  ).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId("review-split-grid")).toBeVisible({ timeout: 30_000 });
 
   // The sidebar may show processing-related statuses (e.g., "Procesando" / "Completado")
   // depending on environment timing, so we avoid asserting a specific final status here.

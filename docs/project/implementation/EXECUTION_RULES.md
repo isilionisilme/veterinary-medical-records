@@ -343,7 +343,7 @@ When all steps of an iteration are `[x]` and CI is green on the last push:
    ```
    gh pr ready <pr_number>
    ```
-2. The agent updates title, body, classification, and UX/Brand compliance following `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/210_pull-requests.md`.
+2. The agent updates title, body, classification, and UX/Brand compliance following `docs/shared/ENGINEERING_PLAYBOOK.md` (PR workflow section).
 3. The agent reports the PR number and URL to the user.
 4. This triggers a **hard-gate**: the user decides when to merge.
 

@@ -66,7 +66,7 @@ test("marking a document as reviewed toggles read-only state and allows reopen",
   await page.route("**/documents/*/review", async (route) => {
     const currentDocId = docId;
     if (!currentDocId) {
-      await route.continue();
+      await route.fallback();
       return;
     }
     const url = new URL(route.request().url());
@@ -78,13 +78,13 @@ test("marking a document as reviewed toggles read-only state and allows reopen",
       });
       return;
     }
-    await route.continue();
+    await route.fallback();
   });
 
   await page.route("**/documents/*", async (route) => {
     const currentDocId = docId;
     if (!currentDocId || route.request().method() !== "GET") {
-      await route.continue();
+      await route.fallback();
       return;
     }
     const url = new URL(route.request().url());
@@ -114,19 +114,19 @@ test("marking a document as reviewed toggles read-only state and allows reopen",
       });
       return;
     }
-    await route.continue();
+    await route.fallback();
   });
 
   await page.route("**/documents/*/reviewed", async (route) => {
     const currentDocId = docId;
     if (!currentDocId) {
-      await route.continue();
+      await route.fallback();
       return;
     }
     const method = route.request().method();
     const url = new URL(route.request().url());
     if (url.pathname !== `/documents/${currentDocId}/reviewed`) {
-      await route.continue();
+      await route.fallback();
       return;
     }
     if (method === "POST") {
@@ -159,7 +159,7 @@ test("marking a document as reviewed toggles read-only state and allows reopen",
       });
       return;
     }
-    await route.continue();
+    await route.fallback();
   });
 
   await page.goto("/");

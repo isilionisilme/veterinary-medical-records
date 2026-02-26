@@ -65,7 +65,7 @@ test("editing a field updates value and persists after reload", async ({ page })
   await page.route("**/documents/*/review", async (route) => {
     const currentDocId = docId;
     if (!currentDocId) {
-      await route.continue();
+      await route.fallback();
       return;
     }
     const url = new URL(route.request().url());
@@ -77,13 +77,13 @@ test("editing a field updates value and persists after reload", async ({ page })
       });
       return;
     }
-    await route.continue();
+    await route.fallback();
   });
 
   await page.route("**/documents/*", async (route) => {
     const currentDocId = docId;
     if (!currentDocId || route.request().method() !== "GET") {
-      await route.continue();
+      await route.fallback();
       return;
     }
     const url = new URL(route.request().url());
@@ -113,12 +113,12 @@ test("editing a field updates value and persists after reload", async ({ page })
       });
       return;
     }
-    await route.continue();
+    await route.fallback();
   });
 
   await page.route("**/runs/*/interpretations", async (route) => {
     if (route.request().method() !== "POST") {
-      await route.continue();
+      await route.fallback();
       return;
     }
     capturedEditPayload = route.request().postDataJSON();
