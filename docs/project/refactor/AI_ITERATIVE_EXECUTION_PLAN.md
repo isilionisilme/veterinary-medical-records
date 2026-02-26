@@ -1786,8 +1786,8 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 | **Esfuerzo** | S |
 | **Agente** | Claude |
 | **Por qué** | FUTURE_IMPROVEMENTS tiene items completados sin marcar. Gate final de Iteración 7. |
-| **Tareas** | 1. Actualizar FUTURE_IMPROVEMENTS.md. 2. Smoke: `pytest` → 317+, `npm test` → 226+, lint → 0, CI green. 3. Commit + push. 4. Actualizar PR #153 con resumen final. |
-| **Criterio de aceptación** | FUTURE_IMPROVEMENTS actualizado. Todos los checks pasan. CI green. PR lista para merge. |
+| **Tareas** | 1. Actualizar FUTURE_IMPROVEMENTS.md. 2. Eliminar del plan la sección `Fase 13 ... [ARCHIVADO — NO USAR PARA ROUTING]`. 3. Smoke: `pytest` → 317+, `npm test` → 226+, lint → 0, CI green. 4. Commit + push. 5. Actualizar PR #153 con resumen final. |
+| **Criterio de aceptación** | FUTURE_IMPROVEMENTS actualizado, sección F13 archivada eliminada, todos los checks pasan, CI green, PR lista para merge. |
 | **Archivos** | `FUTURE_IMPROVEMENTS.md`, todos los modificados en F13-D..J |
 | **Ref FUTURE_IMPROVEMENTS** | Refresh completo |
 
