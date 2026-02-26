@@ -132,7 +132,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 ### Fase 14 — Iteración 8 (Bugs + CI governance + AppWorkspace round 3 + cobertura)
 
 **Bloque 1 — Bugs y CI**
-- [ ] F14-A 🔄 — Hotfix PdfViewer: aceptar ArrayBuffer, eliminar fetch indirection (Codex)
+- [x] F14-A 🔄 — Hotfix PdfViewer: aceptar ArrayBuffer, eliminar fetch indirection (Codex) ✅ DONE (Codex, 2026-02-26)
 - [ ] F14-B 🔄 — Separar job `doc_test_sync_guard` en 3 jobs CI independientes (Codex)
 - [ ] F14-C 🔄 — Clasificador de cambios de docs: script + integración CI (Codex)
 - [ ] F14-D 🔄 — Exención Navigation + modo relajado Clarification en `check_doc_test_sync.py` (Codex)
@@ -1980,16 +1980,20 @@ Flujo para Claude (pasos marcados con "Claude" en el Estado):
 Claude lee el Estado, ejecuta el paso y al terminar le dice al usuario el siguiente movimiento.
 
 ### Instrucciones de siguiente paso (regla para todos los agentes)
-Al terminar un paso, el agente SIEMPRE indica al usuario el siguiente movimiento con instrucciones concretas:
+Al terminar un paso, el agente SIEMPRE indica al usuario el siguiente movimiento con instrucciones concretas.
 
-- **Si el siguiente paso es de Codex (prompt pre-escrito):**
-  → "Abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
-- **Si el siguiente paso es de Codex (just-in-time):**
-  → "Abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`. Claude preparará el prompt just-in-time."
-- **Si el siguiente paso es de Claude (🚧 hard-gate):**
-  → "Abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
-- **Si el siguiente paso es de Claude (🔄 auto-chain):**
-  → "Abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
+**Decisión en 2 pasos:**
+1. ¿El siguiente paso tiene prompt pre-escrito en `## Cola de prompts`?
+2. ¿El siguiente paso es del mismo agente o de otro?
+
+| Prompt existe | Mismo agente | Acción |
+|---|---|---|
+| SÍ | SÍ | **AUTO-CHAIN** (no emitir handoff, ejecutar directamente) |
+| SÍ | NO | → Dirigir al agente correcto: "Abre chat nuevo → **[agente]** → adjunta plan → `Continúa`." |
+| NO | SÍ | → Dirigir a Claude primero: "No hay prompt para F?-?. Vuelve al chat de **Claude Opus 4.6** y pídele que escriba el prompt. Luego abre chat nuevo con **[agente actual]** → adjunta plan → `Continúa`." |
+| NO | NO | → Dirigir a Claude: "Abre chat nuevo → **Claude Opus 4.6** → adjunta plan → `Continúa`." |
+
+**REGLA DURA:** Nunca decir "abre chat con Codex" si no hay prompt pre-escrito para ese paso. Claude debe escribirlo primero.
 
 Así el usuario nunca necesita consultar el plan para saber qué hacer — simplemente sigue las indicaciones del agente.
 
@@ -2013,7 +2017,7 @@ Cuando Codex recibe `Continúa` con este archivo adjunto, sigue esta lógica de 
      b. `## Prompt activo` → sección `### Prompt`.
    → Si ninguno tiene prompt (Cola vacía para ese step Y Prompt activo es
      `_Vacío._`): STOP.
-     Dile al usuario: "⚠️ No hay prompt. Vuelve a Claude para que lo genere."
+     Dile al usuario: "⚠️ No hay prompt pre-escrito para F?-?. Vuelve al chat de **Claude Opus 4.6** y pídele que escriba el prompt para F?-?. Luego abre un chat nuevo con **GPT-5.3-Codex**, adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` y escribe `Continúa`."
 6. Tras completar el paso → ejecutar STEP F del SCOPE BOUNDARY
    (semi-unattended chain check). Si las condiciones se cumplen, encadenar
    al siguiente paso automáticamente.
@@ -2163,12 +2167,20 @@ If you are about to emit a handoff message for a Codex step that has a Cola prom
 You have a bug. Re-read the table above and auto-chain.
 
 **Handoff messages (only when table says HANDOFF):**
-- → Codex (new chat): "Siguiente: abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
-- → Claude (new chat): "Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
+
+Usa EXACTAMENTE el mensaje que corresponda al caso. No improvises.
+
+- **Caso A — Siguiente paso es de OTRO agente Y tiene prompt en Cola:**
+  → "✅ F?-? completado. Siguiente: abre un chat nuevo en Copilot → selecciona **[nombre del agente]** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
+- **Caso B — Siguiente paso es del MISMO agente pero NO tiene prompt en Cola (just-in-time):**
+  → "✅ F?-? completado. No hay prompt pre-escrito para F?-?. Vuelve al chat de **Claude Opus 4.6** y pídele que escriba el prompt para F?-?. Luego abre un chat nuevo con **GPT-5.3-Codex**, adjunta el plan y escribe `Continúa`."
+- **Caso C — Siguiente paso es de OTRO agente que NO es Codex (hard-gate o Claude task):**
+  → "✅ F?-? completado. Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
+
+**REGLA DURA: NUNCA dirigir al usuario a Codex cuando no hay prompt.** Si el siguiente paso es de Codex y no hay prompt en la Cola ni en `## Prompt activo`, el mensaje SIEMPRE es Caso B (volver a Claude primero).
 
 **Context safety valve:** if context exhausted, complete current step cleanly and handoff.
 NEVER end without telling the user what to do next.
-**NEVER direct to Codex when no prompt exists.** Claude must write one first.
 
 7. Stop.
 --- END SCOPE BOUNDARY ---
