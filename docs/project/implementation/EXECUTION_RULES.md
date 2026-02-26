@@ -71,14 +71,16 @@ For visibility and traceability, it is **mandatory** to mark the active step wit
 - **Pending:** `- [ ] F?-? ...`
 - **In progress:** `- [ ] F?-? ... ⏳ EN PROGRESO (<agent>, <date>)`
 - **Blocked:** `- [ ] F?-? ... 🚫 BLOQUEADO (<short reason>)`
+- **Step locked:** `- [ ] F?-? ... 🔒 STEP LOCKED (code committed, awaiting CI + plan update)`
 - **Completed:** `- [x] F?-? ...`
 
 Mandatory rules:
 1. Do not use `[-]`, `[~]`, `[...]` or variants: only `[ ]` or `[x]`.
 2. Before executing a `[ ]` step, the agent must mark it `⏳ EN PROGRESO (<agent>, <date>)`.
 3. `EN PROGRESO` and `BLOQUEADO` are text labels at the end of the line, not checkbox states.
-4. On completion, remove any label (`EN PROGRESO`/`BLOQUEADO`) and mark `[x]`.
+4. On completion, remove any label (`EN PROGRESO`/`BLOQUEADO`/`STEP LOCKED`) and mark `[x]`.
 5. For `BLOQUEADO`, include brief reason and next action if applicable.
+6. After code commit but before CI green + plan update, mark `🔒 STEP LOCKED`. While locked, **no other step may begin** and **no handoff may be emitted**.
 
 ### Agent identity rule (hard rule — applies before any other)
 **If the user writes `Continúa`:**
@@ -130,6 +132,86 @@ Operational protocol (commit, push, PR creation, merge, post-merge cleanup, bran
 2. If CI fails: diagnose, fix, push and wait again.
 3. Only after CI green: declare the step completed to the user.
 4. If unable to fix CI after 2 attempts: STOP and ask for help.
+
+---
+
+## Step completion integrity (hard rules — added 2026-02-26)
+
+> **Origin:** Post-mortem of Iter 9 process violation where Codex batched steps,
+> skipped CI verification, and emitted handoff before CI was green.
+> These rules close every identified gap.
+
+### NO-BATCH (hard rule)
+**Prohibited: closing more than one plan step in a single wave of commits/pushes
+without completing the full CI + plan-update cycle for the previous step.**
+Each step must go through commit → push → CI green → plan update → (next step).
+Batching multiple steps into one push violates atomicity and breaks traceability.
+
+### CI-FIRST-BEFORE-HANDOFF (hard rule)
+**Prohibited: emitting a handoff message if the last code commit of the step
+does not have a green CI run on GitHub.** The agent must wait for CI to pass
+before telling the user (or the next agent) to continue. If CI is still running,
+wait. If CI fails, fix and re-push. Never hand off a red or unknown CI state.
+
+### PLAN-UPDATE-IMMEDIATO (hard rule)
+**After CI green for a step, the very next commit MUST be the plan update
+(`[ ]` → `[x]`).** No intermediate code commits are allowed between CI green
+and the plan-update commit. Sequence:
+1. Code commit (STEP A)
+2. Push (STEP C)
+3. CI green (STEP E)
+4. Plan-update commit (STEP B) — **immediately, nothing in between**
+5. Push plan update
+6. Only then: proceed to STEP F (chain or handoff)
+
+### STEP-LOCK (explicit state — hard rule)
+When a step has a code commit pushed but CI has not yet passed and/or the plan
+has not been updated, the step enters **🔒 STEP LOCKED** state.
+
+- Mark in the plan: `- [ ] F?-? ... 🔒 STEP LOCKED (code committed, awaiting CI + plan update)`
+- While any step is LOCKED:
+  - **No other step may begin execution.**
+  - **No handoff may be emitted.**
+  - **No auto-chain may trigger.**
+- The lock is released only when CI is green AND the plan-update commit is pushed.
+- Then remove the `🔒 STEP LOCKED` label and mark `[x]`.
+
+### EVIDENCE BLOCK (mandatory on every step close)
+Every step completion message (the response to the user after finishing a step)
+**MUST** include an evidence block with these 4 fields:
+
+```
+📋 Evidence:
+- Step: F?-?
+- Code commit: <SHA>
+- CI run: <run_id> — <conclusion (success/failure)>
+- Plan commit: <SHA>
+```
+
+If any field is missing, **the step is NOT considered completed** and the agent
+must not proceed to STEP F. This block provides auditable proof that the full
+sequence was followed.
+
+### AUTO-HANDOFF GUARD (hard rule)
+Before emitting ANY handoff or auto-chain message, the agent MUST perform this
+validation:
+
+1. Is the most recent CI run for the current branch **green**? → Check with
+   `gh run list --branch <branch> --limit 1 --json conclusion`.
+2. Does the most recent commit on the branch correspond to the **plan-update
+   commit** for the just-completed step? → Verify with `git log --oneline -1`.
+
+| CI green? | Plan committed? | Action |
+|---|---|---|
+| YES | YES | Proceed with handoff/chain |
+| YES | NO | Commit plan update first, then handoff |
+| NO | any | **BLOCKED** — fix CI, do NOT handoff |
+| unknown | any | **WAIT** — poll CI, do NOT handoff |
+
+**If the guard fails, the agent stays in fix/watch mode until both conditions
+are met.** This is the final safety net against premature handoffs.
+
+---
 
 ### Format-before-commit (mandatory — hard rule)
 **Before every `git commit`, the agent ALWAYS runs the project formatters:**
@@ -288,6 +370,8 @@ Update with `gh pr edit <pr_number> --body "..."`. Keep existing structure, mark
 ### STEP F — CHAIN OR HANDOFF (mandatory)
 
 ⚠️ **PRE-CONDITION:** STEP F may ONLY execute if STEP A completed successfully (code commit exists).
+
+⚠️ **AUTO-HANDOFF GUARD (mandatory):** Before proceeding, run the guard check from § "Step completion integrity" → AUTO-HANDOFF GUARD. If CI is not green or plan is not committed, STOP here.
 
 ⚠️ **ITERATION BOUNDARY:** Before evaluating auto-chain, check if the NEXT unchecked `[ ]` step belongs to the same Fase/iteration. If it belongs to a DIFFERENT Fase: **STOP. Do NOT auto-chain across iteration boundaries.**
 

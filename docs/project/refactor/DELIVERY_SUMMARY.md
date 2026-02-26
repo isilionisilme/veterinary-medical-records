@@ -1,22 +1,22 @@
 # Delivery Summary — `improvement/refactor`
 
-> Quantitative record of what was delivered across 7 phases + Iterations 2 & 3.  
-> Source of truth for execution details: [`IMPLEMENTATION_HISTORY.md`](../production/IMPLEMENTATION_HISTORY.md).
+> Quantitative record of what was delivered across 7 phases + Iterations 2–9.  
+> Source of truth for execution details: [`IMPLEMENTATION_HISTORY.md`](../implementation/IMPLEMENTATION_HISTORY.md).
 
 ---
 
 ## At a glance
 
-| Metric | Value |
-|--------|-------|
-| Commits | 73 |
-| Files changed | 157 (60 added, 95 modified, 2 deleted) |
-| Net delta | +23,726 / −17,641 lines |
-| Test suite | **431 tests** (263 backend + 168 frontend), all green |
-| Backend coverage | 87% |
-| CI checks | 7 jobs, all passing |
-| New documentation files | 13 |
-| New architecture ADRs | 4 |
+| Metric | Iter 3 (Phase 9) | Iter 6 | Iter 8 | Iter 9 (current) |
+|--------|-------------------|--------|--------|-------------------|
+| Backend tests | 263 | 317 | 372 | 372+ |
+| Frontend tests | 168 | 226 | 263 | 263+ |
+| E2E tests | 0 | 0 | 0 | **5 specs** |
+| Backend coverage | 87% | 90% | 90% | 90% |
+| Frontend coverage | ~65% | 82.6% | 85% | 85% |
+| CI jobs | 7 | 6 | 8 | 9 (+E2E) |
+| Lint issues | 0 | 0 | 0 | 0 |
+| PRs merged | #145 | #152 | #156, #157 | #163 (in progress) |
 
 ---
 
@@ -203,3 +203,132 @@ Targeted hardening: upload safety, security boundary, and frontend decomposition
 | Backend coverage | 87% |
 | New backend tests | 8 (upload streaming + auth boundary) |
 | AppWorkspace.tsx reduction | 5,770 → 3,758 LOC (−35%) |
+
+---
+
+## Iteration 4 — Docs + Lint Polish (Phase 10)
+
+ESLint 0 warnings, Vite build clean, README quality gates.
+
+| Metric | Value |
+|--------|-------|
+| PR | #150 |
+| Key outcomes | ESLint 0 warnings across frontend, Vite production build clean, README quality gates defined |
+
+---
+
+## Iteration 5 — Production Readiness (Phase 11)
+
+Prettier bulk format, Docker non-root containers, `_edit_helpers` coverage push.
+
+| Metric | Value |
+|--------|-------|
+| PR | #151 |
+| Key outcomes | Prettier format enforced on all frontend source, Docker images run as non-root `appuser`, `_edit_helpers.py` coverage 85 %+ |
+
+---
+
+## Iteration 6 — Coverage + Security Hardening (Phase 12)
+
+Major coverage push and security headers.
+
+| Metric | Before | After |
+|--------|--------|-------|
+| Backend tests | ~180 | 317 |
+| Frontend tests | ~120 | 226 |
+| Backend coverage | ~75 % | 90 % |
+| Frontend coverage | ~65 % | 82.6 % |
+
+| # | Improvement | Detail |
+|---|---|---|
+| 1 | Backend coverage 90 % | Comprehensive test expansion across all domain + application modules |
+| 2 | Frontend coverage 82.6 % | New test files for hooks, API layer, and utility modules |
+| 3 | nginx CSP | `Content-Security-Policy` header with `default-src 'self'`, blob/worker support |
+| 4 | CORS tightening | Restricted to configured origins, no wildcard in production |
+| 5 | Routes decomposed | API route files split for maintainability |
+
+---
+
+## Iteration 7 — Modularization (Phase 13)
+
+Monolithic files >500 LOC decomposed into cohesive modules.
+
+| Target | Before | After |
+|--------|--------|-------|
+| `interpretation.py` | 1,398 LOC | `candidate_mining.py` + `confidence_scoring.py` + thin dispatcher |
+| `pdf_extraction.py` | 1,150 LOC | `pdf_extraction_nodeps.py` (878 LOC fallback) + thin dispatcher |
+| `AppWorkspace.tsx` | 4,011 LOC | 5 custom hooks extracted (−49 %) |
+| `extraction_observability.py` | 995 LOC | 4 sub-modules (snapshot, persistence, triage, reporting) |
+| `constants.py` | scattered | Consolidated ~97 lines DRY |
+
+| Metric | Value |
+|--------|-------|
+| PR | #153 |
+| Backend tests | 340+ |
+| Frontend tests | 240+ |
+
+---
+
+## Iteration 8 — Bugs + CI Governance + Refactor Round 3 (Phase 14)
+
+Two-PR strategy: PR A (CI governance) + PR B (refactor + coverage).
+
+### PR A — CI governance (#156)
+
+| # | Improvement | Detail |
+|---|---|---|
+| 1 | PdfViewer hotfix | Accept `ArrayBuffer`, remove fetch indirection (fixed 3 recurring breakages) |
+| 2 | Doc guard CI split | 3 independent CI jobs: parity, sync, brand |
+| 3 | Doc change classifier | Rule/Clarification/Navigation classification with CI integration |
+| 4 | Navigation exemption | Relaxed Clarification mode in `check_doc_test_sync.py` |
+
+### PR B — Refactor + coverage (#157)
+
+| # | Improvement | Detail |
+|---|---|---|
+| 1 | Workspace panel extraction | `UploadPanel`, `StructuredDataPanel`, `PdfViewerPanel` as standalone components |
+| 2 | Hook tests | Unit tests for hooks extracted in Iter 7 |
+| 3 | PdfViewer coverage | 47 % → 65 %+ branch coverage |
+| 4 | documentApi coverage | 67 % → 80 %+ branch coverage |
+| 5 | config.py coverage | 83 % → 90 %+ |
+| 6 | candidate_mining split | 789 LOC → 2 modules < 400 LOC each |
+
+| Metric | Value |
+|--------|-------|
+| Backend tests | 372 (90 % coverage) |
+| Frontend tests | 263 (85 % coverage) |
+| AppWorkspace.tsx | 2,221 LOC (−62 % from original 5,770) |
+| CI jobs | 8 (all green) |
+
+---
+
+## Iteration 9 — E2E Testing + Evaluator Experience Polish (Phase 15)
+
+**PR:** #163 (in progress)  
+**Branch:** `improvement/iteration-9-e2e`
+
+First end-to-end test suite for the application, covering the 4 critical user flows. Added Playwright infrastructure with CI integration.
+
+### E2E test evidence
+
+| Spec | Flow covered | Key assertions |
+|------|-------------|----------------|
+| `app-loads.spec.ts` | App bootstrap | Page loads, sidebar visible, no JS errors |
+| `upload-smoke.spec.ts` | Upload → process | Upload PDF → document appears in sidebar → clickable → center panel reacts |
+| `review-flow.spec.ts` | Review workspace | Select document → PDF viewer renders (toolbar + pages) → structured panel loads |
+| `edit-flow.spec.ts` | Field editing | Open edit dialog → modify value → save → verify API call |
+| `mark-reviewed.spec.ts` | Mark reviewed toggle | Click "Marcar revisado" → verify state change → verify read-only mode |
+
+### CI integration
+
+- New `e2e` job in GitHub Actions: starts Docker stack, runs `npm run test:e2e`, uploads artifacts on failure.
+- Playwright configured: Chromium-only, headless, `baseURL: http://localhost:80`, HTML reporter.
+- `data-testid` attributes added to key components: `review-toggle-btn`, `field-edit-dialog`, `field-edit-input`, `field-edit-save`, `field-edit-cancel`, `field-edit-btn-${id}`.
+
+### Operational improvements (Iter 9)
+
+| Improvement | Detail |
+|---|---|
+| Step completion integrity | 6 new hard rules: NO-BATCH, CI-FIRST-BEFORE-HANDOFF, PLAN-UPDATE-IMMEDIATO, STEP-LOCK, EVIDENCE BLOCK, AUTO-HANDOFF GUARD |
+| EXECUTION_RULES.md | New § "Step completion integrity" with post-mortem origin |
+| 🔒 STEP LOCKED state | Explicit plan state blocking progress until CI green + plan commit |

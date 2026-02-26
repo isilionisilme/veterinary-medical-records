@@ -30,6 +30,7 @@ AI assistant entrypoint. Keep reads minimal and route by intent.
 
 ## Plan execution (`Continúa`)
 - Load: `docs/project/implementation/EXECUTION_RULES.md`.
+- **Step completion integrity:** before any handoff or auto-chain, enforce § "Step completion integrity" (NO-BATCH, CI-FIRST-BEFORE-HANDOFF, PLAN-UPDATE-IMMEDIATO, STEP-LOCK, EVIDENCE BLOCK, AUTO-HANDOFF GUARD).
 - Active plans: `docs/project/implementation/PLAN_*.md`; completed: `docs/project/implementation/completed/`.
 - Read Estado de ejecución and take the first `[ ]` step.
 - If step belongs to another agent: STOP and hand off to the exact required agent with a new chat + active PLAN + `Continúa`.
