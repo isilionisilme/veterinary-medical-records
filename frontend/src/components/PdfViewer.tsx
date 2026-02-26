@@ -104,6 +104,7 @@ export function PdfViewer({
     renderTasksByPageRef.current.clear();
   }
 
+  /* c8 ignore start -- dev-only PDF diagnostics not exercised in jsdom */
   function getNodeId(element: Element | null): string | null {
     if (!element) {
       return null;
@@ -283,6 +284,7 @@ export function PdfViewer({
     console.log(snapshot);
     console.groupEnd();
   }
+  /* c8 ignore stop */
 
   useEffect(() => {
     if (!debugFlags.enabled || !debugFlags.noMotion || typeof document === "undefined") {
