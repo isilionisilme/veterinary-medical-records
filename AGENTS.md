@@ -41,17 +41,22 @@ AI assistant entrypoint. Keep reads minimal and route by intent.
 ## Fallback
 If no intent matches, read `docs/agent_router/00_FALLBACK.md` and ask for clarification.
 
-## Identity check for AI_ITERATIVE_EXECUTION_PLAN.md (hard rule)
-If the user writes `Continúa` and `docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md` is attached:
+## Plan execution (hard rule)
+- Operational rules: load `docs/project/production/EXECUTION_RULES.md`.
+- Active plans in `docs/project/production/PLAN_*.md`.
+- Completed in `docs/project/production/completed/`.
+
+## Identity check for plan execution (hard rule)
+If the user writes `Continúa` and a `docs/project/production/PLAN_*.md` file is attached:
 1. Read Estado de ejecución → find the first `[ ]` step.
 2. If that step belongs to the active agent for this chat: proceed normally following the plan.
 3. If that step belongs to a different agent: STOP. Do not implement anything. Respond EXACTLY with one of these messages:
-  - If the next step is Codex: "⚠️ Este paso no corresponde al agente activo. **STOP.** El siguiente paso es de **GPT-5.3-Codex**. Abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
-  - If the next step is Claude: "⚠️ Este paso no corresponde al agente activo. **STOP.** El siguiente paso es de **Claude Opus 4.6**. Abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
-4. When proceeding with a valid step, enforce the token-efficiency policy from the plan (`iterative-retrieval` before execution and `strategic-compact` at step close).
+  - If the next step is Codex: "⚠️ Este paso no corresponde al agente activo. **STOP.** El siguiente paso es de **GPT-5.3-Codex**. Abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** → adjunta el `PLAN` activo → escribe `Continúa`."
+  - If the next step is Claude: "⚠️ Este paso no corresponde al agente activo. **STOP.** El siguiente paso es de **Claude Opus 4.6**. Abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta el `PLAN` activo → escribe `Continúa`."
+4. When proceeding with a valid step, enforce the token-efficiency policy from `EXECUTION_RULES.md` (`iterative-retrieval` before execution and `strategic-compact` at step close).
 
 ## Mandatory handoff at step close (hard rule)
 When a plan step is completed, ALWAYS end with a "new chat" handoff instruction that names the exact next agent.
 - Never tell the user to continue in the same chat.
-- If next step is Codex, require: open new Copilot chat + choose **GPT-5.3-Codex** + attach `AI_ITERATIVE_EXECUTION_PLAN.md` + write `Continúa`.
-- If next step is Claude, require: open new Copilot chat + choose **Claude Opus 4.6** + attach `AI_ITERATIVE_EXECUTION_PLAN.md` + write `Continúa`.
+- If next step is Codex, require: open new Copilot chat + choose **GPT-5.3-Codex** + attach the active `PLAN` file + write `Continúa`.
+- If next step is Claude, require: open new Copilot chat + choose **Claude Opus 4.6** + attach the active `PLAN` file + write `Continúa`.
