@@ -120,7 +120,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [x] F13-A 🔄 — Consolidar constants.py: migrar ~97 líneas de constantes compartidas (Codex)
 - [x] F13-B 🔄 — Extraer candidate_mining.py de interpretation.py (648+ LOC) (Codex)
 - [x] F13-C 🔄 — Extraer confidence_scoring.py + thin interpretation.py < 400 LOC (Codex)
-- [ ] F13-D 🔄 — Shim compatibility: verificar re-exports en processing_runner.py (Codex)
+- [x] F13-D 🔄 — Shim compatibility: verificar re-exports en processing_runner.py (Codex)
 - [ ] F13-E 🔄 — Extraer pdf_extraction_nodeps.py (~900 LOC fallback sin deps) (Codex)
 - [ ] F13-F 🔄 — Thin dispatcher < 300 LOC + verificar shim pdf_extraction (Codex)
 - [ ] F13-G 🔄 — Extraer hooks de estado: useStructuredDataFilters, useFieldEditing, useUploadState (Codex)
@@ -790,7 +790,7 @@ Below are the 4 architecture ADRs with full arguments, trade-offs, and code evid
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-_Completado: F13-C_
+_Completado: F13-D_
 
 ### Prompt
 
