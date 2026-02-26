@@ -1777,7 +1777,7 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 | **Por qué** | Con la clasificación disponible, `check_doc_test_sync.py` puede ajustar requisitos: Navigation → skip completo, Clarification → solo `owner_any` (sin `required_any`), Rule → full check (status quo). |
 | **Tareas** | 1. En `check_doc_test_sync.py`, al inicio de `main()`, leer `doc_change_classification.json` si existe. 2. Si `overall == "Navigation"` → print mensaje + exit 0. 3. Si `overall == "Clarification"` → set `DOC_SYNC_RELAXED=1` (skip `required_any` checks). 4. Si `overall == "Rule"` o archivo no existe → full validation (status quo). 5. Actualizar `test_impact_map.json` con campo opcional `rule_change_only` para entradas donde solo cambios de regla requieren sync. |
 | **Criterio de aceptación** | PRs con solo Navigation pass `doc_test_sync` sin cambios en tests. PRs con Rule siguen fallando si falta propagación. Clarification requiere owner pero no tests. |
-| **Archivos** | `scripts/check_doc_test_sync.py`, `docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json` |
+| **Archivos** | `scripts/check_doc_test_sync.py`, `test_impact_map.json` |
 | **Ref FUTURE_IMPROVEMENTS** | — |
 
 #### F14-D — Tests unitarios del clasificador + calibración
