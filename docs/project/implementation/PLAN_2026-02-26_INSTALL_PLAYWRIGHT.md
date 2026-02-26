@@ -24,7 +24,7 @@ Focos:
 - [x] P1-B 🔄 — Setup Playwright en `frontend/` (dependencia, config, scripts, fixture) (Codex)
 - [x] P1-C 🔄 — Selectores `data-testid` E2E estables (Codex)
 - [x] P1-D 🔄 — Smoke `app-loads` verde y estable (Codex)
-- [ ] P1-E 🔄 — Smoke `upload` robusto por `document_id` (Codex)
+- [x] P1-E 🔄 — Smoke `upload` robusto por `document_id` (Codex)
 - [ ] P1-F 🔄 — Job `CI / e2e` con artifacts en fallo (Codex)
 - [ ] P1-G 🔄 — Validación técnica: `test:e2e`, `tsc --noEmit`, `eslint .` (Codex)
 - [ ] P1-H 🚧 — Validación manual en headed + checklist funcional mínimo (Usuario/Claude)
@@ -76,11 +76,22 @@ Estas reglas son de cumplimiento estricto para este plan y replican la política
    - Formato: `<tipo>(plan-<id>): <descripción corta>`
    - Ejemplos: `test(plan-p1e): stabilize upload smoke by upload response id`
 
-9. **Handoff obligatorio al cerrar paso (hard rule):**
+9. **Cierre obligatorio por paso (hard rule) — SECUENCIA EXACTA:**
+   Antes de marcar un paso como completado, ejecutar TODOS estos sub-pasos en orden:
+   1. `git add` de los archivos tocados.
+   2. `git commit` con mensaje siguiendo regla 8.
+   3. Actualizar checkbox `[x]` del paso en este plan.
+   4. `git add` del plan actualizado + `git commit -m "docs(plan): mark P?-? complete"`.
+   5. `git push origin improvement/playwright`.
+   6. Registrar evidencia (regla 6).
+   Solo después de los 6 sub-pasos se considera el paso cerrado.
+   **Omitir cualquiera de estos sub-pasos es una violación operativa.**
+
+10. **Handoff obligatorio al cerrar paso (hard rule):**
    - Si el siguiente paso es del **mismo agente** y no es 🚧: anunciar cierre y continuar en el mismo chat.
    - Si el siguiente paso es de **otro agente** o es 🚧: STOP. Abrir chat nuevo + agente exacto + adjuntar este archivo + escribir `Continúa`.
 
-10. **Mensajes de handoff (obligatorios):**
+11. **Mensajes de handoff (obligatorios):**
    - Caso A (siguiente paso otro agente y prompt listo):
      - "✅ P?-? completado. Siguiente: abre un chat nuevo en Copilot → selecciona **[agente]** → adjunta `PLAN_2026-02-26_INSTALL_PLAYWRIGHT.md` → escribe `Continúa`."
    - Caso B (siguiente paso Codex sin prompt listo):
@@ -89,49 +100,53 @@ Estas reglas son de cumplimiento estricto para este plan y replican la política
    - Caso C (siguiente paso Claude/hard-gate):
      - "✅ P?-? completado. Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `PLAN_2026-02-26_INSTALL_PLAYWRIGHT.md` → escribe `Continúa`."
 
-11. **No-review implícito:**
+12. **No-review implícito:**
    - No iniciar code review automáticamente salvo instrucción explícita del usuario.
 
-12. **No implementación fuera de pedido:**
+13. **No implementación fuera de pedido:**
    - Si el objetivo es plan/documentación, no ejecutar implementación técnica en ese turno.
 
-13. **Control de regresión:**
+14. **Control de regresión:**
    - No marcar un paso como completo sin validaciones mínimas definidas para ese paso.
 
-14. **Context safety valve:**
+15. **Context safety valve:**
    - Si el contexto del chat se agota, cerrar paso actual limpiamente y emitir handoff.
 
-15. **Regla de finalización de iteración:**
+16. **Regla de finalización de iteración:**
    - Ningún cierre sin "siguiente acción" concreta.
 
-16. **Prohibición de saltos:**
+17. **Prohibición de saltos:**
    - No saltar hard-gates.
 
 ---
 
 ## Prompt activo
 
-### P1-D — Smoke `app-loads` verde y estable (Codex)
+### P1-D (fix) — Regularizar commits pendientes y reanudar (Codex)
 
-**Objetivo:** Verificar que `app-loads.spec.ts` pasa de forma estable contra el stack Docker en `localhost:80`.
+**Objetivo:** Codex completó P1-D a P1-G sin hacer commit/push individuales. Antes de continuar, regularizar el historial git.
 
 **Instrucciones operativas:**
 
-1. **Branch check:** `git branch --show-current` → debe ser `improvement/playwright`. Si no, STOP.
-2. **Sync check:** `git fetch origin && git pull` (si hay upstream).
-3. **Precondición:** Docker stack corriendo en `localhost:80` (`$env:FRONTEND_PORT='80'; docker compose up -d --build --wait`).
-4. Ejecutar: `cd frontend && npx playwright test e2e/app-loads.spec.ts`
-5. Si falla:
-   - Revisar si es un problema de timing → añadir `await page.waitForLoadState('networkidle')` antes de las assertions si es necesario.
-   - Revisar que los `data-testid` del paso P1-C estén correctamente aplicados.
-   - No aumentar `timeout` global — usar waits explícitos si es necesario.
-6. Ejecutar 3 veces consecutivas para verificar estabilidad (no flaky).
-7. Si ya pasa de forma estable, solo documentar evidencia.
-8. Commit (solo si hay cambios): `test(plan-p1d): stabilize app-loads smoke test`
+1. **Branch check:** `git branch --show-current` → debe ser `improvement/playwright`.
+2. `git status` → listar todos los cambios pendientes.
+3. **Si hay cambios sin commitear:** separarlos en commits atómicos por paso, en orden:
+   - Archivos de P1-D (si tocó algo para `app-loads`): `test(plan-p1d): stabilize app-loads smoke test`
+   - Archivos de P1-E (`upload-smoke.spec.ts`): `test(plan-p1e): stabilize upload smoke by document_id assertion`
+   - Archivos de P1-F (`ci.yml`): `ci(plan-p1f): add e2e job with playwright artifacts on failure`
+   - Archivos de P1-G (fixes de quality gates si los hubo): `fix(plan-p1g): resolve quality gate findings`
+   - Usar `git add <archivos específicos>` + `git commit` por cada grupo.
+4. **Si ya commiteó todo en un solo commit:** reordenar con `git rebase -i` para separar, O documentar como limitación y continuar (no bloquear por esto).
+5. Actualizar checkboxes `[x]` de P1-D a P1-G en este plan si la evidencia local lo valida.
+6. Commit del plan: `docs(plan): mark P1-D through P1-G complete, regularize commits`
+7. `git push origin improvement/playwright`
+8. Verificar que el push fue exitoso.
 
 **Criterio de aceptación:**
-- `npx playwright test e2e/app-loads.spec.ts` pasa 3/3 veces consecutivas.
-- Sin waits arbitrarios (hardcoded sleep).
+- Historial git tiene al menos 1 commit por cada paso completado (P1-D, P1-E, P1-F, P1-G) — o documentación explícita de por qué no fue posible separarlos.
+- `git push` exitoso.
+- Checkboxes actualizados en el plan.
+- Siguiente paso: handoff a P1-H (hard-gate → Claude/Usuario).
 
 ---
 
