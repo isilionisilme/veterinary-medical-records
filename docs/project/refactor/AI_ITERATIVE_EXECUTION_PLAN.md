@@ -131,22 +131,21 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 
 ### Fase 14 — Iteración 8 (Bugs + CI governance + AppWorkspace round 3 + cobertura)
 
-**Bloque 1 — Bugs y CI**
+**PR A — `improvement/iteration-8-ci` (F14-A..F14-E + F14-L)**
 - [x] F14-A 🔄 — Hotfix PdfViewer: aceptar ArrayBuffer, eliminar fetch indirection (Codex) ✅ DONE (Codex, 2026-02-26)
 - [ ] F14-B 🔄 — Separar job `doc_test_sync_guard` en 3 jobs CI independientes (Codex)
 - [ ] F14-C 🔄 — Clasificador de cambios de docs: script + integración CI (Codex)
 - [ ] F14-D 🔄 — Exención Navigation + modo relajado Clarification en `check_doc_test_sync.py` (Codex)
 - [ ] F14-E 🔄 — Tests unitarios del clasificador + calibración (Codex)
-**Bloque 2 — AppWorkspace round 3**
+- [ ] F14-L 🚧 — Smoke test PR A + merge `improvement/iteration-8-ci` → main (Claude)
+**PR B — `improvement/iteration-8-refactor` (F14-F..F14-K + F14-M)**
 - [ ] F14-F 🔄 — Extraer render sections de AppWorkspace.tsx: <UploadPanel>, <ReviewPanel>, <SidebarPanel>, <PdfViewerPanel> (Codex)
 - [ ] F14-G 🔄 — Tests para hooks extraídos en Iter 7: useFieldEditing, useUploadState, useReviewSplitPanel, useDocumentsSidebar, useStructuredDataFilters (Codex)
-**Bloque 3 — Cobertura**
 - [ ] F14-H 🔄 — PdfViewer branch coverage 47%→65%+ (Codex)
 - [ ] F14-I 🔄 — documentApi branch coverage 67%→80%+ (Codex)
 - [ ] F14-J 🔄 — config.py coverage 83%→90%+ (Codex)
-**Bloque 4 — Limpieza y cierre**
 - [ ] F14-K 🔄 — Split candidate_mining.py (789 LOC → 2 módulos < 400 LOC) (Codex)
-- [ ] F14-L 🚧 — FUTURE_IMPROVEMENTS refresh + smoke test + PR → main (Claude)
+- [ ] F14-M 🚧 — FUTURE_IMPROVEMENTS refresh + smoke test PR B + merge → main (Claude)
 
 ---
 
@@ -1750,13 +1749,14 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 > hooks extraídos sin tests propios, candidate_mining.py 789 LOC (>500 guía),
 > coverage gaps en PdfViewer/documentApi/config.py.
 >
-> **Estrategia:** 4 bloques secuenciales. Bloque 1 (bugs+CI) desbloquea testing
-> manual y reduce fricción. Bloque 2 (AppWorkspace) reduce el mayor archivo
-> frontend. Bloque 3 (cobertura) es mecánico. Bloque 4 (limpieza) cierra la
-> iteración. 1 PR única. Ejecución semi-desatendida con Cola de prompts.
+> **Estrategia:** 4 bloques en 2 PRs. PR A (bugs+CI, F14-A..E+L) desbloquea
+> testing manual y reduce fricción CI. PR B (refactor+cobertura, F14-F..K+M)
+> reduce AppWorkspace y cierra gaps de cobertura. Ejecución semi-desatendida
+> con Cola de prompts. PR A se mergea antes de empezar PR B.
 
-**Rama:** `improvement/iteration-8-pr1` desde `main`
-**Agente:** Codex (F14-A..K) · Claude (F14-L)
+**Rama PR A:** `improvement/iteration-8-ci` desde `main`
+**Rama PR B:** `improvement/iteration-8-refactor` desde `main` (tras merge de PR A)
+**Agente:** Codex (F14-A..K) · Claude (F14-L, F14-M)
 **Objetivo:** Fix de PdfViewer, reducir fricción CI docs, AppWorkspace < 1,500 LOC, cerrar gaps de cobertura.
 
 #### F14-A — Hotfix PdfViewer: aceptar ArrayBuffer, eliminar fetch indirection
@@ -1902,7 +1902,20 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 | **Archivos** | `processing/candidate_mining.py`, `processing/date_parsing.py` (nuevo), `processing_runner.py` |
 | **Ref FUTURE_IMPROVEMENTS** | Item modularización |
 
-#### F14-L — FUTURE_IMPROVEMENTS refresh + smoke test + PR → main
+#### F14-L — Smoke test PR A + merge `improvement/iteration-8-ci` → main
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — verificación + merge |
+| **Esfuerzo** | S |
+| **Agente** | Claude |
+| **Por qué** | Gate de calidad para PR A (bugs + CI governance). Mergear antes de empezar PR B para que el refactor se base en main limpio con CI mejorado. |
+| **Tareas** | 1. Smoke: `pytest` → 350+, `npm test` → 241+, lint → 0, CI green. 2. Verificar que un cambio Navigation-only pasa CI sin tests contractuales. 3. Verificar 3 doc jobs separados visibles en CI. 4. DOC_UPDATES normalization pass. 5. Merge PR A → main. 6. Crear rama `improvement/iteration-8-refactor` desde `main` actualizado. |
+| **Criterio de aceptación** | PR A mergeada. CI green con 3 doc jobs separados. Clasificador produce output correcto. Rama PR B creada. |
+| **Archivos** | Todos los modificados en F14-A a F14-E |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
+#### F14-M — FUTURE_IMPROVEMENTS refresh + smoke test PR B + merge → main
 
 | Atributo | Valor |
 |---|---|
@@ -1910,16 +1923,16 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 | **Esfuerzo** | S |
 | **Agente** | Claude |
 | **Por qué** | Gate final de calidad Iteración 8. |
-| **Tareas** | 1. Actualizar FUTURE_IMPROVEMENTS.md con items completados. 2. Smoke: `pytest` → 350+, `npm test` → 250+, lint → 0, CI green. 3. Verificar AppWorkspace < 1,500 LOC. 4. Verificar que un cambio Navigation-only pasa CI sin tests contractuales. 5. DOC_UPDATES normalization pass. 6. Commit + push + PR. |
-| **Criterio de aceptación** | Todos los smoke pasan. CI green con 3 doc jobs separados. AppWorkspace < 1,500 LOC. PR lista para merge. |
-| **Archivos** | `FUTURE_IMPROVEMENTS.md`, todos los modificados en F14-A a F14-K |
+| **Tareas** | 1. Actualizar FUTURE_IMPROVEMENTS.md con items completados. 2. Smoke: `pytest` → 350+, `npm test` → 250+, lint → 0, CI green. 3. Verificar AppWorkspace < 1,500 LOC. 4. DOC_UPDATES normalization pass. 5. Merge PR B → main. |
+| **Criterio de aceptación** | Todos los smoke pasan. AppWorkspace < 1,500 LOC. PR B mergeada. Iteración 8 cerrada. |
+| **Archivos** | `FUTURE_IMPROVEMENTS.md`, todos los modificados en F14-F a F14-K |
 | **Ref FUTURE_IMPROVEMENTS** | Refresh completo |
 
 **Política de la fase — do-not-change:**
 - Contratos HTTP, schemas de respuesta, lógica de negocio, tests existentes (salvo actualización de prop en PdfViewer).
 - Fail-closed mantenido para clasificador de docs: si `doc_change_classification.json` no existe, `check_doc_test_sync.py` aplica validación completa (Rule).
 - AppWorkspace target < 1,500 LOC (stretch: < 1,200). La lógica de UI es densa; no forzar extracciones artificiales.
-- 1 PR única (`improvement/iteration-8-pr1` → `main`).
+- 2 PRs: PR A (`improvement/iteration-8-ci` → `main`), PR B (`improvement/iteration-8-refactor` → `main`). PR A se mergea antes de crear PR B.
 
 ---
 
@@ -2547,3 +2560,4 @@ All tests pass: \`pytest\` (backend) + \`npm test\` (frontend)."
 | Plan de mejoras futuras | `docs/project/FUTURE_IMPROVEMENTS.md` (2/4/8 semanas) |
 | Toolchain completo | Ruff + ESLint + Prettier + pre-commit + coverage reporting |
 
+Secch and Child.
