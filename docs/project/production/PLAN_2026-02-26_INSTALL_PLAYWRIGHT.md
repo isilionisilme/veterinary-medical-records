@@ -21,7 +21,7 @@ Focos:
 
 ### Fase P1 — Integración Playwright E2E
 - [x] P1-A 🔄 — Verificación de estado actual y gap analysis (Codex)
-- [ ] P1-B 🔄 — Setup Playwright en `frontend/` (dependencia, config, scripts, fixture) (Codex)
+- [x] P1-B 🔄 — Setup Playwright en `frontend/` (dependencia, config, scripts, fixture) (Codex)
 - [ ] P1-C 🔄 — Selectores `data-testid` E2E estables (Codex)
 - [ ] P1-D 🔄 — Smoke `app-loads` verde y estable (Codex)
 - [ ] P1-E 🔄 — Smoke `upload` robusto por `document_id` (Codex)
@@ -84,7 +84,8 @@ Estas reglas son de cumplimiento estricto para este plan y replican la política
    - Caso A (siguiente paso otro agente y prompt listo):
      - "✅ P?-? completado. Siguiente: abre un chat nuevo en Copilot → selecciona **[agente]** → adjunta `PLAN_2026-02-26_INSTALL_PLAYWRIGHT.md` → escribe `Continúa`."
    - Caso B (siguiente paso Codex sin prompt listo):
-     - "✅ P?-? completado. No hay prompt pre-escrito para P?-?. Vuelve al chat de **Claude Opus 4.6** y pídele el prompt de P?-?. Luego abre un chat nuevo con **GPT-5.3-Codex**, adjunta el plan y escribe `Continúa`."
+     - Claude **debe escribir el prompt del siguiente paso directamente en la sección "Prompt activo" del plan** antes de emitir el handoff. Nunca dar el prompt solo como texto de chat.
+     - "✅ P?-? completado. Prompt de P?-? escrito en el plan. Siguiente: abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** → adjunta `PLAN_2026-02-26_INSTALL_PLAYWRIGHT.md` → escribe `Continúa`."
    - Caso C (siguiente paso Claude/hard-gate):
      - "✅ P?-? completado. Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `PLAN_2026-02-26_INSTALL_PLAYWRIGHT.md` → escribe `Continúa`."
 
@@ -110,6 +111,18 @@ Estas reglas son de cumplimiento estricto para este plan y replican la política
 
 ## Prompt activo
 
+_Completado: P1-B._
+
+---
+
+## Cola de prompts
+
+### P1-C — Selectores `data-testid` E2E estables (Codex)
+Pendiente de prompt — pedir a Claude cuando P1-B esté completado.
+
+### P1-D — Smoke `app-loads` verde y estable (Codex)
+Pendiente de prompt — pedir a Claude cuando P1-C esté completado.
+
 ### P1-E — Stabilizar `upload-smoke` (Codex)
 Objetivo: hacer el smoke de upload determinístico.
 
@@ -123,15 +136,20 @@ Instrucciones operativas:
 Criterio de aceptación:
 - `cd frontend && npm run test:e2e` en verde local con Docker en `localhost:80`.
 
----
+### P1-F (Codex)
+Endurecer CI `CI / e2e` y artifacts. Pendiente de prompt.
 
-## Cola de prompts
+### P1-G (Codex)
+Ejecutar quality gates y consolidar evidencia. Pendiente de prompt.
 
-- P1-F (Codex): endurecer CI `CI / e2e` y artifacts.
-- P1-G (Codex): ejecutar quality gates y consolidar evidencia.
-- P1-H (Claude/Usuario): validación manual headed.
-- P1-I (Codex): commit + push + PR.
-- P1-J (Claude/Usuario): veredicto final de merge.
+### P1-H (Claude/Usuario)
+Validación manual headed. Pendiente de prompt.
+
+### P1-I (Codex)
+Commit + push + PR. Pendiente de prompt.
+
+### P1-J (Claude/Usuario)
+Veredicto final de merge. Pendiente de prompt.
 
 ---
 
