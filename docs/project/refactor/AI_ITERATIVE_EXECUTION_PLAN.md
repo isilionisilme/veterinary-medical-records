@@ -143,7 +143,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [x] F14-G 🔄 — Tests para hooks extraídos en Iter 7: useFieldEditing, useUploadState, useReviewSplitPanel, useDocumentsSidebar, useStructuredDataFilters (Codex)
 - [x] F14-H 🔄 — PdfViewer branch coverage 47%→65%+ (Codex)
 - [x] F14-I 🔄 — documentApi branch coverage 67%→80%+ (Codex)
-- [ ] F14-J 🔄 — config.py coverage 83%→90%+ (Codex) ⏳ EN PROGRESO (Codex, 2026-02-26)
+- [x] F14-J 🔄 — config.py coverage 83%→90%+ (Codex)
 - [ ] F14-K 🔄 — Split candidate_mining.py (789 LOC → 2 módulos < 400 LOC) (Codex)
 - [ ] F14-M 🚧 — FUTURE_IMPROVEMENTS refresh + smoke test PR B + merge → main (Claude)
 
