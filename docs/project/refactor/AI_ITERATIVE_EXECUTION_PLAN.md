@@ -1953,8 +1953,8 @@ STEP A — Commit code (plan file untouched):
    a. Run: git diff --cached --name-only -- '*.md'
       (checks staged .md files before committing)
    b. If no .md files appear: skip to step 2.
-   c. If .md files appear: load `docs/agent_router/01_WORKFLOW/DOC_UPDATES/00_entry.md`
-      and execute the normalization pass on every changed .md file.
+  c. If .md files appear: execute the DOC_UPDATES normalization pass
+    (per AGENTS.md) on every changed .md file.
    d. If normalization produced changes: git add the normalized files
       (excluding AI_ITERATIVE_EXECUTION_PLAN.md).
 2. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
