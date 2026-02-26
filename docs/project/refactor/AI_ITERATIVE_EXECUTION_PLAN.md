@@ -121,7 +121,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [x] F13-B 🔄 — Extraer candidate_mining.py de interpretation.py (648+ LOC) (Codex)
 - [x] F13-C 🔄 — Extraer confidence_scoring.py + thin interpretation.py < 400 LOC (Codex)
 - [x] F13-D 🔄 — Shim compatibility: verificar re-exports en processing_runner.py (Codex)
-- [ ] F13-E 🔄 — Extraer pdf_extraction_nodeps.py (~900 LOC fallback sin deps) (Codex)
+- [x] F13-E 🔄 — Extraer pdf_extraction_nodeps.py (~900 LOC fallback sin deps) (Codex)
 - [ ] F13-F 🔄 — Thin dispatcher < 300 LOC + verificar shim pdf_extraction (Codex)
 - [ ] F13-G 🔄 — Extraer hooks de estado: useStructuredDataFilters, useFieldEditing, useUploadState (Codex)
 - [ ] F13-H 🔄 — Extraer hooks de UI: useReviewSplitPanel, useDocumentsSidebar (Codex)
@@ -2017,6 +2017,8 @@ Ignore historical/planning sections when deciding the next step.
 **Hard enforcement:** when BOTH conditions are true, DO NOT emit handoff. Continue automatically.
 
 **If EITHER condition fails → HANDOFF (pick the FIRST message that matches):**
+- If next step says "(Codex)":
+  "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
 - If next step says "(Codex)" AND no prompt in Cola AND `### Prompt` in Prompt activo is `_Vacío._`:
   "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`. Claude preparará el prompt just-in-time."
 - If next step says "(Codex)" AND prompt exists in Cola OR Prompt activo:
