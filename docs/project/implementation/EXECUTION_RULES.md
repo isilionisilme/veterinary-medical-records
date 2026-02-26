@@ -6,7 +6,7 @@
 ## File structure
 
 ```
-docs/project/production/
+docs/project/implementation/
 ├── EXECUTION_RULES.md              ← YOU ARE HERE
 ├── IMPLEMENTATION_HISTORY.md       ← Timeline of all iterations
 ├── PLAN_<date>_<slug>.md           ← Active iteration plans
@@ -130,7 +130,7 @@ If a completed step causes an issue not detected by tests:
 ### Next-step message (mandatory — hard rule)
 **On completing a step, the agent ALWAYS tells the user the next move with concrete instructions.** Never finish without saying which agent to use and what to do next. If there is no next step, say "Todos los pasos completados." Reference STEP F of the SCOPE BOUNDARY template.
 
-**Mandatory handoff format:** always "open a new chat" and always with the exact next agent name (**GPT-5.3-Codex** or **Claude Opus 4.6**). Never say "return to this chat".
+**Mandatory handoff format:** when the next step belongs to a **different agent** or is a **🚧 hard-gate**, always "open a new chat" with the exact next agent name (**GPT-5.3-Codex** or **Claude Opus 4.6**). When the next step belongs to the **same agent** and is not a 🚧 hard-gate, the agent announces completion and continues in the same chat (auto-chain). Never say "return to this chat" when a different agent is needed.
 
 ### Token-efficiency policy (mandatory)
 To avoid context explosion between chats and long steps, ALWAYS apply:
@@ -239,14 +239,14 @@ Execute these steps IN THIS EXACT ORDER. Do NOT reorder.
    ```
 1. **DOC NORMALIZATION (conditional — only if .md files were changed):**
    Run `git diff --name-only -- '*.md'`. If .md files appear, execute the DOC_UPDATES normalization pass. Git add normalized files (excluding the plan file).
-2. `git add -A -- . ':!docs/project/production/PLAN_*.md'`
+2. `git add -A -- . ':!docs/project/implementation/PLAN_*.md'`
 3. `git commit -m "<type>(plan-f?-?): <description>\n\nTest proof: <pytest summary> | <npm test summary>"`
    If commit fails: re-run formatters, re-add, retry ONCE. If fails again: STOP.
 
 ### STEP B — Commit plan update (only after code is committed)
 1. Edit the active plan file: change `- [ ] F?-?` to `- [x] F?-?`.
 2. Clean `## Prompt activo`: replace content with `_Completado: F?-?_` / `_Vacío._`
-3. `git add docs/project/production/PLAN_*.md`
+3. `git add docs/project/implementation/PLAN_*.md`
 4. `git commit -m "docs(plan-f?-?): mark step done"`
 
 ### STEP C — Push both commits

@@ -10,7 +10,7 @@ AI assistant entrypoint. Keep reads minimal and route by intent.
 ## Required order
 1) Read `docs/agent_router/00_AUTHORITY.md` first.
 2) Load only the module(s) that match the current intent.
-3) Do not open large docs unless a module explicitly routes to them.
+3) Open large docs only when a module routes to them.
 
 ## Mandatory triggers
 - Starting new work: follow `docs/agent_router/01_WORKFLOW/START_WORK/00_entry.md` (branch-first).
@@ -23,16 +23,10 @@ AI assistant entrypoint. Keep reads minimal and route by intent.
 
 ## Manual trigger only: Code reviews
 - Do not start a review unless explicitly requested.
-- If review seems helpful, propose it and wait.
 
 ## Global rule
 - After modifying docs, run the DOC_UPDATES normalization pass once before finishing.
 - Include a final `How to test` section for user-validatable changes.
-
-## Documentation governance (operational)
-- Prefer `docs/agent_router/*` for discovery.
-- Canonical docs: `docs/project/*`, `docs/shared/*`, `docs/README.md`.
-- Load canonical docs only if explicitly requested, router is missing/ambiguous, or conflict resolution is needed.
 
 ## Mandatory execution policy (hard rule)
 - Run `git`, `gh`, and `npm` with elevation on first attempt.
@@ -42,21 +36,23 @@ AI assistant entrypoint. Keep reads minimal and route by intent.
 If no intent matches, read `docs/agent_router/00_FALLBACK.md` and ask for clarification.
 
 ## Plan execution (hard rule)
-- Operational rules: load `docs/project/production/EXECUTION_RULES.md`.
-- Active plans in `docs/project/production/PLAN_*.md`.
-- Completed in `docs/project/production/completed/`.
+- Operational rules: load `docs/project/implementation/EXECUTION_RULES.md`.
+- Active plans in `docs/project/implementation/PLAN_*.md`.
+- Completed in `docs/project/implementation/completed/`.
 
 ## Identity check for plan execution (hard rule)
-If the user writes `Continúa` and a `docs/project/production/PLAN_*.md` file is attached:
+If the user writes `Continúa` and a `docs/project/implementation/PLAN_*.md` file is attached:
 1. Read Estado de ejecución → find the first `[ ]` step.
-2. If that step belongs to the active agent for this chat: proceed normally following the plan.
+2. If that step belongs to the active agent for this chat: continue with the plan.
 3. If that step belongs to a different agent: STOP. Do not implement anything. Respond EXACTLY with one of these messages:
   - If the next step is Codex: "⚠️ Este paso no corresponde al agente activo. **STOP.** El siguiente paso es de **GPT-5.3-Codex**. Abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** → adjunta el `PLAN` activo → escribe `Continúa`."
   - If the next step is Claude: "⚠️ Este paso no corresponde al agente activo. **STOP.** El siguiente paso es de **Claude Opus 4.6**. Abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta el `PLAN` activo → escribe `Continúa`."
 4. When proceeding with a valid step, enforce the token-efficiency policy from `EXECUTION_RULES.md` (`iterative-retrieval` before execution and `strategic-compact` at step close).
 
 ## Mandatory handoff at step close (hard rule)
-When a plan step is completed, ALWAYS end with a "new chat" handoff instruction that names the exact next agent.
-- Never tell the user to continue in the same chat.
-- If next step is Codex, require: open new Copilot chat + choose **GPT-5.3-Codex** + attach the active `PLAN` file + write `Continúa`.
-- If next step is Claude, require: open new Copilot chat + choose **Claude Opus 4.6** + attach the active `PLAN` file + write `Continúa`.
+When a plan step is completed, identify the agent assigned to the **next** step:
+1. **Same agent as current chat AND not a 🚧 hard-gate** → announce completion and continue in the same chat.
+2. **Different agent** → STOP. End with a "new chat" handoff instruction naming the exact next agent:
+   - If next step is Codex: open new Copilot chat + choose **GPT-5.3-Codex** + attach the active `PLAN` file + write `Continúa`.
+   - If next step is Claude: open new Copilot chat + choose **Claude Opus 4.6** + attach the active `PLAN` file + write `Continúa`.
+3. **🚧 Hard-gate step** → always STOP regardless of agent, because it requires human validation.

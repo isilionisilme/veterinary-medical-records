@@ -77,8 +77,8 @@ Estas reglas son de cumplimiento estricto para este plan y replican la política
    - Ejemplos: `test(plan-p1e): stabilize upload smoke by upload response id`
 
 9. **Handoff obligatorio al cerrar paso (hard rule):**
-   - Nunca pedir continuar en el mismo chat.
-   - Siempre indicar abrir chat nuevo + agente exacto + adjuntar este archivo + escribir `Continúa`.
+   - Si el siguiente paso es del **mismo agente** y no es 🚧: anunciar cierre y continuar en el mismo chat.
+   - Si el siguiente paso es de **otro agente** o es 🚧: STOP. Abrir chat nuevo + agente exacto + adjuntar este archivo + escribir `Continúa`.
 
 10. **Mensajes de handoff (obligatorios):**
    - Caso A (siguiente paso otro agente y prompt listo):

@@ -21,7 +21,7 @@ DOC_UPDATES_TEST_IMPACT_MAP = (
 DOC_UPDATES_ROUTER_PARITY_MAP = (
     REPO_ROOT / "docs" / "agent_router" / "01_WORKFLOW" / "DOC_UPDATES" / "router_parity_map.json"
 )
-EXECUTION_RULES = REPO_ROOT / "docs" / "project" / "production" / "EXECUTION_RULES.md"
+EXECUTION_RULES = REPO_ROOT / "docs" / "project" / "implementation" / "EXECUTION_RULES.md"
 BACKEND_IMPLEMENTATION_ROUTER_ENTRY = (
     REPO_ROOT / "docs" / "agent_router" / "04_PROJECT" / "BACKEND_IMPLEMENTATION" / "00_entry.md"
 )
