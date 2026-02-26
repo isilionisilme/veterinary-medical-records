@@ -1949,20 +1949,18 @@ Save the last summary line of each test run (e.g. "246 passed in 10.63s") — yo
 Execute these steps IN THIS EXACT ORDER. Do NOT reorder.
 
 STEP A — Commit code (plan file untouched):
-1. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
-2. git commit -m "<tipo>(plan-f?-?): <descripción>
+1. DOC NORMALIZATION (conditional — only if .md files were changed):
+   a. Run: git diff --cached --name-only -- '*.md'
+      (checks staged .md files before committing)
+   b. If no .md files appear: skip to step 2.
+   c. If .md files appear: load `docs/agent_router/01_WORKFLOW/DOC_UPDATES/00_entry.md`
+      and execute the normalization pass on every changed .md file.
+   d. If normalization produced changes: git add the normalized files
+      (excluding AI_ITERATIVE_EXECUTION_PLAN.md).
+2. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
+3. git commit -m "<tipo>(plan-f?-?): <descripción>
 
 Test proof: <pytest summary line> | <npm test summary line>"
-
-STEP A.1 — DOC NORMALIZATION (conditional — only if .md files were changed):
-1. Run: git diff --name-only HEAD~1 HEAD -- '*.md'
-2. If no .md files appear: skip to STEP B.
-3. If .md files appear: load `docs/agent_router/01_WORKFLOW/DOC_UPDATES/00_entry.md`
-   and execute the normalization pass on every changed .md file.
-4. If normalization produced changes:
-   git add -A -- '*.md' ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
-   git commit --amend --no-edit
-   (amend into the code commit — keeps the two-commit strategy clean)
 
 STEP B — Commit plan update (only after code is committed):
 1. Edit AI_ITERATIVE_EXECUTION_PLAN.md: change `- [ ] F?-?` to `- [x] F?-?`.
