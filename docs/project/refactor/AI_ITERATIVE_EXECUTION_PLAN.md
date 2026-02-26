@@ -1297,6 +1297,15 @@ Razón: una edición humana accidental (borrar un `[x]`, reformatear una tabla, 
 
 **Razón:** Codex declaró un paso completado con CI rojo. El usuario tuvo que diagnosticar manualmente. Esto no debe repetirse.
 
+### Format-before-commit (mandatory — hard rule)
+**Antes de cada `git commit`, el agente SIEMPRE ejecuta los formateadores del proyecto:**
+1. `cd frontend && npx prettier --write 'src/**/*.{ts,tsx,css}' && cd ..`
+2. `ruff check backend/ --fix --quiet && ruff format backend/ --quiet`
+3. Si el `git commit` falla (pre-commit hook rejects): re-run formatters, re-add, retry ONCE.
+4. Si falla una segunda vez: STOP y reportar al usuario.
+
+**Razón:** Codex Iteration 7 generó código sin formato Prettier → pre-commit hook bloqueó todos los commits → Codex siguió a la siguiente tarea sin commitear → 5 tareas de código quedaron sin commit. No debe repetirse.
+
 ### Next-step message (mandatory — hard rule)
 **Al terminar un paso, el agente SIEMPRE indica al usuario el siguiente movimiento con instrucciones concretas.** Nunca terminar sin decir qué agente usar y qué hacer a continuación. Si no hay siguiente paso, decir "Todos los pasos completados." Referencia: sección "Instrucciones de siguiente paso" y STEP F del template SCOPE BOUNDARY.
 
@@ -1966,9 +1975,14 @@ Save the last summary line of each test run (e.g. "246 passed in 10.63s") — yo
 Execute these steps IN THIS EXACT ORDER. Do NOT reorder.
 
 STEP A — Commit code (plan file untouched):
+0. FORMAT PRE-FLIGHT (mandatory — run BEFORE staging):
+   a. cd frontend && npx prettier --write 'src/**/*.{ts,tsx,css}' && cd ..
+   b. ruff check backend/ --fix --quiet
+   c. ruff format backend/ --quiet
+   This ensures pre-commit hooks will NOT reject the commit.
 1. DOC NORMALIZATION (conditional — only if .md files were changed):
-   a. Run: git diff --cached --name-only -- '*.md'
-      (checks staged .md files before committing)
+   a. Run: git diff --name-only -- '*.md'
+      (checks changed .md files before committing)
    b. If no .md files appear: skip to step 2.
   c. If .md files appear: execute the DOC_UPDATES normalization pass
     (per AGENTS.md) on every changed .md file.
@@ -1976,6 +1990,8 @@ STEP A — Commit code (plan file untouched):
       (excluding AI_ITERATIVE_EXECUTION_PLAN.md).
 2. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
 3. git commit -m "<tipo>(plan-f?-?): <descripción>
+   **If commit fails (exit code ≠ 0):** re-run step 0 (formatters), re-add, retry commit ONCE.
+   If it fails a second time: STOP and report error to user.
 
 Test proof: <pytest summary line> | <npm test summary line>"
 
