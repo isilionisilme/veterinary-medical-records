@@ -127,7 +127,15 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [x] F13-H 🔄 — Extraer hooks de UI: useReviewSplitPanel, useDocumentsSidebar (Codex)
 - [x] F13-I 🔄 — Split extraction_observability.py en 4 módulos < 300 LOC (Codex)
 - [x] F13-J 🔄 — Coverage: PdfViewer 47%→60%+, config.py 83%→90%+, documentApi.ts 67%→80%+ (Codex)
-- [ ] F13-K 🚧 — FUTURE_IMPROVEMENTS refresh + smoke test + PR → main (Claude) ⏳ EN PROGRESO (Claude, 2026-02-26)
+- [x] F13-K 🚧 — FUTURE_IMPROVEMENTS refresh + smoke test + PR → main (Claude) ✅ DONE (Claude, 2026-02-26)
+
+### Fase 14 — Iteración 8 (Gobernanza CI de documentación)
+
+- [ ] F14-A 🔄 — Separar job `doc_test_sync_guard` en 3 jobs CI independientes (Codex)
+- [ ] F14-B 🔄 — Clasificador de cambios de docs: script + integración CI (Codex)
+- [ ] F14-C 🔄 — Exención Navigation + modo relajado Clarification en `check_doc_test_sync.py` (Codex)
+- [ ] F14-D 🔄 — Tests unitarios del clasificador + calibración (Codex)
+- [ ] F14-E 🚧 — Smoke test final + PR → main (Claude)
 
 ---
 
@@ -1707,181 +1715,92 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 - Cada paso es atómico; si F12-I se complica, se puede omitir y la iteración sigue siendo sólida.
 - Si el bump de deps (F12-H) causa breaking changes no triviales, revertir y documentar en FUTURE_IMPROVEMENTS.
 
----
+### Fase 14 — Iteración 8: Gobernanza CI de documentación
 
-### Fase 13 — Iteración 7: Modularización de monolitos + cobertura [ARCHIVADO — NO USAR PARA ROUTING]
+> **Origen:** análisis de fricción en PR #153 (Iteración 7). El job
+> `doc_test_sync_guard` agrupa 3 guardas bajo un nombre único, y
+> `check_doc_test_sync.py` trata todo cambio de docs como contractual.
+> Resultado: cambios editoriales/navegación bloquean CI con requisitos
+> pesados. Métricas de entrada: 350 backend tests (90%), 240 frontend
+> tests, 0 lint, CI green (6/6 jobs).
+>
+> **Estrategia:** 2 fases — Fase A (separar jobs, riesgo cero) y Fase B
+> (clasificador de cambios + exención por tipo). Fail-closed mantenido:
+> si el clasificador no puede determinar el tipo, fallback = Rule.
 
-> **Nota:** esta sección se mantiene como contexto histórico de planificación.
-> Para ejecución/routing, la única fuente de verdad es `## Estado de ejecución`
-> y las reglas de `STEP F — SEMI-UNATTENDED CHAIN CHECK`.
+**Rama:** `improvement/iteration-8-pr1` desde `main`
+**Agente:** Codex (F14-A/B/C/D) · Claude (F14-E)
+**Objetivo:** Reducir fricción CI en docs sin degradar gobernanza.
 
-**Rama PR 1:** `improvement/iteration-7-pr1` desde `main`
-**Rama PR 2:** `improvement/iteration-7-pr2` desde `main` (tras merge de PR 1)
-**Rama PR 3:** `improvement/iteration-7-pr3` desde `main` (tras merge de PR 2)
-**Rama PR 4:** `improvement/iteration-7-pr4` desde `main` (tras merge de PR 3)
-**Agente:** Codex (F13-A/B/C/E/G/I/J) · Claude (F13-D/F/H/K)
-**Objetivo:** Descomponer 4 archivos monolíticos, consolidar constantes DRY, y cerrar gaps de cobertura frontend.
-
-**Evaluación previa (evidencia):**
-- 317 backend tests (90% coverage), 226 frontend tests (82.6% stmts), 0 lint warnings, CI green (6/6 jobs).
-- `interpretation.py` 1,398 LOC (3× guía), `pdf_extraction.py` 1,150 LOC (2×), `AppWorkspace.tsx` 4,011 LOC (8×), `extraction_observability.py` 995 LOC (2×).
-- ~97 líneas de constantes triplicadas en `interpretation.py`, `pdf_extraction.py`, `orchestrator.py`.
-- `constants.py` solo tiene 7 líneas (`_NAME_TOKEN_PATTERN`).
-- `processing_runner.py` es shim de re-exportación; todos los tests importan vía shim.
-
-**Estrategia de PRs (mitigación de riesgo):**
-1. **PR 1 — interpretation.py** (F13-A..D): consolida constants + extrae candidate_mining y confidence_scoring. Menor acoplamiento externo.
-2. **PR 2 — pdf_extraction.py** (F13-E..F): extrae fallback no-deps. Usa constants consolidados de PR 1.
-3. **PR 3 — AppWorkspace.tsx** (F13-G..H): extracción de hooks de estado/UI. Mayor riesgo → base backend estable.
-4. **PR 4 — Suplementario** (F13-I..K): observability split + coverage + docs refresh.
-
-#### F13-A — Consolidar constants.py: migrar constantes compartidas
+#### F14-A — Separar `doc_test_sync_guard` en 3 jobs CI independientes
 
 | Atributo | Valor |
 |---|---|
-| **Riesgo** | Bajo — refactor mecánico de constantes, sin cambio de lógica |
-| **Esfuerzo** | S |
+| **Riesgo** | Ninguno — cambio puramente estructural en CI config |
+| **Esfuerzo** | XS |
 | **Agente** | Codex |
-| **Por qué** | ~97 líneas de constantes (regex de campos, umbrales de confianza, mapeos de secciones, listas de stop-words) están triplicadas en `interpretation.py` (L14-97), `pdf_extraction.py`, y `orchestrator.py`. Violación DRY que complica mantenimiento y es defecto visible para evaluadores. |
-| **Tareas** | 1. Identificar todas las constantes duplicadas entre los 3 archivos. 2. Migrarlas a `processing/constants.py` (que ya tiene `_NAME_TOKEN_PATTERN`). 3. Reemplazar definiciones locales por imports en los 3 archivos. 4. Verificar `pytest` → 317+ passed. |
-| **Criterio de aceptación** | `grep -r` de cada constante migrada muestra 1 definición en `constants.py` y solo imports en los demás. 317+ tests pasan. |
-| **Archivos** | `backend/app/application/processing/constants.py`, `interpretation.py`, `pdf_extraction.py`, `orchestrator.py` |
-| **Ref FUTURE_IMPROVEMENTS** | Item DRY constants |
-
-#### F13-B — Extraer candidate_mining.py de interpretation.py
-
-| Atributo | Valor |
-|---|---|
-| **Riesgo** | Medio — función más grande del codebase (648 LOC), 4 helpers anidados |
-| **Esfuerzo** | M |
-| **Agente** | Codex |
-| **Por qué** | `_mine_interpretation_candidates` (L281-928) representa 46% de interpretation.py. Contiene toda la lógica de extracción de candidatos con 4 helpers anidados. Extraerla reduce interpretation.py de 1,398 a ~750 LOC. |
-| **Tareas** | 1. Crear `processing/candidate_mining.py`. 2. Mover `_mine_interpretation_candidates` + sus helpers + `_extract_date_candidates_with_classification` + funciones auxiliares de parsing. 3. Importar la función desde interpretation.py. 4. Verificar `pytest` → 317+ passed. |
-| **Criterio de aceptación** | `candidate_mining.py` autosuficiente. interpretation.py < 800 LOC. 317+ tests pasan. |
-| **Archivos** | `processing/candidate_mining.py` (nuevo), `processing/interpretation.py` |
-| **Ref FUTURE_IMPROVEMENTS** | Item modularización |
-
-#### F13-C — Extraer confidence_scoring.py + thin interpretation.py
-
-| Atributo | Valor |
-|---|---|
-| **Riesgo** | Bajo — funciones bien delimitadas con interfaces claras |
-| **Esfuerzo** | S |
-| **Agente** | Codex |
-| **Por qué** | Confidence scoring y field assembly (L1108-1399, ~290 LOC) son concern independiente. Extraerlas deja interpretation.py como orquestador thin. |
-| **Tareas** | 1. Crear `processing/confidence_scoring.py`. 2. Mover funciones de scoring + ensamblaje de campos. 3. Dejar interpretation.py como orchestration-only. 4. Verificar `pytest` → 317+ passed. |
-| **Criterio de aceptación** | `confidence_scoring.py` independiente. interpretation.py < 400 LOC. 317+ tests pasan. |
-| **Archivos** | `processing/confidence_scoring.py` (nuevo), `processing/interpretation.py` |
-| **Ref FUTURE_IMPROVEMENTS** | Item modularización |
-
-#### F13-D — Shim compatibility verification
-
-| Atributo | Valor |
-|---|---|
-| **Riesgo** | Bajo — solo verificación/ajuste de re-exports |
-| **Esfuerzo** | S |
-| **Agente** | Codex |
-| **Por qué** | `processing_runner.py` re-exporta símbolos públicos. 6+ test files importan vía shim. Verificar que los nuevos módulos (F13-A..C) están integrados. |
-| **Tareas** | 1. Actualizar `processing_runner.py` para re-exportar desde nuevos módulos si necesario. 2. Verificar imports de tests existentes. 3. `pytest` → 317+ passed. |
-| **Criterio de aceptación** | Shim mantiene API pública intacta. 317+ tests pasan. |
-| **Archivos** | `processing_runner.py` |
+| **Por qué** | El job único `doc_test_sync_guard` ejecuta 3 scripts distintos. Cuando falla, no se ve cuál script causó el fallo. Separar en 3 jobs da diagnóstico inmediato. |
+| **Tareas** | 1. En `.github/workflows/ci.yml`, reemplazar el job `doc_test_sync_guard` por 3 jobs: `doc_canonical_router_guard` (ejecuta `check_no_canonical_router_refs.py`), `doc_test_sync_guard` (ejecuta `check_doc_test_sync.py`), `doc_router_parity_guard` (ejecuta `check_doc_router_parity.py`). 2. Mantener mismo trigger (`pull_request`), misma imagen, mismo setup Python. 3. Verificar que los 3 jobs aparecen en GitHub Actions y producen el mismo resultado que el job unificado. |
+| **Criterio de aceptación** | 3 jobs separados visibles en CI. Mismo resultado pass/fail que antes. Zero cambios en scripts. |
+| **Archivos** | `.github/workflows/ci.yml` |
 | **Ref FUTURE_IMPROVEMENTS** | — |
 
-#### F13-E — Extraer pdf_extraction_nodeps.py (~900 LOC fallback)
+#### F14-B — Clasificador de cambios de docs (`classify_doc_change.py`)
 
 | Atributo | Valor |
 |---|---|
-| **Riesgo** | Medio — parsing PDF bajo nivel, muchos edge cases |
+| **Riesgo** | Bajo — script nuevo, no modifica existentes |
 | **Esfuerzo** | M |
 | **Agente** | Codex |
-| **Por qué** | Estrategia "no-deps" (fallback puro Python) ocupa ~900 LOC. Incluye parser de objetos PDF, tokenizer, font/CMap, text stitching, byte helpers. Autosuficiente. |
-| **Tareas** | 1. Crear `processing/pdf_extraction_nodeps.py`. 2. Mover funciones del fallback no-deps. 3. Dejar pdf_extraction.py como dispatcher < 300 LOC. 4. Verificar `pytest` → 317+ passed. |
-| **Criterio de aceptación** | `pdf_extraction_nodeps.py` autosuficiente. `pdf_extraction.py` < 300 LOC. 317+ tests pasan. |
-| **Archivos** | `processing/pdf_extraction_nodeps.py` (nuevo), `processing/pdf_extraction.py` |
-| **Ref FUTURE_IMPROVEMENTS** | Item modularización |
-
-#### F13-F — Thin dispatcher verification
-
-| Atributo | Valor |
-|---|---|
-| **Riesgo** | Bajo — verificación post-extracción |
-| **Esfuerzo** | S |
-| **Agente** | Codex |
-| **Por qué** | Verificar que pdf_extraction.py es un dispatcher limpio tras F13-E. |
-| **Tareas** | 1. Asegurar pdf_extraction.py usa constants de `constants.py`. 2. Verificar < 300 LOC. 3. Actualizar shim si necesario. 4. `pytest` → 317+. |
-| **Criterio de aceptación** | Dispatcher < 300 LOC. Sin constantes duplicadas. 317+ tests pasan. |
-| **Archivos** | `processing/pdf_extraction.py`, `processing_runner.py` |
+| **Por qué** | Para eximir cambios Navigation/Clarification de requisitos contractuales, primero necesitamos clasificar el tipo de cambio. Heurística conservadora: analiza diff buscando keywords de regla (MUST/SHALL/REQUIRED/threshold/policy); si no encuentra, clasifica como Clarification o Navigation. Fallback = Rule. |
+| **Tareas** | 1. Crear `scripts/classify_doc_change.py` con: detección de `RULE_SIGNALS` (regex conservador), detección de `NAV_PATTERNS` (links, headings, ToC), soporte para tag explícito en commit `[doc:rule]`/`[doc:clar]`/`[doc:nav]`. 2. Output: `doc_change_classification.json` con `{"files": {"path": "type"}, "overall": "Rule|Clarification|Navigation"}`. 3. Integrar como step previo en el job `doc_test_sync_guard` de CI. |
+| **Criterio de aceptación** | Script produce JSON válido. Clasificación correcta para 3 casos de prueba: un diff con MUST (→Rule), un diff solo con links (→Navigation), un diff con rewording (→Clarification). |
+| **Archivos** | `scripts/classify_doc_change.py` (nuevo), `.github/workflows/ci.yml` |
 | **Ref FUTURE_IMPROVEMENTS** | — |
 
-#### F13-G — Extraer hooks de estado: useStructuredDataFilters, useFieldEditing, useUploadState
+#### F14-C — Exención Navigation + modo relajado Clarification
 
 | Atributo | Valor |
 |---|---|
-| **Riesgo** | Medio — AppWorkspace.tsx tiene 42 useState, cambios afectan flujo completo |
+| **Riesgo** | Medio — cambia comportamiento de un guard existente |
 | **Esfuerzo** | M |
 | **Agente** | Codex |
-| **Por qué** | AppWorkspace.tsx (4,011 LOC) tiene 42 useState, 22 useRef, ~30 useMemo. Extraer 3 hooks reduce ~17 state variables. |
-| **Tareas** | 1. Crear `hooks/useStructuredDataFilters.ts` (6 state vars). 2. Crear `hooks/useFieldEditing.ts` (5 state vars + mutation). 3. Crear `hooks/useUploadState.ts` (6 state vars + drag). 4. Reemplazar en AppWorkspace. 5. `npm test` → 226+ passed. |
-| **Criterio de aceptación** | 3 hooks creados. Cada hook ≤150 LOC. AppWorkspace reduced ~300+ LOC. 226+ tests pasan. |
-| **Archivos** | `hooks/useStructuredDataFilters.ts`, `hooks/useFieldEditing.ts`, `hooks/useUploadState.ts` (nuevos), `AppWorkspace.tsx` |
-| **Ref FUTURE_IMPROVEMENTS** | Item AppWorkspace decomposition |
+| **Por qué** | Con la clasificación disponible, `check_doc_test_sync.py` puede ajustar requisitos: Navigation → skip completo, Clarification → solo `owner_any` (sin `required_any`), Rule → full check (status quo). |
+| **Tareas** | 1. En `check_doc_test_sync.py`, al inicio de `main()`, leer `doc_change_classification.json` si existe. 2. Si `overall == "Navigation"` → print mensaje + exit 0. 3. Si `overall == "Clarification"` → set `DOC_SYNC_RELAXED=1` (skip `required_any` checks). 4. Si `overall == "Rule"` o archivo no existe → full validation (status quo). 5. Actualizar `test_impact_map.json` con campo opcional `rule_change_only` para entradas donde solo cambios de regla requieren sync. |
+| **Criterio de aceptación** | PRs con solo Navigation pass `doc_test_sync` sin cambios en tests. PRs con Rule siguen fallando si falta propagación. Clarification requiere owner pero no tests. |
+| **Archivos** | `scripts/check_doc_test_sync.py`, `docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json` |
+| **Ref FUTURE_IMPROVEMENTS** | — |
 
-#### F13-H — Extraer hooks de UI de AppWorkspace
-
-| Atributo | Valor |
-|---|---|
-| **Riesgo** | Medio — hooks de UI interactúan con eventos de puntero y resize |
-| **Esfuerzo** | M |
-| **Agente** | Codex |
-| **Por qué** | Dos hooks de UI restantes para reducir AppWorkspace significativamente. |
-| **Tareas** | 1. Crear `hooks/useReviewSplitPanel.ts` (4 state vars + pointer). 2. Crear `hooks/useDocumentsSidebar.ts` (4 state vars + resize). 3. Reemplazar en AppWorkspace. 4. Verificar < 3,000 LOC. |
-| **Criterio de aceptación** | AppWorkspace < 3,000 LOC. 5 hooks en `hooks/`. 226+ tests pasan. 0 lint. |
-| **Archivos** | `hooks/useReviewSplitPanel.ts`, `hooks/useDocumentsSidebar.ts` (nuevos), `AppWorkspace.tsx` |
-| **Ref FUTURE_IMPROVEMENTS** | Item AppWorkspace decomposition |
-
-#### F13-I — Split extraction_observability.py en módulos
-
-| Atributo | Valor |
-|---|---|
-| **Riesgo** | Bajo — 4 segmentos naturales bien delimitados |
-| **Esfuerzo** | M |
-| **Agente** | Codex |
-| **Por qué** | `extraction_observability.py` (995 LOC) tiene 4 segmentos: snapshot, persistence, triage, reporting. |
-| **Tareas** | 1. Crear `extraction_observability/` package. 2. Mover: snapshot → `snapshot.py`, persistence → `persistence.py`, triage → `triage.py`, summary → `reporting.py`. 3. `__init__.py` re-exporta API pública. 4. Actualizar imports. 5. `pytest` → 317+ passed. |
-| **Criterio de aceptación** | Cada módulo < 300 LOC. API pública sin cambios. 317+ tests pasan. |
-| **Archivos** | `extraction_observability/` (nuevo package), `extraction_observability.py` (eliminado) |
-| **Ref FUTURE_IMPROVEMENTS** | Item modularización |
-
-#### F13-J — Coverage: PdfViewer branch, config.py, documentApi.ts
+#### F14-D — Tests unitarios del clasificador + calibración
 
 | Atributo | Valor |
 |---|---|
 | **Riesgo** | Bajo — tests aditivos |
-| **Esfuerzo** | M |
+| **Esfuerzo** | S |
 | **Agente** | Codex |
-| **Por qué** | 3 archivos con gaps: PdfViewer branch 47%, config.py 83%, documentApi.ts branch 67%. |
-| **Tareas** | 1. PdfViewer: branch coverage → 60%+. 2. config.py: paths alternativos → 90%+. 3. documentApi.ts: error paths → 80%+. |
-| **Criterio de aceptación** | PdfViewer branch ≥60%. config.py ≥90%. documentApi.ts branch ≥80%. Tests verdes. |
-| **Archivos** | `PdfViewer.test.tsx`, `test_config.py`, `documentApi.test.ts` |
-| **Ref FUTURE_IMPROVEMENTS** | Items 4, 12 |
+| **Por qué** | El clasificador es fail-closed pero necesita tests para evitar regresiones. Calibrar contra diffs históricos de las últimas 5 iteraciones. |
+| **Tareas** | 1. Crear `backend/tests/unit/test_classify_doc_change.py` con: test Rule (diff con MUST), test Navigation (diff solo links), test Clarification (rewording), test fallback (sin clasificación → Rule), test commit tag override. 2. Verificar contra 3+ diffs reales de PRs anteriores. |
+| **Criterio de aceptación** | ≥90% coverage del script. 5+ test cases. `pytest` green. |
+| **Archivos** | `backend/tests/unit/test_classify_doc_change.py` (nuevo) |
+| **Ref FUTURE_IMPROVEMENTS** | — |
 
-#### F13-K — FUTURE_IMPROVEMENTS refresh + smoke test + PR → main
+#### F14-E — Smoke test final + PR → main
 
 | Atributo | Valor |
 |---|---|
-| **Riesgo** | Bajo — docs + verificación |
+| **Riesgo** | Bajo — verificación y entrega |
 | **Esfuerzo** | S |
 | **Agente** | Claude |
-| **Por qué** | FUTURE_IMPROVEMENTS tiene items completados sin marcar. Gate final de Iteración 7. |
-| **Tareas** | 1. Actualizar FUTURE_IMPROVEMENTS.md. 2. Eliminar del plan la sección `Fase 13 ... [ARCHIVADO — NO USAR PARA ROUTING]`. 3. Smoke: `pytest` → 317+, `npm test` → 226+, lint → 0, CI green. 4. Commit + push. 5. Actualizar PR #153 con resumen final. |
-| **Criterio de aceptación** | FUTURE_IMPROVEMENTS actualizado, sección F13 archivada eliminada, todos los checks pasan, CI green, PR lista para merge. |
-| **Archivos** | `FUTURE_IMPROVEMENTS.md`, todos los modificados en F13-D..J |
-| **Ref FUTURE_IMPROVEMENTS** | Refresh completo |
+| **Por qué** | Gate final de calidad Iteración 8. |
+| **Tareas** | 1. Smoke: `pytest` → 350+, `npm test` → 240+, lint → 0, CI green. 2. Verificar que un cambio Navigation-only pasa CI sin tests contractuales. 3. Verificar que un cambio Rule falla sin propagación. 4. DOC_UPDATES normalization pass. 5. Commit + push + PR. |
+| **Criterio de aceptación** | Todos los smoke pasan. CI green con 3 doc jobs separados. Clasificador produce output correcto. PR lista para merge. |
+| **Archivos** | Todos los modificados en F14-A a F14-D |
+| **Ref FUTURE_IMPROVEMENTS** | — |
 
 **Política de la fase — do-not-change:**
-- Contratos HTTP, schemas de respuesta, CI pipeline, ADRs.
-- Una sola PR (`#153`): todos los pasos se acumulan en `improvement/iteration-7-pr1`.
-- AppWorkspace target es < 3,000 LOC (stretch: < 2,500; no < 500, la lógica de UI es inherentemente densa).
+- Contratos HTTP, schemas de respuesta, lógica de negocio, tests existentes.
+- Fail-closed mantenido: si `doc_change_classification.json` no existe, `check_doc_test_sync.py` aplica validación completa (Rule).
+- El clasificador NO es la fuente de verdad para gobernanza — es un optimizador de fricción. Los docs siguen requiriendo revisión humana para merges.
 
 ---
 
