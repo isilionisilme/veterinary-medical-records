@@ -32,6 +32,11 @@ AI assistant entrypoint. Keep reads minimal and route by intent.
 - Run `git`, `gh`, and `npm` with elevation on first attempt.
 - If elevation is unavailable, STOP and ask the user.
 
+## Branch protection (hard rule)
+- **NEVER commit or push directly to `main`** unless the user explicitly authorizes it in the current chat.
+- All work goes to feature/iteration branches. Merges to `main` happen only via PR with user approval.
+- If an agent attempts `git push origin main` without explicit authorization: **STOP immediately** and ask for permission.
+
 ## Fallback
 If no intent matches, read `docs/agent_router/00_FALLBACK.md` and ask for clarification.
 
