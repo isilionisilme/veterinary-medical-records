@@ -130,7 +130,7 @@ If a completed step causes an issue not detected by tests:
 ### Next-step message (mandatory — hard rule)
 **On completing a step, the agent ALWAYS tells the user the next move with concrete instructions.** Never finish without saying which agent to use and what to do next. If there is no next step, say "Todos los pasos completados." Reference STEP F of the SCOPE BOUNDARY template.
 
-**Mandatory handoff format:** always "open a new chat" and always with the exact next agent name (**GPT-5.3-Codex** or **Claude Opus 4.6**). Never say "return to this chat".
+**Mandatory handoff format:** when the next step belongs to a **different agent** or is a **🚧 hard-gate**, always "open a new chat" with the exact next agent name (**GPT-5.3-Codex** or **Claude Opus 4.6**). When the next step belongs to the **same agent** and is not a 🚧 hard-gate, the agent announces completion and continues in the same chat (auto-chain). Never say "return to this chat" when a different agent is needed.
 
 ### Token-efficiency policy (mandatory)
 To avoid context explosion between chats and long steps, ALWAYS apply:
