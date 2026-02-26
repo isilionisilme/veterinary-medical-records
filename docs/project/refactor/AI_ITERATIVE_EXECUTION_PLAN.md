@@ -823,7 +823,8 @@ _Vacío._
 > depende del resultado de tareas anteriores. Cada entrada contiene solo la sección
 > `--- TASK ---` específica del paso; el agente la ejecuta envolviéndola en el
 > template estándar (IDENTITY CHECK → BRANCH CHECK → SYNC CHECK → PRE-FLIGHT →
-> TASK → TEST GATE → SCOPE BOUNDARY → CI GATE → CHAIN CHECK).
+> TASK → TEST GATE → SCOPE BOUNDARY → CI GATE → CHAIN CHECK). STEP 0 (branch
+> verification) runs once at the start of each new chat session.
 >
 > **⚠️ AUTO-CHAIN ES OBLIGATORIO:** tras CI verde, si la siguiente tarea es del
 > mismo agente Y tiene prompt aquí → leer ese prompt y ejecutarlo SIN DETENERSE.
@@ -2087,6 +2088,16 @@ Save the last summary line of each test run (e.g. "246 passed in 10.63s") — yo
 --- SCOPE BOUNDARY (two-commit strategy) ---
 Execute these steps IN THIS EXACT ORDER. Do NOT reorder.
 
+STEP 0 — BRANCH VERIFICATION (before any code change):
+1. Read the `**Rama:**` field from the current Fase section in this plan.
+2. Check current branch: `git branch --show-current`
+3. If already on the correct branch: proceed to STEP A.
+4. If not on the correct branch:
+   a. If branch does NOT exist locally or remotely: `git checkout -b <branch> main`
+   b. If branch exists: `git checkout <branch>`
+5. Verify: `git branch --show-current` must match the Rama field.
+   If it does not match: STOP and report to user.
+
 STEP A — Commit code (plan file untouched):
 0. FORMAT PRE-FLIGHT (mandatory — run BEFORE staging):
    a. cd frontend && npx prettier --write 'src/**/*.{ts,tsx,css}' && cd ..
@@ -2159,7 +2170,7 @@ Devolviendo control al usuario."
 
 **AUTO-CHAIN (the default path for Fase 13):**
 Print: "✓ F?-? completado, CI verde. Encadenando → F?-? (semi-desatendido)."
-Read next prompt from `## Cola de prompts`. Execute: PRE-FLIGHT → TASK → TEST GATE → SCOPE BOUNDARY.
+Read next prompt from `## Cola de prompts`. Execute: BRANCH VERIFY → PRE-FLIGHT → TASK → TEST GATE → SCOPE BOUNDARY.
 Repeat this STEP F after completing.
 
 ⚠️ **F13-F through F13-J are ALL Codex + ALL have prompts. AUTO-CHAIN is the ONLY valid path.**
