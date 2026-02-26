@@ -56,7 +56,9 @@ If the user writes `Continúa` and a `docs/project/production/PLAN_*.md` file is
 4. When proceeding with a valid step, enforce the token-efficiency policy from `EXECUTION_RULES.md` (`iterative-retrieval` before execution and `strategic-compact` at step close).
 
 ## Mandatory handoff at step close (hard rule)
-When a plan step is completed, ALWAYS end with a "new chat" handoff instruction that names the exact next agent.
-- Never tell the user to continue in the same chat.
-- If next step is Codex, require: open new Copilot chat + choose **GPT-5.3-Codex** + attach the active `PLAN` file + write `Continúa`.
-- If next step is Claude, require: open new Copilot chat + choose **Claude Opus 4.6** + attach the active `PLAN` file + write `Continúa`.
+When a plan step is completed, identify the agent assigned to the **next** step:
+1. **Same agent as current chat AND not a 🚧 hard-gate** → announce step completion, then proceed to the next step in the same chat. No new chat needed.
+2. **Different agent** → STOP. End with a "new chat" handoff instruction naming the exact next agent:
+   - If next step is Codex: open new Copilot chat + choose **GPT-5.3-Codex** + attach the active `PLAN` file + write `Continúa`.
+   - If next step is Claude: open new Copilot chat + choose **Claude Opus 4.6** + attach the active `PLAN` file + write `Continúa`.
+3. **🚧 Hard-gate step** → always STOP regardless of agent, because it requires human validation.
