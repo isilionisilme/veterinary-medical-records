@@ -133,7 +133,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 
 **PR A — `improvement/iteration-8-ci` (F14-A..F14-E + F14-L)**
 - [x] F14-A 🔄 — Hotfix PdfViewer: aceptar ArrayBuffer, eliminar fetch indirection (Codex) ✅ DONE (Codex, 2026-02-26)
-- [ ] F14-B 🔄 — Separar job `doc_test_sync_guard` en 3 jobs CI independientes (Codex) ⏳ EN PROGRESO (Codex, 2026-02-26 UTC)
+- [x] F14-B 🔄 — Separar job `doc_test_sync_guard` en 3 jobs CI independientes (Codex) ✅ DONE (Codex, 2026-02-26)
 - [ ] F14-C 🔄 — Clasificador de cambios de docs: script + integración CI (Codex)
 - [ ] F14-D 🔄 — Exención Navigation + modo relajado Clarification en `check_doc_test_sync.py` (Codex)
 - [ ] F14-E 🔄 — Tests unitarios del clasificador + calibración (Codex)
