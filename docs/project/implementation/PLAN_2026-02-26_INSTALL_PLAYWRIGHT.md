@@ -23,7 +23,7 @@ Focos:
 - [x] P1-A 🔄 — Verificación de estado actual y gap analysis (Codex)
 - [x] P1-B 🔄 — Setup Playwright en `frontend/` (dependencia, config, scripts, fixture) (Codex)
 - [x] P1-C 🔄 — Selectores `data-testid` E2E estables (Codex)
-- [ ] P1-D 🔄 — Smoke `app-loads` verde y estable (Codex)
+- [x] P1-D 🔄 — Smoke `app-loads` verde y estable (Codex)
 - [ ] P1-E 🔄 — Smoke `upload` robusto por `document_id` (Codex)
 - [ ] P1-F 🔄 — Job `CI / e2e` con artifacts en fallo (Codex)
 - [ ] P1-G 🔄 — Validación técnica: `test:e2e`, `tsc --noEmit`, `eslint .` (Codex)
@@ -111,12 +111,6 @@ Estas reglas son de cumplimiento estricto para este plan y replican la política
 
 ## Prompt activo
 
-_Completado: P1-C._
-
----
-
-## Cola de prompts
-
 ### P1-D — Smoke `app-loads` verde y estable (Codex)
 
 **Objetivo:** Verificar que `app-loads.spec.ts` pasa de forma estable contra el stack Docker en `localhost:80`.
@@ -140,6 +134,8 @@ _Completado: P1-C._
 - Sin waits arbitrarios (hardcoded sleep).
 
 ---
+
+## Cola de prompts
 
 ### P1-E — Stabilizar `upload-smoke` (Codex)
 
