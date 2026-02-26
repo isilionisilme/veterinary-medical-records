@@ -1306,6 +1306,11 @@ Razón: una edición humana accidental (borrar un `[x]`, reformatear una tabla, 
 
 **Razón:** Codex Iteration 7 generó código sin formato Prettier → pre-commit hook bloqueó todos los commits → Codex siguió a la siguiente tarea sin commitear → 5 tareas de código quedaron sin commit. No debe repetirse.
 
+### Iteration boundary (mandatory — hard rule)
+**El auto-chain NUNCA cruza de una Fase/iteración a otra.** Cuando todas las tareas de la Fase actual estén `[x]`, el agente se detiene y devuelve el control al usuario, incluso si la siguiente Fase ya tiene prompts escritos. Iniciar una nueva iteración requiere aprobación explícita del usuario.
+
+**Razón:** Codex Iteration 7 completó F13-K e intentó iniciar F14-A sin autorización. Las iteraciones son unidades de entrega con merge independiente; cruzarlas sin aprobación mezcla alcances y rompe la trazabilidad de PRs.
+
 ### Next-step message (mandatory — hard rule)
 **Al terminar un paso, el agente SIEMPRE indica al usuario el siguiente movimiento con instrucciones concretas.** Nunca terminar sin decir qué agente usar y qué hacer a continuación. Si no hay siguiente paso, decir "Todos los pasos completados." Referencia: sección "Instrucciones de siguiente paso" y STEP F del template SCOPE BOUNDARY.
 
@@ -2026,6 +2031,14 @@ STEP E — CI GATE (mandatory — do NOT skip):
 5. If you cannot fix it after 2 attempts: STOP. Tell the user: "⚠️ CI sigue rojo tras 2 intentos de fix. Necesito ayuda para diagnosticar."
 
 STEP F — CHAIN OR HANDOFF (mandatory):
+
+⚠️ **ITERATION BOUNDARY (hard rule):** Before evaluating auto-chain, check if the
+NEXT unchecked `[ ]` step belongs to the **same Fase/iteration** as the step you
+just completed. If the next step belongs to a DIFFERENT Fase (e.g., you finished
+F13-K and next is F14-A): **STOP. Do NOT auto-chain across iteration boundaries.**
+Report: "✅ Iteración [N] completada. Todas las tareas de Fase [N] están [x].
+Devolviendo control al usuario."
+
 1. Next step = first `[ ]` in Estado de ejecución.
 2. Check: is it YOUR agent? Does `## Cola de prompts` have its prompt?
 
