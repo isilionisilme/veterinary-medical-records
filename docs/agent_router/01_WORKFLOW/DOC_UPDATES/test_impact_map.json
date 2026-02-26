@@ -10,6 +10,7 @@
     {
       "doc_glob": "docs/agent_router/*.md",
       "description": "Root router docs must keep router/doc-updates contract tests aligned.",
+      "rule_change_only": true,
       "owner_any": [
         "docs/agent_router/*.md"
       ],
@@ -22,6 +23,7 @@
     {
       "doc_glob": "docs/agent_router/**/*.md",
       "description": "Router workflow changes must keep router/doc-updates contract tests aligned.",
+      "rule_change_only": true,
       "owner_any": [
         "docs/agent_router/**/*.md"
       ],
@@ -73,6 +75,7 @@
     {
       "doc_glob": "docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md",
       "description": "Project AI_ITERATIVE_EXECUTION_PLAN changes (including appended execution phases through F13, canonical STOP handoff guardrails, token-efficiency policy, and Iteration 7 planning split into 4 PRs / 11 steps) require propagation to its owner module.",
+      "rule_change_only": true,
       "owner_any": [
         "docs/agent_router/04_PROJECT/AI_ITERATIVE_EXECUTION_PLAN/*.md",
         "docs/agent_router/04_PROJECT/AI_ITERATIVE_EXECUTION_PLAN/**/*.md",
