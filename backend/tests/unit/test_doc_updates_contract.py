@@ -314,8 +314,10 @@ def test_ci_does_not_ignore_markdown_only_changes() -> None:
 def test_ai_iterative_plan_doc_updates_maps_track_iteration_7_plan_guardrails() -> None:
     impact_map_text = _read_text(DOC_UPDATES_TEST_IMPACT_MAP)
     parity_map_text = _read_text(DOC_UPDATES_ROUTER_PARITY_MAP)
+    iterative_owner_text = _read_text(AI_ITERATIVE_PLAN_ROUTER_ENTRY)
 
     assert "through F13" in impact_map_text
     assert "4 PRs / 11 steps" in impact_map_text
     assert "router_parity_map.json" in impact_map_text
     assert "Iteration 7" in parity_map_text and "planning updates" in parity_map_text
+    assert "F14-F marked completed" in iterative_owner_text
