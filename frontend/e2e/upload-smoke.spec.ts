@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import { expect, test } from "@playwright/test";
 
+// E2E: full upload flow — upload PDF -> verify sidebar -> verify document is selectable
 test("uploading a PDF adds it to documents sidebar", async ({ page }) => {
   test.setTimeout(90_000);
   const samplePdfPath = "e2e/fixtures/sample.pdf";
@@ -32,7 +33,16 @@ test("uploading a PDF adds it to documents sidebar", async ({ page }) => {
 
   await expect.poll(() => uploadedDocumentId, { timeout: 90_000 }).not.toBeNull();
 
-  await expect(page.getByTestId(`doc-row-${uploadedDocumentId}`)).toBeVisible({
-    timeout: 90_000,
-  });
+  const documentRow = page.getByTestId(`doc-row-${uploadedDocumentId}`);
+  await expect(documentRow).toBeVisible({ timeout: 90_000 });
+
+  await documentRow.click();
+  await expect(
+    page
+      .getByTestId("document-layout-grid")
+      .or(page.getByTestId("review-split-grid")),
+  ).toBeVisible({ timeout: 30_000 });
+
+  // The sidebar may show processing-related statuses (e.g., "Procesando" / "Completado")
+  // depending on environment timing, so we avoid asserting a specific final status here.
 });
