@@ -21,17 +21,7 @@ DOC_UPDATES_TEST_IMPACT_MAP = (
 DOC_UPDATES_ROUTER_PARITY_MAP = (
     REPO_ROOT / "docs" / "agent_router" / "01_WORKFLOW" / "DOC_UPDATES" / "router_parity_map.json"
 )
-AI_ITERATIVE_EXECUTION_PLAN = (
-    REPO_ROOT / "docs" / "project" / "refactor" / "AI_ITERATIVE_EXECUTION_PLAN.md"
-)
-AI_ITERATIVE_PLAN_ROUTER_ENTRY = (
-    REPO_ROOT
-    / "docs"
-    / "agent_router"
-    / "04_PROJECT"
-    / "AI_ITERATIVE_EXECUTION_PLAN"
-    / "00_entry.md"
-)
+EXECUTION_RULES = REPO_ROOT / "docs" / "project" / "production" / "EXECUTION_RULES.md"
 BACKEND_IMPLEMENTATION_ROUTER_ENTRY = (
     REPO_ROOT / "docs" / "agent_router" / "04_PROJECT" / "BACKEND_IMPLEMENTATION" / "00_entry.md"
 )
@@ -94,44 +84,39 @@ def test_identity_handoff_message_is_canonical_and_persistent() -> None:
         '"⚠️ Este paso no corresponde al agente activo. **STOP.** '
         "El siguiente paso es de **GPT-5.3-Codex**. "
         "Abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** "
-        '→ adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."'
+        '→ adjunta el `PLAN` activo → escribe `Continúa`."'
     )
     claude_message = (
         '"⚠️ Este paso no corresponde al agente activo. **STOP.** '
         "El siguiente paso es de **Claude Opus 4.6**. "
         "Abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** "
-        '→ adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."'
+        '→ adjunta el `PLAN` activo → escribe `Continúa`."'
     )
     ambiguous = "selecciona el agente asignado para ese paso"
     same_chat_1 = "Vuelve a Claude (este chat)"
     same_chat_2 = "Vuelve al chat de Claude"
-    # New handoff patterns (3-case system in STEP F)
-    codex_new_chat = "Abre chat nuevo → **[agente]** → adjunta plan → `Continúa`."
-    claude_new_chat = "Abre chat nuevo → **Claude Opus 4.6** → adjunta plan → `Continúa`."
     no_prompt_handoff = "Vuelve al chat de **Claude Opus 4.6** y pídele que escriba el prompt"
     agents_text = _read_text(ROOT_AGENTS)
-    plan_text = _read_text(AI_ITERATIVE_EXECUTION_PLAN)
+    rules_text = _read_text(EXECUTION_RULES)
     assert codex_message in agents_text
     assert claude_message in agents_text
-    assert codex_message in plan_text
-    assert claude_message in plan_text
-    assert codex_new_chat in plan_text
-    assert claude_new_chat in plan_text
-    assert no_prompt_handoff in plan_text
+    assert codex_message in rules_text
+    assert claude_message in rules_text
+    assert no_prompt_handoff in rules_text
     assert ambiguous not in agents_text
-    assert ambiguous not in plan_text
-    assert same_chat_1 not in plan_text
-    assert same_chat_2 not in plan_text
+    assert ambiguous not in rules_text
+    assert same_chat_1 not in rules_text
+    assert same_chat_2 not in rules_text
 
 
 def test_token_efficiency_policy_persists_for_continue_flow() -> None:
     agents_text = _read_text(ROOT_AGENTS)
-    plan_text = _read_text(AI_ITERATIVE_EXECUTION_PLAN)
+    rules_text = _read_text(EXECUTION_RULES)
 
     assert "iterative-retrieval" in agents_text
     assert "strategic-compact" in agents_text
-    assert "iterative-retrieval" in plan_text
-    assert "strategic-compact" in plan_text
+    assert "iterative-retrieval" in rules_text
+    assert "strategic-compact" in rules_text
 
 
 def test_doc_updates_entry_covers_triggers_and_summary_schema() -> None:
@@ -203,7 +188,6 @@ def test_doc_test_sync_map_has_minimum_rules() -> None:
     assert '"fail_on_unmapped_docs": true' in text
     assert '"doc_glob": "docs/agent_router/*.md"' in text
     assert '"doc_glob": "docs/agent_router/**/*.md"' in text
-    assert '"doc_glob": "docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md"' in text
     assert '"doc_glob": "docs/project/refactor/12_FACTOR_AUDIT.md"' in text
     assert '"doc_glob": "docs/shared/ENGINEERING_PLAYBOOK.md"' in text
     assert '"doc_glob": "docs/project/BACKEND_IMPLEMENTATION.md"' in text
@@ -224,7 +208,6 @@ def test_router_parity_map_has_product_design_rule() -> None:
     assert '"required_source_globs"' in text
     assert '"docs/project/*.md"' in text
     assert '"docs/shared/*.md"' in text
-    assert '"source_doc": "docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md"' in text
     assert '"source_doc": "docs/project/refactor/12_FACTOR_AUDIT.md"' in text
     assert '"source_doc": "docs/project/PRODUCT_DESIGN.md"' in text
     assert '"source_doc": "docs/project/TECHNICAL_DESIGN.md"' in text
@@ -236,28 +219,16 @@ def test_router_parity_map_has_product_design_rule() -> None:
     assert '"required_terms"' in text
 
 
-def test_ai_iterative_plan_owner_entry_tracks_phase_9_append_only_update() -> None:
-    text = _read_text(AI_ITERATIVE_PLAN_ROUTER_ENTRY)
-    assert "AI_ITERATIVE_EXECUTION_PLAN — Modules" in text
-    assert "Phase 9 (Iteration 3) appended" in text
-    assert "improvement/refactor-iteration-3" in text
-
-
 def test_owner_entries_track_iteration_4_doc_propagation() -> None:
     backend_text = _read_text(BACKEND_IMPLEMENTATION_ROUTER_ENTRY)
     technical_text = _read_text(TECHNICAL_DESIGN_ROUTER_ENTRY)
-    iterative_text = _read_text(AI_ITERATIVE_PLAN_ROUTER_ENTRY)
     parity_guard_text = _read_text(DOC_ROUTER_PARITY_GUARD)
 
     assert "infra (infrastructure)" in backend_text
     assert "backend/app/infra/" in backend_text
     assert "infra (infrastructure)" in technical_text
     assert "Known Limitations propagation note" in technical_text
-    assert "Phase 10 (Iteration 4)" in iterative_text
-    assert "Phase 11 (Iteration 5)" in iterative_text
-    assert "Phase 12 (Iteration 6)" in iterative_text
     assert "Checked source->router parity against mapped changed docs" in parity_guard_text
-    assert "AI_ITERATIVE_EXECUTION_PLAN updates" in parity_guard_text
 
 
 def test_rules_index_contains_known_mapping_hints() -> None:
@@ -311,13 +282,11 @@ def test_ci_does_not_ignore_markdown_only_changes() -> None:
     assert "check_doc_router_parity.py" in text
 
 
-def test_ai_iterative_plan_doc_updates_maps_track_iteration_7_plan_guardrails() -> None:
-    impact_map_text = _read_text(DOC_UPDATES_TEST_IMPACT_MAP)
-    parity_map_text = _read_text(DOC_UPDATES_ROUTER_PARITY_MAP)
-    iterative_owner_text = _read_text(AI_ITERATIVE_PLAN_ROUTER_ENTRY)
-
-    assert "through F13" in impact_map_text
-    assert "4 PRs / 11 steps" in impact_map_text
-    assert "router_parity_map.json" in impact_map_text
-    assert "Iteration 7" in parity_map_text and "planning updates" in parity_map_text
-    assert "F14-F marked completed" in iterative_owner_text
+def test_execution_rules_exist_and_contain_core_sections() -> None:
+    rules_text = _read_text(EXECUTION_RULES)
+    assert "Semi-unattended execution" in rules_text
+    assert "SCOPE BOUNDARY" in rules_text
+    assert "Plan-edit-last" in rules_text
+    assert "CI GATE" in rules_text
+    assert "AUTO-CHAIN" in rules_text
+    assert "Commit conventions" in rules_text

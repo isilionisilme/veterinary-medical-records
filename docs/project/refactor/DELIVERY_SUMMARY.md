@@ -1,7 +1,7 @@
 # Delivery Summary — `improvement/refactor`
 
 > Quantitative record of what was delivered across 7 phases + Iterations 2 & 3.  
-> Source of truth for execution details: [`AI_ITERATIVE_EXECUTION_PLAN.md`](AI_ITERATIVE_EXECUTION_PLAN.md).
+> Source of truth for execution details: [`IMPLEMENTATION_HISTORY.md`](../production/IMPLEMENTATION_HISTORY.md).
 
 ---
 

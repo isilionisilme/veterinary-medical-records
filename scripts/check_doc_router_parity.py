@@ -180,11 +180,7 @@ def main() -> int:
 
     if findings:
         print("Doc/router parity guard failed.")
-        print(
-            "Checked source->router parity against mapped changed docs "
-            "(including plan-phase propagation such as "
-            "AI_ITERATIVE_EXECUTION_PLAN updates)."
-        )
+        print("Checked source->router parity against mapped changed docs.")
         for finding in findings:
             print(f"- {finding}")
         return 1

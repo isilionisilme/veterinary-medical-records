@@ -7,11 +7,11 @@ This roadmap describes prioritized engineering improvements for the next 2, 4, a
 | # | Improvement | Source | Effort | Risk |
 | --- | --- | --- | --- | --- |
 | 1 | Enable SQLite WAL mode and busy timeout | [ADR-ARCH-0002](adr/ADR-ARCH-0002-sqlite-database.md), [codebase_audit.md](refactor/codebase_audit.md) | S | Low |
-| 2 | Add CI coverage threshold gates | [codebase_audit.md](refactor/codebase_audit.md), [F4-A/F4-B in AI plan](refactor/AI_ITERATIVE_EXECUTION_PLAN.md) | S | Low |
+| 2 | Add CI coverage threshold gates | [codebase_audit.md](refactor/codebase_audit.md), [F4-A/F4-B in history](production/IMPLEMENTATION_HISTORY.md) | S | Low |
 | 3 | Centralize remaining debug env reads in settings | [12_FACTOR_AUDIT.md](refactor/12_FACTOR_AUDIT.md), [ADR-ARCH-0001](adr/ADR-ARCH-0001-modular-monolith.md) | S | Low |
-| 4 | ~~Increase frontend coverage for `lib/utils.ts` error paths~~ **✅ Done (Iteration 8, F14-I)** | [F4-A in AI plan](refactor/AI_ITERATIVE_EXECUTION_PLAN.md) | S | Low |
-| 5 | Increase frontend coverage for AddFieldDialog + source panel hook | [F4-A in AI plan](refactor/AI_ITERATIVE_EXECUTION_PLAN.md) | S | Low |
-| 6 | Add known limitations section in technical design | [F5-A in AI plan](refactor/AI_ITERATIVE_EXECUTION_PLAN.md), [TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) | S | Low |
+| 4 | ~~Increase frontend coverage for `lib/utils.ts` error paths~~ **✅ Done (Iteration 8, F14-I)** | [F4-A in history](production/IMPLEMENTATION_HISTORY.md) | S | Low |
+| 5 | Increase frontend coverage for AddFieldDialog + source panel hook | [F4-A in history](production/IMPLEMENTATION_HISTORY.md) | S | Low |
+| 6 | Add known limitations section in technical design | [F5-A in history](production/IMPLEMENTATION_HISTORY.md), [TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) | S | Low |
 
 1. **SQLite WAL mode + busy timeout PRAGMA.** Update SQLite connection setup to apply `PRAGMA journal_mode=WAL` and `PRAGMA busy_timeout=5000`. This addresses concurrent read/write resilience noted in [ADR-ARCH-0002](adr/ADR-ARCH-0002-sqlite-database.md) and the maintainability audit. **Acceptance criteria:** startup initializes PRAGMAs and concurrent document operations show fewer lock contention failures.
 2. **CI coverage thresholds.** Enforce minimum coverage in backend and frontend quality jobs so regressions fail fast. This closes the audit gap where reporting exists without enforcement. **Acceptance criteria:** CI fails below threshold and passes when suite coverage remains above the configured gates.

@@ -2,7 +2,7 @@
 
 > Late-stage evaluator-perspective review.
 > Date: 2026-02-24
-> Context: All 7 phases of `AI_ITERATIVE_EXECUTION_PLAN.md` completed. Goal: maximize evaluator outcome with minimal additional risk.
+> Context: All 7 initial phases completed (see [`IMPLEMENTATION_HISTORY.md`](../production/IMPLEMENTATION_HISTORY.md)). Goal: maximize evaluator outcome with minimal additional risk.
 
 ---
 
