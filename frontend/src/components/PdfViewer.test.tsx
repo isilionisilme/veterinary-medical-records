@@ -85,6 +85,14 @@ describe("PdfViewer", () => {
     vi.restoreAllMocks();
   });
 
+  it("sets GlobalWorkerOptions.workerSrc at module level", () => {
+    // pdfjs-dist v4 requires workerSrc before any getDocument() call.
+    // Without it, PDFWorker.workerSrc getter throws synchronously and
+    // the PDF silently fails to render. This guard catches regressions
+    // if the import or assignment is accidentally removed.
+    expect(pdfjsLib.GlobalWorkerOptions.workerSrc).toBeTruthy();
+  });
+
   it("renders all pages in a continuous scroll", async () => {
     render(<PdfViewer fileUrl="blob://sample" filename="record.pdf" />);
 

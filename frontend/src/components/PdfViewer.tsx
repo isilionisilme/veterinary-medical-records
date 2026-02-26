@@ -369,8 +369,11 @@ export function PdfViewer({
         setPdfDoc(doc);
         setTotalPages(doc.numPages);
         setPageNumber(1);
-      } catch (_err) {
+      } catch (err) {
         if (!cancelled) {
+          if (import.meta.env.DEV) {
+            console.error("[PdfViewer] loadPdf failed:", err);
+          }
           setError("No pudimos cargar el PDF.");
         }
       } finally {
