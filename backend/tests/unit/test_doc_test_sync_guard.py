@@ -124,7 +124,7 @@ def test_evaluate_sync_ignores_unmapped_doc_outside_required_scope() -> None:
 def test_evaluate_sync_excludes_doc_matching_required_and_excluded_globs() -> None:
     module = _load_guard_module()
     findings = module.evaluate_sync(
-        changed_files=["docs/project/production/PLAN_X.md"],
+        changed_files=["docs/project/implementation/PLAN_X.md"],
         rules=[
             {
                 "doc_glob": "docs/shared/BRAND_GUIDELINES.md",
@@ -133,7 +133,7 @@ def test_evaluate_sync_excludes_doc_matching_required_and_excluded_globs() -> No
         ],
         fail_on_unmapped_docs=True,
         required_doc_globs=["docs/project/**/*.md"],
-        exclude_doc_globs=["docs/project/production/**"],
+        exclude_doc_globs=["docs/project/implementation/**"],
     )
     assert findings == []
 

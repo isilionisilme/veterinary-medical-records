@@ -6,7 +6,7 @@
 ## File structure
 
 ```
-docs/project/production/
+docs/project/implementation/
 ├── EXECUTION_RULES.md              ← YOU ARE HERE
 ├── IMPLEMENTATION_HISTORY.md       ← Timeline of all iterations
 ├── PLAN_<date>_<slug>.md           ← Active iteration plans
@@ -239,14 +239,14 @@ Execute these steps IN THIS EXACT ORDER. Do NOT reorder.
    ```
 1. **DOC NORMALIZATION (conditional — only if .md files were changed):**
    Run `git diff --name-only -- '*.md'`. If .md files appear, execute the DOC_UPDATES normalization pass. Git add normalized files (excluding the plan file).
-2. `git add -A -- . ':!docs/project/production/PLAN_*.md'`
+2. `git add -A -- . ':!docs/project/implementation/PLAN_*.md'`
 3. `git commit -m "<type>(plan-f?-?): <description>\n\nTest proof: <pytest summary> | <npm test summary>"`
    If commit fails: re-run formatters, re-add, retry ONCE. If fails again: STOP.
 
 ### STEP B — Commit plan update (only after code is committed)
 1. Edit the active plan file: change `- [ ] F?-?` to `- [x] F?-?`.
 2. Clean `## Prompt activo`: replace content with `_Completado: F?-?_` / `_Vacío._`
-3. `git add docs/project/production/PLAN_*.md`
+3. `git add docs/project/implementation/PLAN_*.md`
 4. `git commit -m "docs(plan-f?-?): mark step done"`
 
 ### STEP C — Push both commits
