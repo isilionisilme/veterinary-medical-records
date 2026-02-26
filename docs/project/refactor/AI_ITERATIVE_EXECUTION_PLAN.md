@@ -1622,7 +1622,11 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 
 ---
 
-### Fase 13 — Iteración 7: Modularización de monolitos + cobertura
+### Fase 13 — Iteración 7: Modularización de monolitos + cobertura [ARCHIVADO — NO USAR PARA ROUTING]
+
+> **Nota:** esta sección se mantiene como contexto histórico de planificación.
+> Para ejecución/routing, la única fuente de verdad es `## Estado de ejecución`
+> y las reglas de `STEP F — SEMI-UNATTENDED CHAIN CHECK`.
 
 **Rama PR 1:** `improvement/iteration-7-pr1` desde `main`
 **Rama PR 2:** `improvement/iteration-7-pr2` desde `main` (tras merge de PR 1)
@@ -1995,6 +1999,11 @@ STEP E — CI GATE (mandatory — do NOT skip):
 STEP F — SEMI-UNATTENDED CHAIN CHECK (mandatory — replaces old STEP F):
 Look at the Estado de ejecución. Find the next `[ ]` step after the one you just completed.
 
+**Routing authority (hard rule):** use ONLY:
+1. The checklist in `## Estado de ejecución` (first `[ ]`), and
+2. Prompt resolution rules (`## Cola de prompts` → `## Prompt activo`).
+Ignore historical/planning sections when deciding the next step.
+
 **Check ALL of these conditions:**
 1. The next step is assigned to the **same agent** as you (Codex checks for 🔄 Codex steps).
 2. A prompt for that step exists in `## Cola de prompts`.
@@ -2005,11 +2014,13 @@ Look at the Estado de ejecución. Find the next `[ ]` step after the one you jus
 - Execute it from the beginning (PRE-FLIGHT → TASK → TEST GATE → SCOPE BOUNDARY).
 - After completing, repeat this STEP F evaluation for the step after that.
 
+**Hard enforcement:** when BOTH conditions are true, DO NOT emit handoff. Continue automatically.
+
 **If EITHER condition fails → HANDOFF (pick the FIRST message that matches):**
 - If next step says "(Codex)" AND no prompt in Cola AND `### Prompt` in Prompt activo is `_Vacío._`:
   "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`. Claude preparará el prompt just-in-time."
 - If next step says "(Codex)" AND prompt exists in Cola OR Prompt activo:
-  "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
+  "⚠️ Inconsistencia detectada: había prompt y mismo agente, por lo que debía auto-encadenar. Reintentando STEP F en este mismo chat."
 - If next step says "(Claude)":
   "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
 - If no more steps remain:
