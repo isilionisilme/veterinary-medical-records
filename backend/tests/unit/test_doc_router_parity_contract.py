@@ -123,7 +123,7 @@ def test_evaluate_parity_fails_on_unmapped_required_source() -> None:
 def test_evaluate_parity_excludes_source_matching_required_and_excluded_globs() -> None:
     evaluate_parity = _load_evaluate_parity()
     findings = evaluate_parity(
-        changed_files=["docs/project/production/PLAN_X.md"],
+        changed_files=["docs/project/implementation/PLAN_X.md"],
         rules=[
             {
                 "source_doc": "docs/project/PRODUCT_DESIGN.md",
@@ -138,6 +138,6 @@ def test_evaluate_parity_excludes_source_matching_required_and_excluded_globs() 
         repo_root=REPO_ROOT,
         fail_on_unmapped_sources=True,
         required_source_globs=["docs/project/**/*.md"],
-        exclude_source_globs=["docs/project/production/**"],
+        exclude_source_globs=["docs/project/implementation/**"],
     )
     assert findings == []

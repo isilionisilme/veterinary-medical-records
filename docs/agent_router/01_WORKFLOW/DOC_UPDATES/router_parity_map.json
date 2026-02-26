@@ -5,8 +5,8 @@
     "docs/shared/*.md"
   ],
   "exclude_source_globs": [
-    "docs/project/production/*",
-    "docs/project/production/**/*"
+    "docs/project/implementation/*",
+    "docs/project/implementation/**/*"
   ],
   "rules": [
     {

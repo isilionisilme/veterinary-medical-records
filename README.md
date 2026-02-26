@@ -131,7 +131,7 @@ Shared UX principles referenced by project UX design.
 - **Delivery summary (start here):** [`docs/project/refactor/DELIVERY_SUMMARY.md`](docs/project/refactor/DELIVERY_SUMMARY.md)
 - 12-factor architecture audit: [`docs/project/refactor/12_FACTOR_AUDIT.md`](docs/project/refactor/12_FACTOR_AUDIT.md)
 - Maintainability/codebase audit: [`docs/project/refactor/codebase_audit.md`](docs/project/refactor/codebase_audit.md)
-- Iterative execution log and decisions: [`docs/project/production/IMPLEMENTATION_HISTORY.md`](docs/project/production/IMPLEMENTATION_HISTORY.md)
+- Iterative execution log and decisions: [`docs/project/implementation/IMPLEMENTATION_HISTORY.md`](docs/project/implementation/IMPLEMENTATION_HISTORY.md)
 - Future roadmap (2/4/8 weeks): [`docs/project/FUTURE_IMPROVEMENTS.md`](docs/project/FUTURE_IMPROVEMENTS.md)
 - Project ADR index: [`docs/project/adr/README.md`](docs/project/adr/README.md)
 

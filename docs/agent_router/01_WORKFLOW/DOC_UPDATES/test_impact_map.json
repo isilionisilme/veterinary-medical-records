@@ -7,8 +7,8 @@
     "docs/shared/**/*.md"
   ],
   "exclude_doc_globs": [
-    "docs/project/production/*",
-    "docs/project/production/**/*"
+    "docs/project/implementation/*",
+    "docs/project/implementation/**/*"
   ],
   "rules": [
     {

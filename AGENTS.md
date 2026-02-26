@@ -42,12 +42,12 @@ AI assistant entrypoint. Keep reads minimal and route by intent.
 If no intent matches, read `docs/agent_router/00_FALLBACK.md` and ask for clarification.
 
 ## Plan execution (hard rule)
-- Operational rules: load `docs/project/production/EXECUTION_RULES.md`.
-- Active plans in `docs/project/production/PLAN_*.md`.
-- Completed in `docs/project/production/completed/`.
+- Operational rules: load `docs/project/implementation/EXECUTION_RULES.md`.
+- Active plans in `docs/project/implementation/PLAN_*.md`.
+- Completed in `docs/project/implementation/completed/`.
 
 ## Identity check for plan execution (hard rule)
-If the user writes `Continúa` and a `docs/project/production/PLAN_*.md` file is attached:
+If the user writes `Continúa` and a `docs/project/implementation/PLAN_*.md` file is attached:
 1. Read Estado de ejecución → find the first `[ ]` step.
 2. If that step belongs to the active agent for this chat: proceed normally following the plan.
 3. If that step belongs to a different agent: STOP. Do not implement anything. Respond EXACTLY with one of these messages:
