@@ -4,21 +4,13 @@
     "docs/project/*.md",
     "docs/shared/*.md"
   ],
+  "exclude_source_globs": [
+    "docs/project/production/*",
+    "docs/project/production/**/*"
+  ],
   "rules": [
     {
-      "source_doc": "docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md",
-      "description": "Project AI_ITERATIVE_EXECUTION_PLAN must map to project owner entry module and stay aligned with Iteration 7/8 planning updates (including F14 status progression).",
-      "router_modules": [
-        {
-          "path": "docs/agent_router/04_PROJECT/AI_ITERATIVE_EXECUTION_PLAN/00_entry.md",
-          "required_terms": [
-            "AI_ITERATIVE_EXECUTION_PLAN — Modules",
-            "F2-D"
-          ]
-        }
-      ]
-    },
-    {
+
       "source_doc": "docs/project/FUTURE_IMPROVEMENTS.md",
       "description": "Project FUTURE_IMPROVEMENTS must map to project owner entry module.",
       "router_modules": [

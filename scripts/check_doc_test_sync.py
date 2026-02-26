@@ -81,6 +81,7 @@ def evaluate_sync(
     rules: list[dict[str, object]],
     fail_on_unmapped_docs: bool,
     required_doc_globs: list[str] | None = None,
+    exclude_doc_globs: list[str] | None = None,
 ) -> list[str]:
     changed_docs = [
         path for path in changed_files if path.startswith("docs/") and path.endswith(".md")
@@ -97,8 +98,13 @@ def evaluate_sync(
         if isinstance(pattern, str) and pattern.strip()
     ]
 
+    _excludes = exclude_doc_globs or []
     if fail_on_unmapped_docs and normalized_required_globs:
-        scoped_docs = [doc for doc in changed_docs if _matches_any(doc, normalized_required_globs)]
+        scoped_docs = [
+            doc
+            for doc in changed_docs
+            if _matches_any(doc, normalized_required_globs) and not _matches_any(doc, _excludes)
+        ]
     else:
         scoped_docs = []
     relaxed_mode = os.environ.get("DOC_SYNC_RELAXED") == "1"
@@ -227,11 +233,18 @@ def main() -> int:
             os.environ["DOC_SYNC_RELAXED"] = "1"
 
     required_doc_globs = [str(item).strip() for item in required_doc_globs_raw if str(item).strip()]
+    exclude_doc_globs_raw = config.get("exclude_doc_globs", [])
+    exclude_doc_globs = (
+        [str(item).strip() for item in exclude_doc_globs_raw if str(item).strip()]
+        if isinstance(exclude_doc_globs_raw, list)
+        else []
+    )
     findings = evaluate_sync(
         changed_files,
         rules,
         fail_on_unmapped_docs,
         required_doc_globs=required_doc_globs,
+        exclude_doc_globs=exclude_doc_globs,
     )
 
     if findings:

@@ -59,7 +59,7 @@ Classification rule:
 - [`docs/project/refactor/DELIVERY_SUMMARY.md`](project/refactor/DELIVERY_SUMMARY.md) — quantitative summary of what was delivered (start here for the delta).
 - [`docs/project/refactor/12_FACTOR_AUDIT.md`](project/refactor/12_FACTOR_AUDIT.md) — architecture and deployment-factor audit findings.
 - [`docs/project/refactor/codebase_audit.md`](project/refactor/codebase_audit.md) — maintainability and structural quality audit findings.
-- [`docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md`](project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md) — phase-by-phase execution log and decisions.
+- [`docs/project/production/IMPLEMENTATION_HISTORY.md`](project/production/IMPLEMENTATION_HISTORY.md) — iterative improvement timeline and execution log.
 - [`docs/project/FUTURE_IMPROVEMENTS.md`](project/FUTURE_IMPROVEMENTS.md) — forward roadmap derived from audits and ADRs.
 - [`docs/project/adr/README.md`](project/adr/README.md) — architecture ADR index.
 

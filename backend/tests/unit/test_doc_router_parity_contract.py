@@ -118,3 +118,26 @@ def test_evaluate_parity_fails_on_unmapped_required_source() -> None:
     )
     assert len(findings) == 1
     assert "missing Source→Router parity mapping" in findings[0]
+
+
+def test_evaluate_parity_excludes_source_matching_required_and_excluded_globs() -> None:
+    evaluate_parity = _load_evaluate_parity()
+    findings = evaluate_parity(
+        changed_files=["docs/project/production/PLAN_X.md"],
+        rules=[
+            {
+                "source_doc": "docs/project/PRODUCT_DESIGN.md",
+                "router_modules": [
+                    {
+                        "path": "docs/agent_router/04_PROJECT/PRODUCT_DESIGN/00_entry.md",
+                        "required_terms": ["PRODUCT_DESIGN"],
+                    }
+                ],
+            }
+        ],
+        repo_root=REPO_ROOT,
+        fail_on_unmapped_sources=True,
+        required_source_globs=["docs/project/**/*.md"],
+        exclude_source_globs=["docs/project/production/**"],
+    )
+    assert findings == []
