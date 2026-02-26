@@ -26,11 +26,10 @@ function jsonResponse(payload: unknown, status = 200, headers?: HeadersInit): Re
 describe("documentApi", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:generated-url");
     globalThis.fetch = vi.fn();
   });
 
-  it("fetchOriginalPdf returns blob URL and parsed filename", async () => {
+  it("fetchOriginalPdf returns pdf bytes and parsed filename", async () => {
     vi.mocked(globalThis.fetch).mockResolvedValueOnce(
       new Response(new Blob(["pdf-bytes"]), {
         status: 200,
@@ -40,7 +39,9 @@ describe("documentApi", () => {
 
     const result = await fetchOriginalPdf("doc-1");
 
-    expect(result).toEqual({ url: "blob:generated-url", filename: "record.pdf" });
+    expect(result.filename).toBe("record.pdf");
+    expect(result.data).toBeInstanceOf(ArrayBuffer);
+    expect(result.data.byteLength).toBeGreaterThan(0);
   });
 
   it("fetchOriginalPdf maps network failures to UiError", async () => {

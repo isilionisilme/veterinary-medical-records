@@ -8,7 +8,7 @@ type SourcePanelContentProps = {
   isDesktopForPin: boolean;
   onTogglePin: () => void;
   onClose: () => void;
-  fileUrl: string | null;
+  fileUrl: string | ArrayBuffer | null;
   activeId: string | null;
   filename: string | null;
   focusRequestId: number;

@@ -6,7 +6,7 @@ import { SourcePanelContent } from "./SourcePanelContent";
 vi.mock("../PdfViewer", () => ({
   PdfViewer: (props: {
     documentId?: string | null;
-    fileUrl: string | null;
+    fileUrl: string | ArrayBuffer | null;
     filename?: string | null;
     isDragOver?: boolean;
     focusPage?: number | null;
@@ -16,7 +16,7 @@ vi.mock("../PdfViewer", () => ({
     <div
       data-testid="mock-pdf-viewer"
       data-document-id={props.documentId ?? ""}
-      data-file-url={props.fileUrl ?? ""}
+      data-file-url={typeof props.fileUrl === "string" ? props.fileUrl : ""}
       data-filename={props.filename ?? ""}
       data-focus-page={String(props.focusPage ?? "")}
       data-highlight-snippet={props.highlightSnippet ?? ""}

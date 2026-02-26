@@ -7,7 +7,7 @@
   "rules": [
     {
       "source_doc": "docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md",
-      "description": "Project AI_ITERATIVE_EXECUTION_PLAN must map to project owner entry module and stay aligned with Iteration 7 planning updates.",
+      "description": "Project AI_ITERATIVE_EXECUTION_PLAN must map to project owner entry module and stay aligned with Iteration 7/8 planning updates.",
       "router_modules": [
         {
           "path": "docs/agent_router/04_PROJECT/AI_ITERATIVE_EXECUTION_PLAN/00_entry.md",

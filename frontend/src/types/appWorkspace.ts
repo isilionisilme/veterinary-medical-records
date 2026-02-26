@@ -2,7 +2,7 @@ import type { CandidateSuggestion } from "../extraction/candidateSuggestions";
 import type { ConfidenceBucket } from "../lib/structuredDataFilters";
 
 export type LoadResult = {
-  url: string;
+  data: ArrayBuffer;
   filename: string | null;
 };
 

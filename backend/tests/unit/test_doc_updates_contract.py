@@ -105,14 +105,10 @@ def test_identity_handoff_message_is_canonical_and_persistent() -> None:
     ambiguous = "selecciona el agente asignado para ese paso"
     same_chat_1 = "Vuelve a Claude (este chat)"
     same_chat_2 = "Vuelve al chat de Claude"
-    codex_new_chat = (
-        "Siguiente: abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** "
-        "→ adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
-    )
-    claude_new_chat = (
-        "Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** "
-        "→ adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
-    )
+    # New handoff patterns (3-case system in STEP F)
+    codex_new_chat = "Abre chat nuevo → **[agente]** → adjunta plan → `Continúa`."
+    claude_new_chat = "Abre chat nuevo → **Claude Opus 4.6** → adjunta plan → `Continúa`."
+    no_prompt_handoff = "Vuelve al chat de **Claude Opus 4.6** y pídele que escriba el prompt"
     agents_text = _read_text(ROOT_AGENTS)
     plan_text = _read_text(AI_ITERATIVE_EXECUTION_PLAN)
     assert codex_message in agents_text
@@ -121,6 +117,7 @@ def test_identity_handoff_message_is_canonical_and_persistent() -> None:
     assert claude_message in plan_text
     assert codex_new_chat in plan_text
     assert claude_new_chat in plan_text
+    assert no_prompt_handoff in plan_text
     assert ambiguous not in agents_text
     assert ambiguous not in plan_text
     assert same_chat_1 not in plan_text
@@ -321,4 +318,4 @@ def test_ai_iterative_plan_doc_updates_maps_track_iteration_7_plan_guardrails() 
     assert "through F13" in impact_map_text
     assert "4 PRs / 11 steps" in impact_map_text
     assert "router_parity_map.json" in impact_map_text
-    assert "Iteration 7 planning updates" in parity_map_text
+    assert "Iteration 7" in parity_map_text and "planning updates" in parity_map_text
