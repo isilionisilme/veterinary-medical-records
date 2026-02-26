@@ -129,13 +129,24 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [x] F13-J 🔄 — Coverage: PdfViewer 47%→60%+, config.py 83%→90%+, documentApi.ts 67%→80%+ (Codex)
 - [x] F13-K 🚧 — FUTURE_IMPROVEMENTS refresh + smoke test + PR → main (Claude) ✅ DONE (Claude, 2026-02-26)
 
-### Fase 14 — Iteración 8 (Gobernanza CI de documentación)
+### Fase 14 — Iteración 8 (Bugs + CI governance + AppWorkspace round 3 + cobertura)
 
-- [ ] F14-A 🔄 — Separar job `doc_test_sync_guard` en 3 jobs CI independientes (Codex)
-- [ ] F14-B 🔄 — Clasificador de cambios de docs: script + integración CI (Codex)
-- [ ] F14-C 🔄 — Exención Navigation + modo relajado Clarification en `check_doc_test_sync.py` (Codex)
-- [ ] F14-D 🔄 — Tests unitarios del clasificador + calibración (Codex)
-- [ ] F14-E 🚧 — Smoke test final + PR → main (Claude)
+**Bloque 1 — Bugs y CI**
+- [ ] F14-A 🔄 — Hotfix PdfViewer: aceptar ArrayBuffer, eliminar fetch indirection (Codex)
+- [ ] F14-B 🔄 — Separar job `doc_test_sync_guard` en 3 jobs CI independientes (Codex)
+- [ ] F14-C 🔄 — Clasificador de cambios de docs: script + integración CI (Codex)
+- [ ] F14-D 🔄 — Exención Navigation + modo relajado Clarification en `check_doc_test_sync.py` (Codex)
+- [ ] F14-E 🔄 — Tests unitarios del clasificador + calibración (Codex)
+**Bloque 2 — AppWorkspace round 3**
+- [ ] F14-F 🔄 — Extraer render sections de AppWorkspace.tsx: <UploadPanel>, <ReviewPanel>, <SidebarPanel>, <PdfViewerPanel> (Codex)
+- [ ] F14-G 🔄 — Tests para hooks extraídos en Iter 7: useFieldEditing, useUploadState, useReviewSplitPanel, useDocumentsSidebar, useStructuredDataFilters (Codex)
+**Bloque 3 — Cobertura**
+- [ ] F14-H 🔄 — PdfViewer branch coverage 47%→65%+ (Codex)
+- [ ] F14-I 🔄 — documentApi branch coverage 67%→80%+ (Codex)
+- [ ] F14-J 🔄 — config.py coverage 83%→90%+ (Codex)
+**Bloque 4 — Limpieza y cierre**
+- [ ] F14-K 🔄 — Split candidate_mining.py (789 LOC → 2 módulos < 400 LOC) (Codex)
+- [ ] F14-L 🚧 — FUTURE_IMPROVEMENTS refresh + smoke test + PR → main (Claude)
 
 ---
 
@@ -1729,24 +1740,38 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 - Cada paso es atómico; si F12-I se complica, se puede omitir y la iteración sigue siendo sólida.
 - Si el bump de deps (F12-H) causa breaking changes no triviales, revertir y documentar en FUTURE_IMPROVEMENTS.
 
-### Fase 14 — Iteración 8: Gobernanza CI de documentación
+### Fase 14 — Iteración 8: Bugs + CI governance + AppWorkspace round 3 + cobertura
 
-> **Origen:** análisis de fricción en PR #153 (Iteración 7). El job
-> `doc_test_sync_guard` agrupa 3 guardas bajo un nombre único, y
-> `check_doc_test_sync.py` trata todo cambio de docs como contractual.
-> Resultado: cambios editoriales/navegación bloquean CI con requisitos
-> pesados. Métricas de entrada: 350 backend tests (90%), 240 frontend
-> tests, 0 lint, CI green (6/6 jobs).
+> **Origen:** evaluación post-merge Iteración 7 (Claude, 2026-02-26). Métricas
+> de entrada: 350 backend tests (90%), 240+ frontend tests (~83% stmts), 0 lint,
+> CI green (6/6 jobs). Deuda identificada: PdfViewer ArrayBuffer mismatch (bug
+> activo), `doc_test_sync_guard` monolítico, AppWorkspace aún ~2,800 LOC,
+> hooks extraídos sin tests propios, candidate_mining.py 789 LOC (>500 guía),
+> coverage gaps en PdfViewer/documentApi/config.py.
 >
-> **Estrategia:** 2 fases — Fase A (separar jobs, riesgo cero) y Fase B
-> (clasificador de cambios + exención por tipo). Fail-closed mantenido:
-> si el clasificador no puede determinar el tipo, fallback = Rule.
+> **Estrategia:** 4 bloques secuenciales. Bloque 1 (bugs+CI) desbloquea testing
+> manual y reduce fricción. Bloque 2 (AppWorkspace) reduce el mayor archivo
+> frontend. Bloque 3 (cobertura) es mecánico. Bloque 4 (limpieza) cierra la
+> iteración. 1 PR única. Ejecución semi-desatendida con Cola de prompts.
 
 **Rama:** `improvement/iteration-8-pr1` desde `main`
-**Agente:** Codex (F14-A/B/C/D) · Claude (F14-E)
-**Objetivo:** Reducir fricción CI en docs sin degradar gobernanza.
+**Agente:** Codex (F14-A..K) · Claude (F14-L)
+**Objetivo:** Fix de PdfViewer, reducir fricción CI docs, AppWorkspace < 1,500 LOC, cerrar gaps de cobertura.
 
-#### F14-A — Separar `doc_test_sync_guard` en 3 jobs CI independientes
+#### F14-A — Hotfix PdfViewer: aceptar ArrayBuffer, eliminar fetch indirection
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — cambia la interfaz de un componente, no lógica de negocio |
+| **Esfuerzo** | S |
+| **Agente** | Codex |
+| **Por qué** | `useDocumentDownload` devuelve `ArrayBuffer` (fix de Iter 7), pero `PdfViewer` declara `fileUrl: string` y hace `fetch(fileUrl)` internamente. `AppWorkspace` pasa el ArrayBuffer como `fileUrl` → `fetch(anArrayBuffer)` falla silenciosamente → no se renderiza el PDF ni la toolbar. Bug activo visible para evaluadores. |
+| **Tareas** | 1. `PdfViewer.tsx`: cambiar prop de `fileUrl?: string` a `fileData?: ArrayBuffer`. Eliminar `fetch(fileUrl)` + `resp.arrayBuffer()`. Usar `fileData` directamente: `pdfjs.getDocument({ data: new Uint8Array(fileData), ... })`. Actualizar `useEffect` dependency a `fileData`. Mantener `disableWorker: true` e `isEvalSupported: false`. 2. `AppWorkspace.tsx`: cambiar `<PdfViewer fileUrl={fileUrl}` a `<PdfViewer fileData={downloadQuery.data}`. Eliminar variable intermedia `fileUrl` si ya no se usa. 3. `PdfViewer.test.tsx`: actualizar tests existentes de `fileUrl="..."` a `fileData={new ArrayBuffer(0)}`. Añadir test "no renderiza cuando fileData es undefined". Añadir test "handles fileData change sin stale state" (rerender con nuevo buffer). 4. Buscar cualquier otro archivo que pase `fileUrl` a PdfViewer: `grep -rn "fileUrl" frontend/src/ --include="*.tsx" --include="*.ts"`. 5. `npm test` → 240+ passed. |
+| **Criterio de aceptación** | PDF se renderiza al subir archivo en Docker. Toolbar visible. No hay `fetch(fileUrl)` en PdfViewer. Tests pasan. |
+| **Archivos** | `frontend/src/components/PdfViewer.tsx`, `frontend/src/AppWorkspace.tsx`, `frontend/src/components/PdfViewer.test.tsx` |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
+#### F14-B — Separar `doc_test_sync_guard` en 3 jobs CI independientes
 
 | Atributo | Valor |
 |---|---|
@@ -1759,7 +1784,7 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 | **Archivos** | `.github/workflows/ci.yml` |
 | **Ref FUTURE_IMPROVEMENTS** | — |
 
-#### F14-B — Clasificador de cambios de docs (`classify_doc_change.py`)
+#### F14-C — Clasificador de cambios de docs (`classify_doc_change.py`)
 
 | Atributo | Valor |
 |---|---|
@@ -1772,7 +1797,7 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 | **Archivos** | `scripts/classify_doc_change.py` (nuevo), `.github/workflows/ci.yml` |
 | **Ref FUTURE_IMPROVEMENTS** | — |
 
-#### F14-C — Exención Navigation + modo relajado Clarification
+#### F14-D — Exención Navigation + modo relajado Clarification
 
 | Atributo | Valor |
 |---|---|
@@ -1785,7 +1810,7 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 | **Archivos** | `scripts/check_doc_test_sync.py`, `test_impact_map.json` |
 | **Ref FUTURE_IMPROVEMENTS** | — |
 
-#### F14-D — Tests unitarios del clasificador + calibración
+#### F14-E — Tests unitarios del clasificador + calibración
 
 | Atributo | Valor |
 |---|---|
@@ -1798,23 +1823,102 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 | **Archivos** | `backend/tests/unit/test_classify_doc_change.py` (nuevo) |
 | **Ref FUTURE_IMPROVEMENTS** | — |
 
-#### F14-E — Smoke test final + PR → main
+#### F14-F — Extraer render sections de AppWorkspace.tsx
 
 | Atributo | Valor |
 |---|---|
-| **Riesgo** | Bajo — verificación y entrega |
+| **Riesgo** | Medio — toca el componente principal del frontend, refactor de JSX |
+| **Esfuerzo** | M |
+| **Agente** | Codex |
+| **Por qué** | AppWorkspace.tsx sigue en ~2,800 LOC tras Iter 7 (hooks extraídos pero JSX intacto). Extraer render sections a sub-componentes reduce a <1,500 LOC y mejora mantenibilidad. |
+| **Tareas** | 1. Crear `components/workspace/UploadPanel.tsx` — sección de upload/drag-drop. 2. Crear `components/workspace/ReviewPanel.tsx` — sección de revisión estructurada. 3. Crear `components/workspace/SidebarPanel.tsx` — sidebar de documentos. 4. Crear `components/workspace/PdfViewerPanel.tsx` — wrapper del visor PDF con toolbar. 5. Reemplazar JSX en AppWorkspace con los sub-componentes. 6. AppWorkspace < 1,500 LOC. 7. `npm test` → 240+ passed. 0 lint errors. |
+| **Criterio de aceptación** | AppWorkspace < 1,500 LOC. 4 sub-componentes creados. Cada uno < 400 LOC. 240+ frontend tests pasan. UI visualmente idéntica. |
+| **Archivos** | `frontend/src/AppWorkspace.tsx`, `frontend/src/components/workspace/` (nuevo directorio) |
+| **Ref FUTURE_IMPROVEMENTS** | Item 7b |
+
+#### F14-G — Tests para hooks extraídos en Iter 7
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — tests aditivos |
+| **Esfuerzo** | M |
+| **Agente** | Codex |
+| **Por qué** | Los 5 hooks extraídos en Iter 7 (`useFieldEditing`, `useUploadState`, `useReviewSplitPanel`, `useDocumentsSidebar`, `useStructuredDataFilters`) no tienen tests unitarios propios. Dependen de tests indirectos vía AppWorkspace. |
+| **Tareas** | 1. Crear test file por hook en `frontend/src/hooks/`. 2. Cubrir: estado inicial, transiciones, edge cases, cleanup. 3. Usar `renderHook` de `@testing-library/react`. 4. `npm test` → 250+ passed. |
+| **Criterio de aceptación** | 5 test files creados. ≥80% coverage por hook. 250+ frontend tests pasan. |
+| **Archivos** | `frontend/src/hooks/*.test.ts` (5 nuevos) |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
+#### F14-H — PdfViewer branch coverage 47%→65%+
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — tests aditivos |
+| **Esfuerzo** | S |
+| **Agente** | Codex |
+| **Por qué** | PdfViewer tiene 47% branch coverage. Zoom, error fallback, drag overlay sin cubrir. Nota: canvas/observer APIs no disponibles en jsdom — mock lo posible, skip lo que requiere DOM real. |
+| **Tareas** | 1. Añadir tests para: error states, loading states, zoom controls, page navigation edge cases. 2. Mock de canvas context donde sea posible. 3. Target: branch ≥65%. |
+| **Criterio de aceptación** | PdfViewer branch ≥65%. `npm test` green. |
+| **Archivos** | `frontend/src/components/PdfViewer.test.tsx` |
+| **Ref FUTURE_IMPROVEMENTS** | Item 4 |
+
+#### F14-I — documentApi branch coverage 67%→80%+
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — tests aditivos |
+| **Esfuerzo** | S |
+| **Agente** | Codex |
+| **Por qué** | `documentApi.ts` branch coverage en 67%. Error paths (network errors, HTTP 4xx/5xx, malformed responses) sin cubrir. |
+| **Tareas** | 1. Añadir tests para: network errors, HTTP error codes, validation failures, timeout handling, malformed responses. 2. Mock `fetch`. 3. Target: branch ≥80%. |
+| **Criterio de aceptación** | documentApi branch ≥80%. `npm test` green. |
+| **Archivos** | `frontend/src/api/documentApi.test.ts` |
+| **Ref FUTURE_IMPROVEMENTS** | Item 4 |
+
+#### F14-J — config.py coverage 83%→90%+
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — tests aditivos |
+| **Esfuerzo** | XS |
+| **Agente** | Codex |
+| **Por qué** | `config.py` coverage en 83%. Paths alternativos (missing env vars, invalid values, fallback defaults, edge cases de path resolution) sin cubrir. |
+| **Tareas** | 1. Añadir tests para: missing env vars, invalid values, fallback defaults, edge cases. 2. Target: ≥90%. |
+| **Criterio de aceptación** | config.py ≥90%. `pytest` green. |
+| **Archivos** | `backend/tests/unit/test_config.py` |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
+#### F14-K — Split candidate_mining.py (789 LOC → 2 módulos < 400 LOC)
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Medio — lógica de extracción compleja con helpers anidados |
+| **Esfuerzo** | S |
+| **Agente** | Codex |
+| **Por qué** | `candidate_mining.py` (789 LOC) fue extraído de `interpretation.py` en Iter 7 pero sigue por encima de la guía de 500 LOC. Contiene 2 concerns: mining de candidatos y parsing/normalización de fechas. |
+| **Tareas** | 1. Crear `processing/date_parsing.py` con funciones de extracción y clasificación de fechas (`_extract_date_candidates_with_classification` + helpers). 2. `candidate_mining.py` queda con la función principal + mining helpers. 3. Ambos módulos < 400 LOC. 4. Actualizar imports + `processing_runner.py` shim si necesario. 5. `pytest` → 350+ passed. |
+| **Criterio de aceptación** | Ambos módulos < 400 LOC. API pública sin cambios. 350+ tests pasan. |
+| **Archivos** | `processing/candidate_mining.py`, `processing/date_parsing.py` (nuevo), `processing_runner.py` |
+| **Ref FUTURE_IMPROVEMENTS** | Item modularización |
+
+#### F14-L — FUTURE_IMPROVEMENTS refresh + smoke test + PR → main
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — docs + verificación |
 | **Esfuerzo** | S |
 | **Agente** | Claude |
 | **Por qué** | Gate final de calidad Iteración 8. |
-| **Tareas** | 1. Smoke: `pytest` → 350+, `npm test` → 240+, lint → 0, CI green. 2. Verificar que un cambio Navigation-only pasa CI sin tests contractuales. 3. Verificar que un cambio Rule falla sin propagación. 4. DOC_UPDATES normalization pass. 5. Commit + push + PR. |
-| **Criterio de aceptación** | Todos los smoke pasan. CI green con 3 doc jobs separados. Clasificador produce output correcto. PR lista para merge. |
-| **Archivos** | Todos los modificados en F14-A a F14-D |
-| **Ref FUTURE_IMPROVEMENTS** | — |
+| **Tareas** | 1. Actualizar FUTURE_IMPROVEMENTS.md con items completados. 2. Smoke: `pytest` → 350+, `npm test` → 250+, lint → 0, CI green. 3. Verificar AppWorkspace < 1,500 LOC. 4. Verificar que un cambio Navigation-only pasa CI sin tests contractuales. 5. DOC_UPDATES normalization pass. 6. Commit + push + PR. |
+| **Criterio de aceptación** | Todos los smoke pasan. CI green con 3 doc jobs separados. AppWorkspace < 1,500 LOC. PR lista para merge. |
+| **Archivos** | `FUTURE_IMPROVEMENTS.md`, todos los modificados en F14-A a F14-K |
+| **Ref FUTURE_IMPROVEMENTS** | Refresh completo |
 
 **Política de la fase — do-not-change:**
-- Contratos HTTP, schemas de respuesta, lógica de negocio, tests existentes.
-- Fail-closed mantenido: si `doc_change_classification.json` no existe, `check_doc_test_sync.py` aplica validación completa (Rule).
-- El clasificador NO es la fuente de verdad para gobernanza — es un optimizador de fricción. Los docs siguen requiriendo revisión humana para merges.
+- Contratos HTTP, schemas de respuesta, lógica de negocio, tests existentes (salvo actualización de prop en PdfViewer).
+- Fail-closed mantenido para clasificador de docs: si `doc_change_classification.json` no existe, `check_doc_test_sync.py` aplica validación completa (Rule).
+- AppWorkspace target < 1,500 LOC (stretch: < 1,200). La lógica de UI es densa; no forzar extracciones artificiales.
+- 1 PR única (`improvement/iteration-8-pr1` → `main`).
 
 ---
 
