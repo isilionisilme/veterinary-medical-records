@@ -6,6 +6,30 @@
   ],
   "rules": [
     {
+      "source_doc": "docs/project/refactor/documentation_refactor/DOCS_IMPROVEMENT_PLAN.md",
+      "description": "Documentation refactor plan must map to project docs owner entry module.",
+      "router_modules": [
+        {
+          "path": "docs/agent_router/04_PROJECT/00_entry.md",
+          "required_terms": [
+            "Project Docs (Modules)"
+          ]
+        }
+      ]
+    },
+    {
+      "source_doc": "docs/project/MANUAL_QA_REGRESSION_CHECKLIST.md",
+      "description": "Project MANUAL_QA_REGRESSION_CHECKLIST must map to project docs owner entry module.",
+      "router_modules": [
+        {
+          "path": "docs/agent_router/04_PROJECT/00_entry.md",
+          "required_terms": [
+            "Project Docs (Modules)"
+          ]
+        }
+      ]
+    },
+    {
       "source_doc": "docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md",
       "description": "Project AI_ITERATIVE_EXECUTION_PLAN must map to project owner entry module.",
       "router_modules": [

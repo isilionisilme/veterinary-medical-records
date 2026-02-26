@@ -5,7 +5,7 @@ Audit, restructure, and standardize canonical documentation (`docs/project/*`, `
 
 ## Scope Boundary (strict)
 - **In scope:** canonical human documentation (`docs/project/`, `docs/shared/`, `docs/README.md`).
-- **Out of scope:** `docs/agent_router/*` (agent instructions, not wiki content).
+- **Out of scope:** assistant routing modules (agent instructions, not wiki content).
 - **Exception:** Broken Link Checker (#2) and Terminology Enforcer (#5) can run across wiki + router when explicitly required.
 - **Out of scope:** application code (`backend/`, `frontend/`).
 

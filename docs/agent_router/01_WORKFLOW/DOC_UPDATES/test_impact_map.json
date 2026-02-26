@@ -71,6 +71,25 @@
       ]
     },
     {
+      "doc_glob": "docs/project/MANUAL_QA_REGRESSION_CHECKLIST.md",
+      "description": "Project MANUAL_QA_REGRESSION_CHECKLIST changes require doc-updates guard alignment.",
+      "required_any": [
+        "docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json",
+        "docs/agent_router/01_WORKFLOW/DOC_UPDATES/router_parity_map.json",
+        "scripts/check_doc_test_sync.py",
+        "scripts/check_doc_router_parity.py"
+      ]
+    },
+    {
+      "doc_glob": "docs/project/refactor/documentation_refactor/DOCS_IMPROVEMENT_PLAN.md",
+      "description": "DOCS_IMPROVEMENT_PLAN changes require doc-updates guard alignment for this documentation refactor stream.",
+      "required_any": [
+        "docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json",
+        "scripts/check_doc_test_sync.py",
+        "backend/tests/unit/test_doc_updates_contract.py"
+      ]
+    },
+    {
       "doc_glob": "docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md",
       "description": "Project AI_ITERATIVE_EXECUTION_PLAN changes (including new execution phases like F8/F9+, canonical STOP handoff guardrails, and token-efficiency policy) require propagation to its owner module.",
       "owner_any": [
