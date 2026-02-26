@@ -139,7 +139,7 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [x] F14-E 🔄 — Tests unitarios del clasificador + calibración (Codex) ✅ DONE (Codex, 2026-02-26)
 - [x] F14-L 🚧 — Smoke test PR A + merge `improvement/iteration-8-ci` → main (Claude) ✅ DONE (Claude, 2026-02-27) — PR #156 merged (squash). 372 backend, 241 frontend, 0 lint, 3 doc jobs green, classifier verified, owner module propagated.
 **PR B — `improvement/iteration-8-refactor` (F14-F..F14-K + F14-M)**
-- [ ] F14-F 🔄 — Extraer render sections de AppWorkspace.tsx: <UploadPanel>, <ReviewPanel>, <SidebarPanel>, <PdfViewerPanel> (Codex)
+- [ ] F14-F 🔄 — Extraer render sections de AppWorkspace.tsx: <UploadPanel>, <ReviewPanel>, <SidebarPanel>, <PdfViewerPanel> (Codex) ⏳ EN PROGRESO (Codex, 2026-02-26)
 - [ ] F14-G 🔄 — Tests para hooks extraídos en Iter 7: useFieldEditing, useUploadState, useReviewSplitPanel, useDocumentsSidebar, useStructuredDataFilters (Codex)
 - [ ] F14-H 🔄 — PdfViewer branch coverage 47%→65%+ (Codex)
 - [ ] F14-I 🔄 — documentApi branch coverage 67%→80%+ (Codex)
