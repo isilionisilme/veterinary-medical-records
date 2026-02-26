@@ -804,7 +804,12 @@ _Vacío._
 > depende del resultado de tareas anteriores. Cada entrada contiene solo la sección
 > `--- TASK ---` específica del paso; el agente la ejecuta envolviéndola en el
 > template estándar (IDENTITY CHECK → BRANCH CHECK → SYNC CHECK → PRE-FLIGHT →
-> TASK → TEST GATE → SCOPE BOUNDARY → CI GATE → SEMI-UNATTENDED CHECK).
+> TASK → TEST GATE → SCOPE BOUNDARY → CI GATE → CHAIN CHECK).
+>
+> **⚠️ AUTO-CHAIN ES OBLIGATORIO:** tras CI verde, si la siguiente tarea es del
+> mismo agente Y tiene prompt aquí → leer ese prompt y ejecutarlo SIN DETENERSE.
+> NO emitir handoff. NO pedir al usuario. Solo detenerse si el siguiente paso es
+> de otro agente, no tiene prompt, o el contexto está agotado.
 >
 > **Resolución de prompts (orden de prioridad):**
 > 1. Buscar en esta Cola una entrada que coincida con el paso actual → usarla.
@@ -899,6 +904,7 @@ Target files: `processing/pdf_extraction.py`, `processing_runner.py`
 Do NOT change: `pdf_extraction_nodeps.py` unless deduplicating constants.
 Acceptance: `pdf_extraction.py` < 300 LOC. No duplicated constants. 317+ tests pass.
 --- END TASK ---
+⚠️ AUTO-CHAIN: after TEST GATE + SCOPE BOUNDARY + CI green → read F13-G prompt below and execute it. DO NOT stop.
 ```
 
 ### F13-G — Extraer hooks de estado de AppWorkspace
@@ -936,6 +942,7 @@ Target files: `frontend/src/hooks/useStructuredDataFilters.ts`,
 Acceptance: 3 hooks created, each ≤ 150 LOC. AppWorkspace reduced ~300+ LOC.
 226+ frontend tests pass. 0 lint errors.
 --- END TASK ---
+⚠️ AUTO-CHAIN: after TEST GATE + SCOPE BOUNDARY + CI green → read F13-H prompt below and execute it. DO NOT stop.
 ```
 
 ### F13-H — Extraer hooks de UI de AppWorkspace
@@ -966,6 +973,7 @@ Target files: `frontend/src/hooks/useReviewSplitPanel.ts`,
 Acceptance: AppWorkspace < 3,000 LOC. 5 hooks total in hooks/.
 226+ frontend tests pass. 0 lint errors.
 --- END TASK ---
+⚠️ AUTO-CHAIN: after TEST GATE + SCOPE BOUNDARY + CI green → read F13-I prompt below and execute it. DO NOT stop.
 ```
 
 ### F13-I — Split extraction_observability.py
@@ -1003,6 +1011,7 @@ Target files: `extraction_observability/` (new package),
 Acceptance: Each module < 300 LOC. Public API unchanged via __init__.py.
 317+ backend tests pass.
 --- END TASK ---
+⚠️ AUTO-CHAIN: after TEST GATE + SCOPE BOUNDARY + CI green → read F13-J prompt below and execute it. DO NOT stop.
 ```
 
 ### F13-J — Coverage improvements
@@ -1041,6 +1050,7 @@ Target files: Test files for PdfViewer, config.py, documentApi.ts
 Acceptance: PdfViewer branch ≥ 60%. config.py ≥ 90%. documentApi.ts branch ≥ 80%.
 All tests pass.
 --- END TASK ---
+⚠️ F13-J es el último paso Codex. Siguiente es F13-K (Claude). Emitir HANDOFF → Claude.
 ```
 
 ### F13-K — FUTURE_IMPROVEMENTS refresh + smoke + PR (Claude)
@@ -1112,18 +1122,20 @@ Estas áreas puntúan alto con los evaluadores. Todo cambio debe preservarlas:
 
 ## Reglas operativas
 
-### Ejecución semi-desatendida (modo por defecto)
+### Ejecución semi-desatendida (modo por defecto — hard rule)
 
 El modo por defecto de ejecución es **semi-desatendido**. Tras completar una tarea
-(CI verde, paso marcado `[x]`, PR actualizada), el agente activo evalúa si puede
-continuar automáticamente con la siguiente tarea **sin intervención del usuario**.
+(CI verde, paso marcado `[x]`, PR actualizada), el agente **DEBE** continuar
+automáticamente con la siguiente tarea si se cumplen las dos condiciones:
 
 **Condiciones para encadenar (ambas deben cumplirse):**
 1. La siguiente tarea está asignada al **mismo agente** que la que acaba de completarse.
 2. Existe un **prompt pre-escrito** para la siguiente tarea en la sección `## Cola de prompts`.
 
-**Si se cumplen ambas:** el agente lee el prompt de la Cola, lo ejecuta siguiendo el
-template estándar (SCOPE BOUNDARY), y repite la evaluación al terminar.
+**Si se cumplen ambas:** leer el prompt de la Cola, ejecutarlo (SCOPE BOUNDARY completo),
+y repetir la evaluación al terminar. **NO EMITIR HANDOFF. NO DETENERSE.**
+Cada bloque de la Cola incluye un recordatorio `⚠️ AUTO-CHAIN` que indica el
+siguiente paso explícitamente.
 
 **Si falla alguna:** el agente se detiene y genera el mensaje de handoff estándar
 (STEP F del SCOPE BOUNDARY) para que el usuario abra un nuevo chat con el agente
@@ -1996,44 +2008,33 @@ STEP E — CI GATE (mandatory — do NOT skip):
    d. Do NOT declare the step done until CI is green.
 5. If you cannot fix it after 2 attempts: STOP. Tell the user: "⚠️ CI sigue rojo tras 2 intentos de fix. Necesito ayuda para diagnosticar."
 
-STEP F — SEMI-UNATTENDED CHAIN CHECK (mandatory — replaces old STEP F):
-Look at the Estado de ejecución. Find the next `[ ]` step after the one you just completed.
+STEP F — CHAIN OR HANDOFF (mandatory):
+1. Next step = first `[ ]` in Estado de ejecución.
+2. Check: is it YOUR agent? Does `## Cola de prompts` have its prompt?
 
-**Routing authority (hard rule):** use ONLY:
-1. The checklist in `## Estado de ejecución` (first `[ ]`), and
-2. Prompt resolution rules (`## Cola de prompts` → `## Prompt activo`).
-Ignore historical/planning sections when deciding the next step.
+| Your agent? | Prompt exists? | Action |
+|---|---|---|
+| YES | YES | **AUTO-CHAIN** — execute next prompt NOW (see below) |
+| YES | NO | HANDOFF → Claude: "abre chat nuevo → Claude Opus 4.6 → Continúa" |
+| NO | any | HANDOFF → next agent (see handoff messages below) |
+| no steps left | — | "✓ Todos los pasos completados." |
 
-**Check ALL of these conditions:**
-1. The next step is assigned to the **same agent** as you (Codex checks for 🔄 Codex steps).
-2. A prompt for that step exists in `## Cola de prompts`.
+**AUTO-CHAIN (the default path for Fase 13):**
+Print: "✓ F?-? completado, CI verde. Encadenando → F?-? (semi-desatendido)."
+Read next prompt from `## Cola de prompts`. Execute: PRE-FLIGHT → TASK → TEST GATE → SCOPE BOUNDARY.
+Repeat this STEP F after completing.
 
-**If BOTH conditions are met → AUTO-CHAIN:**
-- Print: "✓ F?-? completado, CI verde. Encadenando → F?-? (semi-desatendido)."
-- Read the prompt from `## Cola de prompts` for the next step.
-- Execute it from the beginning (PRE-FLIGHT → TASK → TEST GATE → SCOPE BOUNDARY).
-- After completing, repeat this STEP F evaluation for the step after that.
+⚠️ **F13-F through F13-J are ALL Codex + ALL have prompts. AUTO-CHAIN is the ONLY valid path.**
+If you are about to emit a handoff message for a Codex step that has a Cola prompt: STOP.
+You have a bug. Re-read the table above and auto-chain.
 
-**Hard enforcement:** when BOTH conditions are true, DO NOT emit handoff. Continue automatically.
+**Handoff messages (only when table says HANDOFF):**
+- → Codex (new chat): "Siguiente: abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
+- → Claude (new chat): "Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
 
-**If EITHER condition fails → HANDOFF (pick the FIRST message that matches):**
-- If next step says "(Codex)":
-  "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
-- If next step says "(Codex)" AND no prompt in Cola AND `### Prompt` in Prompt activo is `_Vacío._`:
-  "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`. Claude preparará el prompt just-in-time."
-- If next step says "(Codex)" AND prompt exists in Cola OR Prompt activo:
-  "⚠️ Inconsistencia detectada: había prompt y mismo agente, por lo que debía auto-encadenar. Reintentando STEP F en este mismo chat."
-- If next step says "(Claude)":
-  "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
-- If no more steps remain:
-  "✓ F?-? completado, CI verde, PR actualizada. Todos los pasos completados."
-
-**Context safety valve:** if you detect your context is running low (responses getting
-truncated, losing track of state), complete the current step cleanly and generate
-the HANDOFF message instead of auto-chaining.
-
-NEVER end without telling the user what to do next. This is a hard rule.
-**NEVER direct to Codex when no prompt exists (neither Cola nor Prompt activo).** Claude must write one first.
+**Context safety valve:** if context exhausted, complete current step cleanly and handoff.
+NEVER end without telling the user what to do next.
+**NEVER direct to Codex when no prompt exists.** Claude must write one first.
 
 7. Stop.
 --- END SCOPE BOUNDARY ---
