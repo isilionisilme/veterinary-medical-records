@@ -364,4 +364,60 @@ describe("PdfViewer", () => {
     await screen.findAllByTestId("pdf-page");
     expect(screen.getByText("Suelta el PDF para subirlo")).toBeInTheDocument();
   });
+
+  it("applies focus page targeting when focus request changes", async () => {
+    render(
+      <PdfViewer
+        fileUrl="blob://sample"
+        filename="record.pdf"
+        focusPage={2}
+        focusRequestId={1}
+        highlightSnippet="Pagina 2"
+      />,
+    );
+
+    const pages = await screen.findAllByTestId("pdf-page");
+    const container = screen.getByTestId("pdf-scroll-container");
+    Object.defineProperty(container, "scrollTop", { value: 30, writable: true });
+    vi.spyOn(container, "getBoundingClientRect").mockReturnValue({
+      x: 0,
+      y: 100,
+      top: 100,
+      left: 0,
+      right: 600,
+      bottom: 800,
+      width: 600,
+      height: 700,
+      toJSON: () => "",
+    });
+    vi.spyOn(pages[1], "getBoundingClientRect").mockReturnValue({
+      x: 0,
+      y: 500,
+      top: 500,
+      left: 0,
+      right: 600,
+      bottom: 1300,
+      width: 600,
+      height: 800,
+      toJSON: () => "",
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("2/3")).toBeInTheDocument();
+    });
+  });
+
+  it("enables debug mode from storage flag", async () => {
+    vi.stubEnv("VITE_DEBUG_PDF_VIEWER", "true");
+    window.localStorage.setItem("pdfDebug", "1");
+
+    render(<PdfViewer fileUrl="blob://sample" filename="record.pdf" />);
+
+    await screen.findByTestId("pdf-scroll-container");
+    expect(
+      screen.getByTestId("pdf-scroll-container").closest("[data-pdf-debug='on']"),
+    ).toBeTruthy();
+
+    vi.unstubAllEnvs();
+  });
 });

@@ -7,3 +7,5 @@ Current source links point to `docs/project/adr/*` after ADR relocation under pr
 ## Propagated updates
 - Item 7 renumbered to 7a (routes) and 7b (AppWorkspace decomposition) added from CTO verdict iteration 2 (F8-D). Cross-referenced from TECHNICAL_DESIGN §14 limitations table.
 - Iteration 3 closure (F9-E): marked completed items in roadmap — 7b (AppWorkspace decomposition), 9 (upload streaming guard), and 15 (minimal auth/token boundary).
+- Iteration 7 closure (F13): marked completed items 8 (extraction observability modularization), 8a (interpretation decomposition), 8b (pdf extraction decomposition), and 8c (DRY constants consolidation).
+- Iteration 7 extension of 7b: AppWorkspace decomposition now reflects both iterations 3 and 7, including hook extraction and updated LOC reduction.

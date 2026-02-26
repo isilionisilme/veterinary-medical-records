@@ -52,6 +52,11 @@ describe("documentApi", () => {
     });
   });
 
+  it("fetchOriginalPdf rethrows non-network failures", async () => {
+    vi.mocked(globalThis.fetch).mockRejectedValueOnce(new Error("boom"));
+    await expect(fetchOriginalPdf("doc-1")).rejects.toThrow("boom");
+  });
+
   it("fetchDocuments returns empty payload on 404", async () => {
     vi.mocked(globalThis.fetch).mockResolvedValueOnce(new Response("Not found", { status: 404 }));
 
@@ -81,6 +86,13 @@ describe("documentApi", () => {
     });
   });
 
+  it("fetchDocuments maps network failures to UiError", async () => {
+    vi.mocked(globalThis.fetch).mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    await expect(fetchDocuments()).rejects.toMatchObject<Partial<UiError>>({
+      userMessage: "No se pudieron cargar los documentos.",
+    });
+  });
+
   it("fetchDocumentDetails propagates API message on non-OK responses", async () => {
     vi.mocked(globalThis.fetch).mockResolvedValueOnce(
       jsonResponse({ message: "Documento inexistente" }, 500),
@@ -101,6 +113,11 @@ describe("documentApi", () => {
     await expect(fetchDocumentDetails("doc-2")).rejects.toMatchObject<Partial<UiError>>({
       userMessage: "No se pudo conectar con el servidor.",
     });
+  });
+
+  it("fetchDocumentDetails rethrows non-network errors", async () => {
+    vi.mocked(globalThis.fetch).mockRejectedValueOnce(new Error("unexpected"));
+    await expect(fetchDocumentDetails("doc-2")).rejects.toThrow("unexpected");
   });
 
   it("fetchDocumentReview returns ApiResponseError with code and reason", async () => {
@@ -129,6 +146,17 @@ describe("documentApi", () => {
     await expect(fetchDocumentReview("doc-2")).resolves.toMatchObject({ document_id: "doc-2" });
   });
 
+  it("fetchDocumentReview maps and rethrows fetch errors", async () => {
+    vi.mocked(globalThis.fetch)
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+      .mockRejectedValueOnce(new Error("boom"));
+
+    await expect(fetchDocumentReview("doc-2")).rejects.toMatchObject<Partial<UiError>>({
+      userMessage: "No se pudo conectar con el servidor.",
+    });
+    await expect(fetchDocumentReview("doc-2")).rejects.toThrow("boom");
+  });
+
   it("fetchProcessingHistory returns payload on success", async () => {
     vi.mocked(globalThis.fetch).mockResolvedValueOnce(
       jsonResponse({ document_id: "doc-1", runs: [] }),
@@ -137,6 +165,30 @@ describe("documentApi", () => {
     await expect(fetchProcessingHistory("doc-1")).resolves.toEqual({
       document_id: "doc-1",
       runs: [],
+    });
+  });
+
+  it("fetchProcessingHistory maps and rethrows fetch errors", async () => {
+    vi.mocked(globalThis.fetch)
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+      .mockRejectedValueOnce(new Error("boom"));
+
+    await expect(fetchProcessingHistory("doc-1")).rejects.toMatchObject<Partial<UiError>>({
+      userMessage: "No se pudo conectar con el servidor.",
+    });
+    await expect(fetchProcessingHistory("doc-1")).rejects.toThrow("boom");
+  });
+
+  it("fetchProcessingHistory maps API error payload and fallback message", async () => {
+    vi.mocked(globalThis.fetch)
+      .mockResolvedValueOnce(jsonResponse({ message: "Historial no disponible" }, 500))
+      .mockResolvedValueOnce(new Response("broken", { status: 500 }));
+
+    await expect(fetchProcessingHistory("doc-1")).rejects.toMatchObject<Partial<UiError>>({
+      userMessage: "Historial no disponible",
+    });
+    await expect(fetchProcessingHistory("doc-1")).rejects.toMatchObject<Partial<UiError>>({
+      userMessage: "No pudimos cargar el historial de procesamiento.",
     });
   });
 
@@ -177,6 +229,36 @@ describe("documentApi", () => {
     await expect(reopenDocumentReview("doc-4")).rejects.toMatchObject<Partial<UiError>>({
       userMessage: "No se pudo reabrir el documento.",
     });
+  });
+
+  it("reopenDocumentReview uses backend message only when it is non-empty", async () => {
+    vi.mocked(globalThis.fetch)
+      .mockResolvedValueOnce(jsonResponse({ message: "Reapertura bloqueada" }, 409))
+      .mockResolvedValueOnce(jsonResponse({ message: "   " }, 409));
+
+    await expect(reopenDocumentReview("doc-4")).rejects.toMatchObject<Partial<UiError>>({
+      userMessage: "Reapertura bloqueada",
+    });
+    await expect(reopenDocumentReview("doc-4")).rejects.toMatchObject<Partial<UiError>>({
+      userMessage: "No se pudo reabrir el documento.",
+    });
+  });
+
+  it("markDocumentReviewed and reopenDocumentReview map and rethrow fetch failures", async () => {
+    vi.mocked(globalThis.fetch)
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+      .mockRejectedValueOnce(new Error("mark crash"))
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+      .mockRejectedValueOnce(new Error("reopen crash"));
+
+    await expect(markDocumentReviewed("doc-4")).rejects.toMatchObject<Partial<UiError>>({
+      userMessage: "No se pudo conectar con el servidor.",
+    });
+    await expect(markDocumentReviewed("doc-4")).rejects.toThrow("mark crash");
+    await expect(reopenDocumentReview("doc-4")).rejects.toMatchObject<Partial<UiError>>({
+      userMessage: "No se pudo conectar con el servidor.",
+    });
+    await expect(reopenDocumentReview("doc-4")).rejects.toThrow("reopen crash");
   });
 
   it("editRunInterpretation posts JSON payload and parses response", async () => {
@@ -225,6 +307,13 @@ describe("documentApi", () => {
     });
   });
 
+  it("editRunInterpretation rethrows non-network fetch errors", async () => {
+    vi.mocked(globalThis.fetch).mockRejectedValueOnce(new Error("unexpected"));
+    await expect(
+      editRunInterpretation("run-1", { base_version_number: 1, changes: [] }),
+    ).rejects.toThrow("unexpected");
+  });
+
   it("fetchRawText returns ApiResponseError details when backend reports structured error", async () => {
     vi.mocked(globalThis.fetch).mockResolvedValueOnce(
       jsonResponse(
@@ -254,6 +343,28 @@ describe("documentApi", () => {
     await expect(fetchRawText("run-9")).rejects.toMatchObject<Partial<UiError>>({
       userMessage: "No se pudo conectar con el servidor.",
     });
+  });
+
+  it("fetchRawText uses default message for blank API message and rethrows non-network errors", async () => {
+    vi.mocked(globalThis.fetch)
+      .mockResolvedValueOnce(
+        jsonResponse(
+          {
+            message: "   ",
+            error_code: "RAW_TEXT_NOT_AVAILABLE",
+            details: { reason: "PROCESSING_INCOMPLETE" },
+          },
+          404,
+        ),
+      )
+      .mockRejectedValueOnce(new Error("raw-text-crash"));
+
+    await expect(fetchRawText("run-9")).rejects.toMatchObject<Partial<ApiResponseError>>({
+      userMessage: "No se pudo cargar el texto extraído.",
+      errorCode: "RAW_TEXT_NOT_AVAILABLE",
+      reason: "PROCESSING_INCOMPLETE",
+    });
+    await expect(fetchRawText("run-9")).rejects.toThrow("raw-text-crash");
   });
 
   it("uploadDocument maps API error_code values to user-friendly messages", async () => {
@@ -291,6 +402,18 @@ describe("documentApi", () => {
     });
   });
 
+  it("uploadDocument rethrows non-network errors and keeps default fallback message", async () => {
+    const file = new File(["bytes"], "ok.pdf", { type: "application/pdf" });
+    vi.mocked(globalThis.fetch)
+      .mockRejectedValueOnce(new Error("upload-crash"))
+      .mockResolvedValueOnce(jsonResponse({ message: "" }, 400));
+
+    await expect(uploadDocument(file)).rejects.toThrow("upload-crash");
+    await expect(uploadDocument(file)).rejects.toMatchObject<Partial<UiError>>({
+      userMessage: "No pudimos subir el documento.",
+    });
+  });
+
   it("copyTextToClipboard supports clipboard API and fallback execCommand", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", {
@@ -322,5 +445,17 @@ describe("documentApi", () => {
     await expect(copyTextToClipboard("")).rejects.toMatchObject<Partial<UiError>>({
       userMessage: "No hay texto disponible para copiar.",
     });
+  });
+
+  it("copyTextToClipboard throws when no DOM API is available", async () => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: undefined,
+    });
+    vi.stubGlobal("document", undefined);
+    await expect(copyTextToClipboard("texto")).rejects.toMatchObject<Partial<UiError>>({
+      userMessage: "No se pudo copiar el texto al portapapeles.",
+    });
+    vi.unstubAllGlobals();
   });
 });

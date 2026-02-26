@@ -106,6 +106,48 @@ Mejorar el proyecto para obtener la mejor evaluación posible en la prueba técn
 - [x] F12-I 🔄 — Descomposición `routes.py` (942 LOC → módulos por bounded context) (Codex)
 - [x] F12-J 🚧 — Smoke test final + PR (Claude)
 
+### Fase 13 — Iteración 7 (Modularización de monolitos + cobertura)
+
+> **Contexto:** post-merge Iteración 6 identificó 4 archivos monolíticos (>2× guía
+> 500 LOC): `interpretation.py` (1,398), `pdf_extraction.py` (1,150),
+> `AppWorkspace.tsx` (4,011), `extraction_observability.py` (995). Constantes
+> duplicadas ~97 líneas. Métricas de entrada: 317 backend tests (90%), 226
+> frontend tests (82.6%), 0 lint, CI green.
+> **Estrategia:** 1 PR única (`improvement/iteration-7-pr1` → `main`). Ejecución
+> semi-desatendida: Codex encadena D→J; Claude cierra con K. Prompts pre-escritos
+> en la Cola de prompts.
+
+- [x] F13-A 🔄 — Consolidar constants.py: migrar ~97 líneas de constantes compartidas (Codex)
+- [x] F13-B 🔄 — Extraer candidate_mining.py de interpretation.py (648+ LOC) (Codex)
+- [x] F13-C 🔄 — Extraer confidence_scoring.py + thin interpretation.py < 400 LOC (Codex)
+- [x] F13-D 🔄 — Shim compatibility: verificar re-exports en processing_runner.py (Codex)
+- [x] F13-E 🔄 — Extraer pdf_extraction_nodeps.py (~900 LOC fallback sin deps) (Codex)
+- [x] F13-F 🔄 — Thin dispatcher < 300 LOC + verificar shim pdf_extraction (Codex)
+- [x] F13-G 🔄 — Extraer hooks de estado: useStructuredDataFilters, useFieldEditing, useUploadState (Codex)
+- [x] F13-H 🔄 — Extraer hooks de UI: useReviewSplitPanel, useDocumentsSidebar (Codex)
+- [x] F13-I 🔄 — Split extraction_observability.py en 4 módulos < 300 LOC (Codex)
+- [x] F13-J 🔄 — Coverage: PdfViewer 47%→60%+, config.py 83%→90%+, documentApi.ts 67%→80%+ (Codex)
+- [x] F13-K 🚧 — FUTURE_IMPROVEMENTS refresh + smoke test + PR → main (Claude) ✅ DONE (Claude, 2026-02-26)
+
+### Fase 14 — Iteración 8 (Bugs + CI governance + AppWorkspace round 3 + cobertura)
+
+**Bloque 1 — Bugs y CI**
+- [ ] F14-A 🔄 — Hotfix PdfViewer: aceptar ArrayBuffer, eliminar fetch indirection (Codex)
+- [ ] F14-B 🔄 — Separar job `doc_test_sync_guard` en 3 jobs CI independientes (Codex)
+- [ ] F14-C 🔄 — Clasificador de cambios de docs: script + integración CI (Codex)
+- [ ] F14-D 🔄 — Exención Navigation + modo relajado Clarification en `check_doc_test_sync.py` (Codex)
+- [ ] F14-E 🔄 — Tests unitarios del clasificador + calibración (Codex)
+**Bloque 2 — AppWorkspace round 3**
+- [ ] F14-F 🔄 — Extraer render sections de AppWorkspace.tsx: <UploadPanel>, <ReviewPanel>, <SidebarPanel>, <PdfViewerPanel> (Codex)
+- [ ] F14-G 🔄 — Tests para hooks extraídos en Iter 7: useFieldEditing, useUploadState, useReviewSplitPanel, useDocumentsSidebar, useStructuredDataFilters (Codex)
+**Bloque 3 — Cobertura**
+- [ ] F14-H 🔄 — PdfViewer branch coverage 47%→65%+ (Codex)
+- [ ] F14-I 🔄 — documentApi branch coverage 67%→80%+ (Codex)
+- [ ] F14-J 🔄 — config.py coverage 83%→90%+ (Codex)
+**Bloque 4 — Limpieza y cierre**
+- [ ] F14-K 🔄 — Split candidate_mining.py (789 LOC → 2 módulos < 400 LOC) (Codex)
+- [ ] F14-L 🚧 — FUTURE_IMPROVEMENTS refresh + smoke test + PR → main (Claude)
+
 ---
 
 ## Resultados de auditorías — rellenar automáticamente al completar cada auditoría
@@ -767,10 +809,372 @@ Below are the 4 architecture ADRs with full arguments, trade-offs, and code evid
 > **Flujo:** Claude escribe → commit + push → usuario abre Codex → adjunta archivo → "Continúa" → Codex lee esta sección → ejecuta → borra el contenido al terminar.
 
 ### Paso objetivo
-_Completado: F12-J (Iteration 6 finalizada)_
+_Completado: F13-D_
 
 ### Prompt
+
 _Vacío._
+
+---
+
+## Cola de prompts (pre-escritos)
+
+> **Uso:** Claude pre-escribe aquí los prompts de todas las tareas cuyo contenido no
+> depende del resultado de tareas anteriores. Cada entrada contiene solo la sección
+> `--- TASK ---` específica del paso; el agente la ejecuta envolviéndola en el
+> template estándar (IDENTITY CHECK → BRANCH CHECK → SYNC CHECK → PRE-FLIGHT →
+> TASK → TEST GATE → SCOPE BOUNDARY → CI GATE → CHAIN CHECK).
+>
+> **⚠️ AUTO-CHAIN ES OBLIGATORIO:** tras CI verde, si la siguiente tarea es del
+> mismo agente Y tiene prompt aquí → leer ese prompt y ejecutarlo SIN DETENERSE.
+> NO emitir handoff. NO pedir al usuario. Solo detenerse si el siguiente paso es
+> de otro agente, no tiene prompt, o el contexto está agotado.
+>
+> **Resolución de prompts (orden de prioridad):**
+> 1. Buscar en esta Cola una entrada que coincida con el paso actual → usarla.
+> 2. Si no hay entrada en la Cola: buscar en `## Prompt activo` → usarlo.
+> 3. Si ninguno tiene prompt: STOP → pedir al usuario que vaya a Claude.
+
+### F13-D — Shim compatibility: verificar re-exports
+
+```
+--- TASK ---
+Step: F13-D — Shim compatibility verification
+Branch: improvement/iteration-7-pr1
+PR: #153
+
+Objective: Verify `processing_runner.py` correctly re-exports all public symbols
+from the 3 new modules created in F13-A through F13-C: `constants.py`,
+`candidate_mining.py`, `confidence_scoring.py`.
+
+1. Read `backend/app/application/processing_runner.py`.
+2. Verify it imports from the `processing/` subpackage and re-exports all public
+   symbols that external code (tests, other modules) consumes.
+3. Search for all test files that import from `processing_runner`:
+   Run: grep -r "from.*processing_runner import\|import.*processing_runner" backend/tests/
+4. For each symbol imported by tests: confirm it is accessible via `processing_runner`.
+5. If any symbol is missing: add the re-export to `processing_runner.py`.
+6. If processing_runner uses dynamic __dict__ re-export: verify the new modules
+   are included in the import list.
+7. Proceed to TEST GATE.
+
+Target files: `backend/app/application/processing_runner.py`
+Do NOT change: The new processing/ modules (constants.py, candidate_mining.py,
+confidence_scoring.py, interpretation.py). Only touch processing_runner.py if
+re-exports are missing.
+Acceptance: All existing test imports resolve. 317+ backend tests pass.
+--- END TASK ---
+```
+
+### F13-E — Extraer pdf_extraction_nodeps.py
+
+```
+--- TASK ---
+Step: F13-E — Extract pdf_extraction_nodeps.py
+Branch: improvement/iteration-7-pr1
+PR: #153
+
+Objective: Extract the no-deps fallback strategy (~900 LOC pure-Python PDF parser)
+from `pdf_extraction.py` into a new `pdf_extraction_nodeps.py` module.
+
+1. Read `backend/app/application/processing/pdf_extraction.py` fully.
+2. Identify ALL functions belonging to the "no-deps fallback" strategy:
+   - Pure Python PDF object parser, tokenizer, stream decompression
+   - Font/CMap handling, text stitching, byte-level helpers
+   - Look for the entry point (likely `_extract_text_no_deps` or similar)
+   - Include all private helpers called exclusively by the no-deps path
+3. Create `backend/app/application/processing/pdf_extraction_nodeps.py`:
+   - Move all identified functions.
+   - Add necessary imports (only stdlib — no external deps by definition).
+   - Import shared constants from `constants.py` if any are used.
+4. Update `pdf_extraction.py`:
+   - Replace moved functions with imports from `pdf_extraction_nodeps`.
+   - Keep the strategy dispatcher and fitz-based strategy in pdf_extraction.py.
+5. Verify `pdf_extraction.py` is now a thin dispatcher (target < 300 LOC).
+6. Update `processing_runner.py` shim if needed (re-export new module symbols).
+7. Proceed to TEST GATE.
+
+Target files: `processing/pdf_extraction_nodeps.py` (new), `processing/pdf_extraction.py`
+Acceptance: `pdf_extraction_nodeps.py` self-contained (only stdlib imports).
+`pdf_extraction.py` < 300 LOC. 317+ backend tests pass.
+--- END TASK ---
+```
+
+### F13-F — Thin dispatcher verification
+
+```
+--- TASK ---
+Step: F13-F — Thin dispatcher verification
+Branch: improvement/iteration-7-pr1
+PR: #153
+
+Objective: Verify `pdf_extraction.py` is a clean thin dispatcher after F13-E.
+
+**STEP 0 — MARK IN PROGRESS (do this FIRST):**
+a. Edit this plan: append ` ⏳ EN PROGRESO (Codex, <today UTC>)` to the `- [ ] F13-F` line.
+b. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+c. git commit -m "docs(plan-f13f): mark step in progress"
+d. git push origin improvement/iteration-7-pr1
+
+1. Count lines: `pdf_extraction.py` must be < 300 LOC.
+   If > 300: identify remaining movable code and extract to `pdf_extraction_nodeps.py`.
+2. Check for duplicated constants: any constant defined in both `pdf_extraction.py`
+   and `constants.py` must be deduplicated (use `constants.py` as source of truth).
+3. Verify `processing_runner.py` re-exports PDF extraction symbols correctly.
+4. Verify no circular imports:
+   Run: python -c "from backend.app.application.processing.pdf_extraction import extract_text_from_pdf; print('OK')"
+5. Run TEST GATE (pytest + npm test). If fail: STOP.
+
+**STEP 6 — COMMIT + MARK DONE (do this AFTER tests pass):**
+a. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
+b. git commit -m "refactor(plan-f13f): <description>"
+c. Edit this plan: change `- [ ] F13-F` to `- [x] F13-F` (remove EN PROGRESO tag).
+d. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+e. git commit -m "docs(plan-f13f): mark step done"
+f. git push origin improvement/iteration-7-pr1
+g. Wait for CI green (gh run list, retry up to 10x). If CI red: fix, re-push.
+
+Target files: `processing/pdf_extraction.py`, `processing_runner.py`
+Do NOT change: `pdf_extraction_nodeps.py` unless deduplicating constants.
+Acceptance: `pdf_extraction.py` < 300 LOC. No duplicated constants. 317+ tests pass.
+--- END TASK ---
+⚠️ AUTO-CHAIN: CI green → read F13-G prompt below and execute it. DO NOT stop.
+```
+
+### F13-G — Extraer hooks de estado de AppWorkspace
+
+```
+--- TASK ---
+Step: F13-G — Extract state hooks from AppWorkspace
+Branch: improvement/iteration-7-pr1
+PR: #153
+
+Objective: Extract 3 custom hooks from `AppWorkspace.tsx` to reduce state complexity.
+
+**STEP 0 — MARK IN PROGRESS (do this FIRST):**
+a. Edit this plan: append ` ⏳ EN PROGRESO (Codex, <today UTC>)` to the `- [ ] F13-G` line.
+b. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+c. git commit -m "docs(plan-f13g): mark step in progress"
+d. git push origin improvement/iteration-7-pr1
+
+1. Read `frontend/src/AppWorkspace.tsx` fully.
+2. Create `frontend/src/hooks/useStructuredDataFilters.ts`:
+   - Extract state variables related to structured data filtering (visit filter,
+     section filter, search query, expanded sections, etc. — ~6 useState).
+   - Include associated useMemo/useCallback that depend only on those state vars.
+   - Hook ≤ 150 LOC. Export typed return value.
+3. Create `frontend/src/hooks/useFieldEditing.ts`:
+   - Extract state variables related to field editing (editing field, edit value,
+     pending edits, edit confirmation, etc. — ~5 useState + mutation logic).
+   - Hook ≤ 150 LOC.
+4. Create `frontend/src/hooks/useUploadState.ts`:
+   - Extract state variables related to file upload and drag-and-drop (files,
+     uploading flag, drag over, upload progress, error, etc. — ~6 useState).
+   - Hook ≤ 150 LOC.
+5. In `AppWorkspace.tsx`: replace extracted useState/useMemo/useCallback with
+   hook calls. Pass any cross-hook dependencies as parameters.
+6. Verify AppWorkspace reduced by ~300+ LOC.
+7. Run TEST GATE (pytest + npm test). If fail: STOP.
+
+**STEP 8 — COMMIT + MARK DONE (do this AFTER tests pass):**
+a. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
+b. git commit -m "refactor(plan-f13g): extract state hooks from AppWorkspace"
+c. Edit this plan: change `- [ ] F13-G` to `- [x] F13-G` (remove EN PROGRESO tag).
+d. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+e. git commit -m "docs(plan-f13g): mark step done"
+f. git push origin improvement/iteration-7-pr1
+g. Wait for CI green (gh run list, retry up to 10x). If CI red: fix, re-push.
+
+Target files: `frontend/src/hooks/useStructuredDataFilters.ts`,
+`frontend/src/hooks/useFieldEditing.ts`, `frontend/src/hooks/useUploadState.ts`
+(all new), `frontend/src/AppWorkspace.tsx`
+Acceptance: 3 hooks created, each ≤ 150 LOC. AppWorkspace reduced ~300+ LOC.
+226+ frontend tests pass. 0 lint errors.
+--- END TASK ---
+⚠️ AUTO-CHAIN: CI green → read F13-H prompt below and execute it. DO NOT stop.
+```
+
+### F13-H — Extraer hooks de UI de AppWorkspace
+
+```
+--- TASK ---
+Step: F13-H — Extract UI hooks from AppWorkspace
+Branch: improvement/iteration-7-pr1
+PR: #153
+
+Objective: Extract 2 UI interaction hooks from `AppWorkspace.tsx`.
+
+**STEP 0 — MARK IN PROGRESS (do this FIRST):**
+a. Edit this plan: append ` ⏳ EN PROGRESO (Codex, <today UTC>)` to the `- [ ] F13-H` line.
+b. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+c. git commit -m "docs(plan-f13h): mark step in progress"
+d. git push origin improvement/iteration-7-pr1
+
+1. Read `frontend/src/AppWorkspace.tsx` (after F13-G changes).
+2. Create `frontend/src/hooks/useReviewSplitPanel.ts`:
+   - Extract state variables + pointer/mouse event logic for the review split
+     panel (split position, dragging flag, pointer handlers — ~4 useState).
+   - Hook ≤ 150 LOC.
+3. Create `frontend/src/hooks/useDocumentsSidebar.ts`:
+   - Extract state variables + resize logic for the documents sidebar
+     (sidebar width, collapsed state, resize handlers — ~4 useState).
+   - Hook ≤ 150 LOC.
+4. In `AppWorkspace.tsx`: replace extracted code with hook calls.
+5. Count lines: AppWorkspace must be < 3,000 LOC (stretch target: < 2,500).
+6. Run TEST GATE (pytest + npm test). If fail: STOP.
+
+**STEP 7 — COMMIT + MARK DONE (do this AFTER tests pass):**
+a. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
+b. git commit -m "refactor(plan-f13h): extract UI hooks from AppWorkspace"
+c. Edit this plan: change `- [ ] F13-H` to `- [x] F13-H` (remove EN PROGRESO tag).
+d. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+e. git commit -m "docs(plan-f13h): mark step done"
+f. git push origin improvement/iteration-7-pr1
+g. Wait for CI green (gh run list, retry up to 10x). If CI red: fix, re-push.
+
+Target files: `frontend/src/hooks/useReviewSplitPanel.ts`,
+`frontend/src/hooks/useDocumentsSidebar.ts` (new), `frontend/src/AppWorkspace.tsx`
+Acceptance: AppWorkspace < 3,000 LOC. 5 hooks total in hooks/.
+226+ frontend tests pass. 0 lint errors.
+--- END TASK ---
+⚠️ AUTO-CHAIN: CI green → read F13-I prompt below and execute it. DO NOT stop.
+```
+
+### F13-I — Split extraction_observability.py
+
+```
+--- TASK ---
+Step: F13-I — Split extraction_observability.py into modules
+Branch: improvement/iteration-7-pr1
+PR: #153
+
+Objective: Decompose `extraction_observability.py` (995 LOC) into 4 focused modules.
+
+**STEP 0 — MARK IN PROGRESS (do this FIRST):**
+a. Edit this plan: append ` ⏳ EN PROGRESO (Codex, <today UTC>)` to the `- [ ] F13-I` line.
+b. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+c. git commit -m "docs(plan-f13i): mark step in progress"
+d. git push origin improvement/iteration-7-pr1
+
+1. Read `backend/app/application/extraction_observability.py` fully.
+2. Identify the 4 natural segments:
+   - **Snapshot**: functions that capture extraction state at a point in time.
+   - **Persistence**: functions that save/load observability data to/from storage.
+   - **Triage**: functions that classify extraction quality/issues.
+   - **Reporting**: functions that generate summary reports/metrics.
+3. Create `backend/app/application/extraction_observability/` package:
+   - `__init__.py` — re-exports all public API symbols (preserve backward compat).
+   - `snapshot.py` — snapshot segment.
+   - `persistence.py` — persistence segment.
+   - `triage.py` — triage/classification segment.
+   - `reporting.py` — summary/reporting segment.
+4. Move functions to corresponding modules. Resolve internal cross-references.
+5. Search ALL files that import from `extraction_observability`:
+   Run: grep -rn "from.*extraction_observability import\|import.*extraction_observability" backend/
+   Update every import to use the package (or rely on __init__.py re-exports).
+6. Delete the original `extraction_observability.py` file.
+7. Verify each module < 300 LOC.
+8. Run TEST GATE (pytest + npm test). If fail: STOP.
+
+**STEP 9 — COMMIT + MARK DONE (do this AFTER tests pass):**
+a. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
+b. git commit -m "refactor(plan-f13i): split extraction_observability into package"
+c. Edit this plan: change `- [ ] F13-I` to `- [x] F13-I` (remove EN PROGRESO tag).
+d. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+e. git commit -m "docs(plan-f13i): mark step done"
+f. git push origin improvement/iteration-7-pr1
+g. Wait for CI green (gh run list, retry up to 10x). If CI red: fix, re-push.
+
+Target files: `extraction_observability/` (new package),
+`extraction_observability.py` (to be deleted)
+Acceptance: Each module < 300 LOC. Public API unchanged via __init__.py.
+317+ backend tests pass.
+--- END TASK ---
+⚠️ AUTO-CHAIN: CI green → read F13-J prompt below and execute it. DO NOT stop.
+```
+
+### F13-J — Coverage improvements
+
+```
+--- TASK ---
+Step: F13-J — Coverage improvements
+Branch: improvement/iteration-7-pr1
+PR: #153
+
+Objective: Close 3 specific coverage gaps.
+
+**STEP 0 — MARK IN PROGRESS (do this FIRST):**
+a. Edit this plan: append ` ⏳ EN PROGRESO (Codex, <today UTC>)` to the `- [ ] F13-J` line.
+b. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+c. git commit -m "docs(plan-f13j): mark step in progress"
+d. git push origin improvement/iteration-7-pr1
+
+1. **PdfViewer branch coverage → 60%+**:
+   - Read `frontend/src/PdfViewer.tsx` and its test file.
+   - Add tests for untested conditional branches: error states, loading states,
+     resize/scroll handlers, page navigation edge cases.
+   - Target: branch coverage ≥ 60% (current: ~47%).
+   - Note: canvas/observer APIs are not available in jsdom — mock what you can,
+     skip what requires real DOM. Do NOT set aggressive targets for browser-only code.
+
+2. **config.py → 90%+**:
+   - Read `backend/app/config.py` and its test file.
+   - Add tests for alternative paths: missing env vars, invalid values, fallback
+     defaults, edge cases in path resolution.
+   - Target: line coverage ≥ 90% (current: ~83%).
+
+3. **documentApi.ts → 80%+**:
+   - Read `frontend/src/lib/documentApi.ts` and its test file.
+   - Add tests for error paths: network errors, HTTP error codes, validation
+     failures, timeout handling, malformed responses.
+   - Target: branch coverage ≥ 80% (current: ~67%).
+
+4. Run TEST GATE (pytest + npm test). If fail: STOP.
+
+**STEP 5 — COMMIT + MARK DONE (do this AFTER tests pass):**
+a. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
+b. git commit -m "test(plan-f13j): close coverage gaps for PdfViewer, config, documentApi"
+c. Edit this plan: change `- [ ] F13-J` to `- [x] F13-J` (remove EN PROGRESO tag).
+d. git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+e. git commit -m "docs(plan-f13j): mark step done"
+f. git push origin improvement/iteration-7-pr1
+g. Wait for CI green (gh run list, retry up to 10x). If CI red: fix, re-push.
+
+Target files: Test files for PdfViewer, config.py, documentApi.ts
+Acceptance: PdfViewer branch ≥ 60%. config.py ≥ 90%. documentApi.ts branch ≥ 80%.
+All tests pass.
+--- END TASK ---
+⚠️ F13-J es el último paso Codex. Siguiente es F13-K (Claude). Emitir HANDOFF → Claude.
+```
+
+### F13-K — FUTURE_IMPROVEMENTS refresh + smoke + PR (Claude)
+
+```
+--- TASK ---
+Step: F13-K — FUTURE_IMPROVEMENTS refresh + smoke test + PR → main
+Agent: Claude Opus 4.6
+Branch: improvement/iteration-7-pr1
+PR: #153
+
+Objective: Final gate for Iteration 7. Update docs, full smoke, close PR.
+
+1. Update `docs/project/FUTURE_IMPROVEMENTS.md`:
+   - Mark completed items: modularization of interpretation.py, pdf_extraction.py,
+     AppWorkspace.tsx hooks, extraction_observability.py.
+   - Update LOC counts, coverage metrics, module counts.
+   - Remove or update any "in roadmap" items that are now done.
+2. Full smoke test:
+   - `pytest --tb=short -q` → 317+ passed
+   - `cd frontend && npm test -- --run` → 226+ passed
+   - `npm run lint` → 0 problems
+   - `ruff check backend/` → 0 errors
+3. Update PR #153 body with final iteration 7 summary.
+4. Commit + push.
+5. Request merge review or merge PR → main.
+--- END TASK ---
+```
+
+---
 
 ## Skills instaladas y uso recomendado
 
@@ -811,6 +1215,35 @@ Estas áreas puntúan alto con los evaluadores. Todo cambio debe preservarlas:
 ---
 
 ## Reglas operativas
+
+### Ejecución semi-desatendida (modo por defecto — hard rule)
+
+El modo por defecto de ejecución es **semi-desatendido**. Tras completar una tarea
+(CI verde, paso marcado `[x]`, PR actualizada), el agente **DEBE** continuar
+automáticamente con la siguiente tarea si se cumplen las dos condiciones:
+
+**Condiciones para encadenar (ambas deben cumplirse):**
+1. La siguiente tarea está asignada al **mismo agente** que la que acaba de completarse.
+2. Existe un **prompt pre-escrito** para la siguiente tarea en la sección `## Cola de prompts`.
+
+**Si se cumplen ambas:** leer el prompt de la Cola, ejecutarlo (SCOPE BOUNDARY completo),
+y repetir la evaluación al terminar. **NO EMITIR HANDOFF. NO DETENERSE.**
+Cada bloque de la Cola incluye un recordatorio `⚠️ AUTO-CHAIN` que indica el
+siguiente paso explícitamente.
+
+**Si falla alguna:** el agente se detiene y genera el mensaje de handoff estándar
+(STEP F del SCOPE BOUNDARY) para que el usuario abra un nuevo chat con el agente
+correcto o para que Claude escriba el prompt just-in-time.
+
+**Límite de seguridad:** si el agente detecta que su contexto se está agotando
+(respuestas truncadas, pérdida de estado), debe detenerse en el paso actual,
+completarlo limpiamente (SCOPE BOUNDARY completo) y generar el handoff. El
+siguiente chat retomará desde el primer `[ ]`.
+
+> **Nota:** este modo es compatible con el protocolo `Continúa` existente. Si el
+> usuario abre un chat nuevo y escribe `Continúa`, el agente ejecuta un solo paso
+> y luego evalúa si puede encadenar. La diferencia es que el agente ya no se
+> detiene obligatoriamente tras cada paso.
 
 ### Iteraciones atómicas
 Nunca mezclar alcance entre pasos. Cada paso del Estado de ejecución es una unidad atómica: se ejecuta, se commitea, se pushea, se marca `[x]`. Si falla, se reporta — no se continúa al siguiente.
@@ -874,6 +1307,20 @@ Razón: una edición humana accidental (borrar un `[x]`, reformatear una tabla, 
 4. Si no puede arreglar el CI tras 2 intentos: STOP y pedir ayuda.
 
 **Razón:** Codex declaró un paso completado con CI rojo. El usuario tuvo que diagnosticar manualmente. Esto no debe repetirse.
+
+### Format-before-commit (mandatory — hard rule)
+**Antes de cada `git commit`, el agente SIEMPRE ejecuta los formateadores del proyecto:**
+1. `cd frontend && npx prettier --write 'src/**/*.{ts,tsx,css}' && cd ..`
+2. `ruff check backend/ --fix --quiet && ruff format backend/ --quiet`
+3. Si el `git commit` falla (pre-commit hook rejects): re-run formatters, re-add, retry ONCE.
+4. Si falla una segunda vez: STOP y reportar al usuario.
+
+**Razón:** Codex Iteration 7 generó código sin formato Prettier → pre-commit hook bloqueó todos los commits → Codex siguió a la siguiente tarea sin commitear → 5 tareas de código quedaron sin commit. No debe repetirse.
+
+### Iteration boundary (mandatory — hard rule)
+**El auto-chain NUNCA cruza de una Fase/iteración a otra.** Cuando todas las tareas de la Fase actual estén `[x]`, el agente se detiene y devuelve el control al usuario, incluso si la siguiente Fase ya tiene prompts escritos. Iniciar una nueva iteración requiere aprobación explícita del usuario.
+
+**Razón:** Codex Iteration 7 completó F13-K e intentó iniciar F14-A sin autorización. Las iteraciones son unidades de entrega con merge independiente; cruzarlas sin aprobación mezcla alcances y rompe la trazabilidad de PRs.
 
 ### Next-step message (mandatory — hard rule)
 **Al terminar un paso, el agente SIEMPRE indica al usuario el siguiente movimiento con instrucciones concretas.** Nunca terminar sin decir qué agente usar y qué hacer a continuación. Si no hay siguiente paso, decir "Todos los pasos completados." Referencia: sección "Instrucciones de siguiente paso" y STEP F del template SCOPE BOUNDARY.
@@ -1293,6 +1740,186 @@ Para evitar explosión de contexto entre chats y pasos largos, aplicar SIEMPRE:
 - Cada paso es atómico; si F12-I se complica, se puede omitir y la iteración sigue siendo sólida.
 - Si el bump de deps (F12-H) causa breaking changes no triviales, revertir y documentar en FUTURE_IMPROVEMENTS.
 
+### Fase 14 — Iteración 8: Bugs + CI governance + AppWorkspace round 3 + cobertura
+
+> **Origen:** evaluación post-merge Iteración 7 (Claude, 2026-02-26). Métricas
+> de entrada: 350 backend tests (90%), 240+ frontend tests (~83% stmts), 0 lint,
+> CI green (6/6 jobs). Deuda identificada: PdfViewer ArrayBuffer mismatch (bug
+> activo), `doc_test_sync_guard` monolítico, AppWorkspace aún ~2,800 LOC,
+> hooks extraídos sin tests propios, candidate_mining.py 789 LOC (>500 guía),
+> coverage gaps en PdfViewer/documentApi/config.py.
+>
+> **Estrategia:** 4 bloques secuenciales. Bloque 1 (bugs+CI) desbloquea testing
+> manual y reduce fricción. Bloque 2 (AppWorkspace) reduce el mayor archivo
+> frontend. Bloque 3 (cobertura) es mecánico. Bloque 4 (limpieza) cierra la
+> iteración. 1 PR única. Ejecución semi-desatendida con Cola de prompts.
+
+**Rama:** `improvement/iteration-8-pr1` desde `main`
+**Agente:** Codex (F14-A..K) · Claude (F14-L)
+**Objetivo:** Fix de PdfViewer, reducir fricción CI docs, AppWorkspace < 1,500 LOC, cerrar gaps de cobertura.
+
+#### F14-A — Hotfix PdfViewer: aceptar ArrayBuffer, eliminar fetch indirection
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — cambia la interfaz de un componente, no lógica de negocio |
+| **Esfuerzo** | S |
+| **Agente** | Codex |
+| **Por qué** | `useDocumentDownload` devuelve `ArrayBuffer` (fix de Iter 7), pero `PdfViewer` declara `fileUrl: string` y hace `fetch(fileUrl)` internamente. `AppWorkspace` pasa el ArrayBuffer como `fileUrl` → `fetch(anArrayBuffer)` falla silenciosamente → no se renderiza el PDF ni la toolbar. Bug activo visible para evaluadores. |
+| **Tareas** | 1. `PdfViewer.tsx`: cambiar prop de `fileUrl?: string` a `fileData?: ArrayBuffer`. Eliminar `fetch(fileUrl)` + `resp.arrayBuffer()`. Usar `fileData` directamente: `pdfjs.getDocument({ data: new Uint8Array(fileData), ... })`. Actualizar `useEffect` dependency a `fileData`. Mantener `disableWorker: true` e `isEvalSupported: false`. 2. `AppWorkspace.tsx`: cambiar `<PdfViewer fileUrl={fileUrl}` a `<PdfViewer fileData={downloadQuery.data}`. Eliminar variable intermedia `fileUrl` si ya no se usa. 3. `PdfViewer.test.tsx`: actualizar tests existentes de `fileUrl="..."` a `fileData={new ArrayBuffer(0)}`. Añadir test "no renderiza cuando fileData es undefined". Añadir test "handles fileData change sin stale state" (rerender con nuevo buffer). 4. Buscar cualquier otro archivo que pase `fileUrl` a PdfViewer: `grep -rn "fileUrl" frontend/src/ --include="*.tsx" --include="*.ts"`. 5. `npm test` → 240+ passed. |
+| **Criterio de aceptación** | PDF se renderiza al subir archivo en Docker. Toolbar visible. No hay `fetch(fileUrl)` en PdfViewer. Tests pasan. |
+| **Archivos** | `frontend/src/components/PdfViewer.tsx`, `frontend/src/AppWorkspace.tsx`, `frontend/src/components/PdfViewer.test.tsx` |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
+#### F14-B — Separar `doc_test_sync_guard` en 3 jobs CI independientes
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Ninguno — cambio puramente estructural en CI config |
+| **Esfuerzo** | XS |
+| **Agente** | Codex |
+| **Por qué** | El job único `doc_test_sync_guard` ejecuta 3 scripts distintos. Cuando falla, no se ve cuál script causó el fallo. Separar en 3 jobs da diagnóstico inmediato. |
+| **Tareas** | 1. En `.github/workflows/ci.yml`, reemplazar el job `doc_test_sync_guard` por 3 jobs: `doc_canonical_router_guard` (ejecuta `check_no_canonical_router_refs.py`), `doc_test_sync_guard` (ejecuta `check_doc_test_sync.py`), `doc_router_parity_guard` (ejecuta `check_doc_router_parity.py`). 2. Mantener mismo trigger (`pull_request`), misma imagen, mismo setup Python. 3. Verificar que los 3 jobs aparecen en GitHub Actions y producen el mismo resultado que el job unificado. |
+| **Criterio de aceptación** | 3 jobs separados visibles en CI. Mismo resultado pass/fail que antes. Zero cambios en scripts. |
+| **Archivos** | `.github/workflows/ci.yml` |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
+#### F14-C — Clasificador de cambios de docs (`classify_doc_change.py`)
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — script nuevo, no modifica existentes |
+| **Esfuerzo** | M |
+| **Agente** | Codex |
+| **Por qué** | Para eximir cambios Navigation/Clarification de requisitos contractuales, primero necesitamos clasificar el tipo de cambio. Heurística conservadora: analiza diff buscando keywords de regla (MUST/SHALL/REQUIRED/threshold/policy); si no encuentra, clasifica como Clarification o Navigation. Fallback = Rule. |
+| **Tareas** | 1. Crear `scripts/classify_doc_change.py` con: detección de `RULE_SIGNALS` (regex conservador), detección de `NAV_PATTERNS` (links, headings, ToC), soporte para tag explícito en commit `[doc:rule]`/`[doc:clar]`/`[doc:nav]`. 2. Output: `doc_change_classification.json` con `{"files": {"path": "type"}, "overall": "Rule|Clarification|Navigation"}`. 3. Integrar como step previo en el job `doc_test_sync_guard` de CI. |
+| **Criterio de aceptación** | Script produce JSON válido. Clasificación correcta para 3 casos de prueba: un diff con MUST (→Rule), un diff solo con links (→Navigation), un diff con rewording (→Clarification). |
+| **Archivos** | `scripts/classify_doc_change.py` (nuevo), `.github/workflows/ci.yml` |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
+#### F14-D — Exención Navigation + modo relajado Clarification
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Medio — cambia comportamiento de un guard existente |
+| **Esfuerzo** | M |
+| **Agente** | Codex |
+| **Por qué** | Con la clasificación disponible, `check_doc_test_sync.py` puede ajustar requisitos: Navigation → skip completo, Clarification → solo `owner_any` (sin `required_any`), Rule → full check (status quo). |
+| **Tareas** | 1. En `check_doc_test_sync.py`, al inicio de `main()`, leer `doc_change_classification.json` si existe. 2. Si `overall == "Navigation"` → print mensaje + exit 0. 3. Si `overall == "Clarification"` → set `DOC_SYNC_RELAXED=1` (skip `required_any` checks). 4. Si `overall == "Rule"` o archivo no existe → full validation (status quo). 5. Actualizar `test_impact_map.json` con campo opcional `rule_change_only` para entradas donde solo cambios de regla requieren sync. |
+| **Criterio de aceptación** | PRs con solo Navigation pass `doc_test_sync` sin cambios en tests. PRs con Rule siguen fallando si falta propagación. Clarification requiere owner pero no tests. |
+| **Archivos** | `scripts/check_doc_test_sync.py`, `test_impact_map.json` |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
+#### F14-E — Tests unitarios del clasificador + calibración
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — tests aditivos |
+| **Esfuerzo** | S |
+| **Agente** | Codex |
+| **Por qué** | El clasificador es fail-closed pero necesita tests para evitar regresiones. Calibrar contra diffs históricos de las últimas 5 iteraciones. |
+| **Tareas** | 1. Crear `backend/tests/unit/test_classify_doc_change.py` con: test Rule (diff con MUST), test Navigation (diff solo links), test Clarification (rewording), test fallback (sin clasificación → Rule), test commit tag override. 2. Verificar contra 3+ diffs reales de PRs anteriores. |
+| **Criterio de aceptación** | ≥90% coverage del script. 5+ test cases. `pytest` green. |
+| **Archivos** | `backend/tests/unit/test_classify_doc_change.py` (nuevo) |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
+#### F14-F — Extraer render sections de AppWorkspace.tsx
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Medio — toca el componente principal del frontend, refactor de JSX |
+| **Esfuerzo** | M |
+| **Agente** | Codex |
+| **Por qué** | AppWorkspace.tsx sigue en ~2,800 LOC tras Iter 7 (hooks extraídos pero JSX intacto). Extraer render sections a sub-componentes reduce a <1,500 LOC y mejora mantenibilidad. |
+| **Tareas** | 1. Crear `components/workspace/UploadPanel.tsx` — sección de upload/drag-drop. 2. Crear `components/workspace/ReviewPanel.tsx` — sección de revisión estructurada. 3. Crear `components/workspace/SidebarPanel.tsx` — sidebar de documentos. 4. Crear `components/workspace/PdfViewerPanel.tsx` — wrapper del visor PDF con toolbar. 5. Reemplazar JSX en AppWorkspace con los sub-componentes. 6. AppWorkspace < 1,500 LOC. 7. `npm test` → 240+ passed. 0 lint errors. |
+| **Criterio de aceptación** | AppWorkspace < 1,500 LOC. 4 sub-componentes creados. Cada uno < 400 LOC. 240+ frontend tests pasan. UI visualmente idéntica. |
+| **Archivos** | `frontend/src/AppWorkspace.tsx`, `frontend/src/components/workspace/` (nuevo directorio) |
+| **Ref FUTURE_IMPROVEMENTS** | Item 7b |
+
+#### F14-G — Tests para hooks extraídos en Iter 7
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — tests aditivos |
+| **Esfuerzo** | M |
+| **Agente** | Codex |
+| **Por qué** | Los 5 hooks extraídos en Iter 7 (`useFieldEditing`, `useUploadState`, `useReviewSplitPanel`, `useDocumentsSidebar`, `useStructuredDataFilters`) no tienen tests unitarios propios. Dependen de tests indirectos vía AppWorkspace. |
+| **Tareas** | 1. Crear test file por hook en `frontend/src/hooks/`. 2. Cubrir: estado inicial, transiciones, edge cases, cleanup. 3. Usar `renderHook` de `@testing-library/react`. 4. `npm test` → 250+ passed. |
+| **Criterio de aceptación** | 5 test files creados. ≥80% coverage por hook. 250+ frontend tests pasan. |
+| **Archivos** | `frontend/src/hooks/*.test.ts` (5 nuevos) |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
+#### F14-H — PdfViewer branch coverage 47%→65%+
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — tests aditivos |
+| **Esfuerzo** | S |
+| **Agente** | Codex |
+| **Por qué** | PdfViewer tiene 47% branch coverage. Zoom, error fallback, drag overlay sin cubrir. Nota: canvas/observer APIs no disponibles en jsdom — mock lo posible, skip lo que requiere DOM real. |
+| **Tareas** | 1. Añadir tests para: error states, loading states, zoom controls, page navigation edge cases. 2. Mock de canvas context donde sea posible. 3. Target: branch ≥65%. |
+| **Criterio de aceptación** | PdfViewer branch ≥65%. `npm test` green. |
+| **Archivos** | `frontend/src/components/PdfViewer.test.tsx` |
+| **Ref FUTURE_IMPROVEMENTS** | Item 4 |
+
+#### F14-I — documentApi branch coverage 67%→80%+
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — tests aditivos |
+| **Esfuerzo** | S |
+| **Agente** | Codex |
+| **Por qué** | `documentApi.ts` branch coverage en 67%. Error paths (network errors, HTTP 4xx/5xx, malformed responses) sin cubrir. |
+| **Tareas** | 1. Añadir tests para: network errors, HTTP error codes, validation failures, timeout handling, malformed responses. 2. Mock `fetch`. 3. Target: branch ≥80%. |
+| **Criterio de aceptación** | documentApi branch ≥80%. `npm test` green. |
+| **Archivos** | `frontend/src/api/documentApi.test.ts` |
+| **Ref FUTURE_IMPROVEMENTS** | Item 4 |
+
+#### F14-J — config.py coverage 83%→90%+
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — tests aditivos |
+| **Esfuerzo** | XS |
+| **Agente** | Codex |
+| **Por qué** | `config.py` coverage en 83%. Paths alternativos (missing env vars, invalid values, fallback defaults, edge cases de path resolution) sin cubrir. |
+| **Tareas** | 1. Añadir tests para: missing env vars, invalid values, fallback defaults, edge cases. 2. Target: ≥90%. |
+| **Criterio de aceptación** | config.py ≥90%. `pytest` green. |
+| **Archivos** | `backend/tests/unit/test_config.py` |
+| **Ref FUTURE_IMPROVEMENTS** | — |
+
+#### F14-K — Split candidate_mining.py (789 LOC → 2 módulos < 400 LOC)
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Medio — lógica de extracción compleja con helpers anidados |
+| **Esfuerzo** | S |
+| **Agente** | Codex |
+| **Por qué** | `candidate_mining.py` (789 LOC) fue extraído de `interpretation.py` en Iter 7 pero sigue por encima de la guía de 500 LOC. Contiene 2 concerns: mining de candidatos y parsing/normalización de fechas. |
+| **Tareas** | 1. Crear `processing/date_parsing.py` con funciones de extracción y clasificación de fechas (`_extract_date_candidates_with_classification` + helpers). 2. `candidate_mining.py` queda con la función principal + mining helpers. 3. Ambos módulos < 400 LOC. 4. Actualizar imports + `processing_runner.py` shim si necesario. 5. `pytest` → 350+ passed. |
+| **Criterio de aceptación** | Ambos módulos < 400 LOC. API pública sin cambios. 350+ tests pasan. |
+| **Archivos** | `processing/candidate_mining.py`, `processing/date_parsing.py` (nuevo), `processing_runner.py` |
+| **Ref FUTURE_IMPROVEMENTS** | Item modularización |
+
+#### F14-L — FUTURE_IMPROVEMENTS refresh + smoke test + PR → main
+
+| Atributo | Valor |
+|---|---|
+| **Riesgo** | Bajo — docs + verificación |
+| **Esfuerzo** | S |
+| **Agente** | Claude |
+| **Por qué** | Gate final de calidad Iteración 8. |
+| **Tareas** | 1. Actualizar FUTURE_IMPROVEMENTS.md con items completados. 2. Smoke: `pytest` → 350+, `npm test` → 250+, lint → 0, CI green. 3. Verificar AppWorkspace < 1,500 LOC. 4. Verificar que un cambio Navigation-only pasa CI sin tests contractuales. 5. DOC_UPDATES normalization pass. 6. Commit + push + PR. |
+| **Criterio de aceptación** | Todos los smoke pasan. CI green con 3 doc jobs separados. AppWorkspace < 1,500 LOC. PR lista para merge. |
+| **Archivos** | `FUTURE_IMPROVEMENTS.md`, todos los modificados en F14-A a F14-K |
+| **Ref FUTURE_IMPROVEMENTS** | Refresh completo |
+
+**Política de la fase — do-not-change:**
+- Contratos HTTP, schemas de respuesta, lógica de negocio, tests existentes (salvo actualización de prop en PdfViewer).
+- Fail-closed mantenido para clasificador de docs: si `doc_change_classification.json` no existe, `check_doc_test_sync.py` aplica validación completa (Rule).
+- AppWorkspace target < 1,500 LOC (stretch: < 1,200). La lógica de UI es densa; no forzar extracciones artificiales.
+- 1 PR única (`improvement/iteration-8-pr1` → `main`).
+
 ---
 
 ### Plan-edit-last (hard constraint)
@@ -1327,7 +1954,9 @@ Así las decisiones quedan en el archivo y sobreviven a la pérdida del chat.
 ## Estrategia de prompts
 
 - **Prompts de auditoría** (Fases 1 y 2): pre-escritos en las secciones de cada fase. Codex los lee directamente del archivo.
-- **Prompts de implementación** (Fases 3+): generados just-in-time por Claude. **Claude los escribe en la sección `## Prompt activo`** de este archivo, commitea y pushea. Luego el usuario abre Codex, adjunta el archivo y escribe `Continúa`. Codex lee el prompt de la sección `Prompt activo`. **El usuario nunca copia ni pega prompts manualmente.**
+- **Prompts pre-escritos** (Cola de prompts): al iniciar una iteración, Claude escribe los prompts de **todas las tareas cuyo contenido no depende del resultado de tareas anteriores** en la sección `## Cola de prompts`. Esto permite la ejecución semi-desatendida: Codex encadena pasos consecutivos leyendo directamente de la Cola.
+- **Prompts just-in-time** (Prompt activo): para tareas cuyo prompt sí depende del resultado de una tarea anterior, Claude los escribe en `## Prompt activo` cuando corresponda.
+- **Resolución de prompts** (orden de prioridad): Cola de prompts → Prompt activo → STOP (pedir a Claude).
 
 ### Protocolo "Continúa"
 Cada prompt incluye al final una instrucción para que el agente:
@@ -1370,15 +1999,24 @@ Cuando Codex recibe `Continúa` con este archivo adjunto, sigue esta lógica de 
 ```
 1. Lee Estado de ejecución → encuentra el primer `[ ]`.
 2. Si el paso es de Claude (no de Codex):
-  → STOP. Dile al usuario: "⚠️ Este paso no corresponde al agente activo. **STOP.** El siguiente paso es de **Claude Opus 4.6**. Abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
+  → STOP. Dile al usuario: "⚠️ Este paso no corresponde al agente activo. **STOP.**
+    El siguiente paso es de **Claude Opus 4.6**. Abre un chat nuevo en Copilot →
+    selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` →
+    escribe `Continúa`."
 3. Si el paso es F1-A:
    → Lee el prompt de la sección "Fase 1 — Prompt para Codex".
 4. Si el paso es F2-A:
    → Lee el prompt de la sección "Fase 2 — Prompt para Codex".
 5. Para cualquier otro paso de Codex:
-   → Lee el prompt de la sección "## Prompt activo".
-   → Si `### Prompt` contiene `_Vacío._`: STOP.
-     Dile al usuario: "⚠️ No hay prompt activo. Vuelve a Claude para que lo genere."
+   → Buscar prompt en este orden de prioridad:
+     a. `## Cola de prompts` → entrada con el ID del paso actual.
+     b. `## Prompt activo` → sección `### Prompt`.
+   → Si ninguno tiene prompt (Cola vacía para ese step Y Prompt activo es
+     `_Vacío._`): STOP.
+     Dile al usuario: "⚠️ No hay prompt. Vuelve a Claude para que lo genere."
+6. Tras completar el paso → ejecutar STEP F del SCOPE BOUNDARY
+   (semi-unattended chain check). Si las condiciones se cumplen, encadenar
+   al siguiente paso automáticamente.
 ```
 ### Auto-chain vs Hard-gate
 
@@ -1426,6 +2064,13 @@ This ensures the local copy has the latest Estado, Resultados, and Prompt activo
 3. Target files exist: for any file path mentioned in the TASK section below, run `Test-Path <path>`. If any file does NOT exist: STOP. Tell the user which file is missing — it may have been renamed in a prior refactor step.
 --- END PRE-FLIGHT CHECK ---
 
+--- MARK IN PROGRESS (mandatory — before starting TASK) ---
+Edit AI_ITERATIVE_EXECUTION_PLAN.md: append ` ⏳ EN PROGRESO (<your agent name>, <current UTC date>)` to the `- [ ] F?-?` line you are about to execute.
+git add docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md
+git commit -m "docs(plan-f?-?): mark step in progress"
+git push origin <active_iteration_branch>
+--- END MARK IN PROGRESS ---
+
 [TASK — rellenado por Claude con instrucciones específicas del paso]
 
 --- TEST GATE (ejecutar ANTES de tocar el plan o commitear) ---
@@ -1439,8 +2084,23 @@ Save the last summary line of each test run (e.g. "246 passed in 10.63s") — yo
 Execute these steps IN THIS EXACT ORDER. Do NOT reorder.
 
 STEP A — Commit code (plan file untouched):
-1. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
-2. git commit -m "<tipo>(plan-f?-?): <descripción>
+0. FORMAT PRE-FLIGHT (mandatory — run BEFORE staging):
+   a. cd frontend && npx prettier --write 'src/**/*.{ts,tsx,css}' && cd ..
+   b. ruff check backend/ --fix --quiet
+   c. ruff format backend/ --quiet
+   This ensures pre-commit hooks will NOT reject the commit.
+1. DOC NORMALIZATION (conditional — only if .md files were changed):
+   a. Run: git diff --name-only -- '*.md'
+      (checks changed .md files before committing)
+   b. If no .md files appear: skip to step 2.
+  c. If .md files appear: execute the DOC_UPDATES normalization pass
+    (per AGENTS.md) on every changed .md file.
+   d. If normalization produced changes: git add the normalized files
+      (excluding AI_ITERATIVE_EXECUTION_PLAN.md).
+2. git add -A -- . ':!docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md'
+3. git commit -m "<tipo>(plan-f?-?): <descripción>
+   **If commit fails (exit code ≠ 0):** re-run step 0 (formatters), re-add, retry commit ONCE.
+   If it fails a second time: STOP and report error to user.
 
 Test proof: <pytest summary line> | <npm test summary line>"
 
@@ -1474,18 +2134,41 @@ STEP E — CI GATE (mandatory — do NOT skip):
    d. Do NOT declare the step done until CI is green.
 5. If you cannot fix it after 2 attempts: STOP. Tell the user: "⚠️ CI sigue rojo tras 2 intentos de fix. Necesito ayuda para diagnosticar."
 
-STEP F — Tell the user the NEXT STEP (mandatory — never omit):
-Look at the Estado de ejecución. Find the next `[ ]` step after the one you just completed.
-Then **check the `### Prompt` section inside `## Prompt activo`** to decide the routing.
-Tell the user EXACTLY one of these messages (pick the FIRST that matches):
+STEP F — CHAIN OR HANDOFF (mandatory):
 
-- If next step says "(Codex)" AND `### Prompt` contains `_Vacío._`: "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`. Claude preparará el prompt just-in-time para el paso de Codex."
-- If next step says "(Codex)" AND `### Prompt` is NOT `_Vacío._`: "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
-- If next step says "(Claude)": "✓ F?-? completado, CI verde, PR actualizada. Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
-- If no more steps remain: "✓ F?-? completado, CI verde, PR actualizada. Todos los pasos completados."
+⚠️ **ITERATION BOUNDARY (hard rule):** Before evaluating auto-chain, check if the
+NEXT unchecked `[ ]` step belongs to the **same Fase/iteration** as the step you
+just completed. If the next step belongs to a DIFFERENT Fase (e.g., you finished
+F13-K and next is F14-A): **STOP. Do NOT auto-chain across iteration boundaries.**
+Report: "✅ Iteración [N] completada. Todas las tareas de Fase [N] están [x].
+Devolviendo control al usuario."
 
-NEVER end without telling the user what to do next. This is a hard rule.
-**NEVER direct to Codex when `### Prompt` is `_Vacío._`.** Claude must write the prompt first.
+1. Next step = first `[ ]` in Estado de ejecución.
+2. Check: is it YOUR agent? Does `## Cola de prompts` have its prompt?
+
+| Your agent? | Prompt exists? | Action |
+|---|---|---|
+| YES | YES | **AUTO-CHAIN** — execute next prompt NOW (see below) |
+| YES | NO | HANDOFF → Claude: "abre chat nuevo → Claude Opus 4.6 → Continúa" |
+| NO | any | HANDOFF → next agent (see handoff messages below) |
+| no steps left | — | "✓ Todos los pasos completados." |
+
+**AUTO-CHAIN (the default path for Fase 13):**
+Print: "✓ F?-? completado, CI verde. Encadenando → F?-? (semi-desatendido)."
+Read next prompt from `## Cola de prompts`. Execute: PRE-FLIGHT → TASK → TEST GATE → SCOPE BOUNDARY.
+Repeat this STEP F after completing.
+
+⚠️ **F13-F through F13-J are ALL Codex + ALL have prompts. AUTO-CHAIN is the ONLY valid path.**
+If you are about to emit a handoff message for a Codex step that has a Cola prompt: STOP.
+You have a bug. Re-read the table above and auto-chain.
+
+**Handoff messages (only when table says HANDOFF):**
+- → Codex (new chat): "Siguiente: abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
+- → Claude (new chat): "Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
+
+**Context safety valve:** if context exhausted, complete current step cleanly and handoff.
+NEVER end without telling the user what to do next.
+**NEVER direct to Codex when no prompt exists.** Claude must write one first.
 
 7. Stop.
 --- END SCOPE BOUNDARY ---
@@ -1840,3 +2523,4 @@ All tests pass: \`pytest\` (backend) + \`npm test\` (frontend)."
 | Evidencia de enfoque incremental | PR storyline existente + iteraciones de esta rama |
 | Plan de mejoras futuras | `docs/project/FUTURE_IMPROVEMENTS.md` (2/4/8 semanas) |
 | Toolchain completo | Ruff + ESLint + Prettier + pre-commit + coverage reporting |
+
