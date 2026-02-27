@@ -34,6 +34,8 @@ class Settings:
     vet_records_confidence_low_max: str | None
     vet_records_confidence_mid_max: str | None
     vet_records_human_edit_neutral_candidate_confidence: str | None
+    vet_records_rate_limit_upload: str | None
+    vet_records_rate_limit_download: str | None
     auth_token: str | None
     app_version: str
     git_commit: str
@@ -72,6 +74,8 @@ def get_settings() -> Settings:
         vet_records_human_edit_neutral_candidate_confidence=_getenv(
             "VET_RECORDS_HUMAN_EDIT_NEUTRAL_CANDIDATE_CONFIDENCE"
         ),
+        vet_records_rate_limit_upload=_getenv("VET_RECORDS_RATE_LIMIT_UPLOAD"),
+        vet_records_rate_limit_download=_getenv("VET_RECORDS_RATE_LIMIT_DOWNLOAD"),
         auth_token=_getenv("AUTH_TOKEN"),
         app_version=_getenv("APP_VERSION") or "dev",
         git_commit=_getenv("GIT_COMMIT") or "unknown",

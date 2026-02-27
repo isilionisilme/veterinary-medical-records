@@ -1,7 +1,5 @@
 """Document-related API routes."""
 
-from __future__ import annotations
-
 from pathlib import Path
 from typing import Annotated, Any, cast
 
@@ -27,8 +25,9 @@ from backend.app.application.document_service import (
     register_document_upload,
 )
 from backend.app.application.processing import enqueue_processing_run
-from backend.app.config import processing_enabled
+from backend.app.config import processing_enabled, rate_limit_download, rate_limit_upload
 from backend.app.domain.models import ProcessingStatus
+from backend.app.infra.rate_limiter import limiter
 from backend.app.ports.document_repository import DocumentRepository
 from backend.app.ports.file_storage import FileStorage
 
@@ -45,6 +44,14 @@ ALLOWED_EXTENSIONS = {".pdf"}
 DEFAULT_LIST_LIMIT = 50
 UUID_PATH_PATTERN = r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
 DocumentIdPath = Annotated[str, ParamPath(..., pattern=UUID_PATH_PATTERN)]
+
+
+def _upload_rate_limit() -> str:
+    return rate_limit_upload()
+
+
+def _download_rate_limit() -> str:
+    return rate_limit_download()
 
 
 @router.get(
@@ -238,6 +245,7 @@ def get_document_processing_history(
         500: {"description": "Unexpected filesystem or I/O failure (INTERNAL_ERROR)."},
     },
 )
+@limiter.limit(_download_rate_limit)
 def get_document_original(
     request: Request,
     document_id: DocumentIdPath,
@@ -325,6 +333,7 @@ def get_document_original(
         500: {"description": "Unexpected storage or database failure (INTERNAL_ERROR)."},
     },
 )
+@limiter.limit(_upload_rate_limit)
 async def upload_document(
     request: Request,
     file: UploadFile = File(  # noqa: B008
