@@ -45,7 +45,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 
 - [x] F18-D 🔄 — Add 17 missing `data-testid` attributes to UI components (Codex) → source: F17-A
 - [x] F18-E 🔄 — Update `playwright.config.ts` with smoke/core/extended projects (Codex) → source: F17-B
-- [ ] F18-F 🔄 — Add npm scripts: `test:e2e:smoke`, `test:e2e:all` (Codex) → source: F17-C
+- [x] F18-F 🔄 — Add npm scripts: `test:e2e:smoke`, `test:e2e:all` (Codex) → source: F17-C
 - [ ] F18-G 🔄 — Create reusable E2E helpers (`e2e/helpers.ts`) + fixture files (Codex) → source: F17-D
 - [ ] F18-H 🔄 — Verify green baseline: existing 5 tests pass (Codex) → source: F17-E
 - [ ] F18-I 🔄 — Refine `app-loads.spec.ts`: add `viewer-empty-state` assertion [A4] (Codex) → source: F17-F
