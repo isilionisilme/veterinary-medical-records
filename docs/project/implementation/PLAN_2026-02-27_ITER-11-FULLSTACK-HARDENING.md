@@ -229,9 +229,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 
 **Paso objetivo:** Add 17 `data-testid` attributes to 4 component files so E2E tests have stable selectors.
 
-**Prompt:** Read the full prompt from [PLAN_2026-02-27_E2E-COVERAGE-EXPANSION.md](PLAN_2026-02-27_E2E-COVERAGE-EXPANSION.md) § Cola de prompts → **F17-A**.
-
-**Override:** Use branch `improvement/iteration-11` (not `improvement/e2e-coverage-expansion`). Use commit prefix `plan-f18d` (not `plan-f17a`).
+**Prompt:** _(Originally from E2E coverage expansion plan § F17-A, now merged inline. Step completed.)_
 
 ⚠️ AUTO-CHAIN → F18-E
 
@@ -241,9 +239,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 
 **Paso objetivo:** Configure `playwright.config.ts` with smoke/core/extended project groups.
 
-**Prompt:** Read the full prompt from [PLAN_2026-02-27_E2E-COVERAGE-EXPANSION.md](PLAN_2026-02-27_E2E-COVERAGE-EXPANSION.md) § Cola de prompts → **F17-B**.
-
-**Override:** Use branch `improvement/iteration-11`. Use commit prefix `plan-f18e`.
+**Prompt:** _(Originally from E2E coverage expansion plan § F17-B, now merged inline. Step completed.)_
 
 ⚠️ AUTO-CHAIN → F18-F
 
@@ -253,9 +249,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 
 **Paso objetivo:** Add npm scripts `test:e2e:smoke`, `test:e2e:all`.
 
-**Prompt:** Read the full prompt from [PLAN_2026-02-27_E2E-COVERAGE-EXPANSION.md](PLAN_2026-02-27_E2E-COVERAGE-EXPANSION.md) § Cola de prompts → **F17-C**.
-
-**Override:** Use branch `improvement/iteration-11`. Use commit prefix `plan-f18f`.
+**Prompt:** _(Originally from E2E coverage expansion plan § F17-C, now merged inline. Step completed.)_
 
 ⚠️ AUTO-CHAIN → F18-G
 
@@ -265,9 +259,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 
 **Paso objetivo:** Create `e2e/helpers.ts` with reusable E2E utilities and fixture files.
 
-**Prompt:** Read the full prompt from [PLAN_2026-02-27_E2E-COVERAGE-EXPANSION.md](PLAN_2026-02-27_E2E-COVERAGE-EXPANSION.md) § Cola de prompts → **F17-D**.
-
-**Override:** Use branch `improvement/iteration-11`. Use commit prefix `plan-f18g`.
+**Prompt:** _(Originally from E2E coverage expansion plan § F17-D, now merged inline. Step completed.)_
 
 ⚠️ AUTO-CHAIN → F18-H
 
@@ -277,9 +269,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 
 **Paso objetivo:** Verify all existing 5 E2E tests pass on the current branch.
 
-**Prompt:** Read the full prompt from [PLAN_2026-02-27_E2E-COVERAGE-EXPANSION.md](PLAN_2026-02-27_E2E-COVERAGE-EXPANSION.md) § Cola de prompts → **F17-E**.
-
-**Override:** Use branch `improvement/iteration-11`. Use commit prefix `plan-f18h`.
+**Prompt:** _(Originally from E2E coverage expansion plan § F17-E, now merged inline. Step completed.)_
 
 ⚠️ AUTO-CHAIN → F18-I
 
@@ -289,9 +279,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 
 **Paso objetivo:** Add `viewer-empty-state` assertion to complete A4 coverage.
 
-**Prompt:** Read the full prompt from [PLAN_2026-02-27_E2E-COVERAGE-EXPANSION.md](PLAN_2026-02-27_E2E-COVERAGE-EXPANSION.md) § Cola de prompts → **F17-F**.
-
-**Override:** Use branch `improvement/iteration-11`. Use commit prefix `plan-f18i`.
+**Prompt:** _(Originally from E2E coverage expansion plan § F17-F, now merged inline. Step completed.)_
 
 ⚠️ AUTO-CHAIN → F18-J
 
@@ -301,9 +289,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 
 **Paso objetivo:** Implement Tests 3–8 covering PDF viewer interactions [D1,D3,D4,D6,D7,D9,D10–D13].
 
-**Prompt:** Read the full prompt from [PLAN_2026-02-27_E2E-COVERAGE-EXPANSION.md](PLAN_2026-02-27_E2E-COVERAGE-EXPANSION.md) § Cola de prompts → **F17-G**.
-
-**Override:** Use branch `improvement/iteration-11`. Use commit prefix `plan-f18j`.
+**Prompt:** _(Originally from E2E coverage expansion plan § F17-G, now merged inline. Step completed.)_
 
 ⚠️ AUTO-CHAIN → F18-K
 

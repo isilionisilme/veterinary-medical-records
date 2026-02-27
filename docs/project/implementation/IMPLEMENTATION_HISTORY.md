@@ -6,6 +6,8 @@
 
 **Iteration 11** — E2E expansion + Error UX + testing depth + DX hardening → [PLAN_2026-02-27_ITER-11-FULLSTACK-HARDENING.md](PLAN_2026-02-27_ITER-11-FULLSTACK-HARDENING.md)
 
+**Iteration 12 (Final)** — E2E Phase 3-4 + WCAG + README polish + ARCHITECTURE.md + close-out → [PLAN_2026-02-27_ITER-12-FINAL.md](PLAN_2026-02-27_ITER-12-FINAL.md)
+
 ## Timeline
 
 | Iteration | Date | PR(s) | Theme | Key Metrics | Detail |
