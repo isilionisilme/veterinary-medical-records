@@ -64,7 +64,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 
 - [x] F18-Q 🔄 — Backend failure-path tests: orchestrator partial failures + DB lock/retry (Codex)
 - [x] F18-R 🔄 — SourcePanel + UploadDropzone test depth: branch coverage + interaction edge cases (Codex)
-- [ ] F18-S 🔄 — Split `sqlite_document_repository.py` by aggregate: documents, runs, calibration (Codex)
+- [x] F18-S 🔄 — Split `sqlite_document_repository.py` by aggregate: documents, runs, calibration (Codex)
 
 #### Phase E — Documentation refresh
 
