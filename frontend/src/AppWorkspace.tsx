@@ -1624,15 +1624,6 @@ export function App() {
     }
     return selectableReviewItems.find((field) => field.id === selectedFieldId) ?? null;
   }, [selectableReviewItems, selectedFieldId]);
-  useEffect(() => {
-    if (!selectedReviewField) {
-      return;
-    }
-    // Trigger source navigation only when the selected item changes.
-    sourcePanel.openFromEvidence(selectedReviewField.evidence);
-    // sourcePanel methods are not memoized; depending on them would retrigger on every render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedReviewField?.id]);
   const reviewPanelState: ReviewPanelState = (() => {
     if (!activeId) {
       return "idle";
