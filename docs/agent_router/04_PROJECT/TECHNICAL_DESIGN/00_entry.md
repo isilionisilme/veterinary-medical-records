@@ -67,4 +67,4 @@ Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for i
 - Reviewed signal semantics and calibration observability requirements remain authoritative within this module family.
 - Security Boundary (§13) and Known Limitations (§14) sections added from CTO verdict iteration 2 (F8-D). Auth scope, production path, and limitation table propagated.
 - Naming clarification propagated: architecture layer naming uses `infra (infrastructure)` to stay aligned with `backend/app/infra/`.
-- Known Limitations propagation note: active set includes `routes.py` concentration and current `AppWorkspace.tsx` size baseline for refactor tracking.
+- Known Limitations propagation note refreshed: `routes.py` concentration is now marked resolved (Iteration 6), `AppWorkspace.tsx` baseline is updated to ~2,200 LOC, and pending hardening gaps include API rate limiting and FK index coverage.

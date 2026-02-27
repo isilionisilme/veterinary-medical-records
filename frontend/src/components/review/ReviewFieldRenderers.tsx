@@ -243,6 +243,7 @@ export function createReviewFieldRenderers(ctx: ReviewFieldRenderersContext): {
         )}
         {!ctx.isDocumentReviewed && (
           <IconButton
+            data-testid={`field-edit-btn-${item.id}`}
             label="Editar"
             tooltip="Editar"
             type="button"

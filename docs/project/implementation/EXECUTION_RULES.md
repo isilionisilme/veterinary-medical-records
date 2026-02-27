@@ -347,6 +347,15 @@ Execute these steps IN THIS EXACT ORDER. Do NOT reorder.
 
 ### STEP C — Push both commits
 1. `git push origin <active_iteration_branch>`
+2. **First push of the iteration (no PR exists yet):** create a **draft** PR immediately:
+   ```
+   gh pr create --draft --base main \
+     --title "<type>: <iteration title>" \
+     --body "Tracking: PLAN_<date>_<slug>.md\n\n## Progress\n<initial checklist>"
+   ```
+   Record the PR number in the plan header (`**PR:** #<number>`) via a plan-update commit.
+   This ensures CI runs against the branch from the very first push.
+3. If a PR already exists: skip creation (proceed to STEP D).
 
 ### STEP D — Update active PR description
 Update with `gh pr edit <pr_number> --body "..."`. Keep existing structure, mark the just-completed step with `[x]`, keep body under 3000 chars.
@@ -397,14 +406,28 @@ NEVER end without telling the user what to do next.
 The lifecycle of an iteration follows this sequence. All operational steps after SCOPE BOUNDARY are automatic — they are NOT plan tasks.
 
 ```
-Plan steps (product work)  →  PR creation  →  User approval  →  Merge + cleanup
-     [SCOPE BOUNDARY]         [automatic]     [hard-gate]       [automatic]
+Branch creation  →  Plan steps (product work)  →  PR readiness  →  User approval  →  Merge + cleanup
+  [automatic]          [SCOPE BOUNDARY]            [automatic]      [hard-gate]       [automatic]
 ```
 
-### PR creation (automatic — not a plan step)
+### Branch creation (mandatory — before ANY plan step)
+**The very first action of every iteration is creating and switching to the feature branch.** This happens before writing prompts, before executing any step, and before any code change.
+
+1. Read the `**Rama:**` field from the active plan file.
+2. `git fetch origin`
+3. `git checkout -b <rama> origin/main` (create from latest `main`).
+4. Verify: `git branch --show-current` must match the Rama field.
+5. If the branch already exists remotely: `git checkout <rama> && git pull origin <rama>`.
+
+**This is NOT a plan step** — it is automatic infrastructure, like PR creation or merge cleanup. Agents execute it unconditionally on the first `Continúa` of an iteration.
+
+### PR readiness (automatic — not a plan step)
 When all steps of an iteration are `[x]` and CI is green on the last push:
-1. The agent creates a PR following `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/210_pull-requests.md`.
-2. PR title, body, classification, and UX/Brand compliance (if applicable) follow that document.
+1. The draft PR (created in STEP C on the first push) is converted to **ready for review**:
+   ```
+   gh pr ready <pr_number>
+   ```
+2. The agent updates title, body, classification, and UX/Brand compliance following `docs/shared/ENGINEERING_PLAYBOOK.md` (PR workflow section).
 3. The agent reports the PR number and URL to the user.
 4. This triggers a **hard-gate**: the user decides when to merge.
 
