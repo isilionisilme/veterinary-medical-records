@@ -1021,26 +1021,32 @@ Algunos tests requieren selectores estables que hoy no existen. Listado de `data
 
 ## 7. Orden de implementación recomendado
 
-1. **Fase 1 — Infraestructura** (ya hecha parcialmente)
+> **Estado final (Iteración 12):** 22 spec files, 65 tests. Fases 1–3 completadas.
+
+1. **Fase 1 — Infraestructura** ✅
    - [x] Playwright instalado y configurado
    - [x] `app-loads.spec.ts` (P0)
    - [x] `upload-smoke.spec.ts` (P0)
-   - [ ] Añadir `data-testid` faltantes (tabla §5)
-   - [ ] Crear helpers reutilizables (`uploadAndWaitForProcessing`, etc.)
+   - [x] Añadir `data-testid` faltantes (tabla §5) — 17+ testids añadidos en Iter 11, ampliados en Iter 12
+   - [x] Crear helpers reutilizables (`uploadAndWaitForProcessing`, etc.) — `e2e/helpers.ts` + `e2e/fixtures.ts`
 
-2. **Fase 2 — Core P1**
-   - [ ] `pdf-viewer.spec.ts`
-   - [ ] `extracted-data.spec.ts`
-   - [ ] `field-editing.spec.ts`
-   - [ ] `review-workflow.spec.ts`
-   - [ ] `document-sidebar.spec.ts`
+2. **Fase 2 — Core P1** ✅ (Iteración 11)
+   - [x] `pdf-viewer.spec.ts` (6 tests)
+   - [x] `extracted-data.spec.ts` (3 tests)
+   - [x] `field-editing.spec.ts` (3 tests)
+   - [x] `review-workflow.spec.ts` (2 tests)
+   - [x] `document-sidebar.spec.ts` (3 tests)
 
-3. **Fase 3 — Extended P2** (por bloques)
-   - [ ] Bloque Viewer: `viewer-tabs`, `raw-text`, `zoom-advanced`
-   - [ ] Bloque Data: `structured-filters`, `field-validation`, `add-field`
-   - [ ] Bloque Workflow: `review-workflow` extras, `reprocess`, `toasts`
-   - [ ] Bloque Layout: `source-panel`, `split-panel`, `sidebar-interactions`
-   - [ ] Bloque Avanzado: `visit-grouping`, `upload-validation`
+3. **Fase 3 — Extended P2** ✅ (Iteración 12, F19-A → F19-E)
+   - [x] Bloque Viewer: `viewer-tabs` (4), `raw-text` (5), `zoom-advanced` (2) — F19-A
+   - [x] Bloque Data: `structured-filters` (6), `field-validation` (5), `add-field` (2) — F19-B
+   - [x] Bloque Workflow: `reprocess` (2), `toasts` (3) — F19-C
+   - [x] Bloque Layout: `source-panel` (3), `split-panel` (2), `sidebar-interactions` (3) — F19-D
+   - [x] Bloque Avanzado: `visit-grouping` (3), `upload-validation` (2) — F19-E
+
+4. **Fase 4 — Accessibility** ✅ (Iteración 12, F19-I + F19-J)
+   - [x] `accessibility.spec.ts` (3 tests) — axe-core WCAG 2.1 AA audit
+   - [x] aria-labels, focus management, color contrast fixes
 
 ---
 
