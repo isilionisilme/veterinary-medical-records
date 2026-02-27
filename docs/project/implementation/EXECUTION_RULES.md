@@ -470,7 +470,7 @@ Add a new entry to `docs/project/implementation/IMPLEMENTATION_HISTORY.md`:
 3. **Active iteration pointer**: update from Iter N → Iter N+1.
 
 #### 3. DOC_UPDATES normalization (mandatory)
-Run the DOC_UPDATES normalization pass (`docs/agent_router/01_WORKFLOW/DOC_UPDATES/00_entry.md`) on any `.md` files modified during the iteration or the close-out itself.
+Run the DOC_UPDATES normalization pass on any `.md` files modified during the iteration or the close-out itself.
 
 #### 4. Commit + push close-out changes
 Commit all close-out artifacts (archive annotations, IMPLEMENTATION_HISTORY, normalized docs) with:
