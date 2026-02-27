@@ -68,8 +68,8 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 
 #### Phase E — Documentation refresh
 
-- [ ] F18-T 🚧 — DELIVERY_SUMMARY + TECHNICAL_DESIGN refresh for Iter 11 metrics (Claude)
-- [ ] F18-U 🚧 — FUTURE_IMPROVEMENTS refresh: mark completed items + update roadmap (Claude)
+- [x] F18-T 🚧 — DELIVERY_SUMMARY + TECHNICAL_DESIGN refresh for Iter 11 metrics (Claude)
+- [ ] F18-U 🚧 — FUTURE_IMPROVEMENTS refresh: mark completed items + update roadmap (Claude) ⏳ EN PROGRESO (Claude, 2026-02-27)
 
 ---
 
