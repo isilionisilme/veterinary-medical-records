@@ -32,7 +32,7 @@ Post-Iter 9: E2E tests in CI, backend 90%, frontend 85%. The most impactful rema
 - [x] F16-F 🔄 — Security audit in CI: add `pip-audit` and `npm audit` steps to CI workflow (Codex)
 - [x] F16-G 🔄 — nginx cache headers: add `Cache-Control` for static assets + `Strict-Transport-Security` header (Codex)
 - [x] F16-H 🔄 — PdfViewer lazy loading: `React.lazy` + `Suspense` for PdfViewer component (Codex)
-- [ ] F16-I 🔄 — Deep health check: verify DB connectivity + storage in `/health` endpoint (Codex)
+- [x] F16-I 🔄 — Deep health check: verify DB connectivity + storage in `/health` endpoint (Codex)
 - [ ] F16-J 🔄 — Fix duplicate `@playwright/test` in package.json (Codex)
 - [ ] F16-K 🚧 — DELIVERY_SUMMARY.md + TECHNICAL_DESIGN.md refresh for Iter 9-10 (Claude)
 - [ ] F16-L 🚧 — FUTURE_IMPROVEMENTS.md refresh + smoke test (Claude)
@@ -579,7 +579,7 @@ Post-Iter 9: E2E tests in CI, backend 90%, frontend 85%. The most impactful rema
 ## Prompt activo
 
 ### Paso objetivo
-_Completado: F16-H._
+_Completado: F16-I._
 
 ### Prompt
 _Vacío._
