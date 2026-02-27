@@ -86,14 +86,18 @@ export async function uploadAndWaitForProcessing(
   }
 
   if (!docId || docId === "null") {
-    const listResponse = await page.request.get("/documents?limit=50&offset=0");
+    const listResponse = await page.request.get("/api/documents?limit=50&offset=0");
     if (listResponse.ok()) {
-      const payload = (await listResponse.json()) as {
-        items?: Array<{ document_id?: string }>;
-      };
-      const fallbackId = payload.items?.[0]?.document_id;
-      if (typeof fallbackId === "string" && fallbackId.trim().length > 0) {
-        docId = fallbackId;
+      try {
+        const payload = (await listResponse.json()) as {
+          items?: Array<{ document_id?: string }>;
+        };
+        const fallbackId = payload.items?.[0]?.document_id;
+        if (typeof fallbackId === "string" && fallbackId.trim().length > 0) {
+          docId = fallbackId;
+        }
+      } catch {
+        // Ignore non-JSON responses and let the final guard raise a clear error.
       }
     }
   }
