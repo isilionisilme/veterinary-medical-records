@@ -40,7 +40,7 @@ Post-Iter 11 (estimated): ~390 backend tests (≥92%), ~280 frontend tests (≥8
 - [x] F19-A 🔄 — Bloque Viewer: `viewer-tabs`, `raw-text`, `zoom-advanced` — 10 tests (Codex) → source: F17-L ✅ 7c5cdfa8 + fix 0d775e4f
 - [x] F19-B 🔄 — Bloque Data: `structured-filters`, `field-validation`, `add-field` — 13 tests (Codex) → source: F17-M ✅ 7fa52122
 - [x] F19-C 🔄 — Bloque Workflow: `reprocess`, `toasts` — 5 tests (Codex) → source: F17-N ✅ eb6128f8
-- [ ] F19-D 🔄 — Bloque Layout: `source-panel`, `split-panel`, `sidebar-interactions` — 8 tests (Codex) → source: F17-O
+- [x] F19-D 🔄 — Bloque Layout: `source-panel`, `split-panel`, `sidebar-interactions` — 8 tests (Codex) → source: F17-O ✅ 11d23e1d
 - [ ] F19-E 🔄 — Bloque Avanzado: `visit-grouping`, `upload-validation` — 5 tests (Codex) → source: F17-P
 - [ ] F19-F 🔄 — Run full suite in Docker, verify 61 tests green (Codex) → source: F17-Q
 - [ ] F19-G 🔄 — Remove legacy spec files absorbed by new specs (Codex) → source: F17-R
