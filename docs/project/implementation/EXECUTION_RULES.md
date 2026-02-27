@@ -178,6 +178,8 @@ Commit A → push → start working on B locally (do NOT wait for CI of A)
 2. **Before committing step N+1:** check CI status of step N:
    - ✅ Green → proceed to commit N+1.
    - ❌ Red → `git stash` → fix step N → `git commit --amend` → `git push --force` → `git stash pop`.
+     After pushing the fix, **resume immediately** with step N+1 (do not wait for the fix CI).
+     The fix will be validated at the next CI checkpoint (before committing step N+2).
 3. **A step is NOT marked `[x]` until its CI run is green.** The plan-update commit happens after CI green, per PLAN-UPDATE-IMMEDIATO below.
 4. **Always run targeted local tests** for step N+1's area before committing, regardless of CI result.
    Run only the tests affected by the change — CI runs the full suite after push.
