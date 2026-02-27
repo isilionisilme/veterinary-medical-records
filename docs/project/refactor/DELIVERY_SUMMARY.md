@@ -7,16 +7,16 @@
 
 ## At a glance
 
-| Metric | Iter 3 (Phase 9) | Iter 6 | Iter 8 | Iter 9 | Iter 10 | Iter 11 (current) |
-|--------|-------------------|--------|--------|--------|---------|-------------------|
-| Backend tests | 263 | 317 | 372 | 372+ | 372+ | **395** |
-| Frontend tests | 168 | 226 | 263 | 263+ | 263+ | **287** |
-| E2E tests | 0 | 0 | 0 | **5 specs** | 5 specs | **20 tests (8 specs)** |
-| Backend coverage | 87% | 90% | 90% | 90% | 90% (≥85% enforced) | **91%** (≥85% enforced) |
-| Frontend coverage | ~65% | 82.6% | 85% | 85% | 85% (≥80% enforced) | **~87%** (≥80% enforced) |
-| CI jobs | 7 | 6 | 8 | 9 (+E2E) | 9 (path-filtered + cached) | 9 (path-filtered + cached) |
-| Lint issues | 0 | 0 | 0 | 0 | 0 | 0 |
-| PRs merged | #145 | #152 | #156, #157 | #163 | #165 | **#167** (in progress) |
+| Metric | Iter 3 (Phase 9) | Iter 6 | Iter 8 | Iter 9 | Iter 10 | Iter 11 | Iter 12 (current) |
+|--------|-------------------|--------|--------|--------|---------|---------|-------------------|
+| Backend tests | 263 | 317 | 372 | 372+ | 372+ | 395 | **395** |
+| Frontend tests | 168 | 226 | 263 | 263+ | 263+ | 287 | **287** |
+| E2E tests | 0 | 0 | 0 | **5 specs** | 5 specs | 20 tests (8 specs) | **65 tests (22 specs)** |
+| Backend coverage | 87% | 90% | 90% | 90% | 90% (≥85% enforced) | 91% (≥85% enforced) | **91%** (≥85% enforced) |
+| Frontend coverage | ~65% | 82.6% | 85% | 85% | 85% (≥80% enforced) | ~87% (≥80% enforced) | **~87%** (≥80% enforced) |
+| CI jobs | 7 | 6 | 8 | 9 (+E2E) | 9 (path-filtered + cached) | 9 (path-filtered + cached) | 9 (+ a11y audit) |
+| Lint issues | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| PRs merged | #145 | #152 | #156, #157 | #163 | #165 | #167 | **#169** (in progress) |
 
 ---
 
@@ -452,3 +452,64 @@ Infrastructure: 17 new `data-testid` attributes, `e2e/helpers.ts` reusable helpe
 | Backend coverage | **91%** (enforced ≥85%) |
 | Frontend coverage | **~87%** (enforced ≥80%) |
 | E2E specs | **8 files, 20 tests** (up from 5 tests / 5 files) |
+
+---
+
+## Iteration 12 — E2E Coverage Expansion + Accessibility + Project Close-Out (Phase 19)
+
+**PR:** #169  
+**Branch:** `improvement/iteration-12-final`
+
+Final iteration: massive E2E expansion (20→65 tests), automated accessibility auditing, architecture documentation, and project close-out documentation.
+
+### Phase A — E2E expansion (20→65 tests, 8→22 specs)
+
+Playwright E2E suite expanded from 20 tests to **65 tests across 22 spec files**, completing all 4 phases of the E2E coverage plan.
+
+| Spec (new) | Tests | Plan step |
+|------------|-------|-----------|
+| `viewer-tabs.spec.ts` | 4 | F19-A |
+| `raw-text.spec.ts` | 5 | F19-A |
+| `zoom-advanced.spec.ts` | 2 | F19-A |
+| `structured-filters.spec.ts` | 6 | F19-B |
+| `field-validation.spec.ts` | 5 | F19-B |
+| `add-field.spec.ts` | 2 | F19-B |
+| `reprocess.spec.ts` | 2 | F19-C |
+| `toasts.spec.ts` | 3 | F19-C |
+| `source-panel.spec.ts` | 3 | F19-D |
+| `split-panel.spec.ts` | 2 | F19-D |
+| `sidebar-interactions.spec.ts` | 3 | F19-D |
+| `visit-grouping.spec.ts` | 3 | F19-E |
+| `upload-validation.spec.ts` | 2 | F19-E |
+| `accessibility.spec.ts` | 3 | F19-I |
+
+### Phase B — WCAG accessibility
+
+| # | Improvement | Detail |
+|---|---|---|
+| 1 | axe-core E2E audit | `@axe-core/playwright` integrated; 3 tests assert zero critical/serious WCAG 2.1 AA violations on upload and review views |
+| 2 | aria-labels + focus | Missing `aria-label`, `role`, `tabIndex` attributes added to ~16 component files; focus trapping in dialogs; color contrast fixes |
+
+### Phase C — Architecture & README
+
+| # | Improvement | Detail |
+|---|---|---|
+| 3 | ARCHITECTURE.md | One-page architecture overview with Mermaid system diagram, tech stack table, ADR decision summary, data flow, and quality metrics |
+| 4 | README polish | CI/Python/React/License badges, tech stack one-liner, demo screenshot placeholder, link to ARCHITECTURE.md |
+
+### Phase D — Documentation close-out
+
+| # | Improvement | Detail |
+|---|---|---|
+| 5 | FUTURE_IMPROVEMENTS reframe | Renamed to "Known Limitations & Future Directions"; reorganized into completed summary, conscious trade-offs with rationale, and production evolution bullets |
+| 6 | TECHNICAL_DESIGN §14 | Updated with Iter 12 outcomes: E2E coverage, accessibility, resolved limitations |
+| 7 | E2E plan metrics | PLAN_E2E_TEST_COVERAGE.md §7 checkboxes all marked complete with per-spec counts |
+
+| Metric | Value |
+|--------|-------|
+| Test suite | **395 backend, 287 frontend, 65 E2E** — all green |
+| Backend coverage | **91%** (enforced ≥85%) |
+| Frontend coverage | **~87%** (enforced ≥80%) |
+| E2E specs | **22 files, 65 tests** (up from 20 tests / 8 files) |
+| Accessibility | axe-core WCAG 2.1 AA: 0 critical violations |
+| New docs | ARCHITECTURE.md, Known Limitations reframe |
