@@ -32,7 +32,7 @@ export async function uploadAndWaitForProcessing(
   });
   if (uploadResponse.ok()) {
     const json = (await uploadResponse.json()) as { document_id?: string };
-    docId = json.document_id ?? null;
+    docId = typeof json.document_id === "string" && json.document_id.trim().length > 0 ? json.document_id : null;
   } else {
     await page.getByLabel("Archivo PDF").setInputFiles({
       name: filename,
@@ -56,7 +56,11 @@ export async function uploadAndWaitForProcessing(
         if (!newRowTestId) {
           return null;
         }
-        return newRowTestId.replace("doc-row-", "");
+        const extractedId = newRowTestId.replace("doc-row-", "");
+        if (!extractedId || extractedId === "null") {
+          return null;
+        }
+        return extractedId;
       },
       { timeout },
     )
@@ -70,8 +74,15 @@ export async function uploadAndWaitForProcessing(
       (testId) => testId.startsWith("doc-row-") && !existingRowTestIds.has(testId),
     );
     if (newRowTestId) {
-      docId = newRowTestId.replace("doc-row-", "");
+      const extractedId = newRowTestId.replace("doc-row-", "");
+      if (extractedId && extractedId !== "null") {
+        docId = extractedId;
+      }
     }
+  }
+
+  if (!docId || docId === "null") {
+    throw new Error("Failed to resolve uploaded document id from response or sidebar.");
   }
 
   const row = page.getByTestId(`doc-row-${docId}`);
