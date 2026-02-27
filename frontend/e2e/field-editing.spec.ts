@@ -5,7 +5,6 @@ import {
   buildMockReviewPayload,
   pinSidebar,
   selectDocument,
-  uploadAndWaitForProcessing,
 } from "./helpers";
 
 type EditScenario = {
@@ -19,18 +18,18 @@ async function openWorkspace(page: Page) {
 }
 
 async function setupFieldEditingScenario(page: Page): Promise<EditScenario> {
+  const documentId = "doc-e2e-field-editing";
   let speciesValue = "canino";
   let versionNumber = 1;
   let capturedEditPayload: unknown = null;
 
   await openWorkspace(page);
-  const documentId = await uploadAndWaitForProcessing(page);
 
   await page.route("**/documents/*/review", async (route) => {
     const url = new URL(route.request().url());
     const match = url.pathname.match(/\/documents\/([^/]+)\/review\/?$/);
     const routeDocumentId = match?.[1];
-    if (!routeDocumentId) {
+    if (!routeDocumentId || routeDocumentId !== documentId) {
       await route.fallback();
       return;
     }
@@ -62,7 +61,7 @@ async function setupFieldEditingScenario(page: Page): Promise<EditScenario> {
     const url = new URL(route.request().url());
     const match = url.pathname.match(/\/documents\/([^/]+)\/?$/);
     const routeDocumentId = match?.[1];
-    if (route.request().method() !== "GET" || !routeDocumentId) {
+    if (route.request().method() !== "GET" || !routeDocumentId || routeDocumentId !== documentId) {
       await route.fallback();
       return;
     }
