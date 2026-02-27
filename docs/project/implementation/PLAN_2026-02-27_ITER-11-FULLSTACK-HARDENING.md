@@ -52,7 +52,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 - [x] F18-J 🔄 — Implement `pdf-viewer.spec.ts`: Tests 3–8 [D1,D3,D4,D6,D7,D9,D10–D13] (Codex) → source: F17-G
 - [x] F18-K 🔄 — Implement `document-sidebar.spec.ts`: Tests 9–11 [B1,B2,B3,B6] (Codex) → source: F17-H
 - [x] F18-L 🔄 — Implement `extracted-data.spec.ts`: Tests 12–14 [H1–H5,H7] (Codex) → source: F17-I
-- [ ] F18-M 🔄 — Refactor `edit-flow.spec.ts` → `field-editing.spec.ts`: Tests 15–17 [J1,J2,J9,J10,J15] (Codex) → source: F17-J
+- [x] F18-M 🔄 — Refactor `edit-flow.spec.ts` → `field-editing.spec.ts`: Tests 15–17 [J1,J2,J9,J10,J15] (Codex) → source: F17-J
 - [ ] F18-N 🔄 — Refactor `mark-reviewed.spec.ts` → `review-workflow.spec.ts`: Tests 18–19 [K1–K5] (Codex) → source: F17-K
 
 #### Phase C — Error UX + performance evidence
