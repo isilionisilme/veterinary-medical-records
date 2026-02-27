@@ -145,20 +145,26 @@ but must not **commit** the next step until the previous step's CI is green.
 > These rules close every identified gap.
 
 ### NO-BATCH (hard rule)
-**Prohibited: closing more than one plan step in a single wave of commits/pushes
-without completing the full CI + plan-update cycle for the previous step.**
-Each step must go through commit → push → CI green → plan update → (next step).
-Batching multiple steps into one push violates atomicity and breaks traceability.
+**Prohibited: pushing code for multiple plan steps in a single commit.**
+Each step gets its own commit. This ensures atomicity and traceability.
+The agent MAY start *working* on the next step before CI is green (see CI-PIPELINE below),
+but each step's code must be a separate commit+push.
 
-### CI-PIPELINE (replaces CI-FIRST-BEFORE-HANDOFF for 🔄 auto-chain steps)
+### CI-PIPELINE (pipeline execution for 🔄 auto-chain steps)
 
 > **Origin:** CI wait time was the main bottleneck in iteration velocity. This
-> rule eliminates idle time while keeping at most one task of drift.
+> rule eliminates idle time while keeping at most one step of drift.
+
+#### Core principle
+
+**Do not wait for CI between auto-chain steps.** Commit, push, and immediately
+start working on the next step. CI is checked *before committing* the next step,
+not before *starting work* on it.
 
 #### Flow
 
 ```
-Commit A → push → start working on B locally
+Commit A → push → start working on B locally (do NOT wait for CI of A)
                    ↓
             B ready → check CI status of A
                        ├─ ✅ Green → run local tests for B → commit B → push → start C
@@ -168,18 +174,45 @@ Commit A → push → start working on B locally
 
 #### Rules
 
-1. **After committing step N:** push and start working on step N+1 immediately. Do not wait for CI.
+1. **After committing step N:** push and start working on step N+1 **immediately**. Do not wait for CI.
 2. **Before committing step N+1:** check CI status of step N:
    - ✅ Green → proceed to commit N+1.
    - ❌ Red → `git stash` → fix step N → `git commit --amend` → `git push --force` → `git stash pop`.
-3. **Always run local tests** for step N+1's area before committing, regardless of CI result:
-   - Backend changes: `cd backend && python -m pytest tests/ -x -q --tb=short`
-   - Frontend changes: `cd frontend && npm run lint && npx vitest run`
-   - Both: run both.
-   - Docs/CI only: no local tests needed.
-4. **Maximum pipeline depth: 1.** Never start step N+2 without CI of step N verified.
-5. **Hard-gates (🚧) and agent handoffs** require CI green for ALL pending steps before proceeding.
-6. **Force-push is allowed** only on feature branches where a single agent is working.
+     After pushing the fix, **resume immediately** with step N+1 (do not wait for the fix CI).
+     The fix will be validated at the next CI checkpoint (before committing step N+2).
+3. **A step is NOT marked `[x]` until its CI run is green.** The plan-update commit happens after CI green, per PLAN-UPDATE-IMMEDIATO below.
+4. **Always run targeted local tests** for step N+1's area before committing, regardless of CI result.
+   Run only the tests affected by the change — CI runs the full suite after push.
+
+   | Change type | Local validation command |
+   |-------------|------------------------|
+   | Backend — single module | `cd backend && python -m pytest tests/test_<module>.py -x -q --tb=short` |
+   | Backend — benchmarks | `cd backend && python -m pytest tests/benchmarks/ -v --benchmark-enable` |
+   | Frontend — single component | `cd frontend && npx vitest run src/components/<Component>.test.tsx` |
+   | Frontend — single lib | `cd frontend && npx vitest run src/lib/__tests__/<file>.test.ts` |
+   | E2E — single spec | `cd frontend && npx playwright test <spec-name>.spec.ts --project=core` |
+   | E2E — extended spec | `cd frontend && npx playwright test <spec-name>.spec.ts --project=extended` |
+   | Docs/CI only | No local tests needed |
+
+   **Exceptions — run the full suite locally when:**
+   - The change touches shared infrastructure (`conftest.py`, test helpers, `vite.config.ts`, `playwright.config.ts`).
+   - The change touches composition root (`main.py`) or configuration (`config.py`).
+   - You are unsure which tests are affected — run the directory, not the entire suite.
+5. **Maximum pipeline depth: 1.** Never start step N+2 without CI of step N verified.
+6. **Hard-gates (🚧) and agent handoffs** require CI green for ALL pending steps before proceeding.
+7. **Force-push is allowed** only on feature branches where a single agent is working.
+
+#### Cancelled CI runs
+
+The CI workflow uses `cancel-in-progress: true` — a new push cancels the running
+CI for the same branch. With pipeline execution, a rapid push sequence (A → B)
+cancels CI-A before it finishes. This is **expected and safe**:
+
+- CI-B validates the cumulative code (A + B). If CI-B is green, A is implicitly validated.
+- When checking CI status "of step N", accept the **most recent completed green run**
+  on the branch, even if it was triggered by a later push.
+- If the only completed run is cancelled (not green, not red), wait for the next
+  run to finish or re-trigger with an empty commit (`git commit --allow-empty`).
 
 #### CI-FIRST still required for
 

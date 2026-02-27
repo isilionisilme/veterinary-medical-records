@@ -20,6 +20,7 @@ export function buildViewerToolbarContent({
       <IconButton
         label="Documento"
         tooltip="Documento"
+        data-testid="viewer-tab-document"
         pressed={activeViewerTab === "document"}
         className={
           activeViewerTab === "document"
@@ -34,6 +35,7 @@ export function buildViewerToolbarContent({
       <IconButton
         label="Texto extraído"
         tooltip="Texto extraído"
+        data-testid="viewer-tab-raw-text"
         pressed={activeViewerTab === "raw_text"}
         className={
           activeViewerTab === "raw_text"
@@ -48,6 +50,7 @@ export function buildViewerToolbarContent({
       <IconButton
         label="Detalles técnicos"
         tooltip="Detalles técnicos"
+        data-testid="viewer-tab-technical"
         pressed={activeViewerTab === "technical"}
         className={
           activeViewerTab === "technical"
@@ -66,6 +69,7 @@ export function buildViewerToolbarContent({
     <IconButton
       label="Descargar"
       tooltip="Descargar"
+      data-testid="viewer-download"
       onClick={() => window.open(downloadUrl, "_blank", "noopener,noreferrer")}
     >
       <Download size={16} aria-hidden="true" />

@@ -3,27 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { SourcePanelContent } from "./SourcePanelContent";
 
-vi.mock("../PdfViewer", () => ({
-  PdfViewer: (props: {
-    documentId?: string | null;
-    fileUrl: string | ArrayBuffer | null;
-    filename?: string | null;
-    isDragOver?: boolean;
-    focusPage?: number | null;
-    highlightSnippet?: string | null;
-    focusRequestId?: number;
-  }) => (
-    <div
-      data-testid="mock-pdf-viewer"
-      data-document-id={props.documentId ?? ""}
-      data-file-url={typeof props.fileUrl === "string" ? props.fileUrl : ""}
-      data-filename={props.filename ?? ""}
-      data-focus-page={String(props.focusPage ?? "")}
-      data-highlight-snippet={props.highlightSnippet ?? ""}
-      data-focus-request-id={String(props.focusRequestId ?? "")}
-    />
-  ),
-}));
+vi.mock("../PdfViewer");
 
 type SourcePanelContentProps = Parameters<typeof SourcePanelContent>[0];
 

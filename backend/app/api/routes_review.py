@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 from backend.app.api.schemas import (
     ActiveInterpretationReviewResponse,
     DocumentReviewResponse,
+    ErrorResponse,
     InterpretationEditRequest,
     InterpretationEditResponse,
     LatestCompletedRunReviewResponse,
@@ -28,7 +29,7 @@ from backend.app.ports.file_storage import FileStorage
 
 from .routes_common import error_response, log_event
 
-router = APIRouter()
+router = APIRouter(tags=["Review"])
 UUID_PATH_PATTERN = r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
 DocumentIdPath = Annotated[str, Path(..., pattern=UUID_PATH_PATTERN)]
 RunIdPath = Annotated[str, Path(..., pattern=UUID_PATH_PATTERN)]
@@ -177,7 +178,8 @@ def reopen_document_review_route(
     summary="Create a new interpretation version for a run",
     description="Apply veterinarian edits by creating a new active interpretation version.",
     responses={
-        400: {"description": "Invalid request payload (INVALID_REQUEST)."},
+        400: {"model": ErrorResponse, "description": "Invalid request payload (INVALID_REQUEST)."},
+        422: {"model": ErrorResponse, "description": "Validation error (UNPROCESSABLE_ENTITY)."},
         404: {"description": "Processing run not found (NOT_FOUND)."},
         409: {"description": "Editing blocked by run/version constraints (CONFLICT)."},
     },

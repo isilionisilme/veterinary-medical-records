@@ -806,6 +806,7 @@ export function PdfViewer({
             <IconButton
               label="Alejar"
               tooltip="Alejar"
+              data-testid="pdf-zoom-out"
               disabled={!canZoomOut}
               onClick={() => setZoomLevel((current) => clampZoomLevel(current - ZOOM_STEP))}
             >
@@ -825,6 +826,7 @@ export function PdfViewer({
             <IconButton
               label="Acercar"
               tooltip="Acercar"
+              data-testid="pdf-zoom-in"
               disabled={!canZoomIn}
               onClick={() => setZoomLevel((current) => clampZoomLevel(current + ZOOM_STEP))}
             >
@@ -834,6 +836,7 @@ export function PdfViewer({
             <IconButton
               label="Ajustar al ancho"
               tooltip="Ajustar al ancho"
+              data-testid="pdf-zoom-fit"
               onClick={() => setZoomLevel(1)}
             >
               <ScanLine size={17} className="h-[17px] w-[17px] shrink-0" />
@@ -846,17 +849,22 @@ export function PdfViewer({
             <IconButton
               label="Página anterior"
               tooltip="Página anterior"
+              data-testid="pdf-page-prev"
               disabled={navDisabled || !canGoBack}
               onClick={() => scrollToPage(Math.max(1, pageNumber - 1))}
             >
               <ChevronLeft size={18} className="h-[18px] w-[18px] shrink-0" />
             </IconButton>
-            <p className="min-w-12 text-center text-sm font-semibold text-textSecondary">
+            <p
+              className="min-w-12 text-center text-sm font-semibold text-textSecondary"
+              data-testid="pdf-page-indicator"
+            >
               {pageNumber}/{totalPages}
             </p>
             <IconButton
               label="Página siguiente"
               tooltip="Página siguiente"
+              data-testid="pdf-page-next"
               disabled={navDisabled || !canGoForward}
               onClick={() => scrollToPage(Math.min(totalPages, pageNumber + 1))}
             >

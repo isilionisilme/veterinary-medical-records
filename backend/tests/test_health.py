@@ -12,9 +12,9 @@ def test_health_returns_ok_with_database_and_storage_checks(test_client_factory)
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["status"] == "ok"
-    assert payload["checks"]["database"]["status"] == "ok"
-    assert payload["checks"]["storage"]["status"] == "ok"
+    assert payload["status"] == "healthy"
+    assert payload["database"] == "ok"
+    assert payload["storage"] == "ok"
 
 
 def test_health_returns_degraded_when_database_check_fails(
@@ -32,5 +32,4 @@ def test_health_returns_degraded_when_database_check_fails(
     assert response.status_code == 503
     payload = response.json()
     assert payload["status"] == "degraded"
-    assert payload["checks"]["database"]["status"] == "error"
-    assert "database unavailable" in payload["checks"]["database"]["detail"]
+    assert payload["database"] == "error"

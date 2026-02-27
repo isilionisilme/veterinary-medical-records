@@ -12,6 +12,7 @@ from backend.app.api.schemas import (
     DocumentListResponse,
     DocumentResponse,
     DocumentUploadResponse,
+    ErrorResponse,
     LatestRunResponse,
     ProcessingHistoryResponse,
     ProcessingHistoryRunResponse,
@@ -33,7 +34,7 @@ from backend.app.ports.file_storage import FileStorage
 
 from .routes_common import _request_content_length, error_response, log_event
 
-router = APIRouter()
+router = APIRouter(tags=["Documents"])
 
 # Normative default: 20 MB (see docs/project/TECHNICAL_DESIGN.md Appendix B3.2).
 MAX_UPLOAD_SIZE = 20 * 1024 * 1024  # 20 MB
@@ -327,7 +328,8 @@ def get_document_original(
         "Release 1 stores the original PDF in filesystem storage."
     ),
     responses={
-        400: {"description": "Invalid request (INVALID_REQUEST)."},
+        400: {"model": ErrorResponse, "description": "Invalid request (INVALID_REQUEST)."},
+        422: {"model": ErrorResponse, "description": "Validation error (UNPROCESSABLE_ENTITY)."},
         413: {"description": "Uploaded file exceeds the maximum allowed size (FILE_TOO_LARGE)."},
         415: {"description": "Unsupported upload type (UNSUPPORTED_MEDIA_TYPE)."},
         500: {"description": "Unexpected storage or database failure (INTERNAL_ERROR)."},

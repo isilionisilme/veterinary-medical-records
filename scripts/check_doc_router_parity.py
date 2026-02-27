@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Guardrail that enforces source-doc to router-module parity for mapped docs."""
+"""Guardrail that enforces source-doc to router-module parity for mapped docs.
+
+Synced in Iteration 11 docs propagation cycle (F18-T/F18-U).
+"""
 
 from __future__ import annotations
 

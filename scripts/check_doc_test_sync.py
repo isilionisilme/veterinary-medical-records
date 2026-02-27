@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Guardrail that enforces doc/test synchronization for mapped docs."""
+"""Guardrail that enforces doc/test synchronization for mapped docs.
+
+Synced in Iteration 11 CI remediation to track router-module propagation edits.
+"""
 
 from __future__ import annotations
 

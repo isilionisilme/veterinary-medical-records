@@ -338,6 +338,20 @@ min_volume: 5
 - Failed runs remain visible and auditable.
 - Stuck runs must be detectable via timeout and transitioned to `TIMED_OUT`.
 
+### 8.1 User-facing error messages (Iteration 11)
+
+Raw API error strings are **never shown directly** in toast notifications. The frontend `errorMessages.ts` module applies regex-based pattern matching to classify errors and map them to user-friendly Spanish messages:
+
+| Pattern | User message |
+|---------|-------------|
+| `rate.?limit\|too many` | "Demasiadas solicitudes. Intenta de nuevo en unos segundos." |
+| `file.*too large\|size.*exceed` | "El archivo es demasiado grande. El límite es 50 MB." |
+| `not found\|404` | "Documento no encontrado." |
+| `network\|fetch\|timeout` | "Error de conexión. Verifica tu conexión a internet." |
+| (+ 4 more patterns) | See `frontend/src/lib/errorMessages.ts` for full map |
+
+Unmatched errors fall back to a generic message. This ensures UX consistency regardless of backend error format changes.
+
 ---
 
 ## 9. Observability
@@ -433,6 +447,9 @@ The current architecture supports this evolution: the hexagonal design and expli
 | 5 | ~~`routes.py` at ~940 LOC~~ **✅ Resolved** | Routes fully decomposed into 5 domain modules (all < 420 LOC) + 18-LOC aggregator | Done (Iteration 6); [FUTURE_IMPROVEMENTS.md](FUTURE_IMPROVEMENTS.md) #7a ✅ |
 | 6 | ~~No rate limiting on API endpoints~~ **✅ Resolved** | Rate limiting applied via `slowapi` on upload (10/min) and download (30/min) | Done (Iteration 10, F16-D) |
 | 7 | ~~No DB indexes on FK columns~~ **✅ Resolved** | 4 secondary indexes added on `processing_runs`, `artifacts`, `document_status_history` | Done (Iteration 10, F16-A) |
+| 8 | ~~SQLite repository monolith (751 LOC, 4 aggregates)~~ **✅ Resolved** | Split into 3 aggregate modules + façade: `sqlite_document_repo.py` (241), `sqlite_run_repo.py` (302), `sqlite_calibration_repo.py` (123) | Done (Iteration 11, F18-S) |
+| 9 | ~~No latency baselines~~ **✅ Resolved** | P50/P95 benchmarks for list/get/upload endpoints; P95 < 500ms enforced | Done (Iteration 11, F18-P) |
+| 10 | ~~Raw API errors shown to users~~ **✅ Resolved** | `errorMessages.ts` maps 8 error patterns to user-friendly Spanish toasts | Done (Iteration 11, F18-O) |
 
 ---
 

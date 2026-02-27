@@ -52,10 +52,16 @@ export function ToastHost({
   onCloseActionFeedback,
   onOpenUploadedDocument,
 }: ToastHostProps) {
+  const uploadToastKind = uploadFeedback?.kind ?? "success";
+  const actionToastKind = actionFeedback?.kind ?? "info";
+
   return (
-    <>
+    <div data-testid="toast-host">
       {connectivityToast && (
-        <div className="fixed left-1/2 top-10 z-[65] w-full max-w-lg -translate-x-1/2 px-4 sm:w-[32rem]">
+        <div
+          data-testid="toast-connectivity"
+          className="fixed left-1/2 top-10 z-[65] w-full max-w-lg -translate-x-1/2 px-4 sm:w-[32rem]"
+        >
           <div
             className={`${TOAST_BASE_CLASS} ${getToastKindClass("error")}`}
             style={getToastKindBackground("error")}
@@ -76,6 +82,7 @@ export function ToastHost({
       )}
       {uploadFeedback && (
         <div
+          data-testid={`toast-${uploadToastKind}`}
           className={`${TOAST_CONTAINER_BASE_CLASS} ${getUploadToastTopClass(Boolean(connectivityToast))}`}
         >
           <div
@@ -121,6 +128,7 @@ export function ToastHost({
       )}
       {actionFeedback && (
         <div
+          data-testid={`toast-${actionToastKind}`}
           className={`${TOAST_CONTAINER_BASE_CLASS} ${getActionToastTopClass(Boolean(connectivityToast))}`}
         >
           <div
@@ -161,6 +169,6 @@ export function ToastHost({
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

@@ -61,4 +61,44 @@ describe("SourcePanel", () => {
     expect(screen.getByText(/Sin evidencia disponible/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Fijar fuente/i })).toBeDisabled();
   });
+
+  it("renders pinned state and custom content", () => {
+    render(
+      <SourcePanel
+        sourcePage={2}
+        sourceSnippet="Prueba"
+        isSourcePinned={true}
+        isDesktopForPin={true}
+        onTogglePin={vi.fn()}
+        onClose={vi.fn()}
+        content={<div>Panel interno</div>}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: /Desfijar fuente/i })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByText("Panel interno")).toBeInTheDocument();
+    expect(screen.getByTestId("source-panel-scroll")).toBeInTheDocument();
+  });
+
+  it("does not trigger pin callback when pin button is disabled", () => {
+    const onTogglePin = vi.fn();
+
+    render(
+      <SourcePanel
+        sourcePage={null}
+        sourceSnippet={null}
+        isSourcePinned={false}
+        isDesktopForPin={false}
+        onTogglePin={onTogglePin}
+        onClose={vi.fn()}
+        content={<div>Contenido</div>}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Fijar fuente/i }));
+    expect(onTogglePin).not.toHaveBeenCalled();
+  });
 });

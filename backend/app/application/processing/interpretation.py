@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import os
 from collections.abc import Mapping
 from datetime import UTC, datetime
 from uuid import uuid4
@@ -24,6 +23,7 @@ from backend.app.config import (
     confidence_policy_version_or_none,
 )
 from backend.app.ports.document_repository import DocumentRepository
+from backend.app.settings import should_include_interpretation_candidates
 
 from .candidate_mining import (
     _candidate_sort_key,
@@ -36,7 +36,6 @@ from .confidence_scoring import (
 )
 from .constants import (
     _WHITESPACE_PATTERN,
-    INTERPRETATION_DEBUG_INCLUDE_CANDIDATES_ENV,
     MVP_COVERAGE_DEBUG_KEYS,
     REVIEW_SCHEMA_CONTRACT,
 )
@@ -177,8 +176,7 @@ def _build_interpretation_artifact(
 
 
 def _should_include_interpretation_candidates() -> bool:
-    raw = os.getenv(INTERPRETATION_DEBUG_INCLUDE_CANDIDATES_ENV, "").strip().lower()
-    return raw in {"1", "true", "yes", "on"}
+    return should_include_interpretation_candidates()
 
 
 def _build_date_selection_debug(

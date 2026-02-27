@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -8,26 +7,7 @@ import {
   waitForStructuredDataReady,
 } from "./test/helpers";
 
-vi.mock("./components/PdfViewer", () => ({
-  PdfViewer: (props: {
-    focusPage?: number | null;
-    highlightSnippet?: string | null;
-    focusRequestId?: number;
-    toolbarLeftContent?: ReactNode;
-    toolbarRightExtra?: ReactNode;
-  }) => (
-    <>
-      <div data-testid="pdf-viewer-toolbar-left">{props.toolbarLeftContent ?? null}</div>
-      <div data-testid="pdf-viewer-toolbar-right">{props.toolbarRightExtra ?? null}</div>
-      <div
-        data-testid="pdf-viewer"
-        data-focus-page={props.focusPage ?? ""}
-        data-highlight-snippet={props.highlightSnippet ?? ""}
-        data-focus-request-id={props.focusRequestId ?? 0}
-      />
-    </>
-  ),
-}));
+vi.mock("./components/PdfViewer");
 
 describe("App upload and list flow", () => {
   beforeEach(() => {

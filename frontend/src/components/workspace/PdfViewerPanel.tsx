@@ -325,6 +325,7 @@ export function PdfViewerPanel({
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <input
+                  data-testid="raw-text-search-input"
                   className="w-full rounded-control border border-borderSubtle bg-surface px-3 py-2 text-xs text-text outline-none placeholder:text-textSecondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:w-64"
                   placeholder="Buscar en el texto"
                   value={rawSearch}
@@ -340,6 +341,7 @@ export function PdfViewerPanel({
                   Buscar
                 </Button>
                 <Button
+                  data-testid="raw-text-copy"
                   type="button"
                   disabled={!canCopyRawText || isCopyingRawText}
                   onClick={() => {
@@ -352,7 +354,12 @@ export function PdfViewerPanel({
                       ? "Copiado"
                       : "Copiar todo"}
                 </Button>
-                <Button type="button" disabled={!rawTextContent} onClick={onDownloadRawText}>
+                <Button
+                  data-testid="raw-text-download"
+                  type="button"
+                  disabled={!rawTextContent}
+                  onClick={onDownloadRawText}
+                >
                   Descargar texto (.txt)
                 </Button>
               </div>
@@ -523,7 +530,7 @@ export function PdfViewerPanel({
         </div>
       </div>
       <Dialog open={showRetryModal} onOpenChange={onShowRetryModalChange}>
-        <DialogContent className="max-w-sm">
+        <DialogContent data-testid="reprocess-confirm-modal" className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Reprocesar documento</DialogTitle>
             <DialogDescription className="text-xs">
@@ -536,7 +543,12 @@ export function PdfViewerPanel({
                 Cancelar
               </Button>
             </DialogClose>
-            <Button type="button" onClick={onConfirmRetry} disabled={reprocessPending}>
+            <Button
+              data-testid="reprocess-confirm-btn"
+              type="button"
+              onClick={onConfirmRetry}
+              disabled={reprocessPending}
+            >
               {reprocessPending ? "Reprocesando..." : "Reprocesar"}
             </Button>
           </DialogFooter>
