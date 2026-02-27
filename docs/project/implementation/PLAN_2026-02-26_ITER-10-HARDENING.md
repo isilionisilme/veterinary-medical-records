@@ -3,7 +3,7 @@
 > **Operational rules:** See [EXECUTION_RULES.md](EXECUTION_RULES.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
 
 **Rama:** `improvement/iteration-10-hardening`
-**PR:** TBD (single PR → `main`)
+**PR:** #165 (single PR → `main`)
 **Prerequisito:** Iteration 9 (E2E) merged to `main`.
 
 ## Context
@@ -24,7 +24,7 @@ Post-Iter 9: E2E tests in CI, backend 90%, frontend 85%. The most impactful rema
 
 ### Fase 16 — Iteration 10 (Security, resilience & performance hardening)
 
-- [ ] F16-A 🔄 — Database indexes: add indexes on `processing_runs(document_id)`, `document_status_history(document_id)`, `artifacts(run_id)`, `artifacts(run_id, artifact_type)` (Codex)
+- [x] F16-A 🔄 — Database indexes: add indexes on `processing_runs(document_id)`, `document_status_history(document_id)`, `artifacts(run_id)`, `artifacts(run_id, artifact_type)` (Codex)
 - [ ] F16-B 🔄 — UUID validation: add `document_id` path parameter validation on all routes (Codex)
 - [ ] F16-C 🔄 — React Error Boundary: add global error boundary wrapping the app tree (Codex)
 - [ ] F16-D 🔄 — Rate limiting: add `slowapi` middleware to protect upload and extraction endpoints (Codex)
@@ -579,7 +579,7 @@ Post-Iter 9: E2E tests in CI, backend 90%, frontend 85%. The most impactful rema
 ## Prompt activo
 
 ### Paso objetivo
-_Vacío._
+_Completado: F16-A._
 
 ### Prompt
 _Vacío._
