@@ -3,7 +3,7 @@
 > **Operational rules:** See [EXECUTION_RULES.md](EXECUTION_RULES.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
 
 **Rama:** `improvement/iteration-12-final`
-**PR:** TBD (single PR → `main`)
+**PR:** #169
 **Prerequisito:** Iteration 11 merged to `main`.
 
 ## Context
