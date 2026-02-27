@@ -128,10 +128,13 @@ Operational protocol (commit, push, PR creation, merge, post-merge cleanup, bran
 
 ### CI verification (mandatory — hard rule)
 **No step is considered completed until GitHub CI is green.** Local tests are necessary but NOT sufficient. After push, the agent MUST:
-1. Wait for the CI run to finish (`gh run list --branch <branch> --limit 1`).
+1. Check CI status of the previous step (see CI-PIPELINE rule).
 2. If CI fails: diagnose, fix, push and wait again.
 3. Only after CI green: declare the step completed to the user.
 4. If unable to fix CI after 2 attempts: STOP and ask for help.
+
+Under CI-PIPELINE, the agent may start **local work** on the next step while CI runs,
+but must not **commit** the next step until the previous step's CI is green.
 
 ---
 
@@ -147,11 +150,42 @@ without completing the full CI + plan-update cycle for the previous step.**
 Each step must go through commit → push → CI green → plan update → (next step).
 Batching multiple steps into one push violates atomicity and breaks traceability.
 
-### CI-FIRST-BEFORE-HANDOFF (hard rule)
-**Prohibited: emitting a handoff message if the last code commit of the step
-does not have a green CI run on GitHub.** The agent must wait for CI to pass
-before telling the user (or the next agent) to continue. If CI is still running,
-wait. If CI fails, fix and re-push. Never hand off a red or unknown CI state.
+### CI-PIPELINE (replaces CI-FIRST-BEFORE-HANDOFF for 🔄 auto-chain steps)
+
+> **Origin:** CI wait time was the main bottleneck in iteration velocity. This
+> rule eliminates idle time while keeping at most one task of drift.
+
+#### Flow
+
+```
+Commit A → push → start working on B locally
+                   ↓
+            B ready → check CI status of A
+                       ├─ ✅ Green → run local tests for B → commit B → push → start C
+                       └─ ❌ Red   → stash B → fix A → amend → force-push
+                                     → pop B → run local tests for B → commit B → push → start C
+```
+
+#### Rules
+
+1. **After committing step N:** push and start working on step N+1 immediately. Do not wait for CI.
+2. **Before committing step N+1:** check CI status of step N:
+   - ✅ Green → proceed to commit N+1.
+   - ❌ Red → `git stash` → fix step N → `git commit --amend` → `git push --force` → `git stash pop`.
+3. **Always run local tests** for step N+1's area before committing, regardless of CI result:
+   - Backend changes: `cd backend && python -m pytest tests/ -x -q --tb=short`
+   - Frontend changes: `cd frontend && npm run lint && npx vitest run`
+   - Both: run both.
+   - Docs/CI only: no local tests needed.
+4. **Maximum pipeline depth: 1.** Never start step N+2 without CI of step N verified.
+5. **Hard-gates (🚧) and agent handoffs** require CI green for ALL pending steps before proceeding.
+6. **Force-push is allowed** only on feature branches where a single agent is working.
+
+#### CI-FIRST still required for
+
+- Handoffs between agents (Codex ↔ Claude)
+- Hard-gate (🚧) steps
+- The last step of an iteration (before merge)
 
 ### PLAN-UPDATE-IMMEDIATO (hard rule)
 **After CI green for a step, the very next commit MUST be the plan update
@@ -170,9 +204,9 @@ has not been updated, the step enters **🔒 STEP LOCKED** state.
 
 - Mark in the plan: `- [ ] F?-? ... 🔒 STEP LOCKED (code committed, awaiting CI + plan update)`
 - While any step is LOCKED:
-  - **No other step may begin execution.**
+  - **No other step may begin execution** (except under CI-PIPELINE rule §1, where the agent starts local work while CI runs).
   - **No handoff may be emitted.**
-  - **No auto-chain may trigger.**
+  - **No auto-chain commit may occur** until CI of the locked step is verified.
 - The lock is released only when CI is green AND the plan-update commit is pushed.
 - Then remove the `🔒 STEP LOCKED` label and mark `[x]`.
 
