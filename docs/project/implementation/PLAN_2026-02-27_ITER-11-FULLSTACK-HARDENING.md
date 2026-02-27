@@ -58,7 +58,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 #### Phase C — Error UX + performance evidence
 
 - [x] F18-O 🔄 — Error UX mapping: `errorCodeMap` + user-friendly toast messages (Codex)
-- [ ] F18-P 🔄 — Latency benchmarks: P50/P95 for upload, list, extract endpoints (Codex)
+- [x] F18-P 🔄 — Latency benchmarks: P50/P95 for upload, list, extract endpoints (Codex)
 
 #### Phase D — Testing depth + architecture
 
