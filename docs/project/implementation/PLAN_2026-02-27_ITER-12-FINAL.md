@@ -53,13 +53,13 @@ Post-Iter 11 (estimated): ~390 backend tests (≥92%), ~280 frontend tests (≥8
 
 #### Phase C — README + Architecture one-pager
 
-- [ ] F19-K 🚧 — Create `ARCHITECTURE.md` one-pager with Mermaid diagram (Claude)
-- [ ] F19-L 🚧 — README final polish: badges, tech stack table, demo GIF placeholder, streamlined structure (Claude)
+- [x] F19-K 🚧 — Create `ARCHITECTURE.md` one-pager with Mermaid diagram (Claude) ✅ 402a2ff0
+- [x] F19-L 🚧 — README final polish: badges, tech stack table, demo GIF placeholder, streamlined structure (Claude) ✅ 093fb6eb
 
 #### Phase D — Final documentation close-out
 
 - [ ] F19-M 🚧 — DELIVERY_SUMMARY final refresh with Iter 11+12 metrics (Claude)
-- [ ] F19-N 🚧 — FUTURE_IMPROVEMENTS → reframe as "Known Limitations & Future Directions" (Claude)
+- [x] F19-N 🚧 — FUTURE_IMPROVEMENTS → reframe as "Known Limitations & Future Directions" (Claude) ✅ 096efbbf
 - [ ] F19-O 🚧 — TECHNICAL_DESIGN §14 final update: mark resolved limitations, add Iter 12 outcomes (Claude)
 
 ---
