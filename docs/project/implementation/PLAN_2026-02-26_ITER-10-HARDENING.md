@@ -26,7 +26,7 @@ Post-Iter 9: E2E tests in CI, backend 90%, frontend 85%. The most impactful rema
 
 - [x] F16-A 🔄 — Database indexes: add indexes on `processing_runs(document_id)`, `document_status_history(document_id)`, `artifacts(run_id)`, `artifacts(run_id, artifact_type)` (Codex)
 - [x] F16-B 🔄 — UUID validation: add `document_id` path parameter validation on all routes (Codex)
-- [ ] F16-C 🔄 — React Error Boundary: add global error boundary wrapping the app tree (Codex)
+- [x] F16-C 🔄 — React Error Boundary: add global error boundary wrapping the app tree (Codex)
 - [ ] F16-D 🔄 — Rate limiting: add `slowapi` middleware to protect upload and extraction endpoints (Codex)
 - [ ] F16-E 🔄 — Coverage thresholds: enforce `--cov-fail-under=85` in pytest and vitest coverage config (Codex)
 - [ ] F16-F 🔄 — Security audit in CI: add `pip-audit` and `npm audit` steps to CI workflow (Codex)
@@ -579,7 +579,7 @@ Post-Iter 9: E2E tests in CI, backend 90%, frontend 85%. The most impactful rema
 ## Prompt activo
 
 ### Paso objetivo
-_Completado: F16-B._
+_Completado: F16-C._
 
 ### Prompt
 _Vacío._
