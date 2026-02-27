@@ -24,7 +24,7 @@ from backend.app.config import extraction_observability_enabled
 
 from .routes_common import error_response, extraction_observability_disabled_response
 
-router = APIRouter()
+router = APIRouter(tags=["Calibration"])
 logger = logging.getLogger(__name__)
 
 

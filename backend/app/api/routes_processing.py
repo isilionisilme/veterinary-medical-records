@@ -20,7 +20,7 @@ from backend.app.ports.file_storage import FileStorage
 
 from .routes_common import error_response, log_event
 
-router = APIRouter()
+router = APIRouter(tags=["Processing"])
 
 
 @router.post(
