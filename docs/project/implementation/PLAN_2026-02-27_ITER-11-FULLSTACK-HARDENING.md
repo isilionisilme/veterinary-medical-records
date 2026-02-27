@@ -47,7 +47,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 - [x] F18-E 🔄 — Update `playwright.config.ts` with smoke/core/extended projects (Codex) → source: F17-B
 - [x] F18-F 🔄 — Add npm scripts: `test:e2e:smoke`, `test:e2e:all` (Codex) → source: F17-C
 - [x] F18-G 🔄 — Create reusable E2E helpers (`e2e/helpers.ts`) + fixture files (Codex) → source: F17-D
-- [ ] F18-H 🔄 — Verify green baseline: existing 5 tests pass (Codex) → source: F17-E
+- [x] F18-H 🔄 — Verify green baseline: existing 5 tests pass (Codex) → source: F17-E
 - [ ] F18-I 🔄 — Refine `app-loads.spec.ts`: add `viewer-empty-state` assertion [A4] (Codex) → source: F17-F
 - [ ] F18-J 🔄 — Implement `pdf-viewer.spec.ts`: Tests 3–8 [D1,D3,D4,D6,D7,D9,D10–D13] (Codex) → source: F17-G
 - [ ] F18-K 🔄 — Implement `document-sidebar.spec.ts`: Tests 9–11 [B1,B2,B3,B6] (Codex) → source: F17-H
