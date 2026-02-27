@@ -2,6 +2,10 @@
 
 > Consolidated timeline of all improvement iterations. Each row links to a detailed completed file with step-by-step execution logs.
 
+## Active iteration
+
+See [PLAN_2026-02-26_ITER-10-HARDENING.md](PLAN_2026-02-26_ITER-10-HARDENING.md) — Iteration 10: Security, resilience & performance hardening.
+
 ## Timeline
 
 | Iteration | Date | PR(s) | Theme | Key Metrics | Detail |
@@ -14,22 +18,16 @@
 | 6 | 2026-02-25 | #152 | Coverage + security hardening | Backend 90%, frontend 82.6%, nginx CSP, CORS restricted, routes decomposed | [COMPLETED_ITER-6.md](completed/COMPLETED_ITER-6.md) |
 | 7 | 2026-02-26 | #153 | Modularization | interpretation.py split, pdf_extraction split, AppWorkspace hooks, observability 4-module | [COMPLETED_ITER-7.md](completed/COMPLETED_ITER-7.md) |
 | 8 | 2026-02-26 | #156, #157 | Bugs + CI governance + refactor round 3 | 372 backend, 263 frontend, 3 doc guard CI jobs, AppWorkspace −62% | [COMPLETED_ITER-8.md](completed/COMPLETED_ITER-8.md) |
+| 9 | 2026-02-27 | #163 | E2E testing + evaluator polish | 5 Playwright E2E specs, 17 data-testid attrs, docs refresh, 6 EXECUTION_RULES integrity rules | [COMPLETED_ITER-9.md](completed/COMPLETED_ITER-9.md) |
 
 ## Cumulative progress
 
-| Metric | Iter 1 | Iter 3 | Iter 6 | Iter 8 |
-|---|---|---|---|---|
-| Backend tests | ~80 | ~180 | 317 | 372 |
-| Frontend tests | ~40 | ~120 | 226 | 263 |
-| Backend coverage | ~60% | ~75% | 90% | 90% |
-| Frontend coverage | ~40% | ~65% | 82.6% | 85% |
-| CI jobs | 1 | 4 | 6 | 8 |
-| Lint issues | many | some | 0 | 0 |
-
-## Active iteration
-
-See [PLAN_2026-02-26_ITER-9-E2E.md](PLAN_2026-02-26_ITER-9-E2E.md) — Iteration 9: E2E testing + evaluator experience polish.
-
-## Next iteration (pending Iter 9 completion)
-
-See [PLAN_2026-02-26_ITER-10-HARDENING.md](PLAN_2026-02-26_ITER-10-HARDENING.md) — Iteration 10: Security, resilience & performance hardening.
+| Metric | Iter 1 | Iter 3 | Iter 6 | Iter 8 | Iter 9 |
+|---|---|---|---|---|---|
+| Backend tests | ~80 | ~180 | 317 | 372 | 372 |
+| Frontend tests | ~40 | ~120 | 226 | 263 | 263 |
+| Backend coverage | ~60% | ~75% | 90% | 90% | 90% |
+| Frontend coverage | ~40% | ~65% | 82.6% | 85% | 85% |
+| E2E specs | 0 | 0 | 0 | 0 | 5 |
+| CI jobs | 1 | 4 | 6 | 8 | 8 |
+| Lint issues | many | some | 0 | 0 | 0 |

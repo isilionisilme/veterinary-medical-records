@@ -23,6 +23,7 @@ AI assistant entrypoint. Keep reads minimal and route by intent.
 - If the user says documentation was updated, route to `docs/agent_router/01_WORKFLOW/DOC_UPDATES/00_entry.md`.
 
 ## Global rules
+- **No direct commits to `main` (hard rule).** All changes go through a feature branch + PR. The only exception is if the user gives explicit, per-instance authorization (e.g. "commitea directo a main"). Without that authorization, STOP and create a branch first.
 - Manual trigger only for code reviews (never start one implicitly).
 - After modifying docs, run the DOC_UPDATES normalization pass once before finishing.
 - Include final `How to test` for user-validatable changes.
@@ -30,8 +31,7 @@ AI assistant entrypoint. Keep reads minimal and route by intent.
 
 ## Plan execution (`Continúa`)
 - Load: `docs/project/implementation/EXECUTION_RULES.md`.
-- **Step completion integrity:** before any handoff or auto-chain, enforce § "Step completion integrity" (NO-BATCH, CI-FIRST-BEFORE-HANDOFF, PLAN-UPDATE-IMMEDIATO, STEP-LOCK, EVIDENCE BLOCK, AUTO-HANDOFF GUARD).
-- Active plans: `docs/project/implementation/PLAN_*.md`; completed: `docs/project/implementation/completed/`.
+- **Step completion integrity:** before any handoff or auto-chain, enforce § "Step completion integrity" (NO-BATCH, CI-FIRST-BEFORE-HANDOFF, PLAN-UPDATE-IMMEDIATO, STEP-LOCK, EVIDENCE BLOCK, AUTO-HANDOFF GUARD).- **Iteration close:** after merge, execute § "Iteration close-out protocol" in `EXECUTION_RULES.md` (reconciliation, IMPLEMENTATION_HISTORY, DOC_UPDATES normalization).- Active plans: `docs/project/implementation/PLAN_*.md`; completed: `docs/project/implementation/completed/`.
 - Read Estado de ejecución and take the first `[ ]` step.
 - If step belongs to another agent: STOP and hand off to the exact required agent with a new chat + active PLAN + `Continúa`.
 - If step belongs to current agent: execute it and apply token-efficiency (`iterative-retrieval` before execution, `strategic-compact` at step close).
