@@ -6,6 +6,7 @@ import io
 import json
 from datetime import datetime
 from pathlib import Path
+from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
@@ -223,7 +224,7 @@ def _get_calibration_counts(
 
 def test_document_review_returns_latest_completed_run_context(test_client):
     document_id = _upload_sample_document(test_client)
-    run_id = "run-review-1"
+    run_id = str(uuid4())
     _insert_run(
         document_id=document_id,
         run_id=run_id,
@@ -286,7 +287,7 @@ def test_document_review_returns_latest_completed_run_context(test_client):
 
 def test_document_review_payload_uses_canonical_global_schema_key_only(test_client):
     document_id = _upload_sample_document(test_client)
-    run_id = "run-review-canonical-global-schema"
+    run_id = str(uuid4())
     _insert_run(
         document_id=document_id,
         run_id=run_id,
@@ -329,7 +330,7 @@ def test_document_review_payload_uses_canonical_global_schema_key_only(test_clie
 
 def test_document_review_normalizes_partial_medical_record_view_to_canonical_shape(test_client):
     document_id = _upload_sample_document(test_client)
-    run_id = "run-review-partial-medical-record-view"
+    run_id = str(uuid4())
     _insert_run(
         document_id=document_id,
         run_id=run_id,
@@ -368,7 +369,7 @@ def test_document_review_omits_confidence_policy_when_config_missing(
     monkeypatch.delenv("VET_RECORDS_CONFIDENCE_MID_MAX", raising=False)
 
     document_id = _upload_sample_document(test_client)
-    run_id = "run-review-policy-missing"
+    run_id = str(uuid4())
     _insert_run(
         document_id=document_id,
         run_id=run_id,
@@ -406,7 +407,7 @@ def test_document_review_returns_conflict_when_no_completed_run(test_client):
     document_id = _upload_sample_document(test_client)
     _insert_run(
         document_id=document_id,
-        run_id="run-review-running",
+        run_id=str(uuid4()),
         state=app_models.ProcessingRunState.RUNNING,
         failure_type=None,
     )
@@ -422,7 +423,7 @@ def test_document_review_returns_conflict_when_interpretation_is_missing(test_cl
     document_id = _upload_sample_document(test_client)
     _insert_run(
         document_id=document_id,
-        run_id="run-review-completed",
+        run_id=str(uuid4()),
         state=app_models.ProcessingRunState.COMPLETED,
         failure_type=None,
     )
@@ -436,7 +437,7 @@ def test_document_review_returns_conflict_when_interpretation_is_missing(test_cl
 
 def test_document_review_normalizes_microchip_suffix_to_digits_only(test_client):
     document_id = _upload_sample_document(test_client)
-    run_id = "run-review-microchip-suffix"
+    run_id = str(uuid4())
     _insert_run(
         document_id=document_id,
         run_id=run_id,
@@ -460,7 +461,7 @@ def test_document_review_normalizes_microchip_suffix_to_digits_only(test_client)
 
 def test_document_review_moves_visit_scoped_keys_into_visits_group(test_client):
     document_id = _upload_sample_document(test_client)
-    run_id = "run-review-canonical-visit-scoping"
+    run_id = str(uuid4())
     _insert_run(
         document_id=document_id,
         run_id=run_id,
@@ -611,7 +612,7 @@ def test_document_review_moves_visit_scoped_keys_into_visits_group(test_client):
 
 def test_document_review_detects_multiple_assigned_visits_from_field_evidence(test_client):
     document_id = _upload_sample_document(test_client)
-    run_id = "run-review-canonical-multi-visit-evidence"
+    run_id = str(uuid4())
     _insert_run(
         document_id=document_id,
         run_id=run_id,
@@ -725,7 +726,7 @@ def test_document_review_detects_multiple_assigned_visits_from_field_evidence(te
 
 def test_document_review_non_visit_dates_do_not_create_assigned_visits(test_client):
     document_id = _upload_sample_document(test_client)
-    run_id = "run-review-canonical-non-visit-dates"
+    run_id = str(uuid4())
     _insert_run(
         document_id=document_id,
         run_id=run_id,
@@ -810,7 +811,7 @@ def test_document_review_non_visit_dates_do_not_create_assigned_visits(test_clie
 
 def test_document_review_ambiguous_second_date_stays_unassigned(test_client):
     document_id = _upload_sample_document(test_client)
-    run_id = "run-review-canonical-ambiguous-second-date"
+    run_id = str(uuid4())
     _insert_run(
         document_id=document_id,
         run_id=run_id,
@@ -892,7 +893,7 @@ def test_document_review_ambiguous_second_date_stays_unassigned(test_client):
 
 def test_document_review_merges_prepopulated_and_inferred_visits_deterministically(test_client):
     document_id = _upload_sample_document(test_client)
-    run_id = "run-review-canonical-prepopulated-merge"
+    run_id = str(uuid4())
     _insert_run(
         document_id=document_id,
         run_id=run_id,
@@ -994,7 +995,7 @@ def test_document_review_merges_prepopulated_and_inferred_visits_deterministical
 
 def test_document_review_us46_mixed_multi_visit_assignment_regression_guardrail(test_client):
     document_id = _upload_sample_document(test_client)
-    run_id = "run-review-canonical-us46-mixed-multi-visit-assignment"
+    run_id = str(uuid4())
     _insert_run(
         document_id=document_id,
         run_id=run_id,
@@ -1123,7 +1124,7 @@ def test_document_review_us46_mixed_multi_visit_assignment_regression_guardrail(
 
 def test_document_review_drops_non_digit_microchip_value(test_client):
     document_id = _upload_sample_document(test_client)
-    run_id = "run-review-microchip-non-digit"
+    run_id = str(uuid4())
     _insert_run(
         document_id=document_id,
         run_id=run_id,
@@ -1145,7 +1146,7 @@ def test_document_review_drops_non_digit_microchip_value(test_client):
 
 def test_document_review_keeps_canonical_microchip_digits_unchanged(test_client):
     document_id = _upload_sample_document(test_client)
-    run_id = "run-review-microchip-canonical"
+    run_id = str(uuid4())
     _insert_run(
         document_id=document_id,
         run_id=run_id,
@@ -1169,7 +1170,7 @@ def test_document_review_keeps_canonical_microchip_digits_unchanged(test_client)
 
 def test_document_review_sanitizes_confidence_breakdown_payload_values(test_client):
     document_id = _upload_sample_document(test_client)
-    run_id = "run-review-breakdown-sanitize"
+    run_id = str(uuid4())
     _insert_run(
         document_id=document_id,
         run_id=run_id,
@@ -1212,7 +1213,7 @@ def test_document_review_sanitizes_confidence_breakdown_payload_values(test_clie
 
 def test_document_review_composes_mapping_confidence_from_candidate_and_adjustment(test_client):
     document_id = _upload_sample_document(test_client)
-    run_id = "run-review-mapping-composition"
+    run_id = str(uuid4())
     _insert_run(
         document_id=document_id,
         run_id=run_id,
@@ -1267,7 +1268,7 @@ def test_cross_document_learning_applies_negative_adjustment_after_edit_signal(t
     repository = test_client.app.state.document_repository
     baseline = _build_interpretation_artifact(
         document_id="doc-baseline",
-        run_id="run-baseline",
+        run_id=str(uuid4()),
         raw_text="Paciente: Luna",
         repository=repository,
     )
@@ -1275,9 +1276,9 @@ def test_cross_document_learning_applies_negative_adjustment_after_edit_signal(t
     baseline_pet_name = next(field for field in baseline_fields if field["key"] == "pet_name")
     assert baseline_pet_name["field_review_history_adjustment"] == 0
 
-    for index, value in enumerate(["Kira", "Nala", "Mika"], start=1):
+    for _index, value in enumerate(["Kira", "Nala", "Mika"], start=1):
         document_id = _upload_sample_document(test_client)
-        run_id = f"run-calibration-edit-signal-{index}"
+        run_id = str(uuid4())
         _insert_run(
             document_id=document_id,
             run_id=run_id,
@@ -1332,7 +1333,7 @@ def test_cross_document_learning_applies_negative_adjustment_after_edit_signal(t
 
     calibrated = _build_interpretation_artifact(
         document_id="doc-after-edit",
-        run_id="run-after-edit",
+        run_id=str(uuid4()),
         raw_text="Paciente: Luna",
         repository=repository,
     )
@@ -1343,7 +1344,7 @@ def test_cross_document_learning_applies_negative_adjustment_after_edit_signal(t
 
 def test_mark_document_reviewed_applies_accept_delta_for_non_critical_machine_field(test_client):
     document_id = _upload_sample_document(test_client)
-    run_id = "run-reviewed-non-critical-machine"
+    run_id = str(uuid4())
     context_key = "review:canonical:pet_name"
     mapping_id = "mapping-non-critical-machine"
     policy_version = "v1"
@@ -1436,7 +1437,7 @@ def test_reopen_review_reverts_reviewed_calibration_deltas_and_allows_reapply(te
     repository = test_client.app.state.document_repository
     baseline = _build_interpretation_artifact(
         document_id="doc-snapshot-baseline",
-        run_id="run-snapshot-baseline",
+        run_id=str(uuid4()),
         raw_text="Paciente: Luna",
         repository=repository,
     )
@@ -1448,7 +1449,7 @@ def test_reopen_review_reverts_reviewed_calibration_deltas_and_allows_reapply(te
     policy_version = str(baseline_pet_name["policy_version"])
 
     document_id = _upload_sample_document(test_client)
-    run_id = "run-reviewed-reopen-revert"
+    run_id = str(uuid4())
     _insert_run(
         document_id=document_id,
         run_id=run_id,
@@ -1525,7 +1526,7 @@ def test_reopen_review_reverts_snapshot_from_reviewed_run_even_with_newer_comple
     repository = test_client.app.state.document_repository
     baseline = _build_interpretation_artifact(
         document_id="doc-reviewed-run-baseline",
-        run_id="run-reviewed-run-baseline",
+        run_id=str(uuid4()),
         raw_text="Paciente: Luna",
         repository=repository,
     )
@@ -1537,7 +1538,7 @@ def test_reopen_review_reverts_snapshot_from_reviewed_run_even_with_newer_comple
     policy_version = str(baseline_pet_name["policy_version"])
 
     document_id = _upload_sample_document(test_client)
-    reviewed_run_id = "run-reviewed-revert-target"
+    reviewed_run_id = str(uuid4())
     _insert_run(
         document_id=document_id,
         run_id=reviewed_run_id,
@@ -1580,7 +1581,7 @@ def test_reopen_review_reverts_snapshot_from_reviewed_run_even_with_newer_comple
         policy_version=policy_version,
     ) == (1, 0)
 
-    newer_run_id = "run-reviewed-revert-newer"
+    newer_run_id = str(uuid4())
     _insert_run(
         document_id=document_id,
         run_id=newer_run_id,
@@ -1600,18 +1601,18 @@ def test_reopen_review_reverts_snapshot_from_reviewed_run_even_with_newer_comple
 
 
 def test_reviewed_toggle_returns_not_found_for_unknown_document(test_client):
-    response = test_client.post("/documents/does-not-exist/reviewed")
+    response = test_client.post("/documents/00000000-0000-0000-0000-000000000000/reviewed")
     assert response.status_code == 404
     assert response.json()["error_code"] == "NOT_FOUND"
 
-    reopen_response = test_client.delete("/documents/does-not-exist/reviewed")
+    reopen_response = test_client.delete("/documents/00000000-0000-0000-0000-000000000000/reviewed")
     assert reopen_response.status_code == 404
     assert reopen_response.json()["error_code"] == "NOT_FOUND"
 
 
 def test_interpretation_edit_creates_new_version_and_change_logs(test_client):
     document_id = _upload_sample_document(test_client)
-    run_id = "run-review-edit-1"
+    run_id = str(uuid4())
     _insert_run(
         document_id=document_id,
         run_id=run_id,
@@ -1692,7 +1693,7 @@ def test_interpretation_edit_creates_new_version_and_change_logs(test_client):
 
 def test_interpretation_edit_noop_update_keeps_origin_and_skips_change_log(test_client):
     document_id = _upload_sample_document(test_client)
-    run_id = "run-review-edit-noop-same-value"
+    run_id = str(uuid4())
     _insert_run(
         document_id=document_id,
         run_id=run_id,
@@ -1737,7 +1738,7 @@ def test_interpretation_edit_noop_update_keeps_origin_and_skips_change_log(test_
 
 def test_interpretation_edit_whitespace_only_update_is_noop_for_strings(test_client):
     document_id = _upload_sample_document(test_client)
-    run_id = "run-review-edit-noop-whitespace"
+    run_id = str(uuid4())
     _insert_run(
         document_id=document_id,
         run_id=run_id,
@@ -1782,7 +1783,7 @@ def test_interpretation_edit_whitespace_only_update_is_noop_for_strings(test_cli
 
 def test_interpretation_edit_real_update_still_marks_human_and_logs_change(test_client):
     document_id = _upload_sample_document(test_client)
-    run_id = "run-review-edit-real-change"
+    run_id = str(uuid4())
     _insert_run(
         document_id=document_id,
         run_id=run_id,
@@ -1833,7 +1834,7 @@ def test_interpretation_edit_real_update_still_marks_human_and_logs_change(test_
 
 def test_interpretation_edit_update_preserves_prior_candidate_confidence(test_client):
     document_id = _upload_sample_document(test_client)
-    run_id = "run-review-edit-preserve-candidate-confidence"
+    run_id = str(uuid4())
     _insert_run(
         document_id=document_id,
         run_id=run_id,
@@ -1889,8 +1890,8 @@ def test_interpretation_edit_update_preserves_prior_candidate_confidence(test_cl
 
 def test_interpretation_edit_returns_conflict_when_active_run_exists(test_client):
     document_id = _upload_sample_document(test_client)
-    completed_run_id = "run-review-edit-completed"
-    running_run_id = "run-review-edit-running"
+    completed_run_id = str(uuid4())
+    running_run_id = str(uuid4())
     _insert_run(
         document_id=document_id,
         run_id=completed_run_id,
@@ -1928,7 +1929,7 @@ def test_interpretation_edit_returns_conflict_when_active_run_exists(test_client
 
 def test_interpretation_edit_returns_conflict_when_base_version_mismatches(test_client):
     document_id = _upload_sample_document(test_client)
-    run_id = "run-review-edit-version-mismatch"
+    run_id = str(uuid4())
     _insert_run(
         document_id=document_id,
         run_id=run_id,
@@ -1960,7 +1961,7 @@ def test_interpretation_edit_returns_conflict_when_base_version_mismatches(test_
 
 def test_interpretation_edit_returns_conflict_when_interpretation_is_missing(test_client):
     document_id = _upload_sample_document(test_client)
-    run_id = "run-review-edit-missing-interpretation"
+    run_id = str(uuid4())
     _insert_run(
         document_id=document_id,
         run_id=run_id,
@@ -1991,7 +1992,7 @@ def test_interpretation_edit_returns_conflict_when_interpretation_is_missing(tes
 
 def test_interpretation_edits_append_correction_signals_without_changing_review_flow(test_client):
     document_id = _upload_sample_document(test_client)
-    run_id = "run-review-edit-us09-signals"
+    run_id = str(uuid4())
     _insert_run(
         document_id=document_id,
         run_id=run_id,

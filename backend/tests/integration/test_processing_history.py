@@ -93,9 +93,11 @@ def _insert_step_status(
 
 def test_processing_history_returns_runs_and_step_artifacts(test_client):
     document_id = _upload_sample_document(test_client)
+    older_run_id = str(uuid4())
+    latest_run_id = str(uuid4())
     _insert_run(
         document_id=document_id,
-        run_id="run-older",
+        run_id=older_run_id,
         state="FAILED",
         created_at="2026-02-01T10:00:00+00:00",
         started_at="2026-02-01T10:00:01+00:00",
@@ -104,7 +106,7 @@ def test_processing_history_returns_runs_and_step_artifacts(test_client):
     )
     _insert_run(
         document_id=document_id,
-        run_id="run-latest",
+        run_id=latest_run_id,
         state="COMPLETED",
         created_at="2026-02-01T11:00:00+00:00",
         started_at="2026-02-01T11:00:01+00:00",
@@ -113,7 +115,7 @@ def test_processing_history_returns_runs_and_step_artifacts(test_client):
     )
 
     _insert_step_status(
-        run_id="run-older",
+        run_id=older_run_id,
         created_at="2026-02-01T10:00:02+00:00",
         step_name="EXTRACTION",
         step_status="RUNNING",
@@ -123,7 +125,7 @@ def test_processing_history_returns_runs_and_step_artifacts(test_client):
         error_code=None,
     )
     _insert_step_status(
-        run_id="run-older",
+        run_id=older_run_id,
         created_at="2026-02-01T10:00:04+00:00",
         step_name="EXTRACTION",
         step_status="FAILED",
@@ -137,7 +139,7 @@ def test_processing_history_returns_runs_and_step_artifacts(test_client):
     assert response.status_code == 200
     payload = response.json()
     assert payload["document_id"] == document_id
-    assert [run["run_id"] for run in payload["runs"]] == ["run-older", "run-latest"]
+    assert [run["run_id"] for run in payload["runs"]] == [older_run_id, latest_run_id]
 
     first_run = payload["runs"][0]
     assert first_run["failure_type"] == "EXTRACTION_FAILED"
@@ -148,7 +150,7 @@ def test_processing_history_returns_runs_and_step_artifacts(test_client):
 
 
 def test_processing_history_returns_not_found_for_unknown_document(test_client):
-    response = test_client.get("/documents/unknown/processing-history")
+    response = test_client.get("/documents/00000000-0000-0000-0000-000000000000/processing-history")
     assert response.status_code == 404
     payload = response.json()
     assert payload["error_code"] == "NOT_FOUND"
