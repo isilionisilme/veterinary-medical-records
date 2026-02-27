@@ -99,4 +99,44 @@ describe("UploadDropzone", () => {
       "Arrastra un PDF aquí o haz clic para cargar",
     );
   });
+
+  it("activates on click and ignores unrelated key presses", () => {
+    const { onActivate } = renderDropzone();
+    const button = screen.getByRole("button");
+
+    fireEvent.click(button);
+    fireEvent.keyDown(button, { key: "Tab" });
+
+    expect(onActivate).toHaveBeenCalledTimes(1);
+  });
+
+  it("forwards drag lifecycle callbacks and respects custom aria label", () => {
+    const onDragEnter = vi.fn();
+    const onDragOver = vi.fn();
+    const onDragLeave = vi.fn();
+    const onDrop = vi.fn();
+
+    render(
+      <UploadDropzone
+        isDragOver={false}
+        ariaLabel="Carga rápida"
+        onActivate={noop}
+        onDragEnter={onDragEnter}
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
+      />,
+    );
+
+    const button = screen.getByRole("button", { name: "Carga rápida" });
+    fireEvent.dragEnter(button);
+    fireEvent.dragOver(button);
+    fireEvent.dragLeave(button);
+    fireEvent.drop(button);
+
+    expect(onDragEnter).toHaveBeenCalledTimes(1);
+    expect(onDragOver).toHaveBeenCalledTimes(1);
+    expect(onDragLeave).toHaveBeenCalledTimes(1);
+    expect(onDrop).toHaveBeenCalledTimes(1);
+  });
 });
