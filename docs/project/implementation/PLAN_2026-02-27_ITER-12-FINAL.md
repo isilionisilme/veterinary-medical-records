@@ -41,7 +41,7 @@ Post-Iter 11 (estimated): ~390 backend tests (≥92%), ~280 frontend tests (≥8
 - [x] F19-B 🔄 — Bloque Data: `structured-filters`, `field-validation`, `add-field` — 13 tests (Codex) → source: F17-M ✅ 7fa52122
 - [x] F19-C 🔄 — Bloque Workflow: `reprocess`, `toasts` — 5 tests (Codex) → source: F17-N ✅ eb6128f8
 - [x] F19-D 🔄 — Bloque Layout: `source-panel`, `split-panel`, `sidebar-interactions` — 8 tests (Codex) → source: F17-O ✅ 11d23e1d + fix 43acb9b8 + fix 15fbca79
-- [ ] F19-E 🔄 — Bloque Avanzado: `visit-grouping`, `upload-validation` — 5 tests (Codex) → source: F17-P
+- [x] F19-E 🔄 — Bloque Avanzado: `visit-grouping`, `upload-validation` — 5 tests (Codex) → source: F17-P ✅ 025d2358
 - [ ] F19-F 🔄 — Run full suite in Docker, verify 61 tests green (Codex) → source: F17-Q
 - [ ] F19-G 🔄 — Remove legacy spec files absorbed by new specs (Codex) → source: F17-R
 - [ ] F19-H 🚧 — Update `PLAN_E2E_TEST_COVERAGE.md` §7 checkboxes + metrics (Claude) → source: F17-S
