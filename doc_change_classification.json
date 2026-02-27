@@ -1,9 +1,7 @@
 {
   "files": {
-    "docs/agent_router/04_PROJECT/FUTURE_IMPROVEMENTS/00_entry.md": "Clarification",
-    "docs/project/ARCHITECTURE.md": "Rule",
-    "docs/project/FUTURE_IMPROVEMENTS.md": "Rule",
-    "docs/project/implementation/PLAN_2026-02-27_ITER-12-FINAL.md": "Clarification"
+    "docs/project/implementation/IMPLEMENTATION_HISTORY.md": "Clarification",
+    "docs/project/implementation/completed/COMPLETED_2026-02-27_ITER-12-FINAL.md": "Clarification"
   },
-  "overall": "Rule"
+  "overall": "Clarification"
 }
