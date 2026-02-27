@@ -1,6 +1,9 @@
 {
   "files": {
-    "docs/project/production/PLAN_2026-02-26_INSTALL_PLAYWRIGHT.md": "Clarification"
+    "docs/agent_router/04_PROJECT/FUTURE_IMPROVEMENTS/00_entry.md": "Clarification",
+    "docs/project/ARCHITECTURE.md": "Rule",
+    "docs/project/FUTURE_IMPROVEMENTS.md": "Rule",
+    "docs/project/implementation/PLAN_2026-02-27_ITER-12-FINAL.md": "Clarification"
   },
-  "overall": "Clarification"
+  "overall": "Rule"
 }

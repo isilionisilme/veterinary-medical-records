@@ -48,8 +48,8 @@ Post-Iter 11 (estimated): ~390 backend tests (≥92%), ~280 frontend tests (≥8
 
 #### Phase B — WCAG quick wins + automated a11y
 
-- [ ] F19-I 🔄 — Add `@axe-core/playwright` E2E accessibility audit + fix critical violations (Codex)
-- [ ] F19-J 🔄 — Add missing aria-labels, focus management, and color contrast fixes (Codex)
+- [x] F19-I 🔄 — Add `@axe-core/playwright` E2E accessibility audit + fix critical violations (Codex) ✅ df33d3fb
+- [x] F19-J 🔄 — Add missing aria-labels, focus management, and color contrast fixes (Codex) ✅ done
 
 #### Phase C — README + Architecture one-pager
 
