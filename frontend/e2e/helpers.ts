@@ -15,6 +15,14 @@ function extractDocumentId(payload: unknown): string | null {
   return normalized.length > 0 && normalized !== "null" ? normalized : null;
 }
 
+function extractDocumentIdFromRowTestId(testId: string): string | null {
+  if (!testId.startsWith("doc-row-")) {
+    return null;
+  }
+  const value = testId.replace("doc-row-", "").trim();
+  return value.length > 0 && value !== "null" ? value : null;
+}
+
 async function fetchLatestDocumentId(
   page: Page,
   knownDocumentIds: Set<string>,
@@ -65,8 +73,8 @@ export async function uploadAndWaitForProcessing(
   );
   const knownDocumentIds = new Set(
     Array.from(existingRowTestIds)
-      .map((testId) => testId.replace("doc-row-", ""))
-      .filter((value) => value.length > 0 && value !== "null"),
+      .map((testId) => extractDocumentIdFromRowTestId(testId))
+      .filter((value): value is string => Boolean(value)),
   );
 
   const filename = pdfPath.split("/").pop() ?? "sample.pdf";
@@ -140,6 +148,23 @@ export async function uploadAndWaitForProcessing(
 
   if (!docId || docId === "null") {
     docId = await fetchLatestDocumentId(page, knownDocumentIds);
+  }
+
+  if (!docId || docId === "null") {
+    try {
+      await expect(page.locator('[data-testid^="doc-row-"]').first()).toBeVisible({ timeout: 15_000 });
+      const rowTestIds = await page
+        .locator('[data-testid^="doc-row-"]')
+        .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-testid") ?? ""));
+      const fallbackRowId = rowTestIds
+        .map((testId) => extractDocumentIdFromRowTestId(testId))
+        .find((value): value is string => Boolean(value));
+      if (fallbackRowId) {
+        docId = fallbackRowId;
+      }
+    } catch {
+      // Keep final guard below for hard failures where no row is available.
+    }
   }
 
   if (!docId || docId === "null") {
