@@ -17,10 +17,19 @@ export default defineConfig({
   },
   projects: [
     {
-      name: "chromium",
-      use: {
-        browserName: "chromium",
-      },
+      name: "smoke",
+      testMatch: /app-loads|upload-smoke/,
+      timeout: 30_000,
+    },
+    {
+      name: "core",
+      testMatch: /pdf-viewer|extracted-data|field-editing|review-workflow|document-sidebar/,
+      timeout: 60_000,
+    },
+    {
+      name: "extended",
+      testMatch: /.*/,
+      timeout: 90_000,
     },
   ],
   reporter: [["html", { outputFolder: "playwright-report", open: "never" }]],
