@@ -23,6 +23,7 @@ AI assistant entrypoint. Keep reads minimal and route by intent.
 - If the user says documentation was updated, route to `docs/agent_router/01_WORKFLOW/DOC_UPDATES/00_entry.md`.
 
 ## Global rules
+- **No direct commits to `main` (hard rule).** All changes go through a feature branch + PR. The only exception is if the user gives explicit, per-instance authorization (e.g. "commitea directo a main"). Without that authorization, STOP and create a branch first.
 - Manual trigger only for code reviews (never start one implicitly).
 - After modifying docs, run the DOC_UPDATES normalization pass once before finishing.
 - Include final `How to test` for user-validatable changes.
