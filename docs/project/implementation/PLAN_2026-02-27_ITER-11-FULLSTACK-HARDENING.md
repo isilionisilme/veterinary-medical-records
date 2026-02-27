@@ -44,7 +44,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 > Prompts for F18-D through F18-N reference [PLAN_2026-02-27_E2E-COVERAGE-EXPANSION.md](PLAN_2026-02-27_E2E-COVERAGE-EXPANSION.md) § Cola de prompts (F17-A through F17-K). Each redirect prompt below maps 1:1 to the original, with branch override.
 
 - [x] F18-D 🔄 — Add 17 missing `data-testid` attributes to UI components (Codex) → source: F17-A
-- [ ] F18-E 🔄 — Update `playwright.config.ts` with smoke/core/extended projects (Codex) → source: F17-B
+- [x] F18-E 🔄 — Update `playwright.config.ts` with smoke/core/extended projects (Codex) → source: F17-B
 - [ ] F18-F 🔄 — Add npm scripts: `test:e2e:smoke`, `test:e2e:all` (Codex) → source: F17-C
 - [ ] F18-G 🔄 — Create reusable E2E helpers (`e2e/helpers.ts`) + fixture files (Codex) → source: F17-D
 - [ ] F18-H 🔄 — Verify green baseline: existing 5 tests pass (Codex) → source: F17-E
