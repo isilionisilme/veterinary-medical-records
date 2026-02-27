@@ -344,6 +344,8 @@ export function StructuredDataPanel<TSection>({
         {reviewPanelState === "loading" && (
           <div
             data-testid="right-panel-scroll"
+            tabIndex={0}
+            aria-label="Panel de datos estructurados"
             aria-live="polite"
             className="h-full min-h-0 overflow-y-auto pr-1 space-y-2"
           >

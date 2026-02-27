@@ -209,7 +209,7 @@ export function PdfViewerPanel({
                         {fileUrl ? (
                           <Suspense
                             fallback={
-                              <div className="flex h-full min-h-0 items-center justify-center text-sm text-muted">
+                              <div className="flex h-full min-h-0 items-center justify-center text-sm text-textSecondary">
                                 Cargando visor PDF...
                               </div>
                             }
@@ -235,7 +235,7 @@ export function PdfViewerPanel({
                               </div>
                               <div className="flex items-center gap-1">{viewerDownloadIcon}</div>
                             </div>
-                            <div className="flex flex-1 items-center justify-center text-sm text-muted">
+                            <div className="flex flex-1 items-center justify-center text-sm text-textSecondary">
                               No hay PDF disponible para este documento.
                             </div>
                           </div>

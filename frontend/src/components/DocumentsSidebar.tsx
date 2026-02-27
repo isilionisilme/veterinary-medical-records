@@ -115,7 +115,7 @@ export function DocumentsSidebar({
                   B
                 </span>
                 <div>
-                  <p className="font-display text-lg font-semibold leading-none text-accent">
+                  <p className="font-display text-lg font-semibold leading-none text-text">
                     Barkibu
                   </p>
                   <p className="mt-1 text-xs text-textMuted">Revisión de reembolsos</p>
@@ -383,9 +383,7 @@ export function DocumentsSidebar({
                                 </p>
                               )}
                             {isDocsSidebarExpanded && item.failure_type && (
-                              <p className="mt-2 text-xs text-statusError">
-                                Error: {item.failure_type}
-                              </p>
+                              <p className="mt-2 text-xs text-text">Error: {item.failure_type}</p>
                             )}
                           </button>
                         );

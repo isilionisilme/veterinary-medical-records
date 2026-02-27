@@ -21,6 +21,8 @@ type AddFieldDialogProps = {
   onFieldValueChange: (value: string) => void;
   onOpenChange: (open: boolean) => void;
   onSave: () => void;
+  titleId?: string;
+  descriptionId?: string;
 };
 
 export function AddFieldDialog({
@@ -32,6 +34,8 @@ export function AddFieldDialog({
   onFieldValueChange,
   onOpenChange,
   onSave,
+  titleId = "add-field-dialog-title",
+  descriptionId = "add-field-dialog-description",
 }: AddFieldDialogProps) {
   const fieldKeyRef = useRef<HTMLInputElement | null>(null);
 
@@ -56,6 +60,8 @@ export function AddFieldDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
+        aria-labelledby={titleId}
+        aria-describedby={descriptionId}
         onEscapeKeyDown={(event) => {
           if (!isSaving) {
             return;
@@ -70,8 +76,8 @@ export function AddFieldDialog({
         }}
       >
         <DialogHeader>
-          <DialogTitle>Añadir campo</DialogTitle>
-          <DialogDescription className="text-xs">
+          <DialogTitle id={titleId}>Añadir campo</DialogTitle>
+          <DialogDescription id={descriptionId} className="text-xs">
             Define una clave nueva y su valor inicial para este documento.
           </DialogDescription>
         </DialogHeader>
@@ -81,6 +87,7 @@ export function AddFieldDialog({
             <span className="text-sm font-medium text-text">Clave</span>
             <Input
               ref={fieldKeyRef}
+              aria-label="Clave del nuevo campo"
               value={fieldKey}
               onChange={(event) => onFieldKeyChange(event.target.value)}
             />
@@ -88,6 +95,7 @@ export function AddFieldDialog({
           <label className="space-y-1.5">
             <span className="text-sm font-medium text-text">Valor</span>
             <Input
+              aria-label="Valor del nuevo campo"
               value={fieldValue}
               onChange={(event) => onFieldValueChange(event.target.value)}
             />
