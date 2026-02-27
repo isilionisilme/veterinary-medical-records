@@ -38,6 +38,9 @@ jobs:
         run: npm --prefix frontend run test:coverage
       - name: Run frontend build
         run: npm --prefix frontend run build
+      - name: Security audit (npm audit)
+        run: npm --prefix frontend audit --audit-level=high
+        continue-on-error: true
 
   doc_canonical_router_guard:
     if: github.event_name == 'pull_request'
@@ -152,6 +155,11 @@ jobs:
         run: ruff format --check .
       - name: Run Pytest with coverage
         run: pytest --cov=backend/app --cov-report=term-missing
+      - name: Security audit (pip-audit)
+        run: >
+          pip-audit --requirement backend/requirements.txt --strict
+          --ignore-vuln GHSA-2c2j-9gv5-cj73
+          --ignore-vuln GHSA-7f5h-v6xp-fcq8
 
   docker_packaging_guard:
     runs-on: ubuntu-latest
