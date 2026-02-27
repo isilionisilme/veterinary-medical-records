@@ -481,39 +481,64 @@ When the user says "merge" (or equivalent), the agent executes the full protocol
 6. Check stashes (`git stash list`): drop branch-related stashes, ask about ambiguous ones.
 7. Switch to `main` and pull (`git checkout main && git pull`).
 8. Delete local branch if still exists (safe delete first, force only if verified no unique commits).
-9. Archive the plan file: move from `PLAN_*.md` to `completed/COMPLETED_*.md`.
-10. Commit and push the archive move.
 
 **If any pre-merge check fails:** STOP and report to the user. Do not attempt to fix merge issues autonomously.
 
+> **Important:** After merge + cleanup, proceed immediately to the **Iteration close-out protocol** below. The merge is not done until close-out completes.
+
 ### Iteration close-out protocol (automatic — not a plan step)
 
-After merge + post-merge cleanup is complete, the agent executes these steps **before** considering the iteration finished. This is automatic protocol, not a plan task.
+> **Hard rule:** A merge is **NOT** considered complete until the close-out
+> protocol finishes. The agent may NOT report "merge done" or yield control
+> to the user until all close-out steps below are executed. Skipping close-out
+> is a protocol violation equivalent to skipping CI.
+
+After merge + post-merge cleanup is complete, the agent creates a dedicated
+branch (`chore/iteration-N-close-out`) and executes these steps **before**
+considering the iteration finished.
 
 #### 1. Plan reconciliation (mandatory if any steps are `[ ]`)
-If the archived plan contains uncompleted steps (`[ ]`):
-1. Present each incomplete step to the user with options: **defer** (to next iteration), **drop** (remove from backlog), or **mark complete** (if already done outside the plan).
-2. For deferred steps: annotate with `⏭️ DEFERRED to Iter <N+1> (<new step ID if known>)`.
-3. For dropped steps: annotate with `❌ DROPPED (<reason>)`.
-4. Record all decisions in the `COMPLETED_*.md` archive file under a "Reconciliation" section.
+If the plan contains uncompleted steps (`[ ]`):
+1. Present each incomplete step **one by one** to the user with three options:
+   - **Defer** → move to next iteration.
+   - **Drop** → remove from backlog.
+   - **Mark complete** → if already done outside the plan.
+2. Record each decision in the plan file:
+   - Deferred: `⏭️ DEFERRED to Iter <N+1>`.
+   - Dropped: `❌ DROPPED (<reason>)`.
+   - Marked complete: change `[ ]` to `[x]` with note `(closed in reconciliation)`.
+
+If all steps are already `[x]`: skip this step — no intervention needed.
 
 #### 2. Update IMPLEMENTATION_HISTORY.md (mandatory)
 Add a new entry to `docs/project/implementation/IMPLEMENTATION_HISTORY.md`:
-1. **Iteration row** in the timeline table: date, branch, PR number, step count (completed/total), summary of deliverables.
-2. **Cumulative progress table**: add a column for the closed iteration showing which features advanced.
-3. **Active iteration pointer**: update from Iter N → Iter N+1.
+1. **Timeline row:** iteration number, date, PR(s), theme, key metrics, link to completed file.
+2. **Cumulative progress column:** add a new column to the cumulative table with updated metric values for the closed iteration.
+3. **Active iteration pointer:** update the "Active iteration" section to point to Iter N+1 (or "None" if no next iteration is planned).
 
-#### 3. DOC_UPDATES normalization (mandatory)
-Run the DOC_UPDATES normalization pass on any `.md` files modified during the iteration or the close-out itself.
-
-#### 4. Commit + push close-out changes
-Commit all close-out artifacts (archive annotations, IMPLEMENTATION_HISTORY, normalized docs) with:
+#### 3. Rename plan → completed archive (mandatory)
+Move the plan file from active to completed using `git mv`:
 ```
-docs(iter-close): iteration <N> close-out — history + reconciliation
+git mv docs/project/implementation/PLAN_<date>_<slug>.md \
+       docs/project/implementation/completed/COMPLETED_<date>_<slug>.md
 ```
-Push to `main`.
 
-#### 5. Mirror to docs repository (if applicable)
+#### 4. DOC_UPDATES normalization (conditional)
+Run the DOC_UPDATES normalization pass **only** on `.md` files that:
+- Were modified during the iteration or the close-out itself, AND
+- Have corresponding entries in the router (`test_impact_map.json` or `router_parity_map.json`).
+
+If no qualifying files exist, skip this step.
+
+#### 5. Commit + push + PR
+1. Commit all close-out artifacts with:
+   ```
+   docs(iter-close): iteration <N> close-out — history + reconciliation
+   ```
+2. Push the `chore/iteration-N-close-out` branch.
+3. Open a PR, wait for CI green, and squash-merge.
+
+#### 6. Mirror to docs repository (if applicable)
 If the project uses a separate docs repository (worktree or fork), sync all close-out changes to maintain parity between repos.
 
 ---
