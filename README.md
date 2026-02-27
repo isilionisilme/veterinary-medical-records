@@ -1,5 +1,12 @@
 # Veterinary Medical Records Processing — Technical Exercise
 
+![CI](https://github.com/isilfrith/veterinary-medical-records/actions/workflows/ci.yml/badge.svg?branch=main)
+![Python](https://img.shields.io/badge/python-3.11-blue)
+![React](https://img.shields.io/badge/react-18-61dafb)
+![License](https://img.shields.io/badge/license-MIT-blue)
+
+> **Stack:** Python 3.11 · FastAPI · React 18 · TypeScript · SQLite · Docker · Playwright · GitHub Actions
+
 This repository contains the implementation and supporting materials for a technical exercise focused on **interpreting and processing veterinary medical records**.
 
 The purpose of the exercise is to demonstrate **product thinking, architectural judgment, and a scalable approach to document interpretation in a regulated domain**, rather than to deliver a fully automated system.
@@ -27,6 +34,13 @@ Scope and sequencing source of truth:
 
 ---
 
+## Demo
+
+<!-- Replace with actual screenshot or GIF -->
+> 📸 _Screenshot placeholder — run `docker compose up --build` and visit `http://localhost:5173` to see the app._
+
+---
+
 ## Problem context
 
 Barkibu processes veterinary insurance claims based on **heterogeneous, unstructured medical documents**, typically PDFs originating from different clinics, countries, and formats.
@@ -49,6 +63,8 @@ This project explores an approach that assists veterinarians during document rev
 - [`docs/`](docs/) — authoritative documentation (start at [`docs/README.md`](docs/README.md))
 
 ## Architecture at a glance
+
+For a visual overview with Mermaid diagram, see [**ARCHITECTURE.md**](docs/project/ARCHITECTURE.md).
 
 - Architectural style: modular monolith with clear application/domain/infrastructure boundaries.
 - Backend pattern: ports-and-adapters with explicit use cases and append-only review/processing artifacts.
