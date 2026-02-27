@@ -4,7 +4,7 @@
 
 ## Active iteration
 
-No active iteration. Next iteration TBD.
+**Iteration 11** — E2E expansion + Error UX + testing depth + DX hardening → [PLAN_2026-02-27_ITER-11-FULLSTACK-HARDENING.md](PLAN_2026-02-27_ITER-11-FULLSTACK-HARDENING.md)
 
 ## Timeline
 
