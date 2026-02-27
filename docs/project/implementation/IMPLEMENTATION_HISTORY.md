@@ -4,7 +4,7 @@
 
 ## Active iteration
 
-See [PLAN_2026-02-26_ITER-10-HARDENING.md](PLAN_2026-02-26_ITER-10-HARDENING.md) — Iteration 10: Security, resilience & performance hardening.
+No active iteration. Next iteration TBD.
 
 ## Timeline
 
@@ -19,15 +19,16 @@ See [PLAN_2026-02-26_ITER-10-HARDENING.md](PLAN_2026-02-26_ITER-10-HARDENING.md)
 | 7 | 2026-02-26 | #153 | Modularization | interpretation.py split, pdf_extraction split, AppWorkspace hooks, observability 4-module | [COMPLETED_ITER-7.md](completed/COMPLETED_ITER-7.md) |
 | 8 | 2026-02-26 | #156, #157 | Bugs + CI governance + refactor round 3 | 372 backend, 263 frontend, 3 doc guard CI jobs, AppWorkspace −62% | [COMPLETED_ITER-8.md](completed/COMPLETED_ITER-8.md) |
 | 9 | 2026-02-27 | #163 | E2E testing + evaluator polish | 5 Playwright E2E specs, 17 data-testid attrs, docs refresh, 6 EXECUTION_RULES integrity rules | [COMPLETED_ITER-9.md](completed/COMPLETED_ITER-9.md) |
+| 10 | 2026-02-27 | #165 | Security, resilience & performance hardening | DB indexes, UUID validation, Error Boundary, rate limiting, pip-audit + npm audit CI, deep health, lazy PdfViewer, cache headers, coverage thresholds | [COMPLETED_2026-02-26_ITER-10-HARDENING.md](completed/COMPLETED_2026-02-26_ITER-10-HARDENING.md) |
 
 ## Cumulative progress
 
-| Metric | Iter 1 | Iter 3 | Iter 6 | Iter 8 | Iter 9 |
-|---|---|---|---|---|---|
-| Backend tests | ~80 | ~180 | 317 | 372 | 372 |
-| Frontend tests | ~40 | ~120 | 226 | 263 | 263 |
-| Backend coverage | ~60% | ~75% | 90% | 90% | 90% |
-| Frontend coverage | ~40% | ~65% | 82.6% | 85% | 85% |
-| E2E specs | 0 | 0 | 0 | 0 | 5 |
-| CI jobs | 1 | 4 | 6 | 8 | 8 |
-| Lint issues | many | some | 0 | 0 | 0 |
+| Metric | Iter 1 | Iter 3 | Iter 6 | Iter 8 | Iter 9 | Iter 10 |
+|---|---|---|---|---|---|---|
+| Backend tests | ~80 | ~180 | 317 | 372 | 372 | 377 |
+| Frontend tests | ~40 | ~120 | 226 | 263 | 263 | 266 |
+| Backend coverage | ~60% | ~75% | 90% | 90% | 90% | 90.41% |
+| Frontend coverage | ~40% | ~65% | 82.6% | 85% | 85% | 85% |
+| E2E specs | 0 | 0 | 0 | 0 | 5 | 5 |
+| CI jobs | 1 | 4 | 6 | 8 | 8 | 10 |
+| Lint issues | many | some | 0 | 0 | 0 | 0 |
