@@ -172,11 +172,23 @@ Commit A → push → start working on B locally
 2. **Before committing step N+1:** check CI status of step N:
    - ✅ Green → proceed to commit N+1.
    - ❌ Red → `git stash` → fix step N → `git commit --amend` → `git push --force` → `git stash pop`.
-3. **Always run local tests** for step N+1's area before committing, regardless of CI result:
-   - Backend changes: `cd backend && python -m pytest tests/ -x -q --tb=short`
-   - Frontend changes: `cd frontend && npm run lint && npx vitest run`
-   - Both: run both.
-   - Docs/CI only: no local tests needed.
+3. **Always run targeted local tests** for step N+1's area before committing, regardless of CI result.
+   Run only the tests affected by the change — CI runs the full suite after push.
+
+   | Change type | Local validation command |
+   |-------------|------------------------|
+   | Backend — single module | `cd backend && python -m pytest tests/test_<module>.py -x -q --tb=short` |
+   | Backend — benchmarks | `cd backend && python -m pytest tests/benchmarks/ -v --benchmark-enable` |
+   | Frontend — single component | `cd frontend && npx vitest run src/components/<Component>.test.tsx` |
+   | Frontend — single lib | `cd frontend && npx vitest run src/lib/__tests__/<file>.test.ts` |
+   | E2E — single spec | `cd frontend && npx playwright test <spec-name>.spec.ts --project=core` |
+   | E2E — extended spec | `cd frontend && npx playwright test <spec-name>.spec.ts --project=extended` |
+   | Docs/CI only | No local tests needed |
+
+   **Exceptions — run the full suite locally when:**
+   - The change touches shared infrastructure (`conftest.py`, test helpers, `vite.config.ts`, `playwright.config.ts`).
+   - The change touches composition root (`main.py`) or configuration (`config.py`).
+   - You are unsure which tests are affected — run the directory, not the entire suite.
 4. **Maximum pipeline depth: 1.** Never start step N+2 without CI of step N verified.
 5. **Hard-gates (🚧) and agent handoffs** require CI green for ALL pending steps before proceeding.
 6. **Force-push is allowed** only on feature branches where a single agent is working.

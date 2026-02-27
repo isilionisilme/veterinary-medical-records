@@ -339,7 +339,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 - Test 14: Confidence indicators visible; field count summary in toolbar
 
 **Validation:**
-- `cd frontend && npm run test:e2e` → includes these new tests (core project)
+- `cd frontend && npx playwright test extracted-data.spec.ts --project=core` → 3 tests pass
 
 **Commit:** `feat(plan-f18l): add extracted-data E2E tests (3 tests)`
 
@@ -365,7 +365,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 - Test 17: Cancel edit → dialog closes, value unchanged
 
 **Validation:**
-- `cd frontend && npm run test:e2e` → includes these new tests (core project)
+- `cd frontend && npx playwright test field-editing.spec.ts --project=core` → 3 tests pass
 
 **Commit:** `feat(plan-f18m): refactor edit-flow into field-editing spec (3 tests)`
 
@@ -390,7 +390,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 - Test 19: Reopen → button changes to "Marcar revisado", document moves to "Para revisar" group
 
 **Validation:**
-- `cd frontend && npm run test:e2e` → includes these new tests (core project)
+- `cd frontend && npx playwright test review-workflow.spec.ts --project=core` → 2 tests pass
 
 **Commit:** `feat(plan-f18n): refactor mark-reviewed into review-workflow spec (2 tests)`
 
@@ -454,7 +454,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 4. **Verify toast rendering** — Existing toast components receive the already-mapped friendly string. No changes needed in ToastHost or toast-types.
 
 **Validation:**
-- `cd frontend && npx vitest run --reporter=verbose` → all pass, new error mapping tests green.
+- `cd frontend && npx vitest run src/lib/__tests__/errorMessages.test.ts` → all pattern tests pass.
 - `cd frontend && npm run lint` → 0 errors.
 - Manual: start app, trigger a 429 (rapid uploads) → verify friendly toast text.
 
@@ -506,7 +506,6 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 
 **Validation:**
 - `cd backend && python -m pytest tests/benchmarks/ -v --benchmark-enable` → all pass with P50/P95 output.
-- `cd backend && python -m pytest tests/ -x -q --tb=short --benchmark-disable` → existing tests unaffected.
 
 **Commit:** `perf(plan-f18p): add endpoint latency benchmarks P50/P95`
 
@@ -552,8 +551,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
    - Test: runner with empty PDF content → produces meaningful error artifact.
 
 **Validation:**
-- `cd backend && python -m pytest tests/ -x -q --tb=short` → all pass.
-- `cd backend && python -m pytest tests/ --cov=app --cov-report=term-missing -q` → coverage ≥ 92%.
+- `cd backend && python -m pytest tests/test_orchestrator_failures.py tests/test_db_resilience.py -x -q --tb=short` → all pass.
 
 **Commit:** `test(plan-f18q): backend failure-path tests — orchestrator + DB resilience`
 
@@ -603,7 +601,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
    - Unmount during async operations.
 
 **Validation:**
-- `cd frontend && npx vitest run --coverage --reporter=verbose` → overall coverage ≥ 87%.
+- `cd frontend && npx vitest run src/components/SourcePanel.test.tsx src/components/UploadDropzone.test.tsx --reporter=verbose` → all pass.
 - `cd frontend && npm run lint` → 0 errors.
 
 **Commit:** `test(plan-f18r): deepen SourcePanel + UploadDropzone coverage`
@@ -655,9 +653,8 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 5. **Add/update tests** — Ensure existing repo tests cover each sub-repo independently. Add at least one test per sub-repo verifying isolated construction.
 
 **Validation:**
-- `cd backend && python -m pytest tests/ -x -q --tb=short` → all pass.
-- `wc -l backend/app/infra/sqlite_document_repo*.py backend/app/infra/sqlite_run_repo.py backend/app/infra/sqlite_calibration_repo.py` → each < 400 LOC.
-- `cd backend && python -m pytest tests/ --cov=app --cov-report=term-missing -q` → coverage ≥ 92%.
+- `cd backend && python -m pytest tests/test_document_repo.py tests/test_run_repo.py tests/test_calibration_repo.py -x -q --tb=short` → all pass (adjust file names to actual test files).
+- `(Get-Content backend/app/infra/sqlite_document_repo.py).Count` + similar → each < 400 LOC.
 
 **Commit:** `refactor(plan-f18s): split sqlite_document_repository by aggregate`
 

@@ -101,7 +101,7 @@ Post-Iter 11 (estimated): ~390 backend tests (≥92%), ~280 frontend tests (≥8
    - Test 51: Zoom persists in localStorage across reload
 
 **Validation:**
-- `cd frontend && npm run test:e2e:all` → includes these new tests (extended project)
+- `cd frontend && npx playwright test viewer-tabs.spec.ts raw-text.spec.ts zoom-advanced.spec.ts --project=extended` → 10 tests pass
 
 **Commit:** `feat(plan-f19a): add viewer-tabs, raw-text, zoom-advanced E2E tests (10 tests)`
 
@@ -141,7 +141,7 @@ Post-Iter 11 (estimated): ~390 backend tests (≥92%), ~280 frontend tests (≥8
    - Test 61: Editing blocked on reviewed document → shows toast
 
 **Validation:**
-- `cd frontend && npm run test:e2e:all` → includes these new tests (extended project)
+- `cd frontend && npx playwright test structured-filters.spec.ts field-validation.spec.ts add-field.spec.ts --project=extended` → 13 tests pass
 
 **Commit:** `feat(plan-f19b): add structured-filters, field-validation, add-field E2E tests (13 tests)`
 
@@ -171,7 +171,7 @@ Post-Iter 11 (estimated): ~390 backend tests (≥92%), ~280 frontend tests (≥8
    - Test 59: Manual close toast via X button
 
 **Validation:**
-- `cd frontend && npm run test:e2e:all` → includes these new tests (extended project)
+- `cd frontend && npx playwright test reprocess.spec.ts toasts.spec.ts --project=extended` → 5 tests pass
 
 **Commit:** `feat(plan-f19c): add reprocess and toasts E2E tests (5 tests)`
 
@@ -206,7 +206,7 @@ Post-Iter 11 (estimated): ~390 backend tests (≥92%), ~280 frontend tests (≥8
    - Test 47: Hover expands collapsed sidebar
 
 **Validation:**
-- `cd frontend && npm run test:e2e:all` → includes these new tests (extended project)
+- `cd frontend && npx playwright test source-panel.spec.ts split-panel.spec.ts sidebar-interactions.spec.ts --project=extended` → 8 tests pass
 
 **Commit:** `feat(plan-f19d): add source-panel, split-panel, sidebar-interactions E2E tests (8 tests)`
 
@@ -236,7 +236,7 @@ Post-Iter 11 (estimated): ~390 backend tests (≥92%), ~280 frontend tests (≥8
    - Test 21: Drag & drop on viewer triggers upload overlay
 
 **Validation:**
-- `cd frontend && npm run test:e2e:all` → includes these new tests (extended project)
+- `cd frontend && npx playwright test visit-grouping.spec.ts upload-validation.spec.ts --project=extended` → 5 tests pass
 
 **Commit:** `feat(plan-f19e): add visit-grouping and upload-validation E2E tests (5 tests)`
 
