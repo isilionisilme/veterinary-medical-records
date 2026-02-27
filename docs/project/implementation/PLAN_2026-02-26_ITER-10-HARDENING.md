@@ -29,7 +29,7 @@ Post-Iter 9: E2E tests in CI, backend 90%, frontend 85%. The most impactful rema
 - [x] F16-C 🔄 — React Error Boundary: add global error boundary wrapping the app tree (Codex)
 - [x] F16-D 🔄 — Rate limiting: add `slowapi` middleware to protect upload and extraction endpoints (Codex)
 - [x] F16-E 🔄 — Coverage thresholds: enforce `--cov-fail-under=85` in pytest and vitest coverage config (Codex)
-- [ ] F16-F 🔄 — Security audit in CI: add `pip-audit` and `npm audit` steps to CI workflow (Codex)
+- [x] F16-F 🔄 — Security audit in CI: add `pip-audit` and `npm audit` steps to CI workflow (Codex)
 - [ ] F16-G 🔄 — nginx cache headers: add `Cache-Control` for static assets + `Strict-Transport-Security` header (Codex)
 - [ ] F16-H 🔄 — PdfViewer lazy loading: `React.lazy` + `Suspense` for PdfViewer component (Codex)
 - [ ] F16-I 🔄 — Deep health check: verify DB connectivity + storage in `/health` endpoint (Codex)
@@ -579,7 +579,7 @@ Post-Iter 9: E2E tests in CI, backend 90%, frontend 85%. The most impactful rema
 ## Prompt activo
 
 ### Paso objetivo
-_Completado: F16-E._
+_Completado: F16-F._
 
 ### Prompt
 _Vacío._
