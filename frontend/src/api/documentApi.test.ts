@@ -101,7 +101,7 @@ describe("documentApi", () => {
 
     await expect(fetchDocumentDetails("doc-missing")).rejects.toMatchObject<Partial<UiError>>({
       name: "UiError",
-      userMessage: "Documento inexistente",
+      userMessage: "Ocurrió un error inesperado. Intenta de nuevo.",
     });
   });
 
@@ -135,7 +135,7 @@ describe("documentApi", () => {
 
     await expect(fetchDocumentReview("doc-2")).rejects.toMatchObject<Partial<ApiResponseError>>({
       name: "ApiResponseError",
-      userMessage: "Review blocked",
+      userMessage: "Ocurrió un error inesperado. Intenta de nuevo.",
       errorCode: "REVIEW_BLOCKED",
       reason: "RUN_PENDING",
     });
@@ -186,7 +186,7 @@ describe("documentApi", () => {
       .mockResolvedValueOnce(new Response("broken", { status: 500 }));
 
     await expect(fetchProcessingHistory("doc-1")).rejects.toMatchObject<Partial<UiError>>({
-      userMessage: "Historial no disponible",
+      userMessage: "Ocurrió un error inesperado. Intenta de nuevo.",
     });
     await expect(fetchProcessingHistory("doc-1")).rejects.toMatchObject<Partial<UiError>>({
       userMessage: "No pudimos cargar el historial de procesamiento.",
@@ -196,7 +196,9 @@ describe("documentApi", () => {
   it("triggerReprocess throws Error with API message on failure", async () => {
     vi.mocked(globalThis.fetch).mockResolvedValueOnce(jsonResponse({ message: "No queue" }, 503));
 
-    await expect(triggerReprocess("doc-3")).rejects.toThrow("No queue");
+    await expect(triggerReprocess("doc-3")).rejects.toThrow(
+      "Ocurrió un error inesperado. Intenta de nuevo.",
+    );
   });
 
   it("triggerReprocess returns latest run on success", async () => {
@@ -225,7 +227,7 @@ describe("documentApi", () => {
       .mockResolvedValueOnce(new Response("broken", { status: 500 }));
 
     await expect(markDocumentReviewed("doc-4")).rejects.toMatchObject<Partial<UiError>>({
-      userMessage: "Already reviewed",
+      userMessage: "Ocurrió un error inesperado. Intenta de nuevo.",
     });
     await expect(reopenDocumentReview("doc-4")).rejects.toMatchObject<Partial<UiError>>({
       userMessage: "No se pudo reabrir el documento.",
@@ -238,7 +240,7 @@ describe("documentApi", () => {
       .mockResolvedValueOnce(jsonResponse({ message: "   " }, 409));
 
     await expect(reopenDocumentReview("doc-4")).rejects.toMatchObject<Partial<UiError>>({
-      userMessage: "Reapertura bloqueada",
+      userMessage: "Ocurrió un error inesperado. Intenta de nuevo.",
     });
     await expect(reopenDocumentReview("doc-4")).rejects.toMatchObject<Partial<UiError>>({
       userMessage: "No se pudo reabrir el documento.",
@@ -296,7 +298,7 @@ describe("documentApi", () => {
     await expect(
       editRunInterpretation("run-1", { base_version_number: 1, changes: [] }),
     ).rejects.toMatchObject<Partial<ApiResponseError>>({
-      userMessage: "Version conflict",
+      userMessage: "Ocurrió un error inesperado. Intenta de nuevo.",
       errorCode: "VERSION_CONFLICT",
       reason: "STALE_BASE_VERSION",
     });
@@ -329,7 +331,7 @@ describe("documentApi", () => {
 
     await expect(fetchRawText("run-9")).rejects.toMatchObject<Partial<ApiResponseError>>({
       name: "ApiResponseError",
-      userMessage: "Artifact missing",
+      userMessage: "Ocurrió un error inesperado. Intenta de nuevo.",
       errorCode: "RAW_TEXT_NOT_AVAILABLE",
       reason: "PROCESSING_INCOMPLETE",
     });
@@ -399,7 +401,7 @@ describe("documentApi", () => {
       userMessage: "No se pudo subir el documento.",
     });
     await expect(uploadDocument(file)).rejects.toMatchObject<Partial<UiError>>({
-      userMessage: "Custom backend message",
+      userMessage: "Ocurrió un error inesperado. Intenta de nuevo.",
     });
   });
 

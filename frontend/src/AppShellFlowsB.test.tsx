@@ -84,7 +84,9 @@ describe("App upload and list flow", () => {
     const reprocessDialog = await screen.findByRole("dialog", { name: /Reprocesar documento/i });
     fireEvent.click(within(reprocessDialog).getByRole("button", { name: /^Reprocesar$/i }));
 
-    expect((await screen.findAllByText(/reprocess failed/i)).length).toBeGreaterThan(0);
+    expect(
+      (await screen.findAllByText(/Ocurrió un error inesperado\. Intenta de nuevo\./i)).length,
+    ).toBeGreaterThan(0);
     await waitFor(() => {
       expect(
         within(screen.getByRole("button", { name: /ready\.pdf/i })).getByText("Listo"),
