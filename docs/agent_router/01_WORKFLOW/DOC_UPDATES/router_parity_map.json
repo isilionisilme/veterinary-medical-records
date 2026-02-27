@@ -23,6 +23,18 @@
       ]
     },
     {
+      "source_doc": "docs/project/ARCHITECTURE.md",
+      "description": "Project ARCHITECTURE must remain discoverable from project docs entry.",
+      "router_modules": [
+        {
+          "path": "docs/agent_router/04_PROJECT/00_entry.md",
+          "required_terms": [
+            "Project Docs (Modules)"
+          ]
+        }
+      ]
+    },
+    {
       "source_doc": "docs/project/refactor/DELIVERY_SUMMARY.md",
       "description": "Project DELIVERY_SUMMARY must map to project owner entry module.",
       "router_modules": [

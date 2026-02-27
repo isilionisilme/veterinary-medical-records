@@ -2,6 +2,58 @@ import fs from "node:fs";
 
 import { expect, type Page } from "@playwright/test";
 
+function extractDocumentId(payload: unknown): string | null {
+  if (!payload || typeof payload !== "object") {
+    return null;
+  }
+  const candidate = (payload as { document_id?: unknown; documentId?: unknown }).document_id
+    ?? (payload as { document_id?: unknown; documentId?: unknown }).documentId;
+  if (typeof candidate !== "string") {
+    return null;
+  }
+  const normalized = candidate.trim();
+  return normalized.length > 0 && normalized !== "null" ? normalized : null;
+}
+
+function extractDocumentIdFromRowTestId(testId: string): string | null {
+  if (!testId.startsWith("doc-row-")) {
+    return null;
+  }
+  const value = testId.replace("doc-row-", "").trim();
+  return value.length > 0 && value !== "null" ? value : null;
+}
+
+async function fetchLatestDocumentId(
+  page: Page,
+  knownDocumentIds: Set<string>,
+): Promise<string | null> {
+  const endpoints = ["/api/documents?limit=50&offset=0", "/documents?limit=50&offset=0"];
+  for (const endpoint of endpoints) {
+    const response = await page.request.get(endpoint);
+    if (!response.ok()) {
+      continue;
+    }
+    try {
+      const payload = (await response.json()) as {
+        items?: Array<{ document_id?: string; documentId?: string }>;
+      };
+      const candidate = payload.items
+        ?.map((item) => extractDocumentId(item))
+        .find((documentId) => typeof documentId === "string" && !knownDocumentIds.has(documentId));
+      if (candidate) {
+        return candidate;
+      }
+      const firstKnown = payload.items?.map((item) => extractDocumentId(item)).find(Boolean);
+      if (firstKnown) {
+        return firstKnown;
+      }
+    } catch {
+      // Ignore malformed payloads and continue with other fallbacks.
+    }
+  }
+  return null;
+}
+
 /**
  * Upload a PDF and wait for it to appear in the sidebar.
  * Returns the document_id from the upload response.
@@ -19,6 +71,11 @@ export async function uploadAndWaitForProcessing(
       .locator('[data-testid^="doc-row-"]')
       .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-testid") ?? "")),
   );
+  const knownDocumentIds = new Set(
+    Array.from(existingRowTestIds)
+      .map((testId) => extractDocumentIdFromRowTestId(testId))
+      .filter((value): value is string => Boolean(value)),
+  );
 
   const filename = pdfPath.split("/").pop() ?? "sample.pdf";
   const uploadResponse = await page.request.post("/documents/upload", {
@@ -31,8 +88,12 @@ export async function uploadAndWaitForProcessing(
     },
   });
   if (uploadResponse.ok()) {
-    const json = (await uploadResponse.json()) as { document_id?: string };
-    docId = typeof json.document_id === "string" && json.document_id.trim().length > 0 ? json.document_id : null;
+    try {
+      const json = (await uploadResponse.json()) as unknown;
+      docId = extractDocumentId(json);
+    } catch {
+      docId = null;
+    }
   } else {
     await page.getByLabel("Archivo PDF").setInputFiles({
       name: filename,
@@ -86,19 +147,23 @@ export async function uploadAndWaitForProcessing(
   }
 
   if (!docId || docId === "null") {
-    const listResponse = await page.request.get("/api/documents?limit=50&offset=0");
-    if (listResponse.ok()) {
-      try {
-        const payload = (await listResponse.json()) as {
-          items?: Array<{ document_id?: string }>;
-        };
-        const fallbackId = payload.items?.[0]?.document_id;
-        if (typeof fallbackId === "string" && fallbackId.trim().length > 0) {
-          docId = fallbackId;
-        }
-      } catch {
-        // Ignore non-JSON responses and let the final guard raise a clear error.
+    docId = await fetchLatestDocumentId(page, knownDocumentIds);
+  }
+
+  if (!docId || docId === "null") {
+    try {
+      await expect(page.locator('[data-testid^="doc-row-"]').first()).toBeVisible({ timeout: 15_000 });
+      const rowTestIds = await page
+        .locator('[data-testid^="doc-row-"]')
+        .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-testid") ?? ""));
+      const fallbackRowId = rowTestIds
+        .map((testId) => extractDocumentIdFromRowTestId(testId))
+        .find((value): value is string => Boolean(value));
+      if (fallbackRowId) {
+        docId = fallbackRowId;
       }
+    } catch {
+      // Keep final guard below for hard failures where no row is available.
     }
   }
 

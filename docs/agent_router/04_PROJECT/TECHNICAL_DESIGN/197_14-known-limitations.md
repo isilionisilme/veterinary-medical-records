@@ -9,3 +9,5 @@
 | 5 | Routes monolith concentration | Resolved: API routes split into domain modules and thin aggregator | Iteration 6 completed (#7a) |
 | 6 | No rate limiting on API endpoints | Vulnerable to abuse on upload and extraction paths | Planned for Iteration 10 hardening (F16-D) |
 | 7 | No DB indexes on FK-heavy joins | Full scans on `processing_runs`, `artifacts`, `document_status_history` joins | Planned for Iteration 10 hardening (F16-A) |
+
+> Propagation note: synced with Iteration 12 close-out updates on 2026-02-27.

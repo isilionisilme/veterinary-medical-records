@@ -17,7 +17,7 @@ const TOAST_BASE_CLASS = "rounded-2xl border px-5 py-4 shadow-subtle";
 
 function getToastKindClass(kind: "success" | "info" | "error"): string {
   if (kind === "success") {
-    return "border-statusSuccess text-statusSuccess";
+    return "border-statusSuccess text-text";
   }
   if (kind === "info") {
     return "border-accent text-text";

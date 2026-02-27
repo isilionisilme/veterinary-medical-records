@@ -3,7 +3,7 @@
 > **Operational rules:** See [EXECUTION_RULES.md](EXECUTION_RULES.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
 
 **Rama:** `improvement/iteration-12-final`
-**PR:** TBD (single PR → `main`)
+**PR:** #169
 **Prerequisito:** Iteration 11 merged to `main`.
 
 ## Context
@@ -37,30 +37,30 @@ Post-Iter 11 (estimated): ~390 backend tests (≥92%), ~280 frontend tests (≥8
 
 > E2E prompts originally from the standalone E2E coverage expansion plan (Phase 3–4), now merged inline.
 
-- [ ] F19-A 🔄 — Bloque Viewer: `viewer-tabs`, `raw-text`, `zoom-advanced` — 10 tests (Codex) → source: F17-L
-- [ ] F19-B 🔄 — Bloque Data: `structured-filters`, `field-validation`, `add-field` — 13 tests (Codex) → source: F17-M
-- [ ] F19-C 🔄 — Bloque Workflow: `reprocess`, `toasts` — 5 tests (Codex) → source: F17-N
-- [ ] F19-D 🔄 — Bloque Layout: `source-panel`, `split-panel`, `sidebar-interactions` — 8 tests (Codex) → source: F17-O
-- [ ] F19-E 🔄 — Bloque Avanzado: `visit-grouping`, `upload-validation` — 5 tests (Codex) → source: F17-P
-- [ ] F19-F 🔄 — Run full suite in Docker, verify 61 tests green (Codex) → source: F17-Q
-- [ ] F19-G 🔄 — Remove legacy spec files absorbed by new specs (Codex) → source: F17-R
-- [ ] F19-H 🚧 — Update `PLAN_E2E_TEST_COVERAGE.md` §7 checkboxes + metrics (Claude) → source: F17-S
+- [x] F19-A 🔄 — Bloque Viewer: `viewer-tabs`, `raw-text`, `zoom-advanced` — 10 tests (Codex) → source: F17-L ✅ 7c5cdfa8 + fix 0d775e4f
+- [x] F19-B 🔄 — Bloque Data: `structured-filters`, `field-validation`, `add-field` — 13 tests (Codex) → source: F17-M ✅ 7fa52122
+- [x] F19-C 🔄 — Bloque Workflow: `reprocess`, `toasts` — 5 tests (Codex) → source: F17-N ✅ eb6128f8
+- [x] F19-D 🔄 — Bloque Layout: `source-panel`, `split-panel`, `sidebar-interactions` — 8 tests (Codex) → source: F17-O ✅ 11d23e1d + fix 43acb9b8 + fix 15fbca79
+- [x] F19-E 🔄 — Bloque Avanzado: `visit-grouping`, `upload-validation` — 5 tests (Codex) → source: F17-P ✅ 025d2358
+- [x] F19-F 🔄 — Run full suite in Docker, verify 61 tests green (Codex) → source: F17-Q ✅ 56e5808d + fix 7696bf0f
+- [x] F19-G 🔄 — Remove legacy spec files absorbed by new specs (Codex) → source: F17-R ✅ d5f66e92
+- [x] F19-H 🚧 — Update `PLAN_E2E_TEST_COVERAGE.md` §7 checkboxes + metrics (Claude) → source: F17-S ✅
 
 #### Phase B — WCAG quick wins + automated a11y
 
-- [ ] F19-I 🔄 — Add `@axe-core/playwright` E2E accessibility audit + fix critical violations (Codex)
-- [ ] F19-J 🔄 — Add missing aria-labels, focus management, and color contrast fixes (Codex)
+- [x] F19-I 🔄 — Add `@axe-core/playwright` E2E accessibility audit + fix critical violations (Codex) ✅ df33d3fb
+- [x] F19-J 🔄 — Add missing aria-labels, focus management, and color contrast fixes (Codex) ✅ done
 
 #### Phase C — README + Architecture one-pager
 
-- [ ] F19-K 🚧 — Create `ARCHITECTURE.md` one-pager with Mermaid diagram (Claude)
-- [ ] F19-L 🚧 — README final polish: badges, tech stack table, demo GIF placeholder, streamlined structure (Claude)
+- [x] F19-K 🚧 — Create `ARCHITECTURE.md` one-pager with Mermaid diagram (Claude) ✅ 402a2ff0
+- [x] F19-L 🚧 — README final polish: badges, tech stack table, demo GIF placeholder, streamlined structure (Claude) ✅ 093fb6eb
 
 #### Phase D — Final documentation close-out
 
-- [ ] F19-M 🚧 — DELIVERY_SUMMARY final refresh with Iter 11+12 metrics (Claude)
-- [ ] F19-N 🚧 — FUTURE_IMPROVEMENTS → reframe as "Known Limitations & Future Directions" (Claude)
-- [ ] F19-O 🚧 — TECHNICAL_DESIGN §14 final update: mark resolved limitations, add Iter 12 outcomes (Claude)
+- [x] F19-M 🚧 — DELIVERY_SUMMARY final refresh with Iter 11+12 metrics (Claude) ✅
+- [x] F19-N 🚧 — FUTURE_IMPROVEMENTS → reframe as "Known Limitations & Future Directions" (Claude) ✅ 096efbbf
+- [x] F19-O 🚧 — TECHNICAL_DESIGN §14 final update: mark resolved limitations, add Iter 12 outcomes (Claude) ✅
 
 ---
 

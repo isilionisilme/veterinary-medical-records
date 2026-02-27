@@ -1,15 +1,23 @@
 import { defineConfig } from "@playwright/test";
 
+const baseURL = process.env.PLAYWRIGHT_BASE_URL || "http://localhost:80";
+const workers = process.env.PLAYWRIGHT_WORKERS
+  ? Number(process.env.PLAYWRIGHT_WORKERS)
+  : process.env.CI
+    ? 6
+    : 1;
+
 export default defineConfig({
   testDir: "./e2e",
   timeout: 30_000,
+  workers,
   expect: {
     timeout: 5_000,
   },
   outputDir: "./test-results",
   retries: 0,
   use: {
-    baseURL: "http://localhost:80",
+    baseURL,
     headless: true,
     trace: "on-first-retry",
     screenshot: "only-on-failure",
@@ -28,7 +36,7 @@ export default defineConfig({
     },
     {
       name: "extended",
-      testMatch: /.*/,
+      testMatch: /.*\.spec\.ts$/,
       timeout: 90_000,
     },
   ],

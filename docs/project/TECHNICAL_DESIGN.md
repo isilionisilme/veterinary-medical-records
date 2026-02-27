@@ -440,16 +440,18 @@ The current architecture supports this evolution: the hexagonal design and expli
 
 | # | Limitation | Impact | Mitigation / Roadmap |
 |---|---|---|---|
-| 1 | Single-process model — API and scheduler share one event loop | No horizontal scaling for processing | [ADR-ARCH-0004](../adr/ADR-ARCH-0004-in-process-async-processing.md); optional worker profile in [FUTURE_IMPROVEMENTS.md](FUTURE_IMPROVEMENTS.md) #14 |
+| 1 | Single-process model — API and scheduler share one event loop | No horizontal scaling for processing | [ADR-ARCH-0004](../adr/ADR-ARCH-0004-in-process-async-processing.md); optional worker profile in [Known Limitations](FUTURE_IMPROVEMENTS.md) #14 |
 | 2 | SQLite — single-writer constraint | Write contention under concurrent uploads | WAL mode + busy timeout applied (Iteration 2); PostgreSQL adapter in roadmap (#17) |
 | 3 | Minimal authentication boundary | Root endpoints remain open; token auth is optional and static | Optional bearer-token auth implemented (Iteration 3, §13); full authN/authZ is a production evolution |
-| 4 | `AppWorkspace.tsx` at ~2,200 LOC (down from ~5,800) | Core orchestrator still large; 5 hooks + 3 panel components extracted (−62%) | Decomposition across Iterations 3, 7, 8 ([FUTURE_IMPROVEMENTS.md](FUTURE_IMPROVEMENTS.md) #7b ✅); remaining LOC is render orchestration — further splits yield diminishing returns |
-| 5 | ~~`routes.py` at ~940 LOC~~ **✅ Resolved** | Routes fully decomposed into 5 domain modules (all < 420 LOC) + 18-LOC aggregator | Done (Iteration 6); [FUTURE_IMPROVEMENTS.md](FUTURE_IMPROVEMENTS.md) #7a ✅ |
+| 4 | `AppWorkspace.tsx` at ~2,200 LOC (down from ~5,800) | Core orchestrator still large; 5 hooks + 3 panel components extracted (−62%) | Decomposition across Iterations 3, 7, 8; remaining LOC is render orchestration — further splits yield diminishing returns |
+| 5 | ~~`routes.py` at ~940 LOC~~ **✅ Resolved** | Routes fully decomposed into 5 domain modules (all < 420 LOC) + 18-LOC aggregator | Done (Iteration 6) |
 | 6 | ~~No rate limiting on API endpoints~~ **✅ Resolved** | Rate limiting applied via `slowapi` on upload (10/min) and download (30/min) | Done (Iteration 10, F16-D) |
 | 7 | ~~No DB indexes on FK columns~~ **✅ Resolved** | 4 secondary indexes added on `processing_runs`, `artifacts`, `document_status_history` | Done (Iteration 10, F16-A) |
 | 8 | ~~SQLite repository monolith (751 LOC, 4 aggregates)~~ **✅ Resolved** | Split into 3 aggregate modules + façade: `sqlite_document_repo.py` (241), `sqlite_run_repo.py` (302), `sqlite_calibration_repo.py` (123) | Done (Iteration 11, F18-S) |
 | 9 | ~~No latency baselines~~ **✅ Resolved** | P50/P95 benchmarks for list/get/upload endpoints; P95 < 500ms enforced | Done (Iteration 11, F18-P) |
 | 10 | ~~Raw API errors shown to users~~ **✅ Resolved** | `errorMessages.ts` maps 8 error patterns to user-friendly Spanish toasts | Done (Iteration 11, F18-O) |
+| 11 | ~~Limited E2E coverage (20 tests)~~ **✅ Resolved** | Expanded to 65 tests across 22 spec files covering all 4 phases of the E2E plan | Done (Iteration 12, F19-A→E) |
+| 12 | ~~No accessibility testing~~ **✅ Resolved** | `@axe-core/playwright` WCAG 2.1 AA audit integrated; 0 critical violations; aria-labels + focus management added | Done (Iteration 12, F19-I + F19-J) |
 
 ---
 
