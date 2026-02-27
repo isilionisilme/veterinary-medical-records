@@ -14,21 +14,66 @@ export async function uploadAndWaitForProcessing(
   const timeout = options.timeout ?? 90_000;
   const pdfBuffer = fs.readFileSync(pdfPath);
   let docId: string | null = null;
+  const existingRowTestIds = new Set(
+    await page
+      .locator('[data-testid^="doc-row-"]')
+      .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-testid") ?? "")),
+  );
 
-  await page.route("**/documents/upload", async (route) => {
-    const response = await route.fetch();
-    const json = (await response.json()) as { document_id?: string };
+  const filename = pdfPath.split("/").pop() ?? "sample.pdf";
+  const uploadResponse = await page.request.post("/documents/upload", {
+    multipart: {
+      file: {
+        name: filename,
+        mimeType: "application/pdf",
+        buffer: pdfBuffer,
+      },
+    },
+  });
+  if (uploadResponse.ok()) {
+    const json = (await uploadResponse.json()) as { document_id?: string };
     docId = json.document_id ?? null;
-    await route.fulfill({ response });
-  });
+  } else {
+    await page.getByLabel("Archivo PDF").setInputFiles({
+      name: filename,
+      mimeType: "application/pdf",
+      buffer: pdfBuffer,
+    });
+  }
 
-  await page.getByLabel("Archivo PDF").setInputFiles({
-    name: pdfPath.split("/").pop() ?? "sample.pdf",
-    mimeType: "application/pdf",
-    buffer: pdfBuffer,
-  });
+  await expect
+    .poll(
+      async () => {
+        if (docId) {
+          return docId;
+        }
+        const currentRowTestIds = await page
+          .locator('[data-testid^="doc-row-"]')
+          .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-testid") ?? ""));
+        const newRowTestId = currentRowTestIds.find(
+          (testId) => testId.startsWith("doc-row-") && !existingRowTestIds.has(testId),
+        );
+        if (!newRowTestId) {
+          return null;
+        }
+        return newRowTestId.replace("doc-row-", "");
+      },
+      { timeout },
+    )
+    .not.toBeNull();
 
-  await expect.poll(() => docId, { timeout }).not.toBeNull();
+  if (!docId) {
+    const currentRowTestIds = await page
+      .locator('[data-testid^="doc-row-"]')
+      .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-testid") ?? ""));
+    const newRowTestId = currentRowTestIds.find(
+      (testId) => testId.startsWith("doc-row-") && !existingRowTestIds.has(testId),
+    );
+    if (newRowTestId) {
+      docId = newRowTestId.replace("doc-row-", "");
+    }
+  }
+
   const row = page.getByTestId(`doc-row-${docId}`);
   await expect(row).toBeVisible({ timeout });
 

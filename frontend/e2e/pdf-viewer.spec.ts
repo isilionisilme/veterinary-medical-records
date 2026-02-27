@@ -3,6 +3,9 @@ import { expect, test } from "@playwright/test";
 import { pinSidebar, selectDocument, uploadAndWaitForProcessing } from "./helpers";
 
 test.describe("pdf viewer interactions", () => {
+  test.describe.configure({ mode: "serial" });
+  let sharedDocumentId: string | null = null;
+
   test.beforeEach(async ({ page }) => {
     test.setTimeout(120_000);
 
@@ -10,8 +13,12 @@ test.describe("pdf viewer interactions", () => {
     await page.goto("/");
     await expect(page.getByTestId("documents-sidebar")).toBeVisible();
 
-    const documentId = await uploadAndWaitForProcessing(page);
-    await selectDocument(page, documentId);
+    if (!sharedDocumentId) {
+      sharedDocumentId = await uploadAndWaitForProcessing(page);
+    } else {
+      await expect(page.getByTestId(`doc-row-${sharedDocumentId}`)).toBeVisible({ timeout: 90_000 });
+    }
+    await selectDocument(page, sharedDocumentId);
 
     await expect(page.getByTestId("pdf-toolbar-shell")).toBeVisible({ timeout: 60_000 });
     await expect(page.getByTestId("pdf-page").first()).toBeVisible({ timeout: 60_000 });
@@ -20,7 +27,6 @@ test.describe("pdf viewer interactions", () => {
   test("renders PDF pages and toolbar", async ({ page }) => {
     const pages = page.getByTestId("pdf-page");
     await expect(pages.first()).toBeVisible();
-    expect(await pages.count()).toBeGreaterThanOrEqual(1);
     await expect(page.getByTestId("pdf-toolbar-shell")).toBeVisible();
   });
 
