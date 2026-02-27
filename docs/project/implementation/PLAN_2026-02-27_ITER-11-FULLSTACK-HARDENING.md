@@ -36,7 +36,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 #### Phase A — Quick wins (warmup)
 
 - [x] F18-A 🔄 — Centralize 2 debug `os.getenv` reads into `settings.py` (Codex)
-- [ ] F18-B 🔄 — Extract shared PdfViewer mock helper, deduplicate 9 test files (Codex)
+- [x] F18-B 🔄 — Extract shared PdfViewer mock helper, deduplicate 9 test files (Codex)
 - [ ] F18-C 🔄 — OpenAPI polish: add route tags, error response schemas, health response model (Codex)
 
 #### Phase B — E2E expansion (Phases 0 + 1 + 2 from E2E coverage plan)
