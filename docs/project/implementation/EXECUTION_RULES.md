@@ -145,20 +145,26 @@ but must not **commit** the next step until the previous step's CI is green.
 > These rules close every identified gap.
 
 ### NO-BATCH (hard rule)
-**Prohibited: closing more than one plan step in a single wave of commits/pushes
-without completing the full CI + plan-update cycle for the previous step.**
-Each step must go through commit → push → CI green → plan update → (next step).
-Batching multiple steps into one push violates atomicity and breaks traceability.
+**Prohibited: pushing code for multiple plan steps in a single commit.**
+Each step gets its own commit. This ensures atomicity and traceability.
+The agent MAY start *working* on the next step before CI is green (see CI-PIPELINE below),
+but each step's code must be a separate commit+push.
 
-### CI-PIPELINE (replaces CI-FIRST-BEFORE-HANDOFF for 🔄 auto-chain steps)
+### CI-PIPELINE (pipeline execution for 🔄 auto-chain steps)
 
 > **Origin:** CI wait time was the main bottleneck in iteration velocity. This
-> rule eliminates idle time while keeping at most one task of drift.
+> rule eliminates idle time while keeping at most one step of drift.
+
+#### Core principle
+
+**Do not wait for CI between auto-chain steps.** Commit, push, and immediately
+start working on the next step. CI is checked *before committing* the next step,
+not before *starting work* on it.
 
 #### Flow
 
 ```
-Commit A → push → start working on B locally
+Commit A → push → start working on B locally (do NOT wait for CI of A)
                    ↓
             B ready → check CI status of A
                        ├─ ✅ Green → run local tests for B → commit B → push → start C
@@ -168,11 +174,12 @@ Commit A → push → start working on B locally
 
 #### Rules
 
-1. **After committing step N:** push and start working on step N+1 immediately. Do not wait for CI.
+1. **After committing step N:** push and start working on step N+1 **immediately**. Do not wait for CI.
 2. **Before committing step N+1:** check CI status of step N:
    - ✅ Green → proceed to commit N+1.
    - ❌ Red → `git stash` → fix step N → `git commit --amend` → `git push --force` → `git stash pop`.
-3. **Always run targeted local tests** for step N+1's area before committing, regardless of CI result.
+3. **A step is NOT marked `[x]` until its CI run is green.** The plan-update commit happens after CI green, per PLAN-UPDATE-IMMEDIATO below.
+4. **Always run targeted local tests** for step N+1's area before committing, regardless of CI result.
    Run only the tests affected by the change — CI runs the full suite after push.
 
    | Change type | Local validation command |
@@ -189,9 +196,9 @@ Commit A → push → start working on B locally
    - The change touches shared infrastructure (`conftest.py`, test helpers, `vite.config.ts`, `playwright.config.ts`).
    - The change touches composition root (`main.py`) or configuration (`config.py`).
    - You are unsure which tests are affected — run the directory, not the entire suite.
-4. **Maximum pipeline depth: 1.** Never start step N+2 without CI of step N verified.
-5. **Hard-gates (🚧) and agent handoffs** require CI green for ALL pending steps before proceeding.
-6. **Force-push is allowed** only on feature branches where a single agent is working.
+5. **Maximum pipeline depth: 1.** Never start step N+2 without CI of step N verified.
+6. **Hard-gates (🚧) and agent handoffs** require CI green for ALL pending steps before proceeding.
+7. **Force-push is allowed** only on feature branches where a single agent is working.
 
 #### CI-FIRST still required for
 
