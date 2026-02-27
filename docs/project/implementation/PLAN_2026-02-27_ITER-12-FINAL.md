@@ -44,7 +44,7 @@ Post-Iter 11 (estimated): ~390 backend tests (≥92%), ~280 frontend tests (≥8
 - [x] F19-E 🔄 — Bloque Avanzado: `visit-grouping`, `upload-validation` — 5 tests (Codex) → source: F17-P ✅ 025d2358
 - [ ] F19-F 🔄 — Run full suite in Docker, verify 61 tests green (Codex) → source: F17-Q
 - [ ] F19-G 🔄 — Remove legacy spec files absorbed by new specs (Codex) → source: F17-R
-- [ ] F19-H 🚧 — Update `PLAN_E2E_TEST_COVERAGE.md` §7 checkboxes + metrics (Claude) → source: F17-S
+- [x] F19-H 🚧 — Update `PLAN_E2E_TEST_COVERAGE.md` §7 checkboxes + metrics (Claude) → source: F17-S ✅
 
 #### Phase B — WCAG quick wins + automated a11y
 
@@ -58,9 +58,9 @@ Post-Iter 11 (estimated): ~390 backend tests (≥92%), ~280 frontend tests (≥8
 
 #### Phase D — Final documentation close-out
 
-- [ ] F19-M 🚧 — DELIVERY_SUMMARY final refresh with Iter 11+12 metrics (Claude)
+- [x] F19-M 🚧 — DELIVERY_SUMMARY final refresh with Iter 11+12 metrics (Claude) ✅
 - [x] F19-N 🚧 — FUTURE_IMPROVEMENTS → reframe as "Known Limitations & Future Directions" (Claude) ✅ 096efbbf
-- [ ] F19-O 🚧 — TECHNICAL_DESIGN §14 final update: mark resolved limitations, add Iter 12 outcomes (Claude)
+- [x] F19-O 🚧 — TECHNICAL_DESIGN §14 final update: mark resolved limitations, add Iter 12 outcomes (Claude) ✅
 
 ---
 
