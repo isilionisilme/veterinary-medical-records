@@ -19,6 +19,9 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from backend.app.api.routes import MAX_UPLOAD_SIZE as ROUTE_MAX_UPLOAD_SIZE
 from backend.app.api.routes import router as api_router
@@ -29,6 +32,7 @@ from backend.app.config import (
 )
 from backend.app.infra import database
 from backend.app.infra.file_storage import LocalFileStorage
+from backend.app.infra.rate_limiter import limiter
 from backend.app.infra.scheduler_lifecycle import SchedulerLifecycle
 from backend.app.infra.sqlite_document_repository import SqliteDocumentRepository
 from backend.app.ports.document_repository import DocumentRepository
@@ -138,6 +142,9 @@ def create_app() -> FastAPI:
         version=settings.app_version,
         lifespan=lifespan,
     )
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    app.add_middleware(SlowAPIMiddleware)
     cors_origins = _get_cors_origins()
     if cors_origins:
         app.add_middleware(

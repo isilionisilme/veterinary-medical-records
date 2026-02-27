@@ -66,7 +66,7 @@ def test_get_document_download_returns_410_when_missing_file(test_client):
 
 
 def test_get_document_download_returns_404_when_document_missing(test_client):
-    response = test_client.get("/documents/does-not-exist/download")
+    response = test_client.get("/documents/00000000-0000-0000-0000-000000000000/download")
     assert response.status_code == 404
     payload = response.json()
     assert payload["error_code"] == "NOT_FOUND"

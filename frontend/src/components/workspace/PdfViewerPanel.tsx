@@ -1,4 +1,4 @@
-import { type CSSProperties, type DragEventHandler, type ReactNode } from "react";
+import { lazy, Suspense, type CSSProperties, type DragEventHandler, type ReactNode } from "react";
 
 import { Button } from "../ui/button";
 import {
@@ -10,7 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../ui/dialog";
-import { PdfViewer } from "../PdfViewer";
 import { type ProcessingHistoryRun } from "../../types/appWorkspace";
 import { groupProcessingSteps } from "../../lib/processingHistory";
 import {
@@ -21,6 +20,10 @@ import {
 } from "../../lib/processingHistoryView";
 import { explainFailure } from "../../lib/appWorkspaceUtils";
 import { UploadPanel } from "./UploadPanel";
+
+const PdfViewer = lazy(() =>
+  import("../PdfViewer").then((module) => ({ default: module.PdfViewer })),
+);
 
 type PdfViewerPanelProps = {
   activeViewerTab: "document" | "raw_text" | "technical";
@@ -204,18 +207,26 @@ export function PdfViewerPanel({
                           </p>
                         </div>
                         {fileUrl ? (
-                          <PdfViewer
-                            key={`${effectiveViewMode}-${activeId ?? "empty"}`}
-                            documentId={activeId}
-                            fileUrl={fileUrl}
-                            filename={filename}
-                            isDragOver={isDragOverViewer}
-                            focusPage={selectedReviewFieldEvidencePage}
-                            highlightSnippet={selectedReviewFieldEvidenceSnippet}
-                            focusRequestId={fieldNavigationRequestId}
-                            toolbarLeftContent={viewerModeToolbarIcons}
-                            toolbarRightExtra={viewerDownloadIcon}
-                          />
+                          <Suspense
+                            fallback={
+                              <div className="flex h-full min-h-0 items-center justify-center text-sm text-muted">
+                                Cargando visor PDF...
+                              </div>
+                            }
+                          >
+                            <PdfViewer
+                              key={`${effectiveViewMode}-${activeId ?? "empty"}`}
+                              documentId={activeId}
+                              fileUrl={fileUrl}
+                              filename={filename}
+                              isDragOver={isDragOverViewer}
+                              focusPage={selectedReviewFieldEvidencePage}
+                              highlightSnippet={selectedReviewFieldEvidenceSnippet}
+                              focusRequestId={fieldNavigationRequestId}
+                              toolbarLeftContent={viewerModeToolbarIcons}
+                              toolbarRightExtra={viewerDownloadIcon}
+                            />
+                          </Suspense>
                         ) : (
                           <div className="flex h-full min-h-0 flex-col">
                             <div className="relative z-20 flex items-center justify-between gap-4 pb-3">

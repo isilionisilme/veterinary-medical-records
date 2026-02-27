@@ -68,3 +68,4 @@ Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for i
 - Security Boundary (§13) and Known Limitations (§14) sections added from CTO verdict iteration 2 (F8-D). Auth scope, production path, and limitation table propagated.
 - Naming clarification propagated: architecture layer naming uses `infra (infrastructure)` to stay aligned with `backend/app/infra/`.
 - Known Limitations propagation note refreshed: `routes.py` concentration is now marked resolved (Iteration 6), `AppWorkspace.tsx` baseline is updated to ~2,200 LOC, and pending hardening gaps include API rate limiting and FK index coverage.
+- Iteration 10 propagation (F16-K): Security Boundary now documents active rate limiting (`slowapi`), UUID path validation, and CI security audit gates; Known Limitations marks rate limiting and FK index gaps as resolved.

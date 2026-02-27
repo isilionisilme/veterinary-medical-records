@@ -176,39 +176,43 @@ def _ensure_status_history_schema(conn: sqlite3.Connection) -> None:
             );
             """
         )
-        return
-
-    if {"id", "document_id", "status", "run_id", "created_at"}.issubset(columns):
-        return
-
-    conn.executescript(
+    elif not {"id", "document_id", "status", "run_id", "created_at"}.issubset(columns):
+        conn.executescript(
+            """
+            CREATE TABLE document_status_history_new (
+                id TEXT PRIMARY KEY,
+                document_id TEXT NOT NULL,
+                status TEXT NOT NULL,
+                run_id TEXT,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY(document_id) REFERENCES documents(document_id)
+            );
+            """
+        )
+        historical_rows = conn.execute(
+            """
+            SELECT document_id, state, created_at
+            FROM document_status_history
+            """
+        ).fetchall()
+        for row in historical_rows:
+            conn.execute(
+                """
+                INSERT INTO document_status_history_new (
+                    id, document_id, status, run_id, created_at
+                )
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (str(uuid4()), row["document_id"], row["state"], None, row["created_at"]),
+            )
+        conn.execute("DROP TABLE document_status_history;")
+        conn.execute("ALTER TABLE document_status_history_new RENAME TO document_status_history;")
+    conn.execute(
         """
-        CREATE TABLE document_status_history_new (
-            id TEXT PRIMARY KEY,
-            document_id TEXT NOT NULL,
-            status TEXT NOT NULL,
-            run_id TEXT,
-            created_at TEXT NOT NULL,
-            FOREIGN KEY(document_id) REFERENCES documents(document_id)
-        );
+        CREATE INDEX IF NOT EXISTS idx_document_status_history_document_id
+        ON document_status_history (document_id);
         """
     )
-    historical_rows = conn.execute(
-        """
-        SELECT document_id, state, created_at
-        FROM document_status_history
-        """
-    ).fetchall()
-    for row in historical_rows:
-        conn.execute(
-            """
-            INSERT INTO document_status_history_new (id, document_id, status, run_id, created_at)
-            VALUES (?, ?, ?, ?, ?)
-            """,
-            (str(uuid4()), row["document_id"], row["state"], None, row["created_at"]),
-        )
-    conn.execute("DROP TABLE document_status_history;")
-    conn.execute("ALTER TABLE document_status_history_new RENAME TO document_status_history;")
 
 
 def _ensure_processing_runs_schema(conn: sqlite3.Connection) -> None:
@@ -228,58 +232,61 @@ def _ensure_processing_runs_schema(conn: sqlite3.Connection) -> None:
             );
             """
         )
-        return
-
-    required_columns = {
-        "run_id",
-        "document_id",
-        "state",
-        "created_at",
-        "started_at",
-        "completed_at",
-        "failure_type",
-    }
-    if required_columns.issubset(columns):
-        return
-
-    conn.executescript(
-        """
-        CREATE TABLE processing_runs_new (
-            run_id TEXT PRIMARY KEY,
-            document_id TEXT NOT NULL,
-            state TEXT NOT NULL,
-            created_at TEXT NOT NULL,
-            started_at TEXT,
-            completed_at TEXT,
-            failure_type TEXT,
-            FOREIGN KEY(document_id) REFERENCES documents(document_id)
-        );
-        """
-    )
+    else:
+        required_columns = {
+            "run_id",
+            "document_id",
+            "state",
+            "created_at",
+            "started_at",
+            "completed_at",
+            "failure_type",
+        }
+        if not required_columns.issubset(columns):
+            conn.executescript(
+                """
+                CREATE TABLE processing_runs_new (
+                    run_id TEXT PRIMARY KEY,
+                    document_id TEXT NOT NULL,
+                    state TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    started_at TEXT,
+                    completed_at TEXT,
+                    failure_type TEXT,
+                    FOREIGN KEY(document_id) REFERENCES documents(document_id)
+                );
+                """
+            )
+            conn.execute(
+                """
+                INSERT INTO processing_runs_new (
+                    run_id,
+                    document_id,
+                    state,
+                    created_at,
+                    started_at,
+                    completed_at,
+                    failure_type
+                )
+                SELECT
+                    run_id,
+                    document_id,
+                    state,
+                    created_at,
+                    started_at,
+                    completed_at,
+                    failure_type
+                FROM processing_runs;
+                """
+            )
+            conn.execute("DROP TABLE processing_runs;")
+            conn.execute("ALTER TABLE processing_runs_new RENAME TO processing_runs;")
     conn.execute(
         """
-        INSERT INTO processing_runs_new (
-            run_id,
-            document_id,
-            state,
-            created_at,
-            started_at,
-            completed_at,
-            failure_type
-        )
-        SELECT
-            run_id,
-            document_id,
-            state,
-            created_at,
-            started_at,
-            completed_at,
-            failure_type
-        FROM processing_runs;
+        CREATE INDEX IF NOT EXISTS idx_processing_runs_document_id
+        ON processing_runs (document_id);
         """
     )
-    conn.execute("DROP TABLE processing_runs;")
-    conn.execute("ALTER TABLE processing_runs_new RENAME TO processing_runs;")
 
 
 def _ensure_artifacts_schema(conn: sqlite3.Connection) -> None:
@@ -297,33 +304,42 @@ def _ensure_artifacts_schema(conn: sqlite3.Connection) -> None:
             );
             """
         )
-        return
-
-    required_columns = {"artifact_id", "run_id", "artifact_type", "payload", "created_at"}
-    if required_columns.issubset(columns):
-        return
-
-    conn.executescript(
+    else:
+        required_columns = {"artifact_id", "run_id", "artifact_type", "payload", "created_at"}
+        if not required_columns.issubset(columns):
+            conn.executescript(
+                """
+                CREATE TABLE artifacts_new (
+                    artifact_id TEXT PRIMARY KEY,
+                    run_id TEXT NOT NULL,
+                    artifact_type TEXT NOT NULL,
+                    payload TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY(run_id) REFERENCES processing_runs(run_id)
+                );
+                """
+            )
+            conn.execute(
+                """
+                INSERT INTO artifacts_new (artifact_id, run_id, artifact_type, payload, created_at)
+                SELECT artifact_id, run_id, artifact_type, payload, created_at
+                FROM artifacts;
+                """
+            )
+            conn.execute("DROP TABLE artifacts;")
+            conn.execute("ALTER TABLE artifacts_new RENAME TO artifacts;")
+    conn.execute(
         """
-        CREATE TABLE artifacts_new (
-            artifact_id TEXT PRIMARY KEY,
-            run_id TEXT NOT NULL,
-            artifact_type TEXT NOT NULL,
-            payload TEXT NOT NULL,
-            created_at TEXT NOT NULL,
-            FOREIGN KEY(run_id) REFERENCES processing_runs(run_id)
-        );
+        CREATE INDEX IF NOT EXISTS idx_artifacts_run_id
+        ON artifacts (run_id);
         """
     )
     conn.execute(
         """
-        INSERT INTO artifacts_new (artifact_id, run_id, artifact_type, payload, created_at)
-        SELECT artifact_id, run_id, artifact_type, payload, created_at
-        FROM artifacts;
+        CREATE INDEX IF NOT EXISTS idx_artifacts_run_id_type
+        ON artifacts (run_id, artifact_type);
         """
     )
-    conn.execute("DROP TABLE artifacts;")
-    conn.execute("ALTER TABLE artifacts_new RENAME TO artifacts;")
 
 
 def _ensure_calibration_aggregates_schema(conn: sqlite3.Connection) -> None:

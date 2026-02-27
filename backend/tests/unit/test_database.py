@@ -16,6 +16,11 @@ def _conn() -> sqlite3.Connection:
     return conn
 
 
+def _index_names(conn: sqlite3.Connection) -> set[str]:
+    rows = conn.execute("SELECT name FROM sqlite_master WHERE type = 'index'").fetchall()
+    return {row["name"] for row in rows}
+
+
 def test_table_columns_returns_existing_column_names() -> None:
     conn = _conn()
     conn.execute("CREATE TABLE sample (id TEXT PRIMARY KEY, name TEXT NOT NULL)")
@@ -98,6 +103,12 @@ def test_ensure_schema_runs_all_schema_steps() -> None:
     rows = conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'").fetchall()
     present = {row["name"] for row in rows}
     assert expected_tables.issubset(present)
+    assert {
+        "idx_document_status_history_document_id",
+        "idx_processing_runs_document_id",
+        "idx_artifacts_run_id",
+        "idx_artifacts_run_id_type",
+    }.issubset(_index_names(conn))
     conn.close()
 
 
@@ -196,6 +207,7 @@ def test_status_history_schema_creates_table_when_missing() -> None:
 
     columns = database._table_columns(conn, "document_status_history")
     assert {"id", "document_id", "status", "run_id", "created_at"}.issubset(columns)
+    assert "idx_document_status_history_document_id" in _index_names(conn)
 
 
 def test_processing_runs_schema_migrates_when_required_columns_missing(
@@ -264,6 +276,7 @@ def test_processing_runs_schema_creates_table_when_missing() -> None:
 
     columns = database._table_columns(conn, "processing_runs")
     assert {"run_id", "document_id", "state", "created_at", "failure_type"}.issubset(columns)
+    assert "idx_processing_runs_document_id" in _index_names(conn)
 
 
 def test_artifacts_schema_migrates_when_required_columns_missing(
@@ -315,6 +328,7 @@ def test_artifacts_schema_creates_table_when_missing() -> None:
 
     columns = database._table_columns(conn, "artifacts")
     assert {"artifact_id", "run_id", "artifact_type", "payload", "created_at"}.issubset(columns)
+    assert {"idx_artifacts_run_id", "idx_artifacts_run_id_type"}.issubset(_index_names(conn))
 
 
 def test_calibration_schema_migrates_and_normalizes_scope_key(

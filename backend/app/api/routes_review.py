@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from typing import cast
+from typing import Annotated, cast
 
-from fastapi import APIRouter, Request, status
+from fastapi import APIRouter, Path, Request, status
 from fastapi.responses import JSONResponse
 
 from backend.app.api.schemas import (
@@ -29,6 +29,9 @@ from backend.app.ports.file_storage import FileStorage
 from .routes_common import error_response, log_event
 
 router = APIRouter()
+UUID_PATH_PATTERN = r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+DocumentIdPath = Annotated[str, Path(..., pattern=UUID_PATH_PATTERN)]
+RunIdPath = Annotated[str, Path(..., pattern=UUID_PATH_PATTERN)]
 
 
 @router.get(
@@ -43,7 +46,7 @@ router = APIRouter()
     },
 )
 def get_document_review_context(
-    request: Request, document_id: str
+    request: Request, document_id: DocumentIdPath
 ) -> DocumentReviewResponse | JSONResponse:
     """Return review context based on the latest completed run."""
 
@@ -121,7 +124,7 @@ def get_document_review_context(
 )
 def mark_document_reviewed_route(
     request: Request,
-    document_id: str,
+    document_id: DocumentIdPath,
 ) -> ReviewStatusToggleResponse | JSONResponse:
     repository = cast(DocumentRepository, request.app.state.document_repository)
     result = mark_document_reviewed(document_id=document_id, repository=repository)
@@ -149,7 +152,7 @@ def mark_document_reviewed_route(
 )
 def reopen_document_review_route(
     request: Request,
-    document_id: str,
+    document_id: DocumentIdPath,
 ) -> ReviewStatusToggleResponse | JSONResponse:
     repository = cast(DocumentRepository, request.app.state.document_repository)
     result = reopen_document_review(document_id=document_id, repository=repository)
@@ -181,7 +184,7 @@ def reopen_document_review_route(
 )
 def edit_run_interpretation(
     request: Request,
-    run_id: str,
+    run_id: RunIdPath,
     payload: InterpretationEditRequest,
 ) -> InterpretationEditResponse | JSONResponse:
     repository = cast(DocumentRepository, request.app.state.document_repository)

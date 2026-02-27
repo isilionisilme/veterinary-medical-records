@@ -191,6 +191,19 @@ def main() -> int:
     if findings:
         print("Doc/router parity guard failed.")
         print("Checked source->router parity against mapped changed docs.")
+        mapped_sources = sorted(
+            {
+                path
+                for path in changed_files
+                if any(
+                    fnmatch.fnmatch(path, str(rule.get("source_doc", "")).strip()) for rule in rules
+                )
+            }
+        )
+        if mapped_sources:
+            print("Mapped changed source docs:")
+            for source in mapped_sources:
+                print(f"  - {source}")
         for finding in findings:
             print(f"- {finding}")
         return 1

@@ -6,7 +6,7 @@ def test_api_routes_are_open_when_auth_token_is_unset(test_client_factory) -> No
         response = client.get("/api/health")
 
     assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+    assert response.json()["status"] == "ok"
 
 
 def test_api_routes_require_bearer_token_when_auth_token_is_set(test_client_factory) -> None:
@@ -38,7 +38,7 @@ def test_api_routes_allow_valid_bearer_token(test_client_factory) -> None:
         )
 
     assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+    assert response.json()["status"] == "ok"
 
 
 def test_non_api_routes_remain_unauthenticated_even_when_auth_enabled(
@@ -48,4 +48,4 @@ def test_non_api_routes_remain_unauthenticated_even_when_auth_enabled(
         response = client.get("/health")
 
     assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+    assert response.json()["status"] == "ok"

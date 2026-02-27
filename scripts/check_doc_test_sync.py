@@ -246,15 +246,20 @@ def main() -> int:
         required_doc_globs=required_doc_globs,
         exclude_doc_globs=exclude_doc_globs,
     )
+    changed_docs = [
+        path for path in changed_files if path.startswith("docs/") and path.endswith(".md")
+    ]
 
     if findings:
         print("Doc/test sync guard failed.")
+        if changed_docs:
+            print(f"Changed docs inspected: {len(changed_docs)}")
         print("Documentation changed without related test/guard updates:")
         for finding in findings:
             print(f"- {finding}")
         return 1
 
-    if any(path.startswith("docs/") and path.endswith(".md") for path in changed_files):
+    if changed_docs:
         print("Doc/test sync guard passed.")
     else:
         print("Doc/test sync guard: no markdown docs changed.")
