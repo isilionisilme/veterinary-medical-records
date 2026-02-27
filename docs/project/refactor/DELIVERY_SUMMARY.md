@@ -7,16 +7,16 @@
 
 ## At a glance
 
-| Metric | Iter 3 (Phase 9) | Iter 6 | Iter 8 | Iter 9 | Iter 10 (current) |
-|--------|-------------------|--------|--------|--------|-------------------|
-| Backend tests | 263 | 317 | 372 | 372+ | 372+ |
-| Frontend tests | 168 | 226 | 263 | 263+ | 263+ |
-| E2E tests | 0 | 0 | 0 | **5 specs** | 5 specs |
-| Backend coverage | 87% | 90% | 90% | 90% | 90% (≥85% enforced) |
-| Frontend coverage | ~65% | 82.6% | 85% | 85% | 85% (≥80% enforced) |
-| CI jobs | 7 | 6 | 8 | 9 (+E2E) | 9 (path-filtered + cached) |
-| Lint issues | 0 | 0 | 0 | 0 | 0 |
-| PRs merged | #145 | #152 | #156, #157 | #163 | #165 (in progress) |
+| Metric | Iter 3 (Phase 9) | Iter 6 | Iter 8 | Iter 9 | Iter 10 | Iter 11 (current) |
+|--------|-------------------|--------|--------|--------|---------|-------------------|
+| Backend tests | 263 | 317 | 372 | 372+ | 372+ | **395** |
+| Frontend tests | 168 | 226 | 263 | 263+ | 263+ | **287** |
+| E2E tests | 0 | 0 | 0 | **5 specs** | 5 specs | **20 tests (8 specs)** |
+| Backend coverage | 87% | 90% | 90% | 90% | 90% (≥85% enforced) | **91%** (≥85% enforced) |
+| Frontend coverage | ~65% | 82.6% | 85% | 85% | 85% (≥80% enforced) | **~87%** (≥80% enforced) |
+| CI jobs | 7 | 6 | 8 | 9 (+E2E) | 9 (path-filtered + cached) | 9 (path-filtered + cached) |
+| Lint issues | 0 | 0 | 0 | 0 | 0 | 0 |
+| PRs merged | #145 | #152 | #156, #157 | #163 | #165 | **#167** (in progress) |
 
 ---
 
@@ -385,3 +385,70 @@ Comprehensive hardening pass targeting security gaps, resilience, performance, a
 | Test suite | 372+ backend, 263+ frontend, 5 E2E — all green |
 | Backend coverage | 90% (enforced ≥85%) |
 | Frontend coverage | 85% (enforced ≥80%) |
+---
+
+## Iteration 11 — E2E Expansion + Error UX + Testing Depth + DX Hardening (Phase 18)
+
+**PR:** #167  
+**Branch:** `improvement/iteration-11`
+
+Massive E2E expansion (5→20 tests), user-facing error UX, latency benchmarks, backend failure-path coverage, repository split by aggregate, and OpenAPI polish.
+
+### Phase A — Quick wins
+
+| # | Improvement | Detail |
+|---|---|---|
+| 1 | Centralize env reads | 2 remaining `os.getenv` calls → `Settings` dataclass, completing 12-Factor Factor III |
+| 2 | PdfViewer mock dedup | Shared `__mocks__/react-pdf` auto-mock replacing 9 duplicated mocks |
+| 3 | OpenAPI polish | Route tags, error response schemas (`ErrorResponse` model), health response model for `/docs` |
+
+### Phase B — E2E expansion (5→20 tests)
+
+Playwright E2E suite expanded from 5 tests to **20 tests across 8 spec files**, covering the core Phases 0–2 of the E2E coverage plan.
+
+| Spec | Tests | Flows covered |
+|------|-------|--------------|
+| `app-loads.spec.ts` | 1 | App bootstrap + viewer empty state |
+| `upload-smoke.spec.ts` | 1 | Upload → document appears in sidebar |
+| `review-flow.spec.ts` | 1 | Select document → PDF viewer → structured panel |
+| `pdf-viewer.spec.ts` | 6 | PDF render, page navigation, zoom, error states |
+| `document-sidebar.spec.ts` | 3 | Sidebar listing, selection, search functionality |
+| `extracted-data.spec.ts` | 3 | Structured data display, field groups, confidence indicators |
+| `field-editing.spec.ts` | 3 | Open edit dialog → modify → save → verify |
+| `review-workflow.spec.ts` | 2 | Mark reviewed toggle + read-only mode |
+
+Infrastructure: 17 new `data-testid` attributes, `e2e/helpers.ts` reusable helpers, tiered Playwright projects (smoke/core/extended), npm scripts (`test:e2e:smoke`, `test:e2e:all`).
+
+### Phase C — Error UX + performance
+
+| # | Improvement | Detail |
+|---|---|---|
+| 4 | Error UX mapping | `errorMessages.ts` with regex-based `errorCodeMap`; 8 patterns map raw API errors to user-friendly Spanish toasts |
+| 5 | Latency benchmarks | `test_endpoint_latency.py` with P50/P95 measurement for list, get, upload endpoints; P95 < 500ms threshold |
+
+### Phase D — Testing depth + architecture
+
+| # | Improvement | Detail |
+|---|---|---|
+| 6 | Backend failure-path tests | Orchestrator partial failures + DB lock/retry resilience (22 new tests) |
+| 7 | SourcePanel + UploadDropzone depth | Branch coverage + interaction edge cases (21 new tests) |
+| 8 | Repository split by aggregate | `sqlite_document_repository.py` (751 LOC) → 3 aggregate modules + façade: `sqlite_document_repo.py` (241), `sqlite_run_repo.py` (302), `sqlite_calibration_repo.py` (123), façade (182) |
+
+### Operational improvements (Iter 11)
+
+| Improvement | Detail |
+|---|---|
+| CI path filtering | Effective `paths` filters in `ci.yml` skip heavy jobs on docs-only changes |
+| Pipeline execution | Agents work on next step while CI runs; no idle wait between auto-chain steps |
+| Targeted local tests | Only run tests relevant to the changed module, not full suite |
+| Cancelled CI handling | When `cancel-in-progress` cancels a prior run, agent uses latest green run |
+
+| Metric | Value |
+|--------|-------|
+| Commits | 48 |
+| Files changed | 70 |
+| Net delta | +4,591 / −2,309 lines |
+| Test suite | **395 backend, 287 frontend, 20 E2E** — all green |
+| Backend coverage | **91%** (enforced ≥85%) |
+| Frontend coverage | **~87%** (enforced ≥80%) |
+| E2E specs | **8 files, 20 tests** (up from 5 tests / 5 files) |
