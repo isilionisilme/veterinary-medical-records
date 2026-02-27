@@ -41,7 +41,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 
 #### Phase B — E2E expansion (Phases 0 + 1 + 2 from E2E coverage plan)
 
-> Prompts for F18-D through F18-N reference [PLAN_2026-02-27_E2E-COVERAGE-EXPANSION.md](PLAN_2026-02-27_E2E-COVERAGE-EXPANSION.md) § Cola de prompts (F17-A through F17-K). Each redirect prompt below maps 1:1 to the original, with branch override.
+> E2E prompts originally from the standalone E2E coverage expansion plan (now merged inline). Completed steps (F18-D→J) retain their original short prompts; pending steps (F18-K→N) have full prompts inlined below.
 
 - [x] F18-D 🔄 — Add 17 missing `data-testid` attributes to UI components (Codex) → source: F17-A
 - [x] F18-E 🔄 — Update `playwright.config.ts` with smoke/core/extended projects (Codex) → source: F17-B
@@ -49,7 +49,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 - [x] F18-G 🔄 — Create reusable E2E helpers (`e2e/helpers.ts`) + fixture files (Codex) → source: F17-D
 - [x] F18-H 🔄 — Verify green baseline: existing 5 tests pass (Codex) → source: F17-E
 - [x] F18-I 🔄 — Refine `app-loads.spec.ts`: add `viewer-empty-state` assertion [A4] (Codex) → source: F17-F
-- [ ] F18-J 🔄 — Implement `pdf-viewer.spec.ts`: Tests 3–8 [D1,D3,D4,D6,D7,D9,D10–D13] (Codex) → source: F17-G
+- [x] F18-J 🔄 — Implement `pdf-viewer.spec.ts`: Tests 3–8 [D1,D3,D4,D6,D7,D9,D10–D13] (Codex) → source: F17-G
 - [ ] F18-K 🔄 — Implement `document-sidebar.spec.ts`: Tests 9–11 [B1,B2,B3,B6] (Codex) → source: F17-H
 - [ ] F18-L 🔄 — Implement `extracted-data.spec.ts`: Tests 12–14 [H1–H5,H7] (Codex) → source: F17-I
 - [ ] F18-M 🔄 — Refactor `edit-flow.spec.ts` → `field-editing.spec.ts`: Tests 15–17 [J1,J2,J9,J10,J15] (Codex) → source: F17-J
@@ -313,9 +313,23 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 
 **Paso objetivo:** Implement Tests 9–11 covering sidebar document list [B1,B2,B3,B6].
 
-**Prompt:** Read the full prompt from [PLAN_2026-02-27_E2E-COVERAGE-EXPANSION.md](PLAN_2026-02-27_E2E-COVERAGE-EXPANSION.md) § Cola de prompts → **F17-H**.
+**Prompt:**
 
-**Override:** Use branch `improvement/iteration-11`. Use commit prefix `plan-f18k`.
+**SCOPE BOUNDARY — F18-K**
+
+**Branch:** `improvement/iteration-11`
+
+**Objective:** Create `frontend/e2e/document-sidebar.spec.ts` with 3 tests.
+
+**Tests to implement:**
+- Test 9: Document list shows groups "Para revisar" / "Revisados"
+- Test 10: Selecting a document marks it active (`aria-pressed`, `aria-current`, PDF loads)
+- Test 11: Each document shows its status chip
+
+**Validation:**
+- `cd frontend && npm run test:e2e` → includes these new tests (core project)
+
+**Commit:** `feat(plan-f18k): add document-sidebar E2E tests (3 tests)`
 
 ⚠️ AUTO-CHAIN → F18-L
 
@@ -325,9 +339,23 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 
 **Paso objetivo:** Implement Tests 12–14 covering structured data extraction view [H1–H5,H7].
 
-**Prompt:** Read the full prompt from [PLAN_2026-02-27_E2E-COVERAGE-EXPANSION.md](PLAN_2026-02-27_E2E-COVERAGE-EXPANSION.md) § Cola de prompts → **F17-I**.
+**Prompt:**
 
-**Override:** Use branch `improvement/iteration-11`. Use commit prefix `plan-f18l`.
+**SCOPE BOUNDARY — F18-L**
+
+**Branch:** `improvement/iteration-11`
+
+**Objective:** Create `frontend/e2e/extracted-data.spec.ts` with 3 tests. Uses real backend — upload PDF, wait for processing to complete.
+
+**Tests to implement:**
+- Test 12: Panel shows sections with headers ("Datos extraídos", section titles)
+- Test 13: Fields show formatted values; missing fields show "—"
+- Test 14: Confidence indicators visible; field count summary in toolbar
+
+**Validation:**
+- `cd frontend && npm run test:e2e` → includes these new tests (core project)
+
+**Commit:** `feat(plan-f18l): add extracted-data E2E tests (3 tests)`
 
 ⚠️ AUTO-CHAIN → F18-M
 
@@ -337,9 +365,23 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 
 **Paso objetivo:** Refactor and expand edit flow spec into field-editing with Tests 15–17 [J1,J2,J9,J10,J15].
 
-**Prompt:** Read the full prompt from [PLAN_2026-02-27_E2E-COVERAGE-EXPANSION.md](PLAN_2026-02-27_E2E-COVERAGE-EXPANSION.md) § Cola de prompts → **F17-J**.
+**Prompt:**
 
-**Override:** Use branch `improvement/iteration-11`. Use commit prefix `plan-f18m`.
+**SCOPE BOUNDARY — F18-M**
+
+**Branch:** `improvement/iteration-11`
+
+**Objective:** Rename `frontend/e2e/edit-flow.spec.ts` to `frontend/e2e/field-editing.spec.ts`. Split the single test into 3 focused tests using shared setup. Import `buildMockReviewPayload` and `buildMockDocumentPayload` from helpers.
+
+**Tests to implement:**
+- Test 15: Click on field opens edit dialog (verify dialog title, input pre-populated)
+- Test 16: Edit value + save → dialog closes, value updated, toast shown
+- Test 17: Cancel edit → dialog closes, value unchanged
+
+**Validation:**
+- `cd frontend && npm run test:e2e` → includes these new tests (core project)
+
+**Commit:** `feat(plan-f18m): refactor edit-flow into field-editing spec (3 tests)`
 
 ⚠️ AUTO-CHAIN → F18-N
 
@@ -349,9 +391,22 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 
 **Paso objetivo:** Refactor and expand review spec into review-workflow with Tests 18–19 [K1–K5].
 
-**Prompt:** Read the full prompt from [PLAN_2026-02-27_E2E-COVERAGE-EXPANSION.md](PLAN_2026-02-27_E2E-COVERAGE-EXPANSION.md) § Cola de prompts → **F17-K**.
+**Prompt:**
 
-**Override:** Use branch `improvement/iteration-11`. Use commit prefix `plan-f18n`.
+**SCOPE BOUNDARY — F18-N**
+
+**Branch:** `improvement/iteration-11`
+
+**Objective:** Rename `frontend/e2e/mark-reviewed.spec.ts` to `frontend/e2e/review-workflow.spec.ts`. Split into 2 tests.
+
+**Tests to implement:**
+- Test 18: Mark as reviewed → button changes to "Reabrir", document moves to "Revisados" group
+- Test 19: Reopen → button changes to "Marcar revisado", document moves to "Para revisar" group
+
+**Validation:**
+- `cd frontend && npm run test:e2e` → includes these new tests (core project)
+
+**Commit:** `feat(plan-f18n): refactor mark-reviewed into review-workflow spec (2 tests)`
 
 ⚠️ AUTO-CHAIN → F18-O
 
