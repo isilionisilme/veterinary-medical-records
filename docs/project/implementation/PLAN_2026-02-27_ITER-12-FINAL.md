@@ -38,7 +38,7 @@ Post-Iter 11 (estimated): ~390 backend tests (≥92%), ~280 frontend tests (≥8
 > E2E prompts originally from the standalone E2E coverage expansion plan (Phase 3–4), now merged inline.
 
 - [x] F19-A 🔄 — Bloque Viewer: `viewer-tabs`, `raw-text`, `zoom-advanced` — 10 tests (Codex) → source: F17-L ✅ 7c5cdfa8 + fix 0d775e4f
-- [ ] F19-B 🔄 — Bloque Data: `structured-filters`, `field-validation`, `add-field` — 13 tests (Codex) → source: F17-M
+- [x] F19-B 🔄 — Bloque Data: `structured-filters`, `field-validation`, `add-field` — 13 tests (Codex) → source: F17-M ✅ 7fa52122
 - [ ] F19-C 🔄 — Bloque Workflow: `reprocess`, `toasts` — 5 tests (Codex) → source: F17-N
 - [ ] F19-D 🔄 — Bloque Layout: `source-panel`, `split-panel`, `sidebar-interactions` — 8 tests (Codex) → source: F17-O
 - [ ] F19-E 🔄 — Bloque Avanzado: `visit-grouping`, `upload-validation` — 5 tests (Codex) → source: F17-P
