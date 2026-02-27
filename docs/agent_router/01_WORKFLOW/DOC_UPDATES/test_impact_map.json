@@ -95,6 +95,16 @@
       ]
     },
     {
+      "doc_glob": "docs/project/ARCHITECTURE.md",
+      "description": "Project ARCHITECTURE changes require doc-updates mapping/guard alignment.",
+      "required_any": [
+        "docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json",
+        "docs/agent_router/01_WORKFLOW/DOC_UPDATES/router_parity_map.json",
+        "scripts/check_doc_test_sync.py",
+        "scripts/check_doc_router_parity.py"
+      ]
+    },
+    {
       "doc_glob": "docs/project/adr/**/*.md",
       "description": "Project ADR nested changes require doc-updates guard alignment.",
       "required_any": [
