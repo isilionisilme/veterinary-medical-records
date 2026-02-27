@@ -202,6 +202,18 @@ Commit A → push → start working on B locally (do NOT wait for CI of A)
 6. **Hard-gates (🚧) and agent handoffs** require CI green for ALL pending steps before proceeding.
 7. **Force-push is allowed** only on feature branches where a single agent is working.
 
+#### Cancelled CI runs
+
+The CI workflow uses `cancel-in-progress: true` — a new push cancels the running
+CI for the same branch. With pipeline execution, a rapid push sequence (A → B)
+cancels CI-A before it finishes. This is **expected and safe**:
+
+- CI-B validates the cumulative code (A + B). If CI-B is green, A is implicitly validated.
+- When checking CI status "of step N", accept the **most recent completed green run**
+  on the branch, even if it was triggered by a later push.
+- If the only completed run is cancelled (not green, not red), wait for the next
+  run to finish or re-trigger with an empty commit (`git commit --allow-empty`).
+
 #### CI-FIRST still required for
 
 - Handoffs between agents (Codex ↔ Claude)
