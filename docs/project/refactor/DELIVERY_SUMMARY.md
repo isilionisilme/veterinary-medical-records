@@ -7,16 +7,16 @@
 
 ## At a glance
 
-| Metric | Iter 3 (Phase 9) | Iter 6 | Iter 8 | Iter 9 (current) |
-|--------|-------------------|--------|--------|-------------------|
-| Backend tests | 263 | 317 | 372 | 372+ |
-| Frontend tests | 168 | 226 | 263 | 263+ |
-| E2E tests | 0 | 0 | 0 | **5 specs** |
-| Backend coverage | 87% | 90% | 90% | 90% |
-| Frontend coverage | ~65% | 82.6% | 85% | 85% |
-| CI jobs | 7 | 6 | 8 | 9 (+E2E) |
-| Lint issues | 0 | 0 | 0 | 0 |
-| PRs merged | #145 | #152 | #156, #157 | #163 (in progress) |
+| Metric | Iter 3 (Phase 9) | Iter 6 | Iter 8 | Iter 9 | Iter 10 (current) |
+|--------|-------------------|--------|--------|--------|-------------------|
+| Backend tests | 263 | 317 | 372 | 372+ | 372+ |
+| Frontend tests | 168 | 226 | 263 | 263+ | 263+ |
+| E2E tests | 0 | 0 | 0 | **5 specs** | 5 specs |
+| Backend coverage | 87% | 90% | 90% | 90% | 90% (≥85% enforced) |
+| Frontend coverage | ~65% | 82.6% | 85% | 85% | 85% (≥80% enforced) |
+| CI jobs | 7 | 6 | 8 | 9 (+E2E) | 9 (path-filtered + cached) |
+| Lint issues | 0 | 0 | 0 | 0 | 0 |
+| PRs merged | #145 | #152 | #156, #157 | #163 | #165 (in progress) |
 
 ---
 
@@ -304,7 +304,7 @@ Two-PR strategy: PR A (CI governance) + PR B (refactor + coverage).
 
 ## Iteration 9 — E2E Testing + Evaluator Experience Polish (Phase 15)
 
-**PR:** #163 (in progress)  
+**PR:** #163  
 **Branch:** `improvement/iteration-9-e2e`
 
 First end-to-end test suite for the application, covering the 4 critical user flows. Added Playwright infrastructure with CI integration.
@@ -332,3 +332,56 @@ First end-to-end test suite for the application, covering the 4 critical user fl
 | Step completion integrity | 6 new hard rules: NO-BATCH, CI-FIRST-BEFORE-HANDOFF, PLAN-UPDATE-IMMEDIATO, STEP-LOCK, EVIDENCE BLOCK, AUTO-HANDOFF GUARD |
 | EXECUTION_RULES.md | New § "Step completion integrity" with post-mortem origin |
 | 🔒 STEP LOCKED state | Explicit plan state blocking progress until CI green + plan commit |
+
+---
+
+## Iteration 10 — Security, Resilience & Performance Hardening (Phase 16)
+
+**PR:** #165 (in progress)  
+**Branch:** `improvement/iteration-10-hardening`
+
+Comprehensive hardening pass targeting security gaps, resilience, performance, and CI velocity.
+
+### Security
+
+| # | Improvement | Detail |
+|---|---|---|
+| 1 | UUID validation | All `document_id` and `run_id` path parameters validated via regex pattern — rejects path traversal and malformed IDs with 422 |
+| 2 | Rate limiting | `slowapi` middleware on upload (10/min) and download (30/min) endpoints; configurable via env vars |
+| 3 | Security audit in CI | `pip-audit --strict` for backend dependencies + `npm audit --audit-level=high` for frontend |
+
+### Resilience
+
+| # | Improvement | Detail |
+|---|---|---|
+| 4 | React Error Boundary | Global error boundary wrapping app tree; renders recovery UI with reload button + collapsible stack trace |
+| 5 | Deep health check | `/health` endpoint verifies DB connectivity (SELECT 1) + storage directory writability; returns 503 with degraded status on failure |
+
+### Performance
+
+| # | Improvement | Detail |
+|---|---|---|
+| 6 | Database indexes | 4 secondary indexes on FK columns: `processing_runs(document_id)`, `document_status_history(document_id)`, `artifacts(run_id)`, `artifacts(run_id, artifact_type)` |
+| 7 | nginx cache headers | Immutable 1-year cache for hashed static assets (JS/CSS/fonts); no-cache for HTML; HSTS header |
+| 8 | PdfViewer lazy loading | `React.lazy` + `Suspense` for PdfViewer (852 LOC), removing it from the main bundle |
+
+### CI & Process
+
+| # | Improvement | Detail |
+|---|---|---|
+| 9 | Coverage thresholds | `--cov-fail-under=85` in pytest; vitest thresholds at 80/80/70/80 (lines/functions/branches/statements) |
+| 10 | CI path filtering | `dorny/paths-filter` detects changed areas; backend-only pushes skip frontend jobs and vice versa |
+| 11 | CI caching | `actions/cache@v4` for pip, node_modules, and Playwright browsers |
+| 12 | Conditional E2E | E2E suite runs only on PRs and pushes to `main`, not on every branch push |
+| 13 | CI concurrency | `cancel-in-progress: true` cancels stale runs for the same branch |
+| 14 | CI-PIPELINE rule | New EXECUTION_RULES rule: agents work on next step while CI runs; verify before committing (zero idle time, max 1 task drift) |
+| 15 | Duplicate cleanup | Removed duplicate `@playwright/test` entry from `package.json` |
+
+| Metric | Value |
+|--------|-------|
+| Commits | 21 |
+| Files changed | 32 |
+| Net delta | +690 / −220 lines |
+| Test suite | 372+ backend, 263+ frontend, 5 E2E — all green |
+| Backend coverage | 90% (enforced ≥85%) |
+| Frontend coverage | 85% (enforced ≥80%) |
