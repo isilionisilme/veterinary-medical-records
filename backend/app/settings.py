@@ -36,6 +36,8 @@ class Settings:
     vet_records_human_edit_neutral_candidate_confidence: str | None
     vet_records_rate_limit_upload: str | None
     vet_records_rate_limit_download: str | None
+    pdf_extractor_force: str
+    include_interpretation_candidates: bool
     auth_token: str | None
     app_version: str
     git_commit: str
@@ -76,6 +78,10 @@ def get_settings() -> Settings:
         ),
         vet_records_rate_limit_upload=_getenv("VET_RECORDS_RATE_LIMIT_UPLOAD"),
         vet_records_rate_limit_download=_getenv("VET_RECORDS_RATE_LIMIT_DOWNLOAD"),
+        pdf_extractor_force=(_getenv("PDF_EXTRACTOR_FORCE") or ""),
+        include_interpretation_candidates=(
+            (_getenv("VET_RECORDS_INCLUDE_INTERPRETATION_CANDIDATES") or "") != ""
+        ),
         auth_token=_getenv("AUTH_TOKEN"),
         app_version=_getenv("APP_VERSION") or "dev",
         git_commit=_getenv("GIT_COMMIT") or "unknown",
@@ -87,3 +93,18 @@ def clear_settings_cache() -> None:
     """Reset cached settings to re-read environment values."""
 
     get_settings.cache_clear()
+
+
+def get_pdf_extractor_force() -> str:
+    """Return runtime override for PDF extractor selection."""
+
+    return (_getenv("PDF_EXTRACTOR_FORCE") or get_settings().pdf_extractor_force).strip()
+
+
+def should_include_interpretation_candidates() -> bool:
+    """Return runtime flag for including interpretation candidate debug payloads."""
+
+    raw = _getenv("VET_RECORDS_INCLUDE_INTERPRETATION_CANDIDATES")
+    if raw is None:
+        return get_settings().include_interpretation_candidates
+    return raw.strip().lower() in {"1", "true", "yes", "on"}

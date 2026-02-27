@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import logging
-import os
 from pathlib import Path
+
+from backend.app.settings import get_pdf_extractor_force
 
 from . import pdf_extraction_nodeps as nodeps
 from .constants import PDF_EXTRACTOR_FORCE_ENV
@@ -45,7 +46,7 @@ def extract_text_from_pdf(file_path: Path) -> str:
 
 
 def _extract_pdf_text_with_extractor(file_path: Path) -> tuple[str, str]:
-    forced = os.getenv(PDF_EXTRACTOR_FORCE_ENV, "").strip().lower()
+    forced = get_pdf_extractor_force().lower()
     if forced not in ("", "auto", "fitz", "fallback"):
         logger.warning(
             "Unknown %s value '%s'; using auto mode",
