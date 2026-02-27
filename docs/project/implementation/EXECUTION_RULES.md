@@ -406,8 +406,8 @@ NEVER end without telling the user what to do next.
 The lifecycle of an iteration follows this sequence. All operational steps after SCOPE BOUNDARY are automatic — they are NOT plan tasks.
 
 ```
-Branch creation  →  Plan steps (product work)  →  PR readiness  →  User approval  →  Merge + cleanup
-  [automatic]          [SCOPE BOUNDARY]            [automatic]      [hard-gate]       [automatic]
+Branch creation  →  Plan steps  →  PR readiness  →  User approval  →  Merge + cleanup  →  Close-out
+  [automatic]       [SCOPE BOUNDARY]  [automatic]     [hard-gate]       [automatic]       [automatic]
 ```
 
 ### Branch creation (mandatory — before ANY plan step)
@@ -451,6 +451,36 @@ When the user says "merge" (or equivalent), the agent executes the full protocol
 10. Commit and push the archive move.
 
 **If any pre-merge check fails:** STOP and report to the user. Do not attempt to fix merge issues autonomously.
+
+### Iteration close-out protocol (automatic — not a plan step)
+
+After merge + post-merge cleanup is complete, the agent executes these steps **before** considering the iteration finished. This is automatic protocol, not a plan task.
+
+#### 1. Plan reconciliation (mandatory if any steps are `[ ]`)
+If the archived plan contains uncompleted steps (`[ ]`):
+1. Present each incomplete step to the user with options: **defer** (to next iteration), **drop** (remove from backlog), or **mark complete** (if already done outside the plan).
+2. For deferred steps: annotate with `⏭️ DEFERRED to Iter <N+1> (<new step ID if known>)`.
+3. For dropped steps: annotate with `❌ DROPPED (<reason>)`.
+4. Record all decisions in the `COMPLETED_*.md` archive file under a "Reconciliation" section.
+
+#### 2. Update IMPLEMENTATION_HISTORY.md (mandatory)
+Add a new entry to `docs/project/implementation/IMPLEMENTATION_HISTORY.md`:
+1. **Iteration row** in the timeline table: date, branch, PR number, step count (completed/total), summary of deliverables.
+2. **Cumulative progress table**: add a column for the closed iteration showing which features advanced.
+3. **Active iteration pointer**: update from Iter N → Iter N+1.
+
+#### 3. DOC_UPDATES normalization (mandatory)
+Run the DOC_UPDATES normalization pass (`docs/agent_router/01_WORKFLOW/DOC_UPDATES/00_entry.md`) on any `.md` files modified during the iteration or the close-out itself.
+
+#### 4. Commit + push close-out changes
+Commit all close-out artifacts (archive annotations, IMPLEMENTATION_HISTORY, normalized docs) with:
+```
+docs(iter-close): iteration <N> close-out — history + reconciliation
+```
+Push to `main`.
+
+#### 5. Mirror to docs repository (if applicable)
+If the project uses a separate docs repository (worktree or fork), sync all close-out changes to maintain parity between repos.
 
 ---
 

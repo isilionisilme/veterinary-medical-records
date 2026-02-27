@@ -2,6 +2,10 @@
 
 > Consolidated timeline of all improvement iterations. Each row links to a detailed completed file with step-by-step execution logs.
 
+## Active iteration
+
+See [PLAN_2026-02-26_ITER-10-HARDENING.md](PLAN_2026-02-26_ITER-10-HARDENING.md) — Iteration 10: Security, resilience & performance hardening.
+
 ## Timeline
 
 | Iteration | Date | PR(s) | Theme | Key Metrics | Detail |
@@ -27,7 +31,3 @@
 | E2E specs | 0 | 0 | 0 | 0 | 5 |
 | CI jobs | 1 | 4 | 6 | 8 | 8 |
 | Lint issues | many | some | 0 | 0 | 0 |
-
-## Active iteration
-
-See [PLAN_2026-02-26_ITER-10-HARDENING.md](PLAN_2026-02-26_ITER-10-HARDENING.md) — Iteration 10: Security, resilience & performance hardening.
