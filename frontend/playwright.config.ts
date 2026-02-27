@@ -1,0 +1,44 @@
+import { defineConfig } from "@playwright/test";
+
+const baseURL = process.env.PLAYWRIGHT_BASE_URL || "http://localhost:80";
+const workers = process.env.PLAYWRIGHT_WORKERS
+  ? Number(process.env.PLAYWRIGHT_WORKERS)
+  : process.env.CI
+    ? 6
+    : 1;
+
+export default defineConfig({
+  testDir: "./e2e",
+  timeout: 30_000,
+  workers,
+  expect: {
+    timeout: 5_000,
+  },
+  outputDir: "./test-results",
+  retries: 0,
+  use: {
+    baseURL,
+    headless: true,
+    trace: "on-first-retry",
+    screenshot: "only-on-failure",
+    video: "retain-on-failure",
+  },
+  projects: [
+    {
+      name: "smoke",
+      testMatch: /app-loads|upload-smoke/,
+      timeout: 30_000,
+    },
+    {
+      name: "core",
+      testMatch: /pdf-viewer|extracted-data|field-editing|review-workflow|document-sidebar/,
+      timeout: 60_000,
+    },
+    {
+      name: "extended",
+      testMatch: /.*\.spec\.ts$/,
+      timeout: 90_000,
+    },
+  ],
+  reporter: [["html", { outputFolder: "playwright-report", open: "never" }]],
+});

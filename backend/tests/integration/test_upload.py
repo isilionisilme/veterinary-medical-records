@@ -78,13 +78,13 @@ def test_upload_limits_size(test_client):
 
 
 def test_upload_rejects_oversized_via_content_length_header(test_client, monkeypatch):
-    from backend.app.api import routes
+    from backend.app.api import routes_documents
     from backend.app.main import MAX_UPLOAD_SIZE
 
     async def fail_if_read(*_args, **_kwargs):
         pytest.fail("upload endpoint should reject oversized Content-Length before reading body")
 
-    monkeypatch.setattr(routes.UploadFile, "read", fail_if_read)
+    monkeypatch.setattr(routes_documents.UploadFile, "read", fail_if_read)
     files = {"file": ("record.pdf", io.BytesIO(b"%PDF-1.5 sample"), "application/pdf")}
     response = test_client.post(
         "/documents/upload",
@@ -96,10 +96,10 @@ def test_upload_rejects_oversized_via_content_length_header(test_client, monkeyp
 
 
 def test_upload_rejects_oversized_via_streaming(test_client, monkeypatch):
-    from backend.app.api import routes
+    from backend.app.api import routes_documents
     from backend.app.main import MAX_UPLOAD_SIZE
 
-    monkeypatch.setattr(routes, "_request_content_length", lambda _request: None)
+    monkeypatch.setattr(routes_documents, "_request_content_length", lambda _request: None)
     large_content = b"A" * (MAX_UPLOAD_SIZE + 1)
     files = {"file": ("record.pdf", io.BytesIO(large_content), "application/pdf")}
     response = test_client.post("/documents/upload", files=files)
@@ -108,9 +108,9 @@ def test_upload_rejects_oversized_via_streaming(test_client, monkeypatch):
 
 
 def test_upload_normal_file_still_works(test_client, monkeypatch):
-    from backend.app.api import routes
+    from backend.app.api import routes_documents
 
-    monkeypatch.setattr(routes, "_request_content_length", lambda _request: None)
+    monkeypatch.setattr(routes_documents, "_request_content_length", lambda _request: None)
     files = {"file": ("record.pdf", io.BytesIO(b"%PDF-1.5 sample"), "application/pdf")}
     response = test_client.post("/documents/upload", files=files)
     assert response.status_code == 201
@@ -149,7 +149,7 @@ def test_get_document_returns_metadata_and_state(test_client):
 
 
 def test_get_document_returns_404_when_missing(test_client):
-    response = test_client.get("/documents/does-not-exist")
+    response = test_client.get("/documents/00000000-0000-0000-0000-000000000000")
     assert response.status_code == 404
     payload = response.json()
     assert payload["error_code"] == "NOT_FOUND"

@@ -21,6 +21,17 @@ DOC_UPDATES_ROUTER_PARITY_MAP = (
 )
 RULES_INDEX = REPO_ROOT / "docs" / "agent_router" / "00_RULES_INDEX.md"
 SCENARIOS = REPO_ROOT / "metrics" / "llm_benchmarks" / "SCENARIOS.md"
+TECHNICAL_DESIGN_OWNER_LIMITATIONS = (
+    REPO_ROOT
+    / "docs"
+    / "agent_router"
+    / "04_PROJECT"
+    / "TECHNICAL_DESIGN"
+    / "197_14-known-limitations.md"
+)
+DELIVERY_SUMMARY_OWNER_ENTRY = (
+    REPO_ROOT / "docs" / "agent_router" / "04_PROJECT" / "DELIVERY_SUMMARY" / "00_entry.md"
+)
 
 
 def _read_text(path: Path) -> str:
@@ -159,3 +170,8 @@ def test_benchmark_scenarios_cover_doc_updates_edge_cases() -> None:
         "doc_updates_ambiguous_owner",
     ):
         assert f"## {scenario_id}" in text
+
+
+def test_project_owner_modules_for_delivery_and_limitations_exist() -> None:
+    assert TECHNICAL_DESIGN_OWNER_LIMITATIONS.exists()
+    assert DELIVERY_SUMMARY_OWNER_ENTRY.exists()

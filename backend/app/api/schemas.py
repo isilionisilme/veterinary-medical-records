@@ -7,6 +7,16 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
+class HealthResponse(BaseModel):
+    status: str = Field(description="Health status: 'healthy' or 'degraded'")
+    database: str = Field(description="Database connectivity status")
+    storage: str = Field(description="File storage status")
+
+
+class ErrorResponse(BaseModel):
+    detail: str = Field(description="Human-readable error message")
+
+
 class DocumentUploadResponse(BaseModel):
     document_id: str = Field(..., description="Unique identifier of the document.")
     status: str = Field(..., description="Current processing status of the document.")

@@ -6,29 +6,39 @@
     "docs/shared/*.md",
     "docs/shared/**/*.md"
   ],
+  "exclude_doc_globs": [
+    "docs/project/implementation/*",
+    "docs/project/implementation/**/*"
+  ],
   "rules": [
     {
       "doc_glob": "docs/agent_router/*.md",
       "description": "Root router docs must keep router/doc-updates contract tests aligned.",
+      "rule_change_only": true,
       "owner_any": [
         "docs/agent_router/*.md"
       ],
       "required_any": [
         "backend/tests/unit/test_doc_router_contract.py",
         "backend/tests/unit/test_doc_updates_contract.py",
-        "backend/tests/unit/test_doc_updates_e2e_contract.py"
+        "backend/tests/unit/test_doc_updates_e2e_contract.py",
+        "docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json",
+        "scripts/check_doc_test_sync.py"
       ]
     },
     {
       "doc_glob": "docs/agent_router/**/*.md",
       "description": "Router workflow changes must keep router/doc-updates contract tests aligned.",
+      "rule_change_only": true,
       "owner_any": [
         "docs/agent_router/**/*.md"
       ],
       "required_any": [
         "backend/tests/unit/test_doc_router_contract.py",
         "backend/tests/unit/test_doc_updates_contract.py",
-        "backend/tests/unit/test_doc_updates_e2e_contract.py"
+        "backend/tests/unit/test_doc_updates_e2e_contract.py",
+        "docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json",
+        "scripts/check_doc_test_sync.py"
       ]
     },
     {
@@ -118,6 +128,16 @@
       ]
     },
     {
+      "doc_glob": "docs/project/ARCHITECTURE.md",
+      "description": "Project ARCHITECTURE changes require doc-updates mapping/guard alignment.",
+      "required_any": [
+        "docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json",
+        "docs/agent_router/01_WORKFLOW/DOC_UPDATES/router_parity_map.json",
+        "scripts/check_doc_test_sync.py",
+        "scripts/check_doc_router_parity.py"
+      ]
+    },
+    {
       "doc_glob": "docs/project/adr/**/*.md",
       "description": "Project ADR nested changes require doc-updates guard alignment.",
       "required_any": [
@@ -137,12 +157,14 @@
     },
     {
       "doc_glob": "docs/project/refactor/DELIVERY_SUMMARY.md",
-      "description": "Project DELIVERY_SUMMARY changes require propagation to its owner module and doc-updates guards.",
+      "description": "Project DELIVERY_SUMMARY changes require propagation to its owner module; guard infrastructure updates required only for rule-level changes.",
       "owner_any": [
         "docs/agent_router/04_PROJECT/DELIVERY_SUMMARY/*.md",
         "docs/agent_router/04_PROJECT/DELIVERY_SUMMARY/**/*.md"
       ],
       "required_any": [
+        "docs/agent_router/04_PROJECT/DELIVERY_SUMMARY/*.md",
+        "docs/agent_router/04_PROJECT/DELIVERY_SUMMARY/**/*.md",
         "docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json",
         "docs/agent_router/01_WORKFLOW/DOC_UPDATES/router_parity_map.json",
         "scripts/check_doc_test_sync.py",
@@ -193,6 +215,16 @@
       ]
     },
     {
+      "doc_glob": "docs/project/testing/PLAN_E2E_TEST_COVERAGE.md",
+      "description": "Project testing plans require doc-updates mapping/guard alignment.",
+      "required_any": [
+        "docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json",
+        "docs/agent_router/01_WORKFLOW/DOC_UPDATES/router_parity_map.json",
+        "scripts/check_doc_test_sync.py",
+        "scripts/check_doc_router_parity.py"
+      ]
+    },
+    {
       "doc_glob": "docs/project/BACKEND_IMPLEMENTATION.md",
       "description": "Project BACKEND_IMPLEMENTATION changes require propagation to its owner module.",
       "owner_any": [
@@ -203,7 +235,9 @@
         "backend/tests/unit/test_doc_router_contract.py",
         "backend/tests/unit/test_doc_updates_contract.py",
         "backend/tests/unit/test_doc_updates_e2e_contract.py",
-        "scripts/check_doc_router_parity.py"
+        "scripts/check_doc_router_parity.py",
+        "docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json",
+        "scripts/check_doc_test_sync.py"
       ]
     },
     {
@@ -259,6 +293,16 @@
         "backend/tests/unit/test_doc_router_contract.py",
         "backend/tests/unit/test_doc_updates_contract.py",
         "backend/tests/unit/test_doc_updates_e2e_contract.py",
+        "scripts/check_doc_router_parity.py"
+      ]
+    },
+    {
+      "doc_glob": "docs/project/testing/PLAN_E2E_TEST_COVERAGE.md",
+      "description": "Project testing plan changes require doc-updates guard alignment.",
+      "required_any": [
+        "docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json",
+        "docs/agent_router/01_WORKFLOW/DOC_UPDATES/router_parity_map.json",
+        "scripts/check_doc_test_sync.py",
         "scripts/check_doc_router_parity.py"
       ]
     },

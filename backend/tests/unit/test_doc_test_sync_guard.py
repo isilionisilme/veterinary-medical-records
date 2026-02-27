@@ -3,6 +3,8 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SCRIPT_PATH = REPO_ROOT / "scripts" / "check_doc_test_sync.py"
 
@@ -13,6 +15,12 @@ def _load_guard_module():
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+@pytest.fixture(autouse=True)
+def _clear_relaxed_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Keep tests deterministic regardless of CI/job-level env vars.
+    monkeypatch.delenv("DOC_SYNC_RELAXED", raising=False)
 
 
 def test_evaluate_sync_passes_when_no_docs_changed() -> None:
@@ -109,6 +117,23 @@ def test_evaluate_sync_ignores_unmapped_doc_outside_required_scope() -> None:
         ],
         fail_on_unmapped_docs=True,
         required_doc_globs=["docs/project/*.md", "docs/shared/*.md"],
+    )
+    assert findings == []
+
+
+def test_evaluate_sync_excludes_doc_matching_required_and_excluded_globs() -> None:
+    module = _load_guard_module()
+    findings = module.evaluate_sync(
+        changed_files=["docs/project/implementation/PLAN_X.md"],
+        rules=[
+            {
+                "doc_glob": "docs/shared/BRAND_GUIDELINES.md",
+                "required_any": ["scripts/check_brand_compliance.py"],
+            }
+        ],
+        fail_on_unmapped_docs=True,
+        required_doc_globs=["docs/project/**/*.md"],
+        exclude_doc_globs=["docs/project/implementation/**"],
     )
     assert findings == []
 

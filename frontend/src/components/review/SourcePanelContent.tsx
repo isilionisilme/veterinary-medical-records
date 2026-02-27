@@ -1,5 +1,10 @@
-import { PdfViewer } from "../PdfViewer";
+import { lazy, Suspense } from "react";
+
 import { SourcePanel } from "../SourcePanel";
+
+const PdfViewer = lazy(() =>
+  import("../PdfViewer").then((module) => ({ default: module.PdfViewer })),
+);
 
 type SourcePanelContentProps = {
   sourcePage: number | null;
@@ -8,7 +13,7 @@ type SourcePanelContentProps = {
   isDesktopForPin: boolean;
   onTogglePin: () => void;
   onClose: () => void;
-  fileUrl: string | null;
+  fileUrl: string | ArrayBuffer | null;
   activeId: string | null;
   filename: string | null;
   focusRequestId: number;
@@ -36,16 +41,24 @@ export function SourcePanelContent({
       onClose={onClose}
       content={
         fileUrl ? (
-          <PdfViewer
-            key={`source-${activeId ?? "empty"}`}
-            documentId={activeId}
-            fileUrl={fileUrl}
-            filename={filename}
-            isDragOver={false}
-            focusPage={sourcePage}
-            highlightSnippet={sourceSnippet}
-            focusRequestId={focusRequestId}
-          />
+          <Suspense
+            fallback={
+              <div className="flex h-40 items-center justify-center text-sm text-muted">
+                Cargando visor PDF...
+              </div>
+            }
+          >
+            <PdfViewer
+              key={`source-${activeId ?? "empty"}`}
+              documentId={activeId}
+              fileUrl={fileUrl}
+              filename={filename}
+              isDragOver={false}
+              focusPage={sourcePage}
+              highlightSnippet={sourceSnippet}
+              focusRequestId={focusRequestId}
+            />
+          </Suspense>
         ) : (
           <div className="flex h-40 items-center justify-center text-sm text-muted">
             No hay PDF disponible para este documento.

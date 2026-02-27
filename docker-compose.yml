@@ -10,14 +10,14 @@ services:
     environment:
       VET_RECORDS_DB_PATH: /app/backend/data/documents.db
       VET_RECORDS_STORAGE_PATH: /app/backend/storage
-      VET_RECORDS_CORS_ORIGINS: http://localhost:${FRONTEND_PORT:-5173},http://127.0.0.1:${FRONTEND_PORT:-5173}
+      VET_RECORDS_CORS_ORIGINS: http://localhost,http://127.0.0.1,http://localhost:${FRONTEND_PORT:-5173},http://127.0.0.1:${FRONTEND_PORT:-5173}
       VET_RECORDS_CONFIDENCE_POLICY_VERSION: ${VET_RECORDS_CONFIDENCE_POLICY_VERSION:-v1-local}
       VET_RECORDS_CONFIDENCE_LOW_MAX: ${VET_RECORDS_CONFIDENCE_LOW_MAX:-0.50}
       VET_RECORDS_CONFIDENCE_MID_MAX: ${VET_RECORDS_CONFIDENCE_MID_MAX:-0.75}
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/docs', timeout=3)"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
       interval: 10s
       timeout: 5s
       retries: 8
@@ -33,12 +33,10 @@ services:
     depends_on:
       backend:
         condition: service_healthy
-    environment:
-      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
     ports:
-      - "${FRONTEND_PORT:-5173}:5173"
+      - "${FRONTEND_PORT:-5173}:8080"
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5173/', (r) => process.exit(r.statusCode >= 200 && r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1));"]
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/ || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 8
@@ -48,6 +46,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.backend
+      target: test
     profiles: ["test"]
     command: ["pytest", "backend/tests", "-q"]
     environment:
@@ -61,5 +60,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
+      target: dev
     profiles: ["test"]
     command: ["npm", "run", "test"]

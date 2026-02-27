@@ -1,5 +1,5 @@
 export type LoadResult = {
-  url: string;
+  data: ArrayBuffer;
   filename: string | null;
 };
 

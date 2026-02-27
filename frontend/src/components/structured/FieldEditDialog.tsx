@@ -41,6 +41,8 @@ type FieldEditDialogProps = {
   onValueChange: (value: string) => void;
   onOpenChange: (open: boolean) => void;
   onSave: () => void;
+  titleId?: string;
+  descriptionId?: string;
 };
 
 export function FieldEditDialog({
@@ -61,6 +63,8 @@ export function FieldEditDialog({
   onValueChange,
   onOpenChange,
   onSave,
+  titleId = "field-edit-dialog-title",
+  descriptionId = "field-edit-dialog-description",
 }: FieldEditDialogProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -209,6 +213,9 @@ export function FieldEditDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
+        data-testid="field-edit-dialog"
+        aria-labelledby={titleId}
+        aria-describedby={descriptionId}
         onEscapeKeyDown={(event) => {
           if (!isSaving) {
             return;
@@ -223,15 +230,17 @@ export function FieldEditDialog({
         }}
       >
         <DialogHeader>
-          <DialogTitle>{titleText}</DialogTitle>
-          <DialogDescription className="text-xs">
+          <DialogTitle id={titleId}>{titleText}</DialogTitle>
+          <DialogDescription id={descriptionId} className="text-xs">
             Revisa el valor sugerido, corrígelo si hace falta y guarda los cambios.
           </DialogDescription>
         </DialogHeader>
 
         {isSexField ? (
           <select
+            data-testid="field-edit-input"
             ref={selectRef}
+            aria-label={`Valor del campo ${fieldLabel || "editable"}`}
             value={controlledSelectValue}
             onChange={(event) => handleValueChange(event.target.value)}
             className={`w-full rounded-control border bg-surface px-3 py-2 text-sm text-text outline-none transition focus-visible:bg-surfaceMuted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
@@ -254,7 +263,9 @@ export function FieldEditDialog({
           </select>
         ) : isSpeciesField ? (
           <select
+            data-testid="field-edit-input"
             ref={selectRef}
+            aria-label={`Valor del campo ${fieldLabel || "editable"}`}
             value={controlledSelectValue}
             onChange={(event) => handleValueChange(event.target.value)}
             className={`w-full rounded-control border bg-surface px-3 py-2 text-sm text-text outline-none transition focus-visible:bg-surfaceMuted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
@@ -277,7 +288,9 @@ export function FieldEditDialog({
           </select>
         ) : shouldUseTextarea ? (
           <textarea
+            data-testid="field-edit-input"
             ref={textareaRef}
+            aria-label={`Valor del campo ${fieldLabel || "editable"}`}
             value={value}
             onChange={(event) => handleValueChange(event.target.value)}
             rows={6}
@@ -289,7 +302,9 @@ export function FieldEditDialog({
           />
         ) : (
           <Input
+            data-testid="field-edit-input"
             ref={inputRef}
+            aria-label={`Valor del campo ${fieldLabel || "editable"}`}
             value={value}
             onChange={(event) => handleValueChange(event.target.value)}
             onKeyDown={handleSingleLineEnter}
@@ -317,6 +332,7 @@ export function FieldEditDialog({
                 <button
                   key={`${suggestion.value}-${index}`}
                   type="button"
+                  aria-label={`Aplicar sugerencia ${suggestion.value}`}
                   className="flex w-full items-center justify-between rounded-control border border-borderSubtle bg-surface px-2 py-1 text-left text-xs text-text transition hover:bg-surfaceMuted"
                   onClick={() => handleValueChange(suggestion.value)}
                 >
@@ -412,6 +428,7 @@ export function FieldEditDialog({
         <DialogFooter>
           <DialogClose asChild>
             <Button
+              data-testid="field-edit-cancel"
               type="button"
               variant="ghost"
               className="border border-border bg-surface text-text hover:bg-surfaceMuted"
@@ -420,7 +437,12 @@ export function FieldEditDialog({
               Cancelar
             </Button>
           </DialogClose>
-          <Button type="button" onClick={onSave} disabled={isSaving || isSaveDisabled}>
+          <Button
+            data-testid="field-edit-save"
+            type="button"
+            onClick={onSave}
+            disabled={isSaving || isSaveDisabled}
+          >
             Guardar
           </Button>
         </DialogFooter>

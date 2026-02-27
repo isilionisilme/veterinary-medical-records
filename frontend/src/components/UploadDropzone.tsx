@@ -36,6 +36,7 @@ export function UploadDropzone({
 
   return (
     <div
+      data-testid="upload-dropzone"
       className={`relative flex cursor-pointer flex-col items-center justify-center rounded-card text-center transition ${
         isDragOver
           ? isOverlayActive

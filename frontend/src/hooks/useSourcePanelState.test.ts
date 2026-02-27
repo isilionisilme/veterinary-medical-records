@@ -77,4 +77,64 @@ describe("useSourcePanelState", () => {
     expect(result.current.sourceSnippet).toBeNull();
     expect(result.current.isSourceOpen).toBe(false);
   });
+
+  it("keeps overlay open when pinned and closes when unpinned", () => {
+    const { result } = renderHook(() =>
+      useSourcePanelState({ isDesktopForPin: true, onNotice: vi.fn() }),
+    );
+
+    act(() => {
+      result.current.openSource();
+      result.current.togglePin();
+    });
+    act(() => {
+      result.current.closeOverlay();
+    });
+    expect(result.current.isSourceOpen).toBe(true);
+
+    act(() => {
+      result.current.togglePin();
+    });
+    act(() => {
+      result.current.closeOverlay();
+    });
+    expect(result.current.isSourceOpen).toBe(false);
+  });
+
+  it("normalizes empty snippet to null and unpins when desktop mode is disabled", () => {
+    const onNotice = vi.fn();
+    const { result, rerender } = renderHook(
+      ({ isDesktopForPin }: { isDesktopForPin: boolean }) =>
+        useSourcePanelState({ isDesktopForPin, onNotice }),
+      { initialProps: { isDesktopForPin: true } },
+    );
+
+    act(() => {
+      result.current.openFromEvidence({ page: 5, snippet: "   " });
+      result.current.togglePin();
+    });
+    expect(result.current.sourceSnippet).toBeNull();
+    expect(result.current.isSourcePinned).toBe(true);
+
+    rerender({ isDesktopForPin: false });
+    expect(result.current.isSourcePinned).toBe(false);
+  });
+
+  it("supports rapid pin toggles and cleans keydown listener on unmount", () => {
+    const { result, unmount } = renderHook(() =>
+      useSourcePanelState({ isDesktopForPin: true, onNotice: vi.fn() }),
+    );
+
+    act(() => {
+      result.current.openSource();
+      result.current.togglePin();
+      result.current.togglePin();
+    });
+    expect(result.current.isSourcePinned).toBe(false);
+
+    unmount();
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    });
+  });
 });

@@ -1,5 +1,6 @@
 import { API_BASE_URL } from "../constants/appWorkspace";
 import { isNetworkFetchError, parseFilename } from "../lib/appWorkspaceUtils";
+import { getUserFriendlyError } from "../lib/errorMessages";
 import {
   ApiResponseError,
   type DocumentDetailResponse,
@@ -15,6 +16,13 @@ import {
   type ReviewToggleResponse,
   UiError,
 } from "../types/appWorkspace";
+
+function resolveFriendlyPayloadMessage(payloadMessage: unknown, fallback: string): string {
+  if (typeof payloadMessage === "string" && payloadMessage.trim().length > 0) {
+    return getUserFriendlyError(payloadMessage);
+  }
+  return fallback;
+}
 
 export async function fetchOriginalPdf(documentId: string): Promise<LoadResult> {
   let response: Response;
@@ -33,7 +41,7 @@ export async function fetchOriginalPdf(documentId: string): Promise<LoadResult> 
     let errorMessage = "No pudimos cargar el documento.";
     try {
       const payload = await response.json();
-      errorMessage = payload.message ?? errorMessage;
+      errorMessage = resolveFriendlyPayloadMessage(payload?.message, errorMessage);
     } catch {
       // Ignore JSON parse errors for non-JSON responses.
     }
@@ -42,9 +50,9 @@ export async function fetchOriginalPdf(documentId: string): Promise<LoadResult> 
       `HTTP ${response.status} calling ${API_BASE_URL}/documents/${documentId}/download`,
     );
   }
-  const blob = await response.blob();
+  const data = await response.arrayBuffer();
   const filename = parseFilename(response.headers.get("content-disposition"));
-  return { url: URL.createObjectURL(blob), filename };
+  return { data, filename };
 }
 
 export async function fetchDocuments(): Promise<DocumentListResponse> {
@@ -72,9 +80,7 @@ export async function fetchDocuments(): Promise<DocumentListResponse> {
     let errorMessage = "No se pudieron cargar los documentos.";
     try {
       const payload = await response.json();
-      if (typeof payload?.message === "string" && payload.message.trim().length > 0) {
-        errorMessage = payload.message;
-      }
+      errorMessage = resolveFriendlyPayloadMessage(payload?.message, errorMessage);
     } catch {
       // Ignore JSON parse errors for non-JSON responses.
     }
@@ -100,7 +106,7 @@ export async function fetchDocumentDetails(documentId: string): Promise<Document
     let errorMessage = "No pudimos cargar el estado del documento.";
     try {
       const payload = await response.json();
-      errorMessage = payload.message ?? errorMessage;
+      errorMessage = resolveFriendlyPayloadMessage(payload?.message, errorMessage);
     } catch {
       // Ignore JSON parse errors for non-JSON responses.
     }
@@ -132,9 +138,7 @@ export async function fetchDocumentReview(documentId: string): Promise<DocumentR
     let reason: string | undefined;
     try {
       const payload = await response.json();
-      if (typeof payload?.message === "string" && payload.message.trim()) {
-        errorMessage = payload.message;
-      }
+      errorMessage = resolveFriendlyPayloadMessage(payload?.message, errorMessage);
       if (typeof payload?.error_code === "string") {
         errorCode = payload.error_code;
       }
@@ -174,7 +178,7 @@ export async function fetchProcessingHistory(
     let errorMessage = "No pudimos cargar el historial de procesamiento.";
     try {
       const payload = await response.json();
-      errorMessage = payload.message ?? errorMessage;
+      errorMessage = resolveFriendlyPayloadMessage(payload?.message, errorMessage);
     } catch {
       // Ignore JSON parse errors for non-JSON responses.
     }
@@ -194,7 +198,7 @@ export async function triggerReprocess(documentId: string): Promise<LatestRun> {
     let errorMessage = "No pudimos reprocesar el documento.";
     try {
       const payload = await response.json();
-      errorMessage = payload.message ?? errorMessage;
+      errorMessage = resolveFriendlyPayloadMessage(payload?.message, errorMessage);
     } catch {
       // Ignore JSON parse errors for non-JSON responses.
     }
@@ -223,9 +227,7 @@ export async function markDocumentReviewed(documentId: string): Promise<ReviewTo
     let errorMessage = "No se pudo marcar como revisado.";
     try {
       const payload = await response.json();
-      if (typeof payload?.message === "string" && payload.message.trim()) {
-        errorMessage = payload.message;
-      }
+      errorMessage = resolveFriendlyPayloadMessage(payload?.message, errorMessage);
     } catch {
       // Ignore JSON parse errors for non-JSON responses.
     }
@@ -258,9 +260,7 @@ export async function reopenDocumentReview(documentId: string): Promise<ReviewTo
     let errorMessage = "No se pudo reabrir el documento.";
     try {
       const payload = await response.json();
-      if (typeof payload?.message === "string" && payload.message.trim()) {
-        errorMessage = payload.message;
-      }
+      errorMessage = resolveFriendlyPayloadMessage(payload?.message, errorMessage);
     } catch {
       // Ignore JSON parse errors for non-JSON responses.
     }
@@ -305,9 +305,7 @@ export async function editRunInterpretation(
     let reason: string | undefined;
     try {
       const body = await response.json();
-      if (typeof body?.message === "string" && body.message.trim()) {
-        errorMessage = body.message;
-      }
+      errorMessage = resolveFriendlyPayloadMessage(body?.message, errorMessage);
       if (typeof body?.error_code === "string") {
         errorCode = body.error_code;
       }
@@ -348,9 +346,7 @@ export async function fetchRawText(runId: string): Promise<RawTextArtifactRespon
     let reason: string | undefined;
     try {
       const payload = await response.json();
-      if (typeof payload?.message === "string" && payload.message.trim()) {
-        errorMessage = payload.message;
-      }
+      errorMessage = resolveFriendlyPayloadMessage(payload?.message, errorMessage);
       if (typeof payload?.error_code === "string") {
         errorCode = payload.error_code;
       }
@@ -400,8 +396,8 @@ export async function uploadDocument(file: File): Promise<DocumentUploadResponse
         errorMessage = "El PDF supera el tamaño máximo permitido de 20 MB.";
       } else if (payload?.error_code === "INVALID_REQUEST") {
         errorMessage = "El archivo no es válido. Selecciona un PDF e inténtalo otra vez.";
-      } else if (payload?.message) {
-        errorMessage = payload.message as string;
+      } else {
+        errorMessage = resolveFriendlyPayloadMessage(payload?.message, errorMessage);
       }
     } catch {
       // Ignore JSON parse errors for non-JSON responses.

@@ -2,56 +2,44 @@
 
 AI assistant entrypoint. Keep reads minimal and route by intent.
 
-## Review fast path (`@codex review`)
-- Explicit review trigger only (`@codex review`, “Do a code review…”, “Review the diff…”).
-- Load only `docs/agent_router/01_WORKFLOW/CODE_REVIEW/00_entry.md`.
-- Fallback format if unavailable: `Severity | File:Line | Finding | Suggested fix`.
-
 ## Required order
 1) Read `docs/agent_router/00_AUTHORITY.md` first.
-2) Load only the module(s) that match the current intent.
-3) Do not open large docs unless a module explicitly routes to them.
+2) Load only the module(s) matching the current intent.
+3) Open large docs only when routed there.
+
+## Review fast path (`@codex review`)
+- Trigger only on explicit review requests.
+- Load only `docs/agent_router/01_WORKFLOW/CODE_REVIEW/00_entry.md`.
+- Fallback format if module is unavailable: `Severity | File:Line | Finding | Suggested fix`.
 
 ## Mandatory triggers
-- Starting new work: follow `docs/agent_router/01_WORKFLOW/START_WORK/00_entry.md` (branch-first).
-- Pull requests: follow `docs/agent_router/01_WORKFLOW/PULL_REQUESTS/00_entry.md` (classify PR).
-- User asks to merge a PR: execute `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/210_pull-requests.md` end-to-end.
-- Code PRs: load `docs/agent_router/01_WORKFLOW/CODE_REVIEW/00_entry.md`.
-- User-visible changes: load `docs/agent_router/02_PRODUCT/USER_VISIBLE/00_entry.md` then UX/Brand.
-- User indicates documentation was updated (any language or paraphrase): load `docs/agent_router/01_WORKFLOW/DOC_UPDATES/00_entry.md`.
-  If files are not specified, follow DOC_UPDATES discovery (git diff/status) then normalize.
+- Starting new work: `docs/agent_router/01_WORKFLOW/START_WORK/00_entry.md`.
+- Pull requests: `docs/agent_router/01_WORKFLOW/PULL_REQUESTS/00_entry.md`.
+- Merge request: execute `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/210_pull-requests.md`.
+- Code PRs: `docs/agent_router/01_WORKFLOW/CODE_REVIEW/00_entry.md`.
+- User-visible changes: `docs/agent_router/02_PRODUCT/USER_VISIBLE/00_entry.md`.
+- If user indicates docs changed (any language or paraphrase): `docs/agent_router/01_WORKFLOW/DOC_UPDATES/00_entry.md`.
+  If files are unspecified, run DOC_UPDATES discovery from git diff/status and normalize.
+- If the user says documentation was updated, route to `docs/agent_router/01_WORKFLOW/DOC_UPDATES/00_entry.md`.
 
-## Manual trigger only: Code reviews
-- Do not start a review unless explicitly requested.
-- If review seems helpful, propose it and wait.
-
-## Global rule
+## Global rules
+- **No direct commits to `main` (hard rule).** All changes go through a feature branch + PR. The only exception is if the user gives explicit, per-instance authorization (e.g. "commitea directo a main"). Without that authorization, STOP and create a branch first.
+- Manual trigger only for code reviews (never start one implicitly).
 - After modifying docs, run the DOC_UPDATES normalization pass once before finishing.
-- Include a final `How to test` section for user-validatable changes.
+- Include final `How to test` for user-validatable changes.
+- Run `git`, `gh`, and `npm` with elevation on first attempt; if unavailable, STOP and ask.
 
-## Documentation governance (operational)
-- Prefer `docs/agent_router/*` for discovery.
-- Canonical docs: `docs/project/*`, `docs/shared/*`, `docs/README.md`.
-- Load canonical docs only if explicitly requested, router is missing/ambiguous, or conflict resolution is needed.
-
-## Mandatory execution policy (hard rule)
-- Run `git`, `gh`, and `npm` with elevation on first attempt.
-- If elevation is unavailable, STOP and ask the user.
+## Plan execution (`Continúa`)
+- Load: `docs/project/implementation/EXECUTION_RULES.md`.
+- **Step completion integrity:** before any handoff or auto-chain, enforce § "Step completion integrity" (NO-BATCH, CI-FIRST-BEFORE-HANDOFF, PLAN-UPDATE-IMMEDIATO, STEP-LOCK, EVIDENCE BLOCK, AUTO-HANDOFF GUARD).- **Iteration close:** after merge, execute § "Iteration close-out protocol" in `EXECUTION_RULES.md` (reconciliation, IMPLEMENTATION_HISTORY, DOC_UPDATES normalization).- Active plans: `docs/project/implementation/PLAN_*.md`; completed: `docs/project/implementation/completed/`.
+- Read Estado de ejecución and take the first `[ ]` step.
+- If step belongs to another agent: STOP and hand off to the exact required agent with a new chat + active PLAN + `Continúa`.
+- If step belongs to current agent: execute it and apply token-efficiency (`iterative-retrieval` before execution, `strategic-compact` at step close).
+- If that step belongs to the active agent for this chat: continue with the plan.
+- Canonical handoff (must be exact):
+  "⚠️ Este paso no corresponde al agente activo. **STOP.** El siguiente paso es de **GPT-5.3-Codex**. Abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** → adjunta el `PLAN` activo → escribe `Continúa`."
+  "⚠️ Este paso no corresponde al agente activo. **STOP.** El siguiente paso es de **Claude Opus 4.6**. Abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta el `PLAN` activo → escribe `Continúa`."
+- At step close: auto-continue only when next step is same agent and not a hard-gate; otherwise STOP and hand off.
 
 ## Fallback
 If no intent matches, read `docs/agent_router/00_FALLBACK.md` and ask for clarification.
-
-## Identity check for AI_ITERATIVE_EXECUTION_PLAN.md (hard rule)
-If the user writes `Continúa` and `docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md` is attached:
-1. Read Estado de ejecución → find the first `[ ]` step.
-2. If that step belongs to the active agent for this chat: proceed normally following the plan.
-3. If that step belongs to a different agent: STOP. Do not implement anything. Respond EXACTLY with one of these messages:
-  - If the next step is Codex: "⚠️ Este paso no corresponde al agente activo. **STOP.** El siguiente paso es de **GPT-5.3-Codex**. Abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
-  - If the next step is Claude: "⚠️ Este paso no corresponde al agente activo. **STOP.** El siguiente paso es de **Claude Opus 4.6**. Abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `AI_ITERATIVE_EXECUTION_PLAN.md` → escribe `Continúa`."
-4. When proceeding with a valid step, enforce the token-efficiency policy from the plan (`iterative-retrieval` before execution and `strategic-compact` at step close).
-
-## Mandatory handoff at step close (hard rule)
-When a plan step is completed, ALWAYS end with a "new chat" handoff instruction that names the exact next agent.
-- Never tell the user to continue in the same chat.
-- If next step is Codex, require: open new Copilot chat + choose **GPT-5.3-Codex** + attach `AI_ITERATIVE_EXECUTION_PLAN.md` + write `Continúa`.
-- If next step is Claude, require: open new Copilot chat + choose **Claude Opus 4.6** + attach `AI_ITERATIVE_EXECUTION_PLAN.md` + write `Continúa`.

@@ -30,6 +30,8 @@ export function DocumentStatusChip({
     <Tooltip content={status.tooltip}>
       <span
         data-testid={testId}
+        role="status"
+        aria-label={`Estado del documento: ${status.label}${status.hint ? `. ${status.hint}` : ""}`}
         className={cn(
           "inline-flex items-center gap-1.5 rounded-control bg-surfaceMuted px-2 py-1 text-[11px] font-semibold text-textSecondary",
           compact && "h-4 min-w-4 justify-center border-0 bg-transparent p-0",

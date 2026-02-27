@@ -2,8 +2,20 @@ import type { ReactNode } from "react";
 
 import { cn } from "../../lib/utils";
 
-export function FieldBlock({ children, className }: { children: ReactNode; className?: string }) {
-  return <article className={cn("px-1 py-1.5", className)}>{children}</article>;
+export function FieldBlock({
+  children,
+  className,
+  ariaLabel,
+}: {
+  children: ReactNode;
+  className?: string;
+  ariaLabel?: string;
+}) {
+  return (
+    <article className={cn("px-1 py-1.5", className)} aria-label={ariaLabel}>
+      {children}
+    </article>
+  );
 }
 
 type ValueSurfaceVariant = "short" | "long";
@@ -13,15 +25,18 @@ export function ValueSurface({
   variant,
   className,
   testId,
+  ariaLabel,
 }: {
   children: ReactNode;
   variant: ValueSurfaceVariant;
   className?: string;
   testId?: string;
+  ariaLabel?: string;
 }) {
   return (
     <div
       data-testid={testId}
+      aria-label={ariaLabel}
       className={cn(
         "w-full min-w-0 rounded-md border border-borderSubtle bg-surfaceMuted text-left text-sm break-words",
         variant === "long"
@@ -46,6 +61,7 @@ export function FieldRow({
   indicatorTestId,
   valueWrapperTestId,
   className,
+  ariaLabel,
 }: {
   indicator?: ReactNode;
   label: ReactNode;
@@ -57,12 +73,14 @@ export function FieldRow({
   indicatorTestId?: string;
   valueWrapperTestId?: string;
   className?: string;
+  ariaLabel?: string;
 }) {
   const resolvedValuePlacement = valuePlacement ?? "inline";
 
   return (
     <div
       data-testid={leftTestId}
+      aria-label={ariaLabel}
       className={cn(
         "grid w-full items-start grid-cols-[var(--field-row-label-col)_minmax(0,1fr)] gap-x-[var(--field-row-gap-x)]",
         className,

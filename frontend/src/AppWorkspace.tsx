@@ -1,52 +1,29 @@
-import {
-  type ChangeEvent,
-  type CSSProperties,
-  type DragEvent,
-  type KeyboardEvent as ReactKeyboardEvent,
-  type MouseEvent as ReactMouseEvent,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { AlignLeft, Download, FileText, FilterX, Info, RefreshCw, Search, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-
-import { CriticalIcon } from "./components/app/CriticalBadge";
-import { IconButton } from "./components/app/IconButton";
 import { DocumentsSidebar } from "./components/DocumentsSidebar";
-import { PdfViewer } from "./components/PdfViewer";
-import { AddFieldDialog } from "./components/structured/AddFieldDialog";
-import { FieldEditDialog } from "./components/structured/FieldEditDialog";
-import { UploadDropzone } from "./components/UploadDropzone";
+import { buildViewerToolbarContent } from "./components/viewer/viewerToolbarContent";
+import { PdfViewerPanel } from "./components/workspace/PdfViewerPanel";
+import { StructuredDataPanel } from "./components/workspace/StructuredDataPanel";
 import { ToastHost } from "./components/toast/ToastHost";
 import { createReviewFieldRenderers } from "./components/review/ReviewFieldRenderers";
 import { createReviewSectionLayoutRenderer } from "./components/review/ReviewSectionLayout";
 import { SourcePanelContent } from "./components/review/SourcePanelContent";
+import { WorkspaceDialogs } from "./components/review/WorkspaceDialogs";
 import {
   type ActionFeedback,
   type ConnectivityToast,
   type UploadFeedback,
 } from "./components/toast/toast-types";
-import { Button } from "./components/ui/button";
-import { Input } from "./components/ui/input";
-import { ScrollArea } from "./components/ui/scroll-area";
-import { ToggleGroup, ToggleGroupItem } from "./components/ui/toggle-group";
-import { Tooltip } from "./components/ui/tooltip";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "./components/ui/dialog";
+import { useFieldEditing } from "./hooks/useFieldEditing";
+import { useDocumentsSidebar } from "./hooks/useDocumentsSidebar";
+import { useReviewSplitPanel } from "./hooks/useReviewSplitPanel";
+import { useStructuredDataFilters } from "./hooks/useStructuredDataFilters";
 import { useSourcePanelState } from "./hooks/useSourcePanelState";
+import { useUploadState } from "./hooks/useUploadState";
+import { useRawTextActions } from "./hooks/useRawTextActions";
+import { useReviewedEditBlocker } from "./hooks/useReviewedEditBlocker";
 import { logExtractionDebugEvent, type ExtractionDebugEvent } from "./extraction/extractionDebug";
-import { resolveCandidateSuggestionSections } from "./extraction/candidateSuggestions";
-import { getControlledVocabOptionValues, validateFieldValue } from "./extraction/fieldValidators";
+import { validateFieldValue } from "./extraction/fieldValidators";
 import {
   API_BASE_URL,
   BILLING_REVIEW_FIELDS,
@@ -55,28 +32,19 @@ import {
   CANONICAL_VISIT_SCOPED_FIELD_KEYS,
   CRITICAL_GLOBAL_SCHEMA_KEYS,
   DEBUG_CONFIDENCE_POLICY,
-  DEFAULT_REVIEW_SPLIT_RATIO,
-  DOCS_SIDEBAR_PIN_STORAGE_KEY,
   FIELD_LABELS,
   HIDDEN_REVIEW_FIELDS,
   MAX_UPLOAD_SIZE_BYTES,
   MEDICAL_RECORD_SECTION_ID_ORDER,
   MEDICAL_RECORD_SECTION_ORDER,
-  MIN_PDF_PANEL_WIDTH_PX,
-  MIN_STRUCTURED_PANEL_WIDTH_PX,
   MISSING_VALUE_PLACEHOLDER,
   OTHER_EXTRACTED_FIELDS_SECTION_TITLE,
   REPORT_INFO_SECTION_TITLE,
   REVIEW_MESSAGE_INFO_CLASS,
   REVIEW_MESSAGE_MUTED_CLASS,
   REVIEW_MESSAGE_WARNING_CLASS,
-  REVIEW_SPLIT_MIN_WIDTH_PX,
-  REVIEW_SPLIT_RATIO_EPSILON,
-  REVIEW_SPLIT_RATIO_STORAGE_KEY,
-  SPLITTER_COLUMN_WIDTH_PX,
 } from "./constants/appWorkspace";
 import {
-  copyTextToClipboard,
   editRunInterpretation,
   fetchDocumentDetails,
   fetchDocumentReview,
@@ -89,13 +57,10 @@ import {
   triggerReprocess,
   uploadDocument,
 } from "./api/documentApi";
-import { groupProcessingSteps } from "./lib/processingHistory";
 import { GLOBAL_SCHEMA } from "./lib/globalSchema";
 import {
   clampConfidence,
-  clampReviewSplitRatio,
   emitConfidencePolicyDiagnosticEvent,
-  explainFailure,
   formatFieldValue,
   formatReviewKeyLabel,
   formatRunHeader,
@@ -114,17 +79,8 @@ import {
   resolveConfidencePolicy,
   resolveMappingConfidence,
   resolveUiSection,
-  reviewSplitRatioToPx,
   shouldHideExtractedField,
-  snapReviewSplitRatio,
-  splitPxToReviewSplitRatio,
 } from "./lib/appWorkspaceUtils";
-import {
-  formatDuration,
-  formatTime,
-  shouldShowDetails,
-  statusIcon,
-} from "./lib/processingHistoryView";
 import { type ConfidenceBucket, matchesStructuredDataFilters } from "./lib/structuredDataFilters";
 import { mapDocumentStatus } from "./lib/documentStatus";
 import {
@@ -143,16 +99,14 @@ import {
   type ReviewSelectableField,
   type ReviewVisitGroup,
 } from "./types/appWorkspace";
-
 export {
   MIN_PDF_PANEL_WIDTH_PX,
   REVIEW_SPLIT_MIN_WIDTH_PX,
   SPLITTER_COLUMN_WIDTH_PX,
 } from "./constants/appWorkspace";
-
 export function App() {
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [fileUrl, setFileUrl] = useState<string | null>(null);
+  const [fileUrl, setFileUrl] = useState<string | ArrayBuffer | null>(null);
   const [filename, setFilename] = useState<string | null>(null);
   const [activeViewerTab, setActiveViewerTab] = useState<"document" | "raw_text" | "technical">(
     "document",
@@ -168,289 +122,40 @@ export function App() {
   const [actionFeedback, setActionFeedback] = useState<ActionFeedback | null>(null);
   const [connectivityToast, setConnectivityToast] = useState<ConnectivityToast | null>(null);
   const [hasShownListErrorToast, setHasShownListErrorToast] = useState(false);
-  const [isDragOverViewer, setIsDragOverViewer] = useState(false);
-  const [isDragOverSidebarUpload, setIsDragOverSidebarUpload] = useState(false);
   const [showRefreshFeedback, setShowRefreshFeedback] = useState(false);
-  const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
-  const [isCopyingRawText, setIsCopyingRawText] = useState(false);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
-  const [editingField, setEditingField] = useState<ReviewSelectableField | null>(null);
-  const [editingFieldDraftValue, setEditingFieldDraftValue] = useState("");
-  const [isAddFieldDialogOpen, setIsAddFieldDialogOpen] = useState(false);
-  const [addFieldKeyDraft, setAddFieldKeyDraft] = useState("");
-  const [addFieldValueDraft, setAddFieldValueDraft] = useState("");
   const [evidenceNotice, setEvidenceNotice] = useState<string | null>(null);
   const [expandedFieldValues, setExpandedFieldValues] = useState<Record<string, boolean>>({});
   const [reviewLoadingDocId, setReviewLoadingDocId] = useState<string | null>(null);
   const [reviewLoadingSinceMs, setReviewLoadingSinceMs] = useState<number | null>(null);
   const [isRetryingInterpretation, setIsRetryingInterpretation] = useState(false);
   const [fieldNavigationRequestId, setFieldNavigationRequestId] = useState(0);
-  const [structuredSearchInput, setStructuredSearchInput] = useState("");
-  const [structuredSearchTerm, setStructuredSearchTerm] = useState("");
-  const [selectedConfidenceBuckets, setSelectedConfidenceBuckets] = useState<ConfidenceBucket[]>(
-    [],
-  );
-  const [showOnlyCritical, setShowOnlyCritical] = useState(false);
-  const [showOnlyWithValue, setShowOnlyWithValue] = useState(false);
-  const [showOnlyEmpty, setShowOnlyEmpty] = useState(false);
   const [hoveredFieldTriggerId, setHoveredFieldTriggerId] = useState<string | null>(null);
   const [hoveredCriticalTriggerId, setHoveredCriticalTriggerId] = useState<string | null>(null);
-  const [reviewSplitRatio, setReviewSplitRatio] = useState(() => {
-    if (typeof window === "undefined") {
-      return DEFAULT_REVIEW_SPLIT_RATIO;
-    }
-    const stored = Number(window.localStorage.getItem(REVIEW_SPLIT_RATIO_STORAGE_KEY));
-    if (!Number.isFinite(stored) || stored <= 0 || stored >= 1) {
-      return DEFAULT_REVIEW_SPLIT_RATIO;
-    }
-    return stored;
-  });
-  const [isDraggingReviewSplit, setIsDraggingReviewSplit] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const uploadPanelRef = useRef<HTMLDivElement | null>(null);
-  const structuredSearchInputRef = useRef<HTMLInputElement | null>(null);
-  const reviewSplitGridRef = useRef<HTMLDivElement | null>(null);
-  const [reviewSplitGridElement, setReviewSplitGridElement] = useState<HTMLDivElement | null>(null);
-  const reviewSplitDragStateRef = useRef<{
-    startX: number;
-    startSplitPx: number;
-  } | null>(null);
-  const reviewSplitRatioRef = useRef(reviewSplitRatio);
   const lastExtractionDebugDocIdRef = useRef<string | null>(null);
   const lastConfidencePolicyDocIdRef = useRef<string | null>(null);
   const loggedExtractionDebugEventKeysRef = useRef<Set<string>>(new Set());
   const loggedConfidencePolicyDiagnosticsRef = useRef<Set<string>>(new Set());
   const loggedConfidencePolicyDebugRef = useRef<Set<string>>(new Set());
-  const viewerDragDepthRef = useRef(0);
-  const sidebarUploadDragDepthRef = useRef(0);
-  const suppressDocsSidebarHoverUntilRef = useRef(0);
   const pendingAutoOpenDocumentIdRef = useRef<string | null>(null);
   const autoOpenRetryCountRef = useRef<Record<string, number>>({});
   const autoOpenRetryTimerRef = useRef<number | null>(null);
   const refreshFeedbackTimerRef = useRef<number | null>(null);
-  const copyFeedbackTimerRef = useRef<number | null>(null);
   const latestLoadRequestIdRef = useRef<string | null>(null);
-  const isPointerInsideDocsSidebarRef = useRef(false);
-  // Desktop-only hover sidebar for Documents; touch/mobile is deferred to avoid accidental opens.
-  const docsHoverSidebarMediaQuery = "(min-width: 1024px) and (hover: hover) and (pointer: fine)";
-  const [isDesktopForDocsSidebar, setIsDesktopForDocsSidebar] = useState(false);
-  const [isDocsSidebarHovered, setIsDocsSidebarHovered] = useState(false);
-  const [isDocsSidebarPinned, setIsDocsSidebarPinned] = useState(() => {
-    if (typeof window === "undefined") {
-      return false;
-    }
-    return window.localStorage.getItem(DOCS_SIDEBAR_PIN_STORAGE_KEY) === "1";
-  });
-  // Pin mode is desktop-only to avoid overcrowding tablet/mobile layouts.
-  const sourcePinMediaQuery = "(min-width: 1280px)";
-  const [isDesktopForPin, setIsDesktopForPin] = useState(false);
   const latestRawTextRefreshRef = useRef<string | null>(null);
   const listPollingStartedAtRef = useRef<number | null>(null);
   const interpretationRetryMinTimerRef = useRef<number | null>(null);
   const lastConnectivityToastAtRef = useRef(0);
   const queryClient = useQueryClient();
-  const sourcePanel = useSourcePanelState({
-    isDesktopForPin,
-    onNotice: setEvidenceNotice,
-  });
   const effectiveViewMode = "browse";
   const isReviewMode = false;
   const isBrowseMode = true;
-  const shouldUseHoverDocsSidebar = isDesktopForDocsSidebar;
-  const shouldAutoCollapseDocsSidebar =
-    shouldUseHoverDocsSidebar && Boolean(activeId) && !isDocsSidebarPinned;
-  const isDocsSidebarExpanded = !shouldAutoCollapseDocsSidebar || isDocsSidebarHovered;
-  const getReviewSplitMeasuredWidth = useCallback(() => {
-    const grid = reviewSplitGridRef.current;
-    if (!grid) {
-      return 0;
-    }
-    return Math.max(grid.getBoundingClientRect().width, grid.scrollWidth);
-  }, []);
-  const clampReviewSplitToContainer = useCallback(() => {
-    const containerWidth = getReviewSplitMeasuredWidth();
-    if (containerWidth <= 0) {
-      return;
-    }
-    setReviewSplitRatio((current) => {
-      const next = clampReviewSplitRatio(current, containerWidth);
-      if (Math.abs(next - current) < REVIEW_SPLIT_RATIO_EPSILON) {
-        return current;
-      }
-      return next;
-    });
-  }, [getReviewSplitMeasuredWidth]);
-
   const downloadUrl = useMemo(() => {
     if (!activeId) {
       return null;
     }
     return `${API_BASE_URL}/documents/${activeId}/download?download=true`;
   }, [activeId]);
-
-  useEffect(() => {
-    reviewSplitRatioRef.current = reviewSplitRatio;
-  }, [reviewSplitRatio]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-    window.localStorage.setItem(REVIEW_SPLIT_RATIO_STORAGE_KEY, String(reviewSplitRatio));
-  }, [reviewSplitRatio]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-    window.localStorage.setItem(DOCS_SIDEBAR_PIN_STORAGE_KEY, isDocsSidebarPinned ? "1" : "0");
-  }, [isDocsSidebarPinned]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setStructuredSearchTerm(structuredSearchInput);
-    }, 200);
-    return () => window.clearTimeout(timer);
-  }, [structuredSearchInput]);
-
-  useEffect(() => {
-    if (typeof window.matchMedia !== "function") {
-      setIsDesktopForPin(true);
-      return;
-    }
-
-    const mediaQuery = window.matchMedia(sourcePinMediaQuery);
-    const syncPinCapability = () => setIsDesktopForPin(mediaQuery.matches);
-    syncPinCapability();
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", syncPinCapability);
-      return () => mediaQuery.removeEventListener("change", syncPinCapability);
-    }
-
-    mediaQuery.addListener(syncPinCapability);
-    return () => mediaQuery.removeListener(syncPinCapability);
-  }, [sourcePinMediaQuery]);
-
-  useEffect(() => {
-    if (typeof window.matchMedia !== "function") {
-      setIsDesktopForDocsSidebar(false);
-      return;
-    }
-
-    const mediaQuery = window.matchMedia(docsHoverSidebarMediaQuery);
-    const syncDocsSidebarCapability = () => setIsDesktopForDocsSidebar(mediaQuery.matches);
-    syncDocsSidebarCapability();
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", syncDocsSidebarCapability);
-      return () => mediaQuery.removeEventListener("change", syncDocsSidebarCapability);
-    }
-
-    mediaQuery.addListener(syncDocsSidebarCapability);
-    return () => mediaQuery.removeListener(syncDocsSidebarCapability);
-  }, [docsHoverSidebarMediaQuery]);
-
-  useEffect(() => {
-    if (!isDraggingReviewSplit) {
-      return;
-    }
-
-    const onMouseMove = (event: globalThis.MouseEvent) => {
-      const dragState = reviewSplitDragStateRef.current;
-      if (!dragState) {
-        return;
-      }
-
-      const containerWidth = Math.max(getReviewSplitMeasuredWidth(), 0);
-      if (containerWidth <= 0) {
-        return;
-      }
-      const nextSplitPx = dragState.startSplitPx + (event.clientX - dragState.startX);
-      const nextRatio = splitPxToReviewSplitRatio(nextSplitPx, containerWidth);
-      setReviewSplitRatio(nextRatio);
-    };
-
-    const onMouseUp = () => {
-      const containerWidth = Math.max(getReviewSplitMeasuredWidth(), 0);
-      if (containerWidth <= 0) {
-        setIsDraggingReviewSplit(false);
-        reviewSplitDragStateRef.current = null;
-        return;
-      }
-      setIsDraggingReviewSplit(false);
-      reviewSplitDragStateRef.current = null;
-      setReviewSplitRatio((current) =>
-        clampReviewSplitRatio(snapReviewSplitRatio(current), containerWidth),
-      );
-    };
-
-    document.body.style.cursor = "col-resize";
-    document.body.style.userSelect = "none";
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
-
-    return () => {
-      document.body.style.removeProperty("cursor");
-      document.body.style.removeProperty("user-select");
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
-    };
-  }, [getReviewSplitMeasuredWidth, isDraggingReviewSplit]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-    const rafId = window.requestAnimationFrame(clampReviewSplitToContainer);
-    const resizeObserver =
-      reviewSplitGridElement && typeof ResizeObserver !== "undefined"
-        ? new ResizeObserver(clampReviewSplitToContainer)
-        : null;
-    // Observe the current grid node; callback-ref updates this dependency when the node changes.
-    if (resizeObserver && reviewSplitGridElement) {
-      resizeObserver.observe(reviewSplitGridElement);
-    }
-    window.addEventListener("resize", clampReviewSplitToContainer);
-
-    return () => {
-      window.cancelAnimationFrame(rafId);
-      resizeObserver?.disconnect();
-      window.removeEventListener("resize", clampReviewSplitToContainer);
-    };
-  }, [clampReviewSplitToContainer, reviewSplitGridElement]);
-
-  useEffect(() => {
-    if (typeof window === "undefined" || !reviewSplitGridRef.current) {
-      return;
-    }
-    // Sidebar width animates over 200ms; clamp immediately and again after layout settles.
-    clampReviewSplitToContainer();
-    let rafB: number | null = null;
-    const rafA = window.requestAnimationFrame(() => {
-      clampReviewSplitToContainer();
-      rafB = window.requestAnimationFrame(clampReviewSplitToContainer);
-    });
-    const settleTimer = window.setTimeout(clampReviewSplitToContainer, 240);
-    return () => {
-      window.cancelAnimationFrame(rafA);
-      if (rafB !== null) {
-        window.cancelAnimationFrame(rafB);
-      }
-      window.clearTimeout(settleTimer);
-    };
-  }, [
-    clampReviewSplitToContainer,
-    isDocsSidebarExpanded,
-    isDocsSidebarPinned,
-    shouldAutoCollapseDocsSidebar,
-  ]);
-
-  const handleReviewSplitGridRef = useCallback((node: HTMLDivElement | null) => {
-    reviewSplitGridRef.current = node;
-    setReviewSplitGridElement(node);
-  }, []);
-
   useEffect(() => {
     return () => {
       if (autoOpenRetryTimerRef.current) {
@@ -459,23 +164,15 @@ export function App() {
       if (refreshFeedbackTimerRef.current) {
         window.clearTimeout(refreshFeedbackTimerRef.current);
       }
-      if (copyFeedbackTimerRef.current) {
-        window.clearTimeout(copyFeedbackTimerRef.current);
-      }
       if (interpretationRetryMinTimerRef.current) {
         window.clearTimeout(interpretationRetryMinTimerRef.current);
       }
-      if (fileUrl) {
-        URL.revokeObjectURL(fileUrl);
-      }
     };
-  }, [fileUrl]);
-
+  }, []);
   const loadPdf = useMutation({
     mutationFn: async (docId: string) => fetchOriginalPdf(docId),
     onSuccess: (result, docId) => {
       if (latestLoadRequestIdRef.current !== docId) {
-        URL.revokeObjectURL(result.url);
         return;
       }
       if (pendingAutoOpenDocumentIdRef.current === docId) {
@@ -493,12 +190,7 @@ export function App() {
         });
       }
       setActiveId(docId);
-      setFileUrl((currentUrl) => {
-        if (currentUrl) {
-          URL.revokeObjectURL(currentUrl);
-        }
-        return result.url;
-      });
+      setFileUrl(result.data);
       setFilename(result.filename);
     },
     onError: (_, docId) => {
@@ -526,12 +218,10 @@ export function App() {
       }
     },
   });
-
   const requestPdfLoad = (docId: string) => {
     latestLoadRequestIdRef.current = docId;
     loadPdf.mutate(docId);
   };
-
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => uploadDocument(file),
     onSuccess: async (result, file) => {
@@ -559,11 +249,7 @@ export function App() {
           return { ...current, items, total: exists ? current.total : current.total + 1 };
         },
       );
-
       setActiveViewerTab("document");
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
       pendingAutoOpenDocumentIdRef.current = result.document_id;
       autoOpenRetryCountRef.current[result.document_id] = 0;
       setActiveId(result.document_id);
@@ -595,209 +281,90 @@ export function App() {
       });
     },
   });
-
-  const validateUploadFile = (file: File): string | null => {
-    const hasPdfMime = file.type === "application/pdf";
-    const hasPdfExtension = file.name.toLowerCase().endsWith(".pdf");
-    if (!hasPdfMime && !hasPdfExtension) {
-      return "Solo se admiten archivos PDF.";
-    }
-    if (file.size > MAX_UPLOAD_SIZE_BYTES) {
-      return "El archivo supera el tamaño máximo (20 MB).";
-    }
-    return null;
-  };
-
-  const queueUpload = (file: File) => {
-    if (uploadMutation.isPending) {
-      return false;
-    }
-    const validationError = validateUploadFile(file);
-    if (validationError) {
-      setUploadFeedback({
-        kind: "error",
-        message: validationError,
-      });
-      return false;
-    }
-    setUploadFeedback(null);
-    uploadMutation.mutate(file);
-    return true;
-  };
-
-  const handleViewerDragEnter = (event: DragEvent<HTMLDivElement>) => {
-    if (!event.dataTransfer.types.includes("Files")) {
-      return;
-    }
-    event.preventDefault();
-    event.stopPropagation();
-    viewerDragDepthRef.current += 1;
-    setIsDragOverViewer(true);
-  };
-
-  const handleViewerDragOver = (event: DragEvent<HTMLDivElement>) => {
-    if (!event.dataTransfer.types.includes("Files")) {
-      return;
-    }
-    event.preventDefault();
-    event.stopPropagation();
-    if (!isDragOverViewer) {
-      setIsDragOverViewer(true);
-    }
-  };
-
-  const handleViewerDragLeave = (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    viewerDragDepthRef.current = Math.max(0, viewerDragDepthRef.current - 1);
-    if (viewerDragDepthRef.current === 0) {
-      setIsDragOverViewer(false);
-    }
-  };
-
-  const handleViewerDrop = (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    viewerDragDepthRef.current = 0;
-    setIsDragOverViewer(false);
-    const file = event.dataTransfer.files?.[0];
-    if (!file) {
-      return;
-    }
-    queueUpload(file);
-  };
-
-  const handleSidebarUploadDragEnter = (event: DragEvent<HTMLDivElement>) => {
-    if (!event.dataTransfer.types.includes("Files")) {
-      return;
-    }
-    event.preventDefault();
-    event.stopPropagation();
-    sidebarUploadDragDepthRef.current += 1;
-    setIsDragOverSidebarUpload(true);
-  };
-
-  const handleSidebarUploadDragOver = (event: DragEvent<HTMLDivElement>) => {
-    if (!event.dataTransfer.types.includes("Files")) {
-      return;
-    }
-    event.preventDefault();
-    event.stopPropagation();
-    if (!isDragOverSidebarUpload) {
-      setIsDragOverSidebarUpload(true);
-    }
-  };
-
-  const handleSidebarUploadDragLeave = (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    sidebarUploadDragDepthRef.current = Math.max(0, sidebarUploadDragDepthRef.current - 1);
-    if (sidebarUploadDragDepthRef.current === 0) {
-      setIsDragOverSidebarUpload(false);
-    }
-  };
-
-  const handleSidebarUploadDrop = (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    sidebarUploadDragDepthRef.current = 0;
-    setIsDragOverSidebarUpload(false);
-    suppressDocsSidebarHoverUntilRef.current = Date.now() + 400;
-    const file = event.dataTransfer.files?.[0];
-    if (!file) {
-      return;
-    }
-    queueUpload(file);
-  };
-
-  const openUploadFilePicker = () => {
-    if (uploadMutation.isPending) {
-      return;
-    }
-    fileInputRef.current?.click();
-  };
-
-  const handleOpenUploadArea = (event?: {
-    preventDefault?: () => void;
-    stopPropagation?: () => void;
-  }) => {
-    event?.stopPropagation?.();
-    openUploadFilePicker();
-  };
-
-  const handleSidebarFileInputChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0] ?? null;
-    if (!file) {
-      setUploadFeedback(null);
-      return;
-    }
-    const queued = queueUpload(file);
-    if (!queued) {
-      event.currentTarget.value = "";
-    }
-  };
-
-  const handleDocsSidebarMouseEnter = (event: ReactMouseEvent<HTMLElement>) => {
-    isPointerInsideDocsSidebarRef.current = true;
-    if (Date.now() < suppressDocsSidebarHoverUntilRef.current) {
-      return;
-    }
-    if (sidebarUploadDragDepthRef.current > 0 || isDragOverSidebarUpload) {
-      return;
-    }
-    if (shouldAutoCollapseDocsSidebar && event.buttons === 0) {
-      setIsDocsSidebarHovered(true);
-    }
-  };
-
-  const handleDocsSidebarMouseLeave = () => {
-    isPointerInsideDocsSidebarRef.current = false;
-    if (shouldAutoCollapseDocsSidebar) {
-      setIsDocsSidebarHovered(false);
-    }
-  };
-
-  const handleToggleDocsSidebarPin = () => {
-    setIsDocsSidebarPinned((current) => {
-      const next = !current;
-      if (next) {
-        setIsDocsSidebarHovered(true);
-      } else {
-        setIsDocsSidebarHovered(isPointerInsideDocsSidebarRef.current);
-      }
-      return next;
-    });
-  };
-
+  const {
+    fileInputRef,
+    uploadPanelRef,
+    isDragOverViewer,
+    isDragOverSidebarUpload,
+    sidebarUploadDragDepthRef,
+    handleViewerDragEnter,
+    handleViewerDragOver,
+    handleViewerDragLeave,
+    handleViewerDrop,
+    handleSidebarUploadDragEnter,
+    handleSidebarUploadDragOver,
+    handleSidebarUploadDragLeave,
+    handleSidebarUploadDrop: handleSidebarUploadDropInternal,
+    handleOpenUploadArea,
+    handleSidebarFileInputChange,
+  } = useUploadState({
+    isUploadPending: uploadMutation.isPending,
+    maxUploadSizeBytes: MAX_UPLOAD_SIZE_BYTES,
+    onQueueUpload: (file) => uploadMutation.mutate(file),
+    onSetUploadFeedback: setUploadFeedback,
+  });
+  const {
+    isDesktopForPin,
+    isDocsSidebarPinned,
+    shouldUseHoverDocsSidebar,
+    shouldAutoCollapseDocsSidebar,
+    isDocsSidebarExpanded,
+    setIsDocsSidebarHovered,
+    handleDocsSidebarMouseEnter,
+    handleDocsSidebarMouseLeave,
+    handleToggleDocsSidebarPin,
+    notifySidebarUploadDrop,
+  } = useDocumentsSidebar({
+    activeId,
+    isDragOverSidebarUpload,
+    sidebarUploadDragDepthRef,
+  });
+  const handleSidebarUploadDrop = useCallback(
+    (event: Parameters<typeof handleSidebarUploadDropInternal>[0]) => {
+      notifySidebarUploadDrop();
+      handleSidebarUploadDropInternal(event);
+    },
+    [handleSidebarUploadDropInternal, notifySidebarUploadDrop],
+  );
+  const {
+    reviewSplitLayoutStyle,
+    handleReviewSplitGridRef,
+    resetReviewSplitRatio,
+    startReviewSplitDragging,
+    handleReviewSplitKeyboard,
+  } = useReviewSplitPanel({
+    isDocsSidebarExpanded,
+    isDocsSidebarPinned,
+    shouldAutoCollapseDocsSidebar,
+  });
+  const sourcePanel = useSourcePanelState({
+    isDesktopForPin,
+    onNotice: setEvidenceNotice,
+  });
   const handleSelectDocument = (docId: string) => {
     setActiveId(docId);
     requestPdfLoad(docId);
   };
-
   const documentList = useQuery({
     queryKey: ["documents", "list"],
     queryFn: fetchDocuments,
   });
-
   const documentDetails = useQuery({
     queryKey: ["documents", "detail", activeId],
     queryFn: () => fetchDocumentDetails(activeId ?? ""),
     enabled: Boolean(activeId),
   });
-
   const processingHistory = useQuery({
     queryKey: ["documents", "history", activeId],
     queryFn: () => fetchProcessingHistory(activeId ?? ""),
     enabled: Boolean(activeId),
   });
-
   const documentReview = useQuery({
     queryKey: ["documents", "review", activeId],
     queryFn: () => fetchDocumentReview(activeId ?? ""),
     enabled: Boolean(activeId),
     retry: false,
   });
-
   useEffect(() => {
     if (!activeId) {
       setReviewLoadingDocId(null);
@@ -812,7 +379,6 @@ export function App() {
     setReviewLoadingDocId(activeId);
     setReviewLoadingSinceMs(Date.now());
   }, [activeId]);
-
   useEffect(() => {
     if (!activeId || reviewLoadingDocId !== activeId) {
       return;
@@ -820,7 +386,6 @@ export function App() {
     if (documentReview.isFetching) {
       return;
     }
-
     const minimumVisibleMs = 300;
     const elapsed = reviewLoadingSinceMs ? Date.now() - reviewLoadingSinceMs : minimumVisibleMs;
     if (elapsed >= minimumVisibleMs) {
@@ -828,14 +393,12 @@ export function App() {
       setReviewLoadingSinceMs(null);
       return;
     }
-
     const timer = window.setTimeout(() => {
       setReviewLoadingDocId(null);
       setReviewLoadingSinceMs(null);
     }, minimumVisibleMs - elapsed);
     return () => window.clearTimeout(timer);
   }, [activeId, documentReview.isFetching, reviewLoadingDocId, reviewLoadingSinceMs]);
-
   const rawTextRunId = documentDetails.data?.latest_run?.run_id ?? null;
   const rawTextQuery = useQuery({
     queryKey: ["runs", "raw-text", rawTextRunId],
@@ -843,7 +406,6 @@ export function App() {
     enabled: activeViewerTab === "raw_text" && Boolean(rawTextRunId),
     retry: false,
   });
-
   const sortedDocuments = useMemo(() => {
     const items = documentList.data?.items ?? [];
     return [...items].sort((a, b) => {
@@ -861,9 +423,7 @@ export function App() {
       return bTime - aTime;
     });
   }, [documentList.data?.items]);
-
   const resetSourcePanel = sourcePanel.reset;
-
   useEffect(() => {
     setSelectedFieldId(null);
     setFieldNavigationRequestId(0);
@@ -871,7 +431,6 @@ export function App() {
     setExpandedFieldValues({});
     resetSourcePanel();
   }, [activeId, resetSourcePanel]);
-
   useEffect(() => {
     if (!activeId || !documentDetails.data) {
       return;
@@ -898,13 +457,11 @@ export function App() {
     processingHistory,
     documentReview,
   ]);
-
   const documentListItems = useMemo(
     () => documentList.data?.items ?? [],
     [documentList.data?.items],
   );
   const refetchDocumentList = documentList.refetch;
-
   useEffect(() => {
     const items = documentListItems;
     const processingItems = items.filter((item) => isDocumentProcessing(item.status));
@@ -912,25 +469,21 @@ export function App() {
       listPollingStartedAtRef.current = null;
       return;
     }
-
     const now = Date.now();
     if (listPollingStartedAtRef.current === null) {
       listPollingStartedAtRef.current = now;
     }
-
     const elapsedMs = now - listPollingStartedAtRef.current;
     const maxPollingWindowMs = 10 * 60 * 1000;
     if (elapsedMs > maxPollingWindowMs) {
       return;
     }
-
     const intervalMs = elapsedMs < 2 * 60 * 1000 ? 1500 : 5000;
     const intervalId = window.setInterval(() => {
       refetchDocumentList();
     }, intervalMs);
     return () => window.clearInterval(intervalId);
   }, [refetchDocumentList, documentListItems]);
-
   useEffect(() => {
     if (documentList.status !== "success") {
       return;
@@ -938,8 +491,7 @@ export function App() {
     if (sortedDocuments.length === 0) {
       setIsDocsSidebarHovered(false);
     }
-  }, [documentList.status, sortedDocuments.length]);
-
+  }, [documentList.status, setIsDocsSidebarHovered, sortedDocuments.length]);
   const reprocessMutation = useMutation({
     mutationFn: async (docId: string) => triggerReprocess(docId),
     onMutate: async (docId) => {
@@ -1041,7 +593,6 @@ export function App() {
       setHasObservedProcessingAfterReprocess(false);
     },
   });
-
   const reviewToggleMutation = useMutation({
     mutationFn: async (variables: { docId: string; target: "reviewed" | "in_review" }) => {
       if (variables.target === "reviewed") {
@@ -1099,7 +650,6 @@ export function App() {
           };
         },
       );
-
       setActionFeedback({
         kind: "success",
         message:
@@ -1119,7 +669,6 @@ export function App() {
       });
     },
   });
-
   const interpretationEditMutation = useMutation({
     mutationFn: async (variables: {
       docId: string;
@@ -1163,7 +712,6 @@ export function App() {
       });
     },
   });
-
   const handleRefresh = () => {
     setShowRefreshFeedback(true);
     if (refreshFeedbackTimerRef.current) {
@@ -1183,11 +731,9 @@ export function App() {
   const isListRefreshing =
     (documentList.isFetching || showRefreshFeedback) && !documentList.isLoading;
   const panelHeightClass = "h-[clamp(720px,88vh,980px)]";
-
   const toggleStepDetails = (key: string) => {
     setExpandedSteps((prev) => ({ ...prev, [key]: !prev[key] }));
   };
-
   const latestState = documentDetails.data?.latest_run?.state;
   const latestRunId = documentDetails.data?.latest_run?.run_id;
   const activeListDocument = useMemo(
@@ -1208,27 +754,22 @@ export function App() {
     latestState === "QUEUED" ||
     latestState === "RUNNING";
   const isActiveDocumentProcessing = isProcessing || isActiveListProcessing;
-
   useEffect(() => {
     if (!latestRunId || !latestState) {
       return;
     }
-
     const shouldRefreshRawText =
       latestState === "COMPLETED" || latestState === "FAILED" || latestState === "TIMED_OUT";
     if (!shouldRefreshRawText) {
       return;
     }
-
     const refreshKey = `${latestRunId}:${latestState}`;
     if (latestRawTextRefreshRef.current === refreshKey) {
       return;
     }
-
     latestRawTextRefreshRef.current = refreshKey;
     queryClient.invalidateQueries({ queryKey: ["runs", "raw-text", latestRunId] });
   }, [latestRunId, latestState, queryClient]);
-
   useEffect(() => {
     if (!reprocessingDocumentId || activeId !== reprocessingDocumentId) {
       return;
@@ -1247,7 +788,6 @@ export function App() {
     isActiveDocumentProcessing,
     reprocessingDocumentId,
   ]);
-
   useEffect(() => {
     if (!uploadFeedback) {
       return;
@@ -1256,7 +796,6 @@ export function App() {
     const timer = window.setTimeout(() => setUploadFeedback(null), timeoutMs);
     return () => window.clearTimeout(timer);
   }, [uploadFeedback]);
-
   useEffect(() => {
     if (!actionFeedback) {
       return;
@@ -1265,7 +804,6 @@ export function App() {
     const timer = window.setTimeout(() => setActionFeedback(null), timeoutMs);
     return () => window.clearTimeout(timer);
   }, [actionFeedback]);
-
   useEffect(() => {
     if (!connectivityToast) {
       return;
@@ -1273,7 +811,6 @@ export function App() {
     const timer = window.setTimeout(() => setConnectivityToast(null), 5000);
     return () => window.clearTimeout(timer);
   }, [connectivityToast]);
-
   const showConnectivityToast = () => {
     const now = Date.now();
     if (now - lastConnectivityToastAtRef.current < 5000) {
@@ -1282,7 +819,6 @@ export function App() {
     lastConnectivityToastAtRef.current = now;
     setConnectivityToast({});
   };
-
   useEffect(() => {
     if (documentList.isError) {
       if (isConnectivityOrServerError(documentList.error)) {
@@ -1303,7 +839,6 @@ export function App() {
       setHasShownListErrorToast(false);
     }
   }, [documentList.isError, documentList.isSuccess, documentList.error, hasShownListErrorToast]);
-
   useEffect(() => {
     if (
       !activeId ||
@@ -1320,14 +855,12 @@ export function App() {
     documentReview.errorUpdatedAt,
     documentReview.refetch,
   ]);
-
   useEffect(() => {
     if (!loadPdf.isError || !isConnectivityOrServerError(loadPdf.error)) {
       return;
     }
     showConnectivityToast();
   }, [loadPdf.error, loadPdf.failureCount, loadPdf.isError]);
-
   const handleConfirmRetry = () => {
     if (!activeId) {
       setShowRetryModal(false);
@@ -1336,14 +869,11 @@ export function App() {
     setShowRetryModal(false);
     reprocessMutation.mutate(activeId);
   };
-
   const rawTextContent = rawTextQuery.data?.text ?? null;
   const hasRawText = Boolean(rawTextContent && rawTextContent.length > 0);
   const canCopyRawText = hasRawText && !rawTextQuery.isLoading && !rawTextQuery.isError;
-
   const isRawTextLoading = rawTextQuery.isLoading || rawTextQuery.isFetching;
   const canSearchRawText = hasRawText && !isRawTextLoading && !rawTextQuery.isError;
-
   const handleRawSearch = () => {
     if (!rawTextContent || !rawSearch.trim()) {
       setRawSearchNotice(null);
@@ -1352,7 +882,6 @@ export function App() {
     const match = rawTextContent.toLowerCase().includes(rawSearch.trim().toLowerCase());
     setRawSearchNotice(match ? "Coincidencia encontrada." : "No se encontraron coincidencias.");
   };
-
   const rawTextErrorMessage = (() => {
     if (!rawTextQuery.isError) {
       return null;
@@ -1374,7 +903,6 @@ export function App() {
     }
     return getUserErrorMessage(rawTextQuery.error, "No se pudo cargar el texto extraído.");
   })();
-
   const interpretationData = documentReview.data?.active_interpretation.data;
   const schemaContract =
     typeof interpretationData?.schema_contract === "string"
@@ -1401,13 +929,11 @@ export function App() {
   const hasUnassignedVisitGroup = reviewVisits.some(
     (visit) => visit.visit_id.trim().toLowerCase() === "unassigned",
   );
-
   const extractedReviewFields = useMemo(() => {
     const baseFields = interpretationData?.fields ?? [];
     if (!isCanonicalContract) {
       return baseFields;
     }
-
     const flattenedVisitFields = reviewVisits.flatMap((visit, visitIndex) => {
       const normalizedVisitId = getNormalizedVisitId(visit, visitIndex);
       const metadataFields: ReviewField[] = [
@@ -1464,7 +990,6 @@ export function App() {
           origin: "machine",
         },
       ];
-
       const scopedFields = (visit.fields ?? []).map((field, fieldIndex) => ({
         ...field,
         field_id: field.field_id || `visit-field:${normalizedVisitId}:${field.key}:${fieldIndex}`,
@@ -1472,13 +997,10 @@ export function App() {
         scope: "visit" as const,
         section: field.section ?? "visits",
       }));
-
       return [...metadataFields, ...scopedFields];
     });
-
     return [...baseFields, ...flattenedVisitFields];
   }, [interpretationData?.fields, isCanonicalContract, reviewVisits]);
-
   const explicitOtherReviewFields = useMemo(() => {
     if (!isCanonicalContract) {
       return [] as ReviewField[];
@@ -1499,21 +1021,17 @@ export function App() {
   );
   const activeConfidencePolicy = documentConfidencePolicy?.value ?? null;
   const confidencePolicyDegradedReason = documentConfidencePolicy?.degradedReason ?? null;
-
   const validationResult = useMemo(() => {
     const fieldsByKey = new Map<string, number>();
     const acceptedFields: ReviewField[] = [];
     const debugEvents: ExtractionDebugEvent[] = [];
     const documentId = documentReview.data?.active_interpretation.data.document_id;
-
     extractedReviewFields.forEach((field) => {
       fieldsByKey.set(field.key, (fieldsByKey.get(field.key) ?? 0) + 1);
     });
-
     extractedReviewFields.forEach((field) => {
       const rawValue = field.value === null || field.value === undefined ? "" : String(field.value);
       const validation = validateFieldValue(field.key, rawValue);
-
       if (!validation.ok) {
         debugEvents.push({
           field: field.key,
@@ -1525,13 +1043,11 @@ export function App() {
         });
         return;
       }
-
       const normalizedValue = validation.normalized ?? rawValue.trim();
       acceptedFields.push({
         ...field,
         value: normalizedValue,
       });
-
       debugEvents.push({
         field: field.key,
         status: "accepted",
@@ -1541,36 +1057,30 @@ export function App() {
         page: field.evidence?.page,
       });
     });
-
     GLOBAL_SCHEMA.forEach((definition) => {
       if ((fieldsByKey.get(definition.key) ?? 0) > 0) {
         return;
       }
-
       if (HIDDEN_REVIEW_FIELDS.has(definition.key)) {
         return;
       }
-
       debugEvents.push({
         field: definition.key,
         status: "missing",
         docId: documentId,
       });
     });
-
     return {
       acceptedFields,
       debugEvents,
     };
   }, [documentReview.data?.active_interpretation.data.document_id, extractedReviewFields]);
-
   useEffect(() => {
     const documentId = documentReview.data?.active_interpretation.data.document_id ?? null;
     if (lastExtractionDebugDocIdRef.current !== documentId) {
       loggedExtractionDebugEventKeysRef.current.clear();
       lastExtractionDebugDocIdRef.current = documentId;
     }
-
     validationResult.debugEvents.forEach((event) => {
       const eventKey = [
         event.docId ?? "",
@@ -1588,7 +1098,6 @@ export function App() {
       logExtractionDebugEvent(event);
     });
   }, [documentReview.data?.active_interpretation.data.document_id, validationResult.debugEvents]);
-
   useEffect(() => {
     const documentId = documentReview.data?.active_interpretation.data.document_id ?? null;
     if (documentId === null) {
@@ -1612,24 +1121,20 @@ export function App() {
       reason: confidencePolicyDegradedReason,
     });
   }, [confidencePolicyDegradedReason, documentReview.data?.active_interpretation.data.document_id]);
-
   useEffect(() => {
     if (!DEBUG_CONFIDENCE_POLICY) {
       return;
     }
-
     const interpretationData = documentReview.data?.active_interpretation.data;
     const documentId = interpretationData?.document_id ?? null;
     if (!documentId) {
       return;
     }
-
     const eventKey = `${documentId}|${confidencePolicyDegradedReason ?? "valid"}`;
     if (loggedConfidencePolicyDebugRef.current.has(eventKey)) {
       return;
     }
     loggedConfidencePolicyDebugRef.current.add(eventKey);
-
     const rawPolicy = interpretationData?.confidence_policy;
     const sampleField =
       interpretationData?.fields.find((field) => field.key === "pet_name") ??
@@ -1648,7 +1153,6 @@ export function App() {
         : null,
     });
   }, [confidencePolicyDegradedReason, documentReview.data?.active_interpretation.data]);
-
   useEffect(() => {
     if (!isCanonicalContract || !shouldEmitVisitGroupingDiagnostics(import.meta.env)) {
       return;
@@ -1659,14 +1163,12 @@ export function App() {
       ...diagnostics,
     });
   }, [interpretationData?.document_id, isCanonicalContract, reviewVisits]);
-
   const validatedReviewFields = validationResult.acceptedFields.filter((field) => {
     if (isCanonicalContract) {
       return !BILLING_REVIEW_FIELDS.has(field.key);
     }
     return !HIDDEN_REVIEW_FIELDS.has(field.key);
   });
-
   const buildSelectableField = useCallback(
     (
       base: Omit<
@@ -1694,7 +1196,6 @@ export function App() {
     },
     [activeConfidencePolicy],
   );
-
   const matchesByKey = useMemo(() => {
     const matches = new Map<string, ReviewField[]>();
     validatedReviewFields.forEach((field) => {
@@ -1704,7 +1205,6 @@ export function App() {
     });
     return matches;
   }, [validatedReviewFields]);
-
   const coreDisplayFields = useMemo(() => {
     let coreDefinitions: Array<{
       key: string;
@@ -1716,7 +1216,6 @@ export function App() {
       critical: boolean;
       aliases?: string[];
     }> = [];
-
     if (isCanonicalContract) {
       if (hasMalformedCanonicalFieldSlots) {
         return [];
@@ -1732,7 +1231,6 @@ export function App() {
       const sectionOrderIndex = new Map<string, number>(
         MEDICAL_RECORD_SECTION_ID_ORDER.map((sectionId, index) => [sectionId, index]),
       );
-
       const slotDefinitions = documentSlots.map((slot, index) => {
         const sectionLabel =
           getUiSectionLabelFromSectionId(slot.section) ?? REPORT_INFO_SECTION_TITLE;
@@ -1757,7 +1255,6 @@ export function App() {
           aliases: slot.aliases,
         };
       });
-
       const visitDefinitions: Array<{
         key: string;
         label: string;
@@ -1785,13 +1282,11 @@ export function App() {
             critical: Boolean(field.is_critical),
           });
         });
-
       coreDefinitions = [...slotDefinitions, ...visitDefinitions];
     } else {
       const templateDefinitions = GLOBAL_SCHEMA.filter(
         (definition) => !HIDDEN_REVIEW_FIELDS.has(definition.key),
       );
-
       const dynamicMedicalRecordDefinitions = validatedReviewFields
         .filter((field) => {
           if (field.classification === "other") {
@@ -1811,10 +1306,8 @@ export function App() {
           repeatable: false,
           critical: Boolean(field.is_critical),
         }));
-
       coreDefinitions = [...templateDefinitions, ...dynamicMedicalRecordDefinitions];
     }
-
     return coreDefinitions
       .map((definition): ReviewDisplayField => {
         const uiSection =
@@ -1833,7 +1326,6 @@ export function App() {
           );
           candidates = [...candidates, ...aliasCandidates];
         }
-
         if (definition.repeatable) {
           const items = candidates
             .filter((candidate) => !isFieldValueEmpty(candidate.value))
@@ -1856,7 +1348,6 @@ export function App() {
                   false,
                 ),
             );
-
           return {
             id: `core:${definition.key}`,
             key: definition.key,
@@ -1872,7 +1363,6 @@ export function App() {
             source: "core",
           };
         }
-
         const bestCandidate = candidates
           .filter((candidate) => !isFieldValueEmpty(candidate.value))
           .sort(
@@ -1923,14 +1413,11 @@ export function App() {
     matchesByKey,
     validatedReviewFields,
   ]);
-
   const otherDisplayFields = useMemo(() => {
     const coreKeys = new Set(GLOBAL_SCHEMA.map((field) => field.key));
     const grouped = new Map<string, ReviewField[]>();
     const orderedKeys: string[] = [];
-
     const sourceFields = isCanonicalContract ? explicitOtherReviewFields : validatedReviewFields;
-
     sourceFields.forEach((field) => {
       if (!isCanonicalContract && coreKeys.has(field.key)) {
         return;
@@ -1947,7 +1434,6 @@ export function App() {
       }
       grouped.get(field.key)?.push(field);
     });
-
     return orderedKeys.map((key, index): ReviewDisplayField => {
       const fields = grouped.get(key) ?? [];
       const label = formatReviewKeyLabel(key);
@@ -1987,7 +1473,6 @@ export function App() {
           source: "extracted",
         };
       }
-
       const field = fields[0];
       const hasValue = Boolean(field && !isFieldValueEmpty(field.value));
       const displayValue = hasValue
@@ -2024,7 +1509,6 @@ export function App() {
       };
     });
   }, [buildSelectableField, explicitOtherReviewFields, isCanonicalContract, validatedReviewFields]);
-
   const groupedCoreFields = useMemo(() => {
     const groups = new Map<string, ReviewDisplayField[]>();
     coreDisplayFields.forEach((field) => {
@@ -2039,13 +1523,11 @@ export function App() {
       fields: (groups.get(section) ?? []).sort((a, b) => a.order - b.order),
     }));
   }, [coreDisplayFields]);
-
   const canonicalVisitFieldOrder = useMemo(() => {
     const fallbackOrder = [...CANONICAL_VISIT_METADATA_KEYS, ...CANONICAL_VISIT_SCOPED_FIELD_KEYS];
     if (!isCanonicalContract || hasMalformedCanonicalFieldSlots) {
       return fallbackOrder;
     }
-
     const rawSlots = interpretationData?.medical_record_view?.field_slots;
     const slots = Array.isArray(rawSlots) ? rawSlots : [];
     const orderedKeys: string[] = [];
@@ -2061,71 +1543,34 @@ export function App() {
         orderedKeys.push(canonicalKey);
       }
     });
-
     fallbackOrder.forEach((key) => {
       if (!orderedKeys.includes(key)) {
         orderedKeys.push(key);
       }
     });
-
     return orderedKeys;
   }, [
     hasMalformedCanonicalFieldSlots,
     interpretationData?.medical_record_view?.field_slots,
     isCanonicalContract,
   ]);
-
-  const structuredDataFilters = useMemo(
-    () => ({
-      searchTerm: structuredSearchTerm,
-      selectedConfidence: selectedConfidenceBuckets,
-      onlyCritical: showOnlyCritical,
-      onlyWithValue: showOnlyWithValue,
-      onlyEmpty: showOnlyEmpty,
-    }),
-    [
-      selectedConfidenceBuckets,
-      showOnlyCritical,
-      showOnlyWithValue,
-      showOnlyEmpty,
-      structuredSearchTerm,
-    ],
-  );
-
-  useEffect(() => {
-    if (activeConfidencePolicy || selectedConfidenceBuckets.length === 0) {
-      return;
-    }
-    setSelectedConfidenceBuckets([]);
-  }, [activeConfidencePolicy, selectedConfidenceBuckets]);
-
-  const hasValueRestriction = showOnlyWithValue || showOnlyEmpty;
-
-  const hasActiveStructuredFilters =
-    structuredSearchTerm.trim().length > 0 ||
-    selectedConfidenceBuckets.length > 0 ||
-    showOnlyCritical ||
-    hasValueRestriction;
-
-  const resetStructuredFilters = useCallback(() => {
-    setStructuredSearchInput("");
-    setSelectedConfidenceBuckets([]);
-    setShowOnlyCritical(false);
-    setShowOnlyWithValue(false);
-    setShowOnlyEmpty(false);
-    structuredSearchInputRef.current?.focus();
-  }, []);
-
-  const getFilterToggleItemClass = useCallback(
-    (isActive: boolean) =>
-      `h-7 w-7 rounded-full border-0 p-0 transition-all ${
-        isActive
-          ? "bg-surfaceMuted text-text ring-1 ring-borderSubtle"
-          : "bg-surface text-textSecondary shadow-none hover:bg-surfaceMuted hover:text-text"
-      }`,
-    [],
-  );
-
+  const {
+    structuredSearchInput,
+    setStructuredSearchInput,
+    selectedConfidenceBuckets,
+    setSelectedConfidenceBuckets,
+    showOnlyCritical,
+    setShowOnlyCritical,
+    showOnlyWithValue,
+    setShowOnlyWithValue,
+    showOnlyEmpty,
+    setShowOnlyEmpty,
+    structuredSearchInputRef,
+    structuredDataFilters,
+    hasActiveStructuredFilters,
+    resetStructuredFilters,
+    getFilterToggleItemClass,
+  } = useStructuredDataFilters({ activeConfidencePolicy });
   const visibleCoreGroups = useMemo(() => {
     if (!hasActiveStructuredFilters) {
       return groupedCoreFields;
@@ -2139,56 +1584,46 @@ export function App() {
       }))
       .filter((group) => group.fields.length > 0);
   }, [groupedCoreFields, hasActiveStructuredFilters, structuredDataFilters]);
-
   const visibleOtherDisplayFields = useMemo(
     () => (hasActiveStructuredFilters ? [] : otherDisplayFields),
     [hasActiveStructuredFilters, otherDisplayFields],
   );
-
   const visibleCoreFields = useMemo(
     () => visibleCoreGroups.flatMap((group) => group.fields),
     [visibleCoreGroups],
   );
-
   const reportSections = useMemo(() => {
     const coreSections = visibleCoreGroups.map((group) => ({
       id: `core:${group.section}`,
       title: group.section,
       fields: group.fields,
     }));
-
     if (hasActiveStructuredFilters) {
       return coreSections;
     }
-
     const extraSection = {
       id: "extra:section",
       title: OTHER_EXTRACTED_FIELDS_SECTION_TITLE,
       fields: visibleOtherDisplayFields,
     };
-
     const infoIndex = coreSections.findIndex(
       (section) => section.title === REPORT_INFO_SECTION_TITLE,
     );
     if (infoIndex < 0) {
       return [...coreSections, extraSection];
     }
-
     return [...coreSections.slice(0, infoIndex), extraSection, ...coreSections.slice(infoIndex)];
   }, [hasActiveStructuredFilters, visibleCoreGroups, visibleOtherDisplayFields]);
-
   const selectableReviewItems = useMemo(
     () => [...visibleCoreFields, ...visibleOtherDisplayFields].flatMap((field) => field.items),
     [visibleCoreFields, visibleOtherDisplayFields],
   );
-
   const selectedReviewField = useMemo(() => {
     if (!selectedFieldId) {
       return null;
     }
     return selectableReviewItems.find((field) => field.id === selectedFieldId) ?? null;
   }, [selectableReviewItems, selectedFieldId]);
-
   const reviewPanelState: ReviewPanelState = (() => {
     if (!activeId) {
       return "idle";
@@ -2196,7 +1631,6 @@ export function App() {
     const hasStructuredPayload =
       Boolean(documentReview.data?.active_interpretation?.data) &&
       documentReview.data?.document_id === activeId;
-
     if (reviewLoadingDocId === activeId) {
       return "loading";
     }
@@ -2227,9 +1661,7 @@ export function App() {
     }
     return "ready";
   })();
-
   const reviewPanelMessage = getReviewPanelMessage(reviewPanelState);
-
   const shouldShowReviewEmptyState =
     reviewPanelState !== "loading" && reviewPanelState !== "ready" && Boolean(reviewPanelMessage);
   const hasNoStructuredFilterResults =
@@ -2246,7 +1678,6 @@ export function App() {
       if (!activeConfidencePolicy) {
         return { low, medium, high, unknown: 0 };
       }
-
       coreDisplayFields.forEach((field) => {
         const presentItems = field.items.filter((item) => !item.isMissing);
         if (presentItems.length === 0) {
@@ -2266,10 +1697,8 @@ export function App() {
         }
         unknown += 1;
       });
-
       return { low, medium, high, unknown };
     };
-
     if (isCanonicalContract) {
       const topLevelFields = (interpretationData?.fields ?? []).filter(
         (field): field is ReviewField => Boolean(field && typeof field === "object"),
@@ -2281,7 +1710,6 @@ export function App() {
       let medium = 0;
       let high = 0;
       let unknown = 0;
-
       const addDetectedConceptFromFields = (
         fields: ReviewField[],
         candidateKeys: readonly string[],
@@ -2292,13 +1720,11 @@ export function App() {
         if (matchingWithValue.length === 0) {
           return;
         }
-
         detected += 1;
         if (!confidenceCutoffs) {
           unknown += 1;
           return;
         }
-
         const bestConfidence = matchingWithValue.reduce<number | null>((currentBest, field) => {
           const confidence = resolveMappingConfidence(field);
           if (confidence === null) {
@@ -2309,12 +1735,10 @@ export function App() {
           }
           return currentBest;
         }, null);
-
         if (bestConfidence === null) {
           unknown += 1;
           return;
         }
-
         const tone = getConfidenceTone(bestConfidence, confidenceCutoffs);
         if (tone === "low") {
           low += 1;
@@ -2326,7 +1750,6 @@ export function App() {
         }
         high += 1;
       };
-
       CANONICAL_DOCUMENT_CONCEPTS.forEach((concept) => {
         const aliases = "aliases" in concept ? (concept.aliases ?? []) : [];
         addDetectedConceptFromFields(
@@ -2336,7 +1759,6 @@ export function App() {
           [concept.canonicalKey, ...aliases],
         );
       });
-
       CANONICAL_VISIT_SCOPED_FIELD_KEYS.forEach((key) => {
         const visitFieldsForKey = visits.flatMap((visit) =>
           (visit.fields ?? []).filter(
@@ -2346,7 +1768,6 @@ export function App() {
         );
         addDetectedConceptFromFields(visitFieldsForKey, [key]);
       });
-
       CANONICAL_VISIT_METADATA_KEYS.forEach((key) => {
         const hasValue = visits.some((visit) => !isFieldValueEmpty(visit[key]));
         if (!hasValue) {
@@ -2355,7 +1776,6 @@ export function App() {
         detected += 1;
         unknown += 1;
       });
-
       return {
         detected,
         total:
@@ -2368,11 +1788,9 @@ export function App() {
         unknown,
       };
     }
-
     let detected = 0;
     const total = GLOBAL_SCHEMA.length;
     const confidenceBands = summarizeConfidenceBands();
-
     if (!activeConfidencePolicy) {
       return {
         detected,
@@ -2383,7 +1801,6 @@ export function App() {
         unknown: 0,
       };
     }
-
     coreDisplayFields.forEach((field) => {
       const presentItems = field.items.filter(
         (item) => !item.isMissing && item.confidenceBand !== null,
@@ -2399,7 +1816,6 @@ export function App() {
         return;
       }
     });
-
     return {
       detected,
       total,
@@ -2419,112 +1835,16 @@ export function App() {
     loadPdf.isError && !isConnectivityOrServerError(loadPdf.error);
   const isPinnedSourcePanelVisible =
     isBrowseMode && sourcePanel.isSourceOpen && sourcePanel.isSourcePinned && isDesktopForPin;
-  const reviewSplitLayoutStyle = useMemo<CSSProperties>(
-    () => ({
-      minWidth: `${REVIEW_SPLIT_MIN_WIDTH_PX}px`,
-      gridTemplateColumns: `minmax(${MIN_PDF_PANEL_WIDTH_PX}px, ${reviewSplitRatio}fr) ${SPLITTER_COLUMN_WIDTH_PX}px minmax(${MIN_STRUCTURED_PANEL_WIDTH_PX}px, ${1 - reviewSplitRatio}fr)`,
-    }),
-    [reviewSplitRatio],
-  );
-
   const isDocumentListConnectivityError =
     documentList.isError && isConnectivityOrServerError(documentList.error);
-
   const handleSelectReviewItem = useCallback((field: ReviewSelectableField) => {
     setSelectedFieldId(field.id);
     setFieldNavigationRequestId((current) => current + 1);
   }, []);
-
-  const handleReviewedEditAttempt = useCallback(
-    (event: ReactMouseEvent<HTMLElement>) => {
-      if (!isDocumentReviewed || event.button !== 0) {
-        return;
-      }
-      const selectedText = window.getSelection?.()?.toString().trim() ?? "";
-      if (selectedText.length > 0) {
-        return;
-      }
-      setActionFeedback({
-        kind: "error",
-        message: "Documento revisado: edición bloqueada.",
-      });
-    },
-    [isDocumentReviewed],
-  );
-
-  const handleReviewedKeyboardEditAttempt = useCallback(
-    (event: ReactKeyboardEvent<HTMLElement>) => {
-      if (!isDocumentReviewed) {
-        return;
-      }
-      if (event.key !== "Enter" && event.key !== " ") {
-        return;
-      }
-      event.preventDefault();
-      setActionFeedback({
-        kind: "error",
-        message: "Documento revisado: edición bloqueada.",
-      });
-    },
-    [isDocumentReviewed],
-  );
-
-  const resetReviewSplitRatio = () => {
-    const containerWidth = Math.max(getReviewSplitMeasuredWidth(), 0);
-    if (containerWidth <= 0) {
-      return;
-    }
-    setReviewSplitRatio(clampReviewSplitRatio(DEFAULT_REVIEW_SPLIT_RATIO, containerWidth));
-  };
-
-  const startReviewSplitDragging = (event: ReactMouseEvent<HTMLButtonElement>) => {
-    const containerWidth = Math.max(getReviewSplitMeasuredWidth(), 0);
-    if (containerWidth <= 0) {
-      return;
-    }
-    reviewSplitDragStateRef.current = {
-      startX: event.clientX,
-      startSplitPx: reviewSplitRatioToPx(reviewSplitRatioRef.current, containerWidth),
-    };
-    setIsDraggingReviewSplit(true);
-    event.preventDefault();
-  };
-
-  const handleReviewSplitKeyboard = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
-    const containerWidth = Math.max(getReviewSplitMeasuredWidth(), 0);
-    if (containerWidth <= 0) {
-      return;
-    }
-    const stepPx = 40;
-
-    if (event.key === "ArrowLeft") {
-      event.preventDefault();
-      setReviewSplitRatio((current) =>
-        splitPxToReviewSplitRatio(
-          reviewSplitRatioToPx(current, containerWidth) - stepPx,
-          containerWidth,
-        ),
-      );
-      return;
-    }
-
-    if (event.key === "ArrowRight") {
-      event.preventDefault();
-      setReviewSplitRatio((current) =>
-        splitPxToReviewSplitRatio(
-          reviewSplitRatioToPx(current, containerWidth) + stepPx,
-          containerWidth,
-        ),
-      );
-      return;
-    }
-
-    if (event.key === "Home") {
-      event.preventDefault();
-      resetReviewSplitRatio();
-    }
-  };
-
+  const { handleReviewedEditAttempt, handleReviewedKeyboardEditAttempt } = useReviewedEditBlocker({
+    isDocumentReviewed,
+    onActionFeedback: setActionFeedback,
+  });
   useEffect(() => {
     if (!selectedFieldId) {
       return;
@@ -2534,7 +1854,6 @@ export function App() {
       setSelectedFieldId(null);
     }
   }, [selectableReviewItems, selectedFieldId]);
-
   useEffect(() => {
     if (!evidenceNotice) {
       return;
@@ -2542,106 +1861,33 @@ export function App() {
     const timer = window.setTimeout(() => setEvidenceNotice(null), 3000);
     return () => window.clearTimeout(timer);
   }, [evidenceNotice]);
-
-  const handleDownloadRawText = () => {
-    if (!rawTextContent) {
+  const { copyFeedback, isCopyingRawText, handleDownloadRawText, handleCopyRawText } =
+    useRawTextActions({ rawTextContent: rawTextContent ?? undefined, getUserErrorMessage });
+  const { toolbarLeftContent: viewerModeToolbarIcons, toolbarRightExtra: viewerDownloadIcon } =
+    buildViewerToolbarContent({
+      activeViewerTab,
+      onChangeTab: setActiveViewerTab,
+      downloadUrl,
+    });
+  const handleRetryInterpretation = useCallback(async () => {
+    const retryStartedAt = Date.now();
+    setIsRetryingInterpretation(true);
+    await documentReview.refetch();
+    const minVisibleMs = 250;
+    const elapsedMs = Date.now() - retryStartedAt;
+    const remainingMs = Math.max(0, minVisibleMs - elapsedMs);
+    if (remainingMs === 0) {
+      setIsRetryingInterpretation(false);
       return;
     }
-    const blob = new Blob([rawTextContent], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "texto-extraido.txt";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-  const setCopyFeedbackWithTimeout = (message: string) => {
-    setCopyFeedback(message);
-    if (copyFeedbackTimerRef.current) {
-      window.clearTimeout(copyFeedbackTimerRef.current);
+    if (interpretationRetryMinTimerRef.current) {
+      window.clearTimeout(interpretationRetryMinTimerRef.current);
     }
-    copyFeedbackTimerRef.current = window.setTimeout(() => {
-      setCopyFeedback(null);
-      copyFeedbackTimerRef.current = null;
-    }, 2500);
-  };
-
-  const handleCopyRawText = async () => {
-    if (!rawTextContent) {
-      setCopyFeedbackWithTimeout("No hay texto extraído para copiar.");
-      return;
-    }
-    setIsCopyingRawText(true);
-    try {
-      await copyTextToClipboard(rawTextContent);
-      setCopyFeedbackWithTimeout("Texto copiado.");
-    } catch (error) {
-      setCopyFeedbackWithTimeout(getUserErrorMessage(error, "No se pudo copiar el texto."));
-    } finally {
-      setIsCopyingRawText(false);
-    }
-  };
-
-  const viewerModeToolbarIcons = (
-    <>
-      <IconButton
-        label="Documento"
-        tooltip="Documento"
-        pressed={activeViewerTab === "document"}
-        className={
-          activeViewerTab === "document"
-            ? "border-accent bg-accentSoft/35 text-accent ring-2 ring-accent/25"
-            : undefined
-        }
-        aria-current={activeViewerTab === "document" ? "page" : undefined}
-        onClick={() => setActiveViewerTab("document")}
-      >
-        <FileText size={16} aria-hidden="true" />
-      </IconButton>
-      <IconButton
-        label="Texto extraído"
-        tooltip="Texto extraído"
-        pressed={activeViewerTab === "raw_text"}
-        className={
-          activeViewerTab === "raw_text"
-            ? "border-accent bg-accentSoft/35 text-accent ring-2 ring-accent/25"
-            : undefined
-        }
-        aria-current={activeViewerTab === "raw_text" ? "page" : undefined}
-        onClick={() => setActiveViewerTab("raw_text")}
-      >
-        <AlignLeft size={16} aria-hidden="true" />
-      </IconButton>
-      <IconButton
-        label="Detalles técnicos"
-        tooltip="Detalles técnicos"
-        pressed={activeViewerTab === "technical"}
-        className={
-          activeViewerTab === "technical"
-            ? "border-accent bg-accentSoft/35 text-accent ring-2 ring-accent/25"
-            : undefined
-        }
-        aria-current={activeViewerTab === "technical" ? "page" : undefined}
-        onClick={() => setActiveViewerTab("technical")}
-      >
-        <Info size={16} aria-hidden="true" />
-      </IconButton>
-    </>
-  );
-
-  const viewerDownloadIcon = downloadUrl ? (
-    <IconButton
-      label="Descargar"
-      tooltip="Descargar"
-      onClick={() => window.open(downloadUrl, "_blank", "noopener,noreferrer")}
-    >
-      <Download size={16} aria-hidden="true" />
-    </IconButton>
-  ) : null;
-
+    interpretationRetryMinTimerRef.current = window.setTimeout(() => {
+      interpretationRetryMinTimerRef.current = null;
+      setIsRetryingInterpretation(false);
+    }, remainingMs);
+  }, [documentReview]);
   const submitInterpretationChanges = (
     changes: InterpretationChangePayload[],
     successMessage: string,
@@ -2658,246 +1904,37 @@ export function App() {
       successMessage,
     });
   };
-
-  const closeAddFieldDialog = () => {
-    setIsAddFieldDialogOpen(false);
-    setAddFieldKeyDraft("");
-    setAddFieldValueDraft("");
-  };
-
-  const saveAddFieldDialog = () => {
-    const key = addFieldKeyDraft.trim();
-    if (!key) {
-      setActionFeedback({
-        kind: "error",
-        message: "La clave del campo no puede estar vacía.",
-      });
-      return;
-    }
-    const value = addFieldValueDraft.trim();
-    submitInterpretationChanges(
-      [
-        {
-          op: "ADD",
-          key,
-          value: value.length > 0 ? value : null,
-          value_type: "string",
-        },
-      ],
-      "Campo añadido.",
-    );
-    closeAddFieldDialog();
-  };
-
-  const openFieldEditDialog = (item: ReviewSelectableField) => {
-    const rawCurrentValue = item.rawField?.value;
-    const currentValue =
-      rawCurrentValue === null || rawCurrentValue === undefined ? "" : String(rawCurrentValue);
-    setEditingField(item);
-    setEditingFieldDraftValue(currentValue);
-  };
-
-  const closeFieldEditDialog = () => {
-    setEditingField(null);
-    setEditingFieldDraftValue("");
-  };
-
-  const isEditingMicrochipField = editingField?.key === "microchip_id";
-  const isEditingMicrochipInvalid = useMemo(() => {
-    if (!isEditingMicrochipField) {
-      return false;
-    }
-    const validation = validateFieldValue("microchip_id", editingFieldDraftValue);
-    return !validation.ok;
-  }, [isEditingMicrochipField, editingFieldDraftValue]);
-  const isEditingWeightField = editingField?.key === "weight";
-  const isEditingWeightInvalid = useMemo(() => {
-    if (!isEditingWeightField) {
-      return false;
-    }
-    const validation = validateFieldValue("weight", editingFieldDraftValue);
-    return !validation.ok;
-  }, [isEditingWeightField, editingFieldDraftValue]);
-  const isEditingAgeField = editingField?.key === "age";
-  const isEditingAgeInvalid = useMemo(() => {
-    if (!isEditingAgeField) {
-      return false;
-    }
-    const validation = validateFieldValue("age", editingFieldDraftValue);
-    return !validation.ok;
-  }, [isEditingAgeField, editingFieldDraftValue]);
-  const isEditingDateField = useMemo(() => {
-    const fieldKey = editingField?.key;
-    if (!fieldKey) {
-      return false;
-    }
-    return (
-      fieldKey === "document_date" ||
-      fieldKey === "visit_date" ||
-      fieldKey === "admission_date" ||
-      fieldKey === "discharge_date" ||
-      fieldKey === "dob" ||
-      fieldKey.startsWith("fecha_")
-    );
-  }, [editingField?.key]);
-  const isEditingDateInvalid = useMemo(() => {
-    if (!isEditingDateField || !editingField?.key) {
-      return false;
-    }
-    const validation = validateFieldValue(editingField.key, editingFieldDraftValue);
-    return !validation.ok;
-  }, [isEditingDateField, editingField?.key, editingFieldDraftValue]);
-  const isEditingSexField = editingField?.key === "sex";
-  const canonicalSexOptions = useMemo(
-    () => new Set(getControlledVocabOptionValues("sex").map((value) => value.toLowerCase())),
-    [],
-  );
-  const isEditingSexInvalid = useMemo(() => {
-    if (!isEditingSexField) {
-      return false;
-    }
-    const trimmedValue = editingFieldDraftValue.trim().toLowerCase();
-    if (!trimmedValue) {
-      return true;
-    }
-    return !canonicalSexOptions.has(trimmedValue);
-  }, [canonicalSexOptions, isEditingSexField, editingFieldDraftValue]);
-  const isEditingSpeciesField = editingField?.key === "species";
-  const canonicalSpeciesOptions = useMemo(
-    () => new Set(getControlledVocabOptionValues("species").map((value) => value.toLowerCase())),
-    [],
-  );
-  const isEditingSpeciesInvalid = useMemo(() => {
-    if (!isEditingSpeciesField) {
-      return false;
-    }
-    const trimmedValue = editingFieldDraftValue.trim().toLowerCase();
-    if (!trimmedValue) {
-      return true;
-    }
-    return !canonicalSpeciesOptions.has(trimmedValue);
-  }, [canonicalSpeciesOptions, isEditingSpeciesField, editingFieldDraftValue]);
-  const editingFieldCandidateSections = useMemo(() => {
-    if (!editingField?.key) {
-      return {
-        applicableSuggestions: [],
-        detectedCandidates: [],
-      };
-    }
-    return resolveCandidateSuggestionSections(
-      editingField.key,
-      editingField.rawField?.candidate_suggestions,
-    );
-  }, [editingField?.key, editingField?.rawField?.candidate_suggestions]);
-
-  const saveFieldEditDialog = () => {
-    if (!editingField) {
-      return;
-    }
-    if (editingField.key === "microchip_id") {
-      const validation = validateFieldValue("microchip_id", editingFieldDraftValue);
-      if (!validation.ok) {
-        return;
-      }
-    }
-    if (editingField.key === "weight") {
-      const validation = validateFieldValue("weight", editingFieldDraftValue);
-      if (!validation.ok) {
-        return;
-      }
-    }
-    if (editingField.key === "age") {
-      const validation = validateFieldValue("age", editingFieldDraftValue);
-      if (!validation.ok) {
-        return;
-      }
-    }
-    if (
-      editingField.key === "document_date" ||
-      editingField.key === "visit_date" ||
-      editingField.key === "admission_date" ||
-      editingField.key === "discharge_date" ||
-      editingField.key === "dob" ||
-      editingField.key.startsWith("fecha_")
-    ) {
-      const validation = validateFieldValue(editingField.key, editingFieldDraftValue);
-      if (!validation.ok) {
-        return;
-      }
-    }
-    if (editingField.key === "sex") {
-      if (editingFieldDraftValue.trim().length === 0) {
-        return;
-      }
-      const validation = validateFieldValue("sex", editingFieldDraftValue);
-      if (!validation.ok) {
-        return;
-      }
-    }
-    if (editingField.key === "species") {
-      const validation = validateFieldValue("species", editingFieldDraftValue);
-      if (!validation.ok) {
-        return;
-      }
-    }
-    const nextValue = editingFieldDraftValue.trim();
-    const nextPayloadValue = nextValue.length > 0 ? nextValue : null;
-    const previousRawValue = editingField.rawField?.value;
-    const previousValue =
-      previousRawValue === null || previousRawValue === undefined
-        ? null
-        : String(previousRawValue).trim();
-    const previousPayloadValue = previousValue && previousValue.length > 0 ? previousValue : null;
-    const valueType = editingField.rawField?.value_type ?? editingField.valueType ?? "string";
-
-    if (editingField.rawField && previousPayloadValue === nextPayloadValue) {
-      setActionFeedback({
-        kind: "info",
-        message: "No se han realizado cambios.",
-      });
-      closeFieldEditDialog();
-      return;
-    }
-
-    if (!editingField.rawField && nextPayloadValue === null) {
-      setActionFeedback({
-        kind: "info",
-        message: "No se han realizado cambios.",
-      });
-      closeFieldEditDialog();
-      return;
-    }
-
-    if (editingField.rawField) {
-      submitInterpretationChanges(
-        [
-          {
-            op: "UPDATE",
-            field_id: editingField.rawField.field_id,
-            value: nextPayloadValue,
-            value_type: valueType,
-          },
-        ],
-        "Valor actualizado correctamente.",
-      );
-      closeFieldEditDialog();
-      return;
-    }
-
-    submitInterpretationChanges(
-      [
-        {
-          op: "ADD",
-          key: editingField.key,
-          value: nextPayloadValue,
-          value_type: valueType,
-        },
-      ],
-      "Valor actualizado correctamente.",
-    );
-    closeFieldEditDialog();
-  };
-
+  const {
+    editingField,
+    editingFieldDraftValue,
+    setEditingFieldDraftValue,
+    isAddFieldDialogOpen,
+    addFieldKeyDraft,
+    setAddFieldKeyDraft,
+    addFieldValueDraft,
+    setAddFieldValueDraft,
+    openFieldEditDialog,
+    closeFieldEditDialog,
+    saveFieldEditDialog,
+    closeAddFieldDialog,
+    saveAddFieldDialog,
+    editingFieldCandidateSections,
+    isEditingMicrochipField,
+    isEditingMicrochipInvalid,
+    isEditingWeightField,
+    isEditingWeightInvalid,
+    isEditingAgeField,
+    isEditingAgeInvalid,
+    isEditingDateField,
+    isEditingDateInvalid,
+    isEditingSexField,
+    isEditingSexInvalid,
+    isEditingSpeciesField,
+    isEditingSpeciesInvalid,
+  } = useFieldEditing({
+    onSubmitInterpretationChanges: submitInterpretationChanges,
+    onActionFeedback: setActionFeedback,
+  });
   const { renderScalarReviewField, renderRepeatableReviewField } = useMemo(
     () =>
       createReviewFieldRenderers({
@@ -2926,12 +1963,12 @@ export function App() {
       hoveredFieldTriggerId,
       hoveredCriticalTriggerId,
       hasUnassignedVisitGroup,
+      openFieldEditDialog,
       handleSelectReviewItem,
       handleReviewedEditAttempt,
       handleReviewedKeyboardEditAttempt,
     ],
   );
-
   const renderSectionLayout = useMemo(
     () =>
       createReviewSectionLayoutRenderer({
@@ -2955,7 +1992,6 @@ export function App() {
       renderRepeatableReviewField,
     ],
   );
-
   const sourcePanelContent = (
     <SourcePanelContent
       sourcePage={sourcePanel.sourcePage}
@@ -2970,76 +2006,90 @@ export function App() {
       focusRequestId={sourcePanel.focusRequestId}
     />
   );
-
+  const loadPdfErrorMessage = getUserErrorMessage(
+    loadPdf.error,
+    "No se pudo cargar la vista previa del documento.",
+  );
+  const processingHistoryErrorMessage = getUserErrorMessage(
+    processingHistory.error,
+    "No se pudo cargar el historial de procesamiento.",
+  );
+  const structuredDataPanel = (
+    <StructuredDataPanel
+      activeId={activeId}
+      isActiveDocumentProcessing={isActiveDocumentProcessing}
+      isDocumentReviewed={isDocumentReviewed}
+      reviewTogglePending={reviewToggleMutation.isPending}
+      onToggleReviewStatus={() => {
+        if (!activeId) {
+          return;
+        }
+        reviewToggleMutation.mutate({
+          docId: activeId,
+          target: isDocumentReviewed ? "in_review" : "reviewed",
+        });
+      }}
+      reviewPanelState={reviewPanelState}
+      structuredSearchInput={structuredSearchInput}
+      structuredSearchInputRef={
+        structuredSearchInputRef as import("react").RefObject<HTMLInputElement>
+      }
+      setStructuredSearchInput={setStructuredSearchInput}
+      selectedConfidenceBuckets={selectedConfidenceBuckets}
+      setSelectedConfidenceBuckets={setSelectedConfidenceBuckets}
+      activeConfidencePolicy={activeConfidencePolicy}
+      detectedFieldsSummary={detectedFieldsSummary}
+      showOnlyCritical={showOnlyCritical}
+      showOnlyWithValue={showOnlyWithValue}
+      showOnlyEmpty={showOnlyEmpty}
+      setShowOnlyCritical={setShowOnlyCritical}
+      setShowOnlyWithValue={setShowOnlyWithValue}
+      setShowOnlyEmpty={setShowOnlyEmpty}
+      getFilterToggleItemClass={getFilterToggleItemClass}
+      resetStructuredFilters={resetStructuredFilters}
+      reviewMessageInfoClass={reviewMessageInfoClass}
+      reviewMessageMutedClass={reviewMessageMutedClass}
+      reviewMessageWarningClass={reviewMessageWarningClass}
+      reviewPanelMessage={reviewPanelMessage}
+      shouldShowReviewEmptyState={shouldShowReviewEmptyState}
+      isRetryingInterpretation={isRetryingInterpretation}
+      onRetryInterpretation={handleRetryInterpretation}
+      hasMalformedCanonicalFieldSlots={hasMalformedCanonicalFieldSlots}
+      hasNoStructuredFilterResults={hasNoStructuredFilterResults}
+      reportSections={reportSections}
+      renderSectionLayout={renderSectionLayout}
+      evidenceNotice={evidenceNotice}
+    />
+  );
   return (
     <div className="min-h-screen bg-page px-4 py-3 md:px-6 lg:px-8 xl:px-10">
-      <AddFieldDialog
-        open={isAddFieldDialogOpen}
-        isSaving={interpretationEditMutation.isPending}
-        fieldKey={addFieldKeyDraft}
-        fieldValue={addFieldValueDraft}
+      <WorkspaceDialogs
+        isInterpretationEditPending={interpretationEditMutation.isPending}
+        isAddFieldDialogOpen={isAddFieldDialogOpen}
+        addFieldKeyDraft={addFieldKeyDraft}
+        addFieldValueDraft={addFieldValueDraft}
         onFieldKeyChange={setAddFieldKeyDraft}
         onFieldValueChange={setAddFieldValueDraft}
-        onOpenChange={(open) => {
-          if (!open) {
-            closeAddFieldDialog();
-          }
-        }}
-        onSave={saveAddFieldDialog}
-      />
-      <FieldEditDialog
-        open={editingField !== null}
-        fieldKey={editingField?.key ?? null}
-        fieldLabel={editingField?.label ?? ""}
-        value={editingFieldDraftValue}
-        candidateSuggestions={editingFieldCandidateSections.applicableSuggestions}
-        detectedCandidates={editingFieldCandidateSections.detectedCandidates}
-        isSaving={interpretationEditMutation.isPending}
-        isSaveDisabled={
-          isEditingMicrochipInvalid ||
-          isEditingWeightInvalid ||
-          isEditingAgeInvalid ||
-          isEditingDateInvalid ||
-          isEditingSexInvalid ||
-          isEditingSpeciesInvalid
-        }
-        microchipErrorMessage={
-          isEditingMicrochipField && isEditingMicrochipInvalid
-            ? "Introduce entre 9 y 15 dígitos."
-            : null
-        }
-        weightErrorMessage={
-          isEditingWeightField && isEditingWeightInvalid
-            ? "Introduce un peso entre 0,5 y 120 kg."
-            : null
-        }
-        ageErrorMessage={
-          isEditingAgeField && isEditingAgeInvalid ? "Introduce una edad entre 0-999 años" : null
-        }
-        dateErrorMessage={
-          isEditingDateField && isEditingDateInvalid
-            ? "Formato no válido. Usa dd/mm/aaaa o aaaa-mm-dd."
-            : null
-        }
-        sexErrorMessage={
-          isEditingSexField && editingFieldDraftValue.trim().length > 0 && isEditingSexInvalid
-            ? "Valor no válido. Usa “macho” o “hembra”."
-            : null
-        }
-        speciesErrorMessage={
-          isEditingSpeciesField &&
-          editingFieldDraftValue.trim().length > 0 &&
-          isEditingSpeciesInvalid
-            ? "Valor no válido. Usa “canino” o “felino”."
-            : null
-        }
-        onValueChange={setEditingFieldDraftValue}
-        onOpenChange={(open) => {
-          if (!open) {
-            closeFieldEditDialog();
-          }
-        }}
-        onSave={saveFieldEditDialog}
+        onCloseAddFieldDialog={closeAddFieldDialog}
+        onSaveAddFieldDialog={saveAddFieldDialog}
+        editingField={editingField}
+        editingFieldDraftValue={editingFieldDraftValue}
+        onEditingFieldDraftValueChange={setEditingFieldDraftValue}
+        editingFieldCandidateSections={editingFieldCandidateSections}
+        isEditingMicrochipField={isEditingMicrochipField}
+        isEditingMicrochipInvalid={isEditingMicrochipInvalid}
+        isEditingWeightField={isEditingWeightField}
+        isEditingWeightInvalid={isEditingWeightInvalid}
+        isEditingAgeField={isEditingAgeField}
+        isEditingAgeInvalid={isEditingAgeInvalid}
+        isEditingDateField={isEditingDateField}
+        isEditingDateInvalid={isEditingDateInvalid}
+        isEditingSexField={isEditingSexField}
+        isEditingSexInvalid={isEditingSexInvalid}
+        isEditingSpeciesField={isEditingSpeciesField}
+        isEditingSpeciesInvalid={isEditingSpeciesInvalid}
+        onCloseFieldEditDialog={closeFieldEditDialog}
+        onSaveFieldEditDialog={saveFieldEditDialog}
       />
       <div
         className="mx-auto w-full max-w-[1640px] rounded-frame bg-canvas p-[var(--canvas-gap)]"
@@ -3086,912 +2136,72 @@ export function App() {
               onSelectDocument={handleSelectDocument}
             />
             <section className={`flex min-w-0 flex-1 flex-col ${panelHeightClass}`}>
-              {shouldShowLoadPdfErrorBanner && (
-                <div className="rounded-card border border-statusError bg-surface px-4 py-3 text-sm text-text">
-                  {getUserErrorMessage(
-                    loadPdf.error,
-                    "No se pudo cargar la vista previa del documento.",
-                  )}
-                </div>
-              )}
-              <div className="flex min-h-0 flex-1 flex-col">
-                <div className="min-h-0 flex-1">
-                  {activeViewerTab === "document" && (
-                    <div
-                      data-testid="viewer-dropzone"
-                      className="h-full min-h-0"
-                      onDragEnter={handleViewerDragEnter}
-                      onDragOver={handleViewerDragOver}
-                      onDragLeave={handleViewerDragLeave}
-                      onDrop={handleViewerDrop}
-                    >
-                      {!activeId ? (
-                        documentList.isError ? (
-                          <div className="flex h-full flex-col rounded-card bg-surface p-6">
-                            <div className="flex flex-1 items-center justify-center text-center">
-                              <p className="text-sm text-muted">
-                                Revisa la lista lateral para reintentar la carga de documentos.
-                              </p>
-                            </div>
-                          </div>
-                        ) : (
-                          <div
-                            data-testid="viewer-empty-state"
-                            className="relative flex h-full flex-col rounded-card bg-surfaceMuted p-6 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-                            role="button"
-                            aria-label="Cargar documento"
-                            tabIndex={0}
-                            onClick={handleOpenUploadArea}
-                            onKeyDown={(event) => {
-                              if (event.key === "Enter" || event.key === " ") {
-                                event.preventDefault();
-                                handleOpenUploadArea();
-                              }
-                            }}
-                          >
-                            <div className="flex flex-1 flex-col items-center justify-center text-center">
-                              <p className="text-sm text-muted">
-                                Selecciona un documento en la barra lateral o carga uno nuevo.
-                              </p>
-                              <UploadDropzone
-                                className="mt-4 w-full max-w-sm"
-                                isDragOver={isDragOverViewer}
-                                onActivate={handleOpenUploadArea}
-                                onDragEnter={handleViewerDragEnter}
-                                onDragOver={handleViewerDragOver}
-                                onDragLeave={handleViewerDragLeave}
-                                onDrop={handleViewerDrop}
-                                showDropOverlay
-                              />
-                            </div>
-                          </div>
-                        )
-                      ) : (
-                        <div className="h-full min-h-0">
-                          <div
-                            data-testid="document-layout-grid"
-                            className={`h-full min-h-0 overflow-x-auto ${
-                              isPinnedSourcePanelVisible
-                                ? "grid grid-cols-[minmax(0,1fr)_minmax(320px,400px)] gap-4"
-                                : ""
-                            }`}
-                          >
-                            <div
-                              ref={handleReviewSplitGridRef}
-                              data-testid="review-split-grid"
-                              className="grid h-full min-h-0 overflow-x-auto"
-                              style={reviewSplitLayoutStyle}
-                            >
-                              <aside
-                                data-testid="center-panel-scroll"
-                                className="panel-shell-muted flex h-full min-h-0 min-w-[560px] flex-col gap-[var(--canvas-gap)] p-[var(--canvas-gap)]"
-                              >
-                                <div>
-                                  <h3 className="text-lg font-semibold text-textSecondary">
-                                    Informe
-                                  </h3>
-                                  <p className="mt-0.5 text-xs text-textSecondary">
-                                    Consulta el documento y navega por la evidencia asociada.
-                                  </p>
-                                </div>
-                                {fileUrl ? (
-                                  <PdfViewer
-                                    key={`${effectiveViewMode}-${activeId ?? "empty"}`}
-                                    documentId={activeId}
-                                    fileUrl={fileUrl}
-                                    filename={filename}
-                                    isDragOver={isDragOverViewer}
-                                    focusPage={selectedReviewField?.evidence?.page ?? null}
-                                    highlightSnippet={
-                                      selectedReviewField?.evidence?.snippet ?? null
-                                    }
-                                    focusRequestId={fieldNavigationRequestId}
-                                    toolbarLeftContent={viewerModeToolbarIcons}
-                                    toolbarRightExtra={viewerDownloadIcon}
-                                  />
-                                ) : (
-                                  <div className="flex h-full min-h-0 flex-col">
-                                    <div className="relative z-20 flex items-center justify-between gap-4 pb-3">
-                                      <div className="flex items-center gap-1">
-                                        {viewerModeToolbarIcons}
-                                      </div>
-                                      <div className="flex items-center gap-1">
-                                        {viewerDownloadIcon}
-                                      </div>
-                                    </div>
-                                    <div className="flex flex-1 items-center justify-center text-sm text-muted">
-                                      No hay PDF disponible para este documento.
-                                    </div>
-                                  </div>
-                                )}
-                              </aside>
-
-                              <div className="relative flex h-full min-h-0 items-stretch justify-center">
-                                <button
-                                  type="button"
-                                  data-testid="review-split-handle"
-                                  aria-label="Redimensionar paneles de revisión"
-                                  title="Redimensionar paneles de revisión"
-                                  onMouseDown={startReviewSplitDragging}
-                                  onDoubleClick={resetReviewSplitRatio}
-                                  onKeyDown={handleReviewSplitKeyboard}
-                                  className="group flex h-full w-full cursor-col-resize items-center justify-center rounded-full bg-transparent transition hover:bg-surfaceMuted focus-visible:bg-surfaceMuted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-accent"
-                                >
-                                  <span
-                                    aria-hidden="true"
-                                    className="h-24 w-[2px] rounded-full bg-borderSubtle transition group-hover:bg-border"
-                                  />
-                                </button>
-                              </div>
-
-                              <aside
-                                data-testid="structured-column-stack"
-                                className="panel-shell-muted flex h-full w-full min-h-0 min-w-[420px] flex-1 flex-col gap-[var(--canvas-gap)] p-[var(--canvas-gap)]"
-                              >
-                                <div className="flex w-full flex-wrap items-center justify-between gap-3">
-                                  <div className="min-w-[220px]">
-                                    <h3 className="text-lg font-semibold text-textSecondary">
-                                      Datos extraídos
-                                    </h3>
-                                    <p className="mt-0.5 text-xs text-textSecondary">
-                                      Revisa y confirma los campos antes de marcar el documento como
-                                      revisado.
-                                    </p>
-                                  </div>
-                                  <Tooltip
-                                    content={
-                                      isDocumentReviewed
-                                        ? "Reabre el documento para continuar la revisión. Puedes volver a marcarlo como revisado cuando termines."
-                                        : "Marca este documento como revisado cuando confirmes los datos. Si lo necesitas, luego puedes reabrirlo sin problema."
-                                    }
-                                  >
-                                    <span className="inline-flex">
-                                      <Button
-                                        type="button"
-                                        variant={isDocumentReviewed ? "outline" : "primary"}
-                                        size="toolbar"
-                                        className="min-w-[168px]"
-                                        disabled={
-                                          !activeId ||
-                                          isActiveDocumentProcessing ||
-                                          reviewToggleMutation.isPending
-                                        }
-                                        onClick={() => {
-                                          if (!activeId) {
-                                            return;
-                                          }
-                                          reviewToggleMutation.mutate({
-                                            docId: activeId,
-                                            target: isDocumentReviewed ? "in_review" : "reviewed",
-                                          });
-                                        }}
-                                      >
-                                        {reviewToggleMutation.isPending ? (
-                                          <>
-                                            <RefreshCw
-                                              size={14}
-                                              className="animate-spin"
-                                              aria-hidden="true"
-                                            />
-                                            {isDocumentReviewed ? "Reabriendo..." : "Marcando..."}
-                                          </>
-                                        ) : isDocumentReviewed ? (
-                                          <>
-                                            <RefreshCw size={14} aria-hidden="true" />
-                                            Reabrir
-                                          </>
-                                        ) : (
-                                          "Marcar revisado"
-                                        )}
-                                      </Button>
-                                    </span>
-                                  </Tooltip>
-                                </div>
-
-                                <div
-                                  data-testid="structured-search-shell"
-                                  className="panel-shell px-3 py-2"
-                                >
-                                  <div className="flex flex-wrap items-center gap-2">
-                                    <label className="relative min-w-[220px] flex-1">
-                                      <Search
-                                        size={14}
-                                        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-textSecondary"
-                                        aria-hidden="true"
-                                      />
-                                      <Input
-                                        ref={structuredSearchInputRef}
-                                        type="text"
-                                        aria-label="Buscar en datos extraídos"
-                                        value={structuredSearchInput}
-                                        disabled={reviewPanelState !== "ready"}
-                                        onChange={(event) =>
-                                          setStructuredSearchInput(event.target.value)
-                                        }
-                                        placeholder="Buscar campo, clave o valor"
-                                        className="w-full rounded-control border border-borderSubtle bg-surface py-1.5 pl-9 pr-9 text-xs"
-                                      />
-                                      {structuredSearchInput.trim().length > 0 && (
-                                        <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                                          <IconButton
-                                            label="Limpiar búsqueda"
-                                            tooltip="Limpiar búsqueda"
-                                            className="border-0 bg-transparent shadow-none hover:bg-transparent"
-                                            onClick={() => {
-                                              setStructuredSearchInput("");
-                                              structuredSearchInputRef.current?.focus();
-                                            }}
-                                          >
-                                            <X size={12} aria-hidden="true" />
-                                          </IconButton>
-                                        </div>
-                                      )}
-                                    </label>
-
-                                    <ToggleGroup
-                                      type="multiple"
-                                      value={selectedConfidenceBuckets}
-                                      disabled={
-                                        reviewPanelState !== "ready" || !activeConfidencePolicy
-                                      }
-                                      onValueChange={(values) =>
-                                        setSelectedConfidenceBuckets(
-                                          values.filter(
-                                            (value): value is ConfidenceBucket =>
-                                              value === "low" ||
-                                              value === "medium" ||
-                                              value === "high" ||
-                                              value === "unknown",
-                                          ),
-                                        )
-                                      }
-                                      aria-label="Filtros de confianza"
-                                      className="p-0"
-                                    >
-                                      <Tooltip content="Valor detectado con baja fiabilidad.">
-                                        <ToggleGroupItem
-                                          value="low"
-                                          aria-label={`Baja (${detectedFieldsSummary.low})`}
-                                          className={`h-7 rounded-control border-0 px-2.5 text-xs shadow-none ${
-                                            selectedConfidenceBuckets.includes("low")
-                                              ? "bg-surfaceMuted text-text ring-1 ring-borderSubtle"
-                                              : "bg-surface text-textSecondary"
-                                          }`}
-                                        >
-                                          <span className="inline-flex items-center gap-1.5">
-                                            <span
-                                              aria-hidden="true"
-                                              className="inline-block h-3 w-3 shrink-0 rounded-full bg-confidenceLow"
-                                            />
-                                            <span className="tabular-nums">
-                                              {detectedFieldsSummary.low}
-                                            </span>
-                                          </span>
-                                        </ToggleGroupItem>
-                                      </Tooltip>
-                                      <Tooltip content="Valor detectado con fiabilidad media.">
-                                        <ToggleGroupItem
-                                          value="medium"
-                                          aria-label={`Media (${detectedFieldsSummary.medium})`}
-                                          className={`h-7 rounded-control border-0 px-2.5 text-xs shadow-none ${
-                                            selectedConfidenceBuckets.includes("medium")
-                                              ? "bg-surfaceMuted text-text ring-1 ring-borderSubtle"
-                                              : "bg-surface text-textSecondary"
-                                          }`}
-                                        >
-                                          <span className="inline-flex items-center gap-1.5">
-                                            <span
-                                              aria-hidden="true"
-                                              className="inline-block h-3 w-3 shrink-0 rounded-full bg-confidenceMed"
-                                            />
-                                            <span className="tabular-nums">
-                                              {detectedFieldsSummary.medium}
-                                            </span>
-                                          </span>
-                                        </ToggleGroupItem>
-                                      </Tooltip>
-                                      <Tooltip content="Valor detectado con alta fiabilidad.">
-                                        <ToggleGroupItem
-                                          value="high"
-                                          aria-label={`Alta (${detectedFieldsSummary.high})`}
-                                          className={`h-7 rounded-control border-0 px-2.5 text-xs shadow-none ${
-                                            selectedConfidenceBuckets.includes("high")
-                                              ? "bg-surfaceMuted text-text ring-1 ring-borderSubtle"
-                                              : "bg-surface text-textSecondary"
-                                          }`}
-                                        >
-                                          <span className="inline-flex items-center gap-1.5">
-                                            <span
-                                              aria-hidden="true"
-                                              className="inline-block h-3 w-3 shrink-0 rounded-full bg-confidenceHigh"
-                                            />
-                                            <span className="tabular-nums">
-                                              {detectedFieldsSummary.high}
-                                            </span>
-                                          </span>
-                                        </ToggleGroupItem>
-                                      </Tooltip>
-                                      <Tooltip content="Valor presente, sin confianza automática asignada.">
-                                        <ToggleGroupItem
-                                          value="unknown"
-                                          aria-label={`Sin confianza (${detectedFieldsSummary.unknown})`}
-                                          className={`h-7 rounded-control border-0 px-2.5 text-xs shadow-none ${
-                                            selectedConfidenceBuckets.includes("unknown")
-                                              ? "bg-surfaceMuted text-text ring-1 ring-borderSubtle"
-                                              : "bg-surface text-textSecondary"
-                                          }`}
-                                        >
-                                          <span className="inline-flex items-center gap-1.5">
-                                            <span
-                                              aria-hidden="true"
-                                              className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-missing"
-                                            />
-                                            <span className="tabular-nums">
-                                              {detectedFieldsSummary.unknown}
-                                            </span>
-                                          </span>
-                                        </ToggleGroupItem>
-                                      </Tooltip>
-                                    </ToggleGroup>
-
-                                    <div
-                                      aria-hidden="true"
-                                      className="mx-1 h-6 w-px shrink-0 self-center bg-border"
-                                    />
-
-                                    <ToggleGroup
-                                      type="multiple"
-                                      value={[
-                                        ...(showOnlyCritical ? ["critical"] : []),
-                                        ...(showOnlyWithValue ? ["nonEmpty"] : []),
-                                        ...(showOnlyEmpty ? ["empty"] : []),
-                                      ]}
-                                      disabled={reviewPanelState !== "ready"}
-                                      onValueChange={(values) => {
-                                        const hasNonEmpty = values.includes("nonEmpty");
-                                        const hasEmpty = values.includes("empty");
-                                        setShowOnlyCritical(values.includes("critical"));
-                                        setShowOnlyWithValue(hasNonEmpty && !hasEmpty);
-                                        setShowOnlyEmpty(hasEmpty && !hasNonEmpty);
-                                      }}
-                                      aria-label="Filtros adicionales"
-                                      className="p-0"
-                                    >
-                                      <Tooltip content="Mostrar campos marcados como críticos.">
-                                        <ToggleGroupItem
-                                          value="critical"
-                                          aria-label="Mostrar solo campos críticos"
-                                          className={getFilterToggleItemClass(showOnlyCritical)}
-                                        >
-                                          <CriticalIcon compact />
-                                        </ToggleGroupItem>
-                                      </Tooltip>
-                                      <Tooltip content="Mostrar campos con algún valor.">
-                                        <ToggleGroupItem
-                                          value="nonEmpty"
-                                          aria-label="Mostrar solo campos no vacíos"
-                                          className={getFilterToggleItemClass(showOnlyWithValue)}
-                                        >
-                                          <span
-                                            aria-hidden="true"
-                                            className="inline-block h-3 w-3 shrink-0 rounded-full bg-text"
-                                          />
-                                        </ToggleGroupItem>
-                                      </Tooltip>
-                                      <Tooltip content="Mostrar campos vacíos.">
-                                        <ToggleGroupItem
-                                          value="empty"
-                                          aria-label="Mostrar solo campos vacíos"
-                                          className={getFilterToggleItemClass(showOnlyEmpty)}
-                                        >
-                                          <span
-                                            aria-hidden="true"
-                                            className="inline-block h-3 w-3 shrink-0 rounded-full border border-muted bg-surface"
-                                          />
-                                        </ToggleGroupItem>
-                                      </Tooltip>
-                                    </ToggleGroup>
-
-                                    <div
-                                      aria-hidden="true"
-                                      className="mx-1 h-6 w-px shrink-0 self-center bg-border"
-                                    />
-                                    <IconButton
-                                      label="Limpiar filtros"
-                                      tooltip="Borrar filtros."
-                                      className="border-0 bg-transparent shadow-none hover:bg-transparent"
-                                      disabled={
-                                        reviewPanelState !== "ready" ||
-                                        (structuredSearchInput.trim().length === 0 &&
-                                          selectedConfidenceBuckets.length === 0 &&
-                                          !showOnlyCritical &&
-                                          !showOnlyWithValue &&
-                                          !showOnlyEmpty)
-                                      }
-                                      onClick={resetStructuredFilters}
-                                    >
-                                      <FilterX size={14} aria-hidden="true" />
-                                    </IconButton>
-                                  </div>
-                                </div>
-
-                                {reviewPanelState === "ready" && !activeConfidencePolicy && (
-                                  <p
-                                    data-testid="confidence-policy-degraded"
-                                    className={reviewMessageInfoClass}
-                                    role="status"
-                                    aria-live="polite"
-                                  >
-                                    Configuración de confianza no disponible para este documento. La
-                                    señal visual de confianza está en modo degradado.
-                                  </p>
-                                )}
-
-                                <div className="flex-1 min-h-0">
-                                  {reviewPanelState === "loading" && (
-                                    <div
-                                      data-testid="right-panel-scroll"
-                                      aria-live="polite"
-                                      className="h-full min-h-0 overflow-y-auto pr-1 space-y-2"
-                                    >
-                                      <p className={reviewMessageInfoClass}>{reviewPanelMessage}</p>
-                                      <div data-testid="review-core-skeleton" className="space-y-2">
-                                        {Array.from({ length: 6 }).map((_, index) => (
-                                          <div
-                                            key={`review-skeleton-${index}`}
-                                            className="animate-pulse rounded-card bg-surface p-3"
-                                          >
-                                            <div className="h-3 w-1/2 rounded bg-borderSubtle" />
-                                            <div className="mt-2 h-2.5 w-5/6 rounded bg-borderSubtle" />
-                                            <div className="mt-3 h-2 w-1/3 rounded bg-borderSubtle" />
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {shouldShowReviewEmptyState && (
-                                    <div
-                                      data-testid="right-panel-scroll"
-                                      className="h-full min-h-0 flex items-center justify-center"
-                                    >
-                                      <div className="mx-auto w-full max-w-md px-4">
-                                        <div className="mx-auto max-w-sm text-center">
-                                          <p className="text-base font-semibold text-ink">
-                                            Interpretación no disponible
-                                          </p>
-                                          <p className="mt-2 text-xs text-textSecondary">
-                                            No se pudo cargar la interpretación. Comprueba tu
-                                            conexión y vuelve a intentarlo.
-                                          </p>
-                                          <div className="mt-4 flex justify-center">
-                                            <Button
-                                              type="button"
-                                              disabled={!activeId || isRetryingInterpretation}
-                                              onClick={async () => {
-                                                const retryStartedAt = Date.now();
-                                                setIsRetryingInterpretation(true);
-                                                await documentReview.refetch();
-                                                const minVisibleMs = 250;
-                                                const elapsedMs = Date.now() - retryStartedAt;
-                                                const remainingMs = Math.max(
-                                                  0,
-                                                  minVisibleMs - elapsedMs,
-                                                );
-                                                if (remainingMs === 0) {
-                                                  setIsRetryingInterpretation(false);
-                                                  return;
-                                                }
-                                                if (interpretationRetryMinTimerRef.current) {
-                                                  window.clearTimeout(
-                                                    interpretationRetryMinTimerRef.current,
-                                                  );
-                                                }
-                                                interpretationRetryMinTimerRef.current =
-                                                  window.setTimeout(() => {
-                                                    interpretationRetryMinTimerRef.current = null;
-                                                    setIsRetryingInterpretation(false);
-                                                  }, remainingMs);
-                                              }}
-                                            >
-                                              {isRetryingInterpretation
-                                                ? "Reintentando..."
-                                                : "Reintentar"}
-                                            </Button>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {reviewPanelState === "ready" && (
-                                    <ScrollArea
-                                      data-testid="right-panel-scroll"
-                                      className={`h-full min-h-0 pr-1 ${isDocumentReviewed ? "opacity-80" : ""}`}
-                                    >
-                                      <div className="space-y-3">
-                                        {isDocumentReviewed && (
-                                          <p className={reviewMessageWarningClass}>
-                                            Documento marcado como revisado. Los datos están en modo
-                                            de solo lectura.
-                                          </p>
-                                        )}
-                                        {hasMalformedCanonicalFieldSlots && (
-                                          <p
-                                            data-testid="canonical-contract-error"
-                                            className="rounded-control border border-statusWarn bg-surface px-3 py-2 text-xs text-text"
-                                          >
-                                            No se puede renderizar la plantilla canónica:
-                                            `medical_record_view.field_slots` es inválido.
-                                          </p>
-                                        )}
-                                        {!hasMalformedCanonicalFieldSlots &&
-                                          hasNoStructuredFilterResults && (
-                                            <div
-                                              className={reviewMessageMutedClass}
-                                              role="status"
-                                              aria-live="polite"
-                                            >
-                                              <p>No hay resultados con los filtros actuales.</p>
-                                              <div className="mt-2">
-                                                <Button
-                                                  type="button"
-                                                  variant="ghost"
-                                                  size="toolbar"
-                                                  onClick={resetStructuredFilters}
-                                                >
-                                                  Limpiar filtros
-                                                </Button>
-                                              </div>
-                                            </div>
-                                          )}
-                                        {!hasMalformedCanonicalFieldSlots &&
-                                          reportSections.map((section) =>
-                                            renderSectionLayout(section),
-                                          )}
-                                      </div>
-                                    </ScrollArea>
-                                  )}
-                                </div>
-
-                                {evidenceNotice && (
-                                  <p className={reviewMessageMutedClass}>{evidenceNotice}</p>
-                                )}
-                              </aside>
-                            </div>
-
-                            {isPinnedSourcePanelVisible && (
-                              <aside data-testid="source-pinned-panel" className="min-h-0">
-                                {sourcePanelContent}
-                              </aside>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  {activeViewerTab === "document" &&
-                    sourcePanel.isSourceOpen &&
-                    (isReviewMode || !sourcePanel.isSourcePinned || !isDesktopForPin) && (
-                      <>
-                        <button
-                          type="button"
-                          data-testid="source-drawer-backdrop"
-                          className="fixed inset-0 z-40 bg-text/20"
-                          aria-label="Cerrar fuente"
-                          onClick={sourcePanel.closeOverlay}
-                        />
-                        <div
-                          data-testid="source-drawer"
-                          className="fixed inset-y-0 right-0 z-50 w-full max-w-xl p-4"
-                          role="dialog"
-                          aria-modal="true"
-                          aria-label="Fuente"
-                        >
-                          {sourcePanelContent}
-                        </div>
-                      </>
-                    )}
-                  {activeViewerTab === "raw_text" && (
-                    <div className="flex h-full flex-col rounded-card border border-borderSubtle bg-surface p-4">
-                      <div className="rounded-control border border-borderSubtle bg-surface px-2 py-2">
-                        <div className="flex items-center justify-between gap-4">
-                          <div className="flex items-center gap-1">{viewerModeToolbarIcons}</div>
-                          <div className="flex items-center gap-1">{viewerDownloadIcon}</div>
-                        </div>
-                      </div>
-                      <div className="rounded-card border border-borderSubtle bg-surface p-3">
-                        <div className="flex flex-col gap-2 text-xs text-ink">
-                          <span className="text-textSecondary">
-                            ¿El texto no es correcto? Puedes reprocesarlo para regenerar la
-                            extracción.
-                          </span>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <Button
-                              type="button"
-                              disabled={
-                                !activeId ||
-                                isActiveDocumentProcessing ||
-                                reprocessMutation.isPending
-                              }
-                              onClick={() => setShowRetryModal(true)}
-                            >
-                              {reprocessMutation.isPending ||
-                              (Boolean(activeId) &&
-                                reprocessingDocumentId === activeId &&
-                                (!hasObservedProcessingAfterReprocess ||
-                                  isActiveDocumentProcessing))
-                                ? "Reprocesando..."
-                                : isActiveDocumentProcessing
-                                  ? "Procesando..."
-                                  : "Reprocesar"}
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <input
-                          className="w-full rounded-control border border-borderSubtle bg-surface px-3 py-2 text-xs text-text outline-none placeholder:text-textSecondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:w-64"
-                          placeholder="Buscar en el texto"
-                          value={rawSearch}
-                          disabled={!canSearchRawText}
-                          onChange={(event) => setRawSearch(event.target.value)}
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter") {
-                              handleRawSearch();
-                            }
-                          }}
-                        />
-                        <Button
-                          type="button"
-                          disabled={!canSearchRawText}
-                          onClick={handleRawSearch}
-                        >
-                          Buscar
-                        </Button>
-                        <Button
-                          type="button"
-                          disabled={!canCopyRawText || isCopyingRawText}
-                          onClick={() => {
-                            void handleCopyRawText();
-                          }}
-                        >
-                          {isCopyingRawText
-                            ? "Copiando..."
-                            : copyFeedback === "Texto copiado."
-                              ? "Copiado"
-                              : "Copiar todo"}
-                        </Button>
-                        <Button
-                          type="button"
-                          disabled={!rawTextContent}
-                          onClick={handleDownloadRawText}
-                        >
-                          Descargar texto (.txt)
-                        </Button>
-                      </div>
-                      {copyFeedback && (
-                        <p
-                          className="mt-2 text-xs text-textSecondary"
-                          role="status"
-                          aria-live="polite"
-                        >
-                          {copyFeedback}
-                        </p>
-                      )}
-                      {hasRawText && rawSearchNotice && (
-                        <p className="mt-2 text-xs text-textSecondary">{rawSearchNotice}</p>
-                      )}
-                      {isRawTextLoading && (
-                        <p className="mt-2 text-xs text-textSecondary">
-                          Cargando texto extraído...
-                        </p>
-                      )}
-                      {rawTextErrorMessage && (
-                        <p className="mt-2 text-xs text-statusError">{rawTextErrorMessage}</p>
-                      )}
-                      <div className="mt-3 flex-1 overflow-y-auto rounded-card border border-borderSubtle bg-surface p-3 font-mono text-xs text-textSecondary">
-                        {rawTextContent ? <pre>{rawTextContent}</pre> : "Sin texto extraído."}
-                      </div>
-                    </div>
-                  )}
-                  {activeViewerTab === "technical" && (
-                    <div className="h-full overflow-y-auto rounded-card border border-borderSubtle bg-surface p-3">
-                      <div className="rounded-control border border-borderSubtle bg-surface px-2 py-2">
-                        <div className="flex items-center justify-between gap-4">
-                          <div className="flex items-center gap-1">{viewerModeToolbarIcons}</div>
-                          <div className="flex items-center gap-1">{viewerDownloadIcon}</div>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
-                          Historial de procesamiento
-                        </p>
-                        <Button
-                          type="button"
-                          disabled={
-                            !activeId || isActiveDocumentProcessing || reprocessMutation.isPending
-                          }
-                          onClick={() => setShowRetryModal(true)}
-                        >
-                          {isActiveDocumentProcessing
-                            ? "Procesando..."
-                            : reprocessMutation.isPending
-                              ? "Reprocesando..."
-                              : "Reprocesar"}
-                        </Button>
-                      </div>
-                      {!activeId && (
-                        <p className="mt-2 text-xs text-muted">
-                          Selecciona un documento para ver los detalles técnicos.
-                        </p>
-                      )}
-                      {activeId && processingHistory.isLoading && (
-                        <p className="mt-2 text-xs text-muted">Cargando historial...</p>
-                      )}
-                      {activeId && processingHistory.isError && (
-                        <p className="mt-2 text-xs text-statusError">
-                          {getUserErrorMessage(
-                            processingHistory.error,
-                            "No se pudo cargar el historial de procesamiento.",
-                          )}
-                        </p>
-                      )}
-                      {activeId &&
-                        processingHistory.data &&
-                        processingHistory.data.runs.length === 0 && (
-                          <p className="mt-2 text-xs text-muted">
-                            No hay ejecuciones registradas para este documento.
-                          </p>
-                        )}
-                      {activeId &&
-                        processingHistory.data &&
-                        processingHistory.data.runs.length > 0 && (
-                          <div className="mt-2 space-y-2">
-                            {processingHistory.data.runs.map((run) => (
-                              <div
-                                key={run.run_id}
-                                className="rounded-card border border-borderSubtle bg-surface p-2"
-                              >
-                                <div className="text-xs font-semibold text-ink">
-                                  {formatRunHeader(run)}
-                                </div>
-                                {run.failure_type && (
-                                  <p className="mt-1 text-xs text-statusError">
-                                    {explainFailure(run.failure_type)}
-                                  </p>
-                                )}
-                                <div className="mt-2 space-y-1">
-                                  {run.steps.length === 0 && (
-                                    <p className="text-xs text-muted">Sin pasos registrados.</p>
-                                  )}
-                                  {run.steps.length > 0 &&
-                                    groupProcessingSteps(run.steps).map((step, index) => {
-                                      const stepKey = `${run.run_id}-${step.step_name}-${step.attempt}-${index}`;
-                                      const duration = formatDuration(
-                                        step.start_time,
-                                        step.end_time,
-                                      );
-                                      const startTime = formatTime(step.start_time);
-                                      const endTime = formatTime(step.end_time);
-                                      const timeRange =
-                                        startTime && endTime
-                                          ? `${startTime} \u2192 ${endTime}`
-                                          : (startTime ?? "--:--");
-                                      return (
-                                        <div
-                                          key={stepKey}
-                                          className="rounded-control bg-surface p-2"
-                                        >
-                                          <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
-                                            <span
-                                              className={
-                                                step.status === "FAILED"
-                                                  ? "text-statusError"
-                                                  : step.status === "COMPLETED"
-                                                    ? "text-statusSuccess"
-                                                    : "text-statusWarn"
-                                              }
-                                            >
-                                              {statusIcon(step.status)}
-                                            </span>
-                                            <span className="font-semibold text-ink">
-                                              {step.step_name}
-                                            </span>
-                                            <span>intento {step.attempt}</span>
-                                            <span>{timeRange}</span>
-                                            {duration && <span>{duration}</span>}
-                                          </div>
-                                          {step.status === "FAILED" && (
-                                            <p className="mt-1 text-xs text-statusError">
-                                              {explainFailure(
-                                                step.raw_events.find(
-                                                  (event) => event.step_status === "FAILED",
-                                                )?.error_code,
-                                              )}
-                                            </p>
-                                          )}
-                                          {shouldShowDetails(step) && (
-                                            <div className="mt-1">
-                                              <button
-                                                type="button"
-                                                className="text-xs font-semibold text-muted"
-                                                onClick={() => toggleStepDetails(stepKey)}
-                                              >
-                                                {expandedSteps[stepKey]
-                                                  ? "Ocultar detalles"
-                                                  : "Ver detalles"}
-                                              </button>
-                                            </div>
-                                          )}
-                                          {shouldShowDetails(step) && expandedSteps[stepKey] && (
-                                            <div className="mt-2 space-y-1 rounded-control bg-surface p-2">
-                                              {step.raw_events.map((event, eventIndex) => (
-                                                <div
-                                                  key={`${stepKey}-event-${eventIndex}`}
-                                                  className="text-xs text-muted"
-                                                >
-                                                  <span className="font-semibold text-ink">
-                                                    {event.step_status}
-                                                  </span>
-                                                  <span>
-                                                    {event.started_at
-                                                      ? ` · Inicio: ${formatTime(event.started_at) ?? "--:--"}`
-                                                      : ""}
-                                                  </span>
-                                                  <span>
-                                                    {event.ended_at
-                                                      ? ` · Fin: ${formatTime(event.ended_at) ?? "--:--"}`
-                                                      : ""}
-                                                  </span>
-                                                  {event.error_code && (
-                                                    <span className="text-statusError">
-                                                      {` · ${explainFailure(event.error_code)}`}
-                                                    </span>
-                                                  )}
-                                                </div>
-                                              ))}
-                                            </div>
-                                          )}
-                                        </div>
-                                      );
-                                    })}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                    </div>
-                  )}
-                </div>
-              </div>
+              <PdfViewerPanel
+                activeViewerTab={activeViewerTab}
+                activeId={activeId}
+                fileUrl={fileUrl}
+                filename={filename}
+                isDragOverViewer={isDragOverViewer}
+                onViewerDragEnter={handleViewerDragEnter}
+                onViewerDragOver={handleViewerDragOver}
+                onViewerDragLeave={handleViewerDragLeave}
+                onViewerDrop={handleViewerDrop}
+                onOpenUploadArea={handleOpenUploadArea}
+                isDocumentListError={documentList.isError}
+                shouldShowLoadPdfErrorBanner={shouldShowLoadPdfErrorBanner}
+                loadPdfErrorMessage={loadPdfErrorMessage}
+                reviewSplitLayoutStyle={reviewSplitLayoutStyle}
+                onReviewSplitGridRef={handleReviewSplitGridRef}
+                onStartReviewSplitDragging={startReviewSplitDragging}
+                onResetReviewSplitRatio={resetReviewSplitRatio}
+                onHandleReviewSplitKeyboard={handleReviewSplitKeyboard}
+                effectiveViewMode={effectiveViewMode}
+                selectedReviewFieldEvidencePage={selectedReviewField?.evidence?.page ?? null}
+                selectedReviewFieldEvidenceSnippet={selectedReviewField?.evidence?.snippet ?? null}
+                fieldNavigationRequestId={fieldNavigationRequestId}
+                viewerModeToolbarIcons={viewerModeToolbarIcons}
+                viewerDownloadIcon={viewerDownloadIcon}
+                structuredDataPanel={structuredDataPanel}
+                isPinnedSourcePanelVisible={isPinnedSourcePanelVisible}
+                sourcePanelContent={sourcePanelContent}
+                isSourceOpen={sourcePanel.isSourceOpen}
+                isSourcePinned={sourcePanel.isSourcePinned}
+                isDesktopForPin={isDesktopForPin}
+                isReviewMode={isReviewMode}
+                onCloseSourceOverlay={sourcePanel.closeOverlay}
+                rawSearch={rawSearch}
+                setRawSearch={setRawSearch}
+                canSearchRawText={canSearchRawText}
+                hasRawText={hasRawText}
+                rawSearchNotice={rawSearchNotice}
+                isRawTextLoading={isRawTextLoading}
+                rawTextErrorMessage={rawTextErrorMessage}
+                rawTextContent={rawTextContent ?? ""}
+                onRawSearch={handleRawSearch}
+                canCopyRawText={canCopyRawText}
+                isCopyingRawText={isCopyingRawText}
+                copyFeedback={copyFeedback}
+                onCopyRawText={handleCopyRawText}
+                onDownloadRawText={handleDownloadRawText}
+                isActiveDocumentProcessing={isActiveDocumentProcessing}
+                reprocessPending={reprocessMutation.isPending}
+                reprocessingDocumentId={reprocessingDocumentId}
+                hasObservedProcessingAfterReprocess={hasObservedProcessingAfterReprocess}
+                onOpenRetryModal={() => setShowRetryModal(true)}
+                showRetryModal={showRetryModal}
+                onShowRetryModalChange={setShowRetryModal}
+                onConfirmRetry={handleConfirmRetry}
+                processingHistoryIsLoading={processingHistory.isLoading}
+                processingHistoryIsError={processingHistory.isError}
+                processingHistoryErrorMessage={processingHistoryErrorMessage}
+                processingHistoryRuns={processingHistory.data?.runs ?? []}
+                expandedSteps={expandedSteps}
+                onToggleStepDetails={toggleStepDetails}
+                formatRunHeader={formatRunHeader}
+              />
             </section>
           </div>
         </main>
-        <Dialog open={showRetryModal} onOpenChange={setShowRetryModal}>
-          <DialogContent className="max-w-sm">
-            <DialogHeader>
-              <DialogTitle>Reprocesar documento</DialogTitle>
-              <DialogDescription className="text-xs">
-                Esto volverá a ejecutar extracción e interpretación y puede cambiar los resultados.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button type="button" variant="ghost" disabled={reprocessMutation.isPending}>
-                  Cancelar
-                </Button>
-              </DialogClose>
-              <Button
-                type="button"
-                onClick={handleConfirmRetry}
-                disabled={reprocessMutation.isPending}
-              >
-                {reprocessMutation.isPending ? "Reprocesando..." : "Reprocesar"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
         <ToastHost
           connectivityToast={connectivityToast}
           uploadFeedback={uploadFeedback}

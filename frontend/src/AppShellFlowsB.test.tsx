@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -8,26 +7,7 @@ import {
   waitForStructuredDataReady,
 } from "./test/helpers";
 
-vi.mock("./components/PdfViewer", () => ({
-  PdfViewer: (props: {
-    focusPage?: number | null;
-    highlightSnippet?: string | null;
-    focusRequestId?: number;
-    toolbarLeftContent?: ReactNode;
-    toolbarRightExtra?: ReactNode;
-  }) => (
-    <>
-      <div data-testid="pdf-viewer-toolbar-left">{props.toolbarLeftContent ?? null}</div>
-      <div data-testid="pdf-viewer-toolbar-right">{props.toolbarRightExtra ?? null}</div>
-      <div
-        data-testid="pdf-viewer"
-        data-focus-page={props.focusPage ?? ""}
-        data-highlight-snippet={props.highlightSnippet ?? ""}
-        data-focus-request-id={props.focusRequestId ?? 0}
-      />
-    </>
-  ),
-}));
+vi.mock("./components/PdfViewer");
 
 describe("App upload and list flow", () => {
   beforeEach(() => {
@@ -104,7 +84,9 @@ describe("App upload and list flow", () => {
     const reprocessDialog = await screen.findByRole("dialog", { name: /Reprocesar documento/i });
     fireEvent.click(within(reprocessDialog).getByRole("button", { name: /^Reprocesar$/i }));
 
-    expect((await screen.findAllByText(/reprocess failed/i)).length).toBeGreaterThan(0);
+    expect(
+      (await screen.findAllByText(/Ocurrió un error inesperado\. Intenta de nuevo\./i)).length,
+    ).toBeGreaterThan(0);
     await waitFor(() => {
       expect(
         within(screen.getByRole("button", { name: /ready\.pdf/i })).getByText("Listo"),

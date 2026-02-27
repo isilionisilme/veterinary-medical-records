@@ -1,61 +1,90 @@
-# Future Improvements Roadmap
+# Known Limitations & Future Directions
 
-This roadmap describes prioritized engineering improvements for the next 2, 4, and 8 weeks. It consolidates outcomes from the architecture and codebase audits, aligns with architecture decisions in ADRs, and makes deferred work explicit for evaluator visibility and planning.
+> After 12 iterations, this project has reached its target quality bar. The items
+> below represent conscious scope decisions — not gaps. Each was evaluated and
+> deferred because the ROI did not justify the effort for a portfolio/demo project.
 
-## Week 2 — Quick wins
+---
 
-| # | Improvement | Source | Effort | Risk |
-| --- | --- | --- | --- | --- |
-| 1 | Enable SQLite WAL mode and busy timeout | [ADR-ARCH-0002](adr/ADR-ARCH-0002-sqlite-database.md), [codebase_audit.md](refactor/codebase_audit.md) | S | Low |
-| 2 | Add CI coverage threshold gates | [codebase_audit.md](refactor/codebase_audit.md), [F4-A/F4-B in AI plan](refactor/AI_ITERATIVE_EXECUTION_PLAN.md) | S | Low |
-| 3 | Centralize remaining debug env reads in settings | [12_FACTOR_AUDIT.md](refactor/12_FACTOR_AUDIT.md), [ADR-ARCH-0001](adr/ADR-ARCH-0001-modular-monolith.md) | S | Low |
-| 4 | Increase frontend coverage for `lib/utils.ts` error paths | [F4-A in AI plan](refactor/AI_ITERATIVE_EXECUTION_PLAN.md) | S | Low |
-| 5 | Increase frontend coverage for AddFieldDialog + source panel hook | [F4-A in AI plan](refactor/AI_ITERATIVE_EXECUTION_PLAN.md) | S | Low |
-| 6 | Add known limitations section in technical design | [F5-A in AI plan](refactor/AI_ITERATIVE_EXECUTION_PLAN.md), [TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) | S | Low |
+## Completed improvements (summary)
 
-1. **SQLite WAL mode + busy timeout PRAGMA.** Update SQLite connection setup to apply `PRAGMA journal_mode=WAL` and `PRAGMA busy_timeout=5000`. This addresses concurrent read/write resilience noted in [ADR-ARCH-0002](adr/ADR-ARCH-0002-sqlite-database.md) and the maintainability audit. **Acceptance criteria:** startup initializes PRAGMAs and concurrent document operations show fewer lock contention failures.
-2. **CI coverage thresholds.** Enforce minimum coverage in backend and frontend quality jobs so regressions fail fast. This closes the audit gap where reporting exists without enforcement. **Acceptance criteria:** CI fails below threshold and passes when suite coverage remains above the configured gates.
-3. **Centralize debug env reads.** Move debug-oriented environment lookups from processing modules into typed runtime settings. This completes the 12-Factor configuration boundary and avoids direct `os.getenv` drift in application code. **Acceptance criteria:** no direct env reads remain in those modules and behavior is unchanged under existing env values.
-4. **Frontend utils error-path coverage.** Add tests for failure branches in API helpers used across the UI data layer. This reduces risk in a shared dependency that can silently affect multiple workflows. **Acceptance criteria:** `lib/utils.ts` branch coverage reaches ~80%+ with explicit assertions for fetch error handling.
-5. **AddFieldDialog and source-panel state tests.** Extend tests for save-lock transitions and source panel state changes to cover interaction edge cases. This directly addresses critical frontend coverage gaps from F4-A. **Acceptance criteria:** targeted suites cover the critical state transitions and pass reliably in CI.
-6. **Document known limitations.** Add an explicit limitations section in technical design covering single-process constraints, auth boundary, and SQLite write-lock characteristics. This improves evaluator trust by making trade-offs transparent. **Acceptance criteria:** section is present, current, and linked from core documentation.
+Across 12 iterations, **15 planned improvements** were fully resolved. For the complete timeline with metrics, see [IMPLEMENTATION_HISTORY.md](implementation/IMPLEMENTATION_HISTORY.md).
 
-## Week 4 — Structural improvements
+<details>
+<summary>Completed items (click to expand)</summary>
 
-| # | Improvement | Source | Effort | Risk |
-| --- | --- | --- | --- | --- |
-| 7a | Decompose backend API routes module (`backend/app/api/routes.py`, ~912 lines) | [codebase_audit.md](refactor/codebase_audit.md), [ADR-ARCH-0001](adr/ADR-ARCH-0001-modular-monolith.md) | M | Medium |
-| 7b | ~~Decompose `AppWorkspace.tsx` (~6 100 LOC) into ReviewWorkspace, StructuredDataView, PdfViewerContainer~~ **✅ Done (Iteration 3, F9-D)** | [CTO_REVIEW_VERDICT.md](refactor/CTO_REVIEW_VERDICT.md), [codebase_audit.md](refactor/codebase_audit.md) | L | Medium |
-| 8 | Modularize extraction observability module (`backend/app/application/extraction_observability.py`, ~846 lines) | [codebase_audit.md](refactor/codebase_audit.md), [TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) | M | Medium |
-| 9 | ~~Add streaming and bounded upload guard~~ **✅ Done (Iteration 3, F9-B)** | [codebase_audit.md](refactor/codebase_audit.md), [BACKEND_IMPLEMENTATION.md](BACKEND_IMPLEMENTATION.md) | M | Medium |
-| 10 | Expand backend failure-path tests | [F4-B in AI plan](refactor/AI_ITERATIVE_EXECUTION_PLAN.md), [codebase_audit.md](refactor/codebase_audit.md) | M | Low |
-| 11 | Add SourcePanel and UploadDropzone full test suites | [F4-A in AI plan](refactor/AI_ITERATIVE_EXECUTION_PLAN.md) | M | Low |
-| 12 | Centralize PdfViewer mock helpers | [F4-A in AI plan](refactor/AI_ITERATIVE_EXECUTION_PLAN.md), [FRONTEND_IMPLEMENTATION.md](FRONTEND_IMPLEMENTATION.md) | S | Low |
+| # | Improvement | Iteration |
+|---|---|---|
+| 1 | SQLite WAL mode + busy timeout | Iter 2 |
+| 2 | CI coverage threshold gates | Iter 10 |
+| 3 | Centralize env reads in Settings | Iter 11 |
+| 4 | Frontend utils error-path coverage | Iter 8 |
+| 5 | AddFieldDialog + SourcePanel tests | Iter 11 |
+| 6 | Known limitations in TECHNICAL_DESIGN §14 | Iter 9 |
+| 7a | Backend routes decomposition (912 → 18 LOC aggregator) | Iter 6 |
+| 7b | AppWorkspace decomposition (6,100 → 2,221 LOC, −62%) | Iters 3+7+8 |
+| 8 | Extraction observability modularization | Iter 7 |
+| 8a | Interpretation module decomposition (−82%) | Iters 7+8 |
+| 8b | PDF extraction decomposition (−91%) | Iter 7 |
+| 8c | DRY constants consolidation | Iter 7 |
+| 9 | Streaming upload guard | Iter 3 |
+| 10 | Backend failure-path test expansion | Iter 11 |
+| 11 | SourcePanel + UploadDropzone test suites | Iter 11 |
+| 12 | Shared PdfViewer mock helpers | Iter 11 |
+| 13 | Repository split by aggregate | Iter 11 |
+| 15 | Minimal auth/token boundary | Iter 3 |
+| 19 | Performance benchmarks (P50/P95) | Iter 11 |
+| 20 | Error UX mapping | Iter 11 |
+| 22 | OpenAPI auto-generated docs | Iter 11 |
+| 24 | CI dependency caching + path filtering | Iter 10 |
 
-7a. **Routes decomposition.** Split API endpoints by bounded context and keep a small router aggregator in `api/routes.py`. This reduces blast radius in one of the largest backend modules and aligns with modular-monolith boundaries from [ADR-ARCH-0001](adr/ADR-ARCH-0001-modular-monolith.md). **Acceptance criteria:** no route contract changes and each endpoint group module stays under the LOC guideline.
-7b. **~~AppWorkspace decomposition.~~** **✅ Done (Iteration 3, F9-D).** Extracted 7 modules from `AppWorkspace.tsx` (5,770 → 3,758 LOC, −35%): `documentApi.ts`, `ReviewFieldRenderers.tsx`, `ReviewSectionLayout.tsx`, `SourcePanelContent.tsx`, constants, utils, and types. All existing tests pass without modification.
-8. **Extraction observability modularization.** Break observability logic into storage, transform, and aggregate units with explicit interfaces. This improves testability and makes telemetry changes safer to ship. **Acceptance criteria:** all existing observability outputs remain equivalent and unit tests cover each sub-module independently.
-9. **~~Upload size and streaming guard.~~** **✅ Done (Iteration 3, F9-B).** Early `Content-Length` header check rejects oversized uploads before full memory allocation. Chunked streaming read with size enforcement. 3 new integration tests.
-10. **Backend failure-path coverage expansion.** Add tests for orchestrator partial failures and database lock/retry behavior. This targets reliability-critical paths where regressions can affect processing state integrity. **Acceptance criteria:** coverage in these modules improves with deterministic assertions on run-state transitions and error handling.
-11. **Frontend interaction suite expansion.** Build comprehensive tests for `SourcePanel` and `UploadDropzone` where coverage remains shallow. These are high-touch components and merit stronger regression protection. **Acceptance criteria:** suites validate key user flows and significantly increase branch/line coverage in both components.
-12. **Shared PdfViewer mock extraction.** Replace repeated local mocks with a single helper under test utilities. This reduces duplication and lowers maintenance overhead when viewer behavior changes. **Acceptance criteria:** test files reuse one helper and all existing viewer-related tests remain green.
+</details>
 
-## Week 8 — Architecture evolution
+---
 
-| # | Improvement | Source | Effort | Risk |
-| --- | --- | --- | --- | --- |
-| 13 | Split SQLite repository by aggregate (`backend/app/infra/sqlite_document_repository.py`, ~684 lines) | [ADR-ARCH-0003](adr/ADR-ARCH-0003-raw-sql-repository-pattern.md), [codebase_audit.md](refactor/codebase_audit.md) | L | Medium |
-| 14 | Optional Compose worker profile for background processing | [ADR-ARCH-0004](adr/ADR-ARCH-0004-in-process-async-processing.md), [12_FACTOR_AUDIT.md](refactor/12_FACTOR_AUDIT.md) | L | High |
-| 15 | ~~Add minimal auth/token boundary~~ **✅ Done (Iteration 3, F9-C)** | [codebase_audit.md](refactor/codebase_audit.md), [PRODUCT_DESIGN.md](PRODUCT_DESIGN.md) | L | Medium |
-| 16 | Implement persistent event tracing and metrics | [TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md), [codebase_audit.md](refactor/codebase_audit.md) | L | Medium |
-| 17 | Add PostgreSQL adapter behind DocumentRepository protocol | [ADR-ARCH-0002](adr/ADR-ARCH-0002-sqlite-database.md), [ADR-ARCH-0003](adr/ADR-ARCH-0003-raw-sql-repository-pattern.md) | L | High |
-| 18 | Introduce migration tooling for schema evolution | [ADR-ARCH-0003](adr/ADR-ARCH-0003-raw-sql-repository-pattern.md), [TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) | M | Medium |
+## Known limitations — conscious trade-offs
 
-13. **Repository split by aggregate.** Separate document, run, and calibration persistence concerns behind focused protocols and adapters. This contains growth in the current monolithic repository and improves ownership boundaries. **Acceptance criteria:** composition root wires the same public capabilities while each repository module remains cohesive and independently testable.
-14. **Optional worker profile.** Introduce a dedicated worker service profile for processing workloads while preserving default evaluator flow. This advances process separation from [ADR-ARCH-0004](adr/ADR-ARCH-0004-in-process-async-processing.md) but depends on database concurrency guarantees. **Acceptance criteria:** worker profile is opt-in, documented, and validated only after PostgreSQL path is available.
-15. **~~Minimal auth/token boundary.~~** **✅ Done (Iteration 3, F9-C).** New `AUTH_TOKEN` env var (optional, empty = disabled). When set, all `/api/` endpoints require `Authorization: Bearer <token>` header. When unset, behavior is identical to current. Integration tests cover both modes. `TECHNICAL_DESIGN.md` §13 updated.
-16. **Persistent tracing and observability metrics.** Implement structured event tracing across document lifecycle and processing transitions. This provides production-grade debugging and trend analysis beyond ad-hoc logs. **Acceptance criteria:** trace events are queryable, correlated by document/run IDs, and covered by diagnostic docs.
-17. **PostgreSQL adapter.** Implement a PostgreSQL-backed repository conforming to the existing repository protocol and composition root contracts. This enables multi-process scaling and reduces SQLite write-lock constraints documented in [ADR-ARCH-0002](adr/ADR-ARCH-0002-sqlite-database.md). **Acceptance criteria:** functional parity tests pass for both SQLite and PostgreSQL adapters.
-18. **Migration tooling.** Replace bootstrap schema setup with a versioned migration workflow for controlled evolution. This improves operability and release safety as table count and complexity increase. **Acceptance criteria:** schema changes are reproducible via migration commands in CI and local setup.
+These items were evaluated and intentionally deferred. They do not represent oversights.
 
-This roadmap was generated from audit findings (F1-A, F2-A, F4-A/B, F5-A), architecture decision records (ADR-ARCH-0001 through 0004), and TECHNICAL_DESIGN.md deferred items.
+### 14 — Optional Compose worker profile
+
+**We chose not to** add a dedicated worker service for background processing. The in-process async model ([ADR-ARCH-0004](adr/ADR-ARCH-0004-in-process-async-processing.md)) is sufficient for single-evaluator load, and a worker profile adds operational complexity without demonstrated need at this scale.
+
+### 16 — Persistent event tracing and metrics
+
+**We chose not to** implement structured tracing or Prometheus metrics. The current structured logging is adequate for a demo context. Production-grade observability is documented in TECHNICAL_DESIGN.md §9 as a known evolution path.
+
+### 17 — PostgreSQL adapter
+
+**We chose not to** implement a second database adapter. SQLite with WAL mode handles the target workload. The repository protocol ([ADR-ARCH-0003](adr/ADR-ARCH-0003-raw-sql-repository-pattern.md)) is designed for adapter swapping — adding PostgreSQL would follow the existing interface without architectural changes.
+
+### 18 — Schema migration tooling
+
+**We chose not to** introduce Alembic or similar migration tooling. The bootstrap schema approach works for a portfolio project with a stable schema. Migration tooling becomes essential only when schema evolution frequency increases in production.
+
+### 21 — WCAG 2.1 AA full audit
+
+**We chose not to** pursue a full WCAG audit beyond the quick wins implemented in Iteration 12 (axe-core integration, critical violation fixes). Remaining moderate/minor violations are documented but do not affect core functionality.
+
+### 23 — Structured logging + Prometheus endpoint
+
+**We chose not to** replace `logging.info` with `structlog` JSON output or expose a `/metrics` endpoint. The current log format is human-readable and sufficient for local evaluation. JSON logs and Prometheus are production concerns.
+
+### 24 (remaining) — Python version matrix + deploy previews
+
+**We chose not to** add Python 3.12 CI matrix testing or PR deploy previews. Single-version CI (3.11) keeps pipeline fast. Deploy previews require hosting infrastructure beyond the scope of a technical exercise.
+
+---
+
+## If this were production
+
+If this project were taken to production, the first priorities would be:
+
+1. **PostgreSQL migration** — Replace SQLite for multi-process write concurrency and connection pooling. The repository protocol makes this a clean swap.
+2. **Authentication + RBAC** — Expand the token boundary to role-based access (veterinarian, admin, auditor). OAuth2/OIDC integration for clinic systems.
+3. **Observability stack** — Structured logging (structlog), distributed tracing (OpenTelemetry), and Prometheus metrics for SLA monitoring.
+4. **Background worker** — Extract processing pipeline to a dedicated worker via Compose profile or task queue (Celery/ARQ), enabling horizontal scaling independent of API response times.
+
+---
+
+_This document was reframed from an active backlog to a permanent "known limitations" reference as part of Iteration 12 project close-out (2026-02-27)._

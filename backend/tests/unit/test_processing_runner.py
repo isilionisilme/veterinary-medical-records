@@ -1,6 +1,12 @@
 from __future__ import annotations
 
+import asyncio
 import zlib
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import Mock
+
+import pytest
 
 from backend.app.application.extraction_quality import (
     evaluate_extracted_text_quality,
@@ -12,6 +18,7 @@ from backend.app.application.processing_runner import (
     _extract_pdf_text_with_extractor,
     _extract_pdf_text_without_external_dependencies,
     _parse_pdf_literal_string,
+    _process_document,
 )
 
 
@@ -110,3 +117,77 @@ def test_extractor_force_modes_choose_expected_path(monkeypatch, tmp_path) -> No
     fallback_text, fallback_extractor = _extract_pdf_text_with_extractor(sample)
     assert fallback_extractor == "fallback"
     assert fallback_text == "fallback text"
+
+
+def test_process_document_converts_keyerror_during_interpretation_to_processing_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from backend.app.application.processing import orchestrator
+
+    repository = Mock()
+    storage = Mock()
+    sample_pdf = Path(__file__)
+    repository.get.return_value = SimpleNamespace(storage_path="doc/original.pdf")
+    storage.exists.return_value = True
+    storage.resolve.return_value = sample_pdf
+
+    monkeypatch.setattr(
+        "backend.app.application.processing.orchestrator.pdf_extraction._extract_pdf_text_with_extractor",
+        lambda _path: ("historia clinica suficiente para procesamiento", "fitz"),
+    )
+    monkeypatch.setattr(
+        "backend.app.application.processing.orchestrator.evaluate_extracted_text_quality",
+        lambda _text: (0.9, True, []),
+    )
+    monkeypatch.setattr(
+        "backend.app.application.processing.orchestrator._build_interpretation_artifact",
+        lambda **_kwargs: (_ for _ in ()).throw(KeyError("field_mapping")),
+    )
+
+    with pytest.raises(orchestrator.ProcessingError, match="INTERPRETATION_FAILED"):
+        asyncio.run(
+            _process_document(
+                run_id="run-keyerror-1",
+                document_id="doc-keyerror-1",
+                repository=repository,
+                storage=storage,
+            )
+        )
+
+
+def test_process_document_with_empty_extraction_creates_low_quality_failure_artifact(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from backend.app.application.processing import orchestrator
+
+    repository = Mock()
+    storage = Mock()
+    sample_pdf = Path(__file__)
+    repository.get.return_value = SimpleNamespace(storage_path="doc/original.pdf")
+    storage.exists.return_value = True
+    storage.resolve.return_value = sample_pdf
+
+    monkeypatch.setattr(
+        "backend.app.application.processing.orchestrator.pdf_extraction._extract_pdf_text_with_extractor",
+        lambda _path: ("", "fitz"),
+    )
+
+    with pytest.raises(orchestrator.ProcessingError, match="EXTRACTION_LOW_QUALITY"):
+        asyncio.run(
+            _process_document(
+                run_id="run-empty-1",
+                document_id="doc-empty-1",
+                repository=repository,
+                storage=storage,
+            )
+        )
+
+    failed_extraction_artifacts = [
+        call.kwargs["payload"]
+        for call in repository.append_artifact.call_args_list
+        if call.kwargs.get("artifact_type") == "STEP_STATUS"
+        and call.kwargs["payload"]["step_name"] == "EXTRACTION"
+        and call.kwargs["payload"]["step_status"] == "FAILED"
+    ]
+    assert failed_extraction_artifacts
+    assert failed_extraction_artifacts[0]["error_code"] == "EXTRACTION_LOW_QUALITY"

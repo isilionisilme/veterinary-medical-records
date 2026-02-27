@@ -1,11 +1,11 @@
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, ScanLine, Upload, ZoomIn, ZoomOut } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
-import workerSrc from "pdfjs-dist/build/pdf.worker.min?url";
+import pdfjsWorkerUrl from "pdfjs-dist/build/pdf.worker.mjs?url";
 import { IconButton } from "./app/IconButton";
 import { Tooltip } from "./ui/tooltip";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
 
 const PDF_ZOOM_STORAGE_KEY = "pdfViewerZoomLevel";
 const MIN_ZOOM_LEVEL = 0.5;
@@ -18,7 +18,7 @@ function clampZoomLevel(value: number): number {
 
 type PdfViewerProps = {
   documentId?: string | null;
-  fileUrl: string | null;
+  fileUrl: string | ArrayBuffer | null;
   filename?: string | null;
   isDragOver?: boolean;
   focusPage?: number | null;
@@ -107,6 +107,7 @@ export function PdfViewer({
     renderTasksByPageRef.current.clear();
   }
 
+  /* c8 ignore start -- dev-only PDF diagnostics not exercised in jsdom */
   function getNodeId(element: Element | null): string | null {
     if (!element) {
       return null;
@@ -233,7 +234,7 @@ export function PdfViewer({
       chainHasFlip,
       viewer: {
         documentId,
-        fileUrl,
+        fileUrl: typeof fileUrl === "string" ? fileUrl : "[array-buffer]",
         filename,
         pageNumber,
         renderedPageIndex: params.pageIndex,
@@ -286,6 +287,7 @@ export function PdfViewer({
     console.log(snapshot);
     console.groupEnd();
   }
+  /* c8 ignore stop */
 
   useEffect(() => {
     if (!debugFlags.enabled || !debugFlags.noMotion || typeof document === "undefined") {
@@ -345,7 +347,20 @@ export function PdfViewer({
       setLoading(true);
       setError(null);
       try {
-        loadingTask = pdfjsLib.getDocument(fileUrl);
+        let arrayBuffer: ArrayBuffer;
+        if (typeof fileUrl === "string") {
+          const response = await fetch(fileUrl);
+          if (!response.ok) {
+            throw new Error("Failed to fetch PDF data.");
+          }
+          arrayBuffer = await response.arrayBuffer();
+        } else {
+          arrayBuffer = fileUrl;
+        }
+        loadingTask = pdfjsLib.getDocument({
+          data: new Uint8Array(arrayBuffer),
+          isEvalSupported: false,
+        });
         const doc = await loadingTask.promise;
         if (cancelled) {
           void doc.destroy();
@@ -354,8 +369,11 @@ export function PdfViewer({
         setPdfDoc(doc);
         setTotalPages(doc.numPages);
         setPageNumber(1);
-      } catch (_err) {
+      } catch (err) {
         if (!cancelled) {
+          if (import.meta.env.DEV) {
+            console.error("[PdfViewer] loadPdf failed:", err);
+          }
           setError("No pudimos cargar el PDF.");
         }
       } finally {
@@ -788,6 +806,7 @@ export function PdfViewer({
             <IconButton
               label="Alejar"
               tooltip="Alejar"
+              data-testid="pdf-zoom-out"
               disabled={!canZoomOut}
               onClick={() => setZoomLevel((current) => clampZoomLevel(current - ZOOM_STEP))}
             >
@@ -807,6 +826,7 @@ export function PdfViewer({
             <IconButton
               label="Acercar"
               tooltip="Acercar"
+              data-testid="pdf-zoom-in"
               disabled={!canZoomIn}
               onClick={() => setZoomLevel((current) => clampZoomLevel(current + ZOOM_STEP))}
             >
@@ -816,6 +836,7 @@ export function PdfViewer({
             <IconButton
               label="Ajustar al ancho"
               tooltip="Ajustar al ancho"
+              data-testid="pdf-zoom-fit"
               onClick={() => setZoomLevel(1)}
             >
               <ScanLine size={17} className="h-[17px] w-[17px] shrink-0" />
@@ -828,17 +849,22 @@ export function PdfViewer({
             <IconButton
               label="Página anterior"
               tooltip="Página anterior"
+              data-testid="pdf-page-prev"
               disabled={navDisabled || !canGoBack}
               onClick={() => scrollToPage(Math.max(1, pageNumber - 1))}
             >
               <ChevronLeft size={18} className="h-[18px] w-[18px] shrink-0" />
             </IconButton>
-            <p className="min-w-12 text-center text-sm font-semibold text-textSecondary">
+            <p
+              className="min-w-12 text-center text-sm font-semibold text-textSecondary"
+              data-testid="pdf-page-indicator"
+            >
               {pageNumber}/{totalPages}
             </p>
             <IconButton
               label="Página siguiente"
               tooltip="Página siguiente"
+              data-testid="pdf-page-next"
               disabled={navDisabled || !canGoForward}
               onClick={() => scrollToPage(Math.min(totalPages, pageNumber + 1))}
             >

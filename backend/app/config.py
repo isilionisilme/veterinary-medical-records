@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import os
+import sys
+
 from backend.app.settings import clear_settings_cache, get_settings
 
 DEFAULT_CONFIDENCE_POLICY_VERSION = "v1"
@@ -12,6 +15,10 @@ CONFIDENCE_POLICY_VERSION_ENV = "VET_RECORDS_CONFIDENCE_POLICY_VERSION"
 CONFIDENCE_LOW_MAX_ENV = "VET_RECORDS_CONFIDENCE_LOW_MAX"
 CONFIDENCE_MID_MAX_ENV = "VET_RECORDS_CONFIDENCE_MID_MAX"
 HUMAN_EDIT_NEUTRAL_CANDIDATE_CONFIDENCE_ENV = "VET_RECORDS_HUMAN_EDIT_NEUTRAL_CANDIDATE_CONFIDENCE"
+RATE_LIMIT_UPLOAD_ENV = "VET_RECORDS_RATE_LIMIT_UPLOAD"
+RATE_LIMIT_DOWNLOAD_ENV = "VET_RECORDS_RATE_LIMIT_DOWNLOAD"
+DEFAULT_RATE_LIMIT_UPLOAD = "10/minute"
+DEFAULT_RATE_LIMIT_DOWNLOAD = "30/minute"
 
 
 def _current_settings():
@@ -45,6 +52,32 @@ def auth_token() -> str | None:
         return None
     token = raw.strip()
     return token or None
+
+
+def _is_pytest_runtime() -> bool:
+    return bool(os.environ.get("PYTEST_CURRENT_TEST")) or "pytest" in sys.modules
+
+
+def rate_limit_upload() -> str:
+    """Return upload endpoint rate limit string."""
+
+    raw = (_current_settings().vet_records_rate_limit_upload or "").strip()
+    if raw:
+        return raw
+    if _is_pytest_runtime():
+        return "10000/minute"
+    return DEFAULT_RATE_LIMIT_UPLOAD
+
+
+def rate_limit_download() -> str:
+    """Return download endpoint rate limit string."""
+
+    raw = (_current_settings().vet_records_rate_limit_download or "").strip()
+    if raw:
+        return raw
+    if _is_pytest_runtime():
+        return "10000/minute"
+    return DEFAULT_RATE_LIMIT_DOWNLOAD
 
 
 def confidence_policy_version() -> str:

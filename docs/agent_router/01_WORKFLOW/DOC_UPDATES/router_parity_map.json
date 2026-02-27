@@ -4,6 +4,10 @@
     "docs/project/*.md",
     "docs/shared/*.md"
   ],
+  "exclude_source_globs": [
+    "docs/project/implementation/*",
+    "docs/project/implementation/**/*"
+  ],
   "rules": [
     {
       "source_doc": "docs/project/refactor/documentation_refactor/DOCS_IMPROVEMENT_PLAN.md",
@@ -55,6 +59,18 @@
       ]
     },
     {
+      "source_doc": "docs/project/ARCHITECTURE.md",
+      "description": "Project ARCHITECTURE must remain discoverable from project docs entry.",
+      "router_modules": [
+        {
+          "path": "docs/agent_router/04_PROJECT/00_entry.md",
+          "required_terms": [
+            "Project Docs (Modules)"
+          ]
+        }
+      ]
+    },
+    {
       "source_doc": "docs/project/refactor/DELIVERY_SUMMARY.md",
       "description": "Project DELIVERY_SUMMARY must map to project owner entry module.",
       "router_modules": [
@@ -98,6 +114,18 @@
           "path": "docs/agent_router/04_PROJECT/CTO_REVIEW_VERDICT/00_entry.md",
           "required_terms": [
             "CTO_REVIEW_VERDICT — Modules"
+          ]
+        }
+      ]
+    },
+    {
+      "source_doc": "docs/project/testing/PLAN_E2E_TEST_COVERAGE.md",
+      "description": "Project testing plans must remain routed under project modules.",
+      "router_modules": [
+        {
+          "path": "docs/agent_router/04_PROJECT/00_entry.md",
+          "required_terms": [
+            "Project Docs (Modules)"
           ]
         }
       ]
@@ -228,6 +256,18 @@
             "smoothing to avoid abrupt oscillations from isolated events",
             "thresholds are met with hysteresis and minimum volume",
             "captured as a structural signal"
+          ]
+        }
+      ]
+    },
+    {
+      "source_doc": "docs/project/testing/PLAN_E2E_TEST_COVERAGE.md",
+      "description": "Project testing plans must remain discoverable from the project docs entry.",
+      "router_modules": [
+        {
+          "path": "docs/agent_router/04_PROJECT/00_entry.md",
+          "required_terms": [
+            "Project Docs (Modules)"
           ]
         }
       ]
