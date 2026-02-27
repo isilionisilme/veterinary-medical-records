@@ -3,7 +3,7 @@
 > **Operational rules:** See [EXECUTION_RULES.md](EXECUTION_RULES.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
 
 **Rama:** `improvement/iteration-11`
-**PR:** TBD (single PR → `main`)
+**PR:** #167 (single PR → `main`)
 **Prerequisito:** Iteration 10 (#165) merged to `main`.
 
 ## Context
@@ -35,7 +35,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 
 #### Phase A — Quick wins (warmup)
 
-- [ ] F18-A 🔄 — Centralize 2 debug `os.getenv` reads into `settings.py` (Codex)
+- [x] F18-A 🔄 — Centralize 2 debug `os.getenv` reads into `settings.py` (Codex)
 - [ ] F18-B 🔄 — Extract shared PdfViewer mock helper, deduplicate 9 test files (Codex)
 - [ ] F18-C 🔄 — OpenAPI polish: add route tags, error response schemas, health response model (Codex)
 
