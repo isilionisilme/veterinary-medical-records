@@ -75,7 +75,7 @@ usePdfNavigation (depende de usePdfRenderer.pageRefs, pdfDoc)
 
 ### Phase 1 — Pure utility extraction
 
-- [ ] P1-A 🔄 — Extract `lib/pdfDebug.ts` — move `analyzeTransform()`, `captureDebugSnapshot()`, `getNodeId()`, debug flags computation, related types and constants (`PDF_ZOOM_STORAGE_KEY`, etc.). Write test for `analyzeTransform` (pure function). (Codex)
+- [x] P1-A 🔄 — Extract `lib/pdfDebug.ts` — move `analyzeTransform()`, `captureDebugSnapshot()`, `getNodeId()`, debug flags computation, related types and constants (`PDF_ZOOM_STORAGE_KEY`, etc.). Write test for `analyzeTransform` (pure function). (Codex)
 
 ### Phase 2 — Hook extractions (leaf → dependent)
 
@@ -239,26 +239,23 @@ _Claude writes after P4-B._
 
 ## Prompt activo
 
-### Paso objetivo: P1-A — Extract lib/pdfDebug.ts
+### Paso objetivo: P2-A — Extract usePdfZoom
 
 ```
-Extrae las utilidades de debug de `PdfViewer.tsx` a `frontend/src/lib/pdfDebug.ts`.
+Extrae `usePdfZoom` de `PdfViewer.tsx` a `frontend/src/hooks/usePdfZoom.ts`.
 
-**Código que migra:**
-- Constantes: PDF_ZOOM_STORAGE_KEY, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL, ZOOM_STEP, clampZoomLevel()
-- Función pura: analyzeTransform(rawTransform) → { determinant, negativeDeterminant, hasMirrorScale }
-- Función: createDebugFlags() — el useMemo actual que lee import.meta.env y URLSearchParams
-- Tipo: DebugFlags (el shape { enabled, noTransformSubtree, noMotion, hardRemountCanvas })
-- Funciones de snapshot: getNodeId (needs ref maps as params), captureDebugSnapshot (needs state as params)
-- Exports necesarios para que PdfViewer los importe
+**Estado que migra:**
+- useState: zoomLevel (con initializer que lee localStorage)
+- Effects: localStorage persistence (write on change), ctrl+wheel zoom handler
+- Funciones: zoom in/out/fit handlers
 
-**Reglas:**
-1. Las funciones `getNodeId` y `captureDebugSnapshot` reciben sus refs/state como parámetros (no dependen de closure del componente).
-2. `analyzeTransform` es pura — test unitario directo.
-3. En PdfViewer.tsx, reemplaza el código inline con imports de pdfDebug.ts.
-4. `npm run test` verde.
+**Interfaz del hook:**
+- Params: { scrollRef: RefObject<HTMLDivElement | null> }
+- Returns: { zoomLevel, setZoomLevel, canZoomIn, canZoomOut, zoomPercent, handleZoomIn, handleZoomOut, handleZoomFit }
+
+**Reglas:** Extracción mecánica. Test con renderHook + vi. Verde.
 ```
-⚠️ AUTO-CHAIN → P2-A
+⚠️ AUTO-CHAIN → P2-B
 
 ---
 
