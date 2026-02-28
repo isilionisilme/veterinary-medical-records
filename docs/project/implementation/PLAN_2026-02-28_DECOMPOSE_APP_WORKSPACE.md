@@ -59,7 +59,7 @@ Orden de extracción: hooks sin dependencias cruzadas primero → hooks que depe
 
 - [x] R1-A 🔄 — Extract `useConnectivityToasts` — state: `connectivityToast`, `hasShownListErrorToast`, `showConnectivityToast()`; refs: `lastConnectivityToastAtRef`; effects: toast auto-dismiss, connectivity error detection. Write test. (Codex) — ✅ `a37be999`
 - [x] R1-B 🔄 — Extract `useDocumentLoader` — state: `fileUrl`, `filename`; mutation: `loadPdf`; fn: `requestPdfLoad`; refs: `latestLoadRequestIdRef`, `pendingAutoOpenDocumentIdRef`, `autoOpenRetryCountRef`, `autoOpenRetryTimerRef`; effect: cleanup timers. Write test. (Codex) — ✅ `72595a23`
-- [ ] R1-C 🔄 — Extract `useReprocessing` — state: `reprocessingDocumentId`, `hasObservedProcessingAfterReprocess`, `showRetryModal`; mutation: `reprocessMutation`; fn: `handleConfirmRetry`; effects: reprocess lifecycle tracking. Write test. (Codex)
+- [x] R1-C 🔄 — Extract `useReprocessing` — state: `reprocessingDocumentId`, `hasObservedProcessingAfterReprocess`, `showRetryModal`; mutation: `reprocessMutation`; fn: `handleConfirmRetry`; effects: reprocess lifecycle tracking. Write test. (Codex) — ✅ `1e9623f0`
 - [ ] R1-D 🔄 — Extract `useReviewToggle` — mutation: `reviewToggleMutation` with optimistic cache updates on list/detail/review queries. Write test. (Codex)
 - [ ] R1-E 🔄 — Extract `useInterpretationEdit` — mutation: `interpretationEditMutation`; fn: `submitInterpretationChanges`. Write test. (Codex)
 
@@ -334,7 +334,7 @@ _Claude writes after R4-B._
 
 ### Paso objetivo
 
-_Completado: R1-B_
+_Completado: R1-C_
 
 _Vacío._
 
