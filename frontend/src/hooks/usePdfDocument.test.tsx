@@ -45,7 +45,6 @@ describe("usePdfDocument", () => {
   it("loads PDF, reports total pages, and cleans up on unmount", async () => {
     const { scrollRef, container } = createScrollRef();
     const cancelAllRenderTasks = vi.fn();
-    const onRenderSessionReset = vi.fn();
     const destroyDoc = vi.fn();
     const destroyLoadingTask = vi.fn();
     const mockDoc = { numPages: 3, destroy: destroyDoc };
@@ -64,7 +63,6 @@ describe("usePdfDocument", () => {
         fileUrl: "https://example.test/file.pdf",
         scrollRef,
         cancelAllRenderTasks,
-        onRenderSessionReset,
       }),
     );
 
@@ -74,7 +72,6 @@ describe("usePdfDocument", () => {
       expect(result.current.pdfDoc).toBe(mockDoc);
     });
 
-    expect(onRenderSessionReset).toHaveBeenCalledTimes(1);
     expect(container.scrollTo).toHaveBeenCalledWith({ top: 0, behavior: "auto" });
 
     act(() => {

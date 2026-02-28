@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useRef, useState, type MutableRefObject, type RefObject } from "react";
 import type * as pdfjsLib from "pdfjs-dist";
 import { captureDebugSnapshot, type DebugFlags } from "../lib/pdfDebug";
 
@@ -11,7 +11,7 @@ type UsePdfRendererParams = {
   debugFlags: DebugFlags;
   fileUrl: string | ArrayBuffer | null;
   filename?: string | null;
-  pageNumber: number;
+  pageNumberRef: MutableRefObject<number>;
 };
 
 export function usePdfRenderer({
@@ -23,7 +23,7 @@ export function usePdfRenderer({
   debugFlags,
   fileUrl,
   filename,
-  pageNumber,
+  pageNumberRef,
 }: UsePdfRendererParams) {
   const nodeIdentityMapRef = useRef<WeakMap<Element, string>>(new WeakMap());
   const nodeIdentityCounterRef = useRef(0);
@@ -236,7 +236,7 @@ export function usePdfRenderer({
             documentId,
             fileUrl,
             filename,
-            pageNumber,
+            pageNumber: pageNumberRef.current,
             zoomLevel,
             renderSession: renderSessionRef.current,
           });
@@ -262,7 +262,7 @@ export function usePdfRenderer({
               documentId,
               fileUrl,
               filename,
-              pageNumber,
+              pageNumber: pageNumberRef.current,
               zoomLevel,
               renderSession: renderSessionRef.current,
             });
@@ -333,9 +333,10 @@ export function usePdfRenderer({
     zoomLevel,
     documentId,
     debugFlags.enabled,
+    debugFlags,
     fileUrl,
     filename,
-    pageNumber,
+    pageNumberRef,
   ]);
 
   return {

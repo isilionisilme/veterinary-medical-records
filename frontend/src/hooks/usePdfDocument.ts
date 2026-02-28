@@ -5,15 +5,9 @@ type UsePdfDocumentParams = {
   fileUrl: string | ArrayBuffer | null;
   scrollRef: RefObject<HTMLDivElement | null>;
   cancelAllRenderTasks: () => void;
-  onRenderSessionReset?: () => void;
 };
 
-export function usePdfDocument({
-  fileUrl,
-  scrollRef,
-  cancelAllRenderTasks,
-  onRenderSessionReset,
-}: UsePdfDocumentParams) {
+export function usePdfDocument({ fileUrl, scrollRef, cancelAllRenderTasks }: UsePdfDocumentParams) {
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -32,7 +26,6 @@ export function usePdfDocument({
         return;
       }
 
-      onRenderSessionReset?.();
       cancelAllRenderTasks();
       setPdfDoc(null);
       setTotalPages(0);
@@ -84,7 +77,7 @@ export function usePdfDocument({
         void (loadingTask as { destroy: () => Promise<void> | void }).destroy();
       }
     };
-  }, [fileUrl, cancelAllRenderTasks, onRenderSessionReset]);
+  }, [fileUrl, cancelAllRenderTasks]);
 
   useEffect(() => {
     const container = scrollRef.current;

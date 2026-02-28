@@ -1,13 +1,13 @@
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, ScanLine, Upload, ZoomIn, ZoomOut } from "lucide-react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef } from "react";
+import { Upload } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfjsWorkerUrl from "pdfjs-dist/build/pdf.worker.mjs?url";
 import { usePdfDocument } from "../hooks/usePdfDocument";
+import { usePdfNavigation } from "../hooks/usePdfNavigation";
 import { usePdfRenderer } from "../hooks/usePdfRenderer";
 import { createDebugFlags } from "../lib/pdfDebug";
 import { usePdfZoom } from "../hooks/usePdfZoom";
-import { IconButton } from "./app/IconButton";
-import { Tooltip } from "./ui/tooltip";
+import { PdfViewerToolbar } from "./PdfViewerToolbar";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
 
@@ -38,8 +38,8 @@ export function PdfViewer({
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
+  const pageNumberRef = useRef(1);
   const cancelAllRenderTasksRef = useRef<() => void>(() => {});
-  const [pageNumber, setPageNumber] = useState(1);
   const {
     zoomLevel,
     canZoomIn,
@@ -52,15 +52,11 @@ export function PdfViewer({
   const handleCancelAllRenderTasks = useCallback(() => {
     cancelAllRenderTasksRef.current();
   }, []);
-  const handleRenderSessionReset = useCallback(() => {
-    setPageNumber(1);
-  }, []);
 
   const { pdfDoc, totalPages, loading, error } = usePdfDocument({
     fileUrl,
     scrollRef,
     cancelAllRenderTasks: handleCancelAllRenderTasks,
-    onRenderSessionReset: handleRenderSessionReset,
   });
 
   const { canvasRefs, pageRefs, pageTextByIndex, cancelAllRenderTasks } = usePdfRenderer({
@@ -72,9 +68,31 @@ export function PdfViewer({
     debugFlags,
     fileUrl,
     filename,
-    pageNumber,
+    pageNumberRef,
   });
   cancelAllRenderTasksRef.current = cancelAllRenderTasks;
+
+  const {
+    pageNumber,
+    canGoBack,
+    canGoForward,
+    showPageNavigation,
+    isSnippetLocated,
+    scrollToPage,
+  } = usePdfNavigation({
+    pdfDoc,
+    totalPages,
+    loading,
+    error,
+    fileUrl,
+    focusPage,
+    highlightSnippet,
+    focusRequestId,
+    scrollRef,
+    pageRefs,
+    pageTextByIndex,
+  });
+  pageNumberRef.current = pageNumber;
 
   useEffect(() => {
     if (!debugFlags.enabled || !debugFlags.noMotion || typeof document === "undefined") {
@@ -86,99 +104,11 @@ export function PdfViewer({
     };
   }, [debugFlags.enabled, debugFlags.noMotion]);
 
-  useEffect(() => {
-    if (!focusPage || !pdfDoc || focusPage < 1 || focusPage > pdfDoc.numPages) {
-      return;
-    }
-    scrollToPage(focusPage);
-    // We intentionally react only to incoming evidence targeting info.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [focusPage, pdfDoc, focusRequestId]);
-
-  useEffect(() => {
-    const root = scrollRef.current;
-    if (!root || totalPages === 0) {
-      return undefined;
-    }
-
-    const ratios = new Map<number, number>();
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          const pageIndex = Number((entry.target as HTMLElement).dataset.pageIndex || "0");
-          ratios.set(pageIndex, entry.intersectionRatio);
-        });
-
-        let nextPage = 0;
-        let maxRatio = 0;
-        ratios.forEach((ratio, index) => {
-          if (ratio > maxRatio) {
-            maxRatio = ratio;
-            nextPage = index;
-          }
-        });
-
-        if (nextPage > 0) {
-          setPageNumber((current) => (current === nextPage ? current : nextPage));
-        }
-      },
-      {
-        root,
-        threshold: [0, 0.25, 0.5, 0.75, 1],
-      },
-    );
-
-    pageRefs.current.forEach((page) => {
-      if (page) {
-        observer.observe(page);
-      }
-    });
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [totalPages]);
-
   const pages = useMemo(
     () => Array.from({ length: totalPages }, (_, index) => index + 1),
     [totalPages],
   );
-
-  const scrollToPage = (targetPage: number, event?: React.MouseEvent<HTMLButtonElement>) => {
-    event?.preventDefault();
-    event?.stopPropagation();
-    const container = scrollRef.current;
-    const page = pageRefs.current[targetPage - 1];
-    if (!page || !container) {
-      return;
-    }
-    if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_PDF_VIEWER === "true") {
-      console.debug("[PdfViewer] navigate", {
-        currentPage: pageNumber,
-        targetPage,
-        totalPages,
-        renderedPages: Object.keys(pageTextByIndex).length,
-      });
-    }
-    setPageNumber(targetPage);
-    const containerRect = container.getBoundingClientRect();
-    const pageRect = page.getBoundingClientRect();
-    const targetTop = pageRect.top - containerRect.top + container.scrollTop;
-    container.scrollTo({ top: targetTop, behavior: "smooth" });
-  };
-
-  const canGoBack = pageNumber > 1;
-  const canGoForward = pageNumber < totalPages;
   const navDisabled = loading || !pdfDoc;
-  const showPageNavigation = Boolean(fileUrl) && !loading && !error && totalPages > 0;
-  const normalizedSnippet = (highlightSnippet ?? "").trim().toLowerCase();
-  const normalizedFocusedPageText = focusPage
-    ? (pageTextByIndex[focusPage] ?? "").toLowerCase()
-    : "";
-  const isSnippetLocated =
-    Boolean(normalizedSnippet) &&
-    Boolean(focusPage) &&
-    normalizedFocusedPageText.includes(normalizedSnippet);
 
   return (
     <div
@@ -188,89 +118,23 @@ export function PdfViewer({
       data-pdf-debug={debugFlags.enabled ? "on" : "off"}
     >
       {showPageNavigation && (
-        <div
-          data-testid="pdf-toolbar-shell"
-          className="panel-shell relative z-20 flex items-center justify-between gap-4 px-2 py-2"
-        >
-          <div className="flex min-w-0 items-center gap-1">{toolbarLeftContent}</div>
-
-          <div className="flex items-center gap-1">
-            <IconButton
-              label="Alejar"
-              tooltip="Alejar"
-              data-testid="pdf-zoom-out"
-              disabled={!canZoomOut}
-              onClick={handleZoomOut}
-            >
-              <ZoomOut size={17} className="h-[17px] w-[17px] shrink-0" />
-            </IconButton>
-
-            <Tooltip content="Nivel de zoom">
-              <p
-                className="min-w-14 text-center text-sm font-semibold text-textSecondary"
-                aria-label="Nivel de zoom"
-                data-testid="pdf-zoom-indicator"
-              >
-                {zoomPercent}%
-              </p>
-            </Tooltip>
-
-            <IconButton
-              label="Acercar"
-              tooltip="Acercar"
-              data-testid="pdf-zoom-in"
-              disabled={!canZoomIn}
-              onClick={handleZoomIn}
-            >
-              <ZoomIn size={17} className="h-[17px] w-[17px] shrink-0" />
-            </IconButton>
-
-            <IconButton
-              label="Ajustar al ancho"
-              tooltip="Ajustar al ancho"
-              data-testid="pdf-zoom-fit"
-              onClick={handleZoomFit}
-            >
-              <ScanLine size={17} className="h-[17px] w-[17px] shrink-0" />
-            </IconButton>
-          </div>
-
-          <span aria-hidden="true" className="h-5 w-px bg-page" />
-
-          <div className="flex items-center gap-1">
-            <IconButton
-              label="Página anterior"
-              tooltip="Página anterior"
-              data-testid="pdf-page-prev"
-              disabled={navDisabled || !canGoBack}
-              onClick={() => scrollToPage(Math.max(1, pageNumber - 1))}
-            >
-              <ChevronLeft size={18} className="h-[18px] w-[18px] shrink-0" />
-            </IconButton>
-            <p
-              className="min-w-12 text-center text-sm font-semibold text-textSecondary"
-              data-testid="pdf-page-indicator"
-            >
-              {pageNumber}/{totalPages}
-            </p>
-            <IconButton
-              label="Página siguiente"
-              tooltip="Página siguiente"
-              data-testid="pdf-page-next"
-              disabled={navDisabled || !canGoForward}
-              onClick={() => scrollToPage(Math.min(totalPages, pageNumber + 1))}
-            >
-              <ChevronRight size={18} className="h-[18px] w-[18px] shrink-0" />
-            </IconButton>
-          </div>
-
-          {toolbarRightExtra ? (
-            <>
-              <span aria-hidden="true" className="h-5 w-px bg-page" />
-              <div className="flex items-center gap-1">{toolbarRightExtra}</div>
-            </>
-          ) : null}
-        </div>
+        <PdfViewerToolbar
+          toolbarLeftContent={toolbarLeftContent}
+          toolbarRightExtra={toolbarRightExtra}
+          canZoomIn={canZoomIn}
+          canZoomOut={canZoomOut}
+          zoomPercent={zoomPercent}
+          onZoomIn={handleZoomIn}
+          onZoomOut={handleZoomOut}
+          onZoomFit={handleZoomFit}
+          navDisabled={navDisabled}
+          canGoBack={canGoBack}
+          canGoForward={canGoForward}
+          pageNumber={pageNumber}
+          totalPages={totalPages}
+          onPrevPage={() => scrollToPage(Math.max(1, pageNumber - 1))}
+          onNextPage={() => scrollToPage(Math.min(totalPages, pageNumber + 1))}
+        />
       )}
       <div className="relative min-h-0 flex-1">
         <div
