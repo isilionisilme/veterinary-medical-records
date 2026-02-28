@@ -1,9 +1,10 @@
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, ScanLine, Upload, ZoomIn, ZoomOut } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfjsWorkerUrl from "pdfjs-dist/build/pdf.worker.mjs?url";
 import { usePdfDocument } from "../hooks/usePdfDocument";
-import { captureDebugSnapshot, createDebugFlags } from "../lib/pdfDebug";
+import { usePdfRenderer } from "../hooks/usePdfRenderer";
+import { createDebugFlags } from "../lib/pdfDebug";
 import { usePdfZoom } from "../hooks/usePdfZoom";
 import { IconButton } from "./app/IconButton";
 import { Tooltip } from "./ui/tooltip";
@@ -35,22 +36,10 @@ export function PdfViewer({
 }: PdfViewerProps) {
   const debugFlags = useMemo(() => createDebugFlags(), []);
 
-  const nodeIdentityMapRef = useRef<WeakMap<Element, string>>(new WeakMap());
-  const nodeIdentityCounterRef = useRef(0);
-  const lastCanvasNodeByPageRef = useRef<Map<number, string>>(new Map());
-  const renderTaskStatusRef = useRef<Map<number, string>>(new Map());
-  const renderTasksByPageRef = useRef<Map<number, pdfjsLib.RenderTask>>(new Map());
-  const currentDocumentIdRef = useRef<string | null>(documentId);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
-  const pageRefs = useRef<Array<HTMLDivElement | null>>([]);
-  const canvasRefs = useRef<Array<HTMLCanvasElement | null>>([]);
-  const renderedPages = useRef<Set<number>>(new Set());
-  const renderingPages = useRef<Set<number>>(new Set());
-  const renderSessionRef = useRef(0);
+  const cancelAllRenderTasksRef = useRef<() => void>(() => {});
   const [pageNumber, setPageNumber] = useState(1);
-  const [containerWidth, setContainerWidth] = useState(0);
-  const [pageTextByIndex, setPageTextByIndex] = useState<Record<number, string>>({});
   const {
     zoomLevel,
     canZoomIn,
@@ -60,33 +49,32 @@ export function PdfViewer({
     handleZoomOut,
     handleZoomFit,
   } = usePdfZoom({ scrollRef });
-
-  function cancelAllRenderTasks() {
-    for (const task of renderTasksByPageRef.current.values()) {
-      try {
-        task.cancel();
-      } catch {
-        // ignore cancellation errors
-      }
-    }
-    renderTasksByPageRef.current.clear();
-  }
+  const handleCancelAllRenderTasks = useCallback(() => {
+    cancelAllRenderTasksRef.current();
+  }, []);
+  const handleRenderSessionReset = useCallback(() => {
+    setPageNumber(1);
+  }, []);
 
   const { pdfDoc, totalPages, loading, error } = usePdfDocument({
     fileUrl,
     scrollRef,
-    cancelAllRenderTasks,
-    onRenderSessionReset: () => {
-      pageRefs.current = [];
-      canvasRefs.current = [];
-      renderedPages.current = new Set();
-      renderingPages.current = new Set();
-      renderSessionRef.current += 1;
-      renderTaskStatusRef.current = new Map();
-      setPageTextByIndex({});
-      setPageNumber(1);
-    },
+    cancelAllRenderTasks: handleCancelAllRenderTasks,
+    onRenderSessionReset: handleRenderSessionReset,
   });
+
+  const { canvasRefs, pageRefs, pageTextByIndex, cancelAllRenderTasks } = usePdfRenderer({
+    pdfDoc,
+    totalPages,
+    zoomLevel,
+    documentId,
+    contentRef,
+    debugFlags,
+    fileUrl,
+    filename,
+    pageNumber,
+  });
+  cancelAllRenderTasksRef.current = cancelAllRenderTasks;
 
   useEffect(() => {
     if (!debugFlags.enabled || !debugFlags.noMotion || typeof document === "undefined") {
@@ -97,288 +85,6 @@ export function PdfViewer({
       document.body.classList.remove("pdf-debug-no-motion");
     };
   }, [debugFlags.enabled, debugFlags.noMotion]);
-
-  useEffect(() => {
-    currentDocumentIdRef.current = documentId;
-  }, [documentId]);
-
-  useEffect(() => {
-    renderSessionRef.current += 1;
-    cancelAllRenderTasks();
-    renderedPages.current = new Set();
-    renderingPages.current = new Set();
-    pageRefs.current = [];
-    canvasRefs.current = [];
-    lastCanvasNodeByPageRef.current = new Map();
-    renderTaskStatusRef.current = new Map();
-    setPageTextByIndex({});
-  }, [documentId]);
-
-  useEffect(() => {
-    renderSessionRef.current += 1;
-    cancelAllRenderTasks();
-  }, [zoomLevel]);
-
-  useEffect(() => {
-    if (!contentRef.current) {
-      return undefined;
-    }
-
-    const updateWidth = () => {
-      setContainerWidth(contentRef.current?.clientWidth ?? 0);
-    };
-    updateWidth();
-
-    const observer = new ResizeObserver(updateWidth);
-    observer.observe(contentRef.current);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
-
-  useEffect(() => {
-    renderedPages.current = new Set();
-    renderingPages.current = new Set();
-  }, [zoomLevel, containerWidth, pdfDoc]);
-
-  useEffect(() => {
-    const renderSession = ++renderSessionRef.current;
-    const sessionDocumentId = documentId;
-    let cancelled = false;
-    let retryCount = 0;
-    let retryTimer: number | null = null;
-    const MAX_CANVAS_RETRIES = 30;
-
-    async function renderAllPages() {
-      if (!pdfDoc || containerWidth <= 0 || totalPages <= 0) {
-        return;
-      }
-
-      let missingCanvas = false;
-      for (let pageIndex = 1; pageIndex <= pdfDoc.numPages; pageIndex += 1) {
-        if (cancelled || renderSession !== renderSessionRef.current) {
-          return;
-        }
-
-        const canvas = canvasRefs.current[pageIndex - 1];
-        if (!canvas) {
-          missingCanvas = true;
-          continue;
-        }
-        if (renderedPages.current.has(pageIndex) || renderingPages.current.has(pageIndex)) {
-          continue;
-        }
-
-        renderingPages.current.add(pageIndex);
-        try {
-          const page = await pdfDoc.getPage(pageIndex);
-          if (cancelled || renderSession !== renderSessionRef.current) {
-            return;
-          }
-
-          const viewport = page.getViewport({ scale: 1 });
-          const fitWidthScale = containerWidth / viewport.width;
-          const scale = Math.max(0.1, fitWidthScale * zoomLevel);
-          const scaledViewport = page.getViewport({ scale });
-          const expectedPage = pageIndex;
-          const context = canvas.getContext("2d");
-          if (!context) {
-            continue;
-          }
-
-          const preRenderTransform =
-            typeof context.getTransform === "function"
-              ? context.getTransform().toString()
-              : "unavailable";
-
-          canvas.width = Math.max(1, Math.floor(scaledViewport.width));
-          canvas.height = Math.max(1, Math.floor(scaledViewport.height));
-          context.setTransform(1, 0, 0, 1, 0, 0);
-          context.clearRect(0, 0, canvas.width, canvas.height);
-
-          const existingTask = renderTasksByPageRef.current.get(pageIndex);
-          if (existingTask) {
-            try {
-              existingTask.cancel();
-            } catch {
-              // ignore cancellation errors
-            }
-          }
-
-          const renderTask = page.render({ canvasContext: context, viewport: scaledViewport });
-          renderTasksByPageRef.current.set(pageIndex, renderTask);
-          renderTaskStatusRef.current.set(pageIndex, "started");
-          await renderTask.promise;
-          renderTasksByPageRef.current.delete(pageIndex);
-          renderTaskStatusRef.current.set(pageIndex, "completed");
-          if (cancelled || renderSession !== renderSessionRef.current) {
-            if (debugFlags.enabled) {
-              console.debug("[PdfViewerDebug] stale-render-ignored", {
-                reason: "session-mismatch",
-                sessionAtStart: renderSession,
-                sessionCurrent: renderSessionRef.current,
-                documentIdAtStart: sessionDocumentId,
-                documentIdCurrent: currentDocumentIdRef.current,
-                pageIndex,
-              });
-            }
-            return;
-          }
-
-          if (sessionDocumentId !== currentDocumentIdRef.current) {
-            if (debugFlags.enabled) {
-              console.debug("[PdfViewerDebug] stale-render-ignored", {
-                reason: "document-mismatch",
-                sessionAtStart: renderSession,
-                sessionCurrent: renderSessionRef.current,
-                documentIdAtStart: sessionDocumentId,
-                documentIdCurrent: currentDocumentIdRef.current,
-                pageIndex,
-              });
-            }
-            return;
-          }
-
-          if (expectedPage !== pageIndex) {
-            if (debugFlags.enabled) {
-              console.debug("[PdfViewerDebug] stale-render-ignored", {
-                reason: "page-mismatch",
-                expectedPage,
-                pageIndex,
-                sessionAtStart: renderSession,
-                sessionCurrent: renderSessionRef.current,
-                documentIdAtStart: sessionDocumentId,
-                documentIdCurrent: currentDocumentIdRef.current,
-              });
-            }
-            return;
-          }
-
-          const postRenderTransform =
-            typeof context.getTransform === "function"
-              ? context.getTransform().toString()
-              : "unavailable";
-
-          if (debugFlags.enabled) {
-            console.debug("[PdfViewerDebug] context-transform", {
-              documentId,
-              pageIndex,
-              preRenderTransform,
-              postRenderTransform,
-              renderTaskStatus: renderTaskStatusRef.current.get(pageIndex),
-            });
-          }
-
-          captureDebugSnapshot({
-            reason: "page-render-finished",
-            pageIndex,
-            canvas,
-            viewportScale: scale,
-            viewportRotation: scaledViewport.rotation,
-            renderTaskStatus: renderTaskStatusRef.current.get(pageIndex) ?? "unknown",
-            debugFlags,
-            nodeIdentityMap: nodeIdentityMapRef.current,
-            nodeIdentityCounterRef,
-            lastCanvasNodeByPage: lastCanvasNodeByPageRef.current,
-            documentId,
-            fileUrl,
-            filename,
-            pageNumber,
-            zoomLevel,
-            renderSession: renderSessionRef.current,
-          });
-
-          const latestSnapshots = (
-            window as Window & {
-              __pdfBugSnapshots?: Array<{ chainHasFlip?: boolean }>;
-            }
-          ).__pdfBugSnapshots;
-          const latestSnapshot = latestSnapshots?.[latestSnapshots.length - 1];
-          if (latestSnapshot?.chainHasFlip) {
-            captureDebugSnapshot({
-              reason: "flip-detected-transform-chain",
-              pageIndex,
-              canvas,
-              viewportScale: scale,
-              viewportRotation: scaledViewport.rotation,
-              renderTaskStatus: renderTaskStatusRef.current.get(pageIndex) ?? "unknown",
-              debugFlags,
-              nodeIdentityMap: nodeIdentityMapRef.current,
-              nodeIdentityCounterRef,
-              lastCanvasNodeByPage: lastCanvasNodeByPageRef.current,
-              documentId,
-              fileUrl,
-              filename,
-              pageNumber,
-              zoomLevel,
-              renderSession: renderSessionRef.current,
-            });
-          }
-
-          const textContent = await page.getTextContent();
-          if (cancelled || renderSession !== renderSessionRef.current) {
-            return;
-          }
-          const pageText = textContent.items
-            .map((item) => {
-              if (typeof item !== "object" || !("str" in item)) {
-                return "";
-              }
-              const value = item.str;
-              return typeof value === "string" ? value : "";
-            })
-            .join(" ")
-            .replace(/\s+/g, " ")
-            .trim();
-          setPageTextByIndex((current) => ({ ...current, [pageIndex]: pageText }));
-          renderedPages.current.add(pageIndex);
-        } catch (error) {
-          renderTasksByPageRef.current.delete(pageIndex);
-          const errorName =
-            typeof error === "object" && error && "name" in error
-              ? String((error as { name?: unknown }).name)
-              : "UnknownError";
-          if (errorName === "RenderingCancelledException") {
-            renderTaskStatusRef.current.set(pageIndex, "cancelled");
-          } else {
-            renderTaskStatusRef.current.set(pageIndex, "failed");
-          }
-          // Keep rendering other pages even if one page fails.
-          continue;
-        } finally {
-          renderingPages.current.delete(pageIndex);
-        }
-      }
-
-      const allPagesRendered = renderedPages.current.size >= pdfDoc.numPages;
-      if (
-        !allPagesRendered &&
-        missingCanvas &&
-        retryCount < MAX_CANVAS_RETRIES &&
-        !cancelled &&
-        renderSession === renderSessionRef.current
-      ) {
-        retryCount += 1;
-        retryTimer = window.setTimeout(() => {
-          void renderAllPages();
-        }, 50);
-      }
-    }
-
-    renderAllPages();
-
-    return () => {
-      cancelled = true;
-      cancelAllRenderTasks();
-      if (retryTimer) {
-        window.clearTimeout(retryTimer);
-      }
-    };
-    // captureDebugSnapshot is intentionally excluded — it depends only on debugFlags.enabled
-    // which is already tracked, and including it would cause expensive full re-renders.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pdfDoc, containerWidth, totalPages, zoomLevel, documentId, debugFlags.enabled]);
 
   useEffect(() => {
     if (!focusPage || !pdfDoc || focusPage < 1 || focusPage > pdfDoc.numPages) {
@@ -451,7 +157,7 @@ export function PdfViewer({
         currentPage: pageNumber,
         targetPage,
         totalPages,
-        renderedPages: renderedPages.current.size,
+        renderedPages: Object.keys(pageTextByIndex).length,
       });
     }
     setPageNumber(targetPage);
