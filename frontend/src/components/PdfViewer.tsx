@@ -2,15 +2,8 @@ import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, ScanLine, Upload, ZoomIn, ZoomOut } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfjsWorkerUrl from "pdfjs-dist/build/pdf.worker.mjs?url";
-import {
-  MAX_ZOOM_LEVEL,
-  MIN_ZOOM_LEVEL,
-  PDF_ZOOM_STORAGE_KEY,
-  ZOOM_STEP,
-  captureDebugSnapshot,
-  clampZoomLevel,
-  createDebugFlags,
-} from "../lib/pdfDebug";
+import { captureDebugSnapshot, createDebugFlags } from "../lib/pdfDebug";
+import { usePdfZoom } from "../hooks/usePdfZoom";
 import { IconButton } from "./app/IconButton";
 import { Tooltip } from "./ui/tooltip";
 
@@ -61,20 +54,15 @@ export function PdfViewer({
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const [pageTextByIndex, setPageTextByIndex] = useState<Record<number, string>>({});
-  const [zoomLevel, setZoomLevel] = useState(() => {
-    if (typeof window === "undefined") {
-      return 1;
-    }
-    const rawStored = window.localStorage.getItem(PDF_ZOOM_STORAGE_KEY);
-    if (rawStored === null) {
-      return 1;
-    }
-    const stored = Number(rawStored);
-    if (!Number.isFinite(stored)) {
-      return 1;
-    }
-    return clampZoomLevel(stored);
-  });
+  const {
+    zoomLevel,
+    canZoomIn,
+    canZoomOut,
+    zoomPercent,
+    handleZoomIn,
+    handleZoomOut,
+    handleZoomFit,
+  } = usePdfZoom({ scrollRef });
 
   function cancelAllRenderTasks() {
     for (const task of renderTasksByPageRef.current.values()) {
@@ -234,37 +222,6 @@ export function PdfViewer({
       observer.disconnect();
     };
   }, []);
-
-  useEffect(() => {
-    const container = scrollRef.current;
-    if (!container) {
-      return;
-    }
-
-    const onWheel = (event: WheelEvent) => {
-      if (!event.ctrlKey) {
-        return;
-      }
-
-      event.preventDefault();
-      setZoomLevel((current) => {
-        const direction = event.deltaY < 0 ? 1 : -1;
-        return clampZoomLevel(current + direction * ZOOM_STEP);
-      });
-    };
-
-    container.addEventListener("wheel", onWheel, { passive: false });
-    return () => {
-      container.removeEventListener("wheel", onWheel);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-    window.localStorage.setItem(PDF_ZOOM_STORAGE_KEY, String(zoomLevel));
-  }, [zoomLevel]);
 
   useEffect(() => {
     renderedPages.current = new Set();
@@ -592,9 +549,6 @@ export function PdfViewer({
 
   const canGoBack = pageNumber > 1;
   const canGoForward = pageNumber < totalPages;
-  const canZoomOut = zoomLevel > MIN_ZOOM_LEVEL;
-  const canZoomIn = zoomLevel < MAX_ZOOM_LEVEL;
-  const zoomPercent = Math.round(zoomLevel * 100);
   const navDisabled = loading || !pdfDoc;
   const showPageNavigation = Boolean(fileUrl) && !loading && !error && totalPages > 0;
   const normalizedSnippet = (highlightSnippet ?? "").trim().toLowerCase();
@@ -626,7 +580,7 @@ export function PdfViewer({
               tooltip="Alejar"
               data-testid="pdf-zoom-out"
               disabled={!canZoomOut}
-              onClick={() => setZoomLevel((current) => clampZoomLevel(current - ZOOM_STEP))}
+              onClick={handleZoomOut}
             >
               <ZoomOut size={17} className="h-[17px] w-[17px] shrink-0" />
             </IconButton>
@@ -646,7 +600,7 @@ export function PdfViewer({
               tooltip="Acercar"
               data-testid="pdf-zoom-in"
               disabled={!canZoomIn}
-              onClick={() => setZoomLevel((current) => clampZoomLevel(current + ZOOM_STEP))}
+              onClick={handleZoomIn}
             >
               <ZoomIn size={17} className="h-[17px] w-[17px] shrink-0" />
             </IconButton>
@@ -655,7 +609,7 @@ export function PdfViewer({
               label="Ajustar al ancho"
               tooltip="Ajustar al ancho"
               data-testid="pdf-zoom-fit"
-              onClick={() => setZoomLevel(1)}
+              onClick={handleZoomFit}
             >
               <ScanLine size={17} className="h-[17px] w-[17px] shrink-0" />
             </IconButton>
