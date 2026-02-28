@@ -90,8 +90,9 @@ export function App() {
   }, [activeId]);
   useEffect(() => {
     return () => {
-      if (refreshFeedbackTimerRef.current) {
-        window.clearTimeout(refreshFeedbackTimerRef.current);
+      const refreshTimer = refreshFeedbackTimerRef.current;
+      if (refreshTimer) {
+        window.clearTimeout(refreshTimer);
       }
     };
   }, []);
