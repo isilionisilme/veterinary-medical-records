@@ -21,6 +21,7 @@ import { useRawTextActions } from "./hooks/useRawTextActions";
 import { useReviewedEditBlocker } from "./hooks/useReviewedEditBlocker";
 import { useDocumentLoader } from "./hooks/useDocumentLoader";
 import { useReprocessing } from "./hooks/useReprocessing";
+import { useReviewToggle } from "./hooks/useReviewToggle";
 import { logExtractionDebugEvent, type ExtractionDebugEvent } from "./extraction/extractionDebug";
 import { validateFieldValue } from "./extraction/fieldValidators";
 import {
@@ -50,8 +51,6 @@ import {
   fetchDocuments,
   fetchProcessingHistory,
   fetchRawText,
-  markDocumentReviewed,
-  reopenDocumentReview,
   uploadDocument,
 } from "./api/documentApi";
 import { GLOBAL_SCHEMA } from "./lib/globalSchema";
@@ -86,7 +85,6 @@ import {
 } from "./lib/visitGroupingObservability";
 import {
   ApiResponseError,
-  type DocumentDetailResponse,
   type DocumentListResponse,
   type DocumentReviewResponse,
   type InterpretationChangePayload,
@@ -430,82 +428,6 @@ export function App() {
       setIsDocsSidebarHovered(false);
     }
   }, [documentList.status, setIsDocsSidebarHovered, sortedDocuments.length]);
-  const reviewToggleMutation = useMutation({
-    mutationFn: async (variables: { docId: string; target: "reviewed" | "in_review" }) => {
-      if (variables.target === "reviewed") {
-        return markDocumentReviewed(variables.docId);
-      }
-      return reopenDocumentReview(variables.docId);
-    },
-    onSuccess: (result, variables) => {
-      queryClient.setQueryData<DocumentListResponse | undefined>(
-        ["documents", "list"],
-        (current) => {
-          if (!current) {
-            return current;
-          }
-          return {
-            ...current,
-            items: current.items.map((item) =>
-              item.document_id === variables.docId
-                ? {
-                    ...item,
-                    review_status: result.review_status,
-                    reviewed_at: result.reviewed_at,
-                    reviewed_by: result.reviewed_by,
-                  }
-                : item,
-            ),
-          };
-        },
-      );
-      queryClient.setQueryData<DocumentDetailResponse | undefined>(
-        ["documents", "detail", variables.docId],
-        (current) => {
-          if (!current) {
-            return current;
-          }
-          return {
-            ...current,
-            review_status: result.review_status,
-            reviewed_at: result.reviewed_at,
-            reviewed_by: result.reviewed_by,
-          };
-        },
-      );
-      queryClient.setQueryData<DocumentReviewResponse | undefined>(
-        ["documents", "review", variables.docId],
-        (current) => {
-          if (!current) {
-            return current;
-          }
-          return {
-            ...current,
-            review_status: result.review_status,
-            reviewed_at: result.reviewed_at,
-            reviewed_by: result.reviewed_by,
-          };
-        },
-      );
-      setActionFeedback({
-        kind: "success",
-        message:
-          result.review_status === "REVIEWED"
-            ? "Documento marcado como revisado."
-            : "Documento reabierto para revisión.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["documents", "list"] });
-      queryClient.invalidateQueries({ queryKey: ["documents", "detail", variables.docId] });
-      queryClient.invalidateQueries({ queryKey: ["documents", "review", variables.docId] });
-    },
-    onError: (error) => {
-      setActionFeedback({
-        kind: "error",
-        message: getUserErrorMessage(error, "No se pudo actualizar el estado de revisión."),
-        technicalDetails: getTechnicalDetails(error),
-      });
-    },
-  });
   const interpretationEditMutation = useMutation({
     mutationFn: async (variables: {
       docId: string;
@@ -605,6 +527,9 @@ export function App() {
     onReprocessSuccess: () => {
       latestRawTextRefreshRef.current = null;
     },
+  });
+  const { reviewToggleMutation } = useReviewToggle({
+    onActionFeedback: setActionFeedback,
   });
   useEffect(() => {
     if (!latestRunId || !latestState) {
