@@ -70,3 +70,4 @@ Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for i
 - Known Limitations propagation note refreshed: `routes.py` concentration is now marked resolved (Iteration 6), `AppWorkspace.tsx` baseline is updated to ~2,200 LOC, and pending hardening gaps include API rate limiting and FK index coverage.
 - Iteration 10 propagation (F16-K): Security Boundary now documents active rate limiting (`slowapi`), UUID path validation, and CI security audit gates; Known Limitations marks rate limiting and FK index gaps as resolved.
 - Iteration 11 propagation (F18-T): Known Limitations updated to reflect repository aggregate split and refreshed AppWorkspace sizing; technical notes now include benchmark evidence and frontend error UX mapping references.
+- Canonical TECHNICAL_DESIGN refresh synchronized on 2026-02-28 (classification: clarification/navigation in this cycle).

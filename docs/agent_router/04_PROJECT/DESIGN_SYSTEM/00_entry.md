@@ -7,3 +7,4 @@ Source of truth:
 
 Propagation note:
 - Confidence tooltip content standard includes optional breakdown lines and positive/negative/neutral adjustment styling using existing semantic tokens.
+- Canonical DESIGN_SYSTEM refactor sync completed on 2026-02-28 (classification: clarification/navigation; no rule behavior change).

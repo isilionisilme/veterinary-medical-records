@@ -17,7 +17,7 @@ The project's canonical documentation (`docs/project/`, `docs/shared/`, `docs/RE
 ## Scope Boundary (strict)
 
 - **In scope:** canonical human documentation (`docs/project/`, `docs/shared/`, `docs/README.md`).
-- **Out of scope:** agent routing modules (`docs/agent_router/` — instructions, not wiki content).
+- **Out of scope:** assistant routing modules (execution instructions, not wiki content).
 - **Exception:** Broken Link Checker and Terminology Enforcer may run across wiki + router when explicitly required.
 - **Out of scope:** application code (`backend/`, `frontend/`).
 

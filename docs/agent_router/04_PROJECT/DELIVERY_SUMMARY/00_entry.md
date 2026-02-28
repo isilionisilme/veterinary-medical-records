@@ -11,3 +11,4 @@ Canonical references now use `docs/project/adr/*` paths.
 - Iteration 10 hardening closure (F16-K): at-a-glance table extended with Iteration 10 column; new section summarizes security, resilience, performance, and CI optimizations (rate limiting, UUID validation, Error Boundary, FK indexes, health check deepening, and CI caching/path filtering).
 - Iteration 11 closure (F18-T): delivery metrics refreshed for expanded E2E suite, error UX mapping, endpoint latency benchmarks, and SQLite repository split into aggregate modules.
 - Iteration 12 close-out propagation (2026-02-27): E2E expansion closure, WCAG audit addition, and final documentation refresh synchronized from canonical DELIVERY_SUMMARY.
+- Canonical DELIVERY_SUMMARY restructuring synchronized on 2026-02-28 (navigation/clarification pass).
