@@ -5,8 +5,6 @@ import { buildViewerToolbarContent } from "./components/viewer/viewerToolbarCont
 import { PdfViewerPanel } from "./components/workspace/PdfViewerPanel";
 import { StructuredDataPanel } from "./components/workspace/StructuredDataPanel";
 import { ToastHost } from "./components/toast/ToastHost";
-import { createReviewFieldRenderers } from "./components/review/ReviewFieldRenderers";
-import { createReviewSectionLayoutRenderer } from "./components/review/ReviewSectionLayout";
 import { SourcePanelContent } from "./components/review/SourcePanelContent";
 import { WorkspaceDialogs } from "./components/review/WorkspaceDialogs";
 import { type ActionFeedback, type UploadFeedback } from "./components/toast/toast-types";
@@ -29,6 +27,7 @@ import { useConfidenceDiagnostics } from "./hooks/useConfidenceDiagnostics";
 import { useReviewDataPipeline } from "./hooks/useReviewDataPipeline";
 import { useReviewPanelStatus } from "./hooks/useReviewPanelStatus";
 import { useActiveDocumentQueries } from "./hooks/useActiveDocumentQueries";
+import { useReviewRenderers } from "./hooks/useReviewRenderers";
 import {
   API_BASE_URL,
   MAX_UPLOAD_SIZE_BYTES,
@@ -473,63 +472,29 @@ export function App() {
     onSubmitInterpretationChanges: submitInterpretationChanges,
     onActionFeedback: setActionFeedback,
   });
-  const { renderScalarReviewField, renderRepeatableReviewField } = useMemo(
-    () =>
-      createReviewFieldRenderers({
-        activeConfidencePolicy,
-        isDocumentReviewed,
-        isInterpretationEditPending: interpretationEditMutation.isPending,
-        selectedFieldId,
-        expandedFieldValues,
-        hoveredFieldTriggerId,
-        hoveredCriticalTriggerId,
-        hasUnassignedVisitGroup,
-        onOpenFieldEditDialog: openFieldEditDialog,
-        onSelectReviewItem: handleSelectReviewItem,
-        onReviewedEditAttempt: handleReviewedEditAttempt,
-        onReviewedKeyboardEditAttempt: handleReviewedKeyboardEditAttempt,
-        onSetExpandedFieldValues: setExpandedFieldValues,
-        onSetHoveredFieldTriggerId: setHoveredFieldTriggerId,
-        onSetHoveredCriticalTriggerId: setHoveredCriticalTriggerId,
-      }),
-    [
-      activeConfidencePolicy,
-      isDocumentReviewed,
-      interpretationEditMutation.isPending,
-      selectedFieldId,
-      expandedFieldValues,
-      hoveredFieldTriggerId,
-      hoveredCriticalTriggerId,
-      hasUnassignedVisitGroup,
-      openFieldEditDialog,
-      handleSelectReviewItem,
-      handleReviewedEditAttempt,
-      handleReviewedKeyboardEditAttempt,
-    ],
-  );
-  const renderSectionLayout = useMemo(
-    () =>
-      createReviewSectionLayoutRenderer({
-        isCanonicalContract,
-        hasVisitGroups,
-        validatedReviewFields,
-        reviewVisits,
-        canonicalVisitFieldOrder,
-        buildSelectableField,
-        renderScalarReviewField,
-        renderRepeatableReviewField,
-      }),
-    [
-      isCanonicalContract,
-      hasVisitGroups,
-      validatedReviewFields,
-      reviewVisits,
-      canonicalVisitFieldOrder,
-      buildSelectableField,
-      renderScalarReviewField,
-      renderRepeatableReviewField,
-    ],
-  );
+  const { renderSectionLayout } = useReviewRenderers({
+    activeConfidencePolicy,
+    isDocumentReviewed,
+    isInterpretationEditPending: interpretationEditMutation.isPending,
+    selectedFieldId,
+    expandedFieldValues,
+    hoveredFieldTriggerId,
+    hoveredCriticalTriggerId,
+    hasUnassignedVisitGroup,
+    onOpenFieldEditDialog: openFieldEditDialog,
+    onSelectReviewItem: handleSelectReviewItem,
+    onReviewedEditAttempt: handleReviewedEditAttempt,
+    onReviewedKeyboardEditAttempt: handleReviewedKeyboardEditAttempt,
+    onSetExpandedFieldValues: setExpandedFieldValues,
+    onSetHoveredFieldTriggerId: setHoveredFieldTriggerId,
+    onSetHoveredCriticalTriggerId: setHoveredCriticalTriggerId,
+    isCanonicalContract,
+    hasVisitGroups,
+    validatedReviewFields,
+    reviewVisits,
+    canonicalVisitFieldOrder,
+    buildSelectableField,
+  });
   const sourcePanelContent = (
     <SourcePanelContent
       sourcePage={sourcePanel.sourcePage}
