@@ -2,6 +2,7 @@ import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, ScanLine, Upload, ZoomIn, ZoomOut } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfjsWorkerUrl from "pdfjs-dist/build/pdf.worker.mjs?url";
+import { usePdfDocument } from "../hooks/usePdfDocument";
 import { captureDebugSnapshot, createDebugFlags } from "../lib/pdfDebug";
 import { usePdfZoom } from "../hooks/usePdfZoom";
 import { IconButton } from "./app/IconButton";
@@ -47,11 +48,7 @@ export function PdfViewer({
   const renderedPages = useRef<Set<number>>(new Set());
   const renderingPages = useRef<Set<number>>(new Set());
   const renderSessionRef = useRef(0);
-  const [totalPages, setTotalPages] = useState(0);
   const [pageNumber, setPageNumber] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const [pageTextByIndex, setPageTextByIndex] = useState<Record<number, string>>({});
   const {
@@ -74,6 +71,22 @@ export function PdfViewer({
     }
     renderTasksByPageRef.current.clear();
   }
+
+  const { pdfDoc, totalPages, loading, error } = usePdfDocument({
+    fileUrl,
+    scrollRef,
+    cancelAllRenderTasks,
+    onRenderSessionReset: () => {
+      pageRefs.current = [];
+      canvasRefs.current = [];
+      renderedPages.current = new Set();
+      renderingPages.current = new Set();
+      renderSessionRef.current += 1;
+      renderTaskStatusRef.current = new Map();
+      setPageTextByIndex({});
+      setPageNumber(1);
+    },
+  });
 
   useEffect(() => {
     if (!debugFlags.enabled || !debugFlags.noMotion || typeof document === "undefined") {
@@ -105,105 +118,6 @@ export function PdfViewer({
     renderSessionRef.current += 1;
     cancelAllRenderTasks();
   }, [zoomLevel]);
-
-  useEffect(() => {
-    let cancelled = false;
-    let loadingTask: pdfjsLib.PDFDocumentLoadingTask | null = null;
-
-    async function loadPdf() {
-      if (!fileUrl) {
-        setPdfDoc(null);
-        setTotalPages(0);
-        setPageNumber(1);
-        setError(null);
-        return;
-      }
-
-      pageRefs.current = [];
-      canvasRefs.current = [];
-      renderedPages.current = new Set();
-      renderingPages.current = new Set();
-      renderSessionRef.current += 1;
-      cancelAllRenderTasks();
-      renderTaskStatusRef.current = new Map();
-      setPdfDoc(null);
-      setTotalPages(0);
-      setPageTextByIndex({});
-
-      setLoading(true);
-      setError(null);
-      try {
-        let arrayBuffer: ArrayBuffer;
-        if (typeof fileUrl === "string") {
-          const response = await fetch(fileUrl);
-          if (!response.ok) {
-            throw new Error("Failed to fetch PDF data.");
-          }
-          arrayBuffer = await response.arrayBuffer();
-        } else {
-          arrayBuffer = fileUrl;
-        }
-        loadingTask = pdfjsLib.getDocument({
-          data: new Uint8Array(arrayBuffer),
-          isEvalSupported: false,
-        });
-        const doc = await loadingTask.promise;
-        if (cancelled) {
-          void doc.destroy();
-          return;
-        }
-        setPdfDoc(doc);
-        setTotalPages(doc.numPages);
-        setPageNumber(1);
-      } catch (err) {
-        if (!cancelled) {
-          if (import.meta.env.DEV) {
-            console.error("[PdfViewer] loadPdf failed:", err);
-          }
-          setError("No pudimos cargar el PDF.");
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    }
-
-    loadPdf();
-
-    return () => {
-      cancelled = true;
-      cancelAllRenderTasks();
-      if (loadingTask && typeof (loadingTask as { destroy?: unknown }).destroy === "function") {
-        void (loadingTask as { destroy: () => Promise<void> | void }).destroy();
-      }
-    };
-  }, [fileUrl]);
-
-  useEffect(() => {
-    const container = scrollRef.current;
-    if (!container) {
-      return;
-    }
-    if (typeof container.scrollTo === "function") {
-      container.scrollTo({ top: 0, behavior: "auto" });
-      return;
-    }
-    container.scrollTop = 0;
-  }, [fileUrl]);
-
-  useEffect(() => {
-    if (!pdfDoc) {
-      return undefined;
-    }
-
-    return () => {
-      cancelAllRenderTasks();
-      if (typeof (pdfDoc as { destroy?: unknown }).destroy === "function") {
-        void (pdfDoc as { destroy: () => Promise<void> | void }).destroy();
-      }
-    };
-  }, [pdfDoc]);
 
   useEffect(() => {
     if (!contentRef.current) {
