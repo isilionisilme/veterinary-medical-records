@@ -4,7 +4,7 @@
 
 **Iteración:** 13
 **Rama:** `refactor/decompose-app-workspace`
-**PR:** _pendiente de creación_
+**PR:** #171
 **Prerequisito:** `main` estable con tests verdes.
 
 ## Context
@@ -53,7 +53,7 @@ Orden de extracción: hooks sin dependencias cruzadas primero → hooks que depe
 
 ### Phase 0 — Bootstrap
 
-- [ ] R0-A 🔄 — Create branch `refactor/decompose-app-workspace` from `main`, create PR (Codex) ⏳ EN PROGRESO (Codex, 2026-02-28)
+- [x] R0-A 🔄 — Create branch `refactor/decompose-app-workspace` from `main`, create PR (Codex) — ✅ `5d972b97`
 
 ### Phase 1 — Leaf hooks (sin dependencias cruzadas)
 
@@ -334,7 +334,9 @@ _Claude writes after R4-B._
 
 ### Paso objetivo
 
-_Empty — plan no iniciado._
+_Completado: R0-A_
+
+_Vacío._
 
 ---
 
