@@ -81,7 +81,7 @@ usePdfNavigation (depende de usePdfRenderer.pageRefs, pdfDoc)
 
 - [x] P2-A 🔄 — Extract `usePdfZoom` — state: `zoomLevel`; effects: localStorage persistence, ctrl+wheel handler; exports: `zoomLevel`, `setZoomLevel`, `canZoomIn`, `canZoomOut`, `zoomPercent`, zoom control functions. Write test. (Codex)
 - [x] P2-B 🔄 — Extract `usePdfDocument` — state: `pdfDoc`, `totalPages`, `loading`, `error`; effect: PDF fetch/load lifecycle with cleanup. Write test. (Codex)
-- [ ] P2-C 🔄 — Extract `usePdfRenderer` — refs: `canvasRefs`, `pageRefs`, `renderedPages`, `renderingPages`, `renderSessionRef`, `renderTasksByPageRef`, `renderTaskStatusRef`; state: `pageTextByIndex`; effects: render-all-pages with retry, session/document identity guards; fn: `cancelAllRenderTasks`. Write test. (Codex)
+- [x] P2-C 🔄 — Extract `usePdfRenderer` — refs: `canvasRefs`, `pageRefs`, `renderedPages`, `renderingPages`, `renderSessionRef`, `renderTasksByPageRef`, `renderTaskStatusRef`; state: `pageTextByIndex`; effects: render-all-pages with retry, session/document identity guards; fn: `cancelAllRenderTasks`. Write test. (Codex)
 - [ ] P2-D 🔄 — Extract `usePdfNavigation` — state: `pageNumber`; refs: `scrollRef`, `contentRef`; effects: intersection observer page tracking, focus-page scroll; fn: `scrollToPage`; derived: `canGoBack`, `canGoForward`, `showPageNavigation`, snippet highlight detection. Write test. (Codex)
 
 ### Phase 3 — Component cleanup
@@ -239,24 +239,24 @@ _Claude writes after P4-B._
 
 ## Prompt activo
 
-### Paso objetivo: P2-C — Extract usePdfRenderer
+### Paso objetivo: P2-D — Extract usePdfNavigation
 
 ```
-Extrae `usePdfRenderer` de `PdfViewer.tsx` a `frontend/src/hooks/usePdfRenderer.ts`.
+Extrae `usePdfNavigation` de `PdfViewer.tsx` a `frontend/src/hooks/usePdfNavigation.ts`.
 
 **Estado que migra:**
-- Refs: canvasRefs, renderedPages, renderingPages, renderSessionRef, renderTasksByPageRef, renderTaskStatusRef, currentDocumentIdRef, nodeIdentityMapRef, nodeIdentityCounterRef, lastCanvasNodeByPageRef
-- State: pageTextByIndex, containerWidth
-- Effects: renderAllPages (the big ~200-line effect), containerWidth ResizeObserver, session reset on zoom/doc change
-- Fn: cancelAllRenderTasks
+- useState: pageNumber
+- Effects: intersection observer for page tracking, focus-page scroll effect
+- Fn: scrollToPage
+- Derived: canGoBack, canGoForward, showPageNavigation, normalizedSnippet, isSnippetLocated
 
 **Interfaz del hook:**
-- Params: { pdfDoc, totalPages, zoomLevel, documentId, contentRef, debugFlags }
-- Returns: { canvasRefs, pageRefs, pageTextByIndex, containerWidth, renderSessionRef }
+- Params: { pdfDoc, totalPages, loading, error, fileUrl, focusPage, highlightSnippet, focusRequestId, scrollRef, pageRefs, pageTextByIndex }
+- Returns: { pageNumber, canGoBack, canGoForward, showPageNavigation, isSnippetLocated, scrollToPage }
 
-**Reglas:** Este es el hook más grande (~250 líneas). Extracción mecánica cuidadosa. Test. Verde.
+**Reglas:** Extracción mecánica. Test. Verde.
 ```
-⚠️ AUTO-CHAIN → P2-D
+⚠️ AUTO-CHAIN → P3-A
 
 ---
 
