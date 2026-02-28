@@ -17,7 +17,6 @@ import { useReviewSplitPanel } from "./hooks/useReviewSplitPanel";
 import { useStructuredDataFilters } from "./hooks/useStructuredDataFilters";
 import { useSourcePanelState } from "./hooks/useSourcePanelState";
 import { useUploadState } from "./hooks/useUploadState";
-import { useRawTextActions } from "./hooks/useRawTextActions";
 import { useReviewedEditBlocker } from "./hooks/useReviewedEditBlocker";
 import { useDocumentLoader } from "./hooks/useDocumentLoader";
 import { useReprocessing } from "./hooks/useReprocessing";
@@ -25,6 +24,7 @@ import { useReviewToggle } from "./hooks/useReviewToggle";
 import { useInterpretationEdit } from "./hooks/useInterpretationEdit";
 import { useDocumentUpload } from "./hooks/useDocumentUpload";
 import { useDocumentListPolling } from "./hooks/useDocumentListPolling";
+import { useRawTextViewer } from "./hooks/useRawTextViewer";
 import { logExtractionDebugEvent, type ExtractionDebugEvent } from "./extraction/extractionDebug";
 import { validateFieldValue } from "./extraction/fieldValidators";
 import {
@@ -51,7 +51,6 @@ import {
   fetchDocumentDetails,
   fetchDocumentReview,
   fetchProcessingHistory,
-  fetchRawText,
 } from "./api/documentApi";
 import { GLOBAL_SCHEMA } from "./lib/globalSchema";
 import {
@@ -102,8 +101,6 @@ export function App() {
     "document",
   );
   const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>({});
-  const [rawSearch, setRawSearch] = useState("");
-  const [rawSearchNotice, setRawSearchNotice] = useState<string | null>(null);
   const [uploadFeedback, setUploadFeedback] = useState<UploadFeedback | null>(null);
   const [actionFeedback, setActionFeedback] = useState<ActionFeedback | null>(null);
   const [showRefreshFeedback, setShowRefreshFeedback] = useState(false);
@@ -280,12 +277,22 @@ export function App() {
     return () => window.clearTimeout(timer);
   }, [activeId, documentReview.isFetching, reviewLoadingDocId, reviewLoadingSinceMs]);
   const rawTextRunId = documentDetails.data?.latest_run?.run_id ?? null;
-  const rawTextQuery = useQuery({
-    queryKey: ["runs", "raw-text", rawTextRunId],
-    queryFn: () => fetchRawText(rawTextRunId ?? ""),
-    enabled: activeViewerTab === "raw_text" && Boolean(rawTextRunId),
-    retry: false,
-  });
+  const {
+    rawSearch,
+    setRawSearch,
+    rawSearchNotice,
+    rawTextContent,
+    hasRawText,
+    canCopyRawText,
+    isRawTextLoading,
+    canSearchRawText,
+    rawTextErrorMessage,
+    handleRawSearch,
+    copyFeedback,
+    isCopyingRawText,
+    handleDownloadRawText,
+    handleCopyRawText,
+  } = useRawTextViewer({ rawTextRunId, activeViewerTab });
   const resetSourcePanel = sourcePanel.reset;
   useEffect(() => {
     setSelectedFieldId(null);
@@ -459,40 +466,6 @@ export function App() {
     }
     showConnectivityToast();
   }, [loadPdf.error, loadPdf.failureCount, loadPdf.isError]);
-  const rawTextContent = rawTextQuery.data?.text ?? null;
-  const hasRawText = Boolean(rawTextContent && rawTextContent.length > 0);
-  const canCopyRawText = hasRawText && !rawTextQuery.isLoading && !rawTextQuery.isError;
-  const isRawTextLoading = rawTextQuery.isLoading || rawTextQuery.isFetching;
-  const canSearchRawText = hasRawText && !isRawTextLoading && !rawTextQuery.isError;
-  const handleRawSearch = () => {
-    if (!rawTextContent || !rawSearch.trim()) {
-      setRawSearchNotice(null);
-      return;
-    }
-    const match = rawTextContent.toLowerCase().includes(rawSearch.trim().toLowerCase());
-    setRawSearchNotice(match ? "Coincidencia encontrada." : "No se encontraron coincidencias.");
-  };
-  const rawTextErrorMessage = (() => {
-    if (!rawTextQuery.isError) {
-      return null;
-    }
-    if (rawTextQuery.error instanceof ApiResponseError) {
-      if (rawTextQuery.error.reason === "RAW_TEXT_NOT_READY") {
-        return null;
-      }
-      if (rawTextQuery.error.reason === "RAW_TEXT_NOT_AVAILABLE") {
-        return null;
-      }
-      if (rawTextQuery.error.reason === "RAW_TEXT_NOT_USABLE") {
-        return null;
-      }
-      if (rawTextQuery.error.errorCode === "ARTIFACT_MISSING") {
-        return null;
-      }
-      return rawTextQuery.error.userMessage;
-    }
-    return getUserErrorMessage(rawTextQuery.error, "No se pudo cargar el texto extraído.");
-  })();
   const interpretationData = documentReview.data?.active_interpretation.data;
   const schemaContract =
     typeof interpretationData?.schema_contract === "string"
@@ -1451,8 +1424,6 @@ export function App() {
     const timer = window.setTimeout(() => setEvidenceNotice(null), 3000);
     return () => window.clearTimeout(timer);
   }, [evidenceNotice]);
-  const { copyFeedback, isCopyingRawText, handleDownloadRawText, handleCopyRawText } =
-    useRawTextActions({ rawTextContent: rawTextContent ?? undefined, getUserErrorMessage });
   const { toolbarLeftContent: viewerModeToolbarIcons, toolbarRightExtra: viewerDownloadIcon } =
     buildViewerToolbarContent({
       activeViewerTab,
