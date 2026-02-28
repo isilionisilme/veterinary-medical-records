@@ -19,6 +19,7 @@ import { useSourcePanelState } from "./hooks/useSourcePanelState";
 import { useUploadState } from "./hooks/useUploadState";
 import { useRawTextActions } from "./hooks/useRawTextActions";
 import { useReviewedEditBlocker } from "./hooks/useReviewedEditBlocker";
+import { useDocumentLoader } from "./hooks/useDocumentLoader";
 import { logExtractionDebugEvent, type ExtractionDebugEvent } from "./extraction/extractionDebug";
 import { validateFieldValue } from "./extraction/fieldValidators";
 import {
@@ -46,7 +47,6 @@ import {
   fetchDocumentDetails,
   fetchDocumentReview,
   fetchDocuments,
-  fetchOriginalPdf,
   fetchProcessingHistory,
   fetchRawText,
   markDocumentReviewed,
@@ -103,8 +103,6 @@ export {
 } from "./constants/appWorkspace";
 export function App() {
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [fileUrl, setFileUrl] = useState<string | ArrayBuffer | null>(null);
-  const [filename, setFilename] = useState<string | null>(null);
   const [activeViewerTab, setActiveViewerTab] = useState<"document" | "raw_text" | "technical">(
     "document",
   );
@@ -132,11 +130,7 @@ export function App() {
   const loggedExtractionDebugEventKeysRef = useRef<Set<string>>(new Set());
   const loggedConfidencePolicyDiagnosticsRef = useRef<Set<string>>(new Set());
   const loggedConfidencePolicyDebugRef = useRef<Set<string>>(new Set());
-  const pendingAutoOpenDocumentIdRef = useRef<string | null>(null);
-  const autoOpenRetryCountRef = useRef<Record<string, number>>({});
-  const autoOpenRetryTimerRef = useRef<number | null>(null);
   const refreshFeedbackTimerRef = useRef<number | null>(null);
-  const latestLoadRequestIdRef = useRef<string | null>(null);
   const latestRawTextRefreshRef = useRef<string | null>(null);
   const listPollingStartedAtRef = useRef<number | null>(null);
   const interpretationRetryMinTimerRef = useRef<number | null>(null);
@@ -148,6 +142,10 @@ export function App() {
     hasShownListErrorToast,
     setHasShownListErrorToast,
   } = useConnectivityToasts();
+  const { fileUrl, filename, requestPdfLoad, loadPdf, pendingAutoOpenDocumentIdRef } =
+    useDocumentLoader({
+      onUploadFeedback: setUploadFeedback,
+    });
   const effectiveViewMode = "browse";
   const isReviewMode = false;
   const isBrowseMode = true;
@@ -159,9 +157,6 @@ export function App() {
   }, [activeId]);
   useEffect(() => {
     return () => {
-      if (autoOpenRetryTimerRef.current) {
-        window.clearTimeout(autoOpenRetryTimerRef.current);
-      }
       if (refreshFeedbackTimerRef.current) {
         window.clearTimeout(refreshFeedbackTimerRef.current);
       }
@@ -170,59 +165,6 @@ export function App() {
       }
     };
   }, []);
-  const loadPdf = useMutation({
-    mutationFn: async (docId: string) => fetchOriginalPdf(docId),
-    onSuccess: (result, docId) => {
-      if (latestLoadRequestIdRef.current !== docId) {
-        return;
-      }
-      if (pendingAutoOpenDocumentIdRef.current === docId) {
-        pendingAutoOpenDocumentIdRef.current = null;
-        delete autoOpenRetryCountRef.current[docId];
-        if (autoOpenRetryTimerRef.current) {
-          window.clearTimeout(autoOpenRetryTimerRef.current);
-          autoOpenRetryTimerRef.current = null;
-        }
-        setUploadFeedback((current) => {
-          if (current?.kind !== "success" || current.documentId !== docId) {
-            return current;
-          }
-          return { ...current, showOpenAction: false };
-        });
-      }
-      setActiveId(docId);
-      setFileUrl(result.data);
-      setFilename(result.filename);
-    },
-    onError: (_, docId) => {
-      if (latestLoadRequestIdRef.current !== docId) {
-        return;
-      }
-      if (pendingAutoOpenDocumentIdRef.current === docId) {
-        const retries = autoOpenRetryCountRef.current[docId] ?? 0;
-        if (retries < 1) {
-          autoOpenRetryCountRef.current[docId] = retries + 1;
-          autoOpenRetryTimerRef.current = window.setTimeout(() => {
-            latestLoadRequestIdRef.current = docId;
-            requestPdfLoad(docId);
-          }, 1000);
-          return;
-        }
-        pendingAutoOpenDocumentIdRef.current = null;
-        delete autoOpenRetryCountRef.current[docId];
-        setUploadFeedback({
-          kind: "success",
-          message: "Documento subido correctamente.",
-          documentId: docId,
-          showOpenAction: true,
-        });
-      }
-    },
-  });
-  const requestPdfLoad = (docId: string) => {
-    latestLoadRequestIdRef.current = docId;
-    loadPdf.mutate(docId);
-  };
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => uploadDocument(file),
     onSuccess: async (result, file) => {
@@ -252,7 +194,6 @@ export function App() {
       );
       setActiveViewerTab("document");
       pendingAutoOpenDocumentIdRef.current = result.document_id;
-      autoOpenRetryCountRef.current[result.document_id] = 0;
       setActiveId(result.document_id);
       setUploadFeedback({
         kind: "success",
@@ -2197,6 +2138,7 @@ export function App() {
           onCloseActionFeedback={() => setActionFeedback(null)}
           onOpenUploadedDocument={(documentId) => {
             setActiveViewerTab("document");
+            setActiveId(documentId);
             requestPdfLoad(documentId);
             setUploadFeedback(null);
           }}
