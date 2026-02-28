@@ -25,6 +25,7 @@ import { useInterpretationEdit } from "./hooks/useInterpretationEdit";
 import { useDocumentUpload } from "./hooks/useDocumentUpload";
 import { useDocumentListPolling } from "./hooks/useDocumentListPolling";
 import { useRawTextViewer } from "./hooks/useRawTextViewer";
+import { useConfidenceDiagnostics } from "./hooks/useConfidenceDiagnostics";
 import { logExtractionDebugEvent, type ExtractionDebugEvent } from "./extraction/extractionDebug";
 import { validateFieldValue } from "./extraction/fieldValidators";
 import {
@@ -34,7 +35,6 @@ import {
   CANONICAL_VISIT_METADATA_KEYS,
   CANONICAL_VISIT_SCOPED_FIELD_KEYS,
   CRITICAL_GLOBAL_SCHEMA_KEYS,
-  DEBUG_CONFIDENCE_POLICY,
   FIELD_LABELS,
   HIDDEN_REVIEW_FIELDS,
   MAX_UPLOAD_SIZE_BYTES,
@@ -55,7 +55,6 @@ import {
 import { GLOBAL_SCHEMA } from "./lib/globalSchema";
 import {
   clampConfidence,
-  emitConfidencePolicyDiagnosticEvent,
   formatFieldValue,
   formatReviewKeyLabel,
   formatRunHeader,
@@ -71,17 +70,12 @@ import {
   isDocumentProcessing,
   isFieldValueEmpty,
   isProcessingTooLong,
-  resolveConfidencePolicy,
   resolveMappingConfidence,
   resolveUiSection,
   shouldHideExtractedField,
 } from "./lib/appWorkspaceUtils";
 import { type ConfidenceBucket, matchesStructuredDataFilters } from "./lib/structuredDataFilters";
 import { mapDocumentStatus } from "./lib/documentStatus";
-import {
-  buildVisitGroupingDiagnostics,
-  shouldEmitVisitGroupingDiagnostics,
-} from "./lib/visitGroupingObservability";
 import {
   ApiResponseError,
   type ReviewDisplayField,
@@ -114,10 +108,7 @@ export function App() {
   const [hoveredFieldTriggerId, setHoveredFieldTriggerId] = useState<string | null>(null);
   const [hoveredCriticalTriggerId, setHoveredCriticalTriggerId] = useState<string | null>(null);
   const lastExtractionDebugDocIdRef = useRef<string | null>(null);
-  const lastConfidencePolicyDocIdRef = useRef<string | null>(null);
   const loggedExtractionDebugEventKeysRef = useRef<Set<string>>(new Set());
-  const loggedConfidencePolicyDiagnosticsRef = useRef<Set<string>>(new Set());
-  const loggedConfidencePolicyDebugRef = useRef<Set<string>>(new Set());
   const refreshFeedbackTimerRef = useRef<number | null>(null);
   const latestRawTextRefreshRef = useRef<string | null>(null);
   const interpretationRetryMinTimerRef = useRef<number | null>(null);
@@ -577,13 +568,11 @@ export function App() {
         section: field.section ?? "other",
       }));
   }, [interpretationData, isCanonicalContract]);
-  const documentConfidencePolicy = useMemo(
-    () =>
-      resolveConfidencePolicy(documentReview.data?.active_interpretation.data.confidence_policy),
-    [documentReview.data?.active_interpretation.data.confidence_policy],
-  );
-  const activeConfidencePolicy = documentConfidencePolicy?.value ?? null;
-  const confidencePolicyDegradedReason = documentConfidencePolicy?.degradedReason ?? null;
+  const { activeConfidencePolicy } = useConfidenceDiagnostics({
+    interpretationData,
+    reviewVisits,
+    isCanonicalContract,
+  });
   const validationResult = useMemo(() => {
     const fieldsByKey = new Map<string, number>();
     const acceptedFields: ReviewField[] = [];
@@ -661,71 +650,6 @@ export function App() {
       logExtractionDebugEvent(event);
     });
   }, [documentReview.data?.active_interpretation.data.document_id, validationResult.debugEvents]);
-  useEffect(() => {
-    const documentId = documentReview.data?.active_interpretation.data.document_id ?? null;
-    if (documentId === null) {
-      return;
-    }
-    if (lastConfidencePolicyDocIdRef.current !== documentId) {
-      loggedConfidencePolicyDiagnosticsRef.current.clear();
-      lastConfidencePolicyDocIdRef.current = documentId;
-    }
-    if (!confidencePolicyDegradedReason) {
-      return;
-    }
-    const eventKey = `${documentId ?? ""}|${confidencePolicyDegradedReason}`;
-    if (loggedConfidencePolicyDiagnosticsRef.current.has(eventKey)) {
-      return;
-    }
-    loggedConfidencePolicyDiagnosticsRef.current.add(eventKey);
-    emitConfidencePolicyDiagnosticEvent({
-      event_type: "CONFIDENCE_POLICY_CONFIG_MISSING",
-      document_id: documentId,
-      reason: confidencePolicyDegradedReason,
-    });
-  }, [confidencePolicyDegradedReason, documentReview.data?.active_interpretation.data.document_id]);
-  useEffect(() => {
-    if (!DEBUG_CONFIDENCE_POLICY) {
-      return;
-    }
-    const interpretationData = documentReview.data?.active_interpretation.data;
-    const documentId = interpretationData?.document_id ?? null;
-    if (!documentId) {
-      return;
-    }
-    const eventKey = `${documentId}|${confidencePolicyDegradedReason ?? "valid"}`;
-    if (loggedConfidencePolicyDebugRef.current.has(eventKey)) {
-      return;
-    }
-    loggedConfidencePolicyDebugRef.current.add(eventKey);
-    const rawPolicy = interpretationData?.confidence_policy;
-    const sampleField =
-      interpretationData?.fields.find((field) => field.key === "pet_name") ??
-      interpretationData?.fields[0];
-    console.info("[confidence-policy][debug]", {
-      document_id: documentId,
-      has_confidence_policy: Boolean(rawPolicy),
-      degraded_reason: confidencePolicyDegradedReason,
-      policy_version: rawPolicy?.policy_version ?? null,
-      has_band_cutoffs: Boolean(rawPolicy?.band_cutoffs),
-      sample_field_mapping_confidence: sampleField
-        ? {
-            field_key: sampleField.key,
-            has_field_mapping_confidence: typeof sampleField.field_mapping_confidence === "number",
-          }
-        : null,
-    });
-  }, [confidencePolicyDegradedReason, documentReview.data?.active_interpretation.data]);
-  useEffect(() => {
-    if (!isCanonicalContract || !shouldEmitVisitGroupingDiagnostics(import.meta.env)) {
-      return;
-    }
-    const diagnostics = buildVisitGroupingDiagnostics(reviewVisits);
-    console.info("[visit-grouping][diagnostic]", {
-      document_id: interpretationData?.document_id ?? null,
-      ...diagnostics,
-    });
-  }, [interpretationData?.document_id, isCanonicalContract, reviewVisits]);
   const validatedReviewFields = validationResult.acceptedFields.filter((field) => {
     if (isCanonicalContract) {
       return !BILLING_REVIEW_FIELDS.has(field.key);
