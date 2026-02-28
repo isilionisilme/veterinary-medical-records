@@ -27,6 +27,7 @@ import { useDocumentListPolling } from "./hooks/useDocumentListPolling";
 import { useRawTextViewer } from "./hooks/useRawTextViewer";
 import { useConfidenceDiagnostics } from "./hooks/useConfidenceDiagnostics";
 import { useReviewDataPipeline } from "./hooks/useReviewDataPipeline";
+import { useReviewPanelStatus } from "./hooks/useReviewPanelStatus";
 import {
   API_BASE_URL,
   MAX_UPLOAD_SIZE_BYTES,
@@ -42,7 +43,6 @@ import {
 import {
   formatRunHeader,
   formatTimestamp,
-  getReviewPanelMessage,
   getTechnicalDetails,
   getUserErrorMessage,
   isConnectivityOrServerError,
@@ -50,12 +50,7 @@ import {
   isProcessingTooLong,
 } from "./lib/appWorkspaceUtils";
 import { mapDocumentStatus } from "./lib/documentStatus";
-import {
-  ApiResponseError,
-  type ReviewPanelState,
-  type ReviewSelectableField,
-  type ReviewVisitGroup,
-} from "./types/appWorkspace";
+import { type ReviewSelectableField, type ReviewVisitGroup } from "./types/appWorkspace";
 export {
   MIN_PDF_PANEL_WIDTH_PX,
   REVIEW_SPLIT_MIN_WIDTH_PX,
@@ -73,15 +68,11 @@ export function App() {
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [evidenceNotice, setEvidenceNotice] = useState<string | null>(null);
   const [expandedFieldValues, setExpandedFieldValues] = useState<Record<string, boolean>>({});
-  const [reviewLoadingDocId, setReviewLoadingDocId] = useState<string | null>(null);
-  const [reviewLoadingSinceMs, setReviewLoadingSinceMs] = useState<number | null>(null);
-  const [isRetryingInterpretation, setIsRetryingInterpretation] = useState(false);
   const [fieldNavigationRequestId, setFieldNavigationRequestId] = useState(0);
   const [hoveredFieldTriggerId, setHoveredFieldTriggerId] = useState<string | null>(null);
   const [hoveredCriticalTriggerId, setHoveredCriticalTriggerId] = useState<string | null>(null);
   const refreshFeedbackTimerRef = useRef<number | null>(null);
   const latestRawTextRefreshRef = useRef<string | null>(null);
-  const interpretationRetryMinTimerRef = useRef<number | null>(null);
   const queryClient = useQueryClient();
   const {
     connectivityToast,
@@ -107,9 +98,6 @@ export function App() {
     return () => {
       if (refreshFeedbackTimerRef.current) {
         window.clearTimeout(refreshFeedbackTimerRef.current);
-      }
-      if (interpretationRetryMinTimerRef.current) {
-        window.clearTimeout(interpretationRetryMinTimerRef.current);
       }
     };
   }, []);
@@ -203,40 +191,6 @@ export function App() {
     enabled: Boolean(activeId),
     retry: false,
   });
-  useEffect(() => {
-    if (!activeId) {
-      setReviewLoadingDocId(null);
-      setReviewLoadingSinceMs(null);
-      setIsRetryingInterpretation(false);
-      if (interpretationRetryMinTimerRef.current) {
-        window.clearTimeout(interpretationRetryMinTimerRef.current);
-        interpretationRetryMinTimerRef.current = null;
-      }
-      return;
-    }
-    setReviewLoadingDocId(activeId);
-    setReviewLoadingSinceMs(Date.now());
-  }, [activeId]);
-  useEffect(() => {
-    if (!activeId || reviewLoadingDocId !== activeId) {
-      return;
-    }
-    if (documentReview.isFetching) {
-      return;
-    }
-    const minimumVisibleMs = 300;
-    const elapsed = reviewLoadingSinceMs ? Date.now() - reviewLoadingSinceMs : minimumVisibleMs;
-    if (elapsed >= minimumVisibleMs) {
-      setReviewLoadingDocId(null);
-      setReviewLoadingSinceMs(null);
-      return;
-    }
-    const timer = window.setTimeout(() => {
-      setReviewLoadingDocId(null);
-      setReviewLoadingSinceMs(null);
-    }, minimumVisibleMs - elapsed);
-    return () => window.clearTimeout(timer);
-  }, [activeId, documentReview.isFetching, reviewLoadingDocId, reviewLoadingSinceMs]);
   const rawTextRunId = documentDetails.data?.latest_run?.run_id ?? null;
   const {
     rawSearch,
@@ -500,48 +454,26 @@ export function App() {
     }
     return selectableReviewItems.find((field) => field.id === selectedFieldId) ?? null;
   }, [selectableReviewItems, selectedFieldId]);
-  const reviewPanelState: ReviewPanelState = (() => {
-    if (!activeId) {
-      return "idle";
-    }
-    const hasStructuredPayload =
-      Boolean(documentReview.data?.active_interpretation?.data) &&
-      documentReview.data?.document_id === activeId;
-    if (reviewLoadingDocId === activeId) {
-      return "loading";
-    }
-    if (isActiveDocumentProcessing && !hasStructuredPayload) {
-      return "loading";
-    }
-    if (!hasStructuredPayload && !documentReview.isError && documentReview.isFetching) {
-      return "loading";
-    }
-    if (!isRetryingInterpretation && documentReview.isFetching && !documentReview.isError) {
-      return "loading";
-    }
-    if (documentReview.isError) {
-      if (
-        documentReview.error instanceof ApiResponseError &&
-        (documentReview.error.reason === "NO_COMPLETED_RUN" ||
-          documentReview.error.reason === "INTERPRETATION_MISSING")
-      ) {
-        if (isActiveDocumentProcessing) {
-          return "loading";
-        }
-        return "no_completed_run";
-      }
-      return "error";
-    }
-    if (!hasStructuredPayload) {
-      return "error";
-    }
-    return "ready";
-  })();
-  const reviewPanelMessage = getReviewPanelMessage(reviewPanelState);
-  const shouldShowReviewEmptyState =
-    reviewPanelState !== "loading" && reviewPanelState !== "ready" && Boolean(reviewPanelMessage);
-  const hasNoStructuredFilterResults =
-    reviewPanelState === "ready" && hasActiveStructuredFilters && visibleCoreGroups.length === 0;
+  const {
+    reviewPanelState,
+    reviewPanelMessage,
+    shouldShowReviewEmptyState,
+    hasNoStructuredFilterResults,
+    isRetryingInterpretation,
+    handleRetryInterpretation,
+  } = useReviewPanelStatus({
+    activeId,
+    documentReview: {
+      data: documentReview.data,
+      isFetching: documentReview.isFetching,
+      isError: documentReview.isError,
+      error: documentReview.error,
+      refetch: documentReview.refetch,
+    },
+    isActiveDocumentProcessing,
+    hasActiveStructuredFilters,
+    visibleCoreGroupsLength: visibleCoreGroups.length,
+  });
   const reviewMessageInfoClass = REVIEW_MESSAGE_INFO_CLASS;
   const reviewMessageMutedClass = REVIEW_MESSAGE_MUTED_CLASS;
   const reviewMessageWarningClass = REVIEW_MESSAGE_WARNING_CLASS;
@@ -581,25 +513,6 @@ export function App() {
       onChangeTab: setActiveViewerTab,
       downloadUrl,
     });
-  const handleRetryInterpretation = useCallback(async () => {
-    const retryStartedAt = Date.now();
-    setIsRetryingInterpretation(true);
-    await documentReview.refetch();
-    const minVisibleMs = 250;
-    const elapsedMs = Date.now() - retryStartedAt;
-    const remainingMs = Math.max(0, minVisibleMs - elapsedMs);
-    if (remainingMs === 0) {
-      setIsRetryingInterpretation(false);
-      return;
-    }
-    if (interpretationRetryMinTimerRef.current) {
-      window.clearTimeout(interpretationRetryMinTimerRef.current);
-    }
-    interpretationRetryMinTimerRef.current = window.setTimeout(() => {
-      interpretationRetryMinTimerRef.current = null;
-      setIsRetryingInterpretation(false);
-    }, remainingMs);
-  }, [documentReview]);
   const {
     editingField,
     editingFieldDraftValue,
