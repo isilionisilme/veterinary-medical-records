@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { DocumentsSidebar } from "./components/DocumentsSidebar";
 import { buildViewerToolbarContent } from "./components/viewer/viewerToolbarContent";
 import { PdfViewerPanel } from "./components/workspace/PdfViewerPanel";
@@ -23,6 +23,7 @@ import { useDocumentLoader } from "./hooks/useDocumentLoader";
 import { useReprocessing } from "./hooks/useReprocessing";
 import { useReviewToggle } from "./hooks/useReviewToggle";
 import { useInterpretationEdit } from "./hooks/useInterpretationEdit";
+import { useDocumentUpload } from "./hooks/useDocumentUpload";
 import { logExtractionDebugEvent, type ExtractionDebugEvent } from "./extraction/extractionDebug";
 import { validateFieldValue } from "./extraction/fieldValidators";
 import {
@@ -51,7 +52,6 @@ import {
   fetchDocuments,
   fetchProcessingHistory,
   fetchRawText,
-  uploadDocument,
 } from "./api/documentApi";
 import { GLOBAL_SCHEMA } from "./lib/globalSchema";
 import {
@@ -85,7 +85,6 @@ import {
 } from "./lib/visitGroupingObservability";
 import {
   ApiResponseError,
-  type DocumentListResponse,
   type ReviewDisplayField,
   type ReviewField,
   type ReviewPanelState,
@@ -157,63 +156,12 @@ export function App() {
       }
     };
   }, []);
-  const uploadMutation = useMutation({
-    mutationFn: async (file: File) => uploadDocument(file),
-    onSuccess: async (result, file) => {
-      const createdAt = result.created_at || new Date().toISOString();
-      queryClient.setQueryData<DocumentListResponse | undefined>(
-        ["documents", "list"],
-        (current) => {
-          if (!current) {
-            return current;
-          }
-          const exists = current.items.some((item) => item.document_id === result.document_id);
-          const items = exists
-            ? current.items
-            : [
-                {
-                  document_id: result.document_id,
-                  original_filename: file.name,
-                  created_at: createdAt,
-                  status: result.status,
-                  status_label: result.status,
-                  failure_type: null,
-                },
-                ...current.items,
-              ];
-          return { ...current, items, total: exists ? current.total : current.total + 1 };
-        },
-      );
-      setActiveViewerTab("document");
-      pendingAutoOpenDocumentIdRef.current = result.document_id;
-      setActiveId(result.document_id);
-      setUploadFeedback({
-        kind: "success",
-        message: "Documento subido correctamente.",
-        documentId: result.document_id,
-        showOpenAction: false,
-      });
-      requestPdfLoad(result.document_id);
-      queryClient.invalidateQueries({ queryKey: ["documents", "list"] });
-      try {
-        await queryClient.fetchQuery({
-          queryKey: ["documents", "list"],
-          queryFn: fetchDocuments,
-        });
-      } catch {
-        // Keep optimistic list item and fallback open action when refetch fails.
-      }
-      queryClient.invalidateQueries({ queryKey: ["documents", "detail", result.document_id] });
-      queryClient.invalidateQueries({ queryKey: ["documents", "history", result.document_id] });
-      queryClient.invalidateQueries({ queryKey: ["documents", "review", result.document_id] });
-    },
-    onError: (error) => {
-      setUploadFeedback({
-        kind: "error",
-        message: getUserErrorMessage(error, "No se pudo subir el documento."),
-        technicalDetails: getTechnicalDetails(error),
-      });
-    },
+  const { uploadMutation } = useDocumentUpload({
+    requestPdfLoad,
+    pendingAutoOpenDocumentIdRef,
+    onUploadFeedback: setUploadFeedback,
+    onSetActiveId: setActiveId,
+    onSetActiveViewerTab: setActiveViewerTab,
   });
   const {
     fileInputRef,
