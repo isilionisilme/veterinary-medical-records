@@ -71,28 +71,28 @@ usePdfNavigation (depende de usePdfRenderer.pageRefs, pdfDoc)
 
 ### Phase 0 — Bootstrap
 
-- [ ] P0-A 🔄 — Create branch `refactor/decompose-pdf-viewer` from `main`, create PR (Codex)
+- [x] P0-A 🔄 — Create branch `refactor/decompose-pdf-viewer` from `main`, create PR (Codex)
 
 ### Phase 1 — Pure utility extraction
 
-- [ ] P1-A 🔄 — Extract `lib/pdfDebug.ts` — move `analyzeTransform()`, `captureDebugSnapshot()`, `getNodeId()`, debug flags computation, related types and constants (`PDF_ZOOM_STORAGE_KEY`, etc.). Write test for `analyzeTransform` (pure function). (Codex)
+- [x] P1-A 🔄 — Extract `lib/pdfDebug.ts` — move `analyzeTransform()`, `captureDebugSnapshot()`, `getNodeId()`, debug flags computation, related types and constants (`PDF_ZOOM_STORAGE_KEY`, etc.). Write test for `analyzeTransform` (pure function). (Codex)
 
 ### Phase 2 — Hook extractions (leaf → dependent)
 
-- [ ] P2-A 🔄 — Extract `usePdfZoom` — state: `zoomLevel`; effects: localStorage persistence, ctrl+wheel handler; exports: `zoomLevel`, `setZoomLevel`, `canZoomIn`, `canZoomOut`, `zoomPercent`, zoom control functions. Write test. (Codex)
-- [ ] P2-B 🔄 — Extract `usePdfDocument` — state: `pdfDoc`, `totalPages`, `loading`, `error`; effect: PDF fetch/load lifecycle with cleanup. Write test. (Codex)
-- [ ] P2-C 🔄 — Extract `usePdfRenderer` — refs: `canvasRefs`, `pageRefs`, `renderedPages`, `renderingPages`, `renderSessionRef`, `renderTasksByPageRef`, `renderTaskStatusRef`; state: `pageTextByIndex`; effects: render-all-pages with retry, session/document identity guards; fn: `cancelAllRenderTasks`. Write test. (Codex)
-- [ ] P2-D 🔄 — Extract `usePdfNavigation` — state: `pageNumber`; refs: `scrollRef`, `contentRef`; effects: intersection observer page tracking, focus-page scroll; fn: `scrollToPage`; derived: `canGoBack`, `canGoForward`, `showPageNavigation`, snippet highlight detection. Write test. (Codex)
+- [x] P2-A 🔄 — Extract `usePdfZoom` — state: `zoomLevel`; effects: localStorage persistence, ctrl+wheel handler; exports: `zoomLevel`, `setZoomLevel`, `canZoomIn`, `canZoomOut`, `zoomPercent`, zoom control functions. Write test. (Codex)
+- [x] P2-B 🔄 — Extract `usePdfDocument` — state: `pdfDoc`, `totalPages`, `loading`, `error`; effect: PDF fetch/load lifecycle with cleanup. Write test. (Codex)
+- [x] P2-C 🔄 — Extract `usePdfRenderer` — refs: `canvasRefs`, `pageRefs`, `renderedPages`, `renderingPages`, `renderSessionRef`, `renderTasksByPageRef`, `renderTaskStatusRef`; state: `pageTextByIndex`; effects: render-all-pages with retry, session/document identity guards; fn: `cancelAllRenderTasks`. Write test. (Codex)
+- [x] P2-D 🔄 — Extract `usePdfNavigation` — state: `pageNumber`; refs: `scrollRef`, `contentRef`; effects: intersection observer page tracking, focus-page scroll; fn: `scrollToPage`; derived: `canGoBack`, `canGoForward`, `showPageNavigation`, snippet highlight detection. Write test. (Codex)
 
 ### Phase 3 — Component cleanup
 
-- [ ] P3-A 🔄 — Optionally extract `PdfViewerToolbar` sub-component (toolbar JSX ~80 lines) if PdfViewer still exceeds 200 lines. Clean up dead imports, verify lint. (Codex)
+- [x] P3-A 🔄 — Optionally extract `PdfViewerToolbar` sub-component (toolbar JSX ~80 lines) if PdfViewer still exceeds 200 lines. Clean up dead imports, verify lint. (Codex)
 
 ### Phase 4 — Integration & closure
 
-- [ ] P4-A 🚧 — Review: verify hooks compose correctly, no behavior regressions, existing PdfViewer tests pass, line count target met (Claude)
-- [ ] P4-B 🔄 — Final cleanup: `npm run lint`, `npm run test`, E2E tests, report final line count (Codex)
-- [ ] P4-C 🚧 — User acceptance review (Claude)
+- [x] P4-A 🚧 — Review: verify hooks compose correctly, no behavior regressions, existing PdfViewer tests pass, line count target met (Claude)
+- [x] P4-B 🔄 — Final cleanup: `npm run lint`, `npm run test`, E2E tests, report final line count (Codex)
+- [x] P4-C 🚧 — User acceptance review (Claude)
 
 ---
 
@@ -225,10 +225,13 @@ _Claude writes after P3-A is complete._
 
 ```
 1. Revisa PdfViewer.tsx: elimina imports no usados, verifica que no queden useState/useRef/useEffect huérfanos.
-2. Ejecuta `npm run lint` en frontend/ y corrige errores.
-3. Ejecuta `npm run test` en frontend/ y verifica todo verde.
-4. Ejecuta tests e2e: `npx playwright test`.
-5. Reporta line count final de PdfViewer.tsx.
+2. Dead code cleanup: elimina el parámetro `onRenderSessionReset` de `usePdfDocument`
+   (tipo, destructuring, llamada en loadPdf, dependency array) — ya no se usa desde PdfViewer.
+   Actualiza `usePdfDocument.test.tsx` removiendo la aserción sobre `onRenderSessionReset`.
+3. Ejecuta `npm run lint` en frontend/ y corrige errores.
+4. Ejecuta `npm run test` en frontend/ y verifica todo verde.
+5. Ejecuta tests e2e: `npx playwright test`.
+6. Reporta line count final de PdfViewer.tsx.
 ```
 
 ### P4-C — User acceptance (just-in-time)
@@ -239,14 +242,19 @@ _Claude writes after P4-B._
 
 ## Prompt activo
 
-### Paso objetivo: P0-A — Create branch and PR
+### Paso objetivo: P4-B — Final cleanup
 
 ```
-Crea la rama `refactor/decompose-pdf-viewer` desde `main` y un PR con título
-"refactor: decompose PdfViewer.tsx into hooks and utility modules" y body que resuma el plan.
-No hagas cambios de código aún.
+1. Revisa PdfViewer.tsx: elimina imports no usados, verifica que no queden useState/useRef/useEffect huérfanos.
+2. Dead code cleanup: elimina el parámetro `onRenderSessionReset` de `usePdfDocument`
+   (tipo, destructuring, llamada en loadPdf, dependency array) — ya no se usa desde PdfViewer.
+   Actualiza `usePdfDocument.test.tsx` removiendo la aserción sobre `onRenderSessionReset`.
+3. Ejecuta `npm run lint` en frontend/ y corrige errores.
+4. Ejecuta `npm run test` en frontend/ y verifica todo verde.
+5. Ejecuta tests e2e: `npx playwright test`.
+6. Reporta line count final de PdfViewer.tsx.
 ```
-⚠️ AUTO-CHAIN → P1-A
+⚠️ AUTO-CHAIN → P4-C
 
 ---
 
