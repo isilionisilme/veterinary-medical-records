@@ -20,6 +20,7 @@ import { useUploadState } from "./hooks/useUploadState";
 import { useRawTextActions } from "./hooks/useRawTextActions";
 import { useReviewedEditBlocker } from "./hooks/useReviewedEditBlocker";
 import { useDocumentLoader } from "./hooks/useDocumentLoader";
+import { useReprocessing } from "./hooks/useReprocessing";
 import { logExtractionDebugEvent, type ExtractionDebugEvent } from "./extraction/extractionDebug";
 import { validateFieldValue } from "./extraction/fieldValidators";
 import {
@@ -51,7 +52,6 @@ import {
   fetchRawText,
   markDocumentReviewed,
   reopenDocumentReview,
-  triggerReprocess,
   uploadDocument,
 } from "./api/documentApi";
 import { GLOBAL_SCHEMA } from "./lib/globalSchema";
@@ -107,10 +107,6 @@ export function App() {
     "document",
   );
   const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>({});
-  const [showRetryModal, setShowRetryModal] = useState(false);
-  const [reprocessingDocumentId, setReprocessingDocumentId] = useState<string | null>(null);
-  const [hasObservedProcessingAfterReprocess, setHasObservedProcessingAfterReprocess] =
-    useState(false);
   const [rawSearch, setRawSearch] = useState("");
   const [rawSearchNotice, setRawSearchNotice] = useState<string | null>(null);
   const [uploadFeedback, setUploadFeedback] = useState<UploadFeedback | null>(null);
@@ -434,107 +430,6 @@ export function App() {
       setIsDocsSidebarHovered(false);
     }
   }, [documentList.status, setIsDocsSidebarHovered, sortedDocuments.length]);
-  const reprocessMutation = useMutation({
-    mutationFn: async (docId: string) => triggerReprocess(docId),
-    onMutate: async (docId) => {
-      const previousDocumentList = queryClient.getQueryData<DocumentListResponse>([
-        "documents",
-        "list",
-      ]);
-      const previousDocumentDetail = queryClient.getQueryData<DocumentDetailResponse>([
-        "documents",
-        "detail",
-        docId,
-      ]);
-      setReprocessingDocumentId(docId);
-      setHasObservedProcessingAfterReprocess(false);
-      await queryClient.cancelQueries({ queryKey: ["documents", "list"] });
-      queryClient.setQueryData<DocumentListResponse | undefined>(
-        ["documents", "list"],
-        (current) => {
-          if (!current) {
-            return current;
-          }
-          return {
-            ...current,
-            items: current.items.map((item) =>
-              item.document_id === docId ? { ...item, status: "PROCESSING" } : item,
-            ),
-          };
-        },
-      );
-      queryClient.setQueryData<DocumentDetailResponse | undefined>(
-        ["documents", "detail", docId],
-        (current) => {
-          if (!current) {
-            return current;
-          }
-          return {
-            ...current,
-            status: "PROCESSING",
-            latest_run: current.latest_run
-              ? { ...current.latest_run, state: "QUEUED" }
-              : current.latest_run,
-          };
-        },
-      );
-      return { previousDocumentList, previousDocumentDetail, docId };
-    },
-    onSuccess: (latestRun, docId) => {
-      queryClient.setQueryData<DocumentDetailResponse | undefined>(
-        ["documents", "detail", docId],
-        (current) => {
-          if (!current) {
-            return current;
-          }
-          return {
-            ...current,
-            status: "PROCESSING",
-            latest_run: {
-              run_id: latestRun.run_id,
-              state: latestRun.state,
-              failure_type: latestRun.failure_type,
-            },
-          };
-        },
-      );
-      setActionFeedback({
-        kind: "success",
-        message: "Reprocesamiento iniciado.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["documents", "list"] });
-      queryClient.invalidateQueries({ queryKey: ["documents", "detail", docId] });
-      queryClient.invalidateQueries({ queryKey: ["documents", "history", docId] });
-      queryClient.invalidateQueries({ queryKey: ["documents", "review", docId] });
-      queryClient.invalidateQueries({ queryKey: ["runs", "raw-text"] });
-      queryClient.refetchQueries({ queryKey: ["documents", "list"], type: "active" });
-      queryClient.refetchQueries({ queryKey: ["documents", "detail", docId], type: "active" });
-      queryClient.refetchQueries({ queryKey: ["documents", "history", docId], type: "active" });
-      queryClient.refetchQueries({ queryKey: ["documents", "review", docId], type: "active" });
-      latestRawTextRefreshRef.current = null;
-    },
-    onError: (error, docId, context) => {
-      if (context?.previousDocumentList) {
-        queryClient.setQueryData(["documents", "list"], context.previousDocumentList);
-      }
-      if (context?.previousDocumentDetail) {
-        queryClient.setQueryData(["documents", "detail", docId], context.previousDocumentDetail);
-      }
-      queryClient.invalidateQueries({ queryKey: ["documents", "list"] });
-      queryClient.invalidateQueries({ queryKey: ["documents", "detail", docId] });
-      queryClient.invalidateQueries({ queryKey: ["documents", "review", docId] });
-      queryClient.refetchQueries({ queryKey: ["documents", "list"], type: "active" });
-      queryClient.refetchQueries({ queryKey: ["documents", "detail", docId], type: "active" });
-      queryClient.refetchQueries({ queryKey: ["documents", "review", docId], type: "active" });
-      setActionFeedback({
-        kind: "error",
-        message: getUserErrorMessage(error, "No pudimos iniciar el reprocesamiento."),
-        technicalDetails: getTechnicalDetails(error),
-      });
-      setReprocessingDocumentId(null);
-      setHasObservedProcessingAfterReprocess(false);
-    },
-  });
   const reviewToggleMutation = useMutation({
     mutationFn: async (variables: { docId: string; target: "reviewed" | "in_review" }) => {
       if (variables.target === "reviewed") {
@@ -696,6 +591,21 @@ export function App() {
     latestState === "QUEUED" ||
     latestState === "RUNNING";
   const isActiveDocumentProcessing = isProcessing || isActiveListProcessing;
+  const {
+    reprocessingDocumentId,
+    hasObservedProcessingAfterReprocess,
+    showRetryModal,
+    setShowRetryModal,
+    reprocessMutation,
+    handleConfirmRetry,
+  } = useReprocessing({
+    activeId,
+    isActiveDocumentProcessing,
+    onActionFeedback: setActionFeedback,
+    onReprocessSuccess: () => {
+      latestRawTextRefreshRef.current = null;
+    },
+  });
   useEffect(() => {
     if (!latestRunId || !latestState) {
       return;
@@ -712,24 +622,6 @@ export function App() {
     latestRawTextRefreshRef.current = refreshKey;
     queryClient.invalidateQueries({ queryKey: ["runs", "raw-text", latestRunId] });
   }, [latestRunId, latestState, queryClient]);
-  useEffect(() => {
-    if (!reprocessingDocumentId || activeId !== reprocessingDocumentId) {
-      return;
-    }
-    if (isActiveDocumentProcessing && !hasObservedProcessingAfterReprocess) {
-      setHasObservedProcessingAfterReprocess(true);
-      return;
-    }
-    if (hasObservedProcessingAfterReprocess && !isActiveDocumentProcessing) {
-      setReprocessingDocumentId(null);
-      setHasObservedProcessingAfterReprocess(false);
-    }
-  }, [
-    activeId,
-    hasObservedProcessingAfterReprocess,
-    isActiveDocumentProcessing,
-    reprocessingDocumentId,
-  ]);
   useEffect(() => {
     if (!uploadFeedback) {
       return;
@@ -788,14 +680,6 @@ export function App() {
     }
     showConnectivityToast();
   }, [loadPdf.error, loadPdf.failureCount, loadPdf.isError]);
-  const handleConfirmRetry = () => {
-    if (!activeId) {
-      setShowRetryModal(false);
-      return;
-    }
-    setShowRetryModal(false);
-    reprocessMutation.mutate(activeId);
-  };
   const rawTextContent = rawTextQuery.data?.text ?? null;
   const hasRawText = Boolean(rawTextContent && rawTextContent.length > 0);
   const canCopyRawText = hasRawText && !rawTextQuery.isLoading && !rawTextQuery.isError;
