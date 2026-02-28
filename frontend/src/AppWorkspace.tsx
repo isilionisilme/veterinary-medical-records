@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { DocumentsSidebar } from "./components/DocumentsSidebar";
 import { buildViewerToolbarContent } from "./components/viewer/viewerToolbarContent";
 import { PdfViewerPanel } from "./components/workspace/PdfViewerPanel";
@@ -28,6 +28,7 @@ import { useRawTextViewer } from "./hooks/useRawTextViewer";
 import { useConfidenceDiagnostics } from "./hooks/useConfidenceDiagnostics";
 import { useReviewDataPipeline } from "./hooks/useReviewDataPipeline";
 import { useReviewPanelStatus } from "./hooks/useReviewPanelStatus";
+import { useActiveDocumentQueries } from "./hooks/useActiveDocumentQueries";
 import {
   API_BASE_URL,
   MAX_UPLOAD_SIZE_BYTES,
@@ -35,11 +36,6 @@ import {
   REVIEW_MESSAGE_MUTED_CLASS,
   REVIEW_MESSAGE_WARNING_CLASS,
 } from "./constants/appWorkspace";
-import {
-  fetchDocumentDetails,
-  fetchDocumentReview,
-  fetchProcessingHistory,
-} from "./api/documentApi";
 import {
   formatRunHeader,
   formatTimestamp,
@@ -72,7 +68,6 @@ export function App() {
   const [hoveredFieldTriggerId, setHoveredFieldTriggerId] = useState<string | null>(null);
   const [hoveredCriticalTriggerId, setHoveredCriticalTriggerId] = useState<string | null>(null);
   const refreshFeedbackTimerRef = useRef<number | null>(null);
-  const latestRawTextRefreshRef = useRef<string | null>(null);
   const queryClient = useQueryClient();
   const {
     connectivityToast,
@@ -175,23 +170,23 @@ export function App() {
     setActiveId(docId);
     requestPdfLoad(docId);
   };
-  const documentDetails = useQuery({
-    queryKey: ["documents", "detail", activeId],
-    queryFn: () => fetchDocumentDetails(activeId ?? ""),
-    enabled: Boolean(activeId),
+  const {
+    documentDetails,
+    processingHistory,
+    documentReview,
+    rawTextRunId,
+    isProcessing,
+    handleRefresh,
+    isListRefreshing,
+    clearRawTextRefreshKey,
+  } = useActiveDocumentQueries({
+    activeId,
+    documentList,
+    showRefreshFeedback,
+    setShowRefreshFeedback,
+    refreshFeedbackTimerRef,
+    queryClient,
   });
-  const processingHistory = useQuery({
-    queryKey: ["documents", "history", activeId],
-    queryFn: () => fetchProcessingHistory(activeId ?? ""),
-    enabled: Boolean(activeId),
-  });
-  const documentReview = useQuery({
-    queryKey: ["documents", "review", activeId],
-    queryFn: () => fetchDocumentReview(activeId ?? ""),
-    enabled: Boolean(activeId),
-    retry: false,
-  });
-  const rawTextRunId = documentDetails.data?.latest_run?.run_id ?? null;
   const {
     rawSearch,
     setRawSearch,
@@ -216,61 +211,15 @@ export function App() {
     setExpandedFieldValues({});
     resetSourcePanel();
   }, [activeId, resetSourcePanel]);
-  useEffect(() => {
-    if (!activeId || !documentDetails.data) {
-      return;
-    }
-    const latestState = documentDetails.data.latest_run?.state;
-    const shouldPoll =
-      documentDetails.data.status === "PROCESSING" ||
-      latestState === "QUEUED" ||
-      latestState === "RUNNING";
-    if (!shouldPoll) {
-      return;
-    }
-    const intervalId = window.setInterval(() => {
-      documentDetails.refetch();
-      processingHistory.refetch();
-      documentReview.refetch();
-    }, 1500);
-    return () => window.clearInterval(intervalId);
-  }, [
-    activeId,
-    documentDetails,
-    documentDetails.data?.status,
-    documentDetails.data?.latest_run?.state,
-    processingHistory,
-    documentReview,
-  ]);
   const { interpretationEditMutation, submitInterpretationChanges } = useInterpretationEdit({
     activeId,
     reviewPayload: documentReview.data,
     onActionFeedback: setActionFeedback,
   });
-  const handleRefresh = () => {
-    setShowRefreshFeedback(true);
-    if (refreshFeedbackTimerRef.current) {
-      window.clearTimeout(refreshFeedbackTimerRef.current);
-    }
-    refreshFeedbackTimerRef.current = window.setTimeout(() => {
-      setShowRefreshFeedback(false);
-      refreshFeedbackTimerRef.current = null;
-    }, 350);
-    documentList.refetch();
-    if (activeId) {
-      documentDetails.refetch();
-      processingHistory.refetch();
-      documentReview.refetch();
-    }
-  };
-  const isListRefreshing =
-    (documentList.isFetching || showRefreshFeedback) && !documentList.isLoading;
   const panelHeightClass = "h-[clamp(720px,88vh,980px)]";
   const toggleStepDetails = (key: string) => {
     setExpandedSteps((prev) => ({ ...prev, [key]: !prev[key] }));
   };
-  const latestState = documentDetails.data?.latest_run?.state;
-  const latestRunId = documentDetails.data?.latest_run?.run_id;
   const activeListDocument = useMemo(
     () =>
       activeId
@@ -284,10 +233,6 @@ export function App() {
   const isActiveListProcessing = Boolean(
     activeListDocument && isDocumentProcessing(activeListDocument.status),
   );
-  const isProcessing =
-    documentDetails.data?.status === "PROCESSING" ||
-    latestState === "QUEUED" ||
-    latestState === "RUNNING";
   const isActiveDocumentProcessing = isProcessing || isActiveListProcessing;
   const {
     reprocessingDocumentId,
@@ -301,28 +246,12 @@ export function App() {
     isActiveDocumentProcessing,
     onActionFeedback: setActionFeedback,
     onReprocessSuccess: () => {
-      latestRawTextRefreshRef.current = null;
+      clearRawTextRefreshKey();
     },
   });
   const { reviewToggleMutation } = useReviewToggle({
     onActionFeedback: setActionFeedback,
   });
-  useEffect(() => {
-    if (!latestRunId || !latestState) {
-      return;
-    }
-    const shouldRefreshRawText =
-      latestState === "COMPLETED" || latestState === "FAILED" || latestState === "TIMED_OUT";
-    if (!shouldRefreshRawText) {
-      return;
-    }
-    const refreshKey = `${latestRunId}:${latestState}`;
-    if (latestRawTextRefreshRef.current === refreshKey) {
-      return;
-    }
-    latestRawTextRefreshRef.current = refreshKey;
-    queryClient.invalidateQueries({ queryKey: ["runs", "raw-text", latestRunId] });
-  }, [latestRunId, latestState, queryClient]);
   useEffect(() => {
     if (!uploadFeedback) {
       return;
