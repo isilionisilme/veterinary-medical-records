@@ -250,7 +250,108 @@ _Empty._
 
 ### D2-A — Approved taxonomy
 
-_To be filled._
+**Proposed 2026-02-28 (post-merge main with Iter 13-14)**
+
+#### Current structure (problems)
+
+| # | Problem | Impact |
+|---|---------|--------|
+| 1 | `project/` flat — 10 files with no grouping | Hard to navigate; evaluators waste time searching |
+| 2 | `refactor/` legacy name — 3 of 4 files are stale/archived | Ambiguous: what is active vs historical? |
+| 3 | `testing/` folder with 1 file | Structural noise |
+| 4 | DELIVERY_SUMMARY, IMPLEMENTATION_HISTORY scattered | Delivery evidence fragmented |
+| 5 | No separation between human wiki and agent protocol | EXECUTION_RULES next to IMPLEMENTATION_HISTORY |
+
+#### Target structure
+
+```
+docs/
+├── README.md                                  ← updated (reading order, authority, sitemap)
+│
+├── project/
+│   ├── architecture/                          ← NEW group
+│   │   ├── ARCHITECTURE.md
+│   │   ├── TECHNICAL_DESIGN.md
+│   │   ├── FUTURE_IMPROVEMENTS.md
+│   │   └── adr/
+│   │       ├── README.md
+│   │       └── ADR-ARCH-000{1..4}*.md
+│   │
+│   ├── design/                                ← NEW group
+│   │   ├── PRODUCT_DESIGN.md
+│   │   ├── UX_DESIGN.md
+│   │   └── DESIGN_SYSTEM.md
+│   │
+│   ├── guides/                                ← NEW group
+│   │   ├── BACKEND_IMPLEMENTATION.md
+│   │   ├── FRONTEND_IMPLEMENTATION.md
+│   │   ├── MANUAL_QA_REGRESSION_CHECKLIST.md
+│   │   └── PLAN_E2E_TEST_COVERAGE.md
+│   │
+│   ├── delivery/                              ← NEW (replaces refactor/ + fragments)
+│   │   ├── DELIVERY_SUMMARY.md
+│   │   ├── IMPLEMENTATION_HISTORY.md
+│   │   └── IMPLEMENTATION_PLAN.md
+│   │
+│   ├── implementation/                        ← unchanged (agent protocol)
+│   │   ├── EXECUTION_RULES.md
+│   │   ├── PLAN_*.md
+│   │   └── completed/                         (14 files, unchanged)
+│   │
+│   └── archive/                               ← NEW (replaces refactor/ for stale)
+│       ├── 12_FACTOR_AUDIT.md
+│       ├── CTO_REVIEW_VERDICT.md
+│       └── codebase_audit.md
+│
+├── shared/                                    ← UNCHANGED
+│   ├── BRAND_GUIDELINES.md
+│   ├── ENGINEERING_PLAYBOOK.md
+│   └── UX_GUIDELINES.md
+│
+└── agent_router/                              (out of scope)
+```
+
+#### File move map (18 files)
+
+| Current path | Target path | Reason |
+|---|---|---|
+| `project/ARCHITECTURE.md` | `project/architecture/ARCHITECTURE.md` | Architecture group |
+| `project/TECHNICAL_DESIGN.md` | `project/architecture/TECHNICAL_DESIGN.md` | Central tech reference |
+| `project/FUTURE_IMPROVEMENTS.md` | `project/architecture/FUTURE_IMPROVEMENTS.md` | Architecture roadmap |
+| `project/adr/*` (5 files) | `project/architecture/adr/*` | ADRs = architecture decisions |
+| `project/PRODUCT_DESIGN.md` | `project/design/PRODUCT_DESIGN.md` | Product/UX design group |
+| `project/UX_DESIGN.md` | `project/design/UX_DESIGN.md` | Product/UX design group |
+| `project/DESIGN_SYSTEM.md` | `project/design/DESIGN_SYSTEM.md` | UI tokens and primitives |
+| `project/BACKEND_IMPLEMENTATION.md` | `project/guides/BACKEND_IMPLEMENTATION.md` | Implementation guide |
+| `project/FRONTEND_IMPLEMENTATION.md` | `project/guides/FRONTEND_IMPLEMENTATION.md` | Implementation guide |
+| `project/MANUAL_QA_REGRESSION_CHECKLIST.md` | `project/guides/MANUAL_QA_REGRESSION_CHECKLIST.md` | QA checklist |
+| `project/testing/PLAN_E2E_TEST_COVERAGE.md` | `project/guides/PLAN_E2E_TEST_COVERAGE.md` | Testing guide |
+| `project/IMPLEMENTATION_PLAN.md` | `project/delivery/IMPLEMENTATION_PLAN.md` | Original delivery plan |
+| `project/refactor/DELIVERY_SUMMARY.md` | `project/delivery/DELIVERY_SUMMARY.md` | Quantitative evidence |
+| `project/implementation/IMPLEMENTATION_HISTORY.md` | `project/delivery/IMPLEMENTATION_HISTORY.md` | Iteration timeline |
+| `project/refactor/12_FACTOR_AUDIT.md` | `project/archive/12_FACTOR_AUDIT.md` | Stale (archived D1-D) |
+| `project/refactor/CTO_REVIEW_VERDICT.md` | `project/archive/CTO_REVIEW_VERDICT.md` | Stale (archived D1-D) |
+| `project/refactor/codebase_audit.md` | `project/archive/codebase_audit.md` | Stale (archived D1-D) |
+
+**Folders deleted** (empty after migration): `project/refactor/`, `project/testing/`
+
+#### Design principles
+
+| Principle | Applied how |
+|---|---|
+| **Diátaxis-compatible** | architecture/ = reference, design/ = explanation, guides/ = how-to, delivery/ = changelog |
+| **Evaluator path** | architecture → design → guides → delivery follows natural reading order |
+| **Minimal disruption** | Filenames preserved (ALL_CAPS), only paths change. Agent protocol (`implementation/`) untouched |
+| **Explicit lifecycle** | `archive/` separates stale from active unambiguously |
+| **Max depth = 3** | Deepest: `project/architecture/adr/` (same as today) |
+| **Future-ready** | D7-A will add `project/onboarding/` for audience-tailored guides |
+
+#### D2-B impact estimate
+
+- ~50+ cross-references to update across all docs
+- `docs/README.md` reading order and authority chain to update
+- Git moves with `git mv` to preserve history
+- `EXECUTION_RULES.md` integrity check (references to IMPLEMENTATION_HISTORY)
 
 ### D6-A — Readability report
 
