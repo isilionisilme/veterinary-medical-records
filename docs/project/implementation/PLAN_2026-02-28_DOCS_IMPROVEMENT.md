@@ -45,8 +45,8 @@ The project's canonical documentation (`docs/project/`, `docs/shared/`, `docs/RE
 - [x] D1-C 🚧 — User approves consolidation decisions (Claude) — ✅ all 7 actions approved
 - [x] D1-D 🔄 — Apply consolidation/deprecation updates (Codex) — ✅ `9653c790`
 - [x] D1-E 🚧 — Full docs QA audit against current codebase reality · skill: `architecture-doc-auditor` (Claude) — ✅
-- [ ] D1-F 🚧 — User prioritizes QA findings: fix now vs defer (Claude)
-- [ ] D1-G 🔄 — Implement approved QA corrections (Codex)
+- [x] D1-F 🚧 — User prioritizes QA findings: fix now vs defer (Claude) — ✅ all 13 approved
+- [x] D1-G 🔄 — Implement approved QA corrections (Codex) — ✅ `681e38e7`
 
 ### Phase 2 — Structure and taxonomy (organize what survives)
 
