@@ -3,7 +3,7 @@
 > **Operational rules:** See [EXECUTION_RULES.md](EXECUTION_RULES.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
 
 **Rama:** `docs/documentation-refactor`
-**PR:** _TBD_
+**PR:** [#154](https://github.com/isilionisilme/veterinary-medical-records/pull/154)
 **Prerequisito:** Iteration 12 merged to `main`.
 
 ## Context
@@ -35,8 +35,8 @@ The project's canonical documentation (`docs/project/`, `docs/shared/`, `docs/RE
 ### Phase 0 — Bootstrap
 
 - [x] D0-A 🔄 — Install doc tooling, root config, docs scripts (Codex) — ✅ `a7c2c3d7`
-- [ ] D0-B 🚧 — Review + approve bootstrap changes (Claude)
-- [ ] D0-C 🚧 — Create docs PR, initialize PR tracking (Claude)
+- [x] D0-B 🚧 — Review + approve bootstrap changes (Claude) — ✅
+- [x] D0-C 🚧 — Create docs PR, initialize PR tracking (Claude) — ✅ PR #154
 
 ### Phase 1 — Inventory and audit (know what we have)
 
