@@ -1,10 +1,10 @@
 # Plan: Iteration 14 — Decompose PdfViewer.tsx & extract debug/rendering modules
 
-> **Operational rules:** See [EXECUTION_RULES.md](EXECUTION_RULES.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
+> **Operational rules:** See [EXECUTION_RULES.md](../EXECUTION_RULES.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
 
 **Iteración:** 14
 **Rama:** `refactor/decompose-pdf-viewer`
-**PR:** _pendiente de creación_
+**PR:** #174
 **Prerequisito:** Iteration 13 merged to `main`.
 
 ## Context
