@@ -24,6 +24,7 @@ import { useReprocessing } from "./hooks/useReprocessing";
 import { useReviewToggle } from "./hooks/useReviewToggle";
 import { useInterpretationEdit } from "./hooks/useInterpretationEdit";
 import { useDocumentUpload } from "./hooks/useDocumentUpload";
+import { useDocumentListPolling } from "./hooks/useDocumentListPolling";
 import { logExtractionDebugEvent, type ExtractionDebugEvent } from "./extraction/extractionDebug";
 import { validateFieldValue } from "./extraction/fieldValidators";
 import {
@@ -49,7 +50,6 @@ import {
 import {
   fetchDocumentDetails,
   fetchDocumentReview,
-  fetchDocuments,
   fetchProcessingHistory,
   fetchRawText,
 } from "./api/documentApi";
@@ -123,7 +123,6 @@ export function App() {
   const loggedConfidencePolicyDebugRef = useRef<Set<string>>(new Set());
   const refreshFeedbackTimerRef = useRef<number | null>(null);
   const latestRawTextRefreshRef = useRef<string | null>(null);
-  const listPollingStartedAtRef = useRef<number | null>(null);
   const interpretationRetryMinTimerRef = useRef<number | null>(null);
   const queryClient = useQueryClient();
   const {
@@ -201,6 +200,9 @@ export function App() {
     isDragOverSidebarUpload,
     sidebarUploadDragDepthRef,
   });
+  const { documentList, sortedDocuments } = useDocumentListPolling({
+    setIsDocsSidebarHovered,
+  });
   const handleSidebarUploadDrop = useCallback(
     (event: Parameters<typeof handleSidebarUploadDropInternal>[0]) => {
       notifySidebarUploadDrop();
@@ -227,10 +229,6 @@ export function App() {
     setActiveId(docId);
     requestPdfLoad(docId);
   };
-  const documentList = useQuery({
-    queryKey: ["documents", "list"],
-    queryFn: fetchDocuments,
-  });
   const documentDetails = useQuery({
     queryKey: ["documents", "detail", activeId],
     queryFn: () => fetchDocumentDetails(activeId ?? ""),
@@ -288,23 +286,6 @@ export function App() {
     enabled: activeViewerTab === "raw_text" && Boolean(rawTextRunId),
     retry: false,
   });
-  const sortedDocuments = useMemo(() => {
-    const items = documentList.data?.items ?? [];
-    return [...items].sort((a, b) => {
-      const aTime = Date.parse(a.created_at);
-      const bTime = Date.parse(b.created_at);
-      if (Number.isNaN(aTime) && Number.isNaN(bTime)) {
-        return a.document_id.localeCompare(b.document_id);
-      }
-      if (Number.isNaN(aTime)) {
-        return 1;
-      }
-      if (Number.isNaN(bTime)) {
-        return -1;
-      }
-      return bTime - aTime;
-    });
-  }, [documentList.data?.items]);
   const resetSourcePanel = sourcePanel.reset;
   useEffect(() => {
     setSelectedFieldId(null);
@@ -339,41 +320,6 @@ export function App() {
     processingHistory,
     documentReview,
   ]);
-  const documentListItems = useMemo(
-    () => documentList.data?.items ?? [],
-    [documentList.data?.items],
-  );
-  const refetchDocumentList = documentList.refetch;
-  useEffect(() => {
-    const items = documentListItems;
-    const processingItems = items.filter((item) => isDocumentProcessing(item.status));
-    if (processingItems.length === 0) {
-      listPollingStartedAtRef.current = null;
-      return;
-    }
-    const now = Date.now();
-    if (listPollingStartedAtRef.current === null) {
-      listPollingStartedAtRef.current = now;
-    }
-    const elapsedMs = now - listPollingStartedAtRef.current;
-    const maxPollingWindowMs = 10 * 60 * 1000;
-    if (elapsedMs > maxPollingWindowMs) {
-      return;
-    }
-    const intervalMs = elapsedMs < 2 * 60 * 1000 ? 1500 : 5000;
-    const intervalId = window.setInterval(() => {
-      refetchDocumentList();
-    }, intervalMs);
-    return () => window.clearInterval(intervalId);
-  }, [refetchDocumentList, documentListItems]);
-  useEffect(() => {
-    if (documentList.status !== "success") {
-      return;
-    }
-    if (sortedDocuments.length === 0) {
-      setIsDocsSidebarHovered(false);
-    }
-  }, [documentList.status, setIsDocsSidebarHovered, sortedDocuments.length]);
   const { interpretationEditMutation, submitInterpretationChanges } = useInterpretationEdit({
     activeId,
     reviewPayload: documentReview.data,
