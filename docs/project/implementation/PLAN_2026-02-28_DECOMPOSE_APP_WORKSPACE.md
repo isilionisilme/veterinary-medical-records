@@ -65,8 +65,8 @@ Orden de extracción: hooks sin dependencias cruzadas primero → hooks que depe
 
 ### Phase 2 — Hooks con dependencias simples
 
-- [ ] R2-A 🔄 — Extract `useDocumentUpload` — mutation: `uploadMutation`; depends on `requestPdfLoad` from `useDocumentLoader`. Write test. (Codex) ⏳ EN PROGRESO (Codex, 2026-02-28)
-- [ ] R2-B 🔄 — Extract `useDocumentListPolling` — query: `documentList`; memo: `sortedDocuments`; refs: `listPollingStartedAtRef`; effects: adaptive polling, empty-sidebar collapse. Write test. (Codex)
+- [x] R2-A 🔄 — Extract `useDocumentUpload` — mutation: `uploadMutation`; depends on `requestPdfLoad` from `useDocumentLoader`. Write test. (Codex) — ✅ `3fb87f28`
+- [ ] R2-B 🔄 — Extract `useDocumentListPolling` — query: `documentList`; memo: `sortedDocuments`; refs: `listPollingStartedAtRef`; effects: adaptive polling, empty-sidebar collapse. Write test. (Codex) ⏳ EN PROGRESO (Codex, 2026-02-28)
 - [ ] R2-C 🔄 — Extract `useRawTextViewer` — query: `rawTextQuery`; state: `rawSearch`, `rawSearchNotice`; derived: `rawTextErrorMessage`, `hasRawText`, `canCopy/canSearch`; integrates existing `useRawTextActions`. Write test. (Codex)
 
 ### Phase 3 — Pipeline de datos pesado
