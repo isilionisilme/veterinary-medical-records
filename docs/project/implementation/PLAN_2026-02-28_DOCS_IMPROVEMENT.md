@@ -43,7 +43,7 @@ The project's canonical documentation (`docs/project/`, `docs/shared/`, `docs/RE
 - [x] D1-A 🚧 — Build current-state inventory of canonical docs: path, type, audience, staleness, status · skill: `microsoft-wiki-architect` (Claude) — ✅
 - [x] D1-B 🚧 — Detect duplicate/stale content → consolidation report with keep/merge/delete recommendations · skill: `duplicate-stale-detector` (Claude) — ✅
 - [x] D1-C 🚧 — User approves consolidation decisions (Claude) — ✅ all 7 actions approved
-- [ ] D1-D 🔄 — Apply consolidation/deprecation updates (Codex)
+- [x] D1-D 🔄 — Apply consolidation/deprecation updates (Codex) — ✅ `9653c790`
 - [ ] D1-E 🚧 — Full docs QA audit against current codebase reality · skill: `architecture-doc-auditor` (Claude)
 - [ ] D1-F 🚧 — User prioritizes QA findings: fix now vs defer (Claude)
 - [ ] D1-G 🔄 — Implement approved QA corrections (Codex)
