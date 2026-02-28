@@ -70,25 +70,29 @@ graph TB
 ```
 backend/app/
 ├── api/           → 5 route modules (documents, review, processing, calibration, health)
-├── application/   → orchestrator, processing runner, extraction observability
-├── domain/        → entities, protocols (DocumentRepository)
-├── infrastructure/→ SQLite repos (3 aggregates + façade), file storage
-└── processing/    → PDF extraction, interpretation, confidence scoring
+├── application/   → orchestrator, processing runner, document services, extraction observability
+│   └── processing/→ PDF extraction, interpretation, confidence scoring
+├── domain/        → entities (models.py), status derivation
+├── infra/         → SQLite repos (3 aggregates + façade), file storage
+└── ports/         → repository protocols, file storage interface
 
 frontend/src/
+├── api/           → documentApi client
 ├── components/    → workspace/, viewer/, review/, structured/, ui/, app/, toast/
-├── hooks/         → 5 custom hooks (upload, editing, sidebar, filters, split-panel)
-├── lib/           → API client, utils, filters, validators
+├── constants/     → shared constants
+├── extraction/    → candidateSuggestions, fieldValidators
+├── hooks/         → 8 custom hooks (upload, editing, sidebar, filters, split-panel, rawTextActions, reviewedEditBlocker, sourcePanelState)
+├── lib/           → utils, filters, validators
 └── types/         → shared TypeScript interfaces
 ```
 
-## Quality metrics (post-Iteration 11)
+## Quality metrics (post-Iteration 12)
 
 | Metric | Value |
 |--------|-------|
 | Backend tests | ~395 (≥91% coverage) |
 | Frontend tests | ~287 (≥87% coverage) |
-| E2E specs | 20 (8 spec files) |
+| E2E specs | 64 (21 spec files) |
 | CI jobs | 10 (path-filtered, ~4 min) |
 | Lint errors | 0 |
 

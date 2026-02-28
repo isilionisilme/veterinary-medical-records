@@ -116,7 +116,10 @@ Guideline:
 The frontend uses local shadcn-style wrappers backed by Radix primitives under `frontend/src/components/ui`.
 
 Required primitives:
+- `Badge` (status / severity variants)
 - `Button` (including ghost/icon variants)
+- `Card` (content container with header/footer slots)
+- `Dialog` (modal overlay for editing / confirmation)
 - `Tooltip` + `TooltipProvider`
 - `Tabs`
 - `Separator`
