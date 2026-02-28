@@ -57,7 +57,7 @@ Orden de extracción: hooks sin dependencias cruzadas primero → hooks que depe
 
 ### Phase 1 — Leaf hooks (sin dependencias cruzadas)
 
-- [ ] R1-A 🔄 — Extract `useConnectivityToasts` — state: `connectivityToast`, `hasShownListErrorToast`, `showConnectivityToast()`; refs: `lastConnectivityToastAtRef`; effects: toast auto-dismiss, connectivity error detection. Write test. (Codex)
+- [x] R1-A 🔄 — Extract `useConnectivityToasts` — state: `connectivityToast`, `hasShownListErrorToast`, `showConnectivityToast()`; refs: `lastConnectivityToastAtRef`; effects: toast auto-dismiss, connectivity error detection. Write test. (Codex) — ✅ `a37be999`
 - [ ] R1-B 🔄 — Extract `useDocumentLoader` — state: `fileUrl`, `filename`; mutation: `loadPdf`; fn: `requestPdfLoad`; refs: `latestLoadRequestIdRef`, `pendingAutoOpenDocumentIdRef`, `autoOpenRetryCountRef`, `autoOpenRetryTimerRef`; effect: cleanup timers. Write test. (Codex)
 - [ ] R1-C 🔄 — Extract `useReprocessing` — state: `reprocessingDocumentId`, `hasObservedProcessingAfterReprocess`, `showRetryModal`; mutation: `reprocessMutation`; fn: `handleConfirmRetry`; effects: reprocess lifecycle tracking. Write test. (Codex)
 - [ ] R1-D 🔄 — Extract `useReviewToggle` — mutation: `reviewToggleMutation` with optimistic cache updates on list/detail/review queries. Write test. (Codex)
@@ -334,7 +334,7 @@ _Claude writes after R4-B._
 
 ### Paso objetivo
 
-_Completado: R0-A_
+_Completado: R1-A_
 
 _Vacío._
 
