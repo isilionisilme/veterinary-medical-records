@@ -78,7 +78,7 @@ Orden de extracción: hooks sin dependencias cruzadas primero → hooks que depe
 ### Phase 4 — Integration & cleanup
 
 - [x] R4-A 🚧 — Review: verify all hooks compose correctly in App(), no behavior regressions, line count target met (Claude) — ✅ see findings below
-- [ ] R4-B 🔄 — Cleanup round 2: split `useReviewDataPipeline` (875 LOC), extract residual effects from AppWorkspace, lint + test (Codex)
+- [x] R4-B 🔄 — Cleanup round 2: split `useReviewDataPipeline` (875 LOC), extract residual effects from AppWorkspace, lint + test (Codex) — ✅ `d14e354f`
 - [ ] R4-C 🚧 — User acceptance review of decomposed code (Claude)
 
 ---
@@ -427,7 +427,7 @@ _Claude writes after R4-B._
 
 ### Paso objetivo
 
-_Completado: R1-C_
+_Completado: R4-B_
 
 _Vacío._
 
