@@ -71,9 +71,9 @@ Orden de extracción: hooks sin dependencias cruzadas primero → hooks que depe
 
 ### Phase 3 — Pipeline de datos pesado
 
-- [ ] R3-A 🔄 — Extract `useConfidenceDiagnostics` — memos: `documentConfidencePolicy`; effects: policy diagnostic logging, debug logging, visit grouping diagnostics. Write test. (Codex) ⏳ EN PROGRESO (Codex, 2026-02-28)
-- [ ] R3-B 🔄 — Extract `useReviewDataPipeline` — memos: `extractedReviewFields`, `validationResult`, `validatedReviewFields`, `coreDisplayFields`, `otherDisplayFields`, `groupedCoreFields`, `canonicalVisitFieldOrder`, `reportSections`, `selectableReviewItems`, `detectedFieldsSummary`; effect: extraction debug logging. Write test. (Codex)
-- [ ] R3-C 🔄 — Extract `useReviewPanelState` — derived: `reviewPanelState`, `reviewPanelMessage`, `shouldShowReviewEmptyState`, `hasNoStructuredFilterResults`; state: `reviewLoadingDocId`, `reviewLoadingSinceMs`, `isRetryingInterpretation`; fn: `handleRetryInterpretation`. Write test. (Codex)
+- [x] R3-A 🔄 — Extract `useConfidenceDiagnostics` — memos: `documentConfidencePolicy`; effects: policy diagnostic logging, debug logging, visit grouping diagnostics. Write test. (Codex) — ✅ `d04896c7`
+- [x] R3-B 🔄 — Extract `useReviewDataPipeline` — memos: `extractedReviewFields`, `validationResult`, `validatedReviewFields`, `coreDisplayFields`, `otherDisplayFields`, `groupedCoreFields`, `canonicalVisitFieldOrder`, `reportSections`, `selectableReviewItems`, `detectedFieldsSummary`; effect: extraction debug logging. Write test. (Codex) — ✅ `d59e8848`
+- [x] R3-C 🔄 — Extract `useReviewPanelState` — derived: `reviewPanelState`, `reviewPanelMessage`, `shouldShowReviewEmptyState`, `hasNoStructuredFilterResults`; state: `reviewLoadingDocId`, `reviewLoadingSinceMs`, `isRetryingInterpretation`; fn: `handleRetryInterpretation`. Write test. (Codex) — ✅ `2898c488`
 
 ### Phase 4 — Integration & cleanup
 
