@@ -40,7 +40,7 @@ The project's canonical documentation (`docs/project/`, `docs/shared/`, `docs/RE
 
 ### Phase 1 — Inventory and audit (know what we have)
 
-- [ ] D1-A 🚧 — Build current-state inventory of canonical docs: path, type, audience, staleness, status · skill: `microsoft-wiki-architect` (Claude)
+- [x] D1-A 🚧 — Build current-state inventory of canonical docs: path, type, audience, staleness, status · skill: `microsoft-wiki-architect` (Claude) — ✅
 - [ ] D1-B 🚧 — Detect duplicate/stale content → consolidation report with keep/merge/delete recommendations · skill: `duplicate-stale-detector` (Claude)
 - [ ] D1-C 🚧 — User approves consolidation decisions (Claude)
 - [ ] D1-D 🔄 — Apply consolidation/deprecation updates (Codex)
@@ -131,7 +131,59 @@ _Empty._
 
 ### D1-A — Document inventory
 
-_To be filled._
+**40 files** in scope | **~83,650 words** | Collected 2026-02-28
+
+| Path | Title | Type | Audience | Status | Words | Notes |
+|---|---|---|---|---|---|---|
+| docs/README.md | Scope (Docs Index) | index | all | active | 528 | Reading order, authority chain |
+| docs/project/ARCHITECTURE.md | Architecture Overview | reference | all | active | 527 | One-page summary with diagram |
+| docs/project/BACKEND_IMPLEMENTATION.md | Backend Implementation Notes | guide | contributor | active | 1,870 | Layering, persistence, processing |
+| docs/project/DESIGN_SYSTEM.md | Lean Design System | reference | contributor | active | 1,243 | Color/spacing tokens, a11y |
+| docs/project/FRONTEND_IMPLEMENTATION.md | Frontend Implementation Notes | guide | contributor | active | 1,631 | Stack, PDF rendering, confidence UX |
+| docs/project/FUTURE_IMPROVEMENTS.md | Known Limitations & Future Directions | explanation | staff-engineer | active | 765 | Reframed 2026-02-27 |
+| docs/project/IMPLEMENTATION_PLAN.md | Implementation Plan | plan | contributor | active | 15,394 | **Very large**; 6 releases |
+| docs/project/MANUAL_QA_REGRESSION_CHECKLIST.md | Manual QA Regression Checklist | how-to | all | active | 958 | All cases "Pending" |
+| docs/project/PRODUCT_DESIGN.md | Product Design | explanation | all | active | 2,272 | Strategy, confidence, Global Schema |
+| docs/project/TECHNICAL_DESIGN.md | Technical Design | reference | contributor | active | 9,637 | **Very large**; contracts, state machines |
+| docs/project/UX_DESIGN.md | UX Design | reference | contributor | active | 2,131 | Review flow, rendering rules |
+| docs/project/adr/ADR-ARCH-0001-modular-monolith.md | ADR-ARCH-0001 | adr | staff-engineer | active | 426 | |
+| docs/project/adr/ADR-ARCH-0002-sqlite-database.md | ADR-ARCH-0002 | adr | staff-engineer | active | 369 | |
+| docs/project/adr/ADR-ARCH-0003-raw-sql-repository-pattern.md | ADR-ARCH-0003 | adr | staff-engineer | active | 376 | |
+| docs/project/adr/ADR-ARCH-0004-in-process-async-processing.md | ADR-ARCH-0004 | adr | staff-engineer | active | 368 | |
+| docs/project/adr/README.md | ADR Index | index | all | active | 103 | |
+| docs/project/implementation/EXECUTION_RULES.md | Execution Rules | reference | contributor | active | 5,197 | Agent protocol; large |
+| docs/project/implementation/IMPLEMENTATION_HISTORY.md | Implementation History | changelog | all | active | 571 | 12 iterations |
+| docs/project/implementation/PLAN_2026-02-28_DOCS_IMPROVEMENT.md | Plan: Docs Improvement | plan | contributor | active | 1,053 | This plan (active) |
+| docs/project/implementation/completed/COMPLETED_ITER-1-2.md | Completed: Iter 1-2 | changelog | contributor | active | 517 | |
+| docs/project/implementation/completed/COMPLETED_ITER-3.md | Completed: Iter 3 | changelog | contributor | active | 169 | |
+| docs/project/implementation/completed/COMPLETED_ITER-4.md | Completed: Iter 4 | changelog | contributor | active | 172 | |
+| docs/project/implementation/completed/COMPLETED_ITER-5.md | Completed: Iter 5 | changelog | contributor | active | 173 | |
+| docs/project/implementation/completed/COMPLETED_ITER-6.md | Completed: Iter 6 | changelog | contributor | active | 258 | |
+| docs/project/implementation/completed/COMPLETED_ITER-7.md | Completed: Iter 7 | changelog | contributor | active | 279 | |
+| docs/project/implementation/completed/COMPLETED_ITER-8.md | Completed: Iter 8 | changelog | contributor | active | 367 | |
+| docs/project/implementation/completed/COMPLETED_ITER-9.md | Completed: Iter 9 | changelog | contributor | active | 412 | |
+| docs/project/implementation/completed/COMPLETED_2026-02-26_INSTALL_PLAYWRIGHT.md | Plan: Playwright Install | plan | contributor | active | 2,151 | Spanish; full plan |
+| docs/project/implementation/completed/COMPLETED_2026-02-26_ITER-9-E2E.md | Plan: Iter 9 E2E | plan | contributor | active | 2,768 | Full step log |
+| docs/project/implementation/completed/COMPLETED_2026-02-26_ITER-10-HARDENING.md | Plan: Iter 10 Hardening | plan | contributor | active | 2,895 | |
+| docs/project/implementation/completed/COMPLETED_2026-02-27_ITER-11-FULLSTACK-HARDENING.md | Plan: Iter 11 Hardening | plan | contributor | active | 4,080 | Largest completed |
+| docs/project/implementation/completed/COMPLETED_2026-02-27_ITER-12-FINAL.md | Plan: Iter 12 Final | plan | contributor | active | 3,600 | |
+| docs/project/refactor/12_FACTOR_AUDIT.md | 12-Factor Audit | audit | staff-engineer | **stale** | 628 | Findings resolved in Iter 2+ |
+| docs/project/refactor/CTO_REVIEW_VERDICT.md | CTO Review Verdict | audit | staff-engineer | **stale** | 1,880 | "Still open" resolved; **broken link** |
+| docs/project/refactor/codebase_audit.md | Codebase Maintainability Audit | audit | staff-engineer | **stale** | 1,783 | Findings resolved in Iter 1-12 |
+| docs/project/refactor/DELIVERY_SUMMARY.md | Delivery Summary | reference | all | active | 3,763 | Quantitative metrics |
+| docs/project/testing/PLAN_E2E_TEST_COVERAGE.md | Plan E2E Test Coverage | plan | contributor | active | 7,508 | **Very large**; Spanish |
+| docs/shared/BRAND_GUIDELINES.md | Brand Guidelines | reference | all | active | 494 | |
+| docs/shared/ENGINEERING_PLAYBOOK.md | Engineering Guidelines | reference | contributor | active | 3,802 | Mandatory standards |
+| docs/shared/UX_GUIDELINES.md | UX Guidelines | reference | all | active | 536 | |
+
+**Key findings for downstream phases:**
+
+1. **3 stale files** in `refactor/`: 12_FACTOR_AUDIT, CTO_REVIEW_VERDICT (broken link), codebase_audit — findings resolved in iterations 1-12
+2. **Size concentration**: IMPLEMENTATION_PLAN (15K), TECHNICAL_DESIGN (9.6K), PLAN_E2E_TEST_COVERAGE (7.5K) = 39% of all words → split/TOC candidates
+3. **Completed plan format inconsistency**: `COMPLETED_ITER-N.md` (summaries, 169-517w) vs `COMPLETED_<date>_<slug>.md` (full plans, 2K-4Kw) — two naming conventions coexist
+4. **Language mixing**: PLAN_E2E_TEST_COVERAGE and INSTALL_PLAYWRIGHT are Spanish; Engineering Playbook mandates English
+5. **EXECUTION_RULES.md** (5.2K) is agent protocol, not human wiki — may need reclassification
+6. **12 completed files** total ~17.8K words — consider whether full plans or summaries should persist
 
 ### D1-B — Duplicate/stale findings
 
