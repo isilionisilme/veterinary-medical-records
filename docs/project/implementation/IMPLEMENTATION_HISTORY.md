@@ -4,7 +4,7 @@
 
 ## Active iteration
 
-None — all planned iterations complete.
+**Iteration 13** — Decompose AppWorkspace.tsx (custom hook extraction). See [PLAN_2026-02-28_DECOMPOSE_APP_WORKSPACE.md](PLAN_2026-02-28_DECOMPOSE_APP_WORKSPACE.md).
 
 ## Timeline
 
