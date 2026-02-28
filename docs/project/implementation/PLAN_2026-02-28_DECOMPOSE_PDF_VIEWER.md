@@ -239,9 +239,14 @@ _Claude writes after P4-B._
 
 ## Prompt activo
 
-### Paso objetivo
+### Paso objetivo: P0-A — Create branch and PR
 
-_Empty — plan no iniciado._
+```
+Crea la rama `refactor/decompose-pdf-viewer` desde `main` y un PR con título
+"refactor: decompose PdfViewer.tsx into hooks and utility modules" y body que resuma el plan.
+No hagas cambios de código aún.
+```
+⚠️ AUTO-CHAIN → P1-A
 
 ---
 
