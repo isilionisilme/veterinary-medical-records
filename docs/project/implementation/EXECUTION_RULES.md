@@ -79,8 +79,11 @@ Mandatory rules:
 2. Before executing a `[ ]` step, the agent must mark it `⏳ EN PROGRESO (<agent>, <date>)`.
 3. `EN PROGRESO` and `BLOQUEADO` are text labels at the end of the line, not checkbox states.
 4. On completion, remove any label (`EN PROGRESO`/`BLOQUEADO`/`STEP LOCKED`) and mark `[x]`.
-5. For `BLOQUEADO`, include brief reason and next action if applicable.
-6. After code commit but before CI green + plan update, mark `🔒 STEP LOCKED`. While locked, **no other step may begin** and **no handoff may be emitted**.
+5. On completion, **append the code commit short SHA** to the line for traceability:
+   `- [x] F?-? 🔄 — Description (Agent) — ✅ \`abc1234f\``
+   If the step produced multiple commits (e.g. fix after CI failure), record the final one.
+6. For `BLOQUEADO`, include brief reason and next action if applicable.
+7. After code commit but before CI green + plan update, mark `🔒 STEP LOCKED`. While locked, **no other step may begin** and **no handoff may be emitted**.
 
 ### Agent identity rule (hard rule — applies before any other)
 **If the user writes `Continúa`:**
