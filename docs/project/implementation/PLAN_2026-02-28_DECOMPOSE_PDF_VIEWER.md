@@ -92,7 +92,7 @@ usePdfNavigation (depende de usePdfRenderer.pageRefs, pdfDoc)
 
 - [x] P4-A 🚧 — Review: verify hooks compose correctly, no behavior regressions, existing PdfViewer tests pass, line count target met (Claude)
 - [x] P4-B 🔄 — Final cleanup: `npm run lint`, `npm run test`, E2E tests, report final line count (Codex)
-- [ ] P4-C 🚧 — User acceptance review (Claude)
+- [x] P4-C 🚧 — User acceptance review (Claude)
 
 ---
 
