@@ -61,11 +61,11 @@ Orden de extracción: hooks sin dependencias cruzadas primero → hooks que depe
 - [x] R1-B 🔄 — Extract `useDocumentLoader` — state: `fileUrl`, `filename`; mutation: `loadPdf`; fn: `requestPdfLoad`; refs: `latestLoadRequestIdRef`, `pendingAutoOpenDocumentIdRef`, `autoOpenRetryCountRef`, `autoOpenRetryTimerRef`; effect: cleanup timers. Write test. (Codex) — ✅ `72595a23`
 - [x] R1-C 🔄 — Extract `useReprocessing` — state: `reprocessingDocumentId`, `hasObservedProcessingAfterReprocess`, `showRetryModal`; mutation: `reprocessMutation`; fn: `handleConfirmRetry`; effects: reprocess lifecycle tracking. Write test. (Codex) — ✅ `1e9623f0`
 - [x] R1-D 🔄 — Extract `useReviewToggle` — mutation: `reviewToggleMutation` with optimistic cache updates on list/detail/review queries. Write test. (Codex) — ✅ `cbb003f2`
-- [ ] R1-E 🔄 — Extract `useInterpretationEdit` — mutation: `interpretationEditMutation`; fn: `submitInterpretationChanges`. Write test. (Codex) ⏳ EN PROGRESO (Codex, 2026-02-28)
+- [x] R1-E 🔄 — Extract `useInterpretationEdit` — mutation: `interpretationEditMutation`; fn: `submitInterpretationChanges`. Write test. (Codex) — ✅ `ea7f5a02`
 
 ### Phase 2 — Hooks con dependencias simples
 
-- [ ] R2-A 🔄 — Extract `useDocumentUpload` — mutation: `uploadMutation`; depends on `requestPdfLoad` from `useDocumentLoader`. Write test. (Codex)
+- [ ] R2-A 🔄 — Extract `useDocumentUpload` — mutation: `uploadMutation`; depends on `requestPdfLoad` from `useDocumentLoader`. Write test. (Codex) ⏳ EN PROGRESO (Codex, 2026-02-28)
 - [ ] R2-B 🔄 — Extract `useDocumentListPolling` — query: `documentList`; memo: `sortedDocuments`; refs: `listPollingStartedAtRef`; effects: adaptive polling, empty-sidebar collapse. Write test. (Codex)
 - [ ] R2-C 🔄 — Extract `useRawTextViewer` — query: `rawTextQuery`; state: `rawSearch`, `rawSearchNotice`; derived: `rawTextErrorMessage`, `hasRawText`, `canCopy/canSearch`; integrates existing `useRawTextActions`. Write test. (Codex)
 
