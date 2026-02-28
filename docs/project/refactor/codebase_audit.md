@@ -1,4 +1,7 @@
 # Codebase Maintainability Audit
+
+> **⚠️ Historical snapshot (2026-02-23).** All 15 findings were resolved in Iterations 1–12. Compliance scores below reflect the state at audit time and are no longer current. See [DELIVERY_SUMMARY](DELIVERY_SUMMARY.md) for up-to-date metrics.
+
 Date: 2026-02-23
 
 ## Scope and methodology

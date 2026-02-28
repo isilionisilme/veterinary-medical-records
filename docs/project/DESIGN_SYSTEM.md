@@ -24,30 +24,34 @@ All new user-visible UI must use tokens instead of scattered hard-coded values.
 
 ### Color tokens
 
+> Brand-level color decisions (accent, page bg, text hierarchy, semantic status) are defined in
+> [BRAND_GUIDELINES.md](../shared/BRAND_GUIDELINES.md). This table reflects **actual implementation values**
+> from `frontend/src/index.css`. When brand and implementation diverge, this table tracks the code.
+
 | Token | Value | Usage |
 |---|---|---|
-| `--app-bg` | `#EDF3FB` | outer page background |
-| `--canvas-bg` | `#F8FBFF` | main app canvas/container |
-| `--card-bg` | `#F2F5FA` | cards/panels (inner surfaces) |
+| `--app-bg` | `#ebf5ff` | outer page background |
+| `--canvas-bg` | `#ffffff` | main app canvas/container |
+| `--card-bg` | `#ffffff` | cards/panels (inner surfaces) |
 | `--app-frame` | `var(--canvas-bg)` | canvas alias |
 | `--surface` | `var(--card-bg)` | card alias |
-| `--surface-muted` | `#E9EFF6` | subtle inner surfaces / toolbar blocks |
-| `--border-subtle` | `#DBE4EF` | subtle separators and panel borders |
-| `--shadow-soft` | `0 10px 28px rgb(31 41 51 / 0.08)` | soft elevation for frame/cards |
+| `--surface-muted` | `#f2f5f8` | subtle inner surfaces / toolbar blocks |
+| `--border-subtle` | `#cfd8e3` | subtle separators and panel borders |
+| `--shadow-soft` | `none` | soft elevation for frame/cards |
 | `--color-page-bg` | `var(--app-bg)` | app/page background alias |
 | `--color-surface` | `var(--surface)` | cards/panels alias |
 | `--color-surface-muted` | `var(--surface-muted)` | muted surface alias |
-| `--color-text` | `#1F2933` | primary text |
-| `--color-text-secondary` | `#6B7280` | secondary text |
-| `--color-text-muted` | `#9CA3AF` | metadata/helper text |
-| `--text-title` | `var(--color-text)` | panel/section title text (`text.title`) |
-| `--text-body` | `var(--color-text)` | default body text (`text.body`) |
-| `--text-muted` | `var(--color-text-secondary)` | secondary metadata (`text.muted`) |
-| `--color-border` | `#E5E7EB` | default borders |
+| `--color-text` | `#1f2933` | primary text |
+| `--color-text-secondary` | `#4b5563` | secondary text |
+| `--color-text-muted` | `#6b7280` | metadata/helper text |
+| `--text-title` | `var(--color-text)` | panel/section title text |
+| `--text-body` | `var(--color-text)` | default body text |
+| `--text-muted` | `var(--color-text-secondary)` | secondary metadata |
+| `--color-border` | `#d7dee7` | default borders |
 | `--color-border-subtle` | `var(--border-subtle)` | subtle separators alias |
-| `--color-accent` | `#FC4E1B` | primary accent |
-| `--color-accent-foreground` | `#FFFFFF` | text on accent |
-| `--shadow-subtle` | `var(--shadow-soft)` | gentle elevation alias |
+| `--color-accent` | `#e5603d` | primary accent |
+| `--color-accent-foreground` | `#ffffff` | text on accent |
+| `--shadow-subtle` | `none` | gentle elevation alias |
 
 ### Surface levels (L0–L3)
 
@@ -64,17 +68,20 @@ Rule:
 
 | Token | Value | Usage |
 |---|---|---|
-| `--status-success` | `#4CAF93` | semantic success / ready |
-| `--status-warn` | `#E6B566` | semantic warning / processing |
-| `--status-error` | `#D16D6A` | semantic error / failure |
-| `--confidence-low` | `#D16D6A` | low-confidence indicator |
-| `--confidence-med` | `#E6B566` | medium-confidence indicator |
-| `--confidence-high` | `#4CAF93` | high-confidence indicator |
-| `--status-critical` | `#D16D6A` | critical badge border/text accent |
-| `--status-missing` | `#9CA3AF` | missing/placeholder state tone |
+| `--status-success` | `#3f9e86` | semantic success / ready |
+| `--status-warn` | `#c99645` | semantic warning / processing |
+| `--status-error` | `#c45f5c` | semantic error / failure |
+| `--confidence-low` | `var(--status-error)` | low-confidence indicator |
+| `--confidence-med` | `var(--status-warn)` | medium-confidence indicator |
+| `--confidence-high` | `var(--status-success)` | high-confidence indicator |
+| `--status-critical` | `var(--status-error)` | critical badge border/text accent |
+| `--status-missing` | `#9ca3af` | missing/placeholder state tone |
+| `--status-success-bg` | `#e7f4ef` | success background fill |
+| `--status-info-bg` | `#f3f6f9` | info background fill |
+| `--status-error-bg` | `#f9eceb` | error background fill |
 
 Brand constraint:
-- Barkibu Orange (`#FC4E1B`) is used as accent/CTA only.
+- Barkibu Orange (see [BRAND_GUIDELINES](../shared/BRAND_GUIDELINES.md)) is used as accent/CTA only.
 - Semantic status colors stay muted and never use orange.
 
 ### Spacing scale
@@ -83,7 +90,7 @@ Brand constraint:
 
 ### Radius scale
 
-`--radius-frame: 18px`, `--radius-card: 14px`, `--radius-control: 10px`
+`--radius-frame: 14px`, `--radius-card: 10px`, `--radius-control: 8px`
 
 Guideline:
 - Frame uses `radius-frame`.

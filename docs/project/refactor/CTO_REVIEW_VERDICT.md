@@ -1,8 +1,10 @@
 # CTO Review Verdict — `veterinary-medical-records`
 
+> **⚠️ Historical snapshot (2026-02-24).** All gaps and improvements identified here were resolved in Iterations 2–12. Current state: 682 tests, 10 CI jobs, auth boundary present, AppWorkspace at 2,221 LOC. See [DELIVERY_SUMMARY](DELIVERY_SUMMARY.md) and [IMPLEMENTATION_HISTORY](../implementation/IMPLEMENTATION_HISTORY.md) for current metrics.
+
 > Late-stage evaluator-perspective review.
 > Date: 2026-02-24
-> Context: All 7 initial phases completed (see [`IMPLEMENTATION_HISTORY.md`](../production/IMPLEMENTATION_HISTORY.md)). Goal: maximize evaluator outcome with minimal additional risk.
+> Context: All 7 initial phases completed (see [`IMPLEMENTATION_HISTORY.md`](../implementation/IMPLEMENTATION_HISTORY.md)). Goal: maximize evaluator outcome with minimal additional risk.
 
 ---
 
