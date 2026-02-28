@@ -82,16 +82,16 @@ usePdfNavigation (depende de usePdfRenderer.pageRefs, pdfDoc)
 - [x] P2-A 🔄 — Extract `usePdfZoom` — state: `zoomLevel`; effects: localStorage persistence, ctrl+wheel handler; exports: `zoomLevel`, `setZoomLevel`, `canZoomIn`, `canZoomOut`, `zoomPercent`, zoom control functions. Write test. (Codex)
 - [x] P2-B 🔄 — Extract `usePdfDocument` — state: `pdfDoc`, `totalPages`, `loading`, `error`; effect: PDF fetch/load lifecycle with cleanup. Write test. (Codex)
 - [x] P2-C 🔄 — Extract `usePdfRenderer` — refs: `canvasRefs`, `pageRefs`, `renderedPages`, `renderingPages`, `renderSessionRef`, `renderTasksByPageRef`, `renderTaskStatusRef`; state: `pageTextByIndex`; effects: render-all-pages with retry, session/document identity guards; fn: `cancelAllRenderTasks`. Write test. (Codex)
-- [ ] P2-D 🔄 — Extract `usePdfNavigation` — state: `pageNumber`; refs: `scrollRef`, `contentRef`; effects: intersection observer page tracking, focus-page scroll; fn: `scrollToPage`; derived: `canGoBack`, `canGoForward`, `showPageNavigation`, snippet highlight detection. Write test. (Codex)
+- [x] P2-D 🔄 — Extract `usePdfNavigation` — state: `pageNumber`; refs: `scrollRef`, `contentRef`; effects: intersection observer page tracking, focus-page scroll; fn: `scrollToPage`; derived: `canGoBack`, `canGoForward`, `showPageNavigation`, snippet highlight detection. Write test. (Codex)
 
 ### Phase 3 — Component cleanup
 
-- [ ] P3-A 🔄 — Optionally extract `PdfViewerToolbar` sub-component (toolbar JSX ~80 lines) if PdfViewer still exceeds 200 lines. Clean up dead imports, verify lint. (Codex)
+- [x] P3-A 🔄 — Optionally extract `PdfViewerToolbar` sub-component (toolbar JSX ~80 lines) if PdfViewer still exceeds 200 lines. Clean up dead imports, verify lint. (Codex)
 
 ### Phase 4 — Integration & closure
 
-- [ ] P4-A 🚧 — Review: verify hooks compose correctly, no behavior regressions, existing PdfViewer tests pass, line count target met (Claude)
-- [ ] P4-B 🔄 — Final cleanup: `npm run lint`, `npm run test`, E2E tests, report final line count (Codex)
+- [x] P4-A 🚧 — Review: verify hooks compose correctly, no behavior regressions, existing PdfViewer tests pass, line count target met (Claude)
+- [x] P4-B 🔄 — Final cleanup: `npm run lint`, `npm run test`, E2E tests, report final line count (Codex)
 - [ ] P4-C 🚧 — User acceptance review (Claude)
 
 ---
@@ -225,10 +225,13 @@ _Claude writes after P3-A is complete._
 
 ```
 1. Revisa PdfViewer.tsx: elimina imports no usados, verifica que no queden useState/useRef/useEffect huérfanos.
-2. Ejecuta `npm run lint` en frontend/ y corrige errores.
-3. Ejecuta `npm run test` en frontend/ y verifica todo verde.
-4. Ejecuta tests e2e: `npx playwright test`.
-5. Reporta line count final de PdfViewer.tsx.
+2. Dead code cleanup: elimina el parámetro `onRenderSessionReset` de `usePdfDocument`
+   (tipo, destructuring, llamada en loadPdf, dependency array) — ya no se usa desde PdfViewer.
+   Actualiza `usePdfDocument.test.tsx` removiendo la aserción sobre `onRenderSessionReset`.
+3. Ejecuta `npm run lint` en frontend/ y corrige errores.
+4. Ejecuta `npm run test` en frontend/ y verifica todo verde.
+5. Ejecuta tests e2e: `npx playwright test`.
+6. Reporta line count final de PdfViewer.tsx.
 ```
 
 ### P4-C — User acceptance (just-in-time)
@@ -239,24 +242,19 @@ _Claude writes after P4-B._
 
 ## Prompt activo
 
-### Paso objetivo: P2-D — Extract usePdfNavigation
+### Paso objetivo: P4-B — Final cleanup
 
 ```
-Extrae `usePdfNavigation` de `PdfViewer.tsx` a `frontend/src/hooks/usePdfNavigation.ts`.
-
-**Estado que migra:**
-- useState: pageNumber
-- Effects: intersection observer for page tracking, focus-page scroll effect
-- Fn: scrollToPage
-- Derived: canGoBack, canGoForward, showPageNavigation, normalizedSnippet, isSnippetLocated
-
-**Interfaz del hook:**
-- Params: { pdfDoc, totalPages, loading, error, fileUrl, focusPage, highlightSnippet, focusRequestId, scrollRef, pageRefs, pageTextByIndex }
-- Returns: { pageNumber, canGoBack, canGoForward, showPageNavigation, isSnippetLocated, scrollToPage }
-
-**Reglas:** Extracción mecánica. Test. Verde.
+1. Revisa PdfViewer.tsx: elimina imports no usados, verifica que no queden useState/useRef/useEffect huérfanos.
+2. Dead code cleanup: elimina el parámetro `onRenderSessionReset` de `usePdfDocument`
+   (tipo, destructuring, llamada en loadPdf, dependency array) — ya no se usa desde PdfViewer.
+   Actualiza `usePdfDocument.test.tsx` removiendo la aserción sobre `onRenderSessionReset`.
+3. Ejecuta `npm run lint` en frontend/ y corrige errores.
+4. Ejecuta `npm run test` en frontend/ y verifica todo verde.
+5. Ejecuta tests e2e: `npx playwright test`.
+6. Reporta line count final de PdfViewer.tsx.
 ```
-⚠️ AUTO-CHAIN → P3-A
+⚠️ AUTO-CHAIN → P4-C
 
 ---
 
