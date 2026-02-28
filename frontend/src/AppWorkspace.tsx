@@ -9,11 +9,8 @@ import { createReviewFieldRenderers } from "./components/review/ReviewFieldRende
 import { createReviewSectionLayoutRenderer } from "./components/review/ReviewSectionLayout";
 import { SourcePanelContent } from "./components/review/SourcePanelContent";
 import { WorkspaceDialogs } from "./components/review/WorkspaceDialogs";
-import {
-  type ActionFeedback,
-  type ConnectivityToast,
-  type UploadFeedback,
-} from "./components/toast/toast-types";
+import { type ActionFeedback, type UploadFeedback } from "./components/toast/toast-types";
+import { useConnectivityToasts } from "./hooks/useConnectivityToasts";
 import { useFieldEditing } from "./hooks/useFieldEditing";
 import { useDocumentsSidebar } from "./hooks/useDocumentsSidebar";
 import { useReviewSplitPanel } from "./hooks/useReviewSplitPanel";
@@ -120,8 +117,6 @@ export function App() {
   const [rawSearchNotice, setRawSearchNotice] = useState<string | null>(null);
   const [uploadFeedback, setUploadFeedback] = useState<UploadFeedback | null>(null);
   const [actionFeedback, setActionFeedback] = useState<ActionFeedback | null>(null);
-  const [connectivityToast, setConnectivityToast] = useState<ConnectivityToast | null>(null);
-  const [hasShownListErrorToast, setHasShownListErrorToast] = useState(false);
   const [showRefreshFeedback, setShowRefreshFeedback] = useState(false);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [evidenceNotice, setEvidenceNotice] = useState<string | null>(null);
@@ -145,8 +140,14 @@ export function App() {
   const latestRawTextRefreshRef = useRef<string | null>(null);
   const listPollingStartedAtRef = useRef<number | null>(null);
   const interpretationRetryMinTimerRef = useRef<number | null>(null);
-  const lastConnectivityToastAtRef = useRef(0);
   const queryClient = useQueryClient();
+  const {
+    connectivityToast,
+    showConnectivityToast,
+    setConnectivityToast,
+    hasShownListErrorToast,
+    setHasShownListErrorToast,
+  } = useConnectivityToasts();
   const effectiveViewMode = "browse";
   const isReviewMode = false;
   const isBrowseMode = true;
@@ -804,21 +805,6 @@ export function App() {
     const timer = window.setTimeout(() => setActionFeedback(null), timeoutMs);
     return () => window.clearTimeout(timer);
   }, [actionFeedback]);
-  useEffect(() => {
-    if (!connectivityToast) {
-      return;
-    }
-    const timer = window.setTimeout(() => setConnectivityToast(null), 5000);
-    return () => window.clearTimeout(timer);
-  }, [connectivityToast]);
-  const showConnectivityToast = () => {
-    const now = Date.now();
-    if (now - lastConnectivityToastAtRef.current < 5000) {
-      return;
-    }
-    lastConnectivityToastAtRef.current = now;
-    setConnectivityToast({});
-  };
   useEffect(() => {
     if (documentList.isError) {
       if (isConnectivityOrServerError(documentList.error)) {
