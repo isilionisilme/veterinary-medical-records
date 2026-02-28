@@ -79,7 +79,7 @@ usePdfNavigation (depende de usePdfRenderer.pageRefs, pdfDoc)
 
 ### Phase 2 — Hook extractions (leaf → dependent)
 
-- [ ] P2-A 🔄 — Extract `usePdfZoom` — state: `zoomLevel`; effects: localStorage persistence, ctrl+wheel handler; exports: `zoomLevel`, `setZoomLevel`, `canZoomIn`, `canZoomOut`, `zoomPercent`, zoom control functions. Write test. (Codex)
+- [x] P2-A 🔄 — Extract `usePdfZoom` — state: `zoomLevel`; effects: localStorage persistence, ctrl+wheel handler; exports: `zoomLevel`, `setZoomLevel`, `canZoomIn`, `canZoomOut`, `zoomPercent`, zoom control functions. Write test. (Codex)
 - [ ] P2-B 🔄 — Extract `usePdfDocument` — state: `pdfDoc`, `totalPages`, `loading`, `error`; effect: PDF fetch/load lifecycle with cleanup. Write test. (Codex)
 - [ ] P2-C 🔄 — Extract `usePdfRenderer` — refs: `canvasRefs`, `pageRefs`, `renderedPages`, `renderingPages`, `renderSessionRef`, `renderTasksByPageRef`, `renderTaskStatusRef`; state: `pageTextByIndex`; effects: render-all-pages with retry, session/document identity guards; fn: `cancelAllRenderTasks`. Write test. (Codex)
 - [ ] P2-D 🔄 — Extract `usePdfNavigation` — state: `pageNumber`; refs: `scrollRef`, `contentRef`; effects: intersection observer page tracking, focus-page scroll; fn: `scrollToPage`; derived: `canGoBack`, `canGoForward`, `showPageNavigation`, snippet highlight detection. Write test. (Codex)
@@ -239,23 +239,25 @@ _Claude writes after P4-B._
 
 ## Prompt activo
 
-### Paso objetivo: P2-A — Extract usePdfZoom
+### Paso objetivo: P2-B — Extract usePdfDocument
 
 ```
-Extrae `usePdfZoom` de `PdfViewer.tsx` a `frontend/src/hooks/usePdfZoom.ts`.
+Extrae `usePdfDocument` de `PdfViewer.tsx` a `frontend/src/hooks/usePdfDocument.ts`.
 
 **Estado que migra:**
-- useState: zoomLevel (con initializer que lee localStorage)
-- Effects: localStorage persistence (write on change), ctrl+wheel zoom handler
-- Funciones: zoom in/out/fit handlers
+- useState: pdfDoc, totalPages, loading, error
+- Effect: PDF fetch + pdfjsLib.getDocument lifecycle (fileUrl dependency)
+- Effect: scroll-to-top on new fileUrl
+- Effect: pdfDoc cleanup/destroy on unmount
+- Fn: cancelAllRenderTasks (pass as callback or integrate)
 
 **Interfaz del hook:**
-- Params: { scrollRef: RefObject<HTMLDivElement | null> }
-- Returns: { zoomLevel, setZoomLevel, canZoomIn, canZoomOut, zoomPercent, handleZoomIn, handleZoomOut, handleZoomFit }
+- Params: { fileUrl, scrollRef, onRenderSessionReset?: () => void }
+- Returns: { pdfDoc, totalPages, loading, error }
 
-**Reglas:** Extracción mecánica. Test con renderHook + vi. Verde.
+**Reglas:** Extracción mecánica. Test. Verde.
 ```
-⚠️ AUTO-CHAIN → P2-B
+⚠️ AUTO-CHAIN → P2-C
 
 ---
 
