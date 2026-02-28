@@ -67,11 +67,11 @@ Orden de extracción: hooks sin dependencias cruzadas primero → hooks que depe
 
 - [x] R2-A 🔄 — Extract `useDocumentUpload` — mutation: `uploadMutation`; depends on `requestPdfLoad` from `useDocumentLoader`. Write test. (Codex) — ✅ `3fb87f28`
 - [x] R2-B 🔄 — Extract `useDocumentListPolling` — query: `documentList`; memo: `sortedDocuments`; refs: `listPollingStartedAtRef`; effects: adaptive polling, empty-sidebar collapse. Write test. (Codex) — ✅ `77aec6cc`
-- [ ] R2-C 🔄 — Extract `useRawTextViewer` — query: `rawTextQuery`; state: `rawSearch`, `rawSearchNotice`; derived: `rawTextErrorMessage`, `hasRawText`, `canCopy/canSearch`; integrates existing `useRawTextActions`. Write test. (Codex) ⏳ EN PROGRESO (Codex, 2026-02-28)
+- [x] R2-C 🔄 — Extract `useRawTextViewer` — query: `rawTextQuery`; state: `rawSearch`, `rawSearchNotice`; derived: `rawTextErrorMessage`, `hasRawText`, `canCopy/canSearch`; integrates existing `useRawTextActions`. Write test. (Codex) — ✅ `860c8e17`
 
 ### Phase 3 — Pipeline de datos pesado
 
-- [ ] R3-A 🔄 — Extract `useConfidenceDiagnostics` — memos: `documentConfidencePolicy`; effects: policy diagnostic logging, debug logging, visit grouping diagnostics. Write test. (Codex)
+- [ ] R3-A 🔄 — Extract `useConfidenceDiagnostics` — memos: `documentConfidencePolicy`; effects: policy diagnostic logging, debug logging, visit grouping diagnostics. Write test. (Codex) ⏳ EN PROGRESO (Codex, 2026-02-28)
 - [ ] R3-B 🔄 — Extract `useReviewDataPipeline` — memos: `extractedReviewFields`, `validationResult`, `validatedReviewFields`, `coreDisplayFields`, `otherDisplayFields`, `groupedCoreFields`, `canonicalVisitFieldOrder`, `reportSections`, `selectableReviewItems`, `detectedFieldsSummary`; effect: extraction debug logging. Write test. (Codex)
 - [ ] R3-C 🔄 — Extract `useReviewPanelState` — derived: `reviewPanelState`, `reviewPanelMessage`, `shouldShowReviewEmptyState`, `hasNoStructuredFilterResults`; state: `reviewLoadingDocId`, `reviewLoadingSinceMs`, `isRetryingInterpretation`; fn: `handleRetryInterpretation`. Write test. (Codex)
 
