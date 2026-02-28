@@ -4,7 +4,7 @@
 
 ## Active iteration
 
-**Iteration 13** — Decompose AppWorkspace.tsx (custom hook extraction). See [PLAN_2026-02-28_DECOMPOSE_APP_WORKSPACE.md](PLAN_2026-02-28_DECOMPOSE_APP_WORKSPACE.md).
+**Iteration 14** — Decompose PdfViewer.tsx (custom hook extraction). See [PLAN_2026-02-28_DECOMPOSE_PDF_VIEWER.md](PLAN_2026-02-28_DECOMPOSE_PDF_VIEWER.md).
 
 ## Timeline
 
@@ -22,15 +22,16 @@
 | 10 | 2026-02-27 | #165 | Security, resilience & performance hardening | DB indexes, UUID validation, Error Boundary, rate limiting, pip-audit + npm audit CI, deep health, lazy PdfViewer, cache headers, coverage thresholds | [COMPLETED_2026-02-26_ITER-10-HARDENING.md](completed/COMPLETED_2026-02-26_ITER-10-HARDENING.md) |
 | 11 | 2026-02-27 | #167 | E2E expansion + Error UX + testing depth + DX hardening | 395 backend tests (91%), 287 frontend (87%), 20 E2E (8 specs), error UX mapping, P50/P95 benchmarks, repo split 3 aggregates, OpenAPI polish, 70 files changed | [COMPLETED_2026-02-27_ITER-11-FULLSTACK-HARDENING.md](completed/COMPLETED_2026-02-27_ITER-11-FULLSTACK-HARDENING.md) |
 | 12 | 2026-02-27 | #169 | E2E Phase 3-4 expansion + WCAG accessibility + architecture docs + project close-out | 65 E2E tests (22 specs), axe-core WCAG audit, ARCHITECTURE.md, README badges, Known Limitations reframe, 47 files changed | [COMPLETED_2026-02-27_ITER-12-FINAL.md](completed/COMPLETED_2026-02-27_ITER-12-FINAL.md) |
+| 13 | 2026-02-28 | #171 | AppWorkspace decomposition round 4 + integration hardening | AppWorkspace 2221→726 LOC (−67%), useReviewDataPipeline 875→357 LOC, 318 frontend tests (48 files), 4 new hook suites | [COMPLETED_2026-02-28_DECOMPOSE_APP_WORKSPACE.md](completed/COMPLETED_2026-02-28_DECOMPOSE_APP_WORKSPACE.md) |
 
 ## Cumulative progress
 
-| Metric | Iter 1 | Iter 3 | Iter 6 | Iter 8 | Iter 9 | Iter 10 | Iter 11 | Iter 12 |
-|---|---|---|---|---|---|---|---|---|
-| Backend tests | ~80 | ~180 | 317 | 372 | 372 | 377 | 395 | **395** |
-| Frontend tests | ~40 | ~120 | 226 | 263 | 263 | 266 | 287 | **287** |
-| Backend coverage | ~60% | ~75% | 90% | 90% | 90% | 90.41% | 91% | **91%** |
-| Frontend coverage | ~40% | ~65% | 82.6% | 85% | 85% | 85% | ~87% | **~87%** |
-| E2E specs | 0 | 0 | 0 | 0 | 5 | 5 | 20 (8 files) | **65 (22 files)** |
-| CI jobs | 1 | 4 | 6 | 8 | 8 | 10 | 10 | **10** |
-| Lint issues | many | some | 0 | 0 | 0 | 0 | 0 | **0** |
+| Metric | Iter 1 | Iter 3 | Iter 6 | Iter 8 | Iter 9 | Iter 10 | Iter 11 | Iter 12 | Iter 13 |
+|---|---|---|---|---|---|---|---|---|---|
+| Backend tests | ~80 | ~180 | 317 | 372 | 372 | 377 | 395 | 395 | **395** |
+| Frontend tests | ~40 | ~120 | 226 | 263 | 263 | 266 | 287 | 287 | **318** |
+| Backend coverage | ~60% | ~75% | 90% | 90% | 90% | 90.41% | 91% | 91% | **91%** |
+| Frontend coverage | ~40% | ~65% | 82.6% | 85% | 85% | 85% | ~87% | ~87% | **~87%** |
+| E2E specs | 0 | 0 | 0 | 0 | 5 | 5 | 20 (8 files) | 65 (22 files) | **65 (22 files)** |
+| CI jobs | 1 | 4 | 6 | 8 | 8 | 10 | 10 | 10 | **10** |
+| Lint issues | many | some | 0 | 0 | 0 | 0 | 0 | 0 | **0** |
