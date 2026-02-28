@@ -41,7 +41,7 @@ The project's canonical documentation (`docs/project/`, `docs/shared/`, `docs/RE
 ### Phase 1 — Inventory and audit (know what we have)
 
 - [x] D1-A 🚧 — Build current-state inventory of canonical docs: path, type, audience, staleness, status · skill: `microsoft-wiki-architect` (Claude) — ✅
-- [ ] D1-B 🚧 — Detect duplicate/stale content → consolidation report with keep/merge/delete recommendations · skill: `duplicate-stale-detector` (Claude)
+- [x] D1-B 🚧 — Detect duplicate/stale content → consolidation report with keep/merge/delete recommendations · skill: `duplicate-stale-detector` (Claude) — ✅
 - [ ] D1-C 🚧 — User approves consolidation decisions (Claude)
 - [ ] D1-D 🔄 — Apply consolidation/deprecation updates (Codex)
 - [ ] D1-E 🚧 — Full docs QA audit against current codebase reality · skill: `architecture-doc-auditor` (Claude)
@@ -187,7 +187,44 @@ _Empty._
 
 ### D1-B — Duplicate/stale findings
 
-_To be filled._
+**4 stale** | **5 duplicate pairs** | **3 contradictions** | Collected 2026-02-28
+
+#### Stale files (content-based; all committed within 90 days but content outdated)
+
+| File | Severity | Evidence |
+|---|---|---|
+| DESIGN_SYSTEM.md | **High** | 6+ color tokens diverge from actual CSS in `index.css`; active implementation contract |
+| refactor/CTO_REVIEW_VERDICT.md | **High** | Metrics (411 tests→682, 7 CI→10), all gaps resolved; broken link `../production/` |
+| refactor/codebase_audit.md | **High** | All 15 findings resolved in Iter 1-12; score table misleading |
+| refactor/12_FACTOR_AUDIT.md | Medium | All 5 backlog items resolved |
+
+#### Duplicate / near-duplicate pairs
+
+| File A | File B | Score | Suggested action |
+|---|---|---|---|
+| BRAND_GUIDELINES.md | DESIGN_SYSTEM.md | 0.70 | **MERGE** — DS should reference BRAND for color values, keep DS-only tokens |
+| DELIVERY_SUMMARY.md | IMPLEMENTATION_HISTORY.md | 0.90 | **DEDUPLICATE** — remove cumulative table from HISTORY, keep in DELIVERY |
+| CTO_REVIEW_VERDICT.md | codebase_audit.md | 0.85 | **ARCHIVE both** — historical artifacts, knowledge in completed files |
+| COMPLETED_ITER-9.md | COMPLETED_2026-02-26_ITER-9-E2E.md | 0.85 | **CONSOLIDATE** — keep one canonical file per iteration |
+| DELIVERY_SUMMARY.md | completed/* (collective) | 0.75 | **REVIEW** — acceptable rollup, no action now |
+
+#### Contradictions
+
+| Files | Topic | Severity |
+|---|---|---|
+| BRAND_GUIDELINES ↔ DESIGN_SYSTEM ↔ index.css | Color tokens (3-way divergence, 6+ tokens) | **High** |
+| DELIVERY_SUMMARY ↔ ARCHITECTURE.md | CI job count (9+1 vs 10) | Low |
+| CTO_REVIEW_VERDICT ↔ current state | Test counts, gap status | Medium (resolved by archiving) |
+
+#### Recommended action priority
+
+1. **UPDATE** DESIGN_SYSTEM.md — sync tokens to CSS (high-severity contradiction)
+2. **UPDATE** CTO_REVIEW_VERDICT.md — fix broken link + archive banner
+3. **ARCHIVE** codebase_audit.md — resolution banner + status column
+4. **ARCHIVE** 12_FACTOR_AUDIT.md — resolution banner
+5. **MERGE** BRAND↔DS color overlap — reference instead of restate
+6. **DEDUPLICATE** IMPLEMENTATION_HISTORY cumulative table
+7. **CONSOLIDATE** COMPLETED_ITER-9 with full plan file
 
 ### D1-E — QA audit findings
 
