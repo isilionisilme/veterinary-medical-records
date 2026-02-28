@@ -71,7 +71,7 @@ usePdfNavigation (depende de usePdfRenderer.pageRefs, pdfDoc)
 
 ### Phase 0 — Bootstrap
 
-- [ ] P0-A 🔄 — Create branch `refactor/decompose-pdf-viewer` from `main`, create PR (Codex)
+- [x] P0-A 🔄 — Create branch `refactor/decompose-pdf-viewer` from `main`, create PR (Codex)
 
 ### Phase 1 — Pure utility extraction
 
@@ -239,14 +239,26 @@ _Claude writes after P4-B._
 
 ## Prompt activo
 
-### Paso objetivo: P0-A — Create branch and PR
+### Paso objetivo: P1-A — Extract lib/pdfDebug.ts
 
 ```
-Crea la rama `refactor/decompose-pdf-viewer` desde `main` y un PR con título
-"refactor: decompose PdfViewer.tsx into hooks and utility modules" y body que resuma el plan.
-No hagas cambios de código aún.
+Extrae las utilidades de debug de `PdfViewer.tsx` a `frontend/src/lib/pdfDebug.ts`.
+
+**Código que migra:**
+- Constantes: PDF_ZOOM_STORAGE_KEY, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL, ZOOM_STEP, clampZoomLevel()
+- Función pura: analyzeTransform(rawTransform) → { determinant, negativeDeterminant, hasMirrorScale }
+- Función: createDebugFlags() — el useMemo actual que lee import.meta.env y URLSearchParams
+- Tipo: DebugFlags (el shape { enabled, noTransformSubtree, noMotion, hardRemountCanvas })
+- Funciones de snapshot: getNodeId (needs ref maps as params), captureDebugSnapshot (needs state as params)
+- Exports necesarios para que PdfViewer los importe
+
+**Reglas:**
+1. Las funciones `getNodeId` y `captureDebugSnapshot` reciben sus refs/state como parámetros (no dependen de closure del componente).
+2. `analyzeTransform` es pura — test unitario directo.
+3. En PdfViewer.tsx, reemplaza el código inline con imports de pdfDebug.ts.
+4. `npm run test` verde.
 ```
-⚠️ AUTO-CHAIN → P1-A
+⚠️ AUTO-CHAIN → P2-A
 
 ---
 
