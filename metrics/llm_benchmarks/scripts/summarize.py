@@ -4,6 +4,7 @@ import argparse
 import json
 import statistics
 from collections import defaultdict
+from datetime import datetime
 from pathlib import Path
 
 
@@ -22,6 +23,17 @@ def _load_runs(runs_path: Path) -> list[dict[str, object]]:
         if isinstance(obj, dict):
             runs.append(obj)
     return runs
+
+
+def _parse_date_utc(value: object) -> datetime | None:
+    if not isinstance(value, str):
+        return None
+    try:
+        if value.endswith("Z"):
+            value = value[:-1] + "+00:00"
+        return datetime.fromisoformat(value)
+    except ValueError:
+        return None
 
 
 def _render_summary(runs: list[dict[str, object]]) -> str:
@@ -61,6 +73,36 @@ def _render_summary(runs: list[dict[str, object]]) -> str:
             f"| {scenario_id} | {len(items)} | {_median(med_docs)} | {_median(med_tok)} | "
             f"{max_max_doc_chars} |"
         )
+
+    retro_runs = by_scenario.get("retro_daily_snapshot", [])
+    if retro_runs:
+        lines.append("")
+        lines.append("## Retro daily snapshot detail")
+        lines.append("")
+        lines.append("| Date (UTC) | tok_est | chars_read | docs | commit |")
+        lines.append("|---|---:|---:|---:|---|")
+
+        def _key(run: dict[str, object]) -> tuple[datetime, str]:
+            parsed = _parse_date_utc(run.get("date_utc"))
+            if parsed is None:
+                parsed = datetime.min
+            run_id = str(run.get("run_id", ""))
+            return parsed, run_id
+
+        for run in sorted(retro_runs, key=_key):
+            metrics = run.get("metrics")
+            if not isinstance(metrics, dict):
+                continue
+
+            date_utc = str(run.get("date_utc", ""))
+            day = date_utc[:10] if len(date_utc) >= 10 else date_utc
+            tok_est = int(metrics.get("tok_est", 0))
+            chars_read = int(metrics.get("chars_read", 0))
+            docs = int(metrics.get("unique_docs_opened", 0))
+            commit = str(run.get("commit_sha", ""))
+            commit_short = commit[:7] if len(commit) >= 7 else commit
+
+            lines.append(f"| {day} | {tok_est} | {chars_read} | {docs} | {commit_short} |")
 
     lines.append("")
     return "\n".join(lines) + "\n"
