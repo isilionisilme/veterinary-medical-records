@@ -7,7 +7,7 @@ from pathlib import Path
 
 ROOT_README = Path("README.md")
 DOCS_README = Path("docs/README.md")
-PROJECT_ROOT = Path("docs/project")
+PROJECT_ROOT = Path("docs/projects/veterinary-medical-records")
 SHARED_ROOT = Path("docs/shared")
 ADR_ROOT = Path("docs/projects/veterinary-medical-records/tech/adr")
 
@@ -205,7 +205,8 @@ def main() -> int:
     (wiki_dir / "_Footer.md").write_text(
         (
             "Synced automatically from canonical repository docs "
-            "(`docs/project`, `docs/shared`, and `README.md`).\n"
+            "(`docs/projects/veterinary-medical-records`, `docs/shared`, and "
+            "`README.md`).\n"
         ),
         encoding="utf-8",
     )
