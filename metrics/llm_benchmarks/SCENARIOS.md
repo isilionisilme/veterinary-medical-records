@@ -209,3 +209,19 @@ Mark runs as retrospective estimates (not live captured sessions).
 At the end, print the METRICS line with docs consulted.
 ```
 
+## retro_daily_operational_path
+
+```text
+#metrics
+Generate a retroactive daily benchmark focused on the operational decision path.
+Use a deterministic minimal docs set that changes with repo architecture milestones:
+- before docs router: AGENTS + engineering playbook + docs index
+- after docs router: AGENTS + router authority + start-work workflow entry
+- include the active planning source (monolithic AI_ITERATIVE_EXECUTION_PLAN or split PLAN_*).
+
+Produce one run per day from repo creation to today.
+Mark runs as retrospective estimates (not live captured sessions).
+
+At the end, print the METRICS line with docs consulted.
+```
+

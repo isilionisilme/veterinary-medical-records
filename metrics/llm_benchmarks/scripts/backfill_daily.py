@@ -7,12 +7,77 @@ from dataclasses import dataclass
 from datetime import UTC, date, datetime, time, timedelta
 from pathlib import Path
 
-CANDIDATE_DOCS = [
+SNAPSHOT_CANDIDATE_DOCS = [
     "AGENTS.md",
     "docs/README.md",
     "docs/project/TECHNICAL_DESIGN.md",
     "docs/shared/ENGINEERING_PLAYBOOK.md",
 ]
+
+
+def _path_exists_at_commit(sha: str, path: str) -> bool:
+    return _git_show_text(sha, path) is not None
+
+
+def _list_paths_at_commit(sha: str, prefix: str) -> list[str]:
+    out = _git("ls-tree", "-r", "--name-only", sha, prefix)
+    if not out:
+        return []
+    return [line.strip() for line in out.splitlines() if line.strip()]
+
+
+def _select_plan_path(sha: str) -> str | None:
+    monolithic_candidates = [
+        "docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md",
+        "docs/project/AI_ITERATIVE_EXECUTION_PLAN.md",
+    ]
+    for path in monolithic_candidates:
+        if _path_exists_at_commit(sha, path):
+            return path
+
+    split_paths = [
+        path
+        for path in _list_paths_at_commit(sha, "docs/project/implementation")
+        if path.startswith("docs/project/implementation/PLAN_") and path.endswith(".md")
+    ]
+    if not split_paths:
+        return None
+    return sorted(split_paths)[-1]
+
+
+def _docs_for_snapshot(sha: str) -> list[str]:
+    docs: list[str] = []
+    for path in SNAPSHOT_CANDIDATE_DOCS:
+        if _git_show_text(sha, path) is not None:
+            docs.append(path)
+    return docs
+
+
+def _docs_for_operational_path(sha: str) -> list[str]:
+    docs: list[str] = []
+
+    legacy_min_path = [
+        "AGENTS.md",
+        "docs/shared/ENGINEERING_PLAYBOOK.md",
+        "docs/README.md",
+    ]
+    router_min_path = [
+        "AGENTS.md",
+        "docs/agent_router/00_AUTHORITY.md",
+        "docs/agent_router/01_WORKFLOW/START_WORK/00_entry.md",
+    ]
+
+    using_router = _path_exists_at_commit(sha, "docs/agent_router/00_AUTHORITY.md")
+    base_paths = router_min_path if using_router else legacy_min_path
+    for path in base_paths:
+        if _path_exists_at_commit(sha, path):
+            docs.append(path)
+
+    plan_path = _select_plan_path(sha)
+    if plan_path is not None:
+        docs.append(plan_path)
+
+    return docs
 
 
 @dataclass(frozen=True)
@@ -74,17 +139,23 @@ def _expand_to_all_days(daily_commits: list[DailyCommit]) -> list[DailyCommit]:
 
 def _git_show_text(sha: str, path: str) -> str | None:
     try:
-        return _git("show", f"{sha}:{path}")
+        return subprocess.check_output(
+            ["git", "show", f"{sha}:{path}"],
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            stderr=subprocess.DEVNULL,
+        )
     except subprocess.CalledProcessError:
         return None
 
 
-def _docs_for_commit(sha: str) -> list[str]:
-    docs: list[str] = []
-    for path in CANDIDATE_DOCS:
-        if _git_show_text(sha, path) is not None:
-            docs.append(path)
-    return docs
+def _docs_for_commit(sha: str, scenario_id: str) -> list[str]:
+    if scenario_id == "retro_daily_snapshot":
+        return _docs_for_snapshot(sha)
+    if scenario_id == "retro_daily_operational_path":
+        return _docs_for_operational_path(sha)
+    raise ValueError(f"Unsupported scenario_id: {scenario_id}")
 
 
 def _metrics_for_commit(sha: str, docs: list[str]) -> tuple[int, int, int]:
@@ -122,14 +193,14 @@ def _load_existing_dates(runs_path: Path, scenario_id: str) -> set[str]:
     return existing
 
 
-def _build_run(day: date, sha: str, docs: list[str]) -> dict[str, object]:
+def _build_run(day: date, sha: str, docs: list[str], scenario_id: str) -> dict[str, object]:
     chars_read, tok_est, max_doc_chars = _metrics_for_commit(sha, docs)
 
     return {
         "date_utc": _day_to_iso_end(day),
         "commit_sha": sha,
-        "scenario_id": "retro_daily_snapshot",
-        "run_id": f"retro-{day.isoformat()}-{sha[:7]}",
+        "scenario_id": scenario_id,
+        "run_id": f"{scenario_id}-{day.isoformat()}-{sha[:7]}",
         "agent": "retro_backfill",
         "model": "n/a",
         "reasoning_effort": "retro_daily",
@@ -149,6 +220,11 @@ def _build_run(day: date, sha: str, docs: list[str]) -> dict[str, object]:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Backfill one retro benchmark run per UTC day.")
     parser.add_argument("--runs", default="metrics/llm_benchmarks/runs.jsonl")
+    parser.add_argument(
+        "--scenario",
+        default="retro_daily_snapshot",
+        choices=["retro_daily_snapshot", "retro_daily_operational_path"],
+    )
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
@@ -157,7 +233,7 @@ def main() -> int:
     runs_path.parent.mkdir(parents=True, exist_ok=True)
 
     daily_commits = _expand_to_all_days(_list_daily_last_commits())
-    existing_days = _load_existing_dates(runs_path, "retro_daily_snapshot")
+    existing_days = _load_existing_dates(runs_path, args.scenario)
 
     new_runs: list[dict[str, object]] = []
     for item in daily_commits:
@@ -165,11 +241,11 @@ def main() -> int:
         if day_s in existing_days:
             continue
 
-        docs = _docs_for_commit(item.sha)
+        docs = _docs_for_commit(item.sha, args.scenario)
         if not docs:
             continue
 
-        new_runs.append(_build_run(item.day, item.sha, docs))
+        new_runs.append(_build_run(item.day, item.sha, docs, args.scenario))
 
     if args.dry_run:
         print(f"Would append {len(new_runs)} retro daily runs to {runs_path}")
