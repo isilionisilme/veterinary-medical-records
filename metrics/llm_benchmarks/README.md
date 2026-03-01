@@ -32,6 +32,16 @@ Important: metrics are validated by recomputing file sizes from `metrics.docs` t
 5) Update summary:
    - `python metrics/llm_benchmarks/scripts/summarize.py --write metrics/llm_benchmarks/summary.md`
 
+## Retroactive daily history (backfill)
+
+If you want a daily historical series from repository creation to today, run:
+
+- `python metrics/llm_benchmarks/scripts/backfill_daily.py --runs metrics/llm_benchmarks/runs.jsonl`
+
+This creates one run per UTC day using the latest commit available for that day.
+These runs are marked as retrospective estimates in `metrics.violations` with `retroactive_estimate`.
+They are useful for trend visualization, but are not exact reconstructions of live assistant sessions.
+
 ## Files
 
 - `SCENARIOS.md`: benchmark scenarios + canonical prompt templates.

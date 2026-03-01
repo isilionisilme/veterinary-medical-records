@@ -3,10 +3,26 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
 from datetime import datetime
 from pathlib import Path
 
 _SHA_RE = re.compile(r"^[0-9a-f]{7,40}$")
+
+
+def _git_show_text(repo_root: Path, commit_sha: str, doc_path: str) -> str | None:
+    try:
+        out = subprocess.check_output(
+            ["git", "show", f"{commit_sha}:{doc_path}"],
+            cwd=repo_root,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            stderr=subprocess.DEVNULL,
+        )
+    except subprocess.CalledProcessError:
+        return None
+    return out
 
 
 def _parse_date_utc(value: str) -> None:
@@ -68,12 +84,23 @@ def _validate_run(repo_root: Path, scenario_ids: set[str], run: dict[str, object
         raise ValueError("metrics.docs must not contain duplicates.")
 
     doc_char_counts: list[int] = []
-    for doc in docs:
-        path = repo_root / doc
-        if not path.exists():
-            raise ValueError(f"metrics.docs path does not exist: {doc}")
-        content = path.read_text(encoding="utf-8")
-        doc_char_counts.append(len(content))
+    missing_at_commit = False
+    if commit_sha != "unknown":
+        for doc in docs:
+            content = _git_show_text(repo_root, commit_sha, doc)
+            if content is None:
+                missing_at_commit = True
+                break
+            doc_char_counts.append(len(content))
+
+    if commit_sha == "unknown" or missing_at_commit:
+        doc_char_counts = []
+        for doc in docs:
+            path = repo_root / doc
+            if not path.exists():
+                raise ValueError(f"metrics.docs path does not exist: {doc}")
+            content = path.read_text(encoding="utf-8")
+            doc_char_counts.append(len(content))
 
     chars_read_expected = sum(doc_char_counts)
     max_doc_chars_expected = max(doc_char_counts) if doc_char_counts else 0

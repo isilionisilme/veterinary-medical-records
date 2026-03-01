@@ -198,3 +198,14 @@ Do the minimum doc reading needed to:
 At the end, print the METRICS line with docs consulted.
 ```
 
+## retro_daily_snapshot
+
+```text
+#metrics
+Generate a retroactive daily benchmark snapshot for this repository.
+Use a deterministic docs set and produce one run per day from repo creation to today.
+Mark runs as retrospective estimates (not live captured sessions).
+
+At the end, print the METRICS line with docs consulted.
+```
+
