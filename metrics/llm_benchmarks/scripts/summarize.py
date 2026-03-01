@@ -36,6 +36,45 @@ def _parse_date_utc(value: object) -> datetime | None:
         return None
 
 
+def _scenario_points(
+    runs: list[dict[str, object]],
+) -> list[tuple[str, int, int]]:
+    points: list[tuple[str, int, int, str]] = []
+    for run in runs:
+        metrics = run.get("metrics")
+        if not isinstance(metrics, dict):
+            continue
+        date_utc = str(run.get("date_utc", ""))
+        day = date_utc[:10] if len(date_utc) >= 10 else date_utc
+        tok_est = int(metrics.get("tok_est", 0))
+        docs = int(metrics.get("unique_docs_opened", 0))
+        run_id = str(run.get("run_id", ""))
+        points.append((day, tok_est, docs, run_id))
+
+    points.sort(key=lambda item: (item[0], item[3]))
+    return [(day, tok_est, docs) for day, tok_est, docs, _ in points]
+
+
+def _mermaid_xychart(title: str, y_label: str, points: list[tuple[str, int]]) -> list[str]:
+    if not points:
+        return []
+
+    x_labels = ", ".join(f'"{day}"' for day, _ in points)
+    values = ", ".join(str(value) for _, value in points)
+    max_value = max(value for _, value in points)
+    y_max = max(max_value, 1)
+
+    return [
+        "```mermaid",
+        "xychart-beta",
+        f'    title "{title}"',
+        f"    x-axis [{x_labels}]",
+        f'    y-axis "{y_label}" 0 --> {y_max}',
+        f"    line [{values}]",
+        "```",
+    ]
+
+
 def _render_summary(runs: list[dict[str, object]]) -> str:
     if not runs:
         return (
@@ -74,6 +113,37 @@ def _render_summary(runs: list[dict[str, object]]) -> str:
             f"{max_max_doc_chars} |"
         )
 
+    operational_runs = by_scenario.get("retro_daily_operational_path", [])
+    docs_footprint_runs = by_scenario.get("retro_daily_docs_footprint", [])
+
+    if operational_runs or docs_footprint_runs:
+        lines.append("")
+        lines.append("## Visual trends")
+
+    if operational_runs:
+        lines.append("")
+        lines.append("### Operational path — tok_est by day")
+        op_points = _scenario_points(operational_runs)
+        lines.extend(
+            _mermaid_xychart(
+                "retro_daily_operational_path tok_est",
+                "tok_est",
+                [(day, tok_est) for day, tok_est, _ in op_points],
+            )
+        )
+
+    if docs_footprint_runs:
+        lines.append("")
+        lines.append("### Docs footprint — docs count by day")
+        footprint_points = _scenario_points(docs_footprint_runs)
+        lines.extend(
+            _mermaid_xychart(
+                "retro_daily_docs_footprint docs",
+                "docs",
+                [(day, docs) for day, _, docs in footprint_points],
+            )
+        )
+
     retro_runs = by_scenario.get("retro_daily_snapshot", [])
     if retro_runs:
         lines.append("")
@@ -104,7 +174,6 @@ def _render_summary(runs: list[dict[str, object]]) -> str:
 
             lines.append(f"| {day} | {tok_est} | {chars_read} | {docs} | {commit_short} |")
 
-        operational_runs = by_scenario.get("retro_daily_operational_path", [])
         if operational_runs:
             lines.append("")
             lines.append("## Retro daily operational path detail")
@@ -134,7 +203,6 @@ def _render_summary(runs: list[dict[str, object]]) -> str:
 
                 lines.append(f"| {day} | {tok_est} | {chars_read} | {docs} | {commit_short} |")
 
-        docs_footprint_runs = by_scenario.get("retro_daily_docs_footprint", [])
         if docs_footprint_runs:
             lines.append("")
             lines.append("## Retro daily docs footprint detail")
