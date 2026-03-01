@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import statistics
 from collections import defaultdict
@@ -75,6 +76,27 @@ def _mermaid_xychart(title: str, y_label: str, points: list[tuple[str, int]]) ->
     ]
 
 
+def _load_real_usage_points(repo_root: Path) -> tuple[list[tuple[str, int]], list[tuple[str, int]]]:
+    merged_path = repo_root / "metrics/llm_benchmarks/account_usage_merged_daily.csv"
+    if not merged_path.exists():
+        return [], []
+
+    daily_points: list[tuple[str, int]] = []
+    cumulative_points: list[tuple[str, int]] = []
+    with merged_path.open("r", encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            day = (row.get("DateTime") or "").strip()
+            if not day:
+                continue
+            copilot_daily = int(round(float((row.get("copilot_daily") or "0").strip())))
+            copilot_cumulative = int(round(float((row.get("copilot_cumulative") or "0").strip())))
+            daily_points.append((day, copilot_daily))
+            cumulative_points.append((day, copilot_cumulative))
+
+    return daily_points, cumulative_points
+
+
 def _render_summary(runs: list[dict[str, object]]) -> str:
     if not runs:
         return (
@@ -141,6 +163,39 @@ def _render_summary(runs: list[dict[str, object]]) -> str:
                 "retro_daily_docs_footprint docs",
                 "docs",
                 [(day, docs) for day, _, docs in footprint_points],
+            )
+        )
+
+    repo_root = Path(__file__).resolve().parents[3]
+    real_daily_points, real_cumulative_points = _load_real_usage_points(repo_root)
+    if real_daily_points or real_cumulative_points:
+        lines.append("")
+        lines.append("## Real exported usage (multi-account)")
+        lines.append("")
+        lines.append(
+            "Source: `metrics/llm_benchmarks/account_usage_merged_daily.csv` "
+            "generated from account exports in `tmp/usage/`."
+        )
+
+    if real_daily_points:
+        lines.append("")
+        lines.append("### Copilot daily units (merged)")
+        lines.extend(
+            _mermaid_xychart(
+                "copilot_daily_merged",
+                "daily_units",
+                real_daily_points,
+            )
+        )
+
+    if real_cumulative_points:
+        lines.append("")
+        lines.append("### Copilot cumulative units (merged)")
+        lines.extend(
+            _mermaid_xychart(
+                "copilot_cumulative_merged",
+                "cumulative_units",
+                real_cumulative_points,
             )
         )
 

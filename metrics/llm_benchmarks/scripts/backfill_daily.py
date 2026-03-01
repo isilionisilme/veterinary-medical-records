@@ -120,6 +120,39 @@ def _docs_for_docs_footprint(sha: str, day: date) -> list[str]:
     return _docs_for_operational_path(sha)
 
 
+def _is_high_signal_touched_doc(path: str) -> bool:
+    if path in {"AGENTS.md", "docs/README.md"}:
+        return True
+    if path.startswith("docs/project/") and path.endswith(".md"):
+        return True
+    if path.startswith("docs/shared/") and path.endswith(".md"):
+        return True
+    if path.startswith("docs/agent_router/") and (
+        path.endswith("00_AUTHORITY.md") or path.endswith("/00_entry.md")
+    ):
+        return True
+    return False
+
+
+def _docs_for_realistic_estimate(sha: str, day: date) -> list[str]:
+    baseline = _docs_for_operational_path(sha)
+    baseline_set = set(baseline)
+
+    touched_paths = _list_touched_docs_for_day(day)
+    extras: list[str] = []
+    for path in touched_paths:
+        if path in baseline_set:
+            continue
+        if not _is_high_signal_touched_doc(path):
+            continue
+        if not _path_exists_at_commit(sha, path):
+            continue
+        extras.append(path)
+
+    extras_sorted = sorted(set(extras))[:8]
+    return baseline + extras_sorted
+
+
 @dataclass(frozen=True)
 class DailyCommit:
     day: date
@@ -197,6 +230,8 @@ def _docs_for_commit(sha: str, scenario_id: str, day: date) -> list[str]:
         return _docs_for_operational_path(sha)
     if scenario_id == "retro_daily_docs_footprint":
         return _docs_for_docs_footprint(sha, day)
+    if scenario_id == "retro_daily_realistic_estimate":
+        return _docs_for_realistic_estimate(sha, day)
     raise ValueError(f"Unsupported scenario_id: {scenario_id}")
 
 
@@ -269,6 +304,7 @@ def main() -> int:
             "retro_daily_snapshot",
             "retro_daily_operational_path",
             "retro_daily_docs_footprint",
+            "retro_daily_realistic_estimate",
         ],
     )
     parser.add_argument("--dry-run", action="store_true")

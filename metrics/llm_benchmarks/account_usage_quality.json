@@ -1,0 +1,23 @@
+{
+  "input_dir": "D:\\Git\\veterinary-medical-records\\tmp\\usage",
+  "files": [
+    "acosdetelebaris.csv",
+    "fclaros-uoc.csv",
+    "fernandoclaros-hotmail.csv",
+    "fernandoclaros.compras.csv",
+    "fernandoclaros.investment.csv",
+    "fjclarosdeluna.csv",
+    "ihavebeenwaiting.csv",
+    "isilion-isilion.csv",
+    "isilion-ludosofia.csv",
+    "isilion.isilme.csv",
+    "moonwastooshort.csv"
+  ],
+  "exact_duplicate_files": [],
+  "copilot_series_duplicate_files": [],
+  "daily_rows": 28,
+  "first_day": "2026-02-01",
+  "last_day": "2026-02-28",
+  "copilot_total": 130.28,
+  "actions_total": 26.78
+}

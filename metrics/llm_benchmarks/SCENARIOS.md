@@ -240,3 +240,21 @@ Mark runs as retrospective estimates (not live captured sessions).
 At the end, print the METRICS line with docs consulted.
 ```
 
+## retro_daily_realistic_estimate
+
+```text
+#metrics
+Generate a retroactive daily benchmark using a realistic-reading model.
+Build from the operational path baseline, then add only high-signal touched docs for that day:
+- keep canonical docs in docs/project and docs/shared,
+- keep docs/README.md and AGENTS.md,
+- for router changes keep only authority and 00_entry files,
+- ignore archival noise (completed plans/refactor archives),
+- cap extra touched docs to avoid counting full migration churn as if everything was read.
+
+Produce one run per day from repo creation to today.
+Mark runs as retrospective estimates (not live captured sessions).
+
+At the end, print the METRICS line with docs consulted.
+```
+
