@@ -10,6 +10,30 @@
   ],
   "rules": [
     {
+      "source_doc": "docs/projects/veterinary-medical-records/README.md",
+      "description": "Project root README must remain discoverable from project docs entry.",
+      "router_modules": [
+        {
+          "path": "docs/agent_router/04_PROJECT/00_entry.md",
+          "required_terms": [
+            "Project Docs (Modules)"
+          ]
+        }
+      ]
+    },
+    {
+      "source_doc": "docs/shared/LLM_BENCHMARKS.md",
+      "description": "Shared LLM_BENCHMARKS must remain discoverable from shared docs entry.",
+      "router_modules": [
+        {
+          "path": "docs/agent_router/03_SHARED/00_entry.md",
+          "required_terms": [
+            "Shared Docs (Modules)"
+          ]
+        }
+      ]
+    },
+    {
       "source_doc": "docs/projects/veterinary-medical-records/archive/DOCS_IMPROVEMENT_PLAN.md",
       "description": "Documentation refactor plan must map to project docs owner entry module.",
       "router_modules": [
