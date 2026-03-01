@@ -88,7 +88,7 @@
 
 1. **README** → runs system in 3 commands → ✅ positive impression
 2. **Opens `frontend/src/`** → sees `AppWorkspace.tsx` at 5,760 LOC → ⚠️ immediate concern
-3. **Opens `docs/project/adr/`** → sees 4 well-structured ADRs with code evidence → ✅ positive
+3. **Opens `docs/projects/veterinary-medical-records/tech/adr/`** → sees 4 well-structured ADRs with code evidence → ✅ positive
 4. **Runs tests** → 411 green, 87% backend coverage → ✅ strong signal
 5. **Opens `backend/app/`** → sees hexagonal structure → ✅ positive
 6. **Browses DELIVERY_SUMMARY** → sees quantitative evidence → ✅ strong signal
@@ -101,10 +101,10 @@
 | # | Improvement | Impact | Risk | Effort | Acceptance Criteria | Files | Doc Updates |
 |---|---|---|---|---|---|---|---|
 | 1 | **Add `busy_timeout` + WAL mode to SQLite connection config** | **High** — prevents `database is locked` during evaluator's multi-upload smoke test | **Low** — additive change, no behavioral shift | **S** | `sqlite3.connect()` calls include `PRAGMA journal_mode=WAL` and `PRAGMA busy_timeout=5000`. Integration test verifies concurrent read during write doesn't raise `OperationalError`. | `backend/app/infra/database.py` | Update `codebase_audit.md` finding #7 status. Optionally note in ADR-ARCH-0002 consequences section. |
-| 2 | **Document security boundary explicitly** | **High** — evaluator in regulated domain expects security awareness | **Low** — documentation-only, no code changes | **S** | `TECHNICAL_DESIGN.md` contains a "Security Boundary" section stating: (a) auth is out of scope for the exercise, (b) all endpoints are unauthenticated by design, (c) production path would add token-based auth at API gateway level. `FUTURE_IMPROVEMENTS.md` includes auth as a 2-week item. | `docs/project/TECHNICAL_DESIGN.md`, `docs/project/FUTURE_IMPROVEMENTS.md` | Self-referencing (these are the doc updates). |
+| 2 | **Document security boundary explicitly** | **High** — evaluator in regulated domain expects security awareness | **Low** — documentation-only, no code changes | **S** | `TECHNICAL_DESIGN.md` contains a "Security Boundary" section stating: (a) auth is out of scope for the exercise, (b) all endpoints are unauthenticated by design, (c) production path would add token-based auth at API gateway level. `FUTURE_IMPROVEMENTS.md` includes auth as a 2-week item. | `docs/projects/veterinary-medical-records/tech/TECHNICAL_DESIGN.md`, `docs/projects/veterinary-medical-records/delivery/FUTURE_IMPROVEMENTS.md` | Self-referencing (these are the doc updates). |
 | 3 | **Add a brief comment/docstring at top of `AppWorkspace.tsx` explaining decomposition plan** | **Medium** — preempts evaluator's "why is this still huge" reaction | **Low** — comment-only, zero code change | **S** | File header contains a 3–5 line comment acknowledging the file exceeds target size, referencing FUTURE_IMPROVEMENTS.md for the planned decomposition, and explaining it was deprioritized vs. the 3 critical monolithic files that were decomposed. | `frontend/src/AppWorkspace.tsx` | Reference from `FUTURE_IMPROVEMENTS.md` (likely already there via codebase_audit remediation). |
 | 4 | **Add targeted tests for `lib/utils.ts` error paths** | **Medium** — `24%` coverage on a core utility file is evaluator-visible in coverage report | **Low** — additive tests only | **S** | `lib/utils.ts` coverage rises to ≥70%. Tests cover: `apiFetchJson` with non-JSON response, network error, and malformed error body. | `frontend/src/lib/utils.test.ts` (new or extend existing) | None. |
-| 5 | **Verify `FUTURE_IMPROVEMENTS.md` explicitly lists the `AppWorkspace.tsx` decomposition as a 2-week item** | **Medium** — converts a visible gap into a "we know, it's planned" signal | **Low** — doc-only | **S** | `FUTURE_IMPROVEMENTS.md` 2-week section contains an item: "Decompose `AppWorkspace.tsx` (~5,760 LOC) into feature-oriented modules (ReviewWorkspace, StructuredDataView, PdfViewerContainer) following the same pattern used for `App.tsx`, `processing_runner.py`, and `document_service.py`." | `docs/project/FUTURE_IMPROVEMENTS.md` | Self-referencing. |
+| 5 | **Verify `FUTURE_IMPROVEMENTS.md` explicitly lists the `AppWorkspace.tsx` decomposition as a 2-week item** | **Medium** — converts a visible gap into a "we know, it's planned" signal | **Low** — doc-only | **S** | `FUTURE_IMPROVEMENTS.md` 2-week section contains an item: "Decompose `AppWorkspace.tsx` (~5,760 LOC) into feature-oriented modules (ReviewWorkspace, StructuredDataView, PdfViewerContainer) following the same pattern used for `App.tsx`, `processing_runner.py`, and `document_service.py`." | `docs/projects/veterinary-medical-records/delivery/FUTURE_IMPROVEMENTS.md` | Self-referencing. |
 
 ---
 
@@ -115,7 +115,7 @@
 | **Hexagonal architecture** (`domain/`, `ports/`, `infra/`) | Already strong. Any change risks regression with zero upside. |
 | **Docker Compose setup** (`docker-compose.yml`, `docker-compose.dev.yml`) | Working, healthchecked, evaluator-verified. Touching it risks breaking the quickstart. |
 | **CI pipeline** (`.github/workflows/ci.yml`) | 7 jobs, all green. Adding jobs = risk of red CI before submission. |
-| **ADR content** (`docs/project/adr/ADR-ARCH-*.md`) | Well-written with code evidence. Editing risks introducing inconsistencies. |
+| **ADR content** (`docs/projects/veterinary-medical-records/tech/adr/ADR-ARCH-*.md`) | Well-written with code evidence. Editing risks introducing inconsistencies. |
 | **Backend structural decomposition** (the 5-module processing, 8-module document_service) | Just completed and verified. Re-touching risks regressions. |
 | **Frontend component decomposition** (37 extracted components) | Same — fresh refactor, tests redistributed. Leave alone. |
 | **`IMPLEMENTATION_PLAN.md`** | Massive file with story definitions — any edit risks breaking cross-references. |

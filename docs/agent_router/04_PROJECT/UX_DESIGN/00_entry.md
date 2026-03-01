@@ -20,3 +20,4 @@ Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for i
 ## Propagated updates
 - UX confidence semantics distinguish `candidate_confidence` (diagnostic) from `field_mapping_confidence` (veterinarian-facing signal).
 - Reviewed-toggle behavior and implicit unchanged-field weak-positive signal contracts are reflected in UX owner modules.
+- Medical Record panel rendering remains contract-driven (`medical_record_view`, `field_slots`, `visits[]`, `other_fields[]`) with no UI-side heuristics.

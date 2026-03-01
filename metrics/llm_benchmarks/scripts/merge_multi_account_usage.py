@@ -8,6 +8,9 @@ from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 
+PRICE_PER_PREMIUM_REQUEST_USD = 0.04
+INCLUDED_PREMIUM_REQUESTS_PER_ACCOUNT = 300
+
 
 @dataclass(frozen=True)
 class UsageRow:
@@ -87,6 +90,10 @@ def _write_merged_csv(path: Path, merged: list[dict[str, object]]) -> None:
                 "copilot_daily",
                 "actions_cumulative",
                 "copilot_cumulative",
+                "copilot_usd_daily",
+                "copilot_usd_cumulative",
+                "premium_requests_daily_est",
+                "premium_requests_cumulative_est",
             ],
         )
         writer.writeheader()
@@ -146,8 +153,15 @@ def main() -> int:
     for day in all_days:
         actions_daily = round(daily_actions[day], 4)
         copilot_daily = round(daily_copilot[day], 4)
+        copilot_usd_daily = copilot_daily
+        premium_requests_daily_est = round(copilot_usd_daily / PRICE_PER_PREMIUM_REQUEST_USD, 4)
         actions_cumulative = round(actions_cumulative + actions_daily, 4)
         copilot_cumulative = round(copilot_cumulative + copilot_daily, 4)
+        copilot_usd_cumulative = copilot_cumulative
+        premium_requests_cumulative_est = round(
+            copilot_usd_cumulative / PRICE_PER_PREMIUM_REQUEST_USD,
+            4,
+        )
         merged.append(
             {
                 "DateTime": day,
@@ -156,6 +170,10 @@ def main() -> int:
                 "copilot_daily": copilot_daily,
                 "actions_cumulative": actions_cumulative,
                 "copilot_cumulative": copilot_cumulative,
+                "copilot_usd_daily": copilot_usd_daily,
+                "copilot_usd_cumulative": copilot_usd_cumulative,
+                "premium_requests_daily_est": premium_requests_daily_est,
+                "premium_requests_cumulative_est": premium_requests_cumulative_est,
             }
         )
 
@@ -172,6 +190,21 @@ def main() -> int:
         "first_day": merged[0]["DateTime"] if merged else None,
         "last_day": merged[-1]["DateTime"] if merged else None,
         "copilot_total": merged[-1]["copilot_cumulative"] if merged else 0,
+        "copilot_usd_total": merged[-1]["copilot_usd_cumulative"] if merged else 0,
+        "premium_requests_total_est": (
+            merged[-1]["premium_requests_cumulative_est"] if merged else 0
+        ),
+        "price_per_premium_request_usd": PRICE_PER_PREMIUM_REQUEST_USD,
+        "included_premium_requests_per_account": INCLUDED_PREMIUM_REQUESTS_PER_ACCOUNT,
+        "included_usd_per_account": round(
+            INCLUDED_PREMIUM_REQUESTS_PER_ACCOUNT * PRICE_PER_PREMIUM_REQUEST_USD,
+            2,
+        ),
+        "accounts_detected": len(by_file),
+        "included_usd_all_accounts": round(
+            len(by_file) * INCLUDED_PREMIUM_REQUESTS_PER_ACCOUNT * PRICE_PER_PREMIUM_REQUEST_USD,
+            2,
+        ),
         "actions_total": merged[-1]["actions_cumulative"] if merged else 0,
     }
 

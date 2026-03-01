@@ -1,16 +1,16 @@
 {
   "fail_on_unmapped_sources": true,
   "required_source_globs": [
-    "docs/project/*.md",
+    "docs/projects/veterinary-medical-records/*.md",
     "docs/shared/*.md"
   ],
   "exclude_source_globs": [
-    "docs/project/implementation/*",
-    "docs/project/implementation/**/*"
+    "docs/projects/veterinary-medical-records/delivery/plans/*",
+    "docs/projects/veterinary-medical-records/delivery/plans/**/*"
   ],
   "rules": [
     {
-      "source_doc": "docs/project/refactor/documentation_refactor/DOCS_IMPROVEMENT_PLAN.md",
+      "source_doc": "docs/projects/veterinary-medical-records/archive/DOCS_IMPROVEMENT_PLAN.md",
       "description": "Documentation refactor plan must map to project docs owner entry module.",
       "router_modules": [
         {
@@ -22,7 +22,7 @@
       ]
     },
     {
-      "source_doc": "docs/project/MANUAL_QA_REGRESSION_CHECKLIST.md",
+      "source_doc": "docs/projects/veterinary-medical-records/ops/MANUAL_QA_REGRESSION_CHECKLIST.md",
       "description": "Project MANUAL_QA_REGRESSION_CHECKLIST must map to project docs owner entry module.",
       "router_modules": [
         {
@@ -34,7 +34,43 @@
       ]
     },
     {
-      "source_doc": "docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md",
+      "source_doc": "docs/projects/veterinary-medical-records/delivery/IMPLEMENTATION_HISTORY.md",
+      "description": "Project IMPLEMENTATION_HISTORY must remain discoverable from project docs entry.",
+      "router_modules": [
+        {
+          "path": "docs/agent_router/04_PROJECT/00_entry.md",
+          "required_terms": [
+            "Project Docs (Modules)"
+          ]
+        }
+      ]
+    },
+    {
+      "source_doc": "docs/projects/veterinary-medical-records/ops/EXECUTION_RULES.md",
+      "description": "Project EXECUTION_RULES must remain discoverable from project docs entry.",
+      "router_modules": [
+        {
+          "path": "docs/agent_router/04_PROJECT/00_entry.md",
+          "required_terms": [
+            "Project Docs (Modules)"
+          ]
+        }
+      ]
+    },
+    {
+      "source_doc": "docs/projects/veterinary-medical-records/metrics/COPILOT_USAGE.md",
+      "description": "Project COPILOT_USAGE must remain discoverable from project docs entry.",
+      "router_modules": [
+        {
+          "path": "docs/agent_router/04_PROJECT/00_entry.md",
+          "required_terms": [
+            "Project Docs (Modules)"
+          ]
+        }
+      ]
+    },
+    {
+      "source_doc": "docs/projects/veterinary-medical-records/archive/AI_ITERATIVE_EXECUTION_PLAN.md",
       "description": "Project AI_ITERATIVE_EXECUTION_PLAN must map to project owner entry module.",
       "router_modules": [
         {
@@ -47,7 +83,7 @@
       ]
     },
     {
-      "source_doc": "docs/project/FUTURE_IMPROVEMENTS.md",
+      "source_doc": "docs/projects/veterinary-medical-records/delivery/FUTURE_IMPROVEMENTS.md",
       "description": "Project FUTURE_IMPROVEMENTS must map to project owner entry module.",
       "router_modules": [
         {
@@ -59,7 +95,7 @@
       ]
     },
     {
-      "source_doc": "docs/project/ARCHITECTURE.md",
+      "source_doc": "docs/projects/veterinary-medical-records/tech/ARCHITECTURE.md",
       "description": "Project ARCHITECTURE must remain discoverable from project docs entry.",
       "router_modules": [
         {
@@ -71,7 +107,7 @@
       ]
     },
     {
-      "source_doc": "docs/project/refactor/DELIVERY_SUMMARY.md",
+      "source_doc": "docs/projects/veterinary-medical-records/delivery/DELIVERY_SUMMARY.md",
       "description": "Project DELIVERY_SUMMARY must map to project owner entry module.",
       "router_modules": [
         {
@@ -83,7 +119,7 @@
       ]
     },
     {
-      "source_doc": "docs/project/refactor/12_FACTOR_AUDIT.md",
+      "source_doc": "docs/projects/veterinary-medical-records/archive/12_FACTOR_AUDIT.md",
       "description": "Project 12_FACTOR_AUDIT must map to project owner entry module.",
       "router_modules": [
         {
@@ -95,7 +131,7 @@
       ]
     },
     {
-      "source_doc": "docs/project/refactor/codebase_audit.md",
+      "source_doc": "docs/projects/veterinary-medical-records/archive/codebase_audit.md",
       "description": "Project codebase_audit must map to project owner entry module.",
       "router_modules": [
         {
@@ -107,7 +143,7 @@
       ]
     },
     {
-      "source_doc": "docs/project/refactor/CTO_REVIEW_VERDICT.md",
+      "source_doc": "docs/projects/veterinary-medical-records/archive/CTO_REVIEW_VERDICT.md",
       "description": "Project CTO_REVIEW_VERDICT must map to project owner entry module.",
       "router_modules": [
         {
@@ -119,7 +155,7 @@
       ]
     },
     {
-      "source_doc": "docs/project/testing/PLAN_E2E_TEST_COVERAGE.md",
+      "source_doc": "docs/projects/veterinary-medical-records/ops/PLAN_E2E_TEST_COVERAGE.md",
       "description": "Project testing plans must remain routed under project modules.",
       "router_modules": [
         {
@@ -131,7 +167,7 @@
       ]
     },
     {
-      "source_doc": "docs/project/adr/*.md",
+      "source_doc": "docs/projects/veterinary-medical-records/tech/adr/*.md",
       "description": "Project ADR docs must map to project owner entry module.",
       "router_modules": [
         {
@@ -179,7 +215,7 @@
       ]
     },
     {
-      "source_doc": "docs/project/BACKEND_IMPLEMENTATION.md",
+      "source_doc": "docs/projects/veterinary-medical-records/tech/BACKEND_IMPLEMENTATION.md",
       "description": "Project BACKEND_IMPLEMENTATION must map to project owner entry module.",
       "router_modules": [
         {
@@ -191,7 +227,7 @@
       ]
     },
     {
-      "source_doc": "docs/project/DESIGN_SYSTEM.md",
+      "source_doc": "docs/projects/veterinary-medical-records/design/DESIGN_SYSTEM.md",
       "description": "Project DESIGN_SYSTEM must map to project owner entry module.",
       "router_modules": [
         {
@@ -203,7 +239,7 @@
       ]
     },
     {
-      "source_doc": "docs/project/FRONTEND_IMPLEMENTATION.md",
+      "source_doc": "docs/projects/veterinary-medical-records/tech/FRONTEND_IMPLEMENTATION.md",
       "description": "Project FRONTEND_IMPLEMENTATION must map to project owner entry module.",
       "router_modules": [
         {
@@ -215,7 +251,7 @@
       ]
     },
     {
-      "source_doc": "docs/project/IMPLEMENTATION_PLAN.md",
+      "source_doc": "docs/projects/veterinary-medical-records/delivery/IMPLEMENTATION_PLAN.md",
       "description": "Project IMPLEMENTATION_PLAN must map to project owner entry module.",
       "router_modules": [
         {
@@ -227,7 +263,7 @@
       ]
     },
     {
-      "source_doc": "docs/project/PRODUCT_DESIGN.md",
+      "source_doc": "docs/projects/veterinary-medical-records/design/PRODUCT_DESIGN.md",
       "description": "Project PRODUCT_DESIGN must map to project owner entry module.",
       "router_modules": [
         {
@@ -239,7 +275,7 @@
       ]
     },
     {
-      "source_doc": "docs/project/PRODUCT_DESIGN.md",
+      "source_doc": "docs/projects/veterinary-medical-records/design/PRODUCT_DESIGN.md",
       "description": "Conceptual model and confidence semantics in PRODUCT_DESIGN must remain synchronized with router module 76.",
       "router_modules": [
         {
@@ -261,7 +297,7 @@
       ]
     },
     {
-      "source_doc": "docs/project/testing/PLAN_E2E_TEST_COVERAGE.md",
+      "source_doc": "docs/projects/veterinary-medical-records/ops/PLAN_E2E_TEST_COVERAGE.md",
       "description": "Project testing plans must remain discoverable from the project docs entry.",
       "router_modules": [
         {
@@ -273,7 +309,7 @@
       ]
     },
     {
-      "source_doc": "docs/project/TECHNICAL_DESIGN.md",
+      "source_doc": "docs/projects/veterinary-medical-records/tech/TECHNICAL_DESIGN.md",
       "description": "Project TECHNICAL_DESIGN must map to project owner entry module.",
       "router_modules": [
         {
@@ -285,7 +321,7 @@
       ]
     },
     {
-      "source_doc": "docs/project/UX_DESIGN.md",
+      "source_doc": "docs/projects/veterinary-medical-records/design/UX_DESIGN.md",
       "description": "Project UX_DESIGN must map to project owner entry module.",
       "router_modules": [
         {

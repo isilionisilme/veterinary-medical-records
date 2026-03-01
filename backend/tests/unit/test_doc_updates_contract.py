@@ -21,7 +21,9 @@ DOC_UPDATES_TEST_IMPACT_MAP = (
 DOC_UPDATES_ROUTER_PARITY_MAP = (
     REPO_ROOT / "docs" / "agent_router" / "01_WORKFLOW" / "DOC_UPDATES" / "router_parity_map.json"
 )
-EXECUTION_RULES = REPO_ROOT / "docs" / "project" / "implementation" / "EXECUTION_RULES.md"
+EXECUTION_RULES = (
+    REPO_ROOT / "docs" / "projects" / "veterinary-medical-records" / "ops" / "EXECUTION_RULES.md"
+)
 BACKEND_IMPLEMENTATION_ROUTER_ENTRY = (
     REPO_ROOT / "docs" / "agent_router" / "04_PROJECT" / "BACKEND_IMPLEMENTATION" / "00_entry.md"
 )
@@ -31,7 +33,14 @@ TECHNICAL_DESIGN_ROUTER_ENTRY = (
 DOC_TEST_SYNC_GUARD = REPO_ROOT / "scripts" / "check_doc_test_sync.py"
 DOC_ROUTER_PARITY_GUARD = REPO_ROOT / "scripts" / "check_doc_router_parity.py"
 DOCS_ROOT = REPO_ROOT / "docs"
-IMPLEMENTATION_PLAN = REPO_ROOT / "docs" / "project" / "IMPLEMENTATION_PLAN.md"
+IMPLEMENTATION_PLAN = (
+    REPO_ROOT
+    / "docs"
+    / "projects"
+    / "veterinary-medical-records"
+    / "delivery"
+    / "IMPLEMENTATION_PLAN.md"
+)
 IMPLEMENTATION_PLAN_ROUTER_ENTRY = (
     REPO_ROOT / "docs" / "agent_router" / "04_PROJECT" / "IMPLEMENTATION_PLAN" / "00_entry.md"
 )
@@ -67,7 +76,7 @@ def test_docs_top_level_folders_are_limited_to_human_and_router_groups() -> None
         for child in DOCS_ROOT.iterdir()
         if child.is_dir() and not child.name.startswith(".")
     }
-    assert actual_dirs == {"shared", "project", "agent_router"}
+    assert actual_dirs == {"shared", "projects", "agent_router"}
 
 
 def test_agents_routes_docs_updated_intent_to_doc_updates() -> None:
@@ -188,12 +197,17 @@ def test_doc_test_sync_map_has_minimum_rules() -> None:
     assert '"fail_on_unmapped_docs": true' in text
     assert '"doc_glob": "docs/agent_router/*.md"' in text
     assert '"doc_glob": "docs/agent_router/**/*.md"' in text
-    assert '"doc_glob": "docs/project/refactor/12_FACTOR_AUDIT.md"' in text
+    assert (
+        '"doc_glob": "docs/projects/veterinary-medical-records/archive/12_FACTOR_AUDIT.md"' in text
+    )
     assert '"doc_glob": "docs/shared/ENGINEERING_PLAYBOOK.md"' in text
-    assert '"doc_glob": "docs/project/BACKEND_IMPLEMENTATION.md"' in text
-    assert '"doc_glob": "docs/project/UX_DESIGN.md"' in text
-    assert '"doc_glob": "docs/project/TECHNICAL_DESIGN.md"' in text
-    assert '"doc_glob": "docs/project/adr/**/*.md"' in text
+    assert (
+        '"doc_glob": "docs/projects/veterinary-medical-records/tech/BACKEND_IMPLEMENTATION.md"'
+        in text
+    )
+    assert '"doc_glob": "docs/projects/veterinary-medical-records/design/UX_DESIGN.md"' in text
+    assert '"doc_glob": "docs/projects/veterinary-medical-records/tech/TECHNICAL_DESIGN.md"' in text
+    assert '"doc_glob": "docs/projects/veterinary-medical-records/tech/adr/**/*.md"' in text
     assert '"owner_any"' in text
     assert '"docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/*.md"' in text
     assert '"docs/agent_router/04_PROJECT/BACKEND_IMPLEMENTATION/*.md"' in text
@@ -206,11 +220,18 @@ def test_router_parity_map_has_product_design_rule() -> None:
     text = _read_text(DOC_UPDATES_ROUTER_PARITY_MAP)
     assert '"fail_on_unmapped_sources": true' in text
     assert '"required_source_globs"' in text
-    assert '"docs/project/*.md"' in text
+    assert '"docs/projects/veterinary-medical-records/*.md"' in text
     assert '"docs/shared/*.md"' in text
-    assert '"source_doc": "docs/project/refactor/12_FACTOR_AUDIT.md"' in text
-    assert '"source_doc": "docs/project/PRODUCT_DESIGN.md"' in text
-    assert '"source_doc": "docs/project/TECHNICAL_DESIGN.md"' in text
+    assert (
+        '"source_doc": "docs/projects/veterinary-medical-records/archive/12_FACTOR_AUDIT.md"'
+        in text
+    )
+    assert (
+        '"source_doc": "docs/projects/veterinary-medical-records/design/PRODUCT_DESIGN.md"' in text
+    )
+    assert (
+        '"source_doc": "docs/projects/veterinary-medical-records/tech/TECHNICAL_DESIGN.md"' in text
+    )
     assert '"source_doc": "docs/shared/ENGINEERING_PLAYBOOK.md"' in text
     assert (
         '"path": "docs/agent_router/04_PROJECT/PRODUCT_DESIGN/'

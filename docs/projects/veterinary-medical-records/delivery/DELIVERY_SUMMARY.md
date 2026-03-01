@@ -121,7 +121,7 @@ Key improvements: removed duplicated suites, added `cli.py` tests (was 0%), impr
 ### Other documentation
 
 - [`FUTURE_IMPROVEMENTS.md`](FUTURE_IMPROVEMENTS.md) — 2/4/8 week roadmap (18 items traced to audits and ADRs)
-- [`docs/project/adr/README.md`](../adr/README.md) — ADR index linking architecture decisions
+- [`docs/projects/veterinary-medical-records/tech/adr/README.md`](../adr/README.md) — ADR index linking architecture decisions
 - Root `README.md` enriched: architecture overview, ADR links, evaluator quickstart, quality gates, delivery evidence
 - `docs/README.md` updated: evaluator-first reading order, audit trail section
 

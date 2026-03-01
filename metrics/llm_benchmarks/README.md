@@ -3,6 +3,7 @@
 This folder tracks **AI-assistant usage benchmarks** for this technical exercise:
 - what docs were consulted (by file path)
 - proxies for token cost (derived from chars read)
+- merged Copilot export usage across multiple accounts (USD + Premium Requests estimate)
 
 These metrics are **not product telemetry**. In a real system they would typically live outside the product
 repository. For this exercise, we keep them **in-repo** so evaluators can inspect methodology and discipline.
@@ -20,6 +21,9 @@ Each run includes:
   - `max_doc_chars`: max characters among consulted docs
 
 Important: metrics are validated by recomputing file sizes from `metrics.docs` to keep the data auditable.
+
+Important: `tok_est` is a repository-side proxy (`chars_read / 4`) for internal trend comparison only.
+It is **not** GitHub Copilot billing data and should not be interpreted as Premium Requests.
 
 ## How to run (local)
 
@@ -60,6 +64,12 @@ If you used multiple GitHub accounts, place each account CSV export under `tmp/u
 Outputs:
 - `metrics/llm_benchmarks/account_usage_merged_daily.csv` (daily merged usage)
 - `metrics/llm_benchmarks/account_usage_quality.json` (duplicate checks + totals)
+
+Billing interpretation for merged CSV exports:
+- `Copilot` in account exports is treated as **USD** spend progression.
+- Estimated Premium Requests are derived as `USD / 0.04`.
+- This estimate is billing-oriented and does **not** map to a fixed token count.
+- Per-account included cap reference: `300` Premium Requests (`$12`) before overage.
 
 Duplicate checks included:
 - exact duplicate files (same bytes/hash)

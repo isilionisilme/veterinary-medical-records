@@ -10,7 +10,7 @@ from pathlib import Path
 SNAPSHOT_CANDIDATE_DOCS = [
     "AGENTS.md",
     "docs/README.md",
-    "docs/project/TECHNICAL_DESIGN.md",
+    "docs/projects/veterinary-medical-records/tech/TECHNICAL_DESIGN.md",
     "docs/shared/ENGINEERING_PLAYBOOK.md",
 ]
 
@@ -60,8 +60,8 @@ def _list_touched_docs_for_day(day: date) -> list[str]:
 
 def _select_plan_path(sha: str) -> str | None:
     monolithic_candidates = [
-        "docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md",
-        "docs/project/AI_ITERATIVE_EXECUTION_PLAN.md",
+        "docs/projects/veterinary-medical-records/archive/AI_ITERATIVE_EXECUTION_PLAN.md",
+        "docs/projects/veterinary-medical-records/AI_ITERATIVE_EXECUTION_PLAN.md",
     ]
     for path in monolithic_candidates:
         if _path_exists_at_commit(sha, path):
@@ -69,8 +69,11 @@ def _select_plan_path(sha: str) -> str | None:
 
     split_paths = [
         path
-        for path in _list_paths_at_commit(sha, "docs/project/implementation")
-        if path.startswith("docs/project/implementation/PLAN_") and path.endswith(".md")
+        for path in _list_paths_at_commit(
+            sha, "docs/projects/veterinary-medical-records/delivery/plans"
+        )
+        if path.startswith("docs/projects/veterinary-medical-records/delivery/plans/PLAN_")
+        and path.endswith(".md")
     ]
     if not split_paths:
         return None
@@ -123,7 +126,7 @@ def _docs_for_docs_footprint(sha: str, day: date) -> list[str]:
 def _is_high_signal_touched_doc(path: str) -> bool:
     if path in {"AGENTS.md", "docs/README.md"}:
         return True
-    if path.startswith("docs/project/") and path.endswith(".md"):
+    if path.startswith("docs/projects/veterinary-medical-records/") and path.endswith(".md"):
         return True
     if path.startswith("docs/shared/") and path.endswith(".md"):
         return True

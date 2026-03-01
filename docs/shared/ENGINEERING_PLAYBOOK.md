@@ -247,7 +247,7 @@ A change is not complete if implementation and documentation diverge.
 
 ### How to add a new User Story
 
-When asked to add a new User Story, update [`docs/project/IMPLEMENTATION_PLAN.md`](../project/IMPLEMENTATION_PLAN.md) in two places:
+When asked to add a new User Story, update [`docs/projects/veterinary-medical-records/delivery/IMPLEMENTATION_PLAN.md`](../projects/veterinary-medical-records/delivery/IMPLEMENTATION_PLAN.md) in two places:
 
 1) Add the story in the relevant **User Stories (in order)** list for its release.
 2) Add or update the full **User Story Details** section for that story.
@@ -280,7 +280,7 @@ Completion checklist before finishing:
 - No unrelated documentation edits are bundled.
 
 Workflow reference:
-- For this operation, use this section together with the canonical implementation plan in [`docs/project/IMPLEMENTATION_PLAN.md`](../project/IMPLEMENTATION_PLAN.md).
+- For this operation, use this section together with the canonical implementation plan in [`docs/projects/veterinary-medical-records/delivery/IMPLEMENTATION_PLAN.md`](../projects/veterinary-medical-records/delivery/IMPLEMENTATION_PLAN.md).
 
 ---
 
@@ -466,7 +466,7 @@ When an AI coding assistant or automation tool is used to create or update a Pul
    - **Non-code, non-doc PR**: the diff contains files that are neither docs nor code (examples: `*.json`, `*.yaml`, `*.yml`, `*.toml`, `*.ini`, `*.env`).
 
 5) For PRs that change `frontend/**` or user-visible behavior/copy:
-  - Review canonical UX/brand sources before implementation/review: [`docs/shared/UX_GUIDELINES.md`](UX_GUIDELINES.md), [`docs/project/UX_DESIGN.md`](../project/UX_DESIGN.md), and [`docs/shared/BRAND_GUIDELINES.md`](BRAND_GUIDELINES.md).
+  - Review canonical UX/brand sources before implementation/review: [`docs/shared/UX_GUIDELINES.md`](UX_GUIDELINES.md), [`docs/projects/veterinary-medical-records/design/UX_DESIGN.md`](../projects/veterinary-medical-records/design/UX_DESIGN.md), and [`docs/shared/BRAND_GUIDELINES.md`](BRAND_GUIDELINES.md).
    - Add a `UX/Brand compliance` section to the PR description with concrete evidence.
 
 6) Ask the user whether they want a code review:
@@ -620,9 +620,9 @@ A change is considered done when it satisfies the criteria that apply to its typ
 For user stories:
 - It delivers a complete vertical slice of user-facing value.
 - It is documented (README and/or ADR if a design decision was made).
-- If user-visible behavior is affected, UX guidance is applied from `docs/shared/UX_GUIDELINES.md` and `docs/project/UX_DESIGN.md`.
+- If user-visible behavior is affected, UX guidance is applied from `docs/shared/UX_GUIDELINES.md` and `docs/projects/veterinary-medical-records/design/UX_DESIGN.md`.
 - If visual identity or user-facing copy is affected, brand guidance is applied from `docs/shared/BRAND_GUIDELINES.md`.
-- When the user story is completed, `docs/project/IMPLEMENTATION_PLAN.md` is updated in the same change and the story includes `**Status**: Implemented (YYYY-MM-DD)`.
+- When the user story is completed, `docs/projects/veterinary-medical-records/delivery/IMPLEMENTATION_PLAN.md` is updated in the same change and the story includes `**Status**: Implemented (YYYY-MM-DD)`.
 - Backfilling status/date for previously implemented stories is allowed when explicitly requested.
 
 For technical non user-facing changes (refactors, chores, CI, docs, fixes):

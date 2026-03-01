@@ -18,7 +18,7 @@ If a rule changes, update **only** its owner module. Other docs may link to it.
 | R-UX-APPLY | docs/agent_router/02_PRODUCT/UX/00_entry.md | UX docs to follow |
 | R-BRAND-APPLY | docs/agent_router/02_PRODUCT/BRAND/00_entry.md | Brand docs to follow |
 | R-SHARED-DOCS | docs/agent_router/03_SHARED/00_entry.md | Split versions of `docs/shared/*` |
-| R-PROJECT-DOCS | docs/agent_router/04_PROJECT/00_entry.md | Split versions of `docs/project/*` |
+| R-PROJECT-DOCS | docs/agent_router/04_PROJECT/00_entry.md | Split versions of `docs/projects/veterinary-medical-records/*` |
 | R-METRICS-OPTIN | metrics/llm_benchmarks/README.md | Benchmarks are opt-in |
 | R-GENERAL-BEHAVIOR | AGENTS.md | General assistant rules |
 

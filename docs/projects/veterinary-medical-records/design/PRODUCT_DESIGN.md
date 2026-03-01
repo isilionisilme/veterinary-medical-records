@@ -270,7 +270,7 @@ It does not prescribe storage tables or transport contracts.
 ## Visit grouping (MVP)
 
 - **Visita** means one care episode identified primarily by `visit_date`, with optional `admission_date`, `discharge_date`, and `reason_for_visit`.
-- Clinical concepts are **visit-scoped**. In `canonical contract`, they are grouped under `visits[].fields[]` as defined in [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix D9.
+- Clinical concepts are **visit-scoped**. In `canonical contract`, they are grouped under `visits[].fields[]` as defined in [`docs/projects/veterinary-medical-records/tech/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix D9.
 - The UI must not infer or heuristic-group visits. Grouping comes from the structured payload (`visits[]`).
 - MVP excludes cross-document deduplication, merge/reconciliation, and longitudinal visit tracking.
 - Review completion remains **document-level**: `Mark as reviewed` applies to the full document, including all its visits.
@@ -278,7 +278,7 @@ It does not prescribe storage tables or transport contracts.
 ## Global Schema (Canonical Field List — Medical Record MVP)
 
 Canonical source location:
-- This section in `docs/project/PRODUCT_DESIGN.md` is the canonical product source for the Global Schema Medical Record MVP field list.
+- This section in `docs/projects/veterinary-medical-records/design/PRODUCT_DESIGN.md` is the canonical product source for the Global Schema Medical Record MVP field list.
 - The historical appendix in this document is reference-only and non-normative.
 
 Purpose: define the canonical contract-aligned field universe for the Medical Record panel.
@@ -313,12 +313,12 @@ E) Información del informe
 - `language` (string)
 
 Visit-level fields:
-- Visit-level clinical data is canonical in `canonical contract` under `visits[]` and `visits[].fields[]` (see Appendix D9 in [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md)).
+- Visit-level clinical data is canonical in `canonical contract` under `visits[]` and `visits[].fields[]` (see Appendix D9 in [`docs/projects/veterinary-medical-records/tech/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md)).
 - Visit fields are not part of the document-level top-level list above.
 
 Panel boundary (Medical Record MVP):
 - Non-clinical claim concepts are not part of this canonical panel field-set by definition.
-- Classification and taxonomy boundaries are defined by contract metadata in [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md), not by frontend denylists.
+- Classification and taxonomy boundaries are defined by contract metadata in [`docs/projects/veterinary-medical-records/tech/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md), not by frontend denylists.
 
 Product compatibility rule:
 - `age` and `dob` may coexist; any derived display behavior is defined by UX and does not imply new extraction requirements.
@@ -326,7 +326,7 @@ Product compatibility rule:
 ### CRITICAL_KEYS (Authoritative, closed set)
 
 Historical continuity note: Appendix D7.4 keeps the same closed CRITICAL_KEYS set defined in the historical Global Schema.
-For Medical Record canonical contract critical/taxonomy semantics, the normative authority is [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix D9.
+For Medical Record canonical contract critical/taxonomy semantics, the normative authority is [`docs/projects/veterinary-medical-records/tech/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) Appendix D9.
 
 ## Medical Record MVP panel semantics (US-44)
 
@@ -335,16 +335,16 @@ For Medical Record canonical contract critical/taxonomy semantics, the normative
 - In `canonical contract`, required document-level panel fields (including missing-value slots) are defined by the Technical contract template (`medical_record_view.field_slots[]`, Appendix D9).
 - Non-clinical claim concepts are out of scope for this panel and must not be rendered here.
 - Panel section order is fixed: `Centro Veterinario` -> `Paciente` -> `Propietario` -> `Visitas` -> `Notas internas` -> `Otros campos detectados` -> `Información del informe`.
-- Labels/copy and empty-states for this panel are defined in [`docs/project/UX_DESIGN.md`](UX_DESIGN.md).
+- Labels/copy and empty-states for this panel are defined in [`docs/projects/veterinary-medical-records/design/UX_DESIGN.md`](UX_DESIGN.md).
 - `owner_id` is not part of Medical Record panel semantics; owner address is represented by `owner_address`.
 - NHC is part of `Centro Veterinario` panel semantics and must render with label `NHC` and tooltip `Número de historial clínico`.
 - Product compatibility for age and birth date: both `age` and `dob` may coexist; any derived display behavior is UX-defined and does not imply new extraction requirements.
 
 ### Authority / cross-doc
 
-- [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md) defines panel meaning and scope (clinical Medical Record view).
-- [`docs/project/UX_DESIGN.md`](UX_DESIGN.md) defines layout, labels, and empty states.
-- [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) defines canonical payload contracts (`schema_contract` visit-grouped), field taxonomy, and explicit `other/unmapped` contract bucket.
+- [`docs/projects/veterinary-medical-records/design/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md) defines panel meaning and scope (clinical Medical Record view).
+- [`docs/projects/veterinary-medical-records/design/UX_DESIGN.md`](UX_DESIGN.md) defines layout, labels, and empty states.
+- [`docs/projects/veterinary-medical-records/tech/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) defines canonical payload contracts (`schema_contract` visit-grouped), field taxonomy, and explicit `other/unmapped` contract bucket.
 
 ## Appendix: Historical Global Schema Reference (Non-normative)
 

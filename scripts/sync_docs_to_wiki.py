@@ -9,7 +9,7 @@ ROOT_README = Path("README.md")
 DOCS_README = Path("docs/README.md")
 PROJECT_ROOT = Path("docs/project")
 SHARED_ROOT = Path("docs/shared")
-ADR_ROOT = Path("docs/project/adr")
+ADR_ROOT = Path("docs/projects/veterinary-medical-records/tech/adr")
 
 
 def _slug(value: str) -> str:
@@ -48,14 +48,14 @@ def _page_name(source_rel: Path) -> str:
         stem = source_rel.stem
         return f"Shared-{_slug(stem)}"
 
-    if source_str == "docs/project/adr/README.md":
+    if source_str == "docs/projects/veterinary-medical-records/tech/adr/README.md":
         return "Project-ADR-Index"
 
-    if source_str.startswith("docs/project/adr/"):
+    if source_str.startswith("docs/projects/veterinary-medical-records/tech/adr/"):
         stem = source_rel.stem
         return f"Project-ADR-{_slug(stem)}"
 
-    if source_str.startswith("docs/project/"):
+    if source_str.startswith("docs/projects/veterinary-medical-records/"):
         rel_no_ext = source_rel.with_suffix("").relative_to(PROJECT_ROOT)
         return f"Project-{_slug(rel_no_ext.as_posix())}"
 
@@ -161,15 +161,17 @@ def main() -> int:
         [
             page
             for source, page in mapping.items()
-            if source.as_posix().startswith("docs/project/")
-            and not source.as_posix().startswith("docs/project/adr/")
+            if source.as_posix().startswith("docs/projects/veterinary-medical-records/")
+            and not source.as_posix().startswith(
+                "docs/projects/veterinary-medical-records/tech/adr/"
+            )
         ]
     )
     adr_pages = sorted(
         [
             page
             for source, page in mapping.items()
-            if source.as_posix().startswith("docs/project/adr/")
+            if source.as_posix().startswith("docs/projects/veterinary-medical-records/tech/adr/")
         ]
     )
     shared_pages = sorted(
