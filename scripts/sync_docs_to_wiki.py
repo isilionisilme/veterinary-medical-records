@@ -106,23 +106,69 @@ def _rewrite_links(
     return link_re.sub(replace, content)
 
 
-def _build_sidebar(project_pages: list[str], adr_pages: list[str], shared_pages: list[str]) -> str:
+def _collect_tree(
+    mapping: dict[Path, str],
+    root: Path,
+) -> dict[str, object]:
+    tree: dict[str, object] = {}
+    for source, page in mapping.items():
+        source_posix = source.as_posix()
+        root_posix = root.as_posix().rstrip("/") + "/"
+        if not source_posix.startswith(root_posix):
+            continue
+
+        rel = source.relative_to(root)
+        parts = list(rel.parts)
+        if not parts:
+            continue
+
+        node: dict[str, object] = tree
+        for folder in parts[:-1]:
+            child = node.setdefault(folder, {})
+            if not isinstance(child, dict):
+                child = {}
+                node[folder] = child
+            node = child
+
+        files = node.setdefault("__files__", [])
+        if isinstance(files, list):
+            files.append((rel.stem, page))
+
+    return tree
+
+
+def _render_tree_lines(tree: dict[str, object], indent: str = "") -> list[str]:
+    lines: list[str] = []
+
+    files = tree.get("__files__", [])
+    if isinstance(files, list):
+        for label, page in sorted(files, key=lambda item: item[0].lower()):
+            lines.append(f"{indent}- [[{page}|{label}]]")
+
+    folders = [key for key in tree.keys() if key != "__files__"]
+    for folder in sorted(folders, key=str.lower):
+        lines.append(f"{indent}- {folder}")
+        child = tree.get(folder)
+        if isinstance(child, dict):
+            lines.extend(_render_tree_lines(child, indent=indent + "  "))
+
+    return lines
+
+
+def _build_sidebar(mapping: dict[Path, str]) -> str:
+    project_tree = _collect_tree(mapping, PROJECT_ROOT)
+    shared_tree = _collect_tree(mapping, SHARED_ROOT)
+
     lines = [
         "## Documentation",
         "",
         "- [[Home]]",
         "- [[Project]]",
     ]
-    for page in project_pages:
-        lines.append(f"  - [[{page}]]")
-    if adr_pages:
-        lines.append("  - ADR")
-        for page in adr_pages:
-            lines.append(f"    - [[{page}]]")
+    lines.extend(_render_tree_lines(project_tree, indent="  "))
 
     lines.append("- [[Shared]]")
-    for page in shared_pages:
-        lines.append(f"  - [[{page}]]")
+    lines.extend(_render_tree_lines(shared_tree, indent="  "))
 
     lines.append("")
     return "\n".join(lines)
@@ -198,10 +244,7 @@ def main() -> int:
         encoding="utf-8",
     )
 
-    (wiki_dir / "_Sidebar.md").write_text(
-        _build_sidebar(project_pages=project_pages, adr_pages=adr_pages, shared_pages=shared_pages),
-        encoding="utf-8",
-    )
+    (wiki_dir / "_Sidebar.md").write_text(_build_sidebar(mapping), encoding="utf-8")
     (wiki_dir / "_Footer.md").write_text(
         (
             "Synced automatically from canonical repository docs "
