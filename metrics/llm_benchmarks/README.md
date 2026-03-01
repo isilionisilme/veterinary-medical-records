@@ -38,6 +38,7 @@ If you want a daily historical series from repository creation to today, run:
 
 - `python metrics/llm_benchmarks/scripts/backfill_daily.py --runs metrics/llm_benchmarks/runs.jsonl`
 - `python metrics/llm_benchmarks/scripts/backfill_daily.py --scenario retro_daily_operational_path --runs metrics/llm_benchmarks/runs.jsonl`
+- `python metrics/llm_benchmarks/scripts/backfill_daily.py --scenario retro_daily_docs_footprint --runs metrics/llm_benchmarks/runs.jsonl`
 
 This creates one run per UTC day using the latest commit available for that day.
 These runs are marked as retrospective estimates in `metrics.violations` with `retroactive_estimate`.
@@ -46,6 +47,7 @@ They are useful for trend visualization, but are not exact reconstructions of li
 Scenario guidance:
 - `retro_daily_snapshot`: static document-set snapshot trend (tracks growth of canonical docs).
 - `retro_daily_operational_path`: milestone-sensitive operational trend (designed to surface reductions after docs-router adoption and plan decomposition).
+- `retro_daily_docs_footprint`: git-history-based daily docs footprint (tracks breadth of docs touched/consulted proxy each day).
 
 ## Files
 

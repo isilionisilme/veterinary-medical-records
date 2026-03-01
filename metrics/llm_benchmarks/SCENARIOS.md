@@ -225,3 +225,18 @@ Mark runs as retrospective estimates (not live captured sessions).
 At the end, print the METRICS line with docs consulted.
 ```
 
+## retro_daily_docs_footprint
+
+```text
+#metrics
+Generate a retroactive daily benchmark using documentation footprint from git history.
+For each UTC day, collect markdown docs touched in commits that day under docs/ plus AGENTS.md.
+Filter to files that still exist at the selected commit for that day.
+If no docs were touched that day, fallback to the operational-path minimal set.
+
+Produce one run per day from repo creation to today.
+Mark runs as retrospective estimates (not live captured sessions).
+
+At the end, print the METRICS line with docs consulted.
+```
+

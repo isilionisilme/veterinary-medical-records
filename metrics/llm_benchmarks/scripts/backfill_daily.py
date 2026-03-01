@@ -26,6 +26,38 @@ def _list_paths_at_commit(sha: str, prefix: str) -> list[str]:
     return [line.strip() for line in out.splitlines() if line.strip()]
 
 
+def _list_touched_docs_for_day(day: date) -> list[str]:
+    day_start = f"{day.isoformat()}T00:00:00Z"
+    day_end = f"{day.isoformat()}T23:59:59Z"
+    out = _git(
+        "log",
+        "--name-only",
+        "--pretty=format:",
+        "--since",
+        day_start,
+        "--until",
+        day_end,
+        "--",
+        "docs",
+        "AGENTS.md",
+    )
+    if not out:
+        return []
+
+    paths: list[str] = []
+    seen: set[str] = set()
+    for raw in out.splitlines():
+        path = raw.strip()
+        if not path:
+            continue
+        if path in seen:
+            continue
+        if path == "AGENTS.md" or (path.startswith("docs/") and path.endswith(".md")):
+            seen.add(path)
+            paths.append(path)
+    return paths
+
+
 def _select_plan_path(sha: str) -> str | None:
     monolithic_candidates = [
         "docs/project/refactor/AI_ITERATIVE_EXECUTION_PLAN.md",
@@ -78,6 +110,14 @@ def _docs_for_operational_path(sha: str) -> list[str]:
         docs.append(plan_path)
 
     return docs
+
+
+def _docs_for_docs_footprint(sha: str, day: date) -> list[str]:
+    touched_paths = _list_touched_docs_for_day(day)
+    docs = [path for path in touched_paths if _path_exists_at_commit(sha, path)]
+    if docs:
+        return docs
+    return _docs_for_operational_path(sha)
 
 
 @dataclass(frozen=True)
@@ -150,11 +190,13 @@ def _git_show_text(sha: str, path: str) -> str | None:
         return None
 
 
-def _docs_for_commit(sha: str, scenario_id: str) -> list[str]:
+def _docs_for_commit(sha: str, scenario_id: str, day: date) -> list[str]:
     if scenario_id == "retro_daily_snapshot":
         return _docs_for_snapshot(sha)
     if scenario_id == "retro_daily_operational_path":
         return _docs_for_operational_path(sha)
+    if scenario_id == "retro_daily_docs_footprint":
+        return _docs_for_docs_footprint(sha, day)
     raise ValueError(f"Unsupported scenario_id: {scenario_id}")
 
 
@@ -223,7 +265,11 @@ def main() -> int:
     parser.add_argument(
         "--scenario",
         default="retro_daily_snapshot",
-        choices=["retro_daily_snapshot", "retro_daily_operational_path"],
+        choices=[
+            "retro_daily_snapshot",
+            "retro_daily_operational_path",
+            "retro_daily_docs_footprint",
+        ],
     )
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
@@ -241,7 +287,7 @@ def main() -> int:
         if day_s in existing_days:
             continue
 
-        docs = _docs_for_commit(item.sha, args.scenario)
+        docs = _docs_for_commit(item.sha, args.scenario, item.day)
         if not docs:
             continue
 

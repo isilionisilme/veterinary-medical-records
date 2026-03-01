@@ -134,6 +134,36 @@ def _render_summary(runs: list[dict[str, object]]) -> str:
 
                 lines.append(f"| {day} | {tok_est} | {chars_read} | {docs} | {commit_short} |")
 
+        docs_footprint_runs = by_scenario.get("retro_daily_docs_footprint", [])
+        if docs_footprint_runs:
+            lines.append("")
+            lines.append("## Retro daily docs footprint detail")
+            lines.append("")
+            lines.append("| Date (UTC) | tok_est | chars_read | docs | commit |")
+            lines.append("|---|---:|---:|---:|---|")
+
+            def _key_docs_footprint(run: dict[str, object]) -> tuple[datetime, str]:
+                parsed = _parse_date_utc(run.get("date_utc"))
+                if parsed is None:
+                    parsed = datetime.min
+                run_id = str(run.get("run_id", ""))
+                return parsed, run_id
+
+            for run in sorted(docs_footprint_runs, key=_key_docs_footprint):
+                metrics = run.get("metrics")
+                if not isinstance(metrics, dict):
+                    continue
+
+                date_utc = str(run.get("date_utc", ""))
+                day = date_utc[:10] if len(date_utc) >= 10 else date_utc
+                tok_est = int(metrics.get("tok_est", 0))
+                chars_read = int(metrics.get("chars_read", 0))
+                docs = int(metrics.get("unique_docs_opened", 0))
+                commit = str(run.get("commit_sha", ""))
+                commit_short = commit[:7] if len(commit) >= 7 else commit
+
+                lines.append(f"| {day} | {tok_est} | {chars_read} | {docs} | {commit_short} |")
+
     lines.append("")
     return "\n".join(lines) + "\n"
 
