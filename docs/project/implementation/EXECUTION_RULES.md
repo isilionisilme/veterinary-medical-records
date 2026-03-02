@@ -17,6 +17,8 @@ docs/project/implementation/
 **Active plan file:** The agent attaches the relevant `PLAN_*.md` file when executing `Continúa`.
 Each plan file contains: Estado de ejecución (checkboxes), Cola de prompts, Prompt activo, and iteration-specific context.
 
+**PR Roadmap:** When a plan spans multiple PRs, it must include a `## PR Roadmap` section mapping phases to PRs. See [`ENGINEERING_PLAYBOOK.md § Plan-level PR Roadmap`](../../../shared/ENGINEERING_PLAYBOOK.md#plan-level-pr-roadmap) for the mandatory format.
+
 ---
 
 ## Strengths — DO NOT MODIFY WITHOUT EXPLICIT JUSTIFICATION
