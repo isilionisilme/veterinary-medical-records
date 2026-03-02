@@ -517,6 +517,13 @@ def main() -> int:
         PROJECT_ROOT,
         wiki_dir,
     )
+    # Auto-generate shared category index pages (same format as project categories)
+    shared_folder_pages = _auto_generate_folder_indices(
+        mapping,
+        SHARED_ROOT,
+        wiki_dir,
+        page_prefix="shared-",
+    )
 
     # Generate project root page from project tree (canonical wiki index)
     (wiki_dir / f"{PROJECT_INDEX_PAGE}.md").write_text(
@@ -542,9 +549,9 @@ def main() -> int:
         child_pages=shared_child_pages,
         child_folders=shared_child_folders,
         child_folder_contents=shared_child_folder_contents,
-        folder_pages={},
+        folder_pages=shared_folder_pages,
         display_title="Shared Documentation",
-        link_categories=False,
+        link_categories=True,
     )
     # Insert intro line after the title
     shared_index_body = shared_index_body.replace(
@@ -557,7 +564,7 @@ def main() -> int:
         _build_sidebar(
             mapping,
             project_folder_pages=project_folder_pages,
-            shared_folder_pages={},
+            shared_folder_pages=shared_folder_pages,
             max_depth=3,
         ),
         encoding="utf-8",
@@ -574,8 +581,9 @@ def main() -> int:
     keep = {f"{page}.md" for page in mapping.values()}
     keep.add(f"{PROJECT_INDEX_PAGE}.md")
     keep.update({"Projects.md", "Shared.md", "_Sidebar.md", "_Footer.md"})
-    # Keep auto-generated index pages from project categories
+    # Keep auto-generated index pages from project and shared categories
     keep.update(f"{page}.md" for page in project_folder_pages.values())
+    keep.update(f"{page}.md" for page in shared_folder_pages.values())
     for md_file in wiki_dir.glob("*.md"):
         if md_file.name not in keep:
             md_file.unlink()
