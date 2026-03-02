@@ -501,12 +501,12 @@ def main() -> int:
         mapping,
         PROJECT_ROOT,
         wiki_dir,
+        page_prefix="project-",
     )
     shared_folder_pages = _auto_generate_folder_indices(
         mapping,
         SHARED_ROOT,
         wiki_dir,
-        page_prefix="shared-",
     )
 
     # Build Shared.md from tree (same category format as project page)
