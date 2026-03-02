@@ -1,6 +1,16 @@
+---
+title: "Manual QA Regression Checklist"
+type: how-to
+status: active
+audience: all
+last-updated: 2026-03-02
+---
+
 # Manual QA Regression Checklist
 
-Purpose: user-centered manual regression checklist grouped by shared environment to minimize context switching between test cases.
+## Goal
+
+Use a user-centered manual regression checklist grouped by shared environment to minimize context switching between test cases.
 
 ## Environment Blocks
 

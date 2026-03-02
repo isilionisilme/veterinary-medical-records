@@ -1,3 +1,11 @@
+---
+title: "Known Limitations & Future Directions"
+type: explanation
+status: active
+audience: staff-engineer
+last-updated: 2026-03-02
+---
+
 # Known Limitations & Future Directions
 
 > After 12 iterations, this project has reached its target quality bar. The items

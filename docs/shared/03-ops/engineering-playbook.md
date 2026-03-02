@@ -1,3 +1,11 @@
+---
+title: "Engineering Guidelines"
+type: reference
+status: active
+audience: contributor
+last-updated: 2026-03-02
+---
+
 # Engineering Guidelines
 
 **Purpose**  

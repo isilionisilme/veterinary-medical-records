@@ -1,3 +1,11 @@
+---
+title: "UX Design — Project Interaction Contract"
+type: reference
+status: active
+audience: contributor
+last-updated: 2026-03-02
+---
+
 # UX Design — Project Interaction Contract
 
 This document defines the **project-specific UX and interaction design contract**

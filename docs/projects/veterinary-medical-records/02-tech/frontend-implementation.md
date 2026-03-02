@@ -1,3 +1,11 @@
+---
+title: "Frontend Implementation Notes"
+type: reference
+status: active
+audience: contributor
+last-updated: 2026-03-02
+---
+
 # Frontend Implementation Notes
 
 ## Purpose

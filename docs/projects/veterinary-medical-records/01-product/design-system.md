@@ -1,3 +1,11 @@
+---
+title: "Lean Design System (Tokens + Primitives)"
+type: reference
+status: active
+audience: contributor
+last-updated: 2026-03-02
+---
+
 # Lean Design System (Tokens + Primitives)
 
 ## Purpose

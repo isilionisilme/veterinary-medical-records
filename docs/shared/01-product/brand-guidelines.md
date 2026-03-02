@@ -1,3 +1,11 @@
+---
+title: "Barkibu — Brand Guidelines (Project Canonical)"
+type: reference
+status: active
+audience: all
+last-updated: 2026-03-02
+---
+
 # Barkibu — Brand Guidelines (Project Canonical)
 
 ## Purpose

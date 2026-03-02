@@ -52,13 +52,13 @@ The project's canonical documentation (`docs/projects/veterinary-medical-records
 
 - [x] D2-A 🚧 — Propose target taxonomy and folder hierarchy based on clean inventory; user approves · skill: `microsoft-wiki-architect` (Claude) — ✅ approved (v2)
 - [x] D2-B 🔄 — Migrate files to approved structure and update internal links (Codex) — ✅ implemented in PR #154
-- [ ] D2-C 🚧 — User validation of migrated structure and content integrity · skill: `microsoft-wiki-qa` (Claude) — moved to PR-A (`docs/wiki-naming-cleanup`) to keep #154 merge-focused
+- [x] D2-C 🚧 — User validation of migrated structure and content integrity · skill: `microsoft-wiki-qa` (Claude) — ✅ completed in PR-A (`docs/wiki-naming-cleanup`)
 
 ### Phase 3 — Templates and normalization
 
-- [ ] D3-A 🚧 — Define templates per doc type (Diátaxis: tutorial, how-to, reference, explanation) · skill: `template-normalizer` (Claude)
-- [ ] D3-B 🚧 — User approval of templates (Claude)
-- [ ] D3-C 🔄 — Normalize existing docs to approved templates · skill: `template-normalizer` (Codex)
+- [x] D3-A 🚧 — Define templates per doc type (Diátaxis: tutorial, how-to, reference, explanation) · skill: `template-normalizer` (Claude) — ✅ approved 2026-03-02
+- [x] D3-B 🚧 — User approval of templates (Claude) — ✅ approved 2026-03-02
+- [x] D3-C 🔄 — Normalize existing docs to approved templates · skill: `template-normalizer` (Codex) — ✅ frontmatter + minimal structural normalization applied (2026-03-02)
 - [ ] D3-D 🚧 — User validation of normalized docs (Claude)
 
 ### Phase 4 — Navigation

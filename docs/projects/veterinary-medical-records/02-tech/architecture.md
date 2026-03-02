@@ -1,3 +1,11 @@
+---
+title: "Architecture Overview"
+type: reference
+status: active
+audience: all
+last-updated: 2026-03-02
+---
+
 # Architecture Overview
 
 > One-page summary for evaluators. For full detail, see [technical-design.md](technical-design.md).

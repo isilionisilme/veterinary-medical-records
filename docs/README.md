@@ -1,3 +1,11 @@
+---
+title: "Wiki — Documentation Index"
+type: index
+status: active
+audience: all
+last-updated: 2026-03-02
+---
+
 # Wiki — Documentation Index
 
 Human-oriented index for all canonical documentation in this repository.

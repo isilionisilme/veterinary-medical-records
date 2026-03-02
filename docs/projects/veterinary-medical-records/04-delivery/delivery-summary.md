@@ -1,3 +1,11 @@
+---
+title: "Delivery Summary — improvement/refactor"
+type: reference
+status: active
+audience: all
+last-updated: 2026-03-02
+---
+
 # Delivery Summary — `improvement/refactor`
 
 > Quantitative record of what was delivered across 7 phases + Iterations 2–9.  

@@ -1,3 +1,11 @@
+---
+title: "Product Design — Document Interpretation & Layout Evolution"
+type: explanation
+status: active
+audience: all
+last-updated: 2026-03-02
+---
+
 # Product Design — Document Interpretation & Layout Evolution
 
 ## Note for readers

@@ -1,3 +1,11 @@
+---
+title: "Copilot Usage Metrics — veterinary-medical-records"
+type: reference
+status: active
+audience: all
+last-updated: 2026-03-02
+---
+
 # Copilot Usage Metrics — veterinary-medical-records
 
 ## Overview

@@ -1,3 +1,11 @@
+---
+title: "Plan de cobertura E2E — Playwright"
+type: reference
+status: active
+audience: contributor
+last-updated: 2026-03-02
+---
+
 # Plan de cobertura E2E — Playwright
 
 ## Objetivo

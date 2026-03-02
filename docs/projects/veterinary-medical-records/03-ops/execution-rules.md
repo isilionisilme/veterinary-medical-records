@@ -1,3 +1,11 @@
+---
+title: "Execution Rules — Shared Operational Rules for AI Plan Execution"
+type: how-to
+status: active
+audience: contributor
+last-updated: 2026-03-02
+---
+
 # Execution Rules — Shared Operational Rules for AI Plan Execution
 
 > **Canonical source:** This file governs how AI agents execute plan steps across all iterations.

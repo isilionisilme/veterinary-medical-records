@@ -1,3 +1,11 @@
+---
+title: "Backend Implementation Notes"
+type: reference
+status: active
+audience: contributor
+last-updated: 2026-03-02
+---
+
 # Note for readers
 This document is intended to provide **implementation guidance for backend work** and to provide structured context to an AI Coding Assistant during implementation.
 

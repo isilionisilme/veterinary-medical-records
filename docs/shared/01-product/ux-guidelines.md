@@ -1,3 +1,11 @@
+---
+title: "UX Guidelines — Shared Principles"
+type: explanation
+status: active
+audience: all
+last-updated: 2026-03-02
+---
+
 # UX Guidelines — Shared Principles
 
 This document defines the **global UX principles and interaction guidelines**

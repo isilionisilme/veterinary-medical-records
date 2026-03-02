@@ -1,3 +1,11 @@
+---
+title: "Technical Design — Instructions for Implementation"
+type: reference
+status: active
+audience: contributor
+last-updated: 2026-03-02
+---
+
 # Note for readers:
 This document is intended to provide structured context to an AI Coding Assistant during implementation.
 
