@@ -81,16 +81,6 @@
       ]
     },
     {
-      "doc_glob": "docs/projects/veterinary-medical-records/00-overview.md",
-      "description": "Project root README changes require doc-updates guard alignment.",
-      "required_any": [
-        "docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json",
-        "docs/agent_router/01_WORKFLOW/DOC_UPDATES/router_parity_map.json",
-        "scripts/check_doc_test_sync.py",
-        "scripts/check_doc_router_parity.py"
-      ]
-    },
-    {
       "doc_glob": "docs/shared/02-tech/llm-benchmarks.md",
       "description": "Shared LLM_BENCHMARKS changes require doc-updates guard alignment.",
       "required_any": [

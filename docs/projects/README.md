@@ -4,7 +4,7 @@ Active initiatives in this repository.
 
 | Initiative | Description | Status |
 |---|---|---|
-| [veterinary-medical-records](veterinary-medical-records/00-overview.md) | AI-assisted veterinary clinical records processing | Active |
+| [veterinary-medical-records](veterinary-medical-records/) | AI-assisted veterinary clinical records processing | Active |
 
 ## Adding a new initiative
 

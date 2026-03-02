@@ -11,7 +11,6 @@ DOCS_README = Path("docs/README.md")
 PROJECT_ROOT = Path("docs/projects/veterinary-medical-records")
 SHARED_ROOT = Path("docs/shared")
 ADR_ROOT = Path("docs/projects/veterinary-medical-records/02-tech/adr")
-PROJECT_OVERVIEW = Path("docs/projects/veterinary-medical-records/00-overview.md")
 PROJECT_INDEX_PAGE = "veterinary-medical-records"
 PROJECT_INDEX_TITLE = "2026-03-02 Veterinary Medical Records"
 
@@ -30,7 +29,6 @@ _CATEGORY_PURPOSES: dict[str, str] = {
 _FIXED_NAMES: dict[str, str] = {
     DOCS_README.as_posix(): "Home",
     ROOT_README.as_posix(): "README",
-    PROJECT_OVERVIEW.as_posix(): PROJECT_INDEX_PAGE,
     f"{PROJECT_ROOT.as_posix()}/README.md": "Project-Overview",
     f"{ADR_ROOT.as_posix()}/README.md": "ADR-Index",
 }
@@ -277,6 +275,7 @@ def _build_folder_index(
     child_folder_contents: dict[str, list[tuple[str, str]]],
     folder_pages: dict[str, str],
     display_title: str | None = None,
+    link_categories: bool = True,
 ) -> str:
     """Auto-generate an index page for a category folder.
 
@@ -310,7 +309,10 @@ def _build_folder_index(
         for cf in sorted(child_folders, key=str.lower):
             page_name = folder_pages.get(cf, cf)
             category_purpose = _CATEGORY_PURPOSES.get(cf, "")
-            lines.append(f"| [{cf}]({page_name}) | {category_purpose or '-'} |")
+            if link_categories:
+                lines.append(f"| [{cf}]({page_name}) | {category_purpose or '-'} |")
+            else:
+                lines.append(f"| {cf} | {category_purpose or '-'} |")
         lines.append("")
         lines.append("## Pages")
         lines.append("")
@@ -338,7 +340,10 @@ def _build_folder_index(
                 for label, page in category_docs:
                     lines.append(f"- [[{page}|{label}]]")
             else:
-                lines.append(f"- [[{page_name}|{cf}]]")
+                if link_categories:
+                    lines.append(f"- [[{page_name}|{cf}]]")
+                else:
+                    lines.append(f"- {cf}")
             lines.append("")
     else:
         lines.append("## Documentation by category")
@@ -386,12 +391,22 @@ def _build_project_index(
         else []
     )
     child_folders = [key for key in tree if key != "__files__"]
+    child_folder_contents: dict[str, list[tuple[str, str]]] = {}
+    for cf in child_folders:
+        sub = tree.get(cf)
+        if not isinstance(sub, dict):
+            continue
+        sub_files = sub.get("__files__", [])
+        docs = list(sub_files) if isinstance(sub_files, list) else []
+        if cf == "adr":
+            docs = [(label, page) for label, page in docs if label.lower() != "index"]
+        child_folder_contents[cf] = sorted(docs, key=lambda x: x[0].lower())
 
     return _build_folder_index(
         folder_name="veterinary-medical-records",
         child_pages=child_pages,
         child_folders=child_folders,
-        child_folder_contents={},
+        child_folder_contents=child_folder_contents,
         folder_pages=folder_pages,
         display_title=PROJECT_INDEX_TITLE,
     )
@@ -496,17 +511,17 @@ def main() -> int:
         encoding="utf-8",
     )
 
-    # Auto-generate index pages for category folders
+    # Auto-generate project category index pages
     project_folder_pages = _auto_generate_folder_indices(
         mapping,
         PROJECT_ROOT,
         wiki_dir,
-        page_prefix="project-",
     )
-    shared_folder_pages = _auto_generate_folder_indices(
-        mapping,
-        SHARED_ROOT,
-        wiki_dir,
+
+    # Generate project root page from project tree (canonical wiki index)
+    (wiki_dir / f"{PROJECT_INDEX_PAGE}.md").write_text(
+        _build_project_index(mapping, project_folder_pages),
+        encoding="utf-8",
     )
 
     # Build Shared.md from tree (same category format as project page)
@@ -527,8 +542,9 @@ def main() -> int:
         child_pages=shared_child_pages,
         child_folders=shared_child_folders,
         child_folder_contents=shared_child_folder_contents,
-        folder_pages=shared_folder_pages,
+        folder_pages={},
         display_title="Shared Documentation",
+        link_categories=False,
     )
     # Insert intro line after the title
     shared_index_body = shared_index_body.replace(
@@ -540,8 +556,8 @@ def main() -> int:
     (wiki_dir / "_Sidebar.md").write_text(
         _build_sidebar(
             mapping,
-            project_folder_pages={},
-            shared_folder_pages=shared_folder_pages,
+            project_folder_pages=project_folder_pages,
+            shared_folder_pages={},
             max_depth=3,
         ),
         encoding="utf-8",
@@ -558,9 +574,8 @@ def main() -> int:
     keep = {f"{page}.md" for page in mapping.values()}
     keep.add(f"{PROJECT_INDEX_PAGE}.md")
     keep.update({"Projects.md", "Shared.md", "_Sidebar.md", "_Footer.md"})
-    # Keep auto-generated index pages from both project and shared
+    # Keep auto-generated index pages from project categories
     keep.update(f"{page}.md" for page in project_folder_pages.values())
-    keep.update(f"{page}.md" for page in shared_folder_pages.values())
     for md_file in wiki_dir.glob("*.md"):
         if md_file.name not in keep:
             md_file.unlink()

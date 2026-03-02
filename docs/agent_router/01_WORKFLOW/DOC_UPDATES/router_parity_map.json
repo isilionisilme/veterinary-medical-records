@@ -10,18 +10,6 @@
   ],
   "rules": [
     {
-      "source_doc": "docs/projects/veterinary-medical-records/00-overview.md",
-      "description": "Project root README must remain discoverable from project docs entry.",
-      "router_modules": [
-        {
-          "path": "docs/agent_router/04_PROJECT/00_entry.md",
-          "required_terms": [
-            "Project Docs (Modules)"
-          ]
-        }
-      ]
-    },
-    {
       "source_doc": "docs/shared/02-tech/llm-benchmarks.md",
       "description": "Shared LLM_BENCHMARKS must remain discoverable from shared docs entry.",
       "router_modules": [

@@ -29,7 +29,7 @@ Standards that apply across all initiatives:
 
 ## Projects
 
-- [veterinary-medical-records](projects/veterinary-medical-records/00-overview.md) — AI-assisted veterinary clinical records processing.
+- [veterinary-medical-records](projects/veterinary-medical-records/) — AI-assisted veterinary clinical records processing.
 
 See [projects/README.md](projects/README.md) for the full initiative listing.
 
