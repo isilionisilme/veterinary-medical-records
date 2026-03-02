@@ -41,10 +41,10 @@ def test_evaluate_sync_passes_when_no_docs_changed() -> None:
 def test_evaluate_sync_fails_when_mapped_doc_changes_without_related_file() -> None:
     module = _load_guard_module()
     findings = module.evaluate_sync(
-        changed_files=["docs/shared/BRAND_GUIDELINES.md"],
+        changed_files=["docs/shared/brand-guidelines.md"],
         rules=[
             {
-                "doc_glob": "docs/shared/BRAND_GUIDELINES.md",
+                "doc_glob": "docs/shared/brand-guidelines.md",
                 "required_any": ["scripts/check_brand_compliance.py"],
             }
         ],
@@ -91,10 +91,10 @@ def test_evaluate_sync_covers_root_router_docs() -> None:
 def test_evaluate_sync_fails_on_unmapped_doc_in_required_scope() -> None:
     module = _load_guard_module()
     findings = module.evaluate_sync(
-        changed_files=["docs/projects/veterinary-medical-records/design/UX_DESIGN.md"],
+        changed_files=["docs/projects/veterinary-medical-records/design/ux-design.md"],
         rules=[
             {
-                "doc_glob": "docs/shared/BRAND_GUIDELINES.md",
+                "doc_glob": "docs/shared/brand-guidelines.md",
                 "required_any": ["scripts/check_brand_compliance.py"],
             }
         ],
@@ -111,7 +111,7 @@ def test_evaluate_sync_ignores_unmapped_doc_outside_required_scope() -> None:
         changed_files=["docs/agent_router/extraction/STRATEGY.md"],
         rules=[
             {
-                "doc_glob": "docs/shared/BRAND_GUIDELINES.md",
+                "doc_glob": "docs/shared/brand-guidelines.md",
                 "required_any": ["scripts/check_brand_compliance.py"],
             }
         ],
@@ -127,7 +127,7 @@ def test_evaluate_sync_excludes_doc_matching_required_and_excluded_globs() -> No
         changed_files=["docs/projects/veterinary-medical-records/delivery/plans/PLAN_X.md"],
         rules=[
             {
-                "doc_glob": "docs/shared/BRAND_GUIDELINES.md",
+                "doc_glob": "docs/shared/brand-guidelines.md",
                 "required_any": ["scripts/check_brand_compliance.py"],
             }
         ],
@@ -157,7 +157,7 @@ def test_evaluate_sync_fails_on_unmapped_doc_when_fail_closed_enabled() -> None:
 def test_evaluate_sync_fails_when_owner_propagation_missing() -> None:
     module = _load_guard_module()
     findings = module.evaluate_sync(
-        changed_files=["docs/shared/ENGINEERING_PLAYBOOK.md"],
+        changed_files=["docs/shared/engineering-playbook.md"],
         rules=[
             {
                 "doc_glob": "docs/shared/*.md",
@@ -179,7 +179,7 @@ def test_evaluate_sync_passes_when_owner_and_related_files_change() -> None:
     module = _load_guard_module()
     findings = module.evaluate_sync(
         changed_files=[
-            "docs/shared/ENGINEERING_PLAYBOOK.md",
+            "docs/shared/engineering-playbook.md",
             "docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/150_documentation-guidelines.md",
             "backend/tests/unit/test_doc_updates_contract.py",
         ],

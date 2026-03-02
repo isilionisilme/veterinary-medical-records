@@ -17,7 +17,7 @@ Initial improvement pass: 12-factor audit, ln-620 codebase audit, structural ref
 | F1-B | Validate backlog (user decides) | Claude | ✅ |
 | F1-C | Implement approved backlog items | Codex | ✅ |
 | **Fase 2 — Maintainability & structural refactor** | | | |
-| F2-A | ln-620 audit + codebase_audit.md | Codex | ✅ |
+| F2-A | ln-620 audit + codebase-audit.md | Codex | ✅ |
 | F2-B | Validate decomposition strategy | Claude | ✅ |
 | F2-C | Refactor App.tsx | Codex | ✅ |
 | F2-D | Refactor processing_runner.py | Codex | ✅ |
@@ -35,7 +35,7 @@ Initial improvement pass: 12-factor audit, ln-620 codebase audit, structural ref
 | F5-A | Docs review with project-guidelines | Codex | ✅ |
 | F5-B | ADR arguments (user defines) | Claude | ✅ |
 | F5-C | Create ADR files | Codex | ✅ |
-| F5-D | FUTURE_IMPROVEMENTS.md | Codex | ✅ |
+| F5-D | future-improvements.md | Codex | ✅ |
 | **Fase 6 — Evaluator smoke test** | | | |
 | F6-A | End-to-end evaluator test | Claude+Codex | ✅ |
 | **Fase 7 — Global close** | | | |

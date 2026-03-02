@@ -137,7 +137,7 @@ def main() -> int:
 
     if findings:
         print("Brand guard failed.")
-        print("Found frontend changes that do not match docs/shared/BRAND_GUIDELINES.md:")
+        print("Found frontend changes that do not match docs/shared/brand-guidelines.md:")
         for item in findings:
             print(f"- {item}")
         return 1

@@ -1,10 +1,10 @@
 # CTO Review Verdict — `veterinary-medical-records`
 
-> **⚠️ Historical snapshot (2026-02-24).** All gaps and improvements identified here were resolved in Iterations 2–12. Current state: 682 tests, 10 CI jobs, auth boundary present, AppWorkspace at 2,221 LOC. See [DELIVERY_SUMMARY](DELIVERY_SUMMARY.md) and [IMPLEMENTATION_HISTORY](../implementation/IMPLEMENTATION_HISTORY.md) for current metrics.
+> **⚠️ Historical snapshot (2026-02-24).** All gaps and improvements identified here were resolved in Iterations 2–12. Current state: 682 tests, 10 CI jobs, auth boundary present, AppWorkspace at 2,221 LOC. See [DELIVERY_SUMMARY](delivery-summary.md) and [IMPLEMENTATION_HISTORY](../implementation/implementation-history.md) for current metrics.
 
 > Late-stage evaluator-perspective review.
 > Date: 2026-02-24
-> Context: All 7 initial phases completed (see [`IMPLEMENTATION_HISTORY.md`](../implementation/IMPLEMENTATION_HISTORY.md)). Goal: maximize evaluator outcome with minimal additional risk.
+> Context: All 7 initial phases completed (see [`implementation-history.md`](../implementation/implementation-history.md)). Goal: maximize evaluator outcome with minimal additional risk.
 
 ---
 
@@ -14,16 +14,16 @@
 
 | Area | Evidence | Source |
 |---|---|---|
-| **Test suite** | 411 tests (249 backend + 162 frontend), all green | `DELIVERY_SUMMARY.md` |
-| **Backend coverage** | 87% | `DELIVERY_SUMMARY.md` |
-| **CI** | 7 jobs, all passing | `DELIVERY_SUMMARY.md` |
-| **Structural refactor** | App.tsx (5,998→9-line shell + modules), processing_runner.py (2,901→5 modules), document_service.py (1,874→8 modules), App.test.tsx redistributed to 20 files | `DELIVERY_SUMMARY.md` Phase 2 |
-| **Tooling** | ESLint 9, Prettier 3, ruff, pre-commit, coverage (v8 + pytest-cov) | `DELIVERY_SUMMARY.md` Phase 3 |
-| **ADRs** | 4 architecture ADRs (modular monolith, SQLite, raw SQL, in-process async) | `DELIVERY_SUMMARY.md` Phase 5 |
+| **Test suite** | 411 tests (249 backend + 162 frontend), all green | `delivery-summary.md` |
+| **Backend coverage** | 87% | `delivery-summary.md` |
+| **CI** | 7 jobs, all passing | `delivery-summary.md` |
+| **Structural refactor** | App.tsx (5,998→9-line shell + modules), processing_runner.py (2,901→5 modules), document_service.py (1,874→8 modules), App.test.tsx redistributed to 20 files | `delivery-summary.md` Phase 2 |
+| **Tooling** | ESLint 9, Prettier 3, ruff, pre-commit, coverage (v8 + pytest-cov) | `delivery-summary.md` Phase 3 |
+| **ADRs** | 4 architecture ADRs (modular monolith, SQLite, raw SQL, in-process async) | `delivery-summary.md` Phase 5 |
 | **Docker** | `docker compose up --build` → 2 services, healthchecks, test profiles | `README.md` |
 | **Doc governance** | Evaluator-first reading order, authority/precedence chain, audit trail section | `docs/README.md` |
 | **Execution plan** | All 7 phases marked `[x]`, 61 commits, 149 files changed | `AI_ITERATIVE_EXECUTION_PLAN.md` |
-| **Audit findings** | 15 findings (2 critical, 4 high, 6 medium, 3 low) — criticals addressed by Phase 2 refactor | `codebase_audit.md` |
+| **Audit findings** | 15 findings (2 critical, 4 high, 6 medium, 3 low) — criticals addressed by Phase 2 refactor | `codebase-audit.md` |
 
 ### 2. Known residual gaps
 
@@ -100,11 +100,11 @@
 
 | # | Improvement | Impact | Risk | Effort | Acceptance Criteria | Files | Doc Updates |
 |---|---|---|---|---|---|---|---|
-| 1 | **Add `busy_timeout` + WAL mode to SQLite connection config** | **High** — prevents `database is locked` during evaluator's multi-upload smoke test | **Low** — additive change, no behavioral shift | **S** | `sqlite3.connect()` calls include `PRAGMA journal_mode=WAL` and `PRAGMA busy_timeout=5000`. Integration test verifies concurrent read during write doesn't raise `OperationalError`. | `backend/app/infra/database.py` | Update `codebase_audit.md` finding #7 status. Optionally note in ADR-ARCH-0002 consequences section. |
-| 2 | **Document security boundary explicitly** | **High** — evaluator in regulated domain expects security awareness | **Low** — documentation-only, no code changes | **S** | `TECHNICAL_DESIGN.md` contains a "Security Boundary" section stating: (a) auth is out of scope for the exercise, (b) all endpoints are unauthenticated by design, (c) production path would add token-based auth at API gateway level. `FUTURE_IMPROVEMENTS.md` includes auth as a 2-week item. | `docs/projects/veterinary-medical-records/tech/TECHNICAL_DESIGN.md`, `docs/projects/veterinary-medical-records/delivery/FUTURE_IMPROVEMENTS.md` | Self-referencing (these are the doc updates). |
-| 3 | **Add a brief comment/docstring at top of `AppWorkspace.tsx` explaining decomposition plan** | **Medium** — preempts evaluator's "why is this still huge" reaction | **Low** — comment-only, zero code change | **S** | File header contains a 3–5 line comment acknowledging the file exceeds target size, referencing FUTURE_IMPROVEMENTS.md for the planned decomposition, and explaining it was deprioritized vs. the 3 critical monolithic files that were decomposed. | `frontend/src/AppWorkspace.tsx` | Reference from `FUTURE_IMPROVEMENTS.md` (likely already there via codebase_audit remediation). |
+| 1 | **Add `busy_timeout` + WAL mode to SQLite connection config** | **High** — prevents `database is locked` during evaluator's multi-upload smoke test | **Low** — additive change, no behavioral shift | **S** | `sqlite3.connect()` calls include `PRAGMA journal_mode=WAL` and `PRAGMA busy_timeout=5000`. Integration test verifies concurrent read during write doesn't raise `OperationalError`. | `backend/app/infra/database.py` | Update `codebase-audit.md` finding #7 status. Optionally note in ADR-ARCH-0002 consequences section. |
+| 2 | **Document security boundary explicitly** | **High** — evaluator in regulated domain expects security awareness | **Low** — documentation-only, no code changes | **S** | `technical-design.md` contains a "Security Boundary" section stating: (a) auth is out of scope for the exercise, (b) all endpoints are unauthenticated by design, (c) production path would add token-based auth at API gateway level. `future-improvements.md` includes auth as a 2-week item. | `docs/projects/veterinary-medical-records/tech/technical-design.md`, `docs/projects/veterinary-medical-records/delivery/future-improvements.md` | Self-referencing (these are the doc updates). |
+| 3 | **Add a brief comment/docstring at top of `AppWorkspace.tsx` explaining decomposition plan** | **Medium** — preempts evaluator's "why is this still huge" reaction | **Low** — comment-only, zero code change | **S** | File header contains a 3–5 line comment acknowledging the file exceeds target size, referencing future-improvements.md for the planned decomposition, and explaining it was deprioritized vs. the 3 critical monolithic files that were decomposed. | `frontend/src/AppWorkspace.tsx` | Reference from `future-improvements.md` (likely already there via codebase_audit remediation). |
 | 4 | **Add targeted tests for `lib/utils.ts` error paths** | **Medium** — `24%` coverage on a core utility file is evaluator-visible in coverage report | **Low** — additive tests only | **S** | `lib/utils.ts` coverage rises to ≥70%. Tests cover: `apiFetchJson` with non-JSON response, network error, and malformed error body. | `frontend/src/lib/utils.test.ts` (new or extend existing) | None. |
-| 5 | **Verify `FUTURE_IMPROVEMENTS.md` explicitly lists the `AppWorkspace.tsx` decomposition as a 2-week item** | **Medium** — converts a visible gap into a "we know, it's planned" signal | **Low** — doc-only | **S** | `FUTURE_IMPROVEMENTS.md` 2-week section contains an item: "Decompose `AppWorkspace.tsx` (~5,760 LOC) into feature-oriented modules (ReviewWorkspace, StructuredDataView, PdfViewerContainer) following the same pattern used for `App.tsx`, `processing_runner.py`, and `document_service.py`." | `docs/projects/veterinary-medical-records/delivery/FUTURE_IMPROVEMENTS.md` | Self-referencing. |
+| 5 | **Verify `future-improvements.md` explicitly lists the `AppWorkspace.tsx` decomposition as a 2-week item** | **Medium** — converts a visible gap into a "we know, it's planned" signal | **Low** — doc-only | **S** | `future-improvements.md` 2-week section contains an item: "Decompose `AppWorkspace.tsx` (~5,760 LOC) into feature-oriented modules (ReviewWorkspace, StructuredDataView, PdfViewerContainer) following the same pattern used for `App.tsx`, `processing_runner.py`, and `document_service.py`." | `docs/projects/veterinary-medical-records/delivery/future-improvements.md` | Self-referencing. |
 
 ---
 
@@ -118,8 +118,8 @@
 | **ADR content** (`docs/projects/veterinary-medical-records/tech/adr/ADR-ARCH-*.md`) | Well-written with code evidence. Editing risks introducing inconsistencies. |
 | **Backend structural decomposition** (the 5-module processing, 8-module document_service) | Just completed and verified. Re-touching risks regressions. |
 | **Frontend component decomposition** (37 extracted components) | Same — fresh refactor, tests redistributed. Leave alone. |
-| **`IMPLEMENTATION_PLAN.md`** | Massive file with story definitions — any edit risks breaking cross-references. |
-| **`DELIVERY_SUMMARY.md`** | Accurate as-is. Only update if new work is done. |
+| **`implementation-plan.md`** | Massive file with story definitions — any edit risks breaking cross-references. |
+| **`delivery-summary.md`** | Accurate as-is. Only update if new work is done. |
 | **Pre-commit hooks** | Working. Changing hook config risks CI/local divergence. |
 
 ---

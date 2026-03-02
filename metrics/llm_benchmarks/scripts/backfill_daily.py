@@ -10,8 +10,8 @@ from pathlib import Path
 SNAPSHOT_CANDIDATE_DOCS = [
     "AGENTS.md",
     "docs/README.md",
-    "docs/projects/veterinary-medical-records/tech/TECHNICAL_DESIGN.md",
-    "docs/shared/ENGINEERING_PLAYBOOK.md",
+    "docs/projects/veterinary-medical-records/tech/technical-design.md",
+    "docs/shared/engineering-playbook.md",
 ]
 
 
@@ -93,7 +93,7 @@ def _docs_for_operational_path(sha: str) -> list[str]:
 
     legacy_min_path = [
         "AGENTS.md",
-        "docs/shared/ENGINEERING_PLAYBOOK.md",
+        "docs/shared/engineering-playbook.md",
         "docs/README.md",
     ]
     router_min_path = [

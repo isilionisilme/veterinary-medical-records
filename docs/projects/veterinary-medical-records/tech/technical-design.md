@@ -148,7 +148,7 @@ The pipeline is **observable** and **step-based**.
 - Processing is **asynchronous** and runs in the background.
 - API requests must **never block** waiting for processing to complete.
 - Processing is executed internally (in-process worker or equivalent).
-This document describes an in-process execution model; story-specific scope boundaries live in [`docs/projects/veterinary-medical-records/delivery/IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md).
+This document describes an in-process execution model; story-specific scope boundaries live in [`docs/projects/veterinary-medical-records/delivery/implementation-plan.md`](implementation-plan.md).
 
 ---
 
@@ -235,7 +235,7 @@ If a client attempts to edit/review while a `RUNNING` run exists, the API MUST r
 
 - Each structured field MUST carry a `confidence` number in range 0–1 (see Appendix D).
 - Confidence is a stored **attention signal** only.
-- The meaning/governance of confidence in veterinarian workflows is defined in [`docs/projects/veterinary-medical-records/design/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md).
+- The meaning/governance of confidence in veterinarian workflows is defined in [`docs/projects/veterinary-medical-records/design/product-design.md`](product-design.md).
 
 ### Context (Deterministic)
 
@@ -392,7 +392,7 @@ If public exposure, formal versioning, or hardening is introduced, it should be 
 
 ## 11. Scope Ownership
 
-Story-specific scope boundaries are defined per user story in [`docs/projects/veterinary-medical-records/delivery/IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md) (Scope Clarification).
+Story-specific scope boundaries are defined per user story in [`docs/projects/veterinary-medical-records/delivery/implementation-plan.md`](implementation-plan.md) (Scope Clarification).
 This Technical Design defines the technical contracts and invariants needed to implement those stories.
 
 ---
@@ -430,9 +430,9 @@ For a production deployment in a regulated veterinary domain, the following woul
 2. **Role-based authorization** on document and processing endpoints.
 3. **Abuse prevention** — rate limiting is now in place (Iteration 10, F16-D); advanced patterns (per-user quotas, adaptive limits) would be a production evolution.
 4. **Audit logging** of access events on protected resources.
-5. **Streaming upload with early size rejection** to prevent memory-based DoS (see [FUTURE_IMPROVEMENTS.md](FUTURE_IMPROVEMENTS.md) item #9).
+5. **Streaming upload with early size rejection** to prevent memory-based DoS (see [future-improvements.md](future-improvements.md) item #9).
 
-The current architecture supports this evolution: the hexagonal design and explicit port/adapter boundaries allow inserting an auth adapter without modifying domain or application layers. See [FUTURE_IMPROVEMENTS.md](FUTURE_IMPROVEMENTS.md) item #15 for the roadmap entry.
+The current architecture supports this evolution: the hexagonal design and explicit port/adapter boundaries allow inserting an auth adapter without modifying domain or application layers. See [future-improvements.md](future-improvements.md) item #15 for the roadmap entry.
 
 ---
 
@@ -440,7 +440,7 @@ The current architecture supports this evolution: the hexagonal design and expli
 
 | # | Limitation | Impact | Mitigation / Roadmap |
 |---|---|---|---|
-| 1 | Single-process model — API and scheduler share one event loop | No horizontal scaling for processing | [ADR-ARCH-0004](../adr/ADR-ARCH-0004-in-process-async-processing.md); optional worker profile in [Known Limitations](FUTURE_IMPROVEMENTS.md) #14 |
+| 1 | Single-process model — API and scheduler share one event loop | No horizontal scaling for processing | [ADR-ARCH-0004](../adr/ADR-ARCH-0004-in-process-async-processing.md); optional worker profile in [Known Limitations](future-improvements.md) #14 |
 | 2 | SQLite — single-writer constraint | Write contention under concurrent uploads | WAL mode + busy timeout applied (Iteration 2); PostgreSQL adapter in roadmap (#17) |
 | 3 | Minimal authentication boundary | Root endpoints remain open; token auth is optional and static | Optional bearer-token auth implemented (Iteration 3, §13); full authN/authZ is a production evolution |
 | 4 | `AppWorkspace.tsx` at ~2,200 LOC (down from ~5,800) | Core orchestrator still large; 8 hooks + 3 panel components extracted (−62%) | Decomposition across Iterations 3, 7, 8; remaining LOC is render orchestration — further splits yield diminishing returns |
@@ -459,7 +459,7 @@ The current architecture supports this evolution: the hexagonal design and expli
 
 Follow:
 - this document for **architecture and behavior**
-- `IMPLEMENTATION_PLAN.md` for **scope and sequencing**
+- `implementation-plan.md` for **scope and sequencing**
 
 If any conflict exists, **STOP and ask for clarification**.
 
@@ -1695,8 +1695,8 @@ Rules (technical, authoritative):
 - This designation MUST NOT block workflows; it only drives UI signaling and internal flags.
 
 Source of truth for `CRITICAL_KEYS`:
-- Defined in [`docs/projects/veterinary-medical-records/design/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md) (product authority).
-- The complete Global Schema key list, fixed ordering, section grouping, repeatability rules, and cross-key fallback rules (including `document_date` fallback to `visit_date`) are also governed by [`docs/projects/veterinary-medical-records/design/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md).
+- Defined in [`docs/projects/veterinary-medical-records/design/product-design.md`](product-design.md) (product authority).
+- The complete Global Schema key list, fixed ordering, section grouping, repeatability rules, and cross-key fallback rules (including `document_date` fallback to `visit_date`) are also governed by [`docs/projects/veterinary-medical-records/design/product-design.md`](product-design.md).
 
 ---
 
@@ -1970,7 +1970,7 @@ Sufficient evidence boundary for assigned VisitGroup creation (US-45, determinis
 
 - This appendix is the technical source of truth for payload taxonomy and deterministic buckets (`fields[]`, `visits[]`, `other_fields[]`, and classification metadata).
 - Frontend consumers MUST render Medical Record structure from contract metadata only; they MUST NOT infer grouping/classification heuristically.
-- UX labels/copy are defined in [`docs/projects/veterinary-medical-records/design/UX_DESIGN.md`](UX_DESIGN.md); this appendix defines contract semantics only.
+- UX labels/copy are defined in [`docs/projects/veterinary-medical-records/design/ux-design.md`](ux-design.md); this appendix defines contract semantics only.
 
 ---
 

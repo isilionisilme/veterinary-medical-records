@@ -7,7 +7,7 @@ It is **project-agnostic** and must not contain product- or initiative-specific
 flows, behaviors, roles, or domain assumptions.
 
 If any UX decision depends on product context, it must be defined in the
-corresponding **project-level UX document** (e.g. [`docs/projects/veterinary-medical-records/design/UX_DESIGN.md`](../projects/veterinary-medical-records/design/UX_DESIGN.md)).
+corresponding **project-level UX document** (e.g. [`docs/projects/veterinary-medical-records/design/ux-design.md`](../projects/veterinary-medical-records/design/ux-design.md)).
 
 ---
 
@@ -128,7 +128,7 @@ For any UX decision that depends on:
 - Review, learning, or governance workflows
 
 This document **must defer** to the corresponding project-level UX document
-(e.g. [`docs/projects/veterinary-medical-records/design/UX_DESIGN.md`](../projects/veterinary-medical-records/design/UX_DESIGN.md)).
+(e.g. [`docs/projects/veterinary-medical-records/design/ux-design.md`](../projects/veterinary-medical-records/design/ux-design.md)).
 
 If no such document exists, **STOP and ask** before inventing UX behavior.
 

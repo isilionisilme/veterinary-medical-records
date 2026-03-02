@@ -207,7 +207,7 @@ def test_implementation_plan_us42_status_is_propagated() -> None:
         / "projects"
         / "veterinary-medical-records"
         / "delivery"
-        / "IMPLEMENTATION_PLAN.md"
+        / "implementation-plan.md"
     )
     owner_module = _read_text(
         ROUTER_ROOT
@@ -227,7 +227,7 @@ def test_technical_design_unassigned_contract_clarification_is_propagated() -> N
         / "projects"
         / "veterinary-medical-records"
         / "tech"
-        / "TECHNICAL_DESIGN.md"
+        / "technical-design.md"
     )
     owner_doc = _read_text(
         ROUTER_ROOT
@@ -252,7 +252,7 @@ def test_technical_design_sufficient_evidence_boundary_is_propagated() -> None:
         / "projects"
         / "veterinary-medical-records"
         / "tech"
-        / "TECHNICAL_DESIGN.md"
+        / "technical-design.md"
     )
     owner_doc = _read_text(
         ROUTER_ROOT
@@ -438,7 +438,7 @@ def test_frontend_implementation_note_includes_build_determinism_and_required_ch
         / "projects"
         / "veterinary-medical-records"
         / "tech"
-        / "FRONTEND_IMPLEMENTATION.md"
+        / "frontend-implementation.md"
     )
     owner_module = _read_text(
         ROUTER_ROOT / "04_PROJECT" / "FRONTEND_IMPLEMENTATION" / "150_implementation-note.md"
@@ -470,7 +470,7 @@ def test_backend_implementation_schema_contract_wording_is_propagated() -> None:
         / "projects"
         / "veterinary-medical-records"
         / "tech"
-        / "BACKEND_IMPLEMENTATION.md"
+        / "backend-implementation.md"
     )
     owner_doc = _read_text(
         ROUTER_ROOT

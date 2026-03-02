@@ -3,7 +3,7 @@
 This document defines the **project-specific UX and interaction design contract**
 for the Veterinary Medical Records Processing system.
 
-It complements the global UX principles defined in [`docs/shared/UX_GUIDELINES.md`](../shared/UX_GUIDELINES.md).
+It complements the global UX principles defined in [`docs/shared/ux-guidelines.md`](../shared/ux-guidelines.md).
 
 All UI and interaction decisions for this project must comply with this document.
 If a design choice conflicts with these rules, it must be reconsidered.
@@ -181,7 +181,7 @@ Layout note:
 
 Schema-aware rendering mode (deterministic):
 - Medical Record MVP panel uses a single canonical structured contract (non-versioned).
-- Render the fixed section order above, with **Visitas** sourced from `visits[]` (per [`docs/projects/veterinary-medical-records/tech/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md), Appendix D9).
+- Render the fixed section order above, with **Visitas** sourced from `visits[]` (per [`docs/projects/veterinary-medical-records/tech/technical-design.md`](technical-design.md), Appendix D9).
 - Required document-level placeholders (for example NHC when missing) are driven by `medical_record_view.field_slots[]` in Appendix D9, not by UI hardcoding.
 - No heuristics grouping in UI; grouping comes from `visits[]` in the canonical contract.
 
@@ -247,7 +247,7 @@ Empty states (deterministic):
 
 Otros campos detectados:
 - This section is a contract-driven bucket for explicit unmapped/other items only; no UI-side classification.
-- If the contract does not expose an explicit unmapped bucket (for example `unmapped_fields[]` / `other_fields[]`), implementation is blocked until technical alignment is defined in [`docs/projects/veterinary-medical-records/tech/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md).
+- If the contract does not expose an explicit unmapped bucket (for example `unmapped_fields[]` / `other_fields[]`), implementation is blocked until technical alignment is defined in [`docs/projects/veterinary-medical-records/tech/technical-design.md`](technical-design.md).
 
 Información del informe:
 - This section is always rendered as the final block.
@@ -373,4 +373,4 @@ It does not define:
 - learning mechanisms.
 
 If a UX decision cannot be resolved using this document and
-[`docs/shared/UX_GUIDELINES.md`](../shared/UX_GUIDELINES.md), it must be escalated to Product Design.
+[`docs/shared/ux-guidelines.md`](../shared/ux-guidelines.md), it must be escalated to Product Design.

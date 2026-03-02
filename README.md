@@ -30,7 +30,7 @@ Stop:
 - `docker compose down`
 
 Scope and sequencing source of truth:
-- [`docs/projects/veterinary-medical-records/delivery/IMPLEMENTATION_PLAN.md`](docs/projects/veterinary-medical-records/delivery/IMPLEMENTATION_PLAN.md)
+- [`docs/projects/veterinary-medical-records/delivery/implementation-plan.md`](docs/projects/veterinary-medical-records/delivery/implementation-plan.md)
 
 ---
 
@@ -64,7 +64,7 @@ This project explores an approach that assists veterinarians during document rev
 
 ## Architecture at a glance
 
-For a visual overview with Mermaid diagram, see [**ARCHITECTURE.md**](docs/projects/veterinary-medical-records/tech/ARCHITECTURE.md).
+For a visual overview with Mermaid diagram, see [**architecture.md**](docs/projects/veterinary-medical-records/tech/architecture.md).
 
 - Architectural style: modular monolith with clear application/domain/infrastructure boundaries.
 - Backend pattern: ports-and-adapters with explicit use cases and append-only review/processing artifacts.
@@ -72,9 +72,9 @@ For a visual overview with Mermaid diagram, see [**ARCHITECTURE.md**](docs/proje
 - Runtime model: Docker-first local environment with deterministic evaluation mode and optional dev overlay.
 
 Key design references:
-- [`docs/projects/veterinary-medical-records/tech/TECHNICAL_DESIGN.md`](docs/projects/veterinary-medical-records/tech/TECHNICAL_DESIGN.md)
-- [`docs/projects/veterinary-medical-records/design/PRODUCT_DESIGN.md`](docs/projects/veterinary-medical-records/design/PRODUCT_DESIGN.md)
-- [`docs/projects/veterinary-medical-records/design/UX_DESIGN.md`](docs/projects/veterinary-medical-records/design/UX_DESIGN.md)
+- [`docs/projects/veterinary-medical-records/tech/technical-design.md`](docs/projects/veterinary-medical-records/tech/technical-design.md)
+- [`docs/projects/veterinary-medical-records/design/product-design.md`](docs/projects/veterinary-medical-records/design/product-design.md)
+- [`docs/projects/veterinary-medical-records/design/ux-design.md`](docs/projects/veterinary-medical-records/design/ux-design.md)
 
 Key technical decisions (ADRs):
 - [`docs/projects/veterinary-medical-records/tech/adr/ADR-ARCH-0001-modular-monolith.md`](docs/projects/veterinary-medical-records/tech/adr/ADR-ARCH-0001-modular-monolith.md) — modular monolith over microservices.
@@ -97,29 +97,29 @@ Start here:
 
 ### Project documentation (authoritative)
 
-📄 **[`docs/projects/veterinary-medical-records/design/PRODUCT_DESIGN.md`](docs/projects/veterinary-medical-records/design/PRODUCT_DESIGN.md)**  
+📄 **[`docs/projects/veterinary-medical-records/design/product-design.md`](docs/projects/veterinary-medical-records/design/product-design.md)**  
 Product intent + semantics summary (with canonical Google Doc link).
 
 ---
 
-📄 **[`docs/projects/veterinary-medical-records/design/UX_DESIGN.md`](docs/projects/veterinary-medical-records/design/UX_DESIGN.md)**  
+📄 **[`docs/projects/veterinary-medical-records/design/ux-design.md`](docs/projects/veterinary-medical-records/design/ux-design.md)**  
 UX interaction contract (roles, workflow guarantees, confidence UX rules).
 
-📄 **[`docs/shared/BRAND_GUIDELINES.md`](docs/shared/BRAND_GUIDELINES.md)**  
+📄 **[`docs/shared/brand-guidelines.md`](docs/shared/brand-guidelines.md)**  
 Visual identity and tone of user-facing copy.
 
-📄 **[`docs/projects/veterinary-medical-records/tech/TECHNICAL_DESIGN.md`](docs/projects/veterinary-medical-records/tech/TECHNICAL_DESIGN.md)**  
+📄 **[`docs/projects/veterinary-medical-records/tech/technical-design.md`](docs/projects/veterinary-medical-records/tech/technical-design.md)**  
 Architecture + invariants + authoritative contracts (endpoint map, error semantics, state rules, schemas).
 
 ---
 
-📄 **[`docs/projects/veterinary-medical-records/delivery/IMPLEMENTATION_PLAN.md`](docs/projects/veterinary-medical-records/delivery/IMPLEMENTATION_PLAN.md)**  
+📄 **[`docs/projects/veterinary-medical-records/delivery/implementation-plan.md`](docs/projects/veterinary-medical-records/delivery/implementation-plan.md)**  
 Scope + story order + acceptance criteria.
 
-📄 **[`docs/projects/veterinary-medical-records/tech/BACKEND_IMPLEMENTATION.md`](docs/projects/veterinary-medical-records/tech/BACKEND_IMPLEMENTATION.md)**  
+📄 **[`docs/projects/veterinary-medical-records/tech/backend-implementation.md`](docs/projects/veterinary-medical-records/tech/backend-implementation.md)**  
 Backend implementation details (“how”).
 
-📄 **[`docs/projects/veterinary-medical-records/tech/FRONTEND_IMPLEMENTATION.md`](docs/projects/veterinary-medical-records/tech/FRONTEND_IMPLEMENTATION.md)**  
+📄 **[`docs/projects/veterinary-medical-records/tech/frontend-implementation.md`](docs/projects/veterinary-medical-records/tech/frontend-implementation.md)**  
 Frontend implementation details (“how”).
 
 ---
@@ -129,10 +129,10 @@ Frontend implementation details (“how”).
 📄 **[`AGENTS.md`](AGENTS.md)**  
 Canonical AI assistant entrypoint for this repo.
 
-📄 **[`docs/shared/ENGINEERING_PLAYBOOK.md`](docs/shared/ENGINEERING_PLAYBOOK.md)**  
+📄 **[`docs/shared/engineering-playbook.md`](docs/shared/engineering-playbook.md)**  
 Engineering standards for implementation and changes.
 
-📄 **[`docs/shared/UX_GUIDELINES.md`](docs/shared/UX_GUIDELINES.md)**  
+📄 **[`docs/shared/ux-guidelines.md`](docs/shared/ux-guidelines.md)**  
 Shared UX principles referenced by project UX design.
 
 ---
@@ -144,11 +144,11 @@ Shared UX principles referenced by project UX design.
 
 ### Delivery evidence and audit trail
 
-- **Delivery summary (start here):** [`docs/projects/veterinary-medical-records/delivery/DELIVERY_SUMMARY.md`](docs/projects/veterinary-medical-records/delivery/DELIVERY_SUMMARY.md)
-- 12-factor architecture audit: [`docs/projects/veterinary-medical-records/archive/12_FACTOR_AUDIT.md`](docs/projects/veterinary-medical-records/archive/12_FACTOR_AUDIT.md)
-- Maintainability/codebase audit: [`docs/projects/veterinary-medical-records/archive/codebase_audit.md`](docs/projects/veterinary-medical-records/archive/codebase_audit.md)
-- Iterative execution log and decisions: [`docs/projects/veterinary-medical-records/delivery/IMPLEMENTATION_HISTORY.md`](docs/projects/veterinary-medical-records/delivery/IMPLEMENTATION_HISTORY.md)
-- Future roadmap (2/4/8 weeks): [`docs/projects/veterinary-medical-records/delivery/FUTURE_IMPROVEMENTS.md`](docs/projects/veterinary-medical-records/delivery/FUTURE_IMPROVEMENTS.md)
+- **Delivery summary (start here):** [`docs/projects/veterinary-medical-records/delivery/delivery-summary.md`](docs/projects/veterinary-medical-records/delivery/delivery-summary.md)
+- 12-factor architecture audit: [`docs/projects/veterinary-medical-records/archive/12-factor-audit.md`](docs/projects/veterinary-medical-records/archive/12-factor-audit.md)
+- Maintainability/codebase audit: [`docs/projects/veterinary-medical-records/archive/codebase-audit.md`](docs/projects/veterinary-medical-records/archive/codebase-audit.md)
+- Iterative execution log and decisions: [`docs/projects/veterinary-medical-records/delivery/implementation-history.md`](docs/projects/veterinary-medical-records/delivery/implementation-history.md)
+- Future roadmap (2/4/8 weeks): [`docs/projects/veterinary-medical-records/delivery/future-improvements.md`](docs/projects/veterinary-medical-records/delivery/future-improvements.md)
 - Project ADR index: [`docs/projects/veterinary-medical-records/tech/adr/README.md`](docs/projects/veterinary-medical-records/tech/adr/README.md)
 
 ---
@@ -309,7 +309,7 @@ Confidence policy:
 - `VET_RECORDS_CONFIDENCE_LOW_MAX`
 - `VET_RECORDS_CONFIDENCE_MID_MAX`
 
-For backend configuration and local runtime details, see [`docs/projects/veterinary-medical-records/tech/BACKEND_IMPLEMENTATION.md`](docs/projects/veterinary-medical-records/tech/BACKEND_IMPLEMENTATION.md).
+For backend configuration and local runtime details, see [`docs/projects/veterinary-medical-records/tech/backend-implementation.md`](docs/projects/veterinary-medical-records/tech/backend-implementation.md).
 
 ---
 

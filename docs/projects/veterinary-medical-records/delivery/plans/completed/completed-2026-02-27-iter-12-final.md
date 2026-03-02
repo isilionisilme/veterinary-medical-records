@@ -1,6 +1,6 @@
 # Plan: Iteration 12 (Final) — E2E Phase 3-4 + WCAG + final polish
 
-> **Operational rules:** See [EXECUTION_RULES.md](EXECUTION_RULES.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
+> **Operational rules:** See [execution-rules.md](execution-rules.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
 
 **Rama:** `improvement/iteration-12-final`
 **PR:** #169
@@ -15,11 +15,11 @@ Post-Iter 11 (estimated): ~390 backend tests (≥92%), ~280 frontend tests (≥8
 1. **E2E coverage at ~33%** — 20 of 61 planned specs. Phase 3-4 brings it to full coverage (61/61).
 2. **No WCAG audit** — moderate aria coverage exists but no systematic audit or automated checks.
 3. **No badges/GIF/one-pager** in README — low effort, high evaluator impact for first impression.
-4. **No `ARCHITECTURE.md`** — TECHNICAL_DESIGN.md is 2K lines; evaluators need a scannable one-pager.
+4. **No `architecture.md`** — technical-design.md is 2K lines; evaluators need a scannable one-pager.
 5. **Documentation final sweep** — close out FUTURE_IMPROVEMENTS, refresh DELIVERY_SUMMARY with final metrics.
 
 **Entry metrics (expected post-Iter 11):** ~390 backend tests (≥92%), ~280 frontend tests (≥87%), ~20 E2E specs, 10+ CI jobs, 0 lint.
-**Exit metrics target:** 61 E2E specs (100% plan coverage), WCAG quick fixes applied, axe-core in CI, badges + demo GIF in README, ARCHITECTURE.md one-pager, all documentation finalized.
+**Exit metrics target:** 61 E2E specs (100% plan coverage), WCAG quick fixes applied, axe-core in CI, badges + demo GIF in README, architecture.md one-pager, all documentation finalized.
 
 ---
 
@@ -44,7 +44,7 @@ Post-Iter 11 (estimated): ~390 backend tests (≥92%), ~280 frontend tests (≥8
 - [x] F19-E 🔄 — Bloque Avanzado: `visit-grouping`, `upload-validation` — 5 tests (Codex) → source: F17-P ✅ 025d2358
 - [x] F19-F 🔄 — Run full suite in Docker, verify 61 tests green (Codex) → source: F17-Q ✅ 56e5808d + fix 7696bf0f
 - [x] F19-G 🔄 — Remove legacy spec files absorbed by new specs (Codex) → source: F17-R ✅ d5f66e92
-- [x] F19-H 🚧 — Update `PLAN_E2E_TEST_COVERAGE.md` §7 checkboxes + metrics (Claude) → source: F17-S ✅
+- [x] F19-H 🚧 — Update `plan-e2e-test-coverage.md` §7 checkboxes + metrics (Claude) → source: F17-S ✅
 
 #### Phase B — WCAG quick wins + automated a11y
 
@@ -53,7 +53,7 @@ Post-Iter 11 (estimated): ~390 backend tests (≥92%), ~280 frontend tests (≥8
 
 #### Phase C — README + Architecture one-pager
 
-- [x] F19-K 🚧 — Create `ARCHITECTURE.md` one-pager with Mermaid diagram (Claude) ✅ 402a2ff0
+- [x] F19-K 🚧 — Create `architecture.md` one-pager with Mermaid diagram (Claude) ✅ 402a2ff0
 - [x] F19-L 🚧 — README final polish: badges, tech stack table, demo GIF placeholder, streamlined structure (Claude) ✅ 093fb6eb
 
 #### Phase D — Final documentation close-out
@@ -301,9 +301,9 @@ Post-Iter 11 (estimated): ~390 backend tests (≥92%), ~280 frontend tests (≥8
 **Prompt:**
 
 **Steps:**
-1. Update `PLAN_E2E_TEST_COVERAGE.md` §7 checkboxes
+1. Update `plan-e2e-test-coverage.md` §7 checkboxes
 2. Update this plan's Estado de ejecución
-3. Record in `IMPLEMENTATION_HISTORY.md`
+3. Record in `implementation-history.md`
 
 **Commit:** `docs(plan-f19h): update E2E coverage plan with final metrics`
 
@@ -467,9 +467,9 @@ Components currently **without** adequate aria/role/tabIndex coverage:
 
 ---
 
-### F19-K — Create `ARCHITECTURE.md` one-pager with Mermaid diagram (Claude)
+### F19-K — Create `architecture.md` one-pager with Mermaid diagram (Claude)
 
-**Paso objetivo:** Create a scannable one-page architecture overview for evaluators who won't read the 2K-line TECHNICAL_DESIGN.md.
+**Paso objetivo:** Create a scannable one-page architecture overview for evaluators who won't read the 2K-line technical-design.md.
 
 **Prompt:**
 
@@ -477,14 +477,14 @@ Components currently **without** adequate aria/role/tabIndex coverage:
 
 **Branch:** `improvement/iteration-12-final`
 
-**Objective:** Create `docs/projects/veterinary-medical-records/tech/ARCHITECTURE.md` — a ~100-line document with a Mermaid C4-style diagram, tech stack table, data flow summary, and links to detailed docs.
+**Objective:** Create `docs/projects/veterinary-medical-records/tech/architecture.md` — a ~100-line document with a Mermaid C4-style diagram, tech stack table, data flow summary, and links to detailed docs.
 
 **Structure:**
 
 ```markdown
 # Architecture Overview
 
-> One-page summary for evaluators. For full detail, see [TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md).
+> One-page summary for evaluators. For full detail, see [technical-design.md](technical-design.md).
 
 ## Tech stack
 
@@ -535,11 +535,11 @@ graph TB
 4. **Review** → Evaluator sees structured fields, can edit, approve, reprocess
 ```
 
-**Adjust:** Read current TECHNICAL_DESIGN.md headings and ADR references to ensure accuracy. Verify tech versions from `pyproject.toml` and `package.json`.
+**Adjust:** Read current technical-design.md headings and ADR references to ensure accuracy. Verify tech versions from `pyproject.toml` and `package.json`.
 
 **Validation:** Links are valid, Mermaid renders, file < 150 lines.
 
-**Commit:** `docs(plan-f19k): add ARCHITECTURE.md one-pager with Mermaid diagram`
+**Commit:** `docs(plan-f19k): add architecture.md one-pager with Mermaid diagram`
 
 ⚠️ AUTO-CHAIN → F19-L
 
@@ -581,9 +581,9 @@ graph TB
    > 📸 _Screenshot placeholder — run `docker compose up --build` and visit `http://localhost:5173` to see the app._
    ```
 
-4. **Add link to `ARCHITECTURE.md`** in the "Architecture at a glance" section:
+4. **Add link to `architecture.md`** in the "Architecture at a glance" section:
    ```markdown
-   For a visual overview, see [ARCHITECTURE.md](docs/projects/veterinary-medical-records/tech/ARCHITECTURE.md).
+   For a visual overview, see [architecture.md](docs/projects/veterinary-medical-records/tech/architecture.md).
    ```
 
 5. **Verify existing links** — All relative links in README must still resolve.
@@ -601,7 +601,7 @@ graph TB
 
 ### F19-M — DELIVERY_SUMMARY final refresh (Claude)
 
-**Paso objetivo:** Update DELIVERY_SUMMARY.md with final metrics from Iterations 11 and 12.
+**Paso objetivo:** Update delivery-summary.md with final metrics from Iterations 11 and 12.
 
 **Prompt:**
 
@@ -620,7 +620,7 @@ _Just-in-time — depends on Iter 11+12 actual results. Claude writes this after
 
 ### F19-N — FUTURE_IMPROVEMENTS → "Known Limitations & Future Directions" (Claude)
 
-**Paso objetivo:** Reframe FUTURE_IMPROVEMENTS.md from an active backlog to a permanent "known limitations and ideas" document appropriate for a completed project.
+**Paso objetivo:** Reframe future-improvements.md from an active backlog to a permanent "known limitations and ideas" document appropriate for a completed project.
 
 **Prompt:**
 
@@ -628,7 +628,7 @@ _Just-in-time — depends on Iter 11+12 actual results. Claude writes this after
 
 **Branch:** `improvement/iteration-12-final`
 
-**Objective:** Restructure FUTURE_IMPROVEMENTS.md to reflect project completion. The document should communicate "we know about these and chose not to pursue them" rather than "these are upcoming tasks."
+**Objective:** Restructure future-improvements.md to reflect project completion. The document should communicate "we know about these and chose not to pursue them" rather than "these are upcoming tasks."
 
 **Changes required:**
 
@@ -667,7 +667,7 @@ _Just-in-time — depends on Iter 11+12 actual results. Claude writes specifics 
 **Changes required:**
 1. Mark resolved limitations (repo split, E2E coverage, accessibility).
 2. Update metrics to final numbers.
-3. Cross-reference ARCHITECTURE.md and KNOWN_LIMITATIONS.md.
+3. Cross-reference architecture.md and KNOWN_LIMITATIONS.md.
 4. Ensure §14 reflects the "completed project" framing.
 
 **Commit:** `docs(plan-f19o): TECHNICAL_DESIGN §14 final update`
@@ -704,5 +704,5 @@ cd frontend && npx vitest run
 
 # Verify docs:
 # Open README.md in GitHub preview — badges render, links work
-# Open ARCHITECTURE.md — Mermaid diagram renders
+# Open architecture.md — Mermaid diagram renders
 ```

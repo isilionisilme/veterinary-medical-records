@@ -1,6 +1,6 @@
 # Plan: Iteration 9 — E2E testing + evaluator experience polish
 
-> **Operational rules:** See [EXECUTION_RULES.md](EXECUTION_RULES.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
+> **Operational rules:** See [execution-rules.md](execution-rules.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
 
 **Rama:** `improvement/iteration-9-e2e`
 **PR:** #163 (single PR → `main`)
@@ -29,14 +29,14 @@ Post-merge Iteration 8: all files >500 LOC are modularized, backend coverage 90%
 - [x] F15-C 🔄 — E2E: review flow — select document → verify PDF renders with toolbar → verify structured data panel loads (Codex)
 - [x] F15-D 🔄 — E2E: edit flow — edit a field → confirm edit → verify persistence (reload page) (Codex)
 - [x] F15-E 🔄 — E2E: mark reviewed — toggle reviewed status → verify banner/state change (Codex)
-- [x] F15-F 🚧 — DELIVERY_SUMMARY.md refresh: update metrics for Iter 7-8, add E2E evidence (Claude) ✅ (Claude, 2026-02-27)
-- [x] F15-G 🚧 — TECHNICAL_DESIGN.md §14 refresh: verify/update Known Limitations post-Iter 8 (Claude) ✅ (Claude, 2026-02-27)
+- [x] F15-F 🚧 — delivery-summary.md refresh: update metrics for Iter 7-8, add E2E evidence (Claude) ✅ (Claude, 2026-02-27)
+- [x] F15-G 🚧 — technical-design.md §14 refresh: verify/update Known Limitations post-Iter 8 (Claude) ✅ (Claude, 2026-02-27)
 - [x] F15-H 🚧 — README E2E section: add instructions to run E2E tests + CI badge (Claude) ✅ (Claude, 2026-02-27)
 - [ ] F15-I 🔄 — cli.py tests: coverage 0% → 80%+ (Codex) ⏭️ DEFERRED to Iter 10 (F16-H)
 - [ ] F15-J 🔄 — Docker healthcheck: nginx serves `/index.html` (not just TCP) (Codex) ⏭️ DEFERRED to Iter 10 (F16-I)
 - [x] F15-K 🚧 — FUTURE_IMPROVEMENTS refresh + smoke test (Claude) ✅ (Claude, 2026-02-27)
 
-**Iteration closed:** 2026-02-27. PR #163 merged (squash). Archived to [COMPLETED_ITER-9.md](completed/COMPLETED_ITER-9.md).
+**Iteration closed:** 2026-02-27. PR #163 merged (squash). Archived to [completed-iter-9-e2e.md](completed/completed-2026-02-26-iter-9-e2e.md).
 
 ---
 

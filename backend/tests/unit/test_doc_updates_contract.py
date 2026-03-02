@@ -22,7 +22,7 @@ DOC_UPDATES_ROUTER_PARITY_MAP = (
     REPO_ROOT / "docs" / "agent_router" / "01_WORKFLOW" / "DOC_UPDATES" / "router_parity_map.json"
 )
 EXECUTION_RULES = (
-    REPO_ROOT / "docs" / "projects" / "veterinary-medical-records" / "ops" / "EXECUTION_RULES.md"
+    REPO_ROOT / "docs" / "projects" / "veterinary-medical-records" / "ops" / "execution-rules.md"
 )
 BACKEND_IMPLEMENTATION_ROUTER_ENTRY = (
     REPO_ROOT / "docs" / "agent_router" / "04_PROJECT" / "BACKEND_IMPLEMENTATION" / "00_entry.md"
@@ -39,7 +39,7 @@ IMPLEMENTATION_PLAN = (
     / "projects"
     / "veterinary-medical-records"
     / "delivery"
-    / "IMPLEMENTATION_PLAN.md"
+    / "implementation-plan.md"
 )
 IMPLEMENTATION_PLAN_ROUTER_ENTRY = (
     REPO_ROOT / "docs" / "agent_router" / "04_PROJECT" / "IMPLEMENTATION_PLAN" / "00_entry.md"
@@ -198,20 +198,20 @@ def test_doc_test_sync_map_has_minimum_rules() -> None:
     assert '"doc_glob": "docs/agent_router/*.md"' in text
     assert '"doc_glob": "docs/agent_router/**/*.md"' in text
     assert (
-        '"doc_glob": "docs/projects/veterinary-medical-records/archive/12_FACTOR_AUDIT.md"' in text
+        '"doc_glob": "docs/projects/veterinary-medical-records/archive/12-factor-audit.md"' in text
     )
-    assert '"doc_glob": "docs/shared/ENGINEERING_PLAYBOOK.md"' in text
+    assert '"doc_glob": "docs/shared/engineering-playbook.md"' in text
     assert (
-        '"doc_glob": "docs/projects/veterinary-medical-records/tech/BACKEND_IMPLEMENTATION.md"'
+        '"doc_glob": "docs/projects/veterinary-medical-records/tech/backend-implementation.md"'
         in text
     )
-    assert '"doc_glob": "docs/projects/veterinary-medical-records/design/UX_DESIGN.md"' in text
-    assert '"doc_glob": "docs/projects/veterinary-medical-records/tech/TECHNICAL_DESIGN.md"' in text
+    assert '"doc_glob": "docs/projects/veterinary-medical-records/design/ux-design.md"' in text
+    assert '"doc_glob": "docs/projects/veterinary-medical-records/tech/technical-design.md"' in text
     assert '"doc_glob": "docs/projects/veterinary-medical-records/tech/adr/**/*.md"' in text
     assert '"owner_any"' in text
     assert '"docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/*.md"' in text
     assert '"docs/agent_router/04_PROJECT/BACKEND_IMPLEMENTATION/*.md"' in text
-    assert '"doc_glob": "docs/shared/BRAND_GUIDELINES.md"' in text
+    assert '"doc_glob": "docs/shared/brand-guidelines.md"' in text
     assert "test_doc_updates_contract.py" in text
     assert "check_brand_compliance.py" in text
 
@@ -223,16 +223,16 @@ def test_router_parity_map_has_product_design_rule() -> None:
     assert '"docs/projects/veterinary-medical-records/*.md"' in text
     assert '"docs/shared/*.md"' in text
     assert (
-        '"source_doc": "docs/projects/veterinary-medical-records/archive/12_FACTOR_AUDIT.md"'
+        '"source_doc": "docs/projects/veterinary-medical-records/archive/12-factor-audit.md"'
         in text
     )
     assert (
-        '"source_doc": "docs/projects/veterinary-medical-records/design/PRODUCT_DESIGN.md"' in text
+        '"source_doc": "docs/projects/veterinary-medical-records/design/product-design.md"' in text
     )
     assert (
-        '"source_doc": "docs/projects/veterinary-medical-records/tech/TECHNICAL_DESIGN.md"' in text
+        '"source_doc": "docs/projects/veterinary-medical-records/tech/technical-design.md"' in text
     )
-    assert '"source_doc": "docs/shared/ENGINEERING_PLAYBOOK.md"' in text
+    assert '"source_doc": "docs/shared/engineering-playbook.md"' in text
     assert (
         '"path": "docs/agent_router/04_PROJECT/PRODUCT_DESIGN/'
         '76_conceptual-model-local-schema-global-schema-and-mapping.md"' in text
