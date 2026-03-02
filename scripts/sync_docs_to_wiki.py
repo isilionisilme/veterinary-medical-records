@@ -185,7 +185,7 @@ def _render_tree_lines(
     for folder in sorted(folders, key=str.lower):
         page_name = folder_pages.get(folder)
         if page_name:
-            lines.append(f"{indent}- [[{page_name}|{folder}]]")
+            lines.append(f"{indent}- [{folder}]({page_name})")
         else:
             lines.append(f"{indent}- {folder}")
         child = tree.get(folder)
