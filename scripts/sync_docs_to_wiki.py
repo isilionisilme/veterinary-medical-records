@@ -211,6 +211,7 @@ def _build_sidebar(
 ) -> str:
     project_tree = _collect_tree(mapping, PROJECT_ROOT)
     shared_tree = _collect_tree(mapping, SHARED_ROOT)
+    shared_tree_sidebar = {k: v for k, v in shared_tree.items() if k != "__files__"}
     project_tree_sidebar = {k: v for k, v in project_tree.items() if k != "__files__"}
 
     lines = [
@@ -221,10 +222,10 @@ def _build_sidebar(
     ]
     lines.extend(
         _render_tree_lines(
-            shared_tree,
+            shared_tree_sidebar,
             indent="  ",
             depth=2,
-            max_depth=max_depth,
+            max_depth=2,
             folder_pages=shared_folder_pages or {},
         )
     )
