@@ -246,10 +246,25 @@ def _build_sidebar(
     return "\n".join(lines)
 
 
-def _build_section_landing(title: str, intro: str, pages: list[str]) -> str:
-    lines = [f"# {title}", "", intro, "", "## Pages", ""]
-    for page in pages:
-        lines.append(f"- [[{page}]]")
+def _build_root_index_page(
+    title: str,
+    intro: str,
+    purpose: str,
+    pages: list[tuple[str, str]],
+) -> str:
+    lines = [f"# {title}", "", intro, "", "## Documentation by category", ""]
+    lines.append("| Category | Purpose |")
+    lines.append("|---|---|")
+    lines.append(f"| general | {purpose} |")
+    lines.append("")
+    lines.append("## Pages")
+    lines.append("")
+    lines.append("### General")
+    lines.append("")
+    lines.append(purpose)
+    lines.append("")
+    for label, page in pages:
+        lines.append(f"- [[{page}|{label}]]")
     lines.append("")
     return "\n".join(lines)
 
@@ -465,42 +480,29 @@ def main() -> int:
         rewritten = _rewrite_links(content, source, mapping, args.repo, args.ref)
         (wiki_dir / f"{page}.md").write_text(rewritten, encoding="utf-8")
 
-    project_pages = sorted(
-        [
-            page
-            for source, page in mapping.items()
-            if source.as_posix().startswith("docs/projects/veterinary-medical-records/")
-            and not source.as_posix().startswith(
-                "docs/projects/veterinary-medical-records/02-tech/adr/"
-            )
-        ]
-    )
-    adr_pages = sorted(
-        [
-            page
-            for source, page in mapping.items()
-            if source.as_posix().startswith("docs/projects/veterinary-medical-records/02-tech/adr/")
-        ]
-    )
     shared_pages = sorted(
-        [page for source, page in mapping.items() if source.as_posix().startswith("docs/shared/")]
+        [
+            (page, page)
+            for source, page in mapping.items()
+            if source.as_posix().startswith("docs/shared/")
+        ],
+        key=lambda item: item[0].lower(),
     )
 
     (wiki_dir / "Projects.md").write_text(
-        _build_section_landing(
+        _build_root_index_page(
             "Projects",
-            (
-                "Human-facing, project-specific documentation. "
-                "This section also includes ADR pages for this project."
-            ),
-            project_pages + adr_pages,
+            "Human-facing, project-specific documentation hubs.",
+            "Contains project root pages for active and historical projects.",
+            [(PROJECT_INDEX_TITLE, PROJECT_INDEX_PAGE)],
         ),
         encoding="utf-8",
     )
     (wiki_dir / "Shared.md").write_text(
-        _build_section_landing(
-            "Shared",
+        _build_root_index_page(
+            "Shared Documentation",
             "Human-facing, cross-project standards and guidelines.",
+            "Contains canonical cross-project standards and guidelines.",
             shared_pages,
         ),
         encoding="utf-8",
