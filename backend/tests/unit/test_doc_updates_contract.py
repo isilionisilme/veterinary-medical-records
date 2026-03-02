@@ -22,7 +22,7 @@ DOC_UPDATES_ROUTER_PARITY_MAP = (
     REPO_ROOT / "docs" / "agent_router" / "01_WORKFLOW" / "DOC_UPDATES" / "router_parity_map.json"
 )
 EXECUTION_RULES = (
-    REPO_ROOT / "docs" / "projects" / "veterinary-medical-records" / "ops" / "execution-rules.md"
+    REPO_ROOT / "docs" / "projects" / "veterinary-medical-records" / "03-ops" / "execution-rules.md"
 )
 BACKEND_IMPLEMENTATION_ROUTER_ENTRY = (
     REPO_ROOT / "docs" / "agent_router" / "04_PROJECT" / "BACKEND_IMPLEMENTATION" / "00_entry.md"
@@ -38,7 +38,7 @@ IMPLEMENTATION_PLAN = (
     / "docs"
     / "projects"
     / "veterinary-medical-records"
-    / "delivery"
+    / "04-delivery"
     / "implementation-plan.md"
 )
 IMPLEMENTATION_PLAN_ROUTER_ENTRY = (
