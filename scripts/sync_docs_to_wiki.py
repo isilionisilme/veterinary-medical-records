@@ -258,7 +258,7 @@ def _build_folder_index(
     folder_name: str,
     child_pages: list[tuple[str, str]],
     child_folders: list[str],
-    child_folder_contents: dict[str, list[str]],
+    child_folder_contents: dict[str, list[tuple[str, str]]],
     folder_pages: dict[str, str],
     display_title: str | None = None,
 ) -> str:
@@ -285,30 +285,24 @@ def _build_folder_index(
     if has_categories:
         lines.append("## Documentation by category")
         lines.append("")
-        lines.append("| Category | Purpose | Contents |")
-        lines.append("|---|---|---|")
+        lines.append("| Category | Purpose |")
+        lines.append("|---|---|")
 
         if child_pages:
-            general_contents = ", ".join(
-                label for label, _ in sorted(child_pages, key=lambda x: x[0].lower())
-            )
-            lines.append(
-                "| general | "
-                "Documents in this section without a sub-category. | "
-                f"{general_contents} |"
-            )
+            lines.append("| general | Documents in this section without a sub-category. |")
 
         for cf in sorted(child_folders, key=str.lower):
             page_name = folder_pages.get(cf, cf)
             category_purpose = _CATEGORY_PURPOSES.get(cf, "")
-            contents = ", ".join(child_folder_contents.get(cf, [])) or "-"
-            lines.append(f"| [[{page_name}|{cf}]] | {category_purpose or '-'} | {contents} |")
+            lines.append(f"| [[{page_name}|{cf}]] | {category_purpose or '-'} |")
         lines.append("")
         lines.append("## Pages")
         lines.append("")
 
         if child_pages:
             lines.append("### General")
+            lines.append("")
+            lines.append("Documents in this section without a sub-category.")
             lines.append("")
             for label, page in sorted(child_pages, key=lambda x: x[0].lower()):
                 lines.append(f"- [[{page}|{label}]]")
@@ -318,7 +312,17 @@ def _build_folder_index(
             page_name = folder_pages.get(cf, cf)
             lines.append(f"### {cf}")
             lines.append("")
-            lines.append(f"- [[{page_name}|{cf}]]")
+            category_purpose = _CATEGORY_PURPOSES.get(cf)
+            if category_purpose:
+                lines.append(category_purpose)
+                lines.append("")
+
+            category_docs = child_folder_contents.get(cf, [])
+            if category_docs:
+                for label, page in category_docs:
+                    lines.append(f"- [[{page}|{label}]]")
+            else:
+                lines.append(f"- [[{page_name}|{cf}]]")
             lines.append("")
     else:
         lines.append("## Documentation in this category")
@@ -408,16 +412,16 @@ def _generate_indices_recursive(
             child_pages = [(label, page) for label, page in child_pages if label.lower() != "index"]
 
         child_folders = [k for k in child if k != "__files__"]
-        child_folder_contents: dict[str, list[str]] = {}
+        child_folder_contents: dict[str, list[tuple[str, str]]] = {}
         for cf in child_folders:
             sub = child.get(cf)
             if not isinstance(sub, dict):
                 continue
             sub_files = sub.get("__files__", [])
-            labels = [label for label, _ in sub_files] if isinstance(sub_files, list) else []
+            docs = list(sub_files) if isinstance(sub_files, list) else []
             if cf == "adr":
-                labels = [label for label in labels if label.lower() != "index"]
-            child_folder_contents[cf] = sorted(labels, key=str.lower)
+                docs = [(label, page) for label, page in docs if label.lower() != "index"]
+            child_folder_contents[cf] = sorted(docs, key=lambda x: x[0].lower())
 
         _generate_indices_recursive(child, wiki_dir, folder_pages)
 
