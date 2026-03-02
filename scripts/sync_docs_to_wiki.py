@@ -202,11 +202,11 @@ def _build_sidebar(
         "## Documentation",
         "",
         "- [[Home]]",
-        "- [[Projects]]",
+        "- [[Shared]]",
     ]
     lines.extend(
         _render_tree_lines(
-            project_tree,
+            shared_tree,
             indent="  ",
             depth=2,
             max_depth=max_depth,
@@ -214,10 +214,10 @@ def _build_sidebar(
         )
     )
 
-    lines.append("- [[Shared]]")
+    lines.append("- [[Projects]]")
     lines.extend(
         _render_tree_lines(
-            shared_tree,
+            project_tree,
             indent="  ",
             depth=2,
             max_depth=max_depth,
