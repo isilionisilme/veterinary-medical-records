@@ -5,6 +5,7 @@ import argparse
 import re
 from collections import Counter
 from pathlib import Path
+from urllib.parse import quote
 
 ROOT_README = Path("README.md")
 DOCS_README = Path("docs/README.md")
@@ -95,6 +96,11 @@ def _split_anchor(target: str) -> tuple[str, str]:
     return base, f"#{anchor}"
 
 
+def _sidebar_link(label: str, page: str, wiki_base_url: str) -> str:
+    encoded_page = quote(page, safe="/-")
+    return f"[{label}]({wiki_base_url}/{encoded_page})"
+
+
 def _wiki_link(label: str, page: str) -> str:
     return f"[[{page}|{label}]]"
 
@@ -173,6 +179,7 @@ def _render_tree_lines(
     depth: int = 1,
     max_depth: int = 3,
     folder_pages: dict[str, str] | None = None,
+    wiki_base_url: str = "",
 ) -> list[str]:
     """Render a nested tree as indented Markdown list lines.
 
@@ -196,7 +203,7 @@ def _render_tree_lines(
     for folder in sorted(folders, key=str.lower):
         page_name = folder_pages.get(folder)
         if page_name:
-            lines.append(f"{indent}- {_wiki_link(folder, page_name)}")
+            lines.append(f"{indent}- {_sidebar_link(folder, page_name, wiki_base_url)}")
         else:
             lines.append(f"{indent}- {folder}")
         child = tree.get(folder)
@@ -208,6 +215,7 @@ def _render_tree_lines(
                     depth=depth + 1,
                     max_depth=max_depth,
                     folder_pages=folder_pages,
+                    wiki_base_url=wiki_base_url,
                 )
             )
 
@@ -216,6 +224,7 @@ def _render_tree_lines(
 
 def _build_sidebar(
     mapping: dict[Path, str],
+    wiki_base_url: str,
     project_folder_pages: dict[str, str] | None = None,
     shared_folder_pages: dict[str, str] | None = None,
     shared_top_folders: tuple[str, ...] | None = None,
@@ -233,7 +242,7 @@ def _build_sidebar(
         "## Documentation",
         "",
         "- [[Home]]",
-        f"- {_wiki_link('Shared Documentation', 'Shared')}",
+        f"- {_sidebar_link('Shared Documentation', 'Shared', wiki_base_url)}",
     ]
     lines.extend(
         _render_tree_lines(
@@ -242,11 +251,12 @@ def _build_sidebar(
             depth=2,
             max_depth=2,
             folder_pages=shared_folder_pages or {},
+            wiki_base_url=wiki_base_url,
         )
     )
 
     lines.append("- [[Projects]]")
-    lines.append(f"  - {_wiki_link(PROJECT_INDEX_TITLE, PROJECT_INDEX_PAGE)}")
+    lines.append(f"  - {_sidebar_link(PROJECT_INDEX_TITLE, PROJECT_INDEX_PAGE, wiki_base_url)}")
     lines.extend(
         _render_tree_lines(
             project_tree_sidebar,
@@ -254,6 +264,7 @@ def _build_sidebar(
             depth=3,
             max_depth=max_depth,
             folder_pages=project_folder_pages or {},
+            wiki_base_url=wiki_base_url,
         )
     )
 
@@ -599,6 +610,7 @@ def main() -> int:
     (wiki_dir / "_Sidebar.md").write_text(
         _build_sidebar(
             mapping,
+            wiki_base_url=f"https://github.com/{args.repo}/wiki",
             project_folder_pages=project_folder_pages,
             shared_folder_pages=shared_folder_pages,
             shared_top_folders=TOP_LEVEL_CATEGORIES,
