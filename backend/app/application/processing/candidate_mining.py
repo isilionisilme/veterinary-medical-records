@@ -435,4 +435,18 @@ def _candidate_sort_key(item: dict[str, object], key: str) -> tuple[float, float
             return 1.0, confidence
         return 0.0, confidence
 
+    if key == "pet_name":
+        raw_value = str(item.get("value", "")).strip()
+        # Prefer candidates that look like real names: alphabetic, 2-40 chars,
+        # no digits, no field-label patterns.  This gives labeled matches with
+        # clean values an edge over noisy heuristic guesses without changing
+        # the global confidence clamp.
+        is_clean = bool(
+            raw_value
+            and not re.search(r"\d", raw_value)
+            and not re.search(r"(?i)^(?:especie|raza|sexo|chip|fecha)", raw_value)
+            and 2 <= len(raw_value) <= 40
+        )
+        return (1.0 if is_clean else 0.0), confidence
+
     return 0.0, confidence
