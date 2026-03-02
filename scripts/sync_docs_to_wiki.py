@@ -208,7 +208,7 @@ def _build_sidebar(
         _render_tree_lines(
             project_tree,
             indent="  ",
-            depth=1,
+            depth=2,
             max_depth=max_depth,
             folder_pages=folder_pages or {},
         )
@@ -219,7 +219,7 @@ def _build_sidebar(
         _render_tree_lines(
             shared_tree,
             indent="  ",
-            depth=1,
+            depth=2,
             max_depth=max_depth,
             folder_pages=folder_pages or {},
         )
