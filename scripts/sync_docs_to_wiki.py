@@ -95,6 +95,10 @@ def _split_anchor(target: str) -> tuple[str, str]:
     return base, f"#{anchor}"
 
 
+def _wiki_link(label: str, page: str) -> str:
+    return f"[[{page}|{label}]]"
+
+
 def _rewrite_links(
     content: str, source_rel: Path, mapping: dict[Path, str], repo: str, ref: str
 ) -> str:
@@ -192,7 +196,7 @@ def _render_tree_lines(
     for folder in sorted(folders, key=str.lower):
         page_name = folder_pages.get(folder)
         if page_name:
-            lines.append(f"{indent}- [{folder}]({page_name})")
+            lines.append(f"{indent}- {_wiki_link(folder, page_name)}")
         else:
             lines.append(f"{indent}- {folder}")
         child = tree.get(folder)
@@ -229,7 +233,7 @@ def _build_sidebar(
         "## Documentation",
         "",
         "- [[Home]]",
-        "- [Shared Documentation](Shared)",
+        f"- {_wiki_link('Shared Documentation', 'Shared')}",
     ]
     lines.extend(
         _render_tree_lines(
@@ -242,7 +246,7 @@ def _build_sidebar(
     )
 
     lines.append("- [[Projects]]")
-    lines.append(f"  - [{PROJECT_INDEX_TITLE}]({PROJECT_INDEX_PAGE})")
+    lines.append(f"  - {_wiki_link(PROJECT_INDEX_TITLE, PROJECT_INDEX_PAGE)}")
     lines.extend(
         _render_tree_lines(
             project_tree_sidebar,
@@ -322,7 +326,7 @@ def _build_folder_index(
             page_name = folder_pages.get(cf, cf)
             category_purpose = _CATEGORY_PURPOSES.get(cf, "")
             if link_categories:
-                lines.append(f"| [{cf}]({page_name}) | {category_purpose or '-'} |")
+                lines.append(f"| {_wiki_link(cf, page_name)} | {category_purpose or '-'} |")
             else:
                 lines.append(f"| {cf} | {category_purpose or '-'} |")
         lines.append("")
