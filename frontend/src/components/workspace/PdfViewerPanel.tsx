@@ -383,7 +383,7 @@ export function PdfViewerPanel({
             </div>
           )}
           {activeViewerTab === "technical" && (
-            <div className="h-full overflow-y-auto rounded-card border border-borderSubtle bg-surface p-3">
+            <div className="h-full overflow-y-auto rounded-card border border-borderSubtle bg-surface p-4">
               <div className="rounded-control border border-borderSubtle bg-surface px-2 py-2">
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-1">{viewerModeToolbarIcons}</div>
