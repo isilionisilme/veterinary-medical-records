@@ -258,6 +258,7 @@ def _build_folder_index(
     folder_name: str,
     child_pages: list[tuple[str, str]],
     child_folders: list[str],
+    child_folder_contents: dict[str, list[str]],
     folder_pages: dict[str, str],
     display_title: str | None = None,
 ) -> str:
@@ -284,20 +285,41 @@ def _build_folder_index(
     if has_categories:
         lines.append("## Documentation by category")
         lines.append("")
-        if purpose:
-            lines.append(purpose)
+        lines.append("| Category | Purpose | Contents |")
+        lines.append("|---|---|---|")
+
+        if child_pages:
+            general_contents = ", ".join(
+                label for label, _ in sorted(child_pages, key=lambda x: x[0].lower())
+            )
+            lines.append(
+                "| general | "
+                "Documents in this section without a sub-category. | "
+                f"{general_contents} |"
+            )
+
+        for cf in sorted(child_folders, key=str.lower):
+            page_name = folder_pages.get(cf, cf)
+            category_purpose = _CATEGORY_PURPOSES.get(cf, "")
+            contents = ", ".join(child_folder_contents.get(cf, [])) or "-"
+            lines.append(f"| [[{page_name}|{cf}]] | {category_purpose or '-'} | {contents} |")
+        lines.append("")
+        lines.append("## Pages")
+        lines.append("")
+
+        if child_pages:
+            lines.append("### General")
+            lines.append("")
+            for label, page in sorted(child_pages, key=lambda x: x[0].lower()):
+                lines.append(f"- [[{page}|{label}]]")
             lines.append("")
 
         for cf in sorted(child_folders, key=str.lower):
             page_name = folder_pages.get(cf, cf)
-            category_purpose = _CATEGORY_PURPOSES.get(cf)
-            if category_purpose:
-                lines.append(f"- [[{page_name}|{cf}]] — {category_purpose}")
-            else:
-                lines.append(f"- [[{page_name}|{cf}]]")
-        lines.append("")
-        lines.append("## Pages")
-        lines.append("")
+            lines.append(f"### {cf}")
+            lines.append("")
+            lines.append(f"- [[{page_name}|{cf}]]")
+            lines.append("")
     else:
         lines.append("## Documentation in this category")
         lines.append("")
@@ -308,12 +330,11 @@ def _build_folder_index(
         lines.append("")
         lines.append("## Pages")
         lines.append("")
-
-    if child_pages:
-        for label, page in sorted(child_pages, key=lambda x: x[0].lower()):
-            lines.append(f"- [[{page}|{label}]]")
-    else:
-        lines.append("- (No direct pages in this section)")
+        if child_pages:
+            for label, page in sorted(child_pages, key=lambda x: x[0].lower()):
+                lines.append(f"- [[{page}|{label}]]")
+        else:
+            lines.append("- (No direct pages in this section)")
 
     lines.append("")
     return "\n".join(lines)
@@ -341,6 +362,7 @@ def _build_project_index(
         folder_name="veterinary-medical-records",
         child_pages=child_pages,
         child_folders=child_folders,
+        child_folder_contents={},
         folder_pages=folder_pages,
         display_title=PROJECT_INDEX_TITLE,
     )
@@ -386,10 +408,26 @@ def _generate_indices_recursive(
             child_pages = [(label, page) for label, page in child_pages if label.lower() != "index"]
 
         child_folders = [k for k in child if k != "__files__"]
+        child_folder_contents: dict[str, list[str]] = {}
+        for cf in child_folders:
+            sub = child.get(cf)
+            if not isinstance(sub, dict):
+                continue
+            sub_files = sub.get("__files__", [])
+            labels = [label for label, _ in sub_files] if isinstance(sub_files, list) else []
+            if cf == "adr":
+                labels = [label for label in labels if label.lower() != "index"]
+            child_folder_contents[cf] = sorted(labels, key=str.lower)
 
         _generate_indices_recursive(child, wiki_dir, folder_pages)
 
-        content = _build_folder_index(folder, child_pages, child_folders, folder_pages)
+        content = _build_folder_index(
+            folder,
+            child_pages,
+            child_folders,
+            child_folder_contents,
+            folder_pages,
+        )
         (wiki_dir / f"{page_name}.md").write_text(content, encoding="utf-8")
 
 

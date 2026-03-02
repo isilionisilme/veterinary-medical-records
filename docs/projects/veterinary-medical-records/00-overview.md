@@ -13,7 +13,7 @@ AI-assisted processing of veterinary clinical records — extracting, structurin
 | [metrics/](04-delivery/) | ¿Cuánto costó? | Copilot usage and cost analysis |
 | [archive/](99-archive/) | Material histórico | 12-Factor audit, CTO review, codebase audit |
 
-## Quick links
+## Pages
 
 ### Design
 - [product-design.md](01-design/product-design.md) — problem framing, scope, and governance.
