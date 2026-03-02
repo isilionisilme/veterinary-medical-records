@@ -3,13 +3,22 @@ from __future__ import annotations
 
 import argparse
 import re
+from collections import Counter
 from pathlib import Path
 
 ROOT_README = Path("README.md")
 DOCS_README = Path("docs/README.md")
-PROJECT_ROOT = Path("docs/project")
+PROJECT_ROOT = Path("docs/projects/veterinary-medical-records")
 SHARED_ROOT = Path("docs/shared")
-ADR_ROOT = Path("docs/project/adr")
+ADR_ROOT = Path("docs/projects/veterinary-medical-records/tech/adr")
+
+# Fixed page names for well-known READMEs (avoids stem collisions).
+_FIXED_NAMES: dict[str, str] = {
+    DOCS_README.as_posix(): "Home",
+    ROOT_README.as_posix(): "README",
+    f"{PROJECT_ROOT.as_posix()}/README.md": "Project-Overview",
+    f"{ADR_ROOT.as_posix()}/README.md": "ADR-Index",
+}
 
 
 def _slug(value: str) -> str:
@@ -37,29 +46,26 @@ def _collect_sources(repo_root: Path) -> list[Path]:
     return sources
 
 
-def _page_name(source_rel: Path) -> str:
-    source_str = source_rel.as_posix()
-    if source_rel == DOCS_README:
-        return "Home"
-    if source_rel == ROOT_README:
-        return "Project-README"
+def _build_mapping(sources: list[Path]) -> dict[Path, str]:
+    """Map each source doc to a short, unique wiki page name."""
+    desired: dict[Path, str] = {}
+    for source in sources:
+        fixed = _FIXED_NAMES.get(source.as_posix())
+        if fixed:
+            desired[source] = fixed
+        else:
+            desired[source] = _slug(source.stem)
 
-    if source_str.startswith("docs/shared/"):
-        stem = source_rel.stem
-        return f"Shared-{_slug(stem)}"
+    # Disambiguate any remaining collisions by prefixing parent folder.
+    counts = Counter(desired.values())
+    collisions = {name for name, n in counts.items() if n > 1}
+    if collisions:
+        for source in list(desired.keys()):
+            if desired[source] in collisions:
+                parent = _slug(source.parent.name)
+                desired[source] = f"{parent}-{_slug(source.stem)}"
 
-    if source_str == "docs/project/adr/README.md":
-        return "Project-ADR-Index"
-
-    if source_str.startswith("docs/project/adr/"):
-        stem = source_rel.stem
-        return f"Project-ADR-{_slug(stem)}"
-
-    if source_str.startswith("docs/project/"):
-        rel_no_ext = source_rel.with_suffix("").relative_to(PROJECT_ROOT)
-        return f"Project-{_slug(rel_no_ext.as_posix())}"
-
-    raise ValueError(f"Unsupported source path for wiki mapping: {source_rel}")
+    return desired
 
 
 def _split_anchor(target: str) -> tuple[str, str]:
@@ -106,23 +112,69 @@ def _rewrite_links(
     return link_re.sub(replace, content)
 
 
-def _build_sidebar(project_pages: list[str], adr_pages: list[str], shared_pages: list[str]) -> str:
+def _collect_tree(
+    mapping: dict[Path, str],
+    root: Path,
+) -> dict[str, object]:
+    tree: dict[str, object] = {}
+    for source, page in mapping.items():
+        source_posix = source.as_posix()
+        root_posix = root.as_posix().rstrip("/") + "/"
+        if not source_posix.startswith(root_posix):
+            continue
+
+        rel = source.relative_to(root)
+        parts = list(rel.parts)
+        if not parts:
+            continue
+
+        node: dict[str, object] = tree
+        for folder in parts[:-1]:
+            child = node.setdefault(folder, {})
+            if not isinstance(child, dict):
+                child = {}
+                node[folder] = child
+            node = child
+
+        files = node.setdefault("__files__", [])
+        if isinstance(files, list):
+            files.append((rel.stem, page))
+
+    return tree
+
+
+def _render_tree_lines(tree: dict[str, object], indent: str = "") -> list[str]:
+    lines: list[str] = []
+
+    files = tree.get("__files__", [])
+    if isinstance(files, list):
+        for label, page in sorted(files, key=lambda item: item[0].lower()):
+            lines.append(f"{indent}- [[{page}|{label}]]")
+
+    folders = [key for key in tree.keys() if key != "__files__"]
+    for folder in sorted(folders, key=str.lower):
+        lines.append(f"{indent}- {folder}")
+        child = tree.get(folder)
+        if isinstance(child, dict):
+            lines.extend(_render_tree_lines(child, indent=indent + "  "))
+
+    return lines
+
+
+def _build_sidebar(mapping: dict[Path, str]) -> str:
+    project_tree = _collect_tree(mapping, PROJECT_ROOT)
+    shared_tree = _collect_tree(mapping, SHARED_ROOT)
+
     lines = [
         "## Documentation",
         "",
         "- [[Home]]",
-        "- [[Project]]",
+        "- [[Projects]]",
     ]
-    for page in project_pages:
-        lines.append(f"  - [[{page}]]")
-    if adr_pages:
-        lines.append("  - ADR")
-        for page in adr_pages:
-            lines.append(f"    - [[{page}]]")
+    lines.extend(_render_tree_lines(project_tree, indent="  "))
 
     lines.append("- [[Shared]]")
-    for page in shared_pages:
-        lines.append(f"  - [[{page}]]")
+    lines.extend(_render_tree_lines(shared_tree, indent="  "))
 
     lines.append("")
     return "\n".join(lines)
@@ -150,7 +202,7 @@ def main() -> int:
     wiki_dir.mkdir(parents=True, exist_ok=True)
 
     sources = _collect_sources(repo_root)
-    mapping = {source: _page_name(source) for source in sources}
+    mapping = _build_mapping(sources)
 
     for source, page in mapping.items():
         content = (repo_root / source).read_text(encoding="utf-8")
@@ -161,24 +213,26 @@ def main() -> int:
         [
             page
             for source, page in mapping.items()
-            if source.as_posix().startswith("docs/project/")
-            and not source.as_posix().startswith("docs/project/adr/")
+            if source.as_posix().startswith("docs/projects/veterinary-medical-records/")
+            and not source.as_posix().startswith(
+                "docs/projects/veterinary-medical-records/tech/adr/"
+            )
         ]
     )
     adr_pages = sorted(
         [
             page
             for source, page in mapping.items()
-            if source.as_posix().startswith("docs/project/adr/")
+            if source.as_posix().startswith("docs/projects/veterinary-medical-records/tech/adr/")
         ]
     )
     shared_pages = sorted(
         [page for source, page in mapping.items() if source.as_posix().startswith("docs/shared/")]
     )
 
-    (wiki_dir / "Project.md").write_text(
+    (wiki_dir / "Projects.md").write_text(
         _build_section_landing(
-            "Project",
+            "Projects",
             (
                 "Human-facing, project-specific documentation. "
                 "This section also includes ADR pages for this project."
@@ -196,20 +250,18 @@ def main() -> int:
         encoding="utf-8",
     )
 
-    (wiki_dir / "_Sidebar.md").write_text(
-        _build_sidebar(project_pages=project_pages, adr_pages=adr_pages, shared_pages=shared_pages),
-        encoding="utf-8",
-    )
+    (wiki_dir / "_Sidebar.md").write_text(_build_sidebar(mapping), encoding="utf-8")
     (wiki_dir / "_Footer.md").write_text(
         (
             "Synced automatically from canonical repository docs "
-            "(`docs/project`, `docs/shared`, and `README.md`).\n"
+            "(`docs/projects/veterinary-medical-records`, `docs/shared`, and "
+            "`README.md`).\n"
         ),
         encoding="utf-8",
     )
 
     keep = {f"{page}.md" for page in mapping.values()}
-    keep.update({"Project.md", "Shared.md", "_Sidebar.md", "_Footer.md"})
+    keep.update({"Projects.md", "Shared.md", "_Sidebar.md", "_Footer.md"})
     for md_file in wiki_dir.glob("*.md"):
         if md_file.name not in keep:
             md_file.unlink()

@@ -50,7 +50,10 @@ def main() -> int:
         "Canonical docs guard failed: found forbidden references to docs/agent_router "
         "in canonical docs."
     )
-    print("Fix: remove agent_router mentions from docs/README.md, docs/project/**, docs/shared/**.")
+    print(
+        "Fix: remove agent_router mentions from docs/README.md, "
+        "docs/projects/veterinary-medical-records/**, docs/shared/**."
+    )
     for file_path, line_number, line in all_violations:
         relative = file_path.relative_to(REPO_ROOT).as_posix()
         print(f"- {relative}:{line_number}: {line}")

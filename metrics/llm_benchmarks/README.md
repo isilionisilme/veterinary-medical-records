@@ -3,6 +3,7 @@
 This folder tracks **AI-assistant usage benchmarks** for this technical exercise:
 - what docs were consulted (by file path)
 - proxies for token cost (derived from chars read)
+- merged Copilot export usage across multiple accounts (USD + Premium Requests estimate)
 
 These metrics are **not product telemetry**. In a real system they would typically live outside the product
 repository. For this exercise, we keep them **in-repo** so evaluators can inspect methodology and discipline.
@@ -21,6 +22,9 @@ Each run includes:
 
 Important: metrics are validated by recomputing file sizes from `metrics.docs` to keep the data auditable.
 
+Important: `tok_est` is a repository-side proxy (`chars_read / 4`) for internal trend comparison only.
+It is **not** GitHub Copilot billing data and should not be interpreted as Premium Requests.
+
 ## How to run (local)
 
 1) Pick a scenario from `SCENARIOS.md` and run it as a **benchmark prompt** (include `#metrics`).
@@ -31,6 +35,45 @@ Important: metrics are validated by recomputing file sizes from `metrics.docs` t
    - `python metrics/llm_benchmarks/scripts/validate_runs.py`
 5) Update summary:
    - `python metrics/llm_benchmarks/scripts/summarize.py --write metrics/llm_benchmarks/summary.md`
+
+## Retroactive daily history (backfill)
+
+If you want a daily historical series from repository creation to today, run:
+
+- `python metrics/llm_benchmarks/scripts/backfill_daily.py --runs metrics/llm_benchmarks/runs.jsonl`
+- `python metrics/llm_benchmarks/scripts/backfill_daily.py --scenario retro_daily_operational_path --runs metrics/llm_benchmarks/runs.jsonl`
+- `python metrics/llm_benchmarks/scripts/backfill_daily.py --scenario retro_daily_docs_footprint --runs metrics/llm_benchmarks/runs.jsonl`
+- `python metrics/llm_benchmarks/scripts/backfill_daily.py --scenario retro_daily_realistic_estimate --runs metrics/llm_benchmarks/runs.jsonl`
+
+This creates one run per UTC day using the latest commit available for that day.
+These runs are marked as retrospective estimates in `metrics.violations` with `retroactive_estimate`.
+They are useful for trend visualization, but are not exact reconstructions of live assistant sessions.
+
+Scenario guidance:
+- `retro_daily_snapshot`: static document-set snapshot trend (tracks growth of canonical docs).
+- `retro_daily_operational_path`: milestone-sensitive operational trend (designed to surface reductions after docs-router adoption and plan decomposition).
+- `retro_daily_docs_footprint`: git-history-based daily docs footprint (tracks breadth of docs touched/consulted proxy each day).
+- `retro_daily_realistic_estimate`: hybrid model (operational baseline + high-signal touched docs, capped) to approximate likely docs actually read.
+
+## Multi-account real usage merge (CSV exports)
+
+If you used multiple GitHub accounts, place each account CSV export under `tmp/usage/` and run:
+
+- `python metrics/llm_benchmarks/scripts/merge_multi_account_usage.py --input-dir tmp/usage`
+
+Outputs:
+- `metrics/llm_benchmarks/account_usage_merged_daily.csv` (daily merged usage)
+- `metrics/llm_benchmarks/account_usage_quality.json` (duplicate checks + totals)
+
+Billing interpretation for merged CSV exports:
+- `Copilot` in account exports is treated as **USD** spend progression.
+- Estimated Premium Requests are derived as `USD / 0.04`.
+- This estimate is billing-oriented and does **not** map to a fixed token count.
+- Per-account included cap reference: `300` Premium Requests (`$12`) before overage.
+
+Duplicate checks included:
+- exact duplicate files (same bytes/hash)
+- duplicate Copilot daily series (same Date→Copilot values)
 
 ## Files
 

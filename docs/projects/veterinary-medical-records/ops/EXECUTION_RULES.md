@@ -6,7 +6,7 @@
 ## File structure
 
 ```
-docs/project/implementation/
+docs/projects/veterinary-medical-records/delivery/plans/
 ├── EXECUTION_RULES.md              ← YOU ARE HERE
 ├── IMPLEMENTATION_HISTORY.md       ← Timeline of all iterations
 ├── PLAN_<date>_<slug>.md           ← Active iteration plans
@@ -81,8 +81,11 @@ Mandatory rules:
 2. Before executing a `[ ]` step, the agent must mark it `⏳ EN PROGRESO (<agent>, <date>)`.
 3. `EN PROGRESO` and `BLOQUEADO` are text labels at the end of the line, not checkbox states.
 4. On completion, remove any label (`EN PROGRESO`/`BLOQUEADO`/`STEP LOCKED`) and mark `[x]`.
-5. For `BLOQUEADO`, include brief reason and next action if applicable.
-6. After code commit but before CI green + plan update, mark `🔒 STEP LOCKED`. While locked, **no other step may begin** and **no handoff may be emitted**.
+5. On completion, **append the code commit short SHA** to the line for traceability:
+   `- [x] F?-? 🔄 — Description (Agent) — ✅ \`abc1234f\``
+   If the step produced multiple commits (e.g. fix after CI failure), record the final one.
+6. For `BLOQUEADO`, include brief reason and next action if applicable.
+7. After code commit but before CI green + plan update, mark `🔒 STEP LOCKED`. While locked, **no other step may begin** and **no handoff may be emitted**.
 
 ### Agent identity rule (hard rule — applies before any other)
 **If the user writes `Continúa`:**
@@ -404,14 +407,14 @@ Execute these steps IN THIS EXACT ORDER. Do NOT reorder.
    ```
 1. **DOC NORMALIZATION (conditional — only if .md files were changed):**
    Run `git diff --name-only -- '*.md'`. If .md files appear, execute the DOC_UPDATES normalization pass. Git add normalized files (excluding the plan file).
-2. `git add -A -- . ':!docs/project/implementation/PLAN_*.md'`
+2. `git add -A -- . ':!docs/projects/veterinary-medical-records/delivery/plans/PLAN_*.md'`
 3. `git commit -m "<type>(plan-f?-?): <description>\n\nTest proof: <pytest summary> | <npm test summary>"`
    If commit fails: re-run formatters, re-add, retry ONCE. If fails again: STOP.
 
 ### STEP B — Commit plan update (only after code is committed)
 1. Edit the active plan file: change `- [ ] F?-?` to `- [x] F?-?`.
 2. Clean `## Prompt activo`: replace content with `_Completado: F?-?_` / `_Vacío._`
-3. `git add docs/project/implementation/PLAN_*.md`
+3. `git add docs/projects/veterinary-medical-records/delivery/plans/PLAN_*.md`
 4. `git commit -m "docs(plan-f?-?): mark step done"`
 
 ### STEP C — Push both commits
@@ -546,7 +549,7 @@ If the plan contains uncompleted steps (`[ ]`):
 If all steps are already `[x]`: skip this step — no intervention needed.
 
 #### 2. Update IMPLEMENTATION_HISTORY.md (mandatory)
-Add a new entry to `docs/project/implementation/IMPLEMENTATION_HISTORY.md`:
+Add a new entry to `docs/projects/veterinary-medical-records/delivery/IMPLEMENTATION_HISTORY.md`:
 1. **Timeline row:** iteration number, date, PR(s), theme, key metrics, link to completed file.
 2. **Cumulative progress column:** add a new column to the cumulative table with updated metric values for the closed iteration.
 3. **Active iteration pointer:** update the "Active iteration" section to point to Iter N+1 (or "None" if no next iteration is planned).
@@ -554,8 +557,8 @@ Add a new entry to `docs/project/implementation/IMPLEMENTATION_HISTORY.md`:
 #### 3. Rename plan → completed archive (mandatory)
 Move the plan file from active to completed using `git mv`:
 ```
-git mv docs/project/implementation/PLAN_<date>_<slug>.md \
-       docs/project/implementation/completed/COMPLETED_<date>_<slug>.md
+git mv docs/projects/veterinary-medical-records/delivery/plans/PLAN_<date>_<slug>.md \
+       docs/projects/veterinary-medical-records/delivery/plans/completed/COMPLETED_<date>_<slug>.md
 ```
 
 #### 4. DOC_UPDATES normalization (conditional)

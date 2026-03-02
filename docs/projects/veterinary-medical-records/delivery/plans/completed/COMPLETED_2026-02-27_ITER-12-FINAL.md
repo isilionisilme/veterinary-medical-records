@@ -477,7 +477,7 @@ Components currently **without** adequate aria/role/tabIndex coverage:
 
 **Branch:** `improvement/iteration-12-final`
 
-**Objective:** Create `docs/project/ARCHITECTURE.md` — a ~100-line document with a Mermaid C4-style diagram, tech stack table, data flow summary, and links to detailed docs.
+**Objective:** Create `docs/projects/veterinary-medical-records/tech/ARCHITECTURE.md` — a ~100-line document with a Mermaid C4-style diagram, tech stack table, data flow summary, and links to detailed docs.
 
 **Structure:**
 
@@ -583,7 +583,7 @@ graph TB
 
 4. **Add link to `ARCHITECTURE.md`** in the "Architecture at a glance" section:
    ```markdown
-   For a visual overview, see [ARCHITECTURE.md](docs/project/ARCHITECTURE.md).
+   For a visual overview, see [ARCHITECTURE.md](docs/projects/veterinary-medical-records/tech/ARCHITECTURE.md).
    ```
 
 5. **Verify existing links** — All relative links in README must still resolve.

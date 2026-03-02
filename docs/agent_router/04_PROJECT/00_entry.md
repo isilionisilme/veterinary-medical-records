@@ -1,6 +1,6 @@
 # Project Docs (Modules)
 
-Split, token-optimized versions of `docs/project/*`.
+Split, token-optimized versions of `docs/projects/veterinary-medical-records/*`.
 
 ## Index
 - `docs/agent_router/04_PROJECT/12_FACTOR_AUDIT/00_entry.md`

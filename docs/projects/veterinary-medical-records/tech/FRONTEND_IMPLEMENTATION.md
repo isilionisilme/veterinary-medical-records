@@ -38,7 +38,7 @@ The frontend is implemented using:
   and justify any new dependency.
 
 - **Lean design system contract**
-  Follow [`docs/project/DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md) for tokens, primitives, wrappers, and guard rules.
+  Follow [`docs/projects/veterinary-medical-records/design/DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md) for tokens, primitives, wrappers, and guard rules.
 
 - **TanStack Query**  
   Used for server state management (loading, error, invalidation) without introducing global client state complexity.
@@ -110,7 +110,7 @@ This ensures:
 ## Review Rendering Backbone (Global Schema)
 
 Rendering authority for the full key universe, ordering, section grouping, repeatability, and fallback rules is
-[`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md) (Global Schema).
+[`docs/projects/veterinary-medical-records/design/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md) (Global Schema).
 
 Frontend implementation guidance:
 - Use Global Schema as the review rendering backbone.
@@ -143,7 +143,7 @@ PDF.js must be configured with an explicit worker (required for production build
 In Vite, use a worker URL import and assign it to `GlobalWorkerOptions.workerSrc`.
 
 ### Paging and navigation rules
-- Evidence `page` values are **1-based** (as defined in [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md)). Keep viewer navigation 1-based.
+- Evidence `page` values are **1-based** (as defined in [`docs/projects/veterinary-medical-records/tech/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md)). Keep viewer navigation 1-based.
 - "Next" / "Previous" scroll within the viewer's scroll container only (no global page scroll hijacking).
 - Track active page based on scroll position (IntersectionObserver), keeping the page index in sync with what is visible.
 - Show placeholders while a page is loading/rendering; empty/blank content must be treated as a normal transient state.
@@ -166,7 +166,7 @@ Frontend implications:
 
 ## Additional File Types
 
-Format expansion is handled by dedicated user stories in [`docs/project/IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md) (US-19 and US-20).
+Format expansion is handled by dedicated user stories in [`docs/projects/veterinary-medical-records/delivery/IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md) (US-19 and US-20).
 
 ---
 
@@ -189,7 +189,7 @@ If matching fails:
 ## Confidence Rendering
 
 Confidence values are rendered as **visual attention signals**, not as control mechanisms.
-Confidence semantics are owned by [`docs/project/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md), and interaction behavior is owned by [`docs/project/UX_DESIGN.md`](UX_DESIGN.md).
+Confidence semantics are owned by [`docs/projects/veterinary-medical-records/design/PRODUCT_DESIGN.md`](PRODUCT_DESIGN.md), and interaction behavior is owned by [`docs/projects/veterinary-medical-records/design/UX_DESIGN.md`](UX_DESIGN.md).
 
 Frontend representation:
 - qualitative signal first (e.g. color or emphasis),
@@ -235,7 +235,7 @@ No frontend logic may interpret confidence as correctness or validation.
 Server state is managed exclusively via **TanStack Query**.
 
 ### Contract authority (backend)
-- Endpoint paths, payload shapes, and error semantics are owned by [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) (Appendix B3/B3.2).
+- Endpoint paths, payload shapes, and error semantics are owned by [`docs/projects/veterinary-medical-records/tech/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) (Appendix B3/B3.2).
 - This document references contracts for implementation convenience only; if any conflict exists, [`TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md) wins.
 
 ### Error handling (authoritative rule)
@@ -262,7 +262,7 @@ No custom caching or duplication of server state logic is introduced.
 
 ## Sequencing (Authority)
 
-Implementation sequencing and scope are owned by [`docs/project/IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md).
+Implementation sequencing and scope are owned by [`docs/projects/veterinary-medical-records/delivery/IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md).
 This document must not introduce or reorder stories; it only provides implementation notes within each story.
 
 ---

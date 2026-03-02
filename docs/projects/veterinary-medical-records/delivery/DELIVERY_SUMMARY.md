@@ -11,10 +11,10 @@
 |--------|-------------------|--------|--------|--------|---------|---------|-------------------|
 | Backend tests | 263 | 317 | 372 | 372+ | 372+ | 395 | **395** |
 | Frontend tests | 168 | 226 | 263 | 263+ | 263+ | 287 | **287** |
-| E2E tests | 0 | 0 | 0 | **5 specs** | 5 specs | 20 tests (8 specs) | **65 tests (22 specs)** |
+| E2E tests | 0 | 0 | 0 | **5 specs** | 5 specs | 20 tests (8 specs) | **64 tests (21 specs)** |
 | Backend coverage | 87% | 90% | 90% | 90% | 90% (≥85% enforced) | 91% (≥85% enforced) | **91%** (≥85% enforced) |
 | Frontend coverage | ~65% | 82.6% | 85% | 85% | 85% (≥80% enforced) | ~87% (≥80% enforced) | **~87%** (≥80% enforced) |
-| CI jobs | 7 | 6 | 8 | 9 (+E2E) | 9 (path-filtered + cached) | 9 (path-filtered + cached) | 9 (+ a11y audit) |
+| CI jobs | 7 | 6 | 8 | 9 (+E2E) | 9 (path-filtered + cached) | 9 (path-filtered + cached) | 10 (+ a11y audit) |
 | Lint issues | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | PRs merged | #145 | #152 | #156, #157 | #163 | #165 | #167 | **#169** (in progress) |
 
@@ -121,7 +121,7 @@ Key improvements: removed duplicated suites, added `cli.py` tests (was 0%), impr
 ### Other documentation
 
 - [`FUTURE_IMPROVEMENTS.md`](FUTURE_IMPROVEMENTS.md) — 2/4/8 week roadmap (18 items traced to audits and ADRs)
-- [`docs/project/adr/README.md`](../adr/README.md) — ADR index linking architecture decisions
+- [`docs/projects/veterinary-medical-records/tech/adr/README.md`](../adr/README.md) — ADR index linking architecture decisions
 - Root `README.md` enriched: architecture overview, ADR links, evaluator quickstart, quality gates, delivery evidence
 - `docs/README.md` updated: evaluator-first reading order, audit trail section
 
@@ -315,7 +315,7 @@ First end-to-end test suite for the application, covering the 4 critical user fl
 |------|-------------|----------------|
 | `app-loads.spec.ts` | App bootstrap | Page loads, sidebar visible, no JS errors |
 | `upload-smoke.spec.ts` | Upload → process | Upload PDF → document appears in sidebar → clickable → center panel reacts |
-| `review-flow.spec.ts` | Review workspace | Select document → PDF viewer renders (toolbar + pages) → structured panel loads |
+| `review-workflow.spec.ts` | Review workspace | Select document → PDF viewer renders (toolbar + pages) → structured panel loads |
 | `edit-flow.spec.ts` | Field editing | Open edit dialog → modify value → save → verify API call |
 | `mark-reviewed.spec.ts` | Mark reviewed toggle | Click "Marcar revisado" → verify state change → verify read-only mode |
 
@@ -410,7 +410,7 @@ Playwright E2E suite expanded from 5 tests to **20 tests across 8 spec files**, 
 |------|-------|--------------|
 | `app-loads.spec.ts` | 1 | App bootstrap + viewer empty state |
 | `upload-smoke.spec.ts` | 1 | Upload → document appears in sidebar |
-| `review-flow.spec.ts` | 1 | Select document → PDF viewer → structured panel |
+| `review-workflow.spec.ts` | 1 | Select document → PDF viewer → structured panel |
 | `pdf-viewer.spec.ts` | 6 | PDF render, page navigation, zoom, error states |
 | `document-sidebar.spec.ts` | 3 | Sidebar listing, selection, search functionality |
 | `extracted-data.spec.ts` | 3 | Structured data display, field groups, confidence indicators |

@@ -181,7 +181,7 @@ Layout note:
 
 Schema-aware rendering mode (deterministic):
 - Medical Record MVP panel uses a single canonical structured contract (non-versioned).
-- Render the fixed section order above, with **Visitas** sourced from `visits[]` (per [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md), Appendix D9).
+- Render the fixed section order above, with **Visitas** sourced from `visits[]` (per [`docs/projects/veterinary-medical-records/tech/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md), Appendix D9).
 - Required document-level placeholders (for example NHC when missing) are driven by `medical_record_view.field_slots[]` in Appendix D9, not by UI hardcoding.
 - No heuristics grouping in UI; grouping comes from `visits[]` in the canonical contract.
 
@@ -247,7 +247,7 @@ Empty states (deterministic):
 
 Otros campos detectados:
 - This section is a contract-driven bucket for explicit unmapped/other items only; no UI-side classification.
-- If the contract does not expose an explicit unmapped bucket (for example `unmapped_fields[]` / `other_fields[]`), implementation is blocked until technical alignment is defined in [`docs/project/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md).
+- If the contract does not expose an explicit unmapped bucket (for example `unmapped_fields[]` / `other_fields[]`), implementation is blocked until technical alignment is defined in [`docs/projects/veterinary-medical-records/tech/TECHNICAL_DESIGN.md`](TECHNICAL_DESIGN.md).
 
 Información del informe:
 - This section is always rendered as the final block.

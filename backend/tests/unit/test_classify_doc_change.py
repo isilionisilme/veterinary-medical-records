@@ -129,22 +129,30 @@ def test_fallback_on_error(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
 
 def test_commit_tag_override_nav(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     module = _load_module(CLASSIFIER_PATH, "scripts.classify_doc_change")
-    monkeypatch.setattr(module, "_changed_markdown_files", lambda _base: ["docs/project/A.md"])
+    monkeypatch.setattr(
+        module,
+        "_changed_markdown_files",
+        lambda _base: ["docs/projects/veterinary-medical-records/A.md"],
+    )
     monkeypatch.setattr(module, "_commit_tag_override", lambda _base: "Navigation")
     monkeypatch.setattr(module, "_classify_file", lambda _base, _path: "Rule")
     payload = _run_classifier_main(module, tmp_path, monkeypatch)
     assert payload["overall"] == "Navigation"
-    assert payload["files"]["docs/project/A.md"] == "Navigation"
+    assert payload["files"]["docs/projects/veterinary-medical-records/A.md"] == "Navigation"
 
 
 def test_commit_tag_override_rule(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     module = _load_module(CLASSIFIER_PATH, "scripts.classify_doc_change")
-    monkeypatch.setattr(module, "_changed_markdown_files", lambda _base: ["docs/project/A.md"])
+    monkeypatch.setattr(
+        module,
+        "_changed_markdown_files",
+        lambda _base: ["docs/projects/veterinary-medical-records/A.md"],
+    )
     monkeypatch.setattr(module, "_commit_tag_override", lambda _base: "Rule")
     monkeypatch.setattr(module, "_classify_file", lambda _base, _path: "Navigation")
     payload = _run_classifier_main(module, tmp_path, monkeypatch)
     assert payload["overall"] == "Rule"
-    assert payload["files"]["docs/project/A.md"] == "Rule"
+    assert payload["files"]["docs/projects/veterinary-medical-records/A.md"] == "Rule"
 
 
 def test_overall_most_restrictive(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -268,10 +276,10 @@ def test_navigation_skips_guard(tmp_path: Path, monkeypatch: pytest.MonkeyPatch)
         module,
         tmp_path,
         monkeypatch,
-        changed_files=["docs/project/A.md"],
+        changed_files=["docs/projects/veterinary-medical-records/A.md"],
         rules=[
             {
-                "doc_glob": "docs/project/*.md",
+                "doc_glob": "docs/projects/veterinary-medical-records/*.md",
                 "required_any": ["backend/tests/unit/test_doc_updates_contract.py"],
             }
         ],
@@ -287,12 +295,12 @@ def test_clarification_relaxes_required(tmp_path: Path, monkeypatch: pytest.Monk
         tmp_path,
         monkeypatch,
         changed_files=[
-            "docs/project/A.md",
+            "docs/projects/veterinary-medical-records/A.md",
             "docs/agent_router/04_PROJECT/A/00_entry.md",
         ],
         rules=[
             {
-                "doc_glob": "docs/project/*.md",
+                "doc_glob": "docs/projects/veterinary-medical-records/*.md",
                 "required_any": ["backend/tests/unit/test_doc_updates_contract.py"],
                 "owner_any": ["docs/agent_router/04_PROJECT/**/*.md"],
             },
@@ -310,12 +318,12 @@ def test_rule_full_enforcement(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
         tmp_path,
         monkeypatch,
         changed_files=[
-            "docs/project/A.md",
+            "docs/projects/veterinary-medical-records/A.md",
             "docs/agent_router/04_PROJECT/A/00_entry.md",
         ],
         rules=[
             {
-                "doc_glob": "docs/project/*.md",
+                "doc_glob": "docs/projects/veterinary-medical-records/*.md",
                 "required_any": ["backend/tests/unit/test_doc_updates_contract.py"],
                 "owner_any": ["docs/agent_router/04_PROJECT/**/*.md"],
             }
@@ -332,12 +340,12 @@ def test_missing_classification_full_check(tmp_path: Path, monkeypatch: pytest.M
         tmp_path,
         monkeypatch,
         changed_files=[
-            "docs/project/A.md",
+            "docs/projects/veterinary-medical-records/A.md",
             "docs/agent_router/04_PROJECT/A/00_entry.md",
         ],
         rules=[
             {
-                "doc_glob": "docs/project/*.md",
+                "doc_glob": "docs/projects/veterinary-medical-records/*.md",
                 "required_any": ["backend/tests/unit/test_doc_updates_contract.py"],
                 "owner_any": ["docs/agent_router/04_PROJECT/**/*.md"],
             }

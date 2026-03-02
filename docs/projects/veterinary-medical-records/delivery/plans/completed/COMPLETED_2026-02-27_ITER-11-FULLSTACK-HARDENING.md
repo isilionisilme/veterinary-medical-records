@@ -502,7 +502,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 
 5. **Add benchmark run script** — Add to `pytest.ini` a marker: `markers = benchmark: latency benchmarks`. Add npm/pip script or document the run command: `cd backend && python -m pytest tests/benchmarks/ -v --benchmark-only`.
 
-6. **Document in `docs/project/testing/`** — Create or update a brief section noting benchmark existence and how to run them.
+6. **Document in `docs/projects/veterinary-medical-records/testing/`** — Create or update a brief section noting benchmark existence and how to run them.
 
 **Validation:**
 - `cd backend && python -m pytest tests/benchmarks/ -v --benchmark-enable` → all pass with P50/P95 output.

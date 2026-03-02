@@ -83,7 +83,7 @@ def test_router_docs_do_not_use_legacy_top_level_paths() -> None:
 
 
 def test_operational_modules_do_not_directly_load_human_docs() -> None:
-    forbidden_prefixes = ("docs/shared/", "docs/project/")
+    forbidden_prefixes = ("docs/shared/", "docs/projects/veterinary-medical-records/")
     violations: list[str] = []
 
     for subfolder in ("01_WORKFLOW", "02_PRODUCT"):
@@ -201,7 +201,14 @@ def test_project_split_entry_includes_implementation_plan_us42_module() -> None:
 
 
 def test_implementation_plan_us42_status_is_propagated() -> None:
-    source_plan = _read_text(REPO_ROOT / "docs" / "project" / "IMPLEMENTATION_PLAN.md")
+    source_plan = _read_text(
+        REPO_ROOT
+        / "docs"
+        / "projects"
+        / "veterinary-medical-records"
+        / "delivery"
+        / "IMPLEMENTATION_PLAN.md"
+    )
     owner_module = _read_text(
         ROUTER_ROOT
         / "04_PROJECT"
@@ -214,7 +221,14 @@ def test_implementation_plan_us42_status_is_propagated() -> None:
 
 
 def test_technical_design_unassigned_contract_clarification_is_propagated() -> None:
-    source_doc = _read_text(REPO_ROOT / "docs" / "project" / "TECHNICAL_DESIGN.md")
+    source_doc = _read_text(
+        REPO_ROOT
+        / "docs"
+        / "projects"
+        / "veterinary-medical-records"
+        / "tech"
+        / "TECHNICAL_DESIGN.md"
+    )
     owner_doc = _read_text(
         ROUTER_ROOT
         / "04_PROJECT"
@@ -232,7 +246,14 @@ def test_technical_design_unassigned_contract_clarification_is_propagated() -> N
 
 
 def test_technical_design_sufficient_evidence_boundary_is_propagated() -> None:
-    source_doc = _read_text(REPO_ROOT / "docs" / "project" / "TECHNICAL_DESIGN.md")
+    source_doc = _read_text(
+        REPO_ROOT
+        / "docs"
+        / "projects"
+        / "veterinary-medical-records"
+        / "tech"
+        / "TECHNICAL_DESIGN.md"
+    )
     owner_doc = _read_text(
         ROUTER_ROOT
         / "04_PROJECT"
@@ -411,7 +432,14 @@ def test_product_and_ux_owner_modules_include_visit_grouping_and_copy_updates() 
 
 
 def test_frontend_implementation_note_includes_build_determinism_and_required_checks() -> None:
-    source_doc = _read_text(REPO_ROOT / "docs" / "project" / "FRONTEND_IMPLEMENTATION.md")
+    source_doc = _read_text(
+        REPO_ROOT
+        / "docs"
+        / "projects"
+        / "veterinary-medical-records"
+        / "tech"
+        / "FRONTEND_IMPLEMENTATION.md"
+    )
     owner_module = _read_text(
         ROUTER_ROOT / "04_PROJECT" / "FRONTEND_IMPLEMENTATION" / "150_implementation-note.md"
     )
@@ -436,7 +464,14 @@ def test_frontend_implementation_note_includes_build_determinism_and_required_ch
 
 
 def test_backend_implementation_schema_contract_wording_is_propagated() -> None:
-    source_doc = _read_text(REPO_ROOT / "docs" / "project" / "BACKEND_IMPLEMENTATION.md")
+    source_doc = _read_text(
+        REPO_ROOT
+        / "docs"
+        / "projects"
+        / "veterinary-medical-records"
+        / "tech"
+        / "BACKEND_IMPLEMENTATION.md"
+    )
     owner_doc = _read_text(
         ROUTER_ROOT
         / "04_PROJECT"

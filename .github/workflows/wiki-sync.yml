@@ -6,7 +6,7 @@ on:
     paths:
       - "README.md"
       - "docs/README.md"
-      - "docs/project/**"
+      - "docs/projects/veterinary-medical-records/**"
       - "docs/shared/**"
       - "scripts/sync_docs_to_wiki.py"
       - ".github/workflows/wiki-sync.yml"

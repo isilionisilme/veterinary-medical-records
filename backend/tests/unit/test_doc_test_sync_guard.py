@@ -91,7 +91,7 @@ def test_evaluate_sync_covers_root_router_docs() -> None:
 def test_evaluate_sync_fails_on_unmapped_doc_in_required_scope() -> None:
     module = _load_guard_module()
     findings = module.evaluate_sync(
-        changed_files=["docs/project/UX_DESIGN.md"],
+        changed_files=["docs/projects/veterinary-medical-records/design/UX_DESIGN.md"],
         rules=[
             {
                 "doc_glob": "docs/shared/BRAND_GUIDELINES.md",
@@ -99,7 +99,7 @@ def test_evaluate_sync_fails_on_unmapped_doc_in_required_scope() -> None:
             }
         ],
         fail_on_unmapped_docs=True,
-        required_doc_globs=["docs/project/*.md", "docs/shared/*.md"],
+        required_doc_globs=["docs/projects/veterinary-medical-records/*.md", "docs/shared/*.md"],
     )
     assert len(findings) == 1
     assert "not mapped in test_impact_map.json" in findings[0]
@@ -116,7 +116,7 @@ def test_evaluate_sync_ignores_unmapped_doc_outside_required_scope() -> None:
             }
         ],
         fail_on_unmapped_docs=True,
-        required_doc_globs=["docs/project/*.md", "docs/shared/*.md"],
+        required_doc_globs=["docs/projects/veterinary-medical-records/*.md", "docs/shared/*.md"],
     )
     assert findings == []
 
@@ -124,7 +124,7 @@ def test_evaluate_sync_ignores_unmapped_doc_outside_required_scope() -> None:
 def test_evaluate_sync_excludes_doc_matching_required_and_excluded_globs() -> None:
     module = _load_guard_module()
     findings = module.evaluate_sync(
-        changed_files=["docs/project/implementation/PLAN_X.md"],
+        changed_files=["docs/projects/veterinary-medical-records/delivery/plans/PLAN_X.md"],
         rules=[
             {
                 "doc_glob": "docs/shared/BRAND_GUIDELINES.md",
@@ -132,8 +132,8 @@ def test_evaluate_sync_excludes_doc_matching_required_and_excluded_globs() -> No
             }
         ],
         fail_on_unmapped_docs=True,
-        required_doc_globs=["docs/project/**/*.md"],
-        exclude_doc_globs=["docs/project/implementation/**"],
+        required_doc_globs=["docs/projects/veterinary-medical-records/**/*.md"],
+        exclude_doc_globs=["docs/projects/veterinary-medical-records/delivery/plans/**"],
     )
     assert findings == []
 

@@ -198,3 +198,63 @@ Do the minimum doc reading needed to:
 At the end, print the METRICS line with docs consulted.
 ```
 
+## retro_daily_snapshot
+
+```text
+#metrics
+Generate a retroactive daily benchmark snapshot for this repository.
+Use a deterministic docs set and produce one run per day from repo creation to today.
+Mark runs as retrospective estimates (not live captured sessions).
+
+At the end, print the METRICS line with docs consulted.
+```
+
+## retro_daily_operational_path
+
+```text
+#metrics
+Generate a retroactive daily benchmark focused on the operational decision path.
+Use a deterministic minimal docs set that changes with repo architecture milestones:
+- before docs router: AGENTS + engineering playbook + docs index
+- after docs router: AGENTS + router authority + start-work workflow entry
+- include the active planning source (monolithic AI_ITERATIVE_EXECUTION_PLAN or split PLAN_*).
+
+Produce one run per day from repo creation to today.
+Mark runs as retrospective estimates (not live captured sessions).
+
+At the end, print the METRICS line with docs consulted.
+```
+
+## retro_daily_docs_footprint
+
+```text
+#metrics
+Generate a retroactive daily benchmark using documentation footprint from git history.
+For each UTC day, collect markdown docs touched in commits that day under docs/ plus AGENTS.md.
+Filter to files that still exist at the selected commit for that day.
+If no docs were touched that day, fallback to the operational-path minimal set.
+
+Produce one run per day from repo creation to today.
+Mark runs as retrospective estimates (not live captured sessions).
+
+At the end, print the METRICS line with docs consulted.
+```
+
+## retro_daily_realistic_estimate
+
+```text
+#metrics
+Generate a retroactive daily benchmark using a realistic-reading model.
+Build from the operational path baseline, then add only high-signal touched docs for that day:
+- keep canonical docs in docs/project and docs/shared,
+- keep docs/README.md and AGENTS.md,
+- for router changes keep only authority and 00_entry files,
+- ignore archival noise (completed plans/refactor archives),
+- cap extra touched docs to avoid counting full migration churn as if everything was read.
+
+Produce one run per day from repo creation to today.
+Mark runs as retrospective estimates (not live captured sessions).
+
+At the end, print the METRICS line with docs consulted.
+```
+

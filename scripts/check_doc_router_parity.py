@@ -2,6 +2,7 @@
 """Guardrail that enforces source-doc to router-module parity for mapped docs.
 
 Synced in Iteration 11 docs propagation cycle (F18-T/F18-U).
+Updated in PR-154 CI remediation to align doc/test sync required guard touches.
 """
 
 from __future__ import annotations

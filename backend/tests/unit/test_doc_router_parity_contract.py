@@ -34,11 +34,11 @@ def test_router_parity_map_file_exists() -> None:
 
 def test_evaluate_parity_reports_missing_terms_when_source_changes() -> None:
     evaluate_parity = _load_evaluate_parity()
-    changed_files = ["docs/project/PRODUCT_DESIGN.md"]
+    changed_files = ["docs/projects/veterinary-medical-records/design/PRODUCT_DESIGN.md"]
     fixture_rel = f"tmp/parity-fixture-{uuid4().hex}.md"
     rules = [
         {
-            "source_doc": "docs/project/PRODUCT_DESIGN.md",
+            "source_doc": "docs/projects/veterinary-medical-records/design/PRODUCT_DESIGN.md",
             "router_modules": [
                 {
                     "path": fixture_rel,
@@ -70,10 +70,10 @@ def test_evaluate_parity_reports_missing_terms_when_source_changes() -> None:
 
 def test_evaluate_parity_skips_when_source_not_changed() -> None:
     evaluate_parity = _load_evaluate_parity()
-    changed_files = ["docs/project/UX_DESIGN.md"]
+    changed_files = ["docs/projects/veterinary-medical-records/design/UX_DESIGN.md"]
     rules = [
         {
-            "source_doc": "docs/project/PRODUCT_DESIGN.md",
+            "source_doc": "docs/projects/veterinary-medical-records/design/PRODUCT_DESIGN.md",
             "router_modules": [
                 {
                     "path": (
@@ -100,10 +100,10 @@ def test_evaluate_parity_skips_when_source_not_changed() -> None:
 def test_evaluate_parity_fails_on_unmapped_required_source() -> None:
     evaluate_parity = _load_evaluate_parity()
     findings = evaluate_parity(
-        changed_files=["docs/project/TECHNICAL_DESIGN.md"],
+        changed_files=["docs/projects/veterinary-medical-records/tech/TECHNICAL_DESIGN.md"],
         rules=[
             {
-                "source_doc": "docs/project/PRODUCT_DESIGN.md",
+                "source_doc": "docs/projects/veterinary-medical-records/design/PRODUCT_DESIGN.md",
                 "router_modules": [
                     {
                         "path": "docs/agent_router/04_PROJECT/PRODUCT_DESIGN/00_entry.md",
@@ -114,7 +114,7 @@ def test_evaluate_parity_fails_on_unmapped_required_source() -> None:
         ],
         repo_root=REPO_ROOT,
         fail_on_unmapped_sources=True,
-        required_source_globs=["docs/project/*.md"],
+        required_source_globs=["docs/projects/veterinary-medical-records/*.md"],
     )
     assert len(findings) == 1
     assert "missing Source→Router parity mapping" in findings[0]
@@ -123,10 +123,10 @@ def test_evaluate_parity_fails_on_unmapped_required_source() -> None:
 def test_evaluate_parity_excludes_source_matching_required_and_excluded_globs() -> None:
     evaluate_parity = _load_evaluate_parity()
     findings = evaluate_parity(
-        changed_files=["docs/project/implementation/PLAN_X.md"],
+        changed_files=["docs/projects/veterinary-medical-records/delivery/plans/PLAN_X.md"],
         rules=[
             {
-                "source_doc": "docs/project/PRODUCT_DESIGN.md",
+                "source_doc": "docs/projects/veterinary-medical-records/design/PRODUCT_DESIGN.md",
                 "router_modules": [
                     {
                         "path": "docs/agent_router/04_PROJECT/PRODUCT_DESIGN/00_entry.md",
@@ -137,7 +137,7 @@ def test_evaluate_parity_excludes_source_matching_required_and_excluded_globs() 
         ],
         repo_root=REPO_ROOT,
         fail_on_unmapped_sources=True,
-        required_source_globs=["docs/project/**/*.md"],
-        exclude_source_globs=["docs/project/implementation/**"],
+        required_source_globs=["docs/projects/veterinary-medical-records/**/*.md"],
+        exclude_source_globs=["docs/projects/veterinary-medical-records/delivery/plans/**"],
     )
     assert findings == []
