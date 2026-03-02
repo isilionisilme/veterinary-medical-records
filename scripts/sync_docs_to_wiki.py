@@ -416,7 +416,7 @@ def _auto_generate_folder_indices(
     mapping: dict[Path, str],
     root: Path,
     wiki_dir: Path,
-    page_prefix: str = "",
+    page_namespace: str = "",
 ) -> dict[str, str]:
     """Walk the tree under *root* and generate wiki index pages for folders.
 
@@ -424,12 +424,12 @@ def _auto_generate_folder_indices(
     render folders as clickable links.  Page names equal the folder name
     (e.g. ``01-product``, ``adr``), keeping the wiki URL clean.
 
-    *page_prefix* is prepended to page names to disambiguate folders that
-    exist under both project and shared roots (e.g. ``shared-01-product``).
+    *page_namespace* is prepended to page names to disambiguate folders that
+    exist under both project and shared roots (e.g. ``Shared/01-product``).
     """
     tree = _collect_tree(mapping, root)
     folder_pages: dict[str, str] = {}
-    _generate_indices_recursive(tree, wiki_dir, folder_pages, page_prefix=page_prefix)
+    _generate_indices_recursive(tree, wiki_dir, folder_pages, page_namespace=page_namespace)
     return folder_pages
 
 
@@ -437,7 +437,7 @@ def _generate_indices_recursive(
     tree: dict[str, object],
     wiki_dir: Path,
     folder_pages: dict[str, str],
-    page_prefix: str = "",
+    page_namespace: str = "",
 ) -> None:
     folders = [k for k in tree if k != "__files__"]
     for folder in folders:
@@ -445,8 +445,8 @@ def _generate_indices_recursive(
         if not isinstance(child, dict):
             continue
 
-        # Use the folder name with optional prefix as the wiki page name.
-        page_name = f"{page_prefix}{folder}" if page_prefix else folder
+        # Use the folder name with optional namespace as the wiki page name.
+        page_name = f"{page_namespace}{folder}" if page_namespace else folder
         folder_pages[folder] = page_name
 
         child_pages: list[tuple[str, str]] = []
@@ -468,7 +468,7 @@ def _generate_indices_recursive(
                 docs = [(label, page) for label, page in docs if label.lower() != "index"]
             child_folder_contents[cf] = sorted(docs, key=lambda x: x[0].lower())
 
-        _generate_indices_recursive(child, wiki_dir, folder_pages, page_prefix=page_prefix)
+        _generate_indices_recursive(child, wiki_dir, folder_pages, page_namespace=page_namespace)
 
         content = _build_folder_index(
             folder,
@@ -477,7 +477,9 @@ def _generate_indices_recursive(
             child_folder_contents,
             folder_pages,
         )
-        (wiki_dir / f"{page_name}.md").write_text(content, encoding="utf-8")
+        page_path = wiki_dir / f"{page_name}.md"
+        page_path.parent.mkdir(parents=True, exist_ok=True)
+        page_path.write_text(content, encoding="utf-8")
 
 
 def main() -> int:
@@ -511,18 +513,19 @@ def main() -> int:
         encoding="utf-8",
     )
 
-    # Auto-generate project category index pages (internal prefix to avoid collisions)
+    # Auto-generate project category index pages (namespaced, no prefixes)
     project_folder_pages = _auto_generate_folder_indices(
         mapping,
         PROJECT_ROOT,
         wiki_dir,
-        page_prefix="project-",
+        page_namespace="Projects/Veterinary-Medical-Records/",
     )
-    # Auto-generate shared category index pages (no prefix)
+    # Auto-generate shared category index pages (namespaced, no prefixes)
     shared_folder_pages = _auto_generate_folder_indices(
         mapping,
         SHARED_ROOT,
         wiki_dir,
+        page_namespace="Shared/",
     )
 
     # Generate project root page from project tree (canonical wiki index)
@@ -584,8 +587,9 @@ def main() -> int:
     # Keep auto-generated index pages from project and shared categories
     keep.update(f"{page}.md" for page in project_folder_pages.values())
     keep.update(f"{page}.md" for page in shared_folder_pages.values())
-    for md_file in wiki_dir.glob("*.md"):
-        if md_file.name not in keep:
+    for md_file in wiki_dir.rglob("*.md"):
+        rel = md_file.relative_to(wiki_dir).as_posix()
+        if rel not in keep:
             md_file.unlink()
 
     return 0
