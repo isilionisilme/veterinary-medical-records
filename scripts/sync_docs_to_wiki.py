@@ -13,6 +13,13 @@ SHARED_ROOT = Path("docs/shared")
 ADR_ROOT = Path("docs/projects/veterinary-medical-records/02-tech/adr")
 PROJECT_INDEX_PAGE = "veterinary-medical-records"
 PROJECT_INDEX_TITLE = "2026-03-02 Veterinary Medical Records"
+TOP_LEVEL_CATEGORIES: tuple[str, ...] = (
+    "01-product",
+    "02-tech",
+    "03-ops",
+    "04-delivery",
+    "99-archive",
+)
 
 _CATEGORY_PURPOSES: dict[str, str] = {
     "01-product": "Defines what we build, for whom, and how it looks.",
@@ -207,11 +214,15 @@ def _build_sidebar(
     mapping: dict[Path, str],
     project_folder_pages: dict[str, str] | None = None,
     shared_folder_pages: dict[str, str] | None = None,
+    shared_top_folders: tuple[str, ...] | None = None,
     max_depth: int = 3,
 ) -> str:
     project_tree = _collect_tree(mapping, PROJECT_ROOT)
     shared_tree = _collect_tree(mapping, SHARED_ROOT)
     shared_tree_sidebar = {k: v for k, v in shared_tree.items() if k != "__files__"}
+    if shared_top_folders:
+        for folder in shared_top_folders:
+            shared_tree_sidebar.setdefault(folder, {})
     project_tree_sidebar = {k: v for k, v in project_tree.items() if k != "__files__"}
 
     lines = [
@@ -528,6 +539,22 @@ def main() -> int:
         wiki_dir,
         page_namespace="Shared/",
     )
+    for folder in TOP_LEVEL_CATEGORIES:
+        page_name = shared_folder_pages.get(folder, f"Shared/{folder}")
+        shared_folder_pages[folder] = page_name
+        page_path = wiki_dir / f"{page_name}.md"
+        if not page_path.exists():
+            page_path.parent.mkdir(parents=True, exist_ok=True)
+            page_path.write_text(
+                _build_folder_index(
+                    folder_name=folder,
+                    child_pages=[],
+                    child_folders=[],
+                    child_folder_contents={},
+                    folder_pages={},
+                ),
+                encoding="utf-8",
+            )
 
     # Generate project root page from project tree (canonical wiki index)
     (wiki_dir / f"{PROJECT_INDEX_PAGE}.md").write_text(
@@ -540,6 +567,10 @@ def main() -> int:
     shared_root_files = shared_tree.get("__files__", [])
     shared_child_pages = list(shared_root_files) if isinstance(shared_root_files, list) else []
     shared_child_folders = [k for k in shared_tree if k != "__files__"]
+    for folder in TOP_LEVEL_CATEGORIES:
+        if folder not in shared_child_folders:
+            shared_child_folders.append(folder)
+    shared_child_folders = sorted(shared_child_folders, key=str.lower)
     shared_child_folder_contents: dict[str, list[tuple[str, str]]] = {}
     for sf in shared_child_folders:
         sub = shared_tree.get(sf)
@@ -569,6 +600,7 @@ def main() -> int:
             mapping,
             project_folder_pages=project_folder_pages,
             shared_folder_pages=shared_folder_pages,
+            shared_top_folders=TOP_LEVEL_CATEGORIES,
             max_depth=3,
         ),
         encoding="utf-8",
