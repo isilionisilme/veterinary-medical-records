@@ -18,7 +18,7 @@ docs/
 - **Directionality rule:** canonical docs are human-facing sources and should remain self-contained.
 - Human-readable documentation → `docs/shared/` or `docs/projects/`.
 
-## Shared documentation
+## Shared Documentation
 
 Standards that apply across all initiatives:
 
