@@ -41,7 +41,7 @@ export function PdfViewerToolbar({
   return (
     <div
       data-testid="pdf-toolbar-shell"
-      className="panel-shell relative z-20 flex items-center justify-between gap-4 px-2 py-2"
+      className="panel-shell relative z-20 mt-2 flex items-center justify-between gap-4 px-2 py-2"
     >
       <div className="flex min-w-0 items-center gap-1">{toolbarLeftContent}</div>
 
