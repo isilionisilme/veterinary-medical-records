@@ -12,7 +12,7 @@ PROJECT_ROOT = Path("docs/projects/veterinary-medical-records")
 SHARED_ROOT = Path("docs/shared")
 ADR_ROOT = Path("docs/projects/veterinary-medical-records/02-tech/adr")
 PROJECT_INDEX_PAGE = "veterinary-medical-records"
-PROJECT_INDEX_TITLE = "Veterinary Medical Records"
+PROJECT_INDEX_TITLE = "2026-03-02 Veterinary Medical Records"
 
 # Fixed page names for well-known READMEs (avoids stem collisions).
 _FIXED_NAMES: dict[str, str] = {
@@ -245,13 +245,16 @@ def _build_folder_index(
     child_pages: list[tuple[str, str]],
     child_folders: list[str],
     folder_pages: dict[str, str],
+    display_title: str | None = None,
 ) -> str:
     """Auto-generate an index page for a category folder.
 
     *child_pages* is a list of ``(label, wiki_page_name)`` tuples.
     *child_folders* lists sub-folder names that also have index pages.
     """
-    if "-" in folder_name:
+    if display_title is not None:
+        display = display_title
+    elif "-" in folder_name:
         display = folder_name.split("-", 1)[-1].replace("-", " ").title()
     else:
         display = folder_name.replace("-", " ").title()
@@ -307,6 +310,7 @@ def _build_project_index(
         child_pages,
         child_folders,
         folder_pages,
+        display_title=PROJECT_INDEX_TITLE,
     )
 
 
