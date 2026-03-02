@@ -26,7 +26,7 @@ Se inicia un nuevo golden loop para mejorar la extracción del campo `clinic_nam
 
 - [x] P0-A 🔄 — Baseline de `clinic_name`: crear/ajustar fixtures sintéticos + benchmark específico y medir accuracy inicial (GPT-5.3-Codex) — ✅ `3aa44550`
 - [x] P0-B 🔄 — Añadir regresiones mínimas (positivas/negativas) para patrones reales de encabezado y OCR ruidoso (GPT-5.3-Codex) — ✅ `43105d8d`
-- [ ] P1-A 🔄 — Mejorar candidate mining para `clinic_name` (labels, delimitadores, guards multilinea/ruido) (GPT-5.3-Codex)
+- [x] P1-A 🔄 — Mejorar candidate mining para `clinic_name` (labels, delimitadores, guards multilinea/ruido) (GPT-5.3-Codex) — ✅ `573b9612`
 - [ ] P1-B 🔄 — Ajustar normalización/ranking de `clinic_name` sin afectar otros campos (GPT-5.3-Codex)
 - [ ] P2-A 🔄 — Añadir observabilidad/triage para candidatos sospechosos de `clinic_name` (GPT-5.3-Codex)
 - [ ] P3-A 🔄 — Ejecutar tests focalizados + benchmark y documentar resultados en PR (GPT-5.3-Codex)
@@ -94,5 +94,5 @@ Tras aprobación explícita de Claude/usuario en P4-A, realiza ajustes finales d
 ## Prompt activo
 
 ```text
-P1-A 🔄 — Mejorar candidate mining de clinic_name (labels, delimitadores, guards multilinea/ruido).
+P1-B 🔄 — Ajustar normalización y ranking de clinic_name sin afectar otros campos.
 ```
