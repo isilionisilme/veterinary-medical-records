@@ -247,6 +247,26 @@ npx playwright test --ui
 - Frontend format check: `cd frontend && npm run format:check`
 - Optional pre-commit hook run: `pre-commit run --all-files`
 
+### Optional local pre-push gate (recommended)
+
+To reduce invalid commits reaching PR checks, install the repository pre-push hook:
+
+- PowerShell (Windows): `./scripts/install-pre-push-hook.ps1`
+
+What it does:
+
+- Runs scoped checks based on changed paths vs upstream:
+  - Backend changes: `python -m pytest backend/tests/unit -q -o addopts=""`
+  - Frontend changes: `npm --prefix frontend run lint` and `npm --prefix frontend run test`
+  - Docs changes: `npm run docs:lint` and `npm run docs:format:check`
+- Blocks `git push` if any command fails.
+
+Files:
+
+- Hook entrypoint: `.githooks/pre-push`
+- Gate logic: `scripts/pre_push_quality_gate.py`
+- Installer: `scripts/install-pre-push-hook.ps1`
+
 ### Administrative commands
 
 - Ensure DB schema: `python -m backend.app.cli db-schema`
