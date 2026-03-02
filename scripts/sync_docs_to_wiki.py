@@ -11,6 +11,7 @@ DOCS_README = Path("docs/README.md")
 PROJECT_ROOT = Path("docs/projects/veterinary-medical-records")
 SHARED_ROOT = Path("docs/shared")
 ADR_ROOT = Path("docs/projects/veterinary-medical-records/02-tech/adr")
+PROJECT_OVERVIEW = Path("docs/projects/veterinary-medical-records/00-overview.md")
 PROJECT_INDEX_PAGE = "veterinary-medical-records"
 PROJECT_INDEX_TITLE = "2026-03-02 Veterinary Medical Records"
 
@@ -18,8 +19,17 @@ PROJECT_INDEX_TITLE = "2026-03-02 Veterinary Medical Records"
 _FIXED_NAMES: dict[str, str] = {
     DOCS_README.as_posix(): "Home",
     ROOT_README.as_posix(): "README",
+    PROJECT_OVERVIEW.as_posix(): PROJECT_INDEX_PAGE,
     f"{PROJECT_ROOT.as_posix()}/README.md": "Project-Overview",
     f"{ADR_ROOT.as_posix()}/README.md": "ADR-Index",
+}
+
+_PROJECT_CATEGORY_DESCRIPTIONS: dict[str, str] = {
+    "01-design": "Qué construimos y para quién.",
+    "02-tech": "Cómo está construido.",
+    "03-ops": "Cómo trabajamos y operamos.",
+    "04-delivery": "Qué se entregó y su seguimiento.",
+    "99-archive": "Contenido histórico.",
 }
 
 
@@ -199,6 +209,7 @@ def _build_sidebar(
 ) -> str:
     project_tree = _collect_tree(mapping, PROJECT_ROOT)
     shared_tree = _collect_tree(mapping, SHARED_ROOT)
+    project_tree_sidebar = {k: v for k, v in project_tree.items() if k != "__files__"}
 
     lines = [
         "## Documentation",
@@ -220,7 +231,7 @@ def _build_sidebar(
     lines.append(f"  - [{PROJECT_INDEX_TITLE}]({PROJECT_INDEX_PAGE})")
     lines.extend(
         _render_tree_lines(
-            project_tree,
+            project_tree_sidebar,
             indent="    ",
             depth=3,
             max_depth=max_depth,
@@ -297,21 +308,26 @@ def _build_project_index(
     folder_pages: dict[str, str],
 ) -> str:
     tree = _collect_tree(mapping, PROJECT_ROOT)
+    child_folders = sorted([key for key in tree if key != "__files__"], key=str.lower)
 
-    child_pages: list[tuple[str, str]] = []
-    files = tree.get("__files__", [])
-    if isinstance(files, list):
-        child_pages = list(files)
+    lines = [
+        f"# {PROJECT_INDEX_TITLE}",
+        "",
+        "Página generada automáticamente desde la estructura de documentación del proyecto.",
+        "",
+        "## Categories",
+        "",
+    ]
+    for folder in child_folders:
+        page_name = folder_pages.get(folder, folder)
+        description = _PROJECT_CATEGORY_DESCRIPTIONS.get(folder, "")
+        if description:
+            lines.append(f"- [[{page_name}|{folder}]] — {description}")
+        else:
+            lines.append(f"- [[{page_name}|{folder}]]")
 
-    child_folders = [key for key in tree if key != "__files__"]
-
-    return _build_folder_index(
-        PROJECT_INDEX_TITLE,
-        child_pages,
-        child_folders,
-        folder_pages,
-        display_title=PROJECT_INDEX_TITLE,
-    )
+    lines.append("")
+    return "\n".join(lines)
 
 
 def _generate_indices_recursive(
