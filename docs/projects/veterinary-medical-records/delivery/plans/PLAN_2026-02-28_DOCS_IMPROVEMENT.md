@@ -50,9 +50,9 @@ The project's canonical documentation (`docs/projects/veterinary-medical-records
 
 ### Phase 2 — Structure and taxonomy (organize what survives)
 
-- [ ] D2-A 🚧 — Propose target taxonomy and folder hierarchy based on clean inventory; user approves · skill: `microsoft-wiki-architect` (Claude)
-- [ ] D2-B 🔄 — Migrate files to approved structure and update internal links (Codex)
-- [ ] D2-C 🚧 — User validation of migrated structure and content integrity · skill: `microsoft-wiki-qa` (Claude)
+- [x] D2-A 🚧 — Propose target taxonomy and folder hierarchy based on clean inventory; user approves · skill: `microsoft-wiki-architect` (Claude) — ✅ approved (v2)
+- [x] D2-B 🔄 — Migrate files to approved structure and update internal links (Codex) — ✅ implemented in PR #154
+- [ ] D2-C 🚧 — User validation of migrated structure and content integrity · skill: `microsoft-wiki-qa` (Claude) — moved to PR-A (`docs/wiki-naming-cleanup`) to keep #154 merge-focused
 
 ### Phase 3 — Templates and normalization
 
