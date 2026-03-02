@@ -143,7 +143,24 @@ def _collect_tree(
     return tree
 
 
-def _render_tree_lines(tree: dict[str, object], indent: str = "") -> list[str]:
+def _render_tree_lines(
+    tree: dict[str, object],
+    indent: str = "",
+    depth: int = 1,
+    max_depth: int = 3,
+    folder_pages: dict[str, str] | None = None,
+) -> list[str]:
+    """Render a nested tree as indented Markdown list lines.
+
+    *depth* tracks the current nesting level (1-based).  When *depth*
+    exceeds *max_depth*, children are suppressed — the user navigates
+    to deeper content via the folder's own index page.
+
+    *folder_pages* maps a folder slug (e.g. ``01-design``) to its
+    wiki page name so the folder label becomes a clickable link.
+    """
+    if folder_pages is None:
+        folder_pages = {}
     lines: list[str] = []
 
     files = tree.get("__files__", [])
@@ -153,15 +170,31 @@ def _render_tree_lines(tree: dict[str, object], indent: str = "") -> list[str]:
 
     folders = [key for key in tree.keys() if key != "__files__"]
     for folder in sorted(folders, key=str.lower):
-        lines.append(f"{indent}- {folder}")
+        page_name = folder_pages.get(folder)
+        if page_name:
+            lines.append(f"{indent}- [[{page_name}|{folder}]]")
+        else:
+            lines.append(f"{indent}- {folder}")
         child = tree.get(folder)
-        if isinstance(child, dict):
-            lines.extend(_render_tree_lines(child, indent=indent + "  "))
+        if isinstance(child, dict) and depth < max_depth:
+            lines.extend(
+                _render_tree_lines(
+                    child,
+                    indent=indent + "  ",
+                    depth=depth + 1,
+                    max_depth=max_depth,
+                    folder_pages=folder_pages,
+                )
+            )
 
     return lines
 
 
-def _build_sidebar(mapping: dict[Path, str]) -> str:
+def _build_sidebar(
+    mapping: dict[Path, str],
+    folder_pages: dict[str, str] | None = None,
+    max_depth: int = 3,
+) -> str:
     project_tree = _collect_tree(mapping, PROJECT_ROOT)
     shared_tree = _collect_tree(mapping, SHARED_ROOT)
 
@@ -171,10 +204,26 @@ def _build_sidebar(mapping: dict[Path, str]) -> str:
         "- [[Home]]",
         "- [[Projects]]",
     ]
-    lines.extend(_render_tree_lines(project_tree, indent="  "))
+    lines.extend(
+        _render_tree_lines(
+            project_tree,
+            indent="  ",
+            depth=1,
+            max_depth=max_depth,
+            folder_pages=folder_pages or {},
+        )
+    )
 
     lines.append("- [[Shared]]")
-    lines.extend(_render_tree_lines(shared_tree, indent="  "))
+    lines.extend(
+        _render_tree_lines(
+            shared_tree,
+            indent="  ",
+            depth=1,
+            max_depth=max_depth,
+            folder_pages=folder_pages or {},
+        )
+    )
 
     lines.append("")
     return "\n".join(lines)
@@ -186,6 +235,91 @@ def _build_section_landing(title: str, intro: str, pages: list[str]) -> str:
         lines.append(f"- [[{page}]]")
     lines.append("")
     return "\n".join(lines)
+
+
+def _build_folder_index(
+    folder_name: str,
+    child_pages: list[tuple[str, str]],
+    child_folders: list[str],
+    folder_pages: dict[str, str],
+) -> str:
+    """Auto-generate an index page for a category folder.
+
+    *child_pages* is a list of ``(label, wiki_page_name)`` tuples.
+    *child_folders* lists sub-folder names that also have index pages.
+    """
+    if "-" in folder_name:
+        display = folder_name.split("-", 1)[-1].replace("-", " ").title()
+    else:
+        display = folder_name.replace("-", " ").title()
+    lines = [f"# {display}", ""]
+    if child_pages:
+        lines.append("## Documents")
+        lines.append("")
+        for label, page in sorted(child_pages, key=lambda x: x[0].lower()):
+            lines.append(f"- [[{page}|{label}]]")
+        lines.append("")
+    if child_folders:
+        lines.append("## Sub-sections")
+        lines.append("")
+        for cf in sorted(child_folders, key=str.lower):
+            page_name = folder_pages.get(cf, cf)
+            lines.append(f"- [[{page_name}|{cf}]]")
+        lines.append("")
+    return "\n".join(lines)
+
+
+def _auto_generate_folder_indices(
+    mapping: dict[Path, str],
+    root: Path,
+    wiki_dir: Path,
+    prefix: str = "",
+) -> dict[str, str]:
+    """Walk the tree under *root* and generate wiki index pages for folders.
+
+    Returns a ``{folder_slug: wiki_page_name}`` dict so the sidebar can
+    render folders as clickable links.
+    """
+    tree = _collect_tree(mapping, root)
+    folder_pages: dict[str, str] = {}
+    _generate_indices_recursive(tree, wiki_dir, folder_pages, prefix)
+    return folder_pages
+
+
+def _generate_indices_recursive(
+    tree: dict[str, object],
+    wiki_dir: Path,
+    folder_pages: dict[str, str],
+    prefix: str,
+) -> None:
+    folders = [k for k in tree if k != "__files__"]
+    for folder in folders:
+        child = tree[folder]
+        if not isinstance(child, dict):
+            continue
+
+        slug_part = f"{prefix}-{_slug(folder)}" if prefix else _slug(folder)
+        # Avoid collision with existing doc pages
+        page_name = f"idx-{slug_part}"
+        folder_pages[folder] = page_name
+
+        child_pages: list[tuple[str, str]] = []
+        files = child.get("__files__", [])
+        if isinstance(files, list):
+            child_pages = list(files)
+
+        child_folders = [k for k in child if k != "__files__"]
+
+        # Recurse into sub-folders (pass slug_part, not page_name)
+        _generate_indices_recursive(
+            child,
+            wiki_dir,
+            folder_pages,
+            slug_part,
+        )
+
+        content = _build_folder_index(folder, child_pages, child_folders, folder_pages)
+        (wiki_dir / f"{page_name}.md").write_text(content, encoding="utf-8")
 
 
 def main() -> int:
@@ -250,7 +384,25 @@ def main() -> int:
         encoding="utf-8",
     )
 
-    (wiki_dir / "_Sidebar.md").write_text(_build_sidebar(mapping), encoding="utf-8")
+    # Auto-generate index pages for category folders
+    project_folder_pages = _auto_generate_folder_indices(
+        mapping,
+        PROJECT_ROOT,
+        wiki_dir,
+        prefix="proj",
+    )
+    shared_folder_pages = _auto_generate_folder_indices(
+        mapping,
+        SHARED_ROOT,
+        wiki_dir,
+        prefix="shared",
+    )
+    all_folder_pages = {**project_folder_pages, **shared_folder_pages}
+
+    (wiki_dir / "_Sidebar.md").write_text(
+        _build_sidebar(mapping, folder_pages=all_folder_pages, max_depth=3),
+        encoding="utf-8",
+    )
     (wiki_dir / "_Footer.md").write_text(
         (
             "Synced automatically from canonical repository docs "
@@ -262,6 +414,8 @@ def main() -> int:
 
     keep = {f"{page}.md" for page in mapping.values()}
     keep.update({"Projects.md", "Shared.md", "_Sidebar.md", "_Footer.md"})
+    # Keep auto-generated index pages
+    keep.update(f"{page}.md" for page in all_folder_pages.values())
     for md_file in wiki_dir.glob("*.md"):
         if md_file.name not in keep:
             md_file.unlink()
