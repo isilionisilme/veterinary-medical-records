@@ -59,7 +59,7 @@ The project's canonical documentation (`docs/projects/veterinary-medical-records
 - [x] D3-A 🚧 — Define templates per doc type (Diátaxis: tutorial, how-to, reference, explanation) · skill: `template-normalizer` (Claude) — ✅ approved 2026-03-02
 - [x] D3-B 🚧 — User approval of templates (Claude) — ✅ approved 2026-03-02
 - [x] D3-C 🔄 — Normalize existing docs to approved templates · skill: `template-normalizer` (Codex) — ✅ frontmatter + minimal structural normalization applied (2026-03-02)
-- [ ] D3-D 🚧 — User validation of normalized docs (Claude)
+- [x] D3-D 🚧 — User validation of normalized docs (Claude) — ✅ validated & committed `c8daa6c8`, PR #184, CI green (2026-03-02)
 
 ### Phase 4 — Navigation
 
