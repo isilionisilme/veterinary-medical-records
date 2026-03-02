@@ -294,7 +294,7 @@ def _build_folder_index(
         for cf in sorted(child_folders, key=str.lower):
             page_name = folder_pages.get(cf, cf)
             category_purpose = _CATEGORY_PURPOSES.get(cf, "")
-            lines.append(f"| [[{page_name}|{cf}]] | {category_purpose or '-'} |")
+            lines.append(f"| [{cf}]({page_name}) | {category_purpose or '-'} |")
         lines.append("")
         lines.append("## Pages")
         lines.append("")
