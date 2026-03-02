@@ -429,6 +429,21 @@ Each release must result in:
 - Pull requests are opened once the change is fully implemented and all automated tests are passing.
 - Each pull request must be small enough to be reviewed comfortably in isolation and should focus on a single user story or a single technical concern.
 
+### Plan-level PR Roadmap
+
+When a plan (`PLAN_*.md`) spans work large enough to require more than one Pull Request, the plan must include a **PR Roadmap** section that maps execution phases to PRs.
+
+Rules:
+
+- Add a `## PR Roadmap` section after the Scope Boundary and before the Estado de ejecución.
+- The roadmap is a table with columns: **PR** (identifier or link), **Rama** (branch name), **Fases** (which plan phases it covers), **Alcance** (short description), **Depende de** (prerequisite PR).
+- Each phase belongs to exactly one PR. A phase must **not** be split across PRs.
+- Each execution step in the Estado de ejecución must carry a `**[PR-X]**` tag indicating which PR it belongs to.
+- A PR is merged only when all its assigned phases pass CI and user review.
+- The roadmap is written when the plan is created or when scope grows beyond a single PR. It may be updated as phases are completed.
+
+This ensures reviewable, isolated PRs while maintaining a clear dependency chain across the full plan.
+
 ### Pull Request Automation (AI Assistants)
 
 When an AI coding assistant or automation tool is used to create or update a Pull Request in this repository, it must follow this procedure automatically. This operational rule complements the existing Pull Request and Code Review policies and does not replace them.

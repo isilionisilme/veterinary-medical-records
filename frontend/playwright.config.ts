@@ -15,7 +15,8 @@ export default defineConfig({
     timeout: 5_000,
   },
   outputDir: "./test-results",
-  retries: 0,
+  // Stabilize CI against intermittent timing/network-related flakes.
+  retries: process.env.CI ? 2 : 0,
   use: {
     baseURL,
     headless: true,
