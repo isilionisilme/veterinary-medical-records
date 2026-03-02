@@ -440,20 +440,19 @@ def _auto_generate_folder_indices(
     mapping: dict[Path, str],
     root: Path,
     wiki_dir: Path,
-    page_namespace: str = "",
+    page_prefix: str = "",
 ) -> dict[str, str]:
     """Walk the tree under *root* and generate wiki index pages for folders.
 
     Returns a ``{folder_name: wiki_page_name}`` dict so the sidebar can
-    render folders as clickable links.  Page names equal the folder name
-    (e.g. ``01-product``, ``adr``), keeping the wiki URL clean.
+    render folders as clickable links.
 
-    *page_namespace* is prepended to page names to disambiguate folders that
-    exist under both project and shared roots (e.g. ``Shared/01-product``).
+    *page_prefix* is prepended to page names to disambiguate folders that
+    exist under both project and shared roots (e.g. ``shared-01-product``).
     """
     tree = _collect_tree(mapping, root)
     folder_pages: dict[str, str] = {}
-    _generate_indices_recursive(tree, wiki_dir, folder_pages, page_namespace=page_namespace)
+    _generate_indices_recursive(tree, wiki_dir, folder_pages, page_prefix=page_prefix)
     return folder_pages
 
 
@@ -461,7 +460,7 @@ def _generate_indices_recursive(
     tree: dict[str, object],
     wiki_dir: Path,
     folder_pages: dict[str, str],
-    page_namespace: str = "",
+    page_prefix: str = "",
 ) -> None:
     folders = [k for k in tree if k != "__files__"]
     for folder in folders:
@@ -469,8 +468,8 @@ def _generate_indices_recursive(
         if not isinstance(child, dict):
             continue
 
-        # Use the folder name with optional namespace as the wiki page name.
-        page_name = f"{page_namespace}{folder}" if page_namespace else folder
+        # Use folder name with optional technical prefix as the wiki page name.
+        page_name = f"{page_prefix}{folder}" if page_prefix else folder
         folder_pages[folder] = page_name
 
         child_pages: list[tuple[str, str]] = []
@@ -492,7 +491,7 @@ def _generate_indices_recursive(
                 docs = [(label, page) for label, page in docs if label.lower() != "index"]
             child_folder_contents[cf] = sorted(docs, key=lambda x: x[0].lower())
 
-        _generate_indices_recursive(child, wiki_dir, folder_pages, page_namespace=page_namespace)
+        _generate_indices_recursive(child, wiki_dir, folder_pages, page_prefix=page_prefix)
 
         content = _build_folder_index(
             folder,
@@ -537,22 +536,22 @@ def main() -> int:
         encoding="utf-8",
     )
 
-    # Auto-generate project category index pages (namespaced, no prefixes)
+    # Auto-generate project category index pages (technical prefixed slugs)
     project_folder_pages = _auto_generate_folder_indices(
         mapping,
         PROJECT_ROOT,
         wiki_dir,
-        page_namespace="Projects/Veterinary-Medical-Records/",
+        page_prefix="project-",
     )
-    # Auto-generate shared category index pages (namespaced, no prefixes)
+    # Auto-generate shared category index pages (technical prefixed slugs)
     shared_folder_pages = _auto_generate_folder_indices(
         mapping,
         SHARED_ROOT,
         wiki_dir,
-        page_namespace="Shared/",
+        page_prefix="shared-",
     )
     for folder in TOP_LEVEL_CATEGORIES:
-        page_name = shared_folder_pages.get(folder, f"Shared/{folder}")
+        page_name = shared_folder_pages.get(folder, f"shared-{folder}")
         shared_folder_pages[folder] = page_name
         page_path = wiki_dir / f"{page_name}.md"
         if not page_path.exists():
