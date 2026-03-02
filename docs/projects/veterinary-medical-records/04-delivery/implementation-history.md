@@ -4,7 +4,7 @@
 
 ## Active iteration
 
-**None** — Iteration 14 closed. Next iteration plan pending.
+**None** — Iteration 15 closed. Next iteration plan pending.
 
 ## Timeline
 
@@ -24,7 +24,9 @@
 | 12 | 2026-02-27 | #169 | E2E Phase 3-4 expansion + WCAG accessibility + architecture docs + project close-out | 65 E2E tests (22 specs), axe-core WCAG audit, architecture.md, README badges, Known Limitations reframe, 47 files changed | [completed-2026-02-27-iter-12-final.md](completed/completed-2026-02-27-iter-12-final.md) |
 | 13 | 2026-02-28 | #171 | AppWorkspace decomposition round 4 + integration hardening | AppWorkspace 2221→726 LOC (−67%), useReviewDataPipeline 875→357 LOC, 318 frontend tests (48 files), 4 new hook suites | [completed-2026-02-28-decompose-app-workspace.md](completed/completed-2026-02-28-decompose-app-workspace.md) |
 | 14 | 2026-02-28 | #174 | PdfViewer decomposition (hooks + debug modules) | PdfViewer 944→199 LOC, 6 extracted modules, 327 frontend tests (52 files), CI stable after extraction | [completed-2026-02-28-decompose-pdf-viewer.md](completed/completed-2026-02-28-decompose-pdf-viewer.md) |
+| 15 | 2026-03-02 | #182 | Golden loop hardening for `pet_name` extraction | Synthetic benchmark 53.3% → 100.0% EM, null misses 26.7% → 0.0%, false positives 13.3% → 0.0%, focused suite 50 passed | [completed-2026-03-02-golden-loop-pet-name.md](completed/completed-2026-03-02-golden-loop-pet-name.md) |
 
 ## Cumulative progress
 
-See [delivery-summary.md](../refactor/delivery-summary.md) for the full cumulative metrics table across all iterations.
+- Iteration 15 cumulative extraction outcome (`pet_name` golden loop): baseline 8/15 exact matches to final 15/15 exact matches with zero null misses and zero false positives on synthetic fixtures.
+- See [delivery-summary.md](delivery-summary.md) for the broader cumulative metrics table across all iterations.
