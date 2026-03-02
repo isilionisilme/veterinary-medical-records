@@ -294,7 +294,7 @@ export function PdfViewerPanel({
             )}
           {activeViewerTab === "raw_text" && (
             <div className="flex h-full flex-col rounded-card border border-borderSubtle bg-surface p-4">
-              <div className="rounded-control border border-borderSubtle bg-surface px-2 py-2">
+              <div className="mt-2 rounded-control border border-borderSubtle bg-surface px-2 py-2">
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-1">{viewerModeToolbarIcons}</div>
                   <div className="flex items-center gap-1">{viewerDownloadIcon}</div>
@@ -384,7 +384,7 @@ export function PdfViewerPanel({
           )}
           {activeViewerTab === "technical" && (
             <div className="h-full overflow-y-auto rounded-card border border-borderSubtle bg-surface p-4">
-              <div className="rounded-control border border-borderSubtle bg-surface px-2 py-2">
+              <div className="mt-2 rounded-control border border-borderSubtle bg-surface px-2 py-2">
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-1">{viewerModeToolbarIcons}</div>
                   <div className="flex items-center gap-1">{viewerDownloadIcon}</div>
