@@ -274,7 +274,7 @@ def test_technical_design_sufficient_evidence_boundary_is_propagated() -> None:
 
 
 def test_engineering_playbook_plan_level_pr_roadmap_is_propagated() -> None:
-    source_doc = _read_text(REPO_ROOT / "docs" / "shared" / "ENGINEERING_PLAYBOOK.md")
+    source_doc = _read_text(REPO_ROOT / "docs" / "shared" / "engineering-playbook.md")
     owner_doc = _read_text(
         ROUTER_ROOT / "03_SHARED" / "ENGINEERING_PLAYBOOK" / "210_pull-requests.md"
     )
