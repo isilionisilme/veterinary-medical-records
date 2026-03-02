@@ -91,7 +91,7 @@ def test_evaluate_sync_covers_root_router_docs() -> None:
 def test_evaluate_sync_fails_on_unmapped_doc_in_required_scope() -> None:
     module = _load_guard_module()
     findings = module.evaluate_sync(
-        changed_files=["docs/projects/veterinary-medical-records/design/ux-design.md"],
+        changed_files=["docs/projects/veterinary-medical-records/01-design/ux-design.md"],
         rules=[
             {
                 "doc_glob": "docs/shared/brand-guidelines.md",
@@ -124,7 +124,7 @@ def test_evaluate_sync_ignores_unmapped_doc_outside_required_scope() -> None:
 def test_evaluate_sync_excludes_doc_matching_required_and_excluded_globs() -> None:
     module = _load_guard_module()
     findings = module.evaluate_sync(
-        changed_files=["docs/projects/veterinary-medical-records/delivery/plans/PLAN_X.md"],
+        changed_files=["docs/projects/veterinary-medical-records/04-delivery/plans/PLAN_X.md"],
         rules=[
             {
                 "doc_glob": "docs/shared/brand-guidelines.md",
@@ -133,7 +133,7 @@ def test_evaluate_sync_excludes_doc_matching_required_and_excluded_globs() -> No
         ],
         fail_on_unmapped_docs=True,
         required_doc_globs=["docs/projects/veterinary-medical-records/**/*.md"],
-        exclude_doc_globs=["docs/projects/veterinary-medical-records/delivery/plans/**"],
+        exclude_doc_globs=["docs/projects/veterinary-medical-records/04-delivery/plans/**"],
     )
     assert findings == []
 

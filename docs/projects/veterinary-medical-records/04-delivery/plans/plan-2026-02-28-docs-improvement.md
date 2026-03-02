@@ -136,42 +136,42 @@ _Empty._
 | Path | Title | Type | Audience | Status | Words | Notes |
 |---|---|---|---|---|---|---|
 | docs/README.md | Scope (Docs Index) | index | all | active | 528 | Reading order, authority chain |
-| docs/projects/veterinary-medical-records/tech/ARCHITECTURE.md | Architecture Overview | reference | all | active | 527 | One-page summary with diagram |
-| docs/projects/veterinary-medical-records/tech/BACKEND_IMPLEMENTATION.md | Backend Implementation Notes | guide | contributor | active | 1,870 | Layering, persistence, processing |
-| docs/projects/veterinary-medical-records/design/DESIGN_SYSTEM.md | Lean Design System | reference | contributor | active | 1,243 | Color/spacing tokens, a11y |
-| docs/projects/veterinary-medical-records/tech/FRONTEND_IMPLEMENTATION.md | Frontend Implementation Notes | guide | contributor | active | 1,631 | Stack, PDF rendering, confidence UX |
-| docs/projects/veterinary-medical-records/delivery/FUTURE_IMPROVEMENTS.md | Known Limitations & Future Directions | explanation | staff-engineer | active | 765 | Reframed 2026-02-27 |
-| docs/projects/veterinary-medical-records/delivery/IMPLEMENTATION_PLAN.md | Implementation Plan | plan | contributor | active | 15,394 | **Very large**; 6 releases |
-| docs/projects/veterinary-medical-records/ops/MANUAL_QA_REGRESSION_CHECKLIST.md | Manual QA Regression Checklist | how-to | all | active | 958 | All cases "Pending" |
-| docs/projects/veterinary-medical-records/design/PRODUCT_DESIGN.md | Product Design | explanation | all | active | 2,272 | Strategy, confidence, Global Schema |
-| docs/projects/veterinary-medical-records/tech/TECHNICAL_DESIGN.md | Technical Design | reference | contributor | active | 9,637 | **Very large**; contracts, state machines |
-| docs/projects/veterinary-medical-records/design/UX_DESIGN.md | UX Design | reference | contributor | active | 2,131 | Review flow, rendering rules |
-| docs/projects/veterinary-medical-records/tech/adr/ADR-ARCH-0001-modular-monolith.md | ADR-ARCH-0001 | adr | staff-engineer | active | 426 | |
-| docs/projects/veterinary-medical-records/tech/adr/ADR-ARCH-0002-sqlite-database.md | ADR-ARCH-0002 | adr | staff-engineer | active | 369 | |
-| docs/projects/veterinary-medical-records/tech/adr/ADR-ARCH-0003-raw-sql-repository-pattern.md | ADR-ARCH-0003 | adr | staff-engineer | active | 376 | |
-| docs/projects/veterinary-medical-records/tech/adr/ADR-ARCH-0004-in-process-async-processing.md | ADR-ARCH-0004 | adr | staff-engineer | active | 368 | |
-| docs/projects/veterinary-medical-records/tech/adr/README.md | ADR Index | index | all | active | 103 | |
-| docs/projects/veterinary-medical-records/ops/EXECUTION_RULES.md | Execution Rules | reference | contributor | active | 5,197 | Agent protocol; large |
-| docs/projects/veterinary-medical-records/delivery/IMPLEMENTATION_HISTORY.md | Implementation History | changelog | all | active | 571 | 12 iterations |
-| docs/projects/veterinary-medical-records/delivery/plans/PLAN_2026-02-28_DOCS_IMPROVEMENT.md | Plan: Docs Improvement | plan | contributor | active | 1,053 | This plan (active) |
-| docs/projects/veterinary-medical-records/delivery/plans/completed/COMPLETED_ITER-1-2.md | Completed: Iter 1-2 | changelog | contributor | active | 517 | |
-| docs/projects/veterinary-medical-records/delivery/plans/completed/COMPLETED_ITER-3.md | Completed: Iter 3 | changelog | contributor | active | 169 | |
-| docs/projects/veterinary-medical-records/delivery/plans/completed/COMPLETED_ITER-4.md | Completed: Iter 4 | changelog | contributor | active | 172 | |
-| docs/projects/veterinary-medical-records/delivery/plans/completed/COMPLETED_ITER-5.md | Completed: Iter 5 | changelog | contributor | active | 173 | |
-| docs/projects/veterinary-medical-records/delivery/plans/completed/COMPLETED_ITER-6.md | Completed: Iter 6 | changelog | contributor | active | 258 | |
-| docs/projects/veterinary-medical-records/delivery/plans/completed/COMPLETED_ITER-7.md | Completed: Iter 7 | changelog | contributor | active | 279 | |
-| docs/projects/veterinary-medical-records/delivery/plans/completed/COMPLETED_ITER-8.md | Completed: Iter 8 | changelog | contributor | active | 367 | |
-| docs/projects/veterinary-medical-records/delivery/plans/completed/COMPLETED_ITER-9.md | Completed: Iter 9 | changelog | contributor | active | 412 | |
-| docs/projects/veterinary-medical-records/delivery/plans/completed/COMPLETED_2026-02-26_INSTALL_PLAYWRIGHT.md | Plan: Playwright Install | plan | contributor | active | 2,151 | Spanish; full plan |
-| docs/projects/veterinary-medical-records/delivery/plans/completed/COMPLETED_2026-02-26_ITER-9-E2E.md | Plan: Iter 9 E2E | plan | contributor | active | 2,768 | Full step log |
-| docs/projects/veterinary-medical-records/delivery/plans/completed/COMPLETED_2026-02-26_ITER-10-HARDENING.md | Plan: Iter 10 Hardening | plan | contributor | active | 2,895 | |
-| docs/projects/veterinary-medical-records/delivery/plans/completed/COMPLETED_2026-02-27_ITER-11-FULLSTACK-HARDENING.md | Plan: Iter 11 Hardening | plan | contributor | active | 4,080 | Largest completed |
-| docs/projects/veterinary-medical-records/delivery/plans/completed/COMPLETED_2026-02-27_ITER-12-FINAL.md | Plan: Iter 12 Final | plan | contributor | active | 3,600 | |
-| docs/projects/veterinary-medical-records/archive/12_FACTOR_AUDIT.md | 12-Factor Audit | audit | staff-engineer | **stale** | 628 | Findings resolved in Iter 2+ |
-| docs/projects/veterinary-medical-records/archive/CTO_REVIEW_VERDICT.md | CTO Review Verdict | audit | staff-engineer | **stale** | 1,880 | "Still open" resolved; **broken link** |
-| docs/projects/veterinary-medical-records/archive/codebase_audit.md | Codebase Maintainability Audit | audit | staff-engineer | **stale** | 1,783 | Findings resolved in Iter 1-12 |
-| docs/projects/veterinary-medical-records/delivery/DELIVERY_SUMMARY.md | Delivery Summary | reference | all | active | 3,763 | Quantitative metrics |
-| docs/projects/veterinary-medical-records/ops/PLAN_E2E_TEST_COVERAGE.md | Plan E2E Test Coverage | plan | contributor | active | 7,508 | **Very large**; Spanish |
+| docs/projects/veterinary-medical-records/02-tech/ARCHITECTURE.md | Architecture Overview | reference | all | active | 527 | One-page summary with diagram |
+| docs/projects/veterinary-medical-records/02-tech/BACKEND_IMPLEMENTATION.md | Backend Implementation Notes | guide | contributor | active | 1,870 | Layering, persistence, processing |
+| docs/projects/veterinary-medical-records/01-design/DESIGN_SYSTEM.md | Lean Design System | reference | contributor | active | 1,243 | Color/spacing tokens, a11y |
+| docs/projects/veterinary-medical-records/02-tech/FRONTEND_IMPLEMENTATION.md | Frontend Implementation Notes | guide | contributor | active | 1,631 | Stack, PDF rendering, confidence UX |
+| docs/projects/veterinary-medical-records/04-delivery/FUTURE_IMPROVEMENTS.md | Known Limitations & Future Directions | explanation | staff-engineer | active | 765 | Reframed 2026-02-27 |
+| docs/projects/veterinary-medical-records/04-delivery/IMPLEMENTATION_PLAN.md | Implementation Plan | plan | contributor | active | 15,394 | **Very large**; 6 releases |
+| docs/projects/veterinary-medical-records/03-ops/MANUAL_QA_REGRESSION_CHECKLIST.md | Manual QA Regression Checklist | how-to | all | active | 958 | All cases "Pending" |
+| docs/projects/veterinary-medical-records/01-design/PRODUCT_DESIGN.md | Product Design | explanation | all | active | 2,272 | Strategy, confidence, Global Schema |
+| docs/projects/veterinary-medical-records/02-tech/TECHNICAL_DESIGN.md | Technical Design | reference | contributor | active | 9,637 | **Very large**; contracts, state machines |
+| docs/projects/veterinary-medical-records/01-design/UX_DESIGN.md | UX Design | reference | contributor | active | 2,131 | Review flow, rendering rules |
+| docs/projects/veterinary-medical-records/02-tech/adr/ADR-ARCH-0001-modular-monolith.md | ADR-ARCH-0001 | adr | staff-engineer | active | 426 | |
+| docs/projects/veterinary-medical-records/02-tech/adr/ADR-ARCH-0002-sqlite-database.md | ADR-ARCH-0002 | adr | staff-engineer | active | 369 | |
+| docs/projects/veterinary-medical-records/02-tech/adr/ADR-ARCH-0003-raw-sql-repository-pattern.md | ADR-ARCH-0003 | adr | staff-engineer | active | 376 | |
+| docs/projects/veterinary-medical-records/02-tech/adr/ADR-ARCH-0004-in-process-async-processing.md | ADR-ARCH-0004 | adr | staff-engineer | active | 368 | |
+| docs/projects/veterinary-medical-records/02-tech/adr/index.md | ADR Index | index | all | active | 103 | |
+| docs/projects/veterinary-medical-records/03-ops/EXECUTION_RULES.md | Execution Rules | reference | contributor | active | 5,197 | Agent protocol; large |
+| docs/projects/veterinary-medical-records/04-delivery/IMPLEMENTATION_HISTORY.md | Implementation History | changelog | all | active | 571 | 12 iterations |
+| docs/projects/veterinary-medical-records/04-delivery/plans/PLAN_2026-02-28_DOCS_IMPROVEMENT.md | Plan: Docs Improvement | plan | contributor | active | 1,053 | This plan (active) |
+| docs/projects/veterinary-medical-records/04-delivery/plans/completed/COMPLETED_ITER-1-2.md | Completed: Iter 1-2 | changelog | contributor | active | 517 | |
+| docs/projects/veterinary-medical-records/04-delivery/plans/completed/COMPLETED_ITER-3.md | Completed: Iter 3 | changelog | contributor | active | 169 | |
+| docs/projects/veterinary-medical-records/04-delivery/plans/completed/COMPLETED_ITER-4.md | Completed: Iter 4 | changelog | contributor | active | 172 | |
+| docs/projects/veterinary-medical-records/04-delivery/plans/completed/COMPLETED_ITER-5.md | Completed: Iter 5 | changelog | contributor | active | 173 | |
+| docs/projects/veterinary-medical-records/04-delivery/plans/completed/COMPLETED_ITER-6.md | Completed: Iter 6 | changelog | contributor | active | 258 | |
+| docs/projects/veterinary-medical-records/04-delivery/plans/completed/COMPLETED_ITER-7.md | Completed: Iter 7 | changelog | contributor | active | 279 | |
+| docs/projects/veterinary-medical-records/04-delivery/plans/completed/COMPLETED_ITER-8.md | Completed: Iter 8 | changelog | contributor | active | 367 | |
+| docs/projects/veterinary-medical-records/04-delivery/plans/completed/COMPLETED_ITER-9.md | Completed: Iter 9 | changelog | contributor | active | 412 | |
+| docs/projects/veterinary-medical-records/04-delivery/plans/completed/COMPLETED_2026-02-26_INSTALL_PLAYWRIGHT.md | Plan: Playwright Install | plan | contributor | active | 2,151 | Spanish; full plan |
+| docs/projects/veterinary-medical-records/04-delivery/plans/completed/COMPLETED_2026-02-26_ITER-9-E2E.md | Plan: Iter 9 E2E | plan | contributor | active | 2,768 | Full step log |
+| docs/projects/veterinary-medical-records/04-delivery/plans/completed/COMPLETED_2026-02-26_ITER-10-HARDENING.md | Plan: Iter 10 Hardening | plan | contributor | active | 2,895 | |
+| docs/projects/veterinary-medical-records/04-delivery/plans/completed/COMPLETED_2026-02-27_ITER-11-FULLSTACK-HARDENING.md | Plan: Iter 11 Hardening | plan | contributor | active | 4,080 | Largest completed |
+| docs/projects/veterinary-medical-records/04-delivery/plans/completed/COMPLETED_2026-02-27_ITER-12-FINAL.md | Plan: Iter 12 Final | plan | contributor | active | 3,600 | |
+| docs/projects/veterinary-medical-records/99-archive/12_FACTOR_AUDIT.md | 12-Factor Audit | audit | staff-engineer | **stale** | 628 | Findings resolved in Iter 2+ |
+| docs/projects/veterinary-medical-records/99-archive/CTO_REVIEW_VERDICT.md | CTO Review Verdict | audit | staff-engineer | **stale** | 1,880 | "Still open" resolved; **broken link** |
+| docs/projects/veterinary-medical-records/99-archive/codebase_audit.md | Codebase Maintainability Audit | audit | staff-engineer | **stale** | 1,783 | Findings resolved in Iter 1-12 |
+| docs/projects/veterinary-medical-records/04-delivery/DELIVERY_SUMMARY.md | Delivery Summary | reference | all | active | 3,763 | Quantitative metrics |
+| docs/projects/veterinary-medical-records/03-ops/PLAN_E2E_TEST_COVERAGE.md | Plan E2E Test Coverage | plan | contributor | active | 7,508 | **Very large**; Spanish |
 | docs/shared/BRAND_GUIDELINES.md | Brand Guidelines | reference | all | active | 494 | |
 | docs/shared/ENGINEERING_PLAYBOOK.md | Engineering Guidelines | reference | contributor | active | 3,802 | Mandatory standards |
 | docs/shared/UX_GUIDELINES.md | UX Guidelines | reference | all | active | 536 | |
@@ -252,7 +252,7 @@ _Empty._
 
 **Revision history:**
 - v1 (2026-02-28): initial proposal with architecture/design/guides/ categories
-- v2 (2026-03-01): user feedback — eliminated overlap between categories; adopted intent-based grouping (design/tech/ops/delivery/metrics); wiki promoted to multi-project platform
+- v2 (2026-03-01): user feedback — eliminated overlap between categories; adopted intent-based grouping (01-design/tech/ops/delivery/metrics); wiki promoted to multi-project platform
 
 #### Current structure (problems)
 
@@ -340,36 +340,36 @@ docs/
 
 | Current path | Target path | Reason |
 |---|---|---|
-| `project/PRODUCT_DESIGN.md` | `projects/veterinary-medical-records/design/PRODUCT_DESIGN.md` | design/ |
-| `project/UX_DESIGN.md` | `projects/veterinary-medical-records/design/UX_DESIGN.md` | design/ |
-| `project/DESIGN_SYSTEM.md` | `projects/veterinary-medical-records/design/DESIGN_SYSTEM.md` | design/ |
-| `project/ARCHITECTURE.md` | `projects/veterinary-medical-records/tech/ARCHITECTURE.md` | tech/ |
-| `project/TECHNICAL_DESIGN.md` | `projects/veterinary-medical-records/tech/TECHNICAL_DESIGN.md` | tech/ |
-| `project/BACKEND_IMPLEMENTATION.md` | `projects/veterinary-medical-records/tech/BACKEND_IMPLEMENTATION.md` | tech/ |
-| `project/FRONTEND_IMPLEMENTATION.md` | `projects/veterinary-medical-records/tech/FRONTEND_IMPLEMENTATION.md` | tech/ |
-| `project/adr/README.md` | `projects/veterinary-medical-records/tech/adr/README.md` | tech/adr/ |
-| `project/adr/ADR-ARCH-0001*.md` | `projects/veterinary-medical-records/tech/adr/ADR-ARCH-0001*.md` | tech/adr/ |
-| `project/adr/ADR-ARCH-0002*.md` | `projects/veterinary-medical-records/tech/adr/ADR-ARCH-0002*.md` | tech/adr/ |
-| `project/adr/ADR-ARCH-0003*.md` | `projects/veterinary-medical-records/tech/adr/ADR-ARCH-0003*.md` | tech/adr/ |
-| `project/adr/ADR-ARCH-0004*.md` | `projects/veterinary-medical-records/tech/adr/ADR-ARCH-0004*.md` | tech/adr/ |
-| `project/implementation/EXECUTION_RULES.md` | `projects/veterinary-medical-records/ops/EXECUTION_RULES.md` | ops/ |
-| `project/MANUAL_QA_REGRESSION_CHECKLIST.md` | `projects/veterinary-medical-records/ops/MANUAL_QA_REGRESSION_CHECKLIST.md` | ops/ |
-| `project/testing/PLAN_E2E_TEST_COVERAGE.md` | `projects/veterinary-medical-records/ops/PLAN_E2E_TEST_COVERAGE.md` | ops/ |
-| `project/IMPLEMENTATION_PLAN.md` | `projects/veterinary-medical-records/delivery/IMPLEMENTATION_PLAN.md` | delivery/ |
-| `project/implementation/IMPLEMENTATION_HISTORY.md` | `projects/veterinary-medical-records/delivery/IMPLEMENTATION_HISTORY.md` | delivery/ |
-| `project/refactor/DELIVERY_SUMMARY.md` | `projects/veterinary-medical-records/delivery/DELIVERY_SUMMARY.md` | delivery/ |
-| `project/FUTURE_IMPROVEMENTS.md` | `projects/veterinary-medical-records/delivery/FUTURE_IMPROVEMENTS.md` | delivery/ |
-| `project/implementation/PLAN_*.md` | `projects/veterinary-medical-records/delivery/plans/PLAN_*.md` | delivery/plans/ |
-| `project/implementation/completed/*` (14 files) | `projects/veterinary-medical-records/delivery/plans/completed/*` | delivery/plans/completed/ |
-| `project/metrics/COPILOT_USAGE.md` | `projects/veterinary-medical-records/metrics/COPILOT_USAGE.md` | metrics/ |
-| `project/refactor/12_FACTOR_AUDIT.md` | `projects/veterinary-medical-records/archive/12_FACTOR_AUDIT.md` | archive/ |
-| `project/refactor/CTO_REVIEW_VERDICT.md` | `projects/veterinary-medical-records/archive/CTO_REVIEW_VERDICT.md` | archive/ |
-| `project/refactor/codebase_audit.md` | `projects/veterinary-medical-records/archive/codebase_audit.md` | archive/ |
+| `project/PRODUCT_DESIGN.md` | `projects/veterinary-medical-records/01-design/PRODUCT_DESIGN.md` | design/ |
+| `project/UX_DESIGN.md` | `projects/veterinary-medical-records/01-design/UX_DESIGN.md` | design/ |
+| `project/DESIGN_SYSTEM.md` | `projects/veterinary-medical-records/01-design/DESIGN_SYSTEM.md` | design/ |
+| `project/ARCHITECTURE.md` | `projects/veterinary-medical-records/02-tech/ARCHITECTURE.md` | tech/ |
+| `project/TECHNICAL_DESIGN.md` | `projects/veterinary-medical-records/02-tech/TECHNICAL_DESIGN.md` | tech/ |
+| `project/BACKEND_IMPLEMENTATION.md` | `projects/veterinary-medical-records/02-tech/BACKEND_IMPLEMENTATION.md` | tech/ |
+| `project/FRONTEND_IMPLEMENTATION.md` | `projects/veterinary-medical-records/02-tech/FRONTEND_IMPLEMENTATION.md` | tech/ |
+| `project/adr/index.md` | `projects/veterinary-medical-records/02-tech/adr/index.md` | tech/adr/ |
+| `project/adr/ADR-ARCH-0001*.md` | `projects/veterinary-medical-records/02-tech/adr/ADR-ARCH-0001*.md` | tech/adr/ |
+| `project/adr/ADR-ARCH-0002*.md` | `projects/veterinary-medical-records/02-tech/adr/ADR-ARCH-0002*.md` | tech/adr/ |
+| `project/adr/ADR-ARCH-0003*.md` | `projects/veterinary-medical-records/02-tech/adr/ADR-ARCH-0003*.md` | tech/adr/ |
+| `project/adr/ADR-ARCH-0004*.md` | `projects/veterinary-medical-records/02-tech/adr/ADR-ARCH-0004*.md` | tech/adr/ |
+| `project/implementation/EXECUTION_RULES.md` | `projects/veterinary-medical-records/03-ops/EXECUTION_RULES.md` | ops/ |
+| `project/MANUAL_QA_REGRESSION_CHECKLIST.md` | `projects/veterinary-medical-records/03-ops/MANUAL_QA_REGRESSION_CHECKLIST.md` | ops/ |
+| `project/testing/PLAN_E2E_TEST_COVERAGE.md` | `projects/veterinary-medical-records/03-ops/PLAN_E2E_TEST_COVERAGE.md` | ops/ |
+| `project/IMPLEMENTATION_PLAN.md` | `projects/veterinary-medical-records/04-delivery/IMPLEMENTATION_PLAN.md` | delivery/ |
+| `project/implementation/IMPLEMENTATION_HISTORY.md` | `projects/veterinary-medical-records/04-delivery/IMPLEMENTATION_HISTORY.md` | delivery/ |
+| `project/refactor/DELIVERY_SUMMARY.md` | `projects/veterinary-medical-records/04-delivery/DELIVERY_SUMMARY.md` | delivery/ |
+| `project/FUTURE_IMPROVEMENTS.md` | `projects/veterinary-medical-records/04-delivery/FUTURE_IMPROVEMENTS.md` | delivery/ |
+| `project/implementation/PLAN_*.md` | `projects/veterinary-medical-records/04-delivery/plans/PLAN_*.md` | delivery/plans/ |
+| `project/implementation/completed/*` (14 files) | `projects/veterinary-medical-records/04-delivery/plans/completed/*` | delivery/plans/completed/ |
+| `project/metrics/COPILOT_USAGE.md` | `projects/veterinary-medical-records/04-delivery/COPILOT_USAGE.md` | metrics/ |
+| `project/refactor/12_FACTOR_AUDIT.md` | `projects/veterinary-medical-records/99-archive/12_FACTOR_AUDIT.md` | archive/ |
+| `project/refactor/CTO_REVIEW_VERDICT.md` | `projects/veterinary-medical-records/99-archive/CTO_REVIEW_VERDICT.md` | archive/ |
+| `project/refactor/codebase_audit.md` | `projects/veterinary-medical-records/99-archive/codebase_audit.md` | archive/ |
 
 **New files:**
 - `docs/README.md` — rewritten as multi-project wiki index
 - `docs/projects/README.md` — initiative listing
-- `docs/projects/veterinary-medical-records/README.md` — project landing page with category table
+- `docs/projects/veterinary-medical-records/00-overview.md` — project landing page with category table
 
 **Folders deleted** (empty after migration): `project/` (entire tree)
 
@@ -381,7 +381,7 @@ docs/
 | **Multi-project ready** | `projects/` allows adding initiatives without restructuring |
 | **Minimal disruption** | Filenames preserved (ALL_CAPS), only paths change |
 | **Explicit lifecycle** | `archive/` separates stale from active unambiguously |
-| **Max depth = 4** | Deepest: `projects/veterinary-medical-records/delivery/plans/completed/` |
+| **Max depth = 4** | Deepest: `projects/veterinary-medical-records/04-delivery/plans/completed/` |
 
 #### D2-B impact estimate
 

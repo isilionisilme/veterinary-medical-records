@@ -140,8 +140,8 @@ def test_doc_updates_test_impact_map_covers_router_and_brand_docs() -> None:
     assert "docs/agent_router/*.md" in text
     assert "docs/agent_router/**/*.md" in text
     assert "docs/shared/engineering-playbook.md" in text
-    assert "docs/projects/veterinary-medical-records/design/ux-design.md" in text
-    assert "docs/projects/veterinary-medical-records/tech/technical-design.md" in text
+    assert "docs/projects/veterinary-medical-records/01-design/ux-design.md" in text
+    assert "docs/projects/veterinary-medical-records/02-tech/technical-design.md" in text
     assert "owner_any" in text
     assert "docs/shared/brand-guidelines.md" in text
 
@@ -152,10 +152,12 @@ def test_router_parity_map_covers_product_design_module_76() -> None:
     assert '"docs/projects/veterinary-medical-records/*.md"' in text
     assert '"docs/shared/*.md"' in text
     assert (
-        '"source_doc": "docs/projects/veterinary-medical-records/design/product-design.md"' in text
+        '"source_doc": "docs/projects/veterinary-medical-records/01-design/product-design.md"'
+        in text
     )
     assert (
-        '"source_doc": "docs/projects/veterinary-medical-records/tech/technical-design.md"' in text
+        '"source_doc": "docs/projects/veterinary-medical-records/02-tech/technical-design.md"'
+        in text
     )
     assert '"source_doc": "docs/shared/engineering-playbook.md"' in text
     assert (

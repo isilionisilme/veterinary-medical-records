@@ -10,7 +10,7 @@ from pathlib import Path
 SNAPSHOT_CANDIDATE_DOCS = [
     "AGENTS.md",
     "docs/README.md",
-    "docs/projects/veterinary-medical-records/tech/TECHNICAL_DESIGN.md",
+    "docs/projects/veterinary-medical-records/02-tech/TECHNICAL_DESIGN.md",
     "docs/shared/ENGINEERING_PLAYBOOK.md",
 ]
 
@@ -60,7 +60,7 @@ def _list_touched_docs_for_day(day: date) -> list[str]:
 
 def _select_plan_path(sha: str) -> str | None:
     monolithic_candidates = [
-        "docs/projects/veterinary-medical-records/archive/AI_ITERATIVE_EXECUTION_PLAN.md",
+        "docs/projects/veterinary-medical-records/99-archive/AI_ITERATIVE_EXECUTION_PLAN.md",
         "docs/projects/veterinary-medical-records/AI_ITERATIVE_EXECUTION_PLAN.md",
     ]
     for path in monolithic_candidates:
@@ -70,9 +70,9 @@ def _select_plan_path(sha: str) -> str | None:
     split_paths = [
         path
         for path in _list_paths_at_commit(
-            sha, "docs/projects/veterinary-medical-records/delivery/plans"
+            sha, "docs/projects/veterinary-medical-records/04-delivery/plans"
         )
-        if path.startswith("docs/projects/veterinary-medical-records/delivery/plans/PLAN_")
+        if path.startswith("docs/projects/veterinary-medical-records/04-delivery/plans/PLAN_")
         and path.endswith(".md")
     ]
     if not split_paths:

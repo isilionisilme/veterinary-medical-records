@@ -102,4 +102,4 @@ frontend/src/
 - [product-design.md](product-design.md) — Product intent and semantics
 - [ux-design.md](ux-design.md) — Interaction contract and confidence UX rules
 - [delivery-summary.md](refactor/delivery-summary.md) — Quantitative delivery evidence
-- [ADR index](adr/README.md) — All architecture decision records
+- [ADR index](adr/index.md) — All architecture decision records

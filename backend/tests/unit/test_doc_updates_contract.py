@@ -198,16 +198,19 @@ def test_doc_test_sync_map_has_minimum_rules() -> None:
     assert '"doc_glob": "docs/agent_router/*.md"' in text
     assert '"doc_glob": "docs/agent_router/**/*.md"' in text
     assert (
-        '"doc_glob": "docs/projects/veterinary-medical-records/archive/12-factor-audit.md"' in text
+        '"doc_glob": "docs/projects/veterinary-medical-records/99-archive/12-factor-audit.md"'
+        in text
     )
     assert '"doc_glob": "docs/shared/engineering-playbook.md"' in text
     assert (
-        '"doc_glob": "docs/projects/veterinary-medical-records/tech/backend-implementation.md"'
+        '"doc_glob": "docs/projects/veterinary-medical-records/02-tech/backend-implementation.md"'
         in text
     )
-    assert '"doc_glob": "docs/projects/veterinary-medical-records/design/ux-design.md"' in text
-    assert '"doc_glob": "docs/projects/veterinary-medical-records/tech/technical-design.md"' in text
-    assert '"doc_glob": "docs/projects/veterinary-medical-records/tech/adr/**/*.md"' in text
+    assert '"doc_glob": "docs/projects/veterinary-medical-records/01-design/ux-design.md"' in text
+    assert (
+        '"doc_glob": "docs/projects/veterinary-medical-records/02-tech/technical-design.md"' in text
+    )
+    assert '"doc_glob": "docs/projects/veterinary-medical-records/02-tech/adr/**/*.md"' in text
     assert '"owner_any"' in text
     assert '"docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/*.md"' in text
     assert '"docs/agent_router/04_PROJECT/BACKEND_IMPLEMENTATION/*.md"' in text
@@ -223,14 +226,16 @@ def test_router_parity_map_has_product_design_rule() -> None:
     assert '"docs/projects/veterinary-medical-records/*.md"' in text
     assert '"docs/shared/*.md"' in text
     assert (
-        '"source_doc": "docs/projects/veterinary-medical-records/archive/12-factor-audit.md"'
+        '"source_doc": "docs/projects/veterinary-medical-records/99-archive/12-factor-audit.md"'
         in text
     )
     assert (
-        '"source_doc": "docs/projects/veterinary-medical-records/design/product-design.md"' in text
+        '"source_doc": "docs/projects/veterinary-medical-records/01-design/product-design.md"'
+        in text
     )
     assert (
-        '"source_doc": "docs/projects/veterinary-medical-records/tech/technical-design.md"' in text
+        '"source_doc": "docs/projects/veterinary-medical-records/02-tech/technical-design.md"'
+        in text
     )
     assert '"source_doc": "docs/shared/engineering-playbook.md"' in text
     assert (

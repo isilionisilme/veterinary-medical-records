@@ -10,7 +10,7 @@ ROOT_README = Path("README.md")
 DOCS_README = Path("docs/README.md")
 PROJECT_ROOT = Path("docs/projects/veterinary-medical-records")
 SHARED_ROOT = Path("docs/shared")
-ADR_ROOT = Path("docs/projects/veterinary-medical-records/tech/adr")
+ADR_ROOT = Path("docs/projects/veterinary-medical-records/02-tech/adr")
 
 # Fixed page names for well-known READMEs (avoids stem collisions).
 _FIXED_NAMES: dict[str, str] = {
@@ -215,7 +215,7 @@ def main() -> int:
             for source, page in mapping.items()
             if source.as_posix().startswith("docs/projects/veterinary-medical-records/")
             and not source.as_posix().startswith(
-                "docs/projects/veterinary-medical-records/tech/adr/"
+                "docs/projects/veterinary-medical-records/02-tech/adr/"
             )
         ]
     )
@@ -223,7 +223,7 @@ def main() -> int:
         [
             page
             for source, page in mapping.items()
-            if source.as_posix().startswith("docs/projects/veterinary-medical-records/tech/adr/")
+            if source.as_posix().startswith("docs/projects/veterinary-medical-records/02-tech/adr/")
         ]
     )
     shared_pages = sorted(

@@ -29,18 +29,18 @@ Standards that apply across all initiatives:
 
 ## Projects
 
-- [veterinary-medical-records](projects/veterinary-medical-records/README.md) — AI-assisted veterinary clinical records processing.
+- [veterinary-medical-records](projects/veterinary-medical-records/00-overview.md) — AI-assisted veterinary clinical records processing.
 
 See [projects/README.md](projects/README.md) for the full initiative listing.
 
 ## Evaluator first-pass (recommended, 10-15 min)
 
 1. [README.md](../README.md) — Docker-first quickstart, smoke path, and repository overview.
-2. [product-design.md](projects/veterinary-medical-records/design/product-design.md) — problem framing and intended outcomes.
-3. [technical-design.md](projects/veterinary-medical-records/tech/technical-design.md) — architecture, contracts, and invariants.
-4. [ADR index](projects/veterinary-medical-records/tech/adr/README.md) — architecture decision records and trade-off rationale.
-5. [ux-design.md](projects/veterinary-medical-records/design/ux-design.md) — review workflow and UX interaction guarantees.
-6. [backend-implementation.md](projects/veterinary-medical-records/tech/backend-implementation.md) and [frontend-implementation.md](projects/veterinary-medical-records/tech/frontend-implementation.md) — implementation details.
+2. [product-design.md](projects/veterinary-medical-records/01-design/product-design.md) — problem framing and intended outcomes.
+3. [technical-design.md](projects/veterinary-medical-records/02-tech/technical-design.md) — architecture, contracts, and invariants.
+4. [ADR index](projects/veterinary-medical-records/02-tech/adr/index.md) — architecture decision records and trade-off rationale.
+5. [ux-design.md](projects/veterinary-medical-records/01-design/ux-design.md) — review workflow and UX interaction guarantees.
+6. [backend-implementation.md](projects/veterinary-medical-records/02-tech/backend-implementation.md) and [frontend-implementation.md](projects/veterinary-medical-records/02-tech/frontend-implementation.md) — implementation details.
 
 ## Tooling (optional)
 
@@ -50,11 +50,11 @@ See [projects/README.md](projects/README.md) for the full initiative listing.
 
 If documents conflict, resolve in this order:
 
-1. [technical-design.md](projects/veterinary-medical-records/tech/technical-design.md) — contracts and invariants
-2. [ux-design.md](projects/veterinary-medical-records/design/ux-design.md) — interaction contract
-3. [product-design.md](projects/veterinary-medical-records/design/product-design.md) — system meaning and governance boundary
-4. [implementation-plan.md](projects/veterinary-medical-records/delivery/implementation-plan.md) — sequencing and acceptance criteria
-5. [backend-implementation.md](projects/veterinary-medical-records/tech/backend-implementation.md) and [frontend-implementation.md](projects/veterinary-medical-records/tech/frontend-implementation.md) — implementation notes
+1. [technical-design.md](projects/veterinary-medical-records/02-tech/technical-design.md) — contracts and invariants
+2. [ux-design.md](projects/veterinary-medical-records/01-design/ux-design.md) — interaction contract
+3. [product-design.md](projects/veterinary-medical-records/01-design/product-design.md) — system meaning and governance boundary
+4. [implementation-plan.md](projects/veterinary-medical-records/04-delivery/implementation-plan.md) — sequencing and acceptance criteria
+5. [backend-implementation.md](projects/veterinary-medical-records/02-tech/backend-implementation.md) and [frontend-implementation.md](projects/veterinary-medical-records/02-tech/frontend-implementation.md) — implementation notes
 
 Shared docs (`docs/shared/*`) apply globally within their scope.
 
