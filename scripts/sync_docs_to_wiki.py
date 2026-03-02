@@ -97,7 +97,7 @@ def _split_anchor(target: str) -> tuple[str, str]:
 
 
 def _sidebar_link(label: str, page: str, wiki_base_url: str) -> str:
-    encoded_page = quote(page, safe="/-")
+    encoded_page = quote(page, safe="-")
     return f"[{label}]({wiki_base_url}/{encoded_page})"
 
 
