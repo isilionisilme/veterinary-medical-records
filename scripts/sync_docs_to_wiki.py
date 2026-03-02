@@ -273,16 +273,16 @@ def _auto_generate_folder_indices(
     mapping: dict[Path, str],
     root: Path,
     wiki_dir: Path,
-    prefix: str = "",
 ) -> dict[str, str]:
     """Walk the tree under *root* and generate wiki index pages for folders.
 
-    Returns a ``{folder_slug: wiki_page_name}`` dict so the sidebar can
-    render folders as clickable links.
+    Returns a ``{folder_name: wiki_page_name}`` dict so the sidebar can
+    render folders as clickable links.  Page names equal the folder name
+    (e.g. ``01-design``, ``adr``), keeping the wiki URL clean.
     """
     tree = _collect_tree(mapping, root)
     folder_pages: dict[str, str] = {}
-    _generate_indices_recursive(tree, wiki_dir, folder_pages, prefix)
+    _generate_indices_recursive(tree, wiki_dir, folder_pages)
     return folder_pages
 
 
@@ -290,7 +290,6 @@ def _generate_indices_recursive(
     tree: dict[str, object],
     wiki_dir: Path,
     folder_pages: dict[str, str],
-    prefix: str,
 ) -> None:
     folders = [k for k in tree if k != "__files__"]
     for folder in folders:
@@ -298,9 +297,8 @@ def _generate_indices_recursive(
         if not isinstance(child, dict):
             continue
 
-        slug_part = f"{prefix}-{_slug(folder)}" if prefix else _slug(folder)
-        # Avoid collision with existing doc pages
-        page_name = f"idx-{slug_part}"
+        # Use the folder name itself as the wiki page name.
+        page_name = folder
         folder_pages[folder] = page_name
 
         child_pages: list[tuple[str, str]] = []
@@ -310,13 +308,7 @@ def _generate_indices_recursive(
 
         child_folders = [k for k in child if k != "__files__"]
 
-        # Recurse into sub-folders (pass slug_part, not page_name)
-        _generate_indices_recursive(
-            child,
-            wiki_dir,
-            folder_pages,
-            slug_part,
-        )
+        _generate_indices_recursive(child, wiki_dir, folder_pages)
 
         content = _build_folder_index(folder, child_pages, child_folders, folder_pages)
         (wiki_dir / f"{page_name}.md").write_text(content, encoding="utf-8")
@@ -389,13 +381,11 @@ def main() -> int:
         mapping,
         PROJECT_ROOT,
         wiki_dir,
-        prefix="proj",
     )
     shared_folder_pages = _auto_generate_folder_indices(
         mapping,
         SHARED_ROOT,
         wiki_dir,
-        prefix="shared",
     )
     all_folder_pages = {**project_folder_pages, **shared_folder_pages}
 
