@@ -160,7 +160,10 @@ _LABELED_PATTERNS: tuple[tuple[str, str, float], ...] = (
     ),
     (
         "clinic_name",
-        r"(?:cl[ií]nica|centro\s+veterinario|hospital\s+veterinario)\s*[:\-]\s*([^\n;]{3,120})",
+        (
+            r"(?m)^\s*(?:cl[ií]nica|centro\s+veterinari[oa]|hospital\s+veterinari[oa]|"
+            r"centr0\s+veterinari0)\s*[:\-|]\s*(?:\n\s*)?([^\n;]{3,120})"
+        ),
         COVERAGE_CONFIDENCE_LABEL,
     ),
     (

@@ -33,7 +33,7 @@
     {
       "id": "address_line_not_clinic_name",
       "text": "Dirección de la clínica: Av. Norte 99\nPaciente: Rocky",
-      "expected_clinic_name": "Av. Norte 99"
+      "expected_clinic_name": null
     },
     {
       "id": "noise_word_clinica_not_label",
@@ -48,7 +48,7 @@
     {
       "id": "ocr_noisy_label_with_zero",
       "text": "CENTR0 VETERINARI0: Vet Plus Sevilla\nPaciente: Max",
-      "expected_clinic_name": null
+      "expected_clinic_name": "Vet Plus Sevilla"
     },
     {
       "id": "clinic_label_with_extra_spaces",

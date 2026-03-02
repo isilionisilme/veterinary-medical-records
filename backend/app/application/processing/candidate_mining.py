@@ -84,6 +84,15 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
             if _ADDRESS_LIKE_PATTERN.search(normalized_person):
                 return
             cleaned_value = normalized_person
+        if key == "clinic_name":
+            snippet_folded = snippet.casefold()
+            if "dirección" in snippet_folded or "direccion" in snippet_folded:
+                return
+            if "domicilio" in snippet_folded:
+                return
+            compact_clinic = cleaned_value.casefold()
+            if _ADDRESS_LIKE_PATTERN.search(compact_clinic) and re.search(r"\d", compact_clinic):
+                return
 
         normalized_key = cleaned_value.casefold()
         if normalized_key in seen_values[key]:
