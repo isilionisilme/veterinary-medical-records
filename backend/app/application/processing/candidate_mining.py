@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections import defaultdict
 from collections.abc import Mapping
 
@@ -29,6 +30,13 @@ from .date_parsing import (
     extract_regex_labeled_candidates,
     extract_timeline_document_date_candidates,
     extract_unanchored_document_date_candidates,
+)
+
+# Guard pattern for unlabeled pet_name heuristic — rejects lines that look
+# like addresses, phone numbers, license plates, or numeric IDs.
+_PET_NAME_GUARD_RE = re.compile(
+    r"\d{3,}|^[A-Z]{2,3}\d|calle|avda|portal|telf|tel[eé]f|c/|direc",
+    re.IGNORECASE,
 )
 
 
@@ -154,6 +162,27 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
         "HISTORIAL",
         "VISITA",
     }
+    # Case-insensitive set for the relaxed (title-case) pet_name heuristic.
+    _pet_name_stop_lower = stopwords_upper | {
+        "nº chip",
+        "n° chip",
+        "no chip",
+        "nº historial",
+        "fecha",
+        "paciente",
+        "propietario",
+        "propietaria",
+        "veterinario",
+        "veterinaria",
+        "diagnóstico",
+        "diagnostico",
+        "tratamiento",
+        "medicación",
+        "medicacion",
+        "vacunación",
+        "vacunacion",
+    }
+    _pet_name_stop_lower = {s.casefold() for s in _pet_name_stop_lower}
 
     for line in lines:
         if ":" in line:
@@ -316,12 +345,22 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
                     snippet=" ".join(lines[max(0, index - 1) : min(len(lines), index + 2)]),
                 )
 
-        if (
-            line.isupper()
-            and 2 < len(line) <= 30
+        # ── pet_name unlabeled heuristic ──────────────────────────────
+        # Accept lines that look like a standalone pet name (title-case or
+        # uppercase, 1-3 tokens, near species/chip/breed context).  Guard
+        # against addresses, phones, license numbers, section headers,
+        # and labeled fields (lines with ':' or '-' separators).
+        word_count = len(line.split())
+        is_name_like = (
+            2 < len(line) <= 40
+            and 1 <= word_count <= 3
             and line not in stopwords_upper
-            and " " not in line
-        ):
+            and line.casefold() not in _pet_name_stop_lower
+            and (line.isupper() or line.istitle())
+            and ":" not in line
+            and not _PET_NAME_GUARD_RE.search(line)
+        )
+        if is_name_like:
             nearby = " ".join(lines[index : min(len(lines), index + 4)]).casefold()
             if any(token in nearby for token in ("canino", "felino", "raza", "chip", "especie")):
                 add_candidate(
