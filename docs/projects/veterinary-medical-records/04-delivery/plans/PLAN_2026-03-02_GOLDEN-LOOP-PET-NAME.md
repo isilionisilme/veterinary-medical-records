@@ -3,7 +3,7 @@
 > **Operational rules:** See `docs/projects/veterinary-medical-records/ops/EXECUTION_RULES.md` for execution protocol, handoff rules, and step completion integrity.
 
 **Rama:** `feature/golden-loop-pet-name`
-**PR:** _To be created_
+**PR:** [#182](https://github.com/isilionisilme/veterinary-medical-records/pull/182)
 **Prerequisito:** Branch created from `main` in isolated worktree.
 
 ## Context
@@ -58,8 +58,8 @@ Goal: implement an end-to-end golden loop for one field (`pet_name`) as a reusab
 
 ### Phase 4 — Wrap-up
 
-- [ ] P4-A 🚧 — User review of extraction deltas and acceptable precision/recall tradeoff
-- [ ] P4-B 🔄 — Create PR with benchmark delta summary and rollback notes
+- [x] P4-A 🚧 — User review of extraction deltas and acceptable precision/recall tradeoff — ✅ approved ("Ahora sí sale bien")
+- [x] P4-B 🔄 — Create PR with benchmark delta summary and rollback notes — ✅ PR #182 updated
 
 ---
 
@@ -81,7 +81,7 @@ Goal: implement an end-to-end golden loop for one field (`pet_name`) as a reusab
 
 ### Paso objetivo
 
-_P4-A — User review (hard-gate)._
+_Completed._
 
 ### Prompt
 
