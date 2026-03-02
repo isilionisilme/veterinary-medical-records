@@ -1,6 +1,6 @@
 # Plan: Iteration 13 — Decompose AppWorkspace.tsx (custom hook extraction)
 
-> **Operational rules:** See [EXECUTION_RULES.md](EXECUTION_RULES.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
+> **Operational rules:** See [execution-rules.md](execution-rules.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
 
 **Iteración:** 13
 **Rama:** `refactor/decompose-app-workspace`

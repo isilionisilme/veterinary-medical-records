@@ -1,6 +1,6 @@
 # Architecture Overview
 
-> One-page summary for evaluators. For full detail, see [TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md).
+> One-page summary for evaluators. For full detail, see [technical-design.md](technical-design.md).
 
 ## Tech stack
 
@@ -98,8 +98,8 @@ frontend/src/
 
 ## Related documentation
 
-- [TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) — Full architecture, contracts, state machines (~2K lines)
-- [PRODUCT_DESIGN.md](PRODUCT_DESIGN.md) — Product intent and semantics
-- [UX_DESIGN.md](UX_DESIGN.md) — Interaction contract and confidence UX rules
-- [DELIVERY_SUMMARY.md](refactor/DELIVERY_SUMMARY.md) — Quantitative delivery evidence
+- [technical-design.md](technical-design.md) — Full architecture, contracts, state machines (~2K lines)
+- [product-design.md](product-design.md) — Product intent and semantics
+- [ux-design.md](ux-design.md) — Interaction contract and confidence UX rules
+- [delivery-summary.md](refactor/delivery-summary.md) — Quantitative delivery evidence
 - [ADR index](adr/README.md) — All architecture decision records

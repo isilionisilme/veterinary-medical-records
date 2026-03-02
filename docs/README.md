@@ -22,10 +22,10 @@ docs/
 
 Standards that apply across all initiatives:
 
-- [ENGINEERING_PLAYBOOK.md](shared/ENGINEERING_PLAYBOOK.md) — engineering standards and working agreements.
-- [UX_GUIDELINES.md](shared/UX_GUIDELINES.md) — global UX principles.
-- [BRAND_GUIDELINES.md](shared/BRAND_GUIDELINES.md) — global brand rules.
-- [LLM_BENCHMARKS.md](shared/LLM_BENCHMARKS.md) — LLM benchmarks system explanation.
+- [engineering-playbook.md](shared/engineering-playbook.md) — engineering standards and working agreements.
+- [ux-guidelines.md](shared/ux-guidelines.md) — global UX principles.
+- [brand-guidelines.md](shared/brand-guidelines.md) — global brand rules.
+- [llm-benchmarks.md](shared/llm-benchmarks.md) — LLM benchmarks system explanation.
 
 ## Projects
 
@@ -36,11 +36,11 @@ See [projects/README.md](projects/README.md) for the full initiative listing.
 ## Evaluator first-pass (recommended, 10-15 min)
 
 1. [README.md](../README.md) — Docker-first quickstart, smoke path, and repository overview.
-2. [PRODUCT_DESIGN.md](projects/veterinary-medical-records/design/PRODUCT_DESIGN.md) — problem framing and intended outcomes.
-3. [TECHNICAL_DESIGN.md](projects/veterinary-medical-records/tech/TECHNICAL_DESIGN.md) — architecture, contracts, and invariants.
+2. [product-design.md](projects/veterinary-medical-records/design/product-design.md) — problem framing and intended outcomes.
+3. [technical-design.md](projects/veterinary-medical-records/tech/technical-design.md) — architecture, contracts, and invariants.
 4. [ADR index](projects/veterinary-medical-records/tech/adr/README.md) — architecture decision records and trade-off rationale.
-5. [UX_DESIGN.md](projects/veterinary-medical-records/design/UX_DESIGN.md) — review workflow and UX interaction guarantees.
-6. [BACKEND_IMPLEMENTATION.md](projects/veterinary-medical-records/tech/BACKEND_IMPLEMENTATION.md) and [FRONTEND_IMPLEMENTATION.md](projects/veterinary-medical-records/tech/FRONTEND_IMPLEMENTATION.md) — implementation details.
+5. [ux-design.md](projects/veterinary-medical-records/design/ux-design.md) — review workflow and UX interaction guarantees.
+6. [backend-implementation.md](projects/veterinary-medical-records/tech/backend-implementation.md) and [frontend-implementation.md](projects/veterinary-medical-records/tech/frontend-implementation.md) — implementation details.
 
 ## Tooling (optional)
 
@@ -50,11 +50,11 @@ See [projects/README.md](projects/README.md) for the full initiative listing.
 
 If documents conflict, resolve in this order:
 
-1. [TECHNICAL_DESIGN.md](projects/veterinary-medical-records/tech/TECHNICAL_DESIGN.md) — contracts and invariants
-2. [UX_DESIGN.md](projects/veterinary-medical-records/design/UX_DESIGN.md) — interaction contract
-3. [PRODUCT_DESIGN.md](projects/veterinary-medical-records/design/PRODUCT_DESIGN.md) — system meaning and governance boundary
-4. [IMPLEMENTATION_PLAN.md](projects/veterinary-medical-records/delivery/IMPLEMENTATION_PLAN.md) — sequencing and acceptance criteria
-5. [BACKEND_IMPLEMENTATION.md](projects/veterinary-medical-records/tech/BACKEND_IMPLEMENTATION.md) and [FRONTEND_IMPLEMENTATION.md](projects/veterinary-medical-records/tech/FRONTEND_IMPLEMENTATION.md) — implementation notes
+1. [technical-design.md](projects/veterinary-medical-records/tech/technical-design.md) — contracts and invariants
+2. [ux-design.md](projects/veterinary-medical-records/design/ux-design.md) — interaction contract
+3. [product-design.md](projects/veterinary-medical-records/design/product-design.md) — system meaning and governance boundary
+4. [implementation-plan.md](projects/veterinary-medical-records/delivery/implementation-plan.md) — sequencing and acceptance criteria
+5. [backend-implementation.md](projects/veterinary-medical-records/tech/backend-implementation.md) and [frontend-implementation.md](projects/veterinary-medical-records/tech/frontend-implementation.md) — implementation notes
 
 Shared docs (`docs/shared/*`) apply globally within their scope.
 

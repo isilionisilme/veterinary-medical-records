@@ -1,7 +1,7 @@
 # Delivery Summary — `improvement/refactor`
 
 > Quantitative record of what was delivered across 7 phases + Iterations 2–9.  
-> Source of truth for execution details: [`IMPLEMENTATION_HISTORY.md`](../implementation/IMPLEMENTATION_HISTORY.md).
+> Source of truth for execution details: [`implementation-history.md`](../implementation/implementation-history.md).
 
 ---
 
@@ -32,7 +32,7 @@ Audited the backend against the 12-Factor App methodology. Implemented 4 of 5 to
 | Admin CLI | New `cli.py` (54 LOC): `db-schema`, `db-check`, `config-check` commands |
 | Discarded: Worker profile | SQLite single-writer prevents reliable multi-process — documented in ADR-ARCH-0002 |
 
-**Audit record:** [`12_FACTOR_AUDIT.md`](12_FACTOR_AUDIT.md)
+**Audit record:** [`12-factor-audit.md`](12-factor-audit.md)
 
 ---
 
@@ -75,7 +75,7 @@ Key extracted components: `PdfViewer` (831), `DocumentsSidebar` (430), `FieldEdi
 
 `App.test.tsx` (3,693 LOC monolithic suite) → redistributed across 20 per-component test files matching the new structure.
 
-**Audit record:** [`codebase_audit.md`](codebase_audit.md)
+**Audit record:** [`codebase-audit.md`](codebase-audit.md)
 
 ---
 
@@ -120,7 +120,7 @@ Key improvements: removed duplicated suites, added `cli.py` tests (was 0%), impr
 
 ### Other documentation
 
-- [`FUTURE_IMPROVEMENTS.md`](FUTURE_IMPROVEMENTS.md) — 2/4/8 week roadmap (18 items traced to audits and ADRs)
+- [`future-improvements.md`](future-improvements.md) — 2/4/8 week roadmap (18 items traced to audits and ADRs)
 - [`docs/projects/veterinary-medical-records/tech/adr/README.md`](../adr/README.md) — ADR index linking architecture decisions
 - Root `README.md` enriched: architecture overview, ADR links, evaluator quickstart, quality gates, delivery evidence
 - `docs/README.md` updated: evaluator-first reading order, audit trail section
@@ -150,12 +150,12 @@ Final verification: all 7 CI checks green, PR #145 updated, no regressions. Plan
 
 ## Iteration 2 — CTO Verdict Improvements (Phase 8)
 
-Targeted improvements from [`CTO_REVIEW_VERDICT.md`](CTO_REVIEW_VERDICT.md) — all 5 highest-leverage items addressed.
+Targeted improvements from [`cto-review-verdict.md`](cto-review-verdict.md) — all 5 highest-leverage items addressed.
 
 | # | Improvement | Step | Detail |
 |---|---|---|---|
 | 1 | SQLite WAL + busy_timeout | F8-B | `PRAGMA journal_mode=WAL` and `PRAGMA busy_timeout=5000` on every connection in `database.py` |
-| 2 | Security boundary docs | F8-D | New §13 Security Boundary + §14 Known Limitations in `TECHNICAL_DESIGN.md` |
+| 2 | Security boundary docs | F8-D | New §13 Security Boundary + §14 Known Limitations in `technical-design.md` |
 | 3 | AppWorkspace.tsx header | F8-D | 9-line docstring acknowledging LOC debt and referencing decomposition roadmap |
 | 4 | `lib/utils.ts` coverage | F8-C | Error-path tests added; coverage from 24% to ≥70% |
 | 5 | FUTURE_IMPROVEMENTS AppWorkspace entry | F8-D | Item #7b: decomposition into ReviewWorkspace, StructuredDataView, PdfViewerContainer |
@@ -330,7 +330,7 @@ First end-to-end test suite for the application, covering the 4 critical user fl
 | Improvement | Detail |
 |---|---|
 | Step completion integrity | 6 new hard rules: NO-BATCH, CI-FIRST-BEFORE-HANDOFF, PLAN-UPDATE-IMMEDIATO, STEP-LOCK, EVIDENCE BLOCK, AUTO-HANDOFF GUARD |
-| EXECUTION_RULES.md | New § "Step completion integrity" with post-mortem origin |
+| execution-rules.md | New § "Step completion integrity" with post-mortem origin |
 | 🔒 STEP LOCKED state | Explicit plan state blocking progress until CI green + plan commit |
 
 ---
@@ -494,8 +494,8 @@ Playwright E2E suite expanded from 20 tests to **65 tests across 22 spec files**
 
 | # | Improvement | Detail |
 |---|---|---|
-| 3 | ARCHITECTURE.md | One-page architecture overview with Mermaid system diagram, tech stack table, ADR decision summary, data flow, and quality metrics |
-| 4 | README polish | CI/Python/React/License badges, tech stack one-liner, demo screenshot placeholder, link to ARCHITECTURE.md |
+| 3 | architecture.md | One-page architecture overview with Mermaid system diagram, tech stack table, ADR decision summary, data flow, and quality metrics |
+| 4 | README polish | CI/Python/React/License badges, tech stack one-liner, demo screenshot placeholder, link to architecture.md |
 
 ### Phase D — Documentation close-out
 
@@ -503,7 +503,7 @@ Playwright E2E suite expanded from 20 tests to **65 tests across 22 spec files**
 |---|---|---|
 | 5 | FUTURE_IMPROVEMENTS reframe | Renamed to "Known Limitations & Future Directions"; reorganized into completed summary, conscious trade-offs with rationale, and production evolution bullets |
 | 6 | TECHNICAL_DESIGN §14 | Updated with Iter 12 outcomes: E2E coverage, accessibility, resolved limitations |
-| 7 | E2E plan metrics | PLAN_E2E_TEST_COVERAGE.md §7 checkboxes all marked complete with per-spec counts |
+| 7 | E2E plan metrics | plan-e2e-test-coverage.md §7 checkboxes all marked complete with per-spec counts |
 
 | Metric | Value |
 |--------|-------|
@@ -512,4 +512,4 @@ Playwright E2E suite expanded from 20 tests to **65 tests across 22 spec files**
 | Frontend coverage | **~87%** (enforced ≥80%) |
 | E2E specs | **22 files, 65 tests** (up from 20 tests / 8 files) |
 | Accessibility | axe-core WCAG 2.1 AA: 0 critical violations |
-| New docs | ARCHITECTURE.md, Known Limitations reframe |
+| New docs | architecture.md, Known Limitations reframe |

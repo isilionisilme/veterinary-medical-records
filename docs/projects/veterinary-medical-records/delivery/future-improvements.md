@@ -8,7 +8,7 @@
 
 ## Completed improvements (summary)
 
-Across 12 iterations, **15 planned improvements** were fully resolved. For the complete timeline with metrics, see [IMPLEMENTATION_HISTORY.md](implementation/IMPLEMENTATION_HISTORY.md).
+Across 12 iterations, **15 planned improvements** were fully resolved. For the complete timeline with metrics, see [implementation-history.md](implementation/implementation-history.md).
 
 <details>
 <summary>Completed items (click to expand)</summary>
@@ -52,7 +52,7 @@ These items were evaluated and intentionally deferred. They do not represent ove
 
 ### 16 — Persistent event tracing and metrics
 
-**We chose not to** implement structured tracing or Prometheus metrics. The current structured logging is adequate for a demo context. Production-grade observability is documented in TECHNICAL_DESIGN.md §9 as a known evolution path.
+**We chose not to** implement structured tracing or Prometheus metrics. The current structured logging is adequate for a demo context. Production-grade observability is documented in technical-design.md §9 as a known evolution path.
 
 ### 17 — PostgreSQL adapter
 

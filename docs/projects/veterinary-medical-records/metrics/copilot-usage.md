@@ -6,7 +6,7 @@ This document summarizes the **real GitHub Copilot usage** for this project duri
 the February 2026 development period, consolidated from 11 personal accounts.
 
 For a general explanation of the benchmarks system, see
-[docs/shared/LLM_BENCHMARKS.md](../../shared/LLM_BENCHMARKS.md).
+[docs/shared/llm-benchmarks.md](../../shared/llm-benchmarks.md).
 
 ---
 

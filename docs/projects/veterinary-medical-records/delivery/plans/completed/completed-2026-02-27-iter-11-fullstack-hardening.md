@@ -1,6 +1,6 @@
 # Plan: Iteration 11 — E2E expansion + Error UX + testing depth + DX hardening
 
-> **Operational rules:** See [EXECUTION_RULES.md](EXECUTION_RULES.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
+> **Operational rules:** See [execution-rules.md](execution-rules.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
 
 **Rama:** `improvement/iteration-11`
 **PR:** #167 (single PR → `main`)
@@ -672,16 +672,16 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 
 **Branch:** `improvement/iteration-11`
 
-**Objective:** Refresh DELIVERY_SUMMARY.md and TECHNICAL_DESIGN.md with Iter 11 metrics, new capabilities (error UX, benchmarks, repo split), and updated known limitations.
+**Objective:** Refresh delivery-summary.md and technical-design.md with Iter 11 metrics, new capabilities (error UX, benchmarks, repo split), and updated known limitations.
 
 **Changes required:**
 
-1. **DELIVERY_SUMMARY.md** — Update metrics table:
+1. **delivery-summary.md** — Update metrics table:
    - Backend tests, frontend tests, E2E specs, coverage numbers.
    - Add new capabilities: error UX mapping, latency benchmarks, OpenAPI tags, repository split.
    - Add Iter 11 PR reference.
 
-2. **TECHNICAL_DESIGN.md §14** — Update known limitations:
+2. **technical-design.md §14** — Update known limitations:
    - Mark "SQLite repository monolith" as resolved (split into 3 aggregates).
    - Update AppWorkspace LOC if changed.
    - Add benchmark results summary.
@@ -699,7 +699,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 
 ### F18-U — FUTURE_IMPROVEMENTS refresh (Claude)
 
-**Paso objetivo:** Update FUTURE_IMPROVEMENTS.md to mark completed items and refresh the roadmap.
+**Paso objetivo:** Update future-improvements.md to mark completed items and refresh the roadmap.
 
 **Prompt:**
 
@@ -707,7 +707,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 
 **Branch:** `improvement/iteration-11`
 
-**Objective:** Mark Iter 11 completed items in FUTURE_IMPROVEMENTS.md and update effort/priority for remaining items.
+**Objective:** Mark Iter 11 completed items in future-improvements.md and update effort/priority for remaining items.
 
 **Changes required:**
 

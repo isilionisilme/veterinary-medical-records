@@ -1,6 +1,6 @@
 # CTO_REVIEW_VERDICT — Modules
 
-Owner entry for `docs/projects/veterinary-medical-records/archive/CTO_REVIEW_VERDICT.md` propagation in DOC_UPDATES workflow.
+Owner entry for `docs/projects/veterinary-medical-records/archive/cto-review-verdict.md` propagation in DOC_UPDATES workflow.
 Canonical references now use `docs/projects/veterinary-medical-records/tech/adr/*` paths.
 
 Propagation note:

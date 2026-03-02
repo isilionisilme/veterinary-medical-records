@@ -34,11 +34,11 @@ def test_router_parity_map_file_exists() -> None:
 
 def test_evaluate_parity_reports_missing_terms_when_source_changes() -> None:
     evaluate_parity = _load_evaluate_parity()
-    changed_files = ["docs/projects/veterinary-medical-records/design/PRODUCT_DESIGN.md"]
+    changed_files = ["docs/projects/veterinary-medical-records/design/product-design.md"]
     fixture_rel = f"tmp/parity-fixture-{uuid4().hex}.md"
     rules = [
         {
-            "source_doc": "docs/projects/veterinary-medical-records/design/PRODUCT_DESIGN.md",
+            "source_doc": "docs/projects/veterinary-medical-records/design/product-design.md",
             "router_modules": [
                 {
                     "path": fixture_rel,
@@ -70,10 +70,10 @@ def test_evaluate_parity_reports_missing_terms_when_source_changes() -> None:
 
 def test_evaluate_parity_skips_when_source_not_changed() -> None:
     evaluate_parity = _load_evaluate_parity()
-    changed_files = ["docs/projects/veterinary-medical-records/design/UX_DESIGN.md"]
+    changed_files = ["docs/projects/veterinary-medical-records/design/ux-design.md"]
     rules = [
         {
-            "source_doc": "docs/projects/veterinary-medical-records/design/PRODUCT_DESIGN.md",
+            "source_doc": "docs/projects/veterinary-medical-records/design/product-design.md",
             "router_modules": [
                 {
                     "path": (
@@ -100,10 +100,10 @@ def test_evaluate_parity_skips_when_source_not_changed() -> None:
 def test_evaluate_parity_fails_on_unmapped_required_source() -> None:
     evaluate_parity = _load_evaluate_parity()
     findings = evaluate_parity(
-        changed_files=["docs/projects/veterinary-medical-records/tech/TECHNICAL_DESIGN.md"],
+        changed_files=["docs/projects/veterinary-medical-records/tech/technical-design.md"],
         rules=[
             {
-                "source_doc": "docs/projects/veterinary-medical-records/design/PRODUCT_DESIGN.md",
+                "source_doc": "docs/projects/veterinary-medical-records/design/product-design.md",
                 "router_modules": [
                     {
                         "path": "docs/agent_router/04_PROJECT/PRODUCT_DESIGN/00_entry.md",
@@ -126,7 +126,7 @@ def test_evaluate_parity_excludes_source_matching_required_and_excluded_globs() 
         changed_files=["docs/projects/veterinary-medical-records/delivery/plans/PLAN_X.md"],
         rules=[
             {
-                "source_doc": "docs/projects/veterinary-medical-records/design/PRODUCT_DESIGN.md",
+                "source_doc": "docs/projects/veterinary-medical-records/design/product-design.md",
                 "router_modules": [
                     {
                         "path": "docs/agent_router/04_PROJECT/PRODUCT_DESIGN/00_entry.md",
