@@ -15,6 +15,17 @@ PROJECT_OVERVIEW = Path("docs/projects/veterinary-medical-records/00-overview.md
 PROJECT_INDEX_PAGE = "veterinary-medical-records"
 PROJECT_INDEX_TITLE = "2026-03-02 Veterinary Medical Records"
 
+_CATEGORY_PURPOSES: dict[str, str] = {
+    "01-design": "Defines what we build and for whom.",
+    "02-tech": "Defines how the system is built.",
+    "03-ops": "Defines how we operate and validate quality.",
+    "04-delivery": "Defines what was delivered and how it evolved.",
+    "99-archive": "Stores historical or non-canonical material.",
+    "adr": "Stores architecture decision records.",
+    "plans": "Stores active implementation plans.",
+    "completed": "Stores completed plan records.",
+}
+
 # Fixed page names for well-known READMEs (avoids stem collisions).
 _FIXED_NAMES: dict[str, str] = {
     DOCS_README.as_posix(): "Home",
@@ -257,25 +268,82 @@ def _build_folder_index(
     """
     if display_title is not None:
         display = display_title
-    elif "-" in folder_name:
-        display = folder_name.split("-", 1)[-1].replace("-", " ").title()
+    elif re.match(r"^\d{2}-", folder_name):
+        code, rest = folder_name.split("-", 1)
+        display = f"{code} {rest.replace('-', ' ').title()}"
+    elif folder_name == "adr":
+        display = "ADR"
     else:
         display = folder_name.replace("-", " ").title()
+
+    has_categories = len(child_folders) > 0
+    purpose = _CATEGORY_PURPOSES.get(folder_name, "")
+
     lines = [f"# {display}", ""]
-    if child_pages:
-        lines.append("## Documents")
+
+    if has_categories:
+        lines.append("## Documentation by category")
         lines.append("")
-        for label, page in sorted(child_pages, key=lambda x: x[0].lower()):
-            lines.append(f"- [[{page}|{label}]]")
-        lines.append("")
-    if child_folders:
-        lines.append("## Sub-sections")
-        lines.append("")
+        if purpose:
+            lines.append(purpose)
+            lines.append("")
+
         for cf in sorted(child_folders, key=str.lower):
             page_name = folder_pages.get(cf, cf)
-            lines.append(f"- [[{page_name}|{cf}]]")
+            category_purpose = _CATEGORY_PURPOSES.get(cf)
+            if category_purpose:
+                lines.append(f"- [[{page_name}|{cf}]] — {category_purpose}")
+            else:
+                lines.append(f"- [[{page_name}|{cf}]]")
         lines.append("")
+        lines.append("## Pages")
+        lines.append("")
+    else:
+        lines.append("## Documentation in this category")
+        lines.append("")
+        if purpose:
+            lines.append(purpose)
+        else:
+            lines.append("Lists the canonical pages that belong to this category.")
+        lines.append("")
+        lines.append("## Pages")
+        lines.append("")
+
+    if child_pages:
+        for label, page in sorted(child_pages, key=lambda x: x[0].lower()):
+            lines.append(f"- [[{page}|{label}]]")
+    else:
+        lines.append("- (No direct pages in this section)")
+
+    lines.append("")
     return "\n".join(lines)
+
+
+def _build_project_index(
+    mapping: dict[Path, str],
+    folder_pages: dict[str, str],
+) -> str:
+    tree = _collect_tree(mapping, PROJECT_ROOT)
+
+    files = tree.get("__files__", [])
+    child_pages = (
+        [
+            (label, page)
+            for label, page in files
+            if isinstance(files, list) and page != PROJECT_INDEX_PAGE
+        ]
+        if isinstance(files, list)
+        else []
+    )
+    child_folders = [key for key in tree if key != "__files__"]
+
+    return _build_folder_index(
+        folder_name="veterinary-medical-records",
+        child_pages=child_pages,
+        child_folders=child_folders,
+        folder_pages=folder_pages,
+        display_title=PROJECT_INDEX_TITLE,
+    )
 
 
 def _auto_generate_folder_indices(
@@ -314,6 +382,8 @@ def _generate_indices_recursive(
         files = child.get("__files__", [])
         if isinstance(files, list):
             child_pages = list(files)
+        if folder == "adr":
+            child_pages = [(label, page) for label, page in child_pages if label.lower() != "index"]
 
         child_folders = [k for k in child if k != "__files__"]
 
@@ -397,6 +467,11 @@ def main() -> int:
         wiki_dir,
     )
     all_folder_pages = {**project_folder_pages, **shared_folder_pages}
+
+    (wiki_dir / f"{PROJECT_INDEX_PAGE}.md").write_text(
+        _build_project_index(mapping, all_folder_pages),
+        encoding="utf-8",
+    )
 
     (wiki_dir / "_Sidebar.md").write_text(
         _build_sidebar(mapping, folder_pages=all_folder_pages, max_depth=3),
