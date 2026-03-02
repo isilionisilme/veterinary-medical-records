@@ -511,18 +511,18 @@ def main() -> int:
         encoding="utf-8",
     )
 
-    # Auto-generate project category index pages
+    # Auto-generate project category index pages (internal prefix to avoid collisions)
     project_folder_pages = _auto_generate_folder_indices(
         mapping,
         PROJECT_ROOT,
         wiki_dir,
+        page_prefix="project-",
     )
-    # Auto-generate shared category index pages (same format as project categories)
+    # Auto-generate shared category index pages (no prefix)
     shared_folder_pages = _auto_generate_folder_indices(
         mapping,
         SHARED_ROOT,
         wiki_dir,
-        page_prefix="shared-",
     )
 
     # Generate project root page from project tree (canonical wiki index)
