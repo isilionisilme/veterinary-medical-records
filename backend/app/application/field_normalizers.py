@@ -22,6 +22,12 @@ _PET_NAME_LOOKS_LIKE_LABEL = re.compile(
     r"(?i)^(?:especie|raza|sexo|peso|edad|chip|fecha|breed|species|sex|age|weight)"
     r"\s*[:\-|]",
 )
+_CLINIC_NAME_LEADING_LABEL = re.compile(
+    r"(?i)^(?:cl[ií]nica|centro\s+veterinari[oa]|hospital\s+veterinari[oa])\s*[:\-|]\s*"
+)
+_CLINIC_NAME_ADDRESS_LIKE = re.compile(
+    r"(?i)\b(?:c/|calle|av\.?|avenida|cp\b|portal|piso|puerta|direcci[oó]n|domicilio)\b"
+)
 
 CANONICAL_SPECIES: frozenset[str] = frozenset({"canino", "felino"})
 
@@ -46,6 +52,7 @@ def normalize_canonical_fields(
     normalized = dict(values)
 
     normalized["pet_name"] = _normalize_pet_name_value(normalized.get("pet_name"))
+    normalized["clinic_name"] = _normalize_clinic_name_value(normalized.get("clinic_name"))
     normalized["species"] = _normalize_species_value(normalized.get("species"))
     normalized["breed"] = _normalize_scalar_with_labels(normalized.get("breed"), ("raza", "breed"))
     normalized = _normalize_species_and_breed_pair(normalized, evidence_map)
@@ -140,6 +147,26 @@ def _normalize_scalar_with_labels(value: object, labels: tuple[str, ...]) -> str
 
     cleaned = _normalize_whitespace(cleaned.strip(" -:;,."))
     return cleaned or None
+
+
+def _normalize_clinic_name_value(value: object) -> str | None:
+    if not isinstance(value, str):
+        return None
+
+    cleaned = _normalize_whitespace(value)
+    if not cleaned:
+        return None
+
+    cleaned = _CLINIC_NAME_LEADING_LABEL.sub("", cleaned).strip(" -:;,.")
+    cleaned = _normalize_whitespace(cleaned)
+    if not cleaned:
+        return None
+
+    lower_cleaned = cleaned.casefold()
+    if _CLINIC_NAME_ADDRESS_LIKE.search(lower_cleaned) and re.search(r"\d", lower_cleaned):
+        return None
+
+    return cleaned
 
 
 def _normalize_species_value(value: object) -> str | None:

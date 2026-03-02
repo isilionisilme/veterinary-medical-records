@@ -492,4 +492,19 @@ def _candidate_sort_key(item: dict[str, object], key: str) -> tuple[float, float
         )
         return (1.0 if is_clean else 0.0), confidence
 
+    if key == "clinic_name":
+        raw_value = str(item.get("value", "")).strip()
+        lower_value = raw_value.casefold()
+        has_clinic_token = bool(
+            re.search(r"\b(?:cl[ií]nic|veterinari|hospital|centro|vet)\b", lower_value)
+        )
+        looks_address_like = bool(_ADDRESS_LIKE_PATTERN.search(lower_value)) and bool(
+            re.search(r"\d", lower_value)
+        )
+        if has_clinic_token and not looks_address_like:
+            return 2.0, confidence
+        if has_clinic_token:
+            return 1.0, confidence
+        return 0.0, confidence
+
     return 0.0, confidence
