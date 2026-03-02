@@ -468,11 +468,6 @@ def main() -> int:
     )
     all_folder_pages = {**project_folder_pages, **shared_folder_pages}
 
-    (wiki_dir / f"{PROJECT_INDEX_PAGE}.md").write_text(
-        _build_project_index(mapping, all_folder_pages),
-        encoding="utf-8",
-    )
-
     (wiki_dir / "_Sidebar.md").write_text(
         _build_sidebar(mapping, folder_pages=all_folder_pages, max_depth=3),
         encoding="utf-8",
