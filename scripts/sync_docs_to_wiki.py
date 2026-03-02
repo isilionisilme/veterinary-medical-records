@@ -540,7 +540,7 @@ def main() -> int:
     (wiki_dir / "_Sidebar.md").write_text(
         _build_sidebar(
             mapping,
-            project_folder_pages=project_folder_pages,
+            project_folder_pages={},
             shared_folder_pages=shared_folder_pages,
             max_depth=3,
         ),
