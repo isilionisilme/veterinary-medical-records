@@ -76,6 +76,11 @@ def test_doc_a_golden_goal_fields_regression(monkeypatch) -> None:
     microchip = schema.get("microchip_id")
     assert isinstance(microchip, str) and _DIGIT_LIKE_PATTERN.search(microchip)
 
+    # pet_name — docA has no labeled pet name; heuristic may or may not fire.
+    pet_name = schema.get("pet_name")
+    # Currently None; if heuristic improves, this assertion documents the change.
+    assert pet_name is None, f"pet_name regression: expected None, got {pet_name!r}"
+
     _assert_owner_or_vet_invariant(
         schema=schema,
         candidates=candidates,
@@ -116,6 +121,13 @@ def test_doc_b_golden_goal_fields_regression(monkeypatch) -> None:
     assert microchip in ("", None)
     microchip_candidates = candidates.get("microchip_id", [])
     assert microchip_candidates == []
+
+    # pet_name — docB has "NOMBRE DEMO" (actually owner name) picked up by
+    # unlabeled heuristic near "chip" context. Known false positive.
+    pet_name = schema.get("pet_name")
+    assert pet_name == "Nombre Demo", (
+        f"pet_name regression: expected 'Nombre Demo', got {pet_name!r}"
+    )
 
     _assert_owner_or_vet_invariant(
         schema=schema,

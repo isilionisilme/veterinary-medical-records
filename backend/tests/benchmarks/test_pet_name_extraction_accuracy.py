@@ -46,8 +46,8 @@ _CASES = _load_cases()
 # ---------------------------------------------------------------------------
 
 # Minimum Exact-Match rate to pass the aggregate gate.
-# Start at 0.0 (baseline discovery) — raise after P0-C captures real baseline.
-MIN_EXACT_MATCH_RATE: float = 0.0
+# After P1 improvements we hit 100 % on synthetic fixtures.
+MIN_EXACT_MATCH_RATE: float = 1.0
 
 
 def _normalize_for_comparison(value: str | None) -> str | None:
@@ -86,10 +86,8 @@ def test_pet_name_case(case: dict) -> None:
     norm_ext = _normalize_for_comparison(extracted)
     norm_exp = _normalize_for_comparison(expected)
 
-    # Soft assertion — marks xfail in baseline phase.
-    # Remove xfail once extraction is hardened.
-    if norm_ext != norm_exp:
-        pytest.xfail(f"[{case['id']}] expected={expected!r}  got={extracted!r}")
+    # Hard assertion — all synthetic cases must now pass after P1 improvements.
+    assert norm_ext == norm_exp, f"[{case['id']}] expected={expected!r}  got={extracted!r}"
 
 
 # ---------------------------------------------------------------------------
@@ -128,16 +126,16 @@ def test_pet_name_accuracy_summary() -> None:
     # ── Report (always printed) ──────────────────────────────────────────
     report_lines = [
         "",
-        "═══ pet_name extraction accuracy ═══",
+        "=== pet_name extraction accuracy ===",
         f"  Total cases     : {total}",
         f"  Exact matches   : {exact} / {total}  ({exact_rate:.1%})",
         f"  Null misses     : {nulls}  ({null_rate:.1%})",
         f"  False positives : {false_positives}  ({fp_rate:.1%})",
     ]
     if mismatches:
-        report_lines.append("  ── Mismatches ──")
+        report_lines.append("  -- Mismatches --")
         report_lines.extend(mismatches)
-    report_lines.append("═══════════════════════════════════════")
+    report_lines.append("=" * 39)
 
     print("\n".join(report_lines))
 
