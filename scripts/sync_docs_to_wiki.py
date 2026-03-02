@@ -202,7 +202,7 @@ def _build_sidebar(
         "## Documentation",
         "",
         "- [[Home]]",
-        "- [[Shared]]",
+        "- [[Shared|Shared Documentation]]",
     ]
     lines.extend(
         _render_tree_lines(
@@ -215,11 +215,12 @@ def _build_sidebar(
     )
 
     lines.append("- [[Projects]]")
+    lines.append("  - Veterinary Medical Records")
     lines.extend(
         _render_tree_lines(
             project_tree,
-            indent="  ",
-            depth=2,
+            indent="    ",
+            depth=3,
             max_depth=max_depth,
             folder_pages=folder_pages or {},
         )
