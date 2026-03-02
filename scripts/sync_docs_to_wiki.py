@@ -325,14 +325,23 @@ def _build_folder_index(
                 lines.append(f"- [[{page_name}|{cf}]]")
             lines.append("")
     else:
-        lines.append("## Documentation in this category")
+        lines.append("## Documentation by category")
+        lines.append("")
+        lines.append("| Category | Purpose |")
+        lines.append("|---|---|")
+        if purpose:
+            lines.append(f"| general | {purpose} |")
+        else:
+            lines.append("| general | Documents in this section without a sub-category. |")
+        lines.append("")
+        lines.append("## Pages")
+        lines.append("")
+        lines.append("### General")
         lines.append("")
         if purpose:
             lines.append(purpose)
         else:
-            lines.append("Lists the canonical pages that belong to this category.")
-        lines.append("")
-        lines.append("## Pages")
+            lines.append("Documents in this section without a sub-category.")
         lines.append("")
         if child_pages:
             for label, page in sorted(child_pages, key=lambda x: x[0].lower()):
