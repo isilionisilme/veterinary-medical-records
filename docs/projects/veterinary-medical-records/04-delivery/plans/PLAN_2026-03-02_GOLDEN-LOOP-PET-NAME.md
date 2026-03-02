@@ -40,21 +40,21 @@ Goal: implement an end-to-end golden loop for one field (`pet_name`) as a reusab
 
 ### Phase 1 — Extraction improvements (`pet_name` only)
 
-- [ ] P1-A 🔄 — Extend labeled regex patterns for `pet_name` (animal/mascota/name variants)
-- [ ] P1-B 🔄 — Improve heuristic fallback for mixed-case and multi-token names with strong guards against address/license/phone false positives
-- [ ] P1-C 🔄 — Add conservative `pet_name` normalization (`_normalize_pet_name_value`) and wire into `normalize_canonical_fields`
-- [ ] P1-D 🔄 — Add/adjust confidence grading logic for `pet_name` candidates only (no global behavior change)
+- [x] P1-A 🔄 — Extend labeled regex patterns for `pet_name` (animal/mascota/name variants) — ✅ `bd4a6e92` → 73.3% EM
+- [x] P1-B 🔄 — Improve heuristic fallback for mixed-case and multi-token names with strong guards against address/license/phone false positives — ✅ `bca05887` → 80.0% EM
+- [x] P1-C 🔄 — Add conservative `pet_name` normalization (`_normalize_pet_name_value`) and wire into `normalize_canonical_fields` — ✅ `7f3e18f1` → 100.0% EM
+- [x] P1-D 🔄 — Add/adjust confidence grading logic for `pet_name` candidates only (no global behavior change) — ✅ `a3510ca4`
 
 ### Phase 2 — Observability and quality gates
 
-- [ ] P2-A 🔄 — Add `pet_name` to goal-field observability and triage reporting
-- [ ] P2-B 🔄 — Add suspicious flags for `pet_name` (numeric-only, too short, stopword, embedded date)
+- [x] P2-A 🔄 — Add `pet_name` to goal-field observability and triage reporting — ✅ `8f78ae2d`
+- [x] P2-B 🔄 — Add suspicious flags for `pet_name` (numeric-only, too short, stopword, embedded date) — ✅ `8f78ae2d`
 
 ### Phase 3 — Tests and regression protection
 
-- [ ] P3-A 🔄 — Add unit tests for `pet_name` normalization and candidate guards
-- [ ] P3-B 🔄 — Add golden regression assertions for `pet_name` in `test_golden_extraction_regression.py`
-- [ ] P3-C 🔄 — Run focused tests + benchmark; set minimum non-regression threshold in benchmark test
+- [x] P3-A 🔄 — Add unit tests for `pet_name` normalization and candidate guards — ✅ `d2187e82` (29 tests)
+- [x] P3-B 🔄 — Add golden regression assertions for `pet_name` in `test_golden_extraction_regression.py` — ✅ `4b591420`
+- [x] P3-C 🔄 — Run focused tests + benchmark; set minimum non-regression threshold in benchmark test — ✅ 442/442 green, `MIN_EXACT_MATCH_RATE=1.0`
 
 ### Phase 4 — Wrap-up
 
@@ -81,7 +81,7 @@ Goal: implement an end-to-end golden loop for one field (`pet_name`) as a reusab
 
 ### Paso objetivo
 
-_Start at P0-A._
+_P4-A — User review (hard-gate)._
 
 ### Prompt
 
