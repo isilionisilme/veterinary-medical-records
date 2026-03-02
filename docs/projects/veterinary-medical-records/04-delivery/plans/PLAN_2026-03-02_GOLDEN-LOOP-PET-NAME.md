@@ -34,7 +34,7 @@ Goal: implement an end-to-end golden loop for one field (`pet_name`) as a reusab
 
 ### Phase 0 — Baseline and fixtures
 
-- [ ] P0-A 🔄 — Create synthetic fixtures + ground truth for `pet_name` variants (labeled, unlabeled, noisy, null-case) under `backend/tests/fixtures/synthetic/pet_name/`
+- [x] P0-A 🔄 — Create synthetic fixtures + ground truth for `pet_name` variants (labeled, unlabeled, noisy, null-case) under `backend/tests/fixtures/synthetic/pet_name/` (GPT-5.3-Codex) — ✅ `3523af93`
 - [ ] P0-B 🔄 — Add benchmark test `backend/tests/benchmark/test_pet_name_extraction_accuracy.py`
 - [ ] P0-C 🔄 — Run baseline benchmark and capture current pass/fail profile
 
