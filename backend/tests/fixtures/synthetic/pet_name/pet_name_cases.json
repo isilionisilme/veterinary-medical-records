@@ -73,6 +73,11 @@
       "text": "NOMBRE\nEspecie: Canina\nRaza: Mestiza"
     },
     {
+      "id": "negative_paciente_multiline_bullet_treatment",
+      "expected_pet_name": null,
+      "text": "PACIENTE:\n- STEROVET A VELOCIDAD DE MANTENIMIENTO\nTratamiento: Prednicortone"
+    },
+    {
       "id": "negative_no_pet_name_present",
       "expected_pet_name": null,
       "text": "Fecha: 04/10/19\nNº Chip\n941000024967769\nC/ CALLE DEMO 1 PORTAL 3 1F\nVet gastril 6ml cada 24h"

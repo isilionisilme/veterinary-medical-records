@@ -110,7 +110,8 @@ _WHITESPACE_PATTERN = re.compile(r"\s+")
 _LABELED_PATTERNS: tuple[tuple[str, str, float], ...] = (
     (
         "pet_name",
-        r"(?:paciente|nombre(?:\s+del\s+(?:paciente|animal))?|patient|animal|mascota|nombre\s+mascota)\s*[:\-|]\s*([^\n;|]{2,100})",
+        r"(?:paciente|nombre(?:\s+del\s+(?:paciente|animal))?|patient|animal|mascota|"
+        r"nombre\s+mascota)\s*[:\-|][ \t]*(?:\n[ \t]*)?([A-Za-zÁÉÍÓÚÜÑáéíóúüñ][^\n;|]{1,99})",
         COVERAGE_CONFIDENCE_LABEL,
     ),
     (
