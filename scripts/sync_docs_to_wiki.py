@@ -11,6 +11,8 @@ DOCS_README = Path("docs/README.md")
 PROJECT_ROOT = Path("docs/projects/veterinary-medical-records")
 SHARED_ROOT = Path("docs/shared")
 ADR_ROOT = Path("docs/projects/veterinary-medical-records/02-tech/adr")
+PROJECT_INDEX_PAGE = "veterinary-medical-records"
+PROJECT_INDEX_TITLE = "Veterinary Medical Records"
 
 # Fixed page names for well-known READMEs (avoids stem collisions).
 _FIXED_NAMES: dict[str, str] = {
@@ -215,7 +217,7 @@ def _build_sidebar(
     )
 
     lines.append("- [[Projects]]")
-    lines.append("  - Veterinary Medical Records")
+    lines.append(f"  - [[{PROJECT_INDEX_PAGE}|{PROJECT_INDEX_TITLE}]]")
     lines.extend(
         _render_tree_lines(
             project_tree,
@@ -285,6 +287,27 @@ def _auto_generate_folder_indices(
     folder_pages: dict[str, str] = {}
     _generate_indices_recursive(tree, wiki_dir, folder_pages)
     return folder_pages
+
+
+def _build_project_index(
+    mapping: dict[Path, str],
+    folder_pages: dict[str, str],
+) -> str:
+    tree = _collect_tree(mapping, PROJECT_ROOT)
+
+    child_pages: list[tuple[str, str]] = []
+    files = tree.get("__files__", [])
+    if isinstance(files, list):
+        child_pages = list(files)
+
+    child_folders = [key for key in tree if key != "__files__"]
+
+    return _build_folder_index(
+        PROJECT_INDEX_TITLE,
+        child_pages,
+        child_folders,
+        folder_pages,
+    )
 
 
 def _generate_indices_recursive(
@@ -390,6 +413,11 @@ def main() -> int:
     )
     all_folder_pages = {**project_folder_pages, **shared_folder_pages}
 
+    (wiki_dir / f"{PROJECT_INDEX_PAGE}.md").write_text(
+        _build_project_index(mapping, all_folder_pages),
+        encoding="utf-8",
+    )
+
     (wiki_dir / "_Sidebar.md").write_text(
         _build_sidebar(mapping, folder_pages=all_folder_pages, max_depth=3),
         encoding="utf-8",
@@ -404,6 +432,7 @@ def main() -> int:
     )
 
     keep = {f"{page}.md" for page in mapping.values()}
+    keep.add(f"{PROJECT_INDEX_PAGE}.md")
     keep.update({"Projects.md", "Shared.md", "_Sidebar.md", "_Footer.md"})
     # Keep auto-generated index pages
     keep.update(f"{page}.md" for page in all_folder_pages.values())
