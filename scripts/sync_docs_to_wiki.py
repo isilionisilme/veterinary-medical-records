@@ -352,10 +352,7 @@ def _build_folder_index(
                 for label, page in category_docs:
                     lines.append(f"- [[{page}|{label}]]")
             else:
-                if link_categories:
-                    lines.append(f"- [[{page_name}|{cf}]]")
-                else:
-                    lines.append(f"- {cf}")
+                lines.append("- (No direct pages in this category)")
             lines.append("")
     else:
         lines.append("## Documentation by category")
