@@ -38,6 +38,11 @@ _PET_NAME_GUARD_RE = re.compile(
     r"\d{3,}|^[A-Z]{2,3}\d|calle|avda|portal|telf|tel[eé]f|c/|direc",
     re.IGNORECASE,
 )
+_PET_NAME_BIRTHLINE_RE = re.compile(
+    r"^\s*([A-Za-zÁÉÍÓÚÜÑáéíóúüñ][A-Za-zÁÉÍÓÚÜÑáéíóúüñ'\-\s]{1,40}?)\s*[-–—]\s*"
+    r"(?:nacimiento|nac\.?|dob|birth(?:\s*date)?)\b",
+    re.IGNORECASE,
+)
 
 
 def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, object]]]:
@@ -317,6 +322,35 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
     for index, line in enumerate(lines):
         lower_line = line.casefold()
         normalized_single = _WHITESPACE_PATTERN.sub(" ", lower_line).strip()
+
+        birthline_match = _PET_NAME_BIRTHLINE_RE.match(line)
+        if birthline_match:
+            candidate_name = _WHITESPACE_PATTERN.sub(" ", birthline_match.group(1)).strip()
+            token_count = len(candidate_name.split())
+            if (
+                1 <= token_count <= 3
+                and candidate_name.casefold() not in _pet_name_stop_lower
+                and not _PET_NAME_GUARD_RE.search(candidate_name)
+            ):
+                nearby = " ".join(lines[index : min(len(lines), index + 4)]).casefold()
+                if any(
+                    token in nearby
+                    for token in (
+                        "canino",
+                        "felino",
+                        "raza",
+                        "chip",
+                        "especie",
+                        "nacimiento",
+                        "nac",
+                    )
+                ):
+                    add_candidate(
+                        key="pet_name",
+                        value=candidate_name,
+                        confidence=COVERAGE_CONFIDENCE_FALLBACK,
+                        snippet=line,
+                    )
 
         if normalized_single in species_keywords:
             add_candidate(
