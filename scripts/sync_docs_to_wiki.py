@@ -204,7 +204,7 @@ def _build_sidebar(
         "## Documentation",
         "",
         "- [[Home]]",
-        "- [[Shared|Shared Documentation]]",
+        "- [Shared Documentation](Shared)",
     ]
     lines.extend(
         _render_tree_lines(
@@ -217,7 +217,7 @@ def _build_sidebar(
     )
 
     lines.append("- [[Projects]]")
-    lines.append(f"  - [[{PROJECT_INDEX_PAGE}|{PROJECT_INDEX_TITLE}]]")
+    lines.append(f"  - [{PROJECT_INDEX_TITLE}]({PROJECT_INDEX_PAGE})")
     lines.extend(
         _render_tree_lines(
             project_tree,
