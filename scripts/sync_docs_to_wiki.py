@@ -24,14 +24,6 @@ _FIXED_NAMES: dict[str, str] = {
     f"{ADR_ROOT.as_posix()}/README.md": "ADR-Index",
 }
 
-_PROJECT_CATEGORY_DESCRIPTIONS: dict[str, str] = {
-    "01-design": "Qué construimos y para quién.",
-    "02-tech": "Cómo está construido.",
-    "03-ops": "Cómo trabajamos y operamos.",
-    "04-delivery": "Qué se entregó y su seguimiento.",
-    "99-archive": "Contenido histórico.",
-}
-
 
 def _slug(value: str) -> str:
     slug = re.sub(r"[^A-Za-z0-9]+", "-", value.strip())
@@ -303,33 +295,6 @@ def _auto_generate_folder_indices(
     return folder_pages
 
 
-def _build_project_index(
-    mapping: dict[Path, str],
-    folder_pages: dict[str, str],
-) -> str:
-    tree = _collect_tree(mapping, PROJECT_ROOT)
-    child_folders = sorted([key for key in tree if key != "__files__"], key=str.lower)
-
-    lines = [
-        f"# {PROJECT_INDEX_TITLE}",
-        "",
-        "Página generada automáticamente desde la estructura de documentación del proyecto.",
-        "",
-        "## Categories",
-        "",
-    ]
-    for folder in child_folders:
-        page_name = folder_pages.get(folder, folder)
-        description = _PROJECT_CATEGORY_DESCRIPTIONS.get(folder, "")
-        if description:
-            lines.append(f"- [[{page_name}|{folder}]] — {description}")
-        else:
-            lines.append(f"- [[{page_name}|{folder}]]")
-
-    lines.append("")
-    return "\n".join(lines)
-
-
 def _generate_indices_recursive(
     tree: dict[str, object],
     wiki_dir: Path,
@@ -432,11 +397,6 @@ def main() -> int:
         wiki_dir,
     )
     all_folder_pages = {**project_folder_pages, **shared_folder_pages}
-
-    (wiki_dir / f"{PROJECT_INDEX_PAGE}.md").write_text(
-        _build_project_index(mapping, all_folder_pages),
-        encoding="utf-8",
-    )
 
     (wiki_dir / "_Sidebar.md").write_text(
         _build_sidebar(mapping, folder_pages=all_folder_pages, max_depth=3),
