@@ -39,6 +39,21 @@
       "id": "noise_word_clinica_not_label",
       "text": "Animal activo y alerta. Corre por la clínica y salta.\nPaciente: Alya",
       "expected_clinic_name": null
+    },
+    {
+      "id": "multiline_header_value_next_line",
+      "text": "Centro Veterinario:\nClínica San Jorge\nPaciente: Nala",
+      "expected_clinic_name": "Clínica San Jorge"
+    },
+    {
+      "id": "ocr_noisy_label_with_zero",
+      "text": "CENTR0 VETERINARI0: Vet Plus Sevilla\nPaciente: Max",
+      "expected_clinic_name": null
+    },
+    {
+      "id": "clinic_label_with_extra_spaces",
+      "text": "Clínica   :    Hospital Vet Costa\nEspecie: Canina",
+      "expected_clinic_name": "Hospital Vet Costa"
     }
   ]
 }
