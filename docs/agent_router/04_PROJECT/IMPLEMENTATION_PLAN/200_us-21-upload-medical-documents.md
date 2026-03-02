@@ -23,9 +23,9 @@ As a user, I want to upload a medical document so that the system can start proc
 **Authoritative References**
 - Tech: API surface + upload requirements + errors: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../TECHNICAL_DESIGN/00_entry.md) Appendix B3/B3.2
 - Tech: Processing model and run invariants: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../TECHNICAL_DESIGN/00_entry.md) Sections 3–4 + Appendix A2
-- UX: Global upload experience and feedback heuristics: [`docs/shared/ux-guidelines.md`](../../03_SHARED/UX_GUIDELINES/00_entry.md)
-- UX: Project interaction contract: [`docs/projects/veterinary-medical-records/01-design/ux-design.md`](../UX_DESIGN/00_entry.md) Sections 1–4
-- UX: User-facing copy tone: [`docs/shared/brand-guidelines.md`](../../03_SHARED/BRAND_GUIDELINES/00_entry.md)
+- UX: Global upload experience and feedback heuristics: [`docs/shared/01-product/ux-guidelines.md`](../../03_SHARED/UX_GUIDELINES/00_entry.md)
+- UX: Project interaction contract: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../UX_DESIGN/00_entry.md) Sections 1–4
+- UX: User-facing copy tone: [`docs/shared/01-product/brand-guidelines.md`](../../03_SHARED/BRAND_GUIDELINES/00_entry.md)
 
 **Story-specific technical requirements**
 - Reuse the existing upload contract and backend validation rules as defined in [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../TECHNICAL_DESIGN/00_entry.md) Appendix B3/B3.2.
@@ -41,7 +41,7 @@ As a user, I want to upload a medical document so that the system can start proc
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
 - Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../TECHNICAL_DESIGN/00_entry.md) Appendix B7.
-- Follow UX guidance from [docs/shared/ux-guidelines.md](../../03_SHARED/UX_GUIDELINES/00_entry.md) and [docs/projects/veterinary-medical-records/01-design/ux-design.md](../UX_DESIGN/00_entry.md), if applicable.
-- Apply [docs/shared/brand-guidelines.md](../../03_SHARED/BRAND_GUIDELINES/00_entry.md), if applicable.
+- Follow UX guidance from [docs/shared/01-product/ux-guidelines.md](../../03_SHARED/UX_GUIDELINES/00_entry.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../UX_DESIGN/00_entry.md), if applicable.
+- Apply [docs/shared/01-product/brand-guidelines.md](../../03_SHARED/BRAND_GUIDELINES/00_entry.md), if applicable.
 
 ---

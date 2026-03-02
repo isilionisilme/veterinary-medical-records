@@ -100,9 +100,9 @@
     "docs/projects/veterinary-medical-records/04-delivery/plans/completed/completed-iter-6.md": "Clarification",
     "docs/projects/veterinary-medical-records/04-delivery/plans/completed/completed-iter-7.md": "Clarification",
     "docs/projects/veterinary-medical-records/04-delivery/plans/completed/completed-iter-8.md": "Clarification",
-    "docs/projects/veterinary-medical-records/01-design/design-system.md": "Clarification",
-    "docs/projects/veterinary-medical-records/01-design/product-design.md": "Clarification",
-    "docs/projects/veterinary-medical-records/01-design/ux-design.md": "Clarification",
+    "docs/projects/veterinary-medical-records/01-product/design-system.md": "Clarification",
+    "docs/projects/veterinary-medical-records/01-product/product-design.md": "Clarification",
+    "docs/projects/veterinary-medical-records/01-product/ux-design.md": "Clarification",
     "docs/projects/veterinary-medical-records/04-delivery/copilot-usage.md": "Clarification",
     "docs/projects/veterinary-medical-records/03-ops/execution-rules.md": "Clarification",
     "docs/projects/veterinary-medical-records/03-ops/manual-qa-regression-checklist.md": "Clarification",
@@ -116,8 +116,8 @@
     "docs/projects/veterinary-medical-records/02-tech/adr/ADR-ARCH-0003-raw-sql-repository-pattern.md": "Clarification",
     "docs/projects/veterinary-medical-records/02-tech/adr/ADR-ARCH-0004-in-process-async-processing.md": "Clarification",
     "docs/projects/veterinary-medical-records/02-tech/adr/index.md": "Clarification",
-    "docs/shared/engineering-playbook.md": "Clarification",
-    "docs/shared/ux-guidelines.md": "Clarification"
+    "docs/shared/03-ops/engineering-playbook.md": "Clarification",
+    "docs/shared/01-product/ux-guidelines.md": "Clarification"
   },
   "overall": "Rule"
 }

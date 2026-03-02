@@ -73,8 +73,8 @@ For a visual overview with Mermaid diagram, see [**architecture.md**](docs/proje
 
 Key design references:
 - [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](docs/projects/veterinary-medical-records/02-tech/technical-design.md)
-- [`docs/projects/veterinary-medical-records/01-design/product-design.md`](docs/projects/veterinary-medical-records/01-design/product-design.md)
-- [`docs/projects/veterinary-medical-records/01-design/ux-design.md`](docs/projects/veterinary-medical-records/01-design/ux-design.md)
+- [`docs/projects/veterinary-medical-records/01-product/product-design.md`](docs/projects/veterinary-medical-records/01-product/product-design.md)
+- [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](docs/projects/veterinary-medical-records/01-product/ux-design.md)
 
 Key technical decisions (ADRs):
 - [`docs/projects/veterinary-medical-records/02-tech/adr/ADR-ARCH-0001-modular-monolith.md`](docs/projects/veterinary-medical-records/02-tech/adr/ADR-ARCH-0001-modular-monolith.md) — modular monolith over microservices.
@@ -97,15 +97,15 @@ Start here:
 
 ### Project documentation (authoritative)
 
-📄 **[`docs/projects/veterinary-medical-records/01-design/product-design.md`](docs/projects/veterinary-medical-records/01-design/product-design.md)**  
+📄 **[`docs/projects/veterinary-medical-records/01-product/product-design.md`](docs/projects/veterinary-medical-records/01-product/product-design.md)**  
 Product intent + semantics summary (with canonical Google Doc link).
 
 ---
 
-📄 **[`docs/projects/veterinary-medical-records/01-design/ux-design.md`](docs/projects/veterinary-medical-records/01-design/ux-design.md)**  
+📄 **[`docs/projects/veterinary-medical-records/01-product/ux-design.md`](docs/projects/veterinary-medical-records/01-product/ux-design.md)**  
 UX interaction contract (roles, workflow guarantees, confidence UX rules).
 
-📄 **[`docs/shared/brand-guidelines.md`](docs/shared/brand-guidelines.md)**  
+📄 **[`docs/shared/01-product/brand-guidelines.md`](docs/shared/01-product/brand-guidelines.md)**  
 Visual identity and tone of user-facing copy.
 
 📄 **[`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](docs/projects/veterinary-medical-records/02-tech/technical-design.md)**  
@@ -129,10 +129,10 @@ Frontend implementation details (“how”).
 📄 **[`AGENTS.md`](AGENTS.md)**  
 Canonical AI assistant entrypoint for this repo.
 
-📄 **[`docs/shared/engineering-playbook.md`](docs/shared/engineering-playbook.md)**  
+📄 **[`docs/shared/03-ops/engineering-playbook.md`](docs/shared/03-ops/engineering-playbook.md)**  
 Engineering standards for implementation and changes.
 
-📄 **[`docs/shared/ux-guidelines.md`](docs/shared/ux-guidelines.md)**  
+📄 **[`docs/shared/01-product/ux-guidelines.md`](docs/shared/01-product/ux-guidelines.md)**  
 Shared UX principles referenced by project UX design.
 
 ---

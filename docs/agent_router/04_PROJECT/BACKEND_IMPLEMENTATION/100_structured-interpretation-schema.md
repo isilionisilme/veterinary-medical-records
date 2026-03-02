@@ -18,7 +18,7 @@ Implementation responsibility:
 
 ## Critical keys
 `StructuredField.is_critical` MUST be derived from `key ∈ CRITICAL_KEYS`.
-Source of truth: [`docs/projects/veterinary-medical-records/01-design/product-design.md`](../PRODUCT_DESIGN/00_entry.md).
+Source of truth: [`docs/projects/veterinary-medical-records/01-product/product-design.md`](../PRODUCT_DESIGN/00_entry.md).
 
 Backend responsibility:
 - Apply deterministic derivation at write-time (or validate on write).

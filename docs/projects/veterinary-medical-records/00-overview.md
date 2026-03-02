@@ -6,7 +6,7 @@ AI-assisted processing of veterinary clinical records — extracting, structurin
 
 | Category | Purpose |
 |---|---|
-| [design/](01-design/) | ¿Qué construimos y para quién? |
+| [product/](01-product/) | ¿Qué construimos, para quién, y cómo se ve? |
 | [tech/](02-tech/) | ¿Cómo está construido? |
 | [ops/](03-ops/) | ¿Cómo trabajamos? |
 | [delivery/](04-delivery/) | ¿Qué hicimos y cómo fue? |
@@ -15,12 +15,12 @@ AI-assisted processing of veterinary clinical records — extracting, structurin
 
 ## Pages
 
-### Design
-¿Qué construimos y para quién?
+### Product
+¿Qué construimos, para quién, y cómo se ve?
 
-- [product-design.md](01-design/product-design.md) — problem framing, scope, and governance.
-- [ux-design.md](01-design/ux-design.md) — review workflow and UX interaction guarantees.
-- [design-system.md](01-design/design-system.md) — design tokens, primitives, and wrappers.
+- [product-design.md](01-product/product-design.md) — problem framing, scope, and governance.
+- [ux-design.md](01-product/ux-design.md) — review workflow and UX interaction guarantees.
+- [design-system.md](01-product/design-system.md) — design tokens, primitives, and wrappers.
 
 ### Tech
 ¿Cómo está construido?

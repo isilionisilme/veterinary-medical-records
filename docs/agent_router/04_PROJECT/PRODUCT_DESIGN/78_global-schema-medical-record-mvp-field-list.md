@@ -51,4 +51,4 @@ Canonical source note:
 - The panel renders a **contract-defined Medical Record field-set and taxonomy** (document-level, visit-level, and explicit other/unmapped bucket).
 - In `canonical contract`, required document-level panel fields (including missing-value slots) are defined by the Technical contract template (`medical_record_view.field_slots[]`, Appendix D9).
 - Non-clinical claim concepts are out of scope for this panel.
-- Labels/copy and empty-states for this panel are defined in [`docs/projects/veterinary-medical-records/01-design/ux-design.md`](ux-design.md).
+- Labels/copy and empty-states for this panel are defined in [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md).

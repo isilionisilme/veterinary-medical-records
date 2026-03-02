@@ -38,7 +38,7 @@ The frontend is implemented using:
   and justify any new dependency.
 
 - **Lean design system contract**
-  Follow [`docs/projects/veterinary-medical-records/01-design/design-system.md`](design-system.md) for tokens, primitives, wrappers, and guard rules.
+  Follow [`docs/projects/veterinary-medical-records/01-product/design-system.md`](design-system.md) for tokens, primitives, wrappers, and guard rules.
 
 - **TanStack Query**  
   Used for server state management (loading, error, invalidation) without introducing global client state complexity.
@@ -110,7 +110,7 @@ This ensures:
 ## Review Rendering Backbone (Global Schema)
 
 Rendering authority for the full key universe, ordering, section grouping, repeatability, and fallback rules is
-[`docs/projects/veterinary-medical-records/01-design/product-design.md`](product-design.md) (Global Schema).
+[`docs/projects/veterinary-medical-records/01-product/product-design.md`](product-design.md) (Global Schema).
 
 Frontend implementation guidance:
 - Use Global Schema as the review rendering backbone.
@@ -189,7 +189,7 @@ If matching fails:
 ## Confidence Rendering
 
 Confidence values are rendered as **visual attention signals**, not as control mechanisms.
-Confidence semantics are owned by [`docs/projects/veterinary-medical-records/01-design/product-design.md`](product-design.md), and interaction behavior is owned by [`docs/projects/veterinary-medical-records/01-design/ux-design.md`](ux-design.md).
+Confidence semantics are owned by [`docs/projects/veterinary-medical-records/01-product/product-design.md`](product-design.md), and interaction behavior is owned by [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md).
 
 Frontend representation:
 - qualitative signal first (e.g. color or emphasis),

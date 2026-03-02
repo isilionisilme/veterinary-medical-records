@@ -42,7 +42,7 @@
       ]
     },
     {
-      "doc_glob": "docs/shared/brand-guidelines.md",
+      "doc_glob": "docs/shared/01-product/brand-guidelines.md",
       "description": "Shared BRAND_GUIDELINES changes require propagation to its owner module and brand guard alignment.",
       "owner_any": [
         "docs/agent_router/03_SHARED/BRAND_GUIDELINES/*.md",
@@ -55,7 +55,7 @@
       ]
     },
     {
-      "doc_glob": "docs/shared/engineering-playbook.md",
+      "doc_glob": "docs/shared/03-ops/engineering-playbook.md",
       "description": "Shared ENGINEERING_PLAYBOOK changes require propagation to its owner module.",
       "owner_any": [
         "docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/*.md",
@@ -68,7 +68,7 @@
       ]
     },
     {
-      "doc_glob": "docs/shared/ux-guidelines.md",
+      "doc_glob": "docs/shared/01-product/ux-guidelines.md",
       "description": "Shared UX_GUIDELINES changes require propagation to its owner module.",
       "owner_any": [
         "docs/agent_router/03_SHARED/UX_GUIDELINES/*.md",
@@ -91,7 +91,7 @@
       ]
     },
     {
-      "doc_glob": "docs/shared/llm-benchmarks.md",
+      "doc_glob": "docs/shared/02-tech/llm-benchmarks.md",
       "description": "Shared LLM_BENCHMARKS changes require doc-updates guard alignment.",
       "required_any": [
         "docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json",
@@ -261,7 +261,7 @@
       ]
     },
     {
-      "doc_glob": "docs/projects/veterinary-medical-records/01-design/design-system.md",
+      "doc_glob": "docs/projects/veterinary-medical-records/01-product/design-system.md",
       "description": "Project DESIGN_SYSTEM changes require propagation to its owner module.",
       "owner_any": [
         "docs/agent_router/04_PROJECT/DESIGN_SYSTEM/*.md",
@@ -303,7 +303,7 @@
       ]
     },
     {
-      "doc_glob": "docs/projects/veterinary-medical-records/01-design/product-design.md",
+      "doc_glob": "docs/projects/veterinary-medical-records/01-product/product-design.md",
       "description": "Project PRODUCT_DESIGN changes require propagation to its owner module.",
       "owner_any": [
         "docs/agent_router/04_PROJECT/PRODUCT_DESIGN/*.md",
@@ -371,7 +371,7 @@
       ]
     },
     {
-      "doc_glob": "docs/projects/veterinary-medical-records/01-design/ux-design.md",
+      "doc_glob": "docs/projects/veterinary-medical-records/01-product/ux-design.md",
       "description": "Project UX_DESIGN changes require propagation to its owner module.",
       "owner_any": [
         "docs/agent_router/04_PROJECT/UX_DESIGN/*.md",

@@ -22,7 +22,7 @@
       ]
     },
     {
-      "source_doc": "docs/shared/llm-benchmarks.md",
+      "source_doc": "docs/shared/02-tech/llm-benchmarks.md",
       "description": "Shared LLM_BENCHMARKS must remain discoverable from shared docs entry.",
       "router_modules": [
         {
@@ -203,7 +203,7 @@
       ]
     },
     {
-      "source_doc": "docs/shared/brand-guidelines.md",
+      "source_doc": "docs/shared/01-product/brand-guidelines.md",
       "description": "Shared BRAND_GUIDELINES must map to shared owner entry module.",
       "router_modules": [
         {
@@ -215,7 +215,7 @@
       ]
     },
     {
-      "source_doc": "docs/shared/engineering-playbook.md",
+      "source_doc": "docs/shared/03-ops/engineering-playbook.md",
       "description": "Shared ENGINEERING_PLAYBOOK must map to shared owner entry module.",
       "router_modules": [
         {
@@ -227,7 +227,7 @@
       ]
     },
     {
-      "source_doc": "docs/shared/ux-guidelines.md",
+      "source_doc": "docs/shared/01-product/ux-guidelines.md",
       "description": "Shared UX_GUIDELINES must map to shared owner entry module.",
       "router_modules": [
         {
@@ -251,7 +251,7 @@
       ]
     },
     {
-      "source_doc": "docs/projects/veterinary-medical-records/01-design/design-system.md",
+      "source_doc": "docs/projects/veterinary-medical-records/01-product/design-system.md",
       "description": "Project DESIGN_SYSTEM must map to project owner entry module.",
       "router_modules": [
         {
@@ -287,7 +287,7 @@
       ]
     },
     {
-      "source_doc": "docs/projects/veterinary-medical-records/01-design/product-design.md",
+      "source_doc": "docs/projects/veterinary-medical-records/01-product/product-design.md",
       "description": "Project PRODUCT_DESIGN must map to project owner entry module.",
       "router_modules": [
         {
@@ -299,7 +299,7 @@
       ]
     },
     {
-      "source_doc": "docs/projects/veterinary-medical-records/01-design/product-design.md",
+      "source_doc": "docs/projects/veterinary-medical-records/01-product/product-design.md",
       "description": "Conceptual model and confidence semantics in PRODUCT_DESIGN must remain synchronized with router module 76.",
       "router_modules": [
         {
@@ -345,7 +345,7 @@
       ]
     },
     {
-      "source_doc": "docs/projects/veterinary-medical-records/01-design/ux-design.md",
+      "source_doc": "docs/projects/veterinary-medical-records/01-product/ux-design.md",
       "description": "Project UX_DESIGN must map to project owner entry module.",
       "router_modules": [
         {

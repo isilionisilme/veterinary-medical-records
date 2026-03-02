@@ -191,7 +191,7 @@ Authority: [`docs/projects/veterinary-medical-records/02-tech/technical-design.m
 
 ## Structured interpretation schema 
 Authority: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix D (Structured Interpretation Schema visit-grouped canonical contract).
-Product semantics for confidence are defined in [`docs/projects/veterinary-medical-records/01-design/product-design.md`](product-design.md); UX behavior remains in [`docs/projects/veterinary-medical-records/01-design/ux-design.md`](ux-design.md).
+Product semantics for confidence are defined in [`docs/projects/veterinary-medical-records/01-product/product-design.md`](product-design.md); UX behavior remains in [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md).
 
 Alignment note:
 - Interpretation output may be partial with respect to the full Global Schema key universe.
@@ -210,7 +210,7 @@ Implementation responsibility:
 
 ### Critical keys
 `StructuredField.is_critical` MUST be derived from `key ∈ CRITICAL_KEYS`.
-Source of truth: [`docs/projects/veterinary-medical-records/01-design/product-design.md`](product-design.md).
+Source of truth: [`docs/projects/veterinary-medical-records/01-product/product-design.md`](product-design.md).
 
 Backend responsibility:
 - Apply deterministic derivation at write-time (or validate on write).

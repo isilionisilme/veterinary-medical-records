@@ -235,7 +235,7 @@ If a client attempts to edit/review while a `RUNNING` run exists, the API MUST r
 
 - Each structured field MUST carry a `confidence` number in range 0–1 (see Appendix D).
 - Confidence is a stored **attention signal** only.
-- The meaning/governance of confidence in veterinarian workflows is defined in [`docs/projects/veterinary-medical-records/01-design/product-design.md`](product-design.md).
+- The meaning/governance of confidence in veterinarian workflows is defined in [`docs/projects/veterinary-medical-records/01-product/product-design.md`](product-design.md).
 
 ### Context (Deterministic)
 
@@ -1695,8 +1695,8 @@ Rules (technical, authoritative):
 - This designation MUST NOT block workflows; it only drives UI signaling and internal flags.
 
 Source of truth for `CRITICAL_KEYS`:
-- Defined in [`docs/projects/veterinary-medical-records/01-design/product-design.md`](product-design.md) (product authority).
-- The complete Global Schema key list, fixed ordering, section grouping, repeatability rules, and cross-key fallback rules (including `document_date` fallback to `visit_date`) are also governed by [`docs/projects/veterinary-medical-records/01-design/product-design.md`](product-design.md).
+- Defined in [`docs/projects/veterinary-medical-records/01-product/product-design.md`](product-design.md) (product authority).
+- The complete Global Schema key list, fixed ordering, section grouping, repeatability rules, and cross-key fallback rules (including `document_date` fallback to `visit_date`) are also governed by [`docs/projects/veterinary-medical-records/01-product/product-design.md`](product-design.md).
 
 ---
 
@@ -1970,7 +1970,7 @@ Sufficient evidence boundary for assigned VisitGroup creation (US-45, determinis
 
 - This appendix is the technical source of truth for payload taxonomy and deterministic buckets (`fields[]`, `visits[]`, `other_fields[]`, and classification metadata).
 - Frontend consumers MUST render Medical Record structure from contract metadata only; they MUST NOT infer grouping/classification heuristically.
-- UX labels/copy are defined in [`docs/projects/veterinary-medical-records/01-design/ux-design.md`](ux-design.md); this appendix defines contract semantics only.
+- UX labels/copy are defined in [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md); this appendix defines contract semantics only.
 
 ---
 

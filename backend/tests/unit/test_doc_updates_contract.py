@@ -201,12 +201,12 @@ def test_doc_test_sync_map_has_minimum_rules() -> None:
         '"doc_glob": "docs/projects/veterinary-medical-records/99-archive/12-factor-audit.md"'
         in text
     )
-    assert '"doc_glob": "docs/shared/engineering-playbook.md"' in text
+    assert '"doc_glob": "docs/shared/03-ops/engineering-playbook.md"' in text
     assert (
         '"doc_glob": "docs/projects/veterinary-medical-records/02-tech/backend-implementation.md"'
         in text
     )
-    assert '"doc_glob": "docs/projects/veterinary-medical-records/01-design/ux-design.md"' in text
+    assert '"doc_glob": "docs/projects/veterinary-medical-records/01-product/ux-design.md"' in text
     assert (
         '"doc_glob": "docs/projects/veterinary-medical-records/02-tech/technical-design.md"' in text
     )
@@ -214,7 +214,7 @@ def test_doc_test_sync_map_has_minimum_rules() -> None:
     assert '"owner_any"' in text
     assert '"docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/*.md"' in text
     assert '"docs/agent_router/04_PROJECT/BACKEND_IMPLEMENTATION/*.md"' in text
-    assert '"doc_glob": "docs/shared/brand-guidelines.md"' in text
+    assert '"doc_glob": "docs/shared/01-product/brand-guidelines.md"' in text
     assert "test_doc_updates_contract.py" in text
     assert "check_brand_compliance.py" in text
 
@@ -230,14 +230,14 @@ def test_router_parity_map_has_product_design_rule() -> None:
         in text
     )
     assert (
-        '"source_doc": "docs/projects/veterinary-medical-records/01-design/product-design.md"'
+        '"source_doc": "docs/projects/veterinary-medical-records/01-product/product-design.md"'
         in text
     )
     assert (
         '"source_doc": "docs/projects/veterinary-medical-records/02-tech/technical-design.md"'
         in text
     )
-    assert '"source_doc": "docs/shared/engineering-playbook.md"' in text
+    assert '"source_doc": "docs/shared/03-ops/engineering-playbook.md"' in text
     assert (
         '"path": "docs/agent_router/04_PROJECT/PRODUCT_DESIGN/'
         '76_conceptual-model-local-schema-global-schema-and-mapping.md"' in text

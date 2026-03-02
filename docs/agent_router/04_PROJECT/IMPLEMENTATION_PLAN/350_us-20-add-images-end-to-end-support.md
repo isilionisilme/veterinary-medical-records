@@ -19,7 +19,7 @@ As a user, I want to upload, access, and process image documents so that scans a
 - Tech: Processing model and run invariants: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../TECHNICAL_DESIGN/00_entry.md) Sections 3–4 + Appendix A2
 - Tech: Step model + failure mapping: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../TECHNICAL_DESIGN/00_entry.md) Appendix C
 - Tech: Extraction library decisions (appendix): [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../TECHNICAL_DESIGN/00_entry.md) Appendix E
-- UX: Review flow guarantees and rendering contract: [`docs/projects/veterinary-medical-records/01-design/ux-design.md`](../UX_DESIGN/00_entry.md) sections **Confidence — UX Definition**, **Veterinarian Review Flow**, **Review-in-Context Contract**, and **Review UI Rendering Rules (Global Schema Template)**.
+- UX: Review flow guarantees and rendering contract: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../UX_DESIGN/00_entry.md) sections **Confidence — UX Definition**, **Veterinarian Review Flow**, **Review-in-Context Contract**, and **Review UI Rendering Rules (Global Schema Template)**.
 
 **Story-specific technical requirements**
 - Add server-side type detection for images based on server-side inspection.
@@ -33,5 +33,5 @@ As a user, I want to upload, access, and process image documents so that scans a
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
 - Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../TECHNICAL_DESIGN/00_entry.md) Appendix B7.
-- Follow UX guidance from [docs/shared/ux-guidelines.md](../../03_SHARED/UX_GUIDELINES/00_entry.md) and [docs/projects/veterinary-medical-records/01-design/ux-design.md](../UX_DESIGN/00_entry.md), if applicable.
-- Apply [docs/shared/brand-guidelines.md](../../03_SHARED/BRAND_GUIDELINES/00_entry.md), if applicable.
+- Follow UX guidance from [docs/shared/01-product/ux-guidelines.md](../../03_SHARED/UX_GUIDELINES/00_entry.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../UX_DESIGN/00_entry.md), if applicable.
+- Apply [docs/shared/01-product/brand-guidelines.md](../../03_SHARED/BRAND_GUIDELINES/00_entry.md), if applicable.

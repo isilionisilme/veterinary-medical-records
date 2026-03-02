@@ -42,6 +42,6 @@ Out of scope:
 
 ## Authoritative References
 - `docs/projects/veterinary-medical-records/02-tech/technical-design.md` Appendix D9
-- `docs/projects/veterinary-medical-records/01-design/ux-design.md`
+- `docs/projects/veterinary-medical-records/01-product/ux-design.md`
 
 ---

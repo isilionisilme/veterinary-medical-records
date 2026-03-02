@@ -34,11 +34,11 @@ def test_router_parity_map_file_exists() -> None:
 
 def test_evaluate_parity_reports_missing_terms_when_source_changes() -> None:
     evaluate_parity = _load_evaluate_parity()
-    changed_files = ["docs/projects/veterinary-medical-records/01-design/product-design.md"]
+    changed_files = ["docs/projects/veterinary-medical-records/01-product/product-design.md"]
     fixture_rel = f"tmp/parity-fixture-{uuid4().hex}.md"
     rules = [
         {
-            "source_doc": "docs/projects/veterinary-medical-records/01-design/product-design.md",
+            "source_doc": "docs/projects/veterinary-medical-records/01-product/product-design.md",
             "router_modules": [
                 {
                     "path": fixture_rel,
@@ -70,10 +70,10 @@ def test_evaluate_parity_reports_missing_terms_when_source_changes() -> None:
 
 def test_evaluate_parity_skips_when_source_not_changed() -> None:
     evaluate_parity = _load_evaluate_parity()
-    changed_files = ["docs/projects/veterinary-medical-records/01-design/ux-design.md"]
+    changed_files = ["docs/projects/veterinary-medical-records/01-product/ux-design.md"]
     rules = [
         {
-            "source_doc": "docs/projects/veterinary-medical-records/01-design/product-design.md",
+            "source_doc": "docs/projects/veterinary-medical-records/01-product/product-design.md",
             "router_modules": [
                 {
                     "path": (
@@ -104,7 +104,7 @@ def test_evaluate_parity_fails_on_unmapped_required_source() -> None:
         rules=[
             {
                 "source_doc": (
-                    "docs/projects/veterinary-medical-records/01-design/product-design.md"
+                    "docs/projects/veterinary-medical-records/01-product/product-design.md"
                 ),
                 "router_modules": [
                     {
@@ -129,7 +129,7 @@ def test_evaluate_parity_excludes_source_matching_required_and_excluded_globs() 
         rules=[
             {
                 "source_doc": (
-                    "docs/projects/veterinary-medical-records/01-design/product-design.md"
+                    "docs/projects/veterinary-medical-records/01-product/product-design.md"
                 ),
                 "router_modules": [
                     {

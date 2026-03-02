@@ -29,9 +29,9 @@ No layout disruption
 - Candidates may be derived from existing debug candidate logic, but must be surfaced via the standard payload contract referenced above (not gated by debug env flag).
 
 **Authoritative References**
-- [`docs/projects/veterinary-medical-records/01-design/ux-design.md`](../UX_DESIGN/00_entry.md)
-- [`docs/projects/veterinary-medical-records/01-design/design-system.md`](../DESIGN_SYSTEM/00_entry.md)
-- [`docs/projects/veterinary-medical-records/01-design/product-design.md`](../PRODUCT_DESIGN/00_entry.md)
+- [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../UX_DESIGN/00_entry.md)
+- [`docs/projects/veterinary-medical-records/01-product/design-system.md`](../DESIGN_SYSTEM/00_entry.md)
+- [`docs/projects/veterinary-medical-records/01-product/product-design.md`](../PRODUCT_DESIGN/00_entry.md)
 - [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../TECHNICAL_DESIGN/00_entry.md) section **Field Candidate Suggestions (standard review payload)**
 
 **Test Expectations**

@@ -38,7 +38,7 @@ so I can review each episode with clear clinical context and lower cognitive loa
 
 2) **Transparency when evidence is insufficient**
 - If some visit-scoped fields cannot be clearly associated to a visit,
-- Then they remain shown under the unassigned bucket (label/copy as defined in `docs/projects/veterinary-medical-records/01-design/ux-design.md`), without forcing doubtful assignments.
+- Then they remain shown under the unassigned bucket (label/copy as defined in `docs/projects/veterinary-medical-records/01-product/ux-design.md`), without forcing doubtful assignments.
 
 3) **Measurable improvement (fixture-bound + frozen baseline)**
 - Define a stable fixture `mixed_multi_visit_assignment` and a versioned baseline expected-output snapshot.
@@ -70,6 +70,6 @@ so I can review each episode with clear clinical context and lower cognitive loa
 
 ## Authoritative References
 - `docs/projects/veterinary-medical-records/02-tech/technical-design.md` — Appendix D9 (visit grouping + visit-scoped keys + ordering rules)
-- `docs/projects/veterinary-medical-records/01-design/ux-design.md` — unassigned label/copy and any relevant empty-state or wording
+- `docs/projects/veterinary-medical-records/01-product/ux-design.md` — unassigned label/copy and any relevant empty-state or wording
 
 ---

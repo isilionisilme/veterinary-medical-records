@@ -16,7 +16,7 @@ PROJECT_INDEX_PAGE = "veterinary-medical-records"
 PROJECT_INDEX_TITLE = "2026-03-02 Veterinary Medical Records"
 
 _CATEGORY_PURPOSES: dict[str, str] = {
-    "01-design": "Defines what we build and for whom.",
+    "01-product": "Defines what we build, for whom, and how it looks.",
     "02-tech": "Defines how the system is built.",
     "03-ops": "Defines how we operate and validate quality.",
     "04-delivery": "Defines what was delivered and how it evolved.",
@@ -171,7 +171,7 @@ def _render_tree_lines(
     exceeds *max_depth*, children are suppressed — the user navigates
     to deeper content via the folder's own index page.
 
-    *folder_pages* maps a folder slug (e.g. ``01-design``) to its
+    *folder_pages* maps a folder slug (e.g. ``01-product``) to its
     wiki page name so the folder label becomes a clickable link.
     """
     if folder_pages is None:
@@ -207,7 +207,8 @@ def _render_tree_lines(
 
 def _build_sidebar(
     mapping: dict[Path, str],
-    folder_pages: dict[str, str] | None = None,
+    project_folder_pages: dict[str, str] | None = None,
+    shared_folder_pages: dict[str, str] | None = None,
     max_depth: int = 3,
 ) -> str:
     project_tree = _collect_tree(mapping, PROJECT_ROOT)
@@ -226,7 +227,7 @@ def _build_sidebar(
             indent="  ",
             depth=2,
             max_depth=max_depth,
-            folder_pages=folder_pages or {},
+            folder_pages=shared_folder_pages or {},
         )
     )
 
@@ -238,7 +239,7 @@ def _build_sidebar(
             indent="    ",
             depth=3,
             max_depth=max_depth,
-            folder_pages=folder_pages or {},
+            folder_pages=project_folder_pages or {},
         )
     )
 
@@ -400,16 +401,20 @@ def _auto_generate_folder_indices(
     mapping: dict[Path, str],
     root: Path,
     wiki_dir: Path,
+    page_prefix: str = "",
 ) -> dict[str, str]:
     """Walk the tree under *root* and generate wiki index pages for folders.
 
     Returns a ``{folder_name: wiki_page_name}`` dict so the sidebar can
     render folders as clickable links.  Page names equal the folder name
-    (e.g. ``01-design``, ``adr``), keeping the wiki URL clean.
+    (e.g. ``01-product``, ``adr``), keeping the wiki URL clean.
+
+    *page_prefix* is prepended to page names to disambiguate folders that
+    exist under both project and shared roots (e.g. ``shared-01-product``).
     """
     tree = _collect_tree(mapping, root)
     folder_pages: dict[str, str] = {}
-    _generate_indices_recursive(tree, wiki_dir, folder_pages)
+    _generate_indices_recursive(tree, wiki_dir, folder_pages, page_prefix=page_prefix)
     return folder_pages
 
 
@@ -417,6 +422,7 @@ def _generate_indices_recursive(
     tree: dict[str, object],
     wiki_dir: Path,
     folder_pages: dict[str, str],
+    page_prefix: str = "",
 ) -> None:
     folders = [k for k in tree if k != "__files__"]
     for folder in folders:
@@ -424,8 +430,8 @@ def _generate_indices_recursive(
         if not isinstance(child, dict):
             continue
 
-        # Use the folder name itself as the wiki page name.
-        page_name = folder
+        # Use the folder name with optional prefix as the wiki page name.
+        page_name = f"{page_prefix}{folder}" if page_prefix else folder
         folder_pages[folder] = page_name
 
         child_pages: list[tuple[str, str]] = []
@@ -447,7 +453,7 @@ def _generate_indices_recursive(
                 docs = [(label, page) for label, page in docs if label.lower() != "index"]
             child_folder_contents[cf] = sorted(docs, key=lambda x: x[0].lower())
 
-        _generate_indices_recursive(child, wiki_dir, folder_pages)
+        _generate_indices_recursive(child, wiki_dir, folder_pages, page_prefix=page_prefix)
 
         content = _build_folder_index(
             folder,
@@ -480,30 +486,12 @@ def main() -> int:
         rewritten = _rewrite_links(content, source, mapping, args.repo, args.ref)
         (wiki_dir / f"{page}.md").write_text(rewritten, encoding="utf-8")
 
-    shared_pages = sorted(
-        [
-            (page, page)
-            for source, page in mapping.items()
-            if source.as_posix().startswith("docs/shared/")
-        ],
-        key=lambda item: item[0].lower(),
-    )
-
     (wiki_dir / "Projects.md").write_text(
         _build_root_index_page(
             "Projects",
             "Human-facing, project-specific documentation hubs.",
             "Contains project root pages for active and historical projects.",
             [(PROJECT_INDEX_TITLE, PROJECT_INDEX_PAGE)],
-        ),
-        encoding="utf-8",
-    )
-    (wiki_dir / "Shared.md").write_text(
-        _build_root_index_page(
-            "Shared Documentation",
-            "Human-facing, cross-project standards and guidelines.",
-            "Contains canonical cross-project standards and guidelines.",
-            shared_pages,
         ),
         encoding="utf-8",
     )
@@ -518,11 +506,44 @@ def main() -> int:
         mapping,
         SHARED_ROOT,
         wiki_dir,
+        page_prefix="shared-",
     )
-    all_folder_pages = {**project_folder_pages, **shared_folder_pages}
 
+    # Build Shared.md from tree (same category format as project page)
+    shared_tree = _collect_tree(mapping, SHARED_ROOT)
+    shared_root_files = shared_tree.get("__files__", [])
+    shared_child_pages = list(shared_root_files) if isinstance(shared_root_files, list) else []
+    shared_child_folders = [k for k in shared_tree if k != "__files__"]
+    shared_child_folder_contents: dict[str, list[tuple[str, str]]] = {}
+    for sf in shared_child_folders:
+        sub = shared_tree.get(sf)
+        if not isinstance(sub, dict):
+            continue
+        sub_files = sub.get("__files__", [])
+        docs = list(sub_files) if isinstance(sub_files, list) else []
+        shared_child_folder_contents[sf] = sorted(docs, key=lambda x: x[0].lower())
+    shared_index_body = _build_folder_index(
+        folder_name="shared",
+        child_pages=shared_child_pages,
+        child_folders=shared_child_folders,
+        child_folder_contents=shared_child_folder_contents,
+        folder_pages=shared_folder_pages,
+        display_title="Shared Documentation",
+    )
+    # Insert intro line after the title
+    shared_index_body = shared_index_body.replace(
+        "# Shared Documentation\n",
+        "# Shared Documentation\n\nHuman-facing, cross-project standards and guidelines.\n",
+        1,
+    )
+    (wiki_dir / "Shared.md").write_text(shared_index_body, encoding="utf-8")
     (wiki_dir / "_Sidebar.md").write_text(
-        _build_sidebar(mapping, folder_pages=all_folder_pages, max_depth=3),
+        _build_sidebar(
+            mapping,
+            project_folder_pages=project_folder_pages,
+            shared_folder_pages=shared_folder_pages,
+            max_depth=3,
+        ),
         encoding="utf-8",
     )
     (wiki_dir / "_Footer.md").write_text(
@@ -537,8 +558,9 @@ def main() -> int:
     keep = {f"{page}.md" for page in mapping.values()}
     keep.add(f"{PROJECT_INDEX_PAGE}.md")
     keep.update({"Projects.md", "Shared.md", "_Sidebar.md", "_Footer.md"})
-    # Keep auto-generated index pages
-    keep.update(f"{page}.md" for page in all_folder_pages.values())
+    # Keep auto-generated index pages from both project and shared
+    keep.update(f"{page}.md" for page in project_folder_pages.values())
+    keep.update(f"{page}.md" for page in shared_folder_pages.values())
     for md_file in wiki_dir.glob("*.md"):
         if md_file.name not in keep:
             md_file.unlink()

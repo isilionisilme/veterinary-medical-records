@@ -138,14 +138,14 @@ _Empty._
 | docs/README.md | Scope (Docs Index) | index | all | active | 528 | Reading order, authority chain |
 | docs/projects/veterinary-medical-records/02-tech/ARCHITECTURE.md | Architecture Overview | reference | all | active | 527 | One-page summary with diagram |
 | docs/projects/veterinary-medical-records/02-tech/BACKEND_IMPLEMENTATION.md | Backend Implementation Notes | guide | contributor | active | 1,870 | Layering, persistence, processing |
-| docs/projects/veterinary-medical-records/01-design/DESIGN_SYSTEM.md | Lean Design System | reference | contributor | active | 1,243 | Color/spacing tokens, a11y |
+| docs/projects/veterinary-medical-records/01-product/DESIGN_SYSTEM.md | Lean Design System | reference | contributor | active | 1,243 | Color/spacing tokens, a11y |
 | docs/projects/veterinary-medical-records/02-tech/FRONTEND_IMPLEMENTATION.md | Frontend Implementation Notes | guide | contributor | active | 1,631 | Stack, PDF rendering, confidence UX |
 | docs/projects/veterinary-medical-records/04-delivery/FUTURE_IMPROVEMENTS.md | Known Limitations & Future Directions | explanation | staff-engineer | active | 765 | Reframed 2026-02-27 |
 | docs/projects/veterinary-medical-records/04-delivery/IMPLEMENTATION_PLAN.md | Implementation Plan | plan | contributor | active | 15,394 | **Very large**; 6 releases |
 | docs/projects/veterinary-medical-records/03-ops/MANUAL_QA_REGRESSION_CHECKLIST.md | Manual QA Regression Checklist | how-to | all | active | 958 | All cases "Pending" |
-| docs/projects/veterinary-medical-records/01-design/PRODUCT_DESIGN.md | Product Design | explanation | all | active | 2,272 | Strategy, confidence, Global Schema |
+| docs/projects/veterinary-medical-records/01-product/PRODUCT_DESIGN.md | Product Design | explanation | all | active | 2,272 | Strategy, confidence, Global Schema |
 | docs/projects/veterinary-medical-records/02-tech/TECHNICAL_DESIGN.md | Technical Design | reference | contributor | active | 9,637 | **Very large**; contracts, state machines |
-| docs/projects/veterinary-medical-records/01-design/UX_DESIGN.md | UX Design | reference | contributor | active | 2,131 | Review flow, rendering rules |
+| docs/projects/veterinary-medical-records/01-product/UX_DESIGN.md | UX Design | reference | contributor | active | 2,131 | Review flow, rendering rules |
 | docs/projects/veterinary-medical-records/02-tech/adr/ADR-ARCH-0001-modular-monolith.md | ADR-ARCH-0001 | adr | staff-engineer | active | 426 | |
 | docs/projects/veterinary-medical-records/02-tech/adr/ADR-ARCH-0002-sqlite-database.md | ADR-ARCH-0002 | adr | staff-engineer | active | 369 | |
 | docs/projects/veterinary-medical-records/02-tech/adr/ADR-ARCH-0003-raw-sql-repository-pattern.md | ADR-ARCH-0003 | adr | staff-engineer | active | 376 | |
@@ -252,7 +252,7 @@ _Empty._
 
 **Revision history:**
 - v1 (2026-02-28): initial proposal with architecture/design/guides/ categories
-- v2 (2026-03-01): user feedback — eliminated overlap between categories; adopted intent-based grouping (01-design/tech/ops/delivery/metrics); wiki promoted to multi-project platform
+- v2 (2026-03-01): user feedback — eliminated overlap between categories; adopted intent-based grouping (01-product/tech/ops/delivery/metrics); wiki promoted to multi-project platform
 
 #### Current structure (problems)
 
@@ -340,9 +340,9 @@ docs/
 
 | Current path | Target path | Reason |
 |---|---|---|
-| `project/PRODUCT_DESIGN.md` | `projects/veterinary-medical-records/01-design/PRODUCT_DESIGN.md` | design/ |
-| `project/UX_DESIGN.md` | `projects/veterinary-medical-records/01-design/UX_DESIGN.md` | design/ |
-| `project/DESIGN_SYSTEM.md` | `projects/veterinary-medical-records/01-design/DESIGN_SYSTEM.md` | design/ |
+| `project/PRODUCT_DESIGN.md` | `projects/veterinary-medical-records/01-product/PRODUCT_DESIGN.md` | design/ |
+| `project/UX_DESIGN.md` | `projects/veterinary-medical-records/01-product/UX_DESIGN.md` | design/ |
+| `project/DESIGN_SYSTEM.md` | `projects/veterinary-medical-records/01-product/DESIGN_SYSTEM.md` | design/ |
 | `project/ARCHITECTURE.md` | `projects/veterinary-medical-records/02-tech/ARCHITECTURE.md` | tech/ |
 | `project/TECHNICAL_DESIGN.md` | `projects/veterinary-medical-records/02-tech/TECHNICAL_DESIGN.md` | tech/ |
 | `project/BACKEND_IMPLEMENTATION.md` | `projects/veterinary-medical-records/02-tech/BACKEND_IMPLEMENTATION.md` | tech/ |

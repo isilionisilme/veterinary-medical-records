@@ -13,12 +13,11 @@ Create a folder under `docs/projects/<initiative-name>/` with at least a `README
 ```
 <initiative-name>/
 ├── README.md       ← landing page with category table
-├── design/         ← ¿Qué construimos y para quién?
-├── tech/           ← ¿Cómo está construido?
-├── ops/            ← ¿Cómo trabajamos?
-├── delivery/       ← ¿Qué hicimos y cómo fue?
-├── metrics/        ← ¿Cuánto costó?
-└── archive/        ← material histórico sin ubicación activa
+├── 01-product/     ← ¿Qué construimos, para quién, y cómo se ve?
+├── 02-tech/        ← ¿Cómo está construido?
+├── 03-ops/         ← ¿Cómo trabajamos?
+├── 04-delivery/    ← ¿Qué hicimos y cómo fue?
+└── 99-archive/     ← material histórico sin ubicación activa
 ```
 
 Then add the initiative to the table above and to [`docs/README.md`](../README.md).
