@@ -288,15 +288,15 @@ if (($Mode -eq "Push" -or $Mode -eq "Full") -and -not $runFrontendFull) {
 
 if ($runDocs) {
     Invoke-Step "Docs canonical guard" {
-        & $python "scripts/check_no_canonical_router_refs.py"
+        & $python "scripts/docs/check_no_canonical_router_refs.py"
     }
 
     Invoke-Step "Doc/test sync guard" {
-        & $python "scripts/check_doc_test_sync.py" "--base-ref" $BaseRef
+        & $python "scripts/docs/check_doc_test_sync.py" "--base-ref" $BaseRef
     }
 
     Invoke-Step "Doc/router parity guard" {
-        & $python "scripts/check_doc_router_parity.py" "--base-ref" $BaseRef
+        & $python "scripts/docs/check_doc_router_parity.py" "--base-ref" $BaseRef
     }
 }
 

@@ -114,38 +114,38 @@ Scripts with **NO path fix needed** (use CWD-relative paths): `check_doc_test_sy
 
 Move 15 scripts → `scripts/ci/`: `pre_push_quality_gate.py`, `install-pre-push-hook.ps1`, `install-pre-commit-hook.ps1`, `preflight-ci-local.ps1/.bat`, `test-L1.ps1/.bat`, `test-L2.ps1/.bat`, `test-L3.ps1/.bat`, `preflight-quick.ps1/.bat`, `preflight-push.ps1/.bat`, `preflight-full.ps1/.bat`
 
-- [ ] S2-A: `git mv` 15 scripts to `scripts/ci/` ⏳ EN PROGRESO (Claude Opus 4.6, 2026-03-03)
-- [ ] S2-B: Fix `pre_push_quality_gate.py` — `parents[1]` → `parents[2]`; update internal glob patterns (`scripts/check_docs_links.mjs` → `scripts/docs/check_docs_links.mjs`, `scripts/check_doc_*.py` → `scripts/docs/check_doc_*.py`, `scripts/check_no_canonical_router_refs.py` → `scripts/docs/check_no_canonical_router_refs.py`)
-- [ ] S2-C: Fix `preflight-ci-local.ps1` — `Join-Path $PSScriptRoot ".."` → `Join-Path $PSScriptRoot "../.."` for repo root; update 4 internal script paths (`scripts/check_no_canonical_router_refs.py` → `scripts/docs/...`, `scripts/check_doc_test_sync.py` → `scripts/docs/...`, `scripts/check_doc_router_parity.py` → `scripts/docs/...`, `scripts/check_brand_compliance.py` → `scripts/quality/...`); update `"scripts/*"` glob to `"scripts/**"`
-- [ ] S2-D: Fix `install-pre-push-hook.ps1` — `Join-Path $PSScriptRoot '..'` → depth +1; update cosmetic message
-- [ ] S2-E: Fix `install-pre-commit-hook.ps1` — `Join-Path $PSScriptRoot '..'` → depth +1; update cosmetic message
-- [ ] S2-F: Update `.githooks/pre-push` — `scripts/test-L2.ps1` → `scripts/ci/test-L2.ps1`; `scripts/pre_push_quality_gate.py` → `scripts/ci/pre_push_quality_gate.py`
-- [ ] S2-G: Update `.githooks/pre-commit` — `scripts/test-L1.ps1` → `scripts/ci/test-L1.ps1`
-- [ ] S2-H: Commit. **Gate:** run `git grep -n "scripts/test-L\|scripts/preflight\|scripts/pre_push\|scripts/install-pre" -- '*.sh' '*.yml'` — only `.githooks/*` with new `scripts/ci/` paths. Unit tests not affected yet.
+- [x] S2-A: `git mv` 17 scripts to `scripts/ci/`
+- [x] S2-B: Fix `pre_push_quality_gate.py` — `parents[1]` → `parents[2]` (glob patterns kept flat — updated in S3)
+- [x] S2-C: Fix `preflight-ci-local.ps1` — `Join-Path $PSScriptRoot ".."` → `Join-Path $PSScriptRoot ".." ".."` for repo root (4 internal script paths kept flat — updated in S3/S4)
+- [x] S2-D: Fix `install-pre-push-hook.ps1` — depth +1 + cosmetic message
+- [x] S2-E: Fix `install-pre-commit-hook.ps1` — depth +1 + cosmetic message
+- [x] S2-F: Update `.githooks/pre-push` — 4 path refs to `scripts/ci/`
+- [x] S2-G: Update `.githooks/pre-commit` — 2 path refs to `scripts/ci/`
+- [x] S2-H: Commit + gate — ✅ `cdcd00a5` (pre-commit hook passed)
 
 ### S3 — Move docs scripts (Commit 3) · **Claude Opus 4.6**
 
 Move 6 scripts → `scripts/docs/`: `check_docs_links.mjs`, `check_doc_test_sync.py`, `check_doc_router_parity.py`, `check_no_canonical_router_refs.py`, `classify_doc_change.py`, `sync_docs_to_wiki.py`
 
-- [ ] S3-A: `git mv` 6 scripts to `scripts/docs/`
-- [ ] S3-B: Fix `check_docs_links.mjs` — `path.resolve(__dirname, '..')` → `path.resolve(__dirname, '../..')`
-- [ ] S3-C: Fix `check_doc_router_parity.py` — `parents[1]` → `parents[2]`
-- [ ] S3-D: Fix `check_no_canonical_router_refs.py` — `parents[1]` → `parents[2]`
-- [ ] S3-E: Update `.github/workflows/ci.yml` — 4 script paths:
+- [x] S3-A: `git mv` 6 scripts to `scripts/docs/`
+- [x] S3-B: Fix `check_docs_links.mjs` — `path.resolve(__dirname, '..')` → `path.resolve(__dirname, '../..')`
+- [x] S3-C: Fix `check_doc_router_parity.py` — `parents[1]` → `parents[2]`
+- [x] S3-D: Fix `check_no_canonical_router_refs.py` — `parents[1]` → `parents[2]`
+- [x] S3-E: Update `.github/workflows/ci.yml` — 4 script paths:
   - `scripts/check_no_canonical_router_refs.py` → `scripts/docs/check_no_canonical_router_refs.py`
   - `scripts/classify_doc_change.py` → `scripts/docs/classify_doc_change.py`
   - `scripts/check_doc_test_sync.py` → `scripts/docs/check_doc_test_sync.py`
   - `scripts/check_doc_router_parity.py` → `scripts/docs/check_doc_router_parity.py`
-- [ ] S3-F: Update `.github/workflows/wiki-sync.yml` — path trigger + run command:
+- [x] S3-F: Update `.github/workflows/wiki-sync.yml` — path trigger + run command:
   - `scripts/sync_docs_to_wiki.py` → `scripts/docs/sync_docs_to_wiki.py`
-- [ ] S3-G: Update `package.json` — `scripts/check_docs_links.mjs` → `scripts/docs/check_docs_links.mjs`
-- [ ] S3-H: Update `test_impact_map.json` — all `scripts/check_doc_test_sync.py` → `scripts/docs/check_doc_test_sync.py` and `scripts/check_doc_router_parity.py` → `scripts/docs/check_doc_router_parity.py`
-- [ ] S3-I: Update test files:
+- [x] S3-G: Update `package.json` — `scripts/check_docs_links.mjs` → `scripts/docs/check_docs_links.mjs`
+- [x] S3-H: Update `test_impact_map.json` — all `scripts/check_doc_test_sync.py` → `scripts/docs/check_doc_test_sync.py` and `scripts/check_doc_router_parity.py` → `scripts/docs/check_doc_router_parity.py`
+- [x] S3-I: Update test files:
   - `test_doc_test_sync_guard.py`: SCRIPT_PATH → `"scripts" / "docs" / "check_doc_test_sync.py"`
   - `test_doc_router_parity_contract.py`: PARITY_SCRIPT → `"scripts" / "docs" / "check_doc_router_parity.py"`
   - `test_classify_doc_change.py`: CLASSIFIER_PATH → `"scripts" / "docs" / "classify_doc_change.py"`, DOC_SYNC_GUARD_PATH → `"scripts" / "docs" / "check_doc_test_sync.py"`
   - `test_doc_updates_contract.py`: DOC_TEST_SYNC_GUARD → `"scripts" / "docs" / "check_doc_test_sync.py"`, DOC_ROUTER_PARITY_GUARD → `"scripts" / "docs" / "check_doc_router_parity.py"`
-- [ ] S3-J: Commit. **Gate:** Run `pytest backend/tests/unit/test_doc_test_sync_guard.py backend/tests/unit/test_doc_router_parity_contract.py backend/tests/unit/test_classify_doc_change.py -x -q -o addopts=`. Verify no stale flat refs via grep.
+- [x] S3-J: Commit. **Gate:** Run `pytest backend/tests/unit/test_doc_test_sync_guard.py backend/tests/unit/test_doc_router_parity_contract.py backend/tests/unit/test_classify_doc_change.py -x -q -o addopts=`. Verify no stale flat refs via grep.
 
 ### S4 — Move quality scripts (Commit 4) · **Claude Opus 4.6**
 

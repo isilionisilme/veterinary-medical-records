@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-SCRIPT_PATH = REPO_ROOT / "scripts" / "check_doc_test_sync.py"
+SCRIPT_PATH = REPO_ROOT / "scripts" / "docs" / "check_doc_test_sync.py"
 
 
 def _load_guard_module():

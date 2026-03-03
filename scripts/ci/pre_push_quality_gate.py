@@ -73,9 +73,9 @@ def main() -> int:
     docs_patterns = [
         "docs/**",
         "*.md",
-        "scripts/check_docs_links.mjs",
-        "scripts/check_doc_*.py",
-        "scripts/check_no_canonical_router_refs.py",
+        "scripts/docs/check_docs_links.mjs",
+        "scripts/docs/check_doc_*.py",
+        "scripts/docs/check_no_canonical_router_refs.py",
     ]
 
     backend_changed = any(matches_any(path, backend_patterns) for path in files)
