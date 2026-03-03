@@ -183,8 +183,12 @@ $frontendImpactPatterns = @(
     "backend/app/api/*",
     "backend/app/domain/models.py",
     "backend/app/application/global_schema.py",
+    "backend/app/main.py",
+    "backend/app/config.py",
+    "backend/app/settings.py",
     "docker-compose.yml",
     "docker-compose.dev.yml",
+    ".env.example",
     "Dockerfile.frontend"
 )
 
@@ -268,6 +272,19 @@ Write-Host " - Frontend guards:  $runFrontendGuards"
 Write-Host " - Docker guard:     $runDocker"
 Write-Host " - E2E:              $runE2E"
 Write-Host " - Frontend impacted:$frontendImpacted"
+Write-Host " - Force frontend:   $forceFrontendChecks"
+
+if ($frontendImpactFiles.Count -gt 0) {
+    Write-Host " - Frontend impact matches:"
+    $frontendImpactFiles | ForEach-Object { Write-Host "   - $_" }
+}
+else {
+    Write-Host " - Frontend impact matches: none"
+}
+
+if (($Mode -eq "Push" -or $Mode -eq "Full") -and -not $runFrontendFull) {
+    Write-Host " - Frontend checks skipped: no frontend-impact paths (use -ForceFrontend to override)"
+}
 
 if ($runDocs) {
     Invoke-Step "Docs canonical guard" {
