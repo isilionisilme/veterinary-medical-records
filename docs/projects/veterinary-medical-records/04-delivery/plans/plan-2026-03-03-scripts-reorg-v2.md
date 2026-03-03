@@ -108,13 +108,13 @@ Scripts with **NO path fix needed** (use CWD-relative paths): `check_doc_test_sy
 
 - [x] S1-A: Create empty directories: `scripts/ci/`, `scripts/docs/`, `scripts/quality/`, `scripts/dev/`
 - [x] S1-B: Create `scripts/README.md` with directory guide
-- [ ] S1-C: Commit. **Gate:** `tree scripts/` shows 4 new folders + README; no script moved. ⏳ EN PROGRESO (Claude Opus 4.6, 2026-03-03)
+- [x] S1-C: Commit. **Gate:** 4 folders + README, no scripts moved — ✅ `aedbfc50`
 
 ### S2 — Move CI scripts (Commit 2) · **Claude Opus 4.6**
 
 Move 15 scripts → `scripts/ci/`: `pre_push_quality_gate.py`, `install-pre-push-hook.ps1`, `install-pre-commit-hook.ps1`, `preflight-ci-local.ps1/.bat`, `test-L1.ps1/.bat`, `test-L2.ps1/.bat`, `test-L3.ps1/.bat`, `preflight-quick.ps1/.bat`, `preflight-push.ps1/.bat`, `preflight-full.ps1/.bat`
 
-- [ ] S2-A: `git mv` 15 scripts to `scripts/ci/`
+- [ ] S2-A: `git mv` 15 scripts to `scripts/ci/` ⏳ EN PROGRESO (Claude Opus 4.6, 2026-03-03)
 - [ ] S2-B: Fix `pre_push_quality_gate.py` — `parents[1]` → `parents[2]`; update internal glob patterns (`scripts/check_docs_links.mjs` → `scripts/docs/check_docs_links.mjs`, `scripts/check_doc_*.py` → `scripts/docs/check_doc_*.py`, `scripts/check_no_canonical_router_refs.py` → `scripts/docs/check_no_canonical_router_refs.py`)
 - [ ] S2-C: Fix `preflight-ci-local.ps1` — `Join-Path $PSScriptRoot ".."` → `Join-Path $PSScriptRoot "../.."` for repo root; update 4 internal script paths (`scripts/check_no_canonical_router_refs.py` → `scripts/docs/...`, `scripts/check_doc_test_sync.py` → `scripts/docs/...`, `scripts/check_doc_router_parity.py` → `scripts/docs/...`, `scripts/check_brand_compliance.py` → `scripts/quality/...`); update `"scripts/*"` glob to `"scripts/**"`
 - [ ] S2-D: Fix `install-pre-push-hook.ps1` — `Join-Path $PSScriptRoot '..'` → depth +1; update cosmetic message
