@@ -307,6 +307,8 @@ def test_preflight_levels_policy_is_documented_for_pr_flow() -> None:
         "Maximum automatic remediation loop: 2 attempts",
         "ForceFrontend",
         "ForceFull",
+        "Before merge to `main`",
+        "Relevant change",
     )
 
     for term in required_terms:
