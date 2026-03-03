@@ -174,10 +174,10 @@ Move 9 scripts → `scripts/dev/`: `start-all.ps1/.bat`, `reset-dev-db.ps1/.bat`
 
 ### S6 — Update docs references (Commit 6) · **Claude Opus 4.6**
 
-- [ ] S6-A: Update `README.md` — all `scripts/test-L*` → `scripts/ci/test-L*`, `scripts/preflight-*` → `scripts/ci/preflight-*`, `scripts/install-pre-*` → `scripts/ci/install-pre-*`
-- [ ] S6-B: Update `docs/shared/03-ops/engineering-playbook.md` — same pattern
-- [ ] S6-C: Update `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/210_pull-requests.md` — same pattern
-- [ ] S6-D: Commit. **Gate:** `git grep -n 'scripts/test-L\|scripts/preflight-\|scripts/install-pre' -- '*.md'` shows only `scripts/ci/` paths (and this plan).
+- [x] S6-A: Update `README.md` — all `scripts/test-L*` → `scripts/ci/test-L*`, `scripts/preflight-*` → `scripts/ci/preflight-*`, `scripts/install-pre-*` → `scripts/ci/install-pre-*`
+- [x] S6-B: Update `docs/shared/03-ops/engineering-playbook.md` — same pattern
+- [x] S6-C: Update `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/210_pull-requests.md` — same pattern
+- [x] S6-D: Commit. **Gate:** `git grep -n 'scripts/test-L\|scripts/preflight-\|scripts/install-pre' -- '*.md'` shows only `scripts/ci/` paths (and this plan).
 
 ### S7 — Final verification + cleanup (Commit 7) · **Claude Opus 4.6**
 
