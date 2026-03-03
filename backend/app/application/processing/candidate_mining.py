@@ -43,6 +43,11 @@ _PET_NAME_BIRTHLINE_RE = re.compile(
     r"(?:nacimiento|nac\.?|dob|birth(?:\s*date)?)\b",
     re.IGNORECASE,
 )
+_CLINIC_CONTEXT_LINE_RE = re.compile(
+    r"(?i)\b(?:en\s+el|en\s+la)\s+"
+    r"(centr[o0]|cl[ií]nica|hospital(?:\s+veterinari[oa])?)\s+"
+    r"([A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9][^\n,;]{2,100})"
+)
 
 
 def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, object]]]:
@@ -331,6 +336,21 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
     for index, line in enumerate(lines):
         lower_line = line.casefold()
         normalized_single = _WHITESPACE_PATTERN.sub(" ", lower_line).strip()
+
+        clinic_context_match = _CLINIC_CONTEXT_LINE_RE.search(line)
+        if clinic_context_match is not None:
+            institution_token = clinic_context_match.group(1)
+            institution_name = clinic_context_match.group(2).strip(" .,:;\t\r\n")
+            canonical_institution = (
+                "Centro" if institution_token.casefold() == "centr0" else institution_token
+            )
+            clinic_candidate = f"{canonical_institution} {institution_name}".strip()
+            add_candidate(
+                key="clinic_name",
+                value=clinic_candidate,
+                confidence=COVERAGE_CONFIDENCE_FALLBACK,
+                snippet=line,
+            )
 
         birthline_match = _PET_NAME_BIRTHLINE_RE.match(line)
         if birthline_match:

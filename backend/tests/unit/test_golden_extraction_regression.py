@@ -97,6 +97,11 @@ def test_doc_a_golden_goal_fields_regression(monkeypatch) -> None:
     discharge_date = schema.get("discharge_date")
     assert discharge_date in ("", None)
 
+    clinic_name = schema.get("clinic_name")
+    assert clinic_name == "CENTRO COSTA AZAHAR", (
+        f"clinic_name regression: expected 'CENTRO COSTA AZAHAR', got {clinic_name!r}"
+    )
+
     _assert_owner_or_vet_invariant(
         schema=schema,
         candidates=candidates,
@@ -144,6 +149,9 @@ def test_doc_b_golden_goal_fields_regression(monkeypatch) -> None:
 
     discharge_date = schema.get("discharge_date")
     assert discharge_date in ("", None)
+
+    clinic_name = schema.get("clinic_name")
+    assert clinic_name in ("", None)
 
     _assert_owner_or_vet_invariant(
         schema=schema,
