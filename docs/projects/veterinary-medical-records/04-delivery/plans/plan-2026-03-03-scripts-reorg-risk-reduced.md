@@ -75,7 +75,7 @@
 
 ### Phase 8 — Final verification and PR readiness
 
-- [ ] S8-C8 — Run focused verification suite (Commit 8)
+- [x] S8-C8 — Run focused verification suite (Commit 8)
   - Run docs guards, affected unit tests, and key npm checks.
   - Smoke-run pre-push installer and preflight scripts.
   - Collect final evidence and prepare PR summary.
