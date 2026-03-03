@@ -25,7 +25,7 @@ All new user-visible UI must use tokens instead of scattered hard-coded values.
 ### Color tokens
 
 > Brand-level color decisions (accent, page bg, text hierarchy, semantic status) are defined in
-> [brand-guidelines.md](../shared/brand-guidelines.md). This table reflects **actual implementation values**
+> [brand-guidelines.md](../../../shared/01-product/brand-guidelines.md). This table reflects **actual implementation values**
 > from `frontend/src/index.css`. When brand and implementation diverge, this table tracks the code.
 
 | Token | Value | Usage |
@@ -81,7 +81,7 @@ Rule:
 | `--status-error-bg` | `#f9eceb` | error background fill |
 
 Brand constraint:
-- Barkibu Orange (see [BRAND_GUIDELINES](../shared/brand-guidelines.md)) is used as accent/CTA only.
+- Barkibu Orange (see [BRAND_GUIDELINES](../../../shared/01-product/brand-guidelines.md)) is used as accent/CTA only.
 - Semantic status colors stay muted and never use orange.
 
 ### Spacing scale
@@ -193,7 +193,7 @@ Don't:
 Use exceptions only when `IconButton` cannot represent the interaction semantics (for example, a non-button resize handle).
 
 Required steps:
-1. Add a narrow token-based allowlist entry in `scripts/check_design_system.mjs` (`ICON_ONLY_ALLOWLIST`) scoped to file + unique marker.
+1. Add a narrow token-based allowlist entry in `scripts/quality/lint/check_design_system.mjs` (`ICON_ONLY_ALLOWLIST`) scoped to file + unique marker.
 2. Add rationale to the PR description (why `IconButton` is not viable).
 3. Keep keyboard and screen-reader accessibility equivalent or better than the default `IconButton` contract.
 

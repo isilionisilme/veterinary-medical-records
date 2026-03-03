@@ -67,7 +67,7 @@
 
 ### Phase 7 — Documentation and cleanup
 
-- [ ] S7-C7 — Update docs + cleanup generated artifacts (Commit 7)
+- [x] S7-C7 — Update docs + cleanup generated artifacts (Commit 7)
   - Update references in `README.md` and impacted docs.
   - Remove tracked `scripts/__pycache__/` artifacts.
   - Document deprecation policy and removal window.
