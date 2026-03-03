@@ -29,6 +29,16 @@ def test_clinic_name_sort_prefers_institution_like_over_plain_address() -> None:
     )
 
 
+def test_clinic_name_sort_prefers_hv_abbrev_over_centro() -> None:
+    hv_candidate = {"value": "HV COSTA AZAHAR", "confidence": 0.5}
+    centro_candidate = {"value": "CENTRO COSTA AZAHAR", "confidence": 0.66}
+
+    assert _candidate_sort_key(hv_candidate, "clinic_name") > _candidate_sort_key(
+        centro_candidate,
+        "clinic_name",
+    )
+
+
 def test_clinic_name_triage_flags_address_like_value() -> None:
     flags = _suspicious_accepted_flags("clinic_name", "Av. Norte 99")
     assert "clinic_name_address_like" in flags

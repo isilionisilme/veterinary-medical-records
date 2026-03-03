@@ -48,6 +48,11 @@ _CLINIC_CONTEXT_LINE_RE = re.compile(
     r"(centr[o0]|cl[ií]nica|hospital(?:\s+veterinari[oa])?)\s+"
     r"([A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9][^\n,;]{2,100})"
 )
+_CLINIC_STANDALONE_LINE_RE = re.compile(
+    r"(?i)^\s*(hv|h\.?\s*v\.?|hospital(?:\s+veterinari[oa])?|"
+    r"centro(?:\s+veterinari[oa])?|cl[ií]nica(?:\s+veterinari[oa])?)\s+"
+    r"([A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9][^\n,;:]{2,100})\s*$"
+)
 
 
 def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, object]]]:
@@ -352,6 +357,23 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
                 snippet=line,
             )
 
+        clinic_standalone_match = _CLINIC_STANDALONE_LINE_RE.match(line)
+        if clinic_standalone_match is not None:
+            institution_token = clinic_standalone_match.group(1).strip()
+            institution_name = clinic_standalone_match.group(2).strip(" .,:;\t\r\n")
+            lowered_name = institution_name.casefold()
+            if not lowered_name.startswith("de "):
+                canonical_institution = institution_token
+                if re.fullmatch(r"(?i)h\.?\s*v\.?", institution_token):
+                    canonical_institution = "HV"
+                clinic_candidate = f"{canonical_institution} {institution_name}".strip()
+                add_candidate(
+                    key="clinic_name",
+                    value=clinic_candidate,
+                    confidence=COVERAGE_CONFIDENCE_FALLBACK,
+                    snippet=line,
+                )
+
         birthline_match = _PET_NAME_BIRTHLINE_RE.match(line)
         if birthline_match:
             candidate_name = _WHITESPACE_PATTERN.sub(" ", birthline_match.group(1)).strip()
@@ -515,12 +537,18 @@ def _candidate_sort_key(item: dict[str, object], key: str) -> tuple[float, float
     if key == "clinic_name":
         raw_value = str(item.get("value", "")).strip()
         lower_value = raw_value.casefold()
+        has_hv_abbrev = bool(re.search(r"\bh\.?\s*v\.?\b", lower_value))
         has_clinic_token = bool(
-            re.search(r"\b(?:cl[ií]nic|veterinari|hospital|centro|vet)\b", lower_value)
+            re.search(
+                r"\b(?:cl[ií]nic|veterinari|hospital|centro|vet|h\.?\s*v\.?)\b",
+                lower_value,
+            )
         )
         looks_address_like = bool(_ADDRESS_LIKE_PATTERN.search(lower_value)) and bool(
             re.search(r"\d", lower_value)
         )
+        if has_hv_abbrev and not looks_address_like:
+            return 3.0, confidence
         if has_clinic_token and not looks_address_like:
             return 2.0, confidence
         if has_clinic_token:

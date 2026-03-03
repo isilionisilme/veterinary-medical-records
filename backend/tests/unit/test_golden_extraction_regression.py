@@ -173,6 +173,19 @@ def test_owner_name_trim_uses_fixture_owner_and_address_lines() -> None:
     assert owner_candidates[0]["value"] == "NOMBRE DEMO"
 
 
+def test_doc_b_hidden_header_clinic_name_is_detected(monkeypatch) -> None:
+    raw_text = "HV COSTA AZAHAR\n" + _load_fixture("docB.txt")
+    data = _build_with_candidates(
+        monkeypatch,
+        doc_id="golden-doc-b-hidden-clinic",
+        raw_text=raw_text,
+    )
+
+    schema = data["global_schema"]
+    assert isinstance(schema, dict)
+    assert schema.get("clinic_name") == "HV COSTA AZAHAR"
+
+
 def test_owner_name_trim_does_not_convert_pure_address_into_owner() -> None:
     raw_text = _load_fixture("docB.txt")
     address_line = next(line for line in raw_text.splitlines() if "C/ CALLE DEMO" in line)
