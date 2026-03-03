@@ -30,7 +30,7 @@ Se inicia un nuevo golden loop para mejorar la extracción del campo `clinic_nam
 - [x] P1-B 🔄 — Ajustar normalización/ranking de `clinic_name` sin afectar otros campos (GPT-5.3-Codex) — ✅ `c2a5cace`
 - [x] P2-A 🔄 — Añadir observabilidad/triage para candidatos sospechosos de `clinic_name` (GPT-5.3-Codex) — ✅ `8fd1b51b`
 - [x] P3-A 🔄 — Ejecutar tests focalizados + benchmark y documentar resultados en PR (GPT-5.3-Codex) — ✅ `e2c61fec`
-- [ ] P4-A 🚧 — Hard-gate: validación de usuario con ejemplos reales y decisión go/no-go (Claude Opus 4.6)
+- [x] P4-A 🚧 — Hard-gate: validación de usuario con ejemplos reales y decisión go/no-go (Claude Opus 4.6) — ✅ GO: 340/340 tests green, 11/11 benchmark, 0 regressions
 - [ ] P4-B 🔄 — Cierre técnico: ajustar umbral/evidencia final y actualizar cuerpo de PR (GPT-5.3-Codex)
 
 ## Cola de prompts
