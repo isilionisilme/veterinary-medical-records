@@ -304,6 +304,8 @@ are met.** This is the final safety net against premature handoffs.
 3. If `git commit` fails (pre-commit hook rejects): re-run formatters, re-add, retry ONCE.
 4. If it fails a second time: STOP and report to the user.
 
+> **Tip:** Running `scripts/ci/test-L1.ps1 -BaseRef HEAD` covers formatting, linting, and doc guards in a single command. Agents may use L1 instead of the two manual commands above.
+
 ### Iteration boundary (mandatory — hard rule)
 **Auto-chain NEVER crosses from one Fase/iteration to another.** When all tasks of the current Fase are `[x]`, the agent stops and returns control to the user, even if the next Fase already has prompts written. Starting a new iteration requires explicit user approval.
 
