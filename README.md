@@ -251,7 +251,7 @@ npx playwright test --ui
 
 To reduce invalid commits reaching PR checks, install the repository pre-push hook:
 
-- PowerShell (Windows): `./scripts/install-pre-push-hook.ps1`
+- PowerShell (Windows): `./scripts/ci/hooks/install-pre-push-hook.ps1`
 
 What it does:
 
@@ -264,8 +264,8 @@ What it does:
 Files:
 
 - Hook entrypoint: `.githooks/pre-push`
-- Gate logic: `scripts/pre_push_quality_gate.py`
-- Installer: `scripts/install-pre-push-hook.ps1`
+- Gate logic: `scripts/ci/preflight/pre_push_quality_gate.py`
+- Installer: `scripts/ci/hooks/install-pre-push-hook.ps1`
 
 ### Administrative commands
 

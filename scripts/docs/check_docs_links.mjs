@@ -1,20 +1,26 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import markdownLinkCheck from 'markdown-link-check';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const repoRoot = path.resolve(__dirname, '..');
+const repoRoot = path.resolve(__dirname, '..', '..');
 
 const roots = [
   path.join(repoRoot, 'docs', 'README.md'),
-  path.join(repoRoot, 'docs', 'project'),
+  path.join(repoRoot, 'docs', 'projects', 'veterinary-medical-records'),
   path.join(repoRoot, 'docs', 'shared'),
 ];
 
 async function collectMarkdownFiles(targetPath) {
-  const stats = await fs.stat(targetPath);
+  let stats;
+  try {
+    stats = await fs.stat(targetPath);
+  } catch {
+    return [];
+  }
   if (stats.isFile()) {
     return targetPath.endsWith('.md') ? [targetPath] : [];
   }
@@ -31,6 +37,48 @@ async function collectMarkdownFiles(targetPath) {
   }
 
   return files;
+}
+
+function gitOutput(args) {
+  const result = spawnSync('git', args, { cwd: repoRoot, encoding: 'utf8' });
+  if (result.status !== 0) {
+    return '';
+  }
+  return result.stdout ?? '';
+}
+
+async function collectChangedMarkdownFiles(baseRef) {
+  const commands = [
+    ['diff', '--name-only', '--diff-filter=ACMR', `${baseRef}...HEAD`],
+    ['diff', '--name-only', '--diff-filter=ACMR'],
+    ['diff', '--cached', '--name-only', '--diff-filter=ACMR'],
+  ];
+
+  const changed = new Set();
+  for (const command of commands) {
+    const output = gitOutput(command);
+    for (const line of output.split(/\r?\n/)) {
+      const relativePath = line.trim().replaceAll('\\', '/');
+      if (!relativePath || !relativePath.startsWith('docs/') || !relativePath.endsWith('.md')) {
+        continue;
+      }
+      changed.add(path.join(repoRoot, relativePath));
+    }
+  }
+
+  const existing = [];
+  for (const filePath of changed) {
+    try {
+      const stats = await fs.stat(filePath);
+      if (stats.isFile()) {
+        existing.push(filePath);
+      }
+    } catch {
+      // ignore deleted/moved files from diff set
+    }
+  }
+
+  return existing.sort((left, right) => left.localeCompare(right));
 }
 
 function runLinkCheck(filePath, markdownContent) {
@@ -55,11 +103,25 @@ function runLinkCheck(filePath, markdownContent) {
 }
 
 async function main() {
-  const filesNested = await Promise.all(roots.map((targetPath) => collectMarkdownFiles(targetPath)));
-  const files = filesNested.flat().sort((left, right) => left.localeCompare(right));
+  const args = process.argv.slice(2);
+  const changedOnly = args.includes('--changed-only');
+  const baseRefIndex = args.indexOf('--base-ref');
+  const baseRef = baseRefIndex >= 0 && args[baseRefIndex + 1] ? args[baseRefIndex + 1] : 'main';
+
+  let files;
+  if (changedOnly) {
+    files = await collectChangedMarkdownFiles(baseRef);
+  } else {
+    const filesNested = await Promise.all(roots.map((targetPath) => collectMarkdownFiles(targetPath)));
+    files = filesNested.flat().sort((left, right) => left.localeCompare(right));
+  }
 
   if (files.length === 0) {
-    console.log('No markdown files found under canonical docs scope.');
+    if (changedOnly) {
+      console.log(`No changed markdown files found under docs scope (base-ref=${baseRef}).`);
+    } else {
+      console.log('No markdown files found under canonical docs scope.');
+    }
     return;
   }
 

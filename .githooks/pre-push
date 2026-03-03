@@ -2,12 +2,12 @@
 set -eu
 
 if command -v python >/dev/null 2>&1; then
-  python scripts/pre_push_quality_gate.py
+  python scripts/ci/preflight/pre_push_quality_gate.py
   exit $?
 fi
 
 if command -v py >/dev/null 2>&1; then
-  py -3 scripts/pre_push_quality_gate.py
+  py -3 scripts/ci/preflight/pre_push_quality_gate.py
   exit $?
 fi
 

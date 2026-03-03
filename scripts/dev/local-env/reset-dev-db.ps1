@@ -4,7 +4,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$repoRoot = Split-Path -Parent $PSScriptRoot
+$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..\..")).Path
 $backendDir = Join-Path $repoRoot "backend"
 $defaultStorageDir = Join-Path $backendDir "storage"
 $venvPython = Join-Path $repoRoot ".venv\Scripts\python.exe"
