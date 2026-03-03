@@ -186,6 +186,29 @@ def test_doc_b_hidden_header_clinic_name_is_detected(monkeypatch) -> None:
     assert schema.get("clinic_name") == "HV COSTA AZAHAR"
 
 
+def test_doc_b_header_context_clinic_name_is_detected(monkeypatch) -> None:
+    raw_text = "\n".join(
+        [
+            "PARQUE OESTE",
+            "AVDA EUROPA",
+            "28922 ALCORCÓN",
+            "Datos de la Mascota",
+            "Datos del Cliente",
+            "Nº Chip",
+            "941000024967769",
+        ]
+    )
+    data = _build_with_candidates(
+        monkeypatch,
+        doc_id="golden-doc-b-header-context-clinic",
+        raw_text=raw_text,
+    )
+
+    schema = data["global_schema"]
+    assert isinstance(schema, dict)
+    assert schema.get("clinic_name") == "PARQUE OESTE"
+
+
 def test_owner_name_trim_does_not_convert_pure_address_into_owner() -> None:
     raw_text = _load_fixture("docB.txt")
     address_line = next(line for line in raw_text.splitlines() if "C/ CALLE DEMO" in line)

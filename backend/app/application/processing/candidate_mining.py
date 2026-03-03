@@ -53,6 +53,12 @@ _CLINIC_STANDALONE_LINE_RE = re.compile(
     r"centro(?:\s+veterinari[oa])?|cl[ií]nica(?:\s+veterinari[oa])?)\s+"
     r"([A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9][^\n,;:]{2,100})\s*$"
 )
+_CLINIC_HEADER_ADDRESS_CONTEXT_RE = re.compile(
+    r"(?i)\b(?:avda?\.?|avenida|calle|c/|portal|piso|puerta|codigo\s+postal|cp\b)\b"
+)
+_CLINIC_HEADER_SECTION_CONTEXT_RE = re.compile(
+    r"(?i)\b(?:datos\s+de\s+la\s+mascota|datos\s+del\s+cliente|especie|raza|n[º°o]\s*chip)\b"
+)
 
 
 def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, object]]]:
@@ -207,6 +213,36 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
         "vacunacion",
     }
     _pet_name_stop_lower = {s.casefold() for s in _pet_name_stop_lower}
+
+    if lines:
+        clinic_header = lines[0]
+        clinic_header_folded = clinic_header.casefold()
+        has_numeric = re.search(r"\d", clinic_header) is not None
+        header_looks_institutional = (
+            clinic_header.isupper()
+            and 3 <= len(clinic_header) <= 60
+            and ":" not in clinic_header
+            and not has_numeric
+            and "-" not in clinic_header
+            and clinic_header_folded not in _pet_name_stop_lower
+        )
+        if header_looks_institutional:
+            context_lines = lines[1:8]
+            context_compact = " ".join(context_lines)
+            has_address_context = (
+                _CLINIC_HEADER_ADDRESS_CONTEXT_RE.search(context_compact) is not None
+                or re.search(r"\b\d{5}\b", context_compact) is not None
+            )
+            has_section_context = (
+                _CLINIC_HEADER_SECTION_CONTEXT_RE.search(context_compact) is not None
+            )
+            if has_address_context and has_section_context:
+                add_candidate(
+                    key="clinic_name",
+                    value=clinic_header,
+                    confidence=COVERAGE_CONFIDENCE_FALLBACK,
+                    snippet="\n".join(lines[:4]),
+                )
 
     for line in lines:
         if ":" in line:
