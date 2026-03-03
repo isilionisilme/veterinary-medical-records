@@ -407,5 +407,5 @@ def test_execution_rules_reference_preflight_levels() -> None:
     assert "L1 —" in rules_text or "L1 — Quick" in rules_text
     assert "L2 —" in rules_text or "L2 — Push" in rules_text
     assert "L3 —" in rules_text or "L3 — Full" in rules_text
-    # ForceFull merge policy
+    # ForceFull available (optional broad validation)
     assert "ForceFull" in rules_text

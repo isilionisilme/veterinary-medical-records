@@ -18,7 +18,7 @@ The `test-L*.ps1` files are thin wrappers (presets) that call the engine with th
 | `preflight-ci-local.bat` | CMD launcher for the engine |
 | `test-L1.ps1` / `.bat` | **L1 — Quick** preset (`-Mode Quick`). Pre-commit gate. |
 | `test-L2.ps1` / `.bat` | **L2 — Push** preset (`-Mode Push -SkipDocker -ForceFrontend`). Pre-push gate. |
-| `test-L3.ps1` / `.bat` | **L3 — Full** preset (`-Mode Full -SkipDocker -SkipE2E -ForceFrontend -ForceFull`). Pre-PR/merge gate. |
+| `test-L3.ps1` / `.bat` | **L3 — Full** preset (`-Mode Full -SkipDocker -SkipE2E -ForceFrontend -ForceFull`). Pre-PR gate. |
 | `install-pre-commit-hook.ps1` | Installs `.githooks/pre-commit` (runs L1) |
 | `install-pre-push-hook.ps1` | Installs `.githooks/pre-push` (runs L2) |
 
@@ -38,7 +38,7 @@ A `.bat` cannot replace the `.ps1` wrappers because:
 |-------|------|-------------|
 | L1 | Before every commit | `.githooks/pre-commit` |
 | L2 | Before every push | `.githooks/pre-push` |
-| L3 | Before PR creation/update and before merge | Manual (documented in engineering playbook) |
+| L3 | Before PR creation/update | Manual (documented in engineering playbook) |
 
 ## Common flags
 

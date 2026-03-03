@@ -194,7 +194,6 @@ Commit A → push → start working on B locally (do NOT wait for CI of A)
    | **L1 — Quick** | Before each commit | `scripts/ci/test-L1.ps1 -BaseRef HEAD` |
    | **L2 — Push** | Before each push | `scripts/ci/test-L2.ps1 -BaseRef main` |
    | **L3 — Full** | Before PR creation/update | `scripts/ci/test-L3.ps1 -BaseRef main` |
-   | **L3 -ForceFull** | Before merge (relevant change) | `scripts/ci/test-L3.ps1 -BaseRef main -ForceFull` |
 
    <details>
    <summary>Individual commands (for targeted debugging)</summary>
@@ -235,7 +234,7 @@ cancels CI-A before it finishes. This is **expected and safe**:
 
 - Handoffs between agents (Codex ↔ Claude)
 - Hard-gate (🚧) steps
-- The last step of an iteration (before merge)
+- The last step of an iteration (before merge — verify CI green)
 
 ### PLAN-UPDATE-IMMEDIATO (hard rule)
 **After CI green for a step, the very next commit MUST be the plan update
@@ -315,7 +314,7 @@ The local preflight system (defined in [Engineering Playbook § Local preflight 
 | Before STEP A (commit) | L1 | `scripts/ci/test-L1.ps1 -BaseRef HEAD` |
 | Before STEP C (push) | L2 | `scripts/ci/test-L2.ps1 -BaseRef main` |
 | Before creating/updating PR | L3 | `scripts/ci/test-L3.ps1 -BaseRef main` |
-| Before merge to main (relevant change) | L3 -ForceFull | `scripts/ci/test-L3.ps1 -BaseRef main -ForceFull` |
+| Before merge to main | Verify CI green | No local run needed — CI is a superset of L3 |
 
 **Rules:**
 - Each higher level is a superset: L2 includes L1 checks, L3 includes L2 checks.

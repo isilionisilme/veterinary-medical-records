@@ -26,14 +26,13 @@ Apply these levels automatically at the corresponding moments:
 
 - **L1 — Quick (before commit):** `scripts/ci/test-L1.ps1` (or `.bat`)
 - **L2 — Push (before every push):** `scripts/ci/test-L2.ps1` (or `.bat`), enforced by `.githooks/pre-push`
-- **L3 — Full (before PR creation/update and before merge):** `scripts/ci/test-L3.ps1` (or `.bat`)
+- **L3 — Full (before PR creation/update):** `scripts/ci/test-L3.ps1` (or `.bat`)
 
 Operational defaults:
 - L2 and L3 are path-scoped for frontend: run frontend checks only when frontend-impact paths changed.
 - `-ForceFrontend` forces frontend checks when no frontend-impact paths changed.
 - `-ForceFull` forces full backend/frontend/docker scope for L3.
-- Before merge to `main`, if the change is relevant, `scripts/ci/test-L3.ps1 -ForceFull` is mandatory.
-- Relevant change for this rule means any diff touching: `backend/**`, `frontend/**`, `shared/**`, docker files/compose, root/frontend package manifests, or environment/config entrypoints (`backend/app/main.py`, `backend/app/config.py`, `backend/app/settings.py`, `.env.example`).
+- Before merge to `main`, verify CI is green. Local L3 is not required when CI has already passed (CI runs a superset of L3 checks).
 
 If the required level fails, STOP and resolve issues before continuing.
 
