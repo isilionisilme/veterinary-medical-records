@@ -306,6 +306,23 @@ are met.** This is the final safety net against premature handoffs.
 
 > **Tip:** Running `scripts/ci/test-L1.ps1 -BaseRef HEAD` covers formatting, linting, and doc guards in a single command. Agents may use L1 instead of the two manual commands above.
 
+### Local preflight integration (mandatory — maps SCOPE BOUNDARY to L1/L2/L3)
+
+The local preflight system (defined in [Engineering Playbook § Local preflight levels](../../../shared/03-ops/engineering-playbook.md#local-preflight-levels-mandatory-workflow)) provides three validation levels. Each SCOPE BOUNDARY moment has a **minimum required preflight level**:
+
+| SCOPE BOUNDARY moment | Min. level | Command |
+|---|---|---|
+| Before STEP A (commit) | L1 | `scripts/ci/test-L1.ps1 -BaseRef HEAD` |
+| Before STEP C (push) | L2 | `scripts/ci/test-L2.ps1 -BaseRef main` |
+| Before creating/updating PR | L3 | `scripts/ci/test-L3.ps1 -BaseRef main` |
+| Before merge to main (relevant change) | L3 -ForceFull | `scripts/ci/test-L3.ps1 -BaseRef main -ForceFull` |
+
+**Rules:**
+- Each higher level is a superset: L2 includes L1 checks, L3 includes L2 checks.
+- "Relevant change" is defined in the Engineering Playbook — any change that touches backend, frontend, E2E, or infrastructure.
+- The pre-commit and pre-push hooks enforce L1/L2 automatically. L3 must be run manually.
+- If a preflight level fails, fix the issues before proceeding. Do NOT bypass with `--no-verify`.
+
 ### Iteration boundary (mandatory — hard rule)
 **Auto-chain NEVER crosses from one Fase/iteration to another.** When all tasks of the current Fase are `[x]`, the agent stops and returns control to the user, even if the next Fase already has prompts written. Starting a new iteration requires explicit user approval.
 
