@@ -77,14 +77,14 @@ function Stop-PortListeners {
   throw "Port $TargetPort is still in LISTEN state after kill attempts."
 }
 
-$repoRoot = Split-Path -Parent $PSScriptRoot
+$repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 Set-Location $repoRoot
 
 $wikiPath = Join-Path $repoRoot $WikiDir
 New-Item -ItemType Directory -Force -Path $wikiPath | Out-Null
 
 Write-Host "[1/3] Generating wiki snapshot from local docs..."
-python scripts/sync_docs_to_wiki.py --wiki-dir $wikiPath --repo $Repo --ref $Ref
+python scripts/docs/sync_docs_to_wiki.py --wiki-dir $wikiPath --repo $Repo --ref $Ref
 
 $pages = Get-ChildItem -Path $wikiPath -Filter *.md |
   Where-Object { $_.Name -notlike '_*.md' } |
