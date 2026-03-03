@@ -32,6 +32,8 @@ Operational defaults:
 - L2 and L3 are path-scoped for frontend: run frontend checks only when frontend-impact paths changed.
 - `-ForceFrontend` forces frontend checks when no frontend-impact paths changed.
 - `-ForceFull` forces full backend/frontend/docker scope for L3.
+- Before merge to `main`, if the change is relevant, `scripts/preflight-full.ps1 -ForceFull` is mandatory.
+- Relevant change for this rule means any diff touching: `backend/**`, `frontend/**`, `shared/**`, docker files/compose, root/frontend package manifests, or environment/config entrypoints (`backend/app/main.py`, `backend/app/config.py`, `backend/app/settings.py`, `.env.example`).
 
 If the required level fails, STOP and resolve issues before continuing.
 

@@ -446,6 +446,9 @@ Rules:
 - For interactive local commits, run L1 by default.
 - Before every `git push`, L2 must run (automatically via pre-push hook).
 - Before opening/updating a PR and before merge execution, run L3.
+- L3 runs path-scoped by default for day-to-day development branches.
+- Before merge to `main`, if the change is relevant, L3 must be executed with `-ForceFull`.
+- Relevant change for this rule means any diff touching: `backend/**`, `frontend/**`, `shared/**`, docker files/compose, root/frontend package manifests, or environment/config entrypoints (`backend/app/main.py`, `backend/app/config.py`, `backend/app/settings.py`, `.env.example`).
 - If a level fails, STOP and resolve failures (or explicitly document why a failure is unrelated/pre-existing).
 
 Auto-fix policy when preflight fails:

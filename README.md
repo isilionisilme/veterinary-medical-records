@@ -252,6 +252,8 @@ Use the preflight scripts by level:
   - PowerShell: `./scripts/preflight-full.ps1`
   - Windows launcher: `scripts\preflight-full.bat`
   - Path-scoped by default; use `-ForceFull` to run full backend/frontend/docker scope.
+  - Before merge to `main`, run with `-ForceFull` whenever the diff is relevant.
+  - Relevant change for this rule: touches `backend/**`, `frontend/**`, `shared/**`, docker files/compose, root/frontend package manifests, or `backend/app/main.py`, `backend/app/config.py`, `backend/app/settings.py`, `.env.example`.
 
 Optional arguments:
 - `-BaseRef main` (default for all levels)
