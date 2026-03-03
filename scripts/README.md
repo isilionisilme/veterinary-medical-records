@@ -27,6 +27,5 @@ Organización por dominio de uso.
 - Qué hace: arranque y utilidades locales de desarrollo.
 - Cuándo usar: setup diario y diagnóstico local.
 
-## Deprecación
-- Rutas legacy bajo `scripts/` raíz se mantienen 1-2 iteraciones.
-- Cada wrapper imprime aviso `[DEPRECATED]` con la nueva ruta.
+## Nota
+- Usa siempre rutas canónicas por dominio (`scripts/ci/**`, `scripts/docs/**`, `scripts/quality/**`, `scripts/dev/**`).

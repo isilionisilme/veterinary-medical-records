@@ -1,12 +1,32 @@
 from __future__ import annotations
 
+import importlib.util
 import json
+from pathlib import Path
 from uuid import uuid4
 
 import pytest
 
 from backend.app.infra import database
-from scripts.interpretation_debug_snapshot import build_snapshot
+
+
+def _load_build_snapshot():
+    module_path = (
+        Path(__file__).resolve().parents[3]
+        / "scripts"
+        / "dev"
+        / "local-env"
+        / "interpretation_debug_snapshot.py"
+    )
+    spec = importlib.util.spec_from_file_location("interpretation_debug_snapshot", module_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Cannot load module from {module_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.build_snapshot
+
+
+build_snapshot = _load_build_snapshot()
 
 
 @pytest.fixture
