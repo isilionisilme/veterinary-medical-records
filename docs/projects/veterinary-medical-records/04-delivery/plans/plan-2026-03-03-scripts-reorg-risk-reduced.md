@@ -19,14 +19,14 @@
 
 ### Phase 1 — Foundation
 
-- [ ] S1-C1 — Create folder structure and index docs (Commit 1)
+- [x] S1-C1 — Create folder structure and index docs (Commit 1)
   - Create: `_shared`, `ci/preflight`, `ci/hooks`, `docs`, `quality/lint`, `quality/format`, `quality/security`, `dev/bootstrap`, `dev/local-env`, `release/versioning`, `release/changelog`, `archive`
   - Add: `scripts/README.md` + README in `ci/preflight`, `ci/hooks`, `docs`
   - **Gate:** No functional behavior changed; tree validated.
 
 ### Phase 2 — CI and hooks first (highest operational risk)
 
-- [ ] S2-C2 — Move CI core scripts + add mandatory wrappers (Commit 2)
+- [x] S2-C2 — Move CI core scripts + add mandatory wrappers (Commit 2)
   - Move: `pre_push_quality_gate.py` -> `scripts/ci/preflight/`
   - Move: `install-pre-push-hook.ps1` -> `scripts/ci/hooks/`
   - Add wrappers at old paths with deprecation notice.
@@ -34,7 +34,7 @@
 
 ### Phase 3 — Docs guard rail migration
 
-- [ ] S3-C3 — Move docs scripts + update guard references (Commit 3)
+- [x] S3-C3 — Move docs scripts + update guard references (Commit 3)
   - Move to `scripts/docs/`: `check_docs_links.mjs`, `classify_doc_change.py`, `check_doc_test_sync.py`, `check_doc_router_parity.py`, `check_no_canonical_router_refs.py`, `sync_docs_to_wiki.py`
   - Update references in workflows and docs guard mappings.
   - Keep legacy wrappers in old locations.
@@ -42,7 +42,7 @@
 
 ### Phase 4 — Quality lint migration
 
-- [ ] S4-C4 — Move lint guards and update npm/workflow references (Commit 4)
+- [x] S4-C4 — Move lint guards and update npm/workflow references (Commit 4)
   - Move to `scripts/quality/lint/`: `check_brand_compliance.py`, `check_design_system.mjs`
   - Update: root `package.json`, `frontend/package.json`, CI references, contract tests.
   - Keep legacy wrappers.
@@ -50,7 +50,7 @@
 
 ### Phase 5 — Developer utilities migration
 
-- [ ] S5-C5 — Move bootstrap/local-env scripts + harden path resolution (Commit 5)
+- [x] S5-C5 — Move bootstrap/local-env scripts + harden path resolution (Commit 5)
   - Move to `scripts/dev/bootstrap/`: `start-all.ps1`, `start-all.bat`
   - Move to `scripts/dev/local-env/`: `reset-dev-db.ps1/.bat`, `reload-vscode-window.ps1/.bat`, `clear-documents.bat`, `interpretation_debug_snapshot.py`, `ab_compare_pdf_extractors.py`
   - Add wrappers for user-facing entrypoints.
@@ -59,7 +59,7 @@
 
 ### Phase 6 — Preflight tiers (L1/L2/L3) and aliases
 
-- [ ] S6-C6 — Add preflight orchestration scripts (Commit 6)
+- [x] S6-C6 — Add preflight orchestration scripts (Commit 6)
   - Add: `scripts/ci/preflight/preflight-ci-local.ps1`
   - Add: `test-L1/L2/L3.ps1` and `.bat`
   - Add legacy aliases: `preflight-quick`, `preflight-push`, `preflight-full` (deprecation notice)
