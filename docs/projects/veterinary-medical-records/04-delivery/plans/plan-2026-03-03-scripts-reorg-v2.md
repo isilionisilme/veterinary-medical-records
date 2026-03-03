@@ -163,14 +163,14 @@ Move 2 scripts → `scripts/quality/`: `check_brand_compliance.py`, `check_desig
 
 Move 9 scripts → `scripts/dev/`: `start-all.ps1/.bat`, `reset-dev-db.ps1/.bat`, `reload-vscode-window.ps1/.bat`, `clear-documents.bat`, `interpretation_debug_snapshot.py`, `ab_compare_pdf_extractors.py`
 
-- [ ] S5-A: `git mv` 9 scripts to `scripts/dev/`
-- [ ] S5-B: Fix `start-all.ps1` — repo root resolution (one more `Split-Path` level)
-- [ ] S5-C: Fix `reset-dev-db.ps1` — repo root resolution (one more `Split-Path` level)
-- [ ] S5-D: Fix `clear-documents.bat` — `%~dp0..` → `%~dp0..\..`; update cosmetic message `scripts\start-all.bat` → `scripts\dev\start-all.bat`
-- [ ] S5-E: Fix `interpretation_debug_snapshot.py` — `parents[1]` → `parents[2]`
-- [ ] S5-F: Fix `ab_compare_pdf_extractors.py` — `parents[1]` → `parents[2]`
-- [ ] S5-G: Update `test_interpretation_debug_snapshot.py` — `from scripts.interpretation_debug_snapshot import build_snapshot` → `from scripts.dev.interpretation_debug_snapshot import build_snapshot`
-- [ ] S5-H: Commit. **Gate:** `Get-ChildItem scripts/ -File` returns only `README.md` (no scripts left at root). Run `pytest backend/tests/unit/test_interpretation_debug_snapshot.py -x -q -o addopts=`.
+- [x] S5-A: `git mv` 9 scripts to `scripts/dev/`
+- [x] S5-B: Fix `start-all.ps1` — repo root resolution (one more `Split-Path` level)
+- [x] S5-C: Fix `reset-dev-db.ps1` — repo root resolution (one more `Split-Path` level)
+- [x] S5-D: Fix `clear-documents.bat` — `%~dp0..` → `%~dp0..\..`; update cosmetic message `scripts\start-all.bat` → `scripts\dev\start-all.bat`
+- [x] S5-E: Fix `interpretation_debug_snapshot.py` — `parents[1]` → `parents[2]`
+- [x] S5-F: Fix `ab_compare_pdf_extractors.py` — `parents[1]` → `parents[2]`
+- [x] S5-G: Update `test_interpretation_debug_snapshot.py` — `from scripts.interpretation_debug_snapshot import build_snapshot` → `from scripts.dev.interpretation_debug_snapshot import build_snapshot`
+- [x] S5-H: Commit. **Gate:** `Get-ChildItem scripts/ -File` returns only `README.md` (no scripts left at root). Run `pytest backend/tests/unit/test_interpretation_debug_snapshot.py -x -q -o addopts=`.
 
 ### S6 — Update docs references (Commit 6) · **Claude Opus 4.6**
 
