@@ -59,6 +59,11 @@ _CLINIC_HEADER_ADDRESS_CONTEXT_RE = re.compile(
 _CLINIC_HEADER_SECTION_CONTEXT_RE = re.compile(
     r"(?i)\b(?:datos\s+de\s+la\s+mascota|datos\s+del\s+cliente|especie|raza|n[º°o]\s*chip)\b"
 )
+_CLINIC_HEADER_GENERIC_BLACKLIST = {
+    "HISTORIAL",
+    "INFORME",
+    "FICHA",
+}
 
 
 def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, object]]]:
@@ -224,6 +229,7 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
             and ":" not in clinic_header
             and not has_numeric
             and "-" not in clinic_header
+            and clinic_header not in _CLINIC_HEADER_GENERIC_BLACKLIST
             and clinic_header_folded not in _pet_name_stop_lower
         )
         if header_looks_institutional:

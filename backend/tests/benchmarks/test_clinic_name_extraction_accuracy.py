@@ -25,8 +25,9 @@ def _load_cases() -> list[dict]:
 
 _CASES = _load_cases()
 
-# Baseline gate for P0-A: keep permissive, tighten in later hardening steps.
-MIN_EXACT_MATCH_RATE: float = 0.75
+# Flexible regression reference: keep tolerance for fixture evolution while
+# still catching meaningful quality drift.
+MIN_EXACT_MATCH_RATE: float = 0.90
 
 
 def _normalize_for_comparison(value: str | None) -> str | None:

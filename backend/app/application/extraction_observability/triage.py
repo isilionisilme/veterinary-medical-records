@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 _uvicorn_logger = logging.getLogger("uvicorn.error")
 _GOAL_FIELDS = (
     "pet_name",
+    "clinic_name",
     "microchip_id",
     "owner_name",
     "weight",
