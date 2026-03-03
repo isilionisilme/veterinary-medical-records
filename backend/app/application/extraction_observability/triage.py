@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 _uvicorn_logger = logging.getLogger("uvicorn.error")
 _GOAL_FIELDS = (
     "pet_name",
+    "clinic_name",
     "microchip_id",
     "owner_name",
     "weight",
@@ -95,6 +96,19 @@ def _suspicious_accepted_flags(field_key: str, value: str | None) -> list[str]:
         _stop = {"nombre", "datos", "cliente", "historial", "visita"}
         if _normalize_text(normalized_value) in _stop:
             flags.append("pet_name_is_stopword")
+    if normalized_key == "clinic_name":
+        compact = _normalize_text(normalized_value)
+        if normalized_value.isdigit():
+            flags.append("clinic_name_numeric_only")
+        if len(normalized_value.strip()) <= 2:
+            flags.append("clinic_name_too_short")
+        if re.search(
+            r"(?i)\b(?:c/|calle|av\.?|avenida|cp\b|portal|piso|puerta|direcci[oó]n|domicilio)\b",
+            normalized_value,
+        ) and re.search(r"\d", normalized_value):
+            flags.append("clinic_name_address_like")
+        if not re.search(r"\b(?:clinica|veterinari|hospital|centro|vet)\b", compact):
+            flags.append("clinic_name_missing_institution_token")
     return flags
 
 

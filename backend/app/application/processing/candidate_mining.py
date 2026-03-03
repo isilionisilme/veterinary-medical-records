@@ -43,6 +43,27 @@ _PET_NAME_BIRTHLINE_RE = re.compile(
     r"(?:nacimiento|nac\.?|dob|birth(?:\s*date)?)\b",
     re.IGNORECASE,
 )
+_CLINIC_CONTEXT_LINE_RE = re.compile(
+    r"(?i)\b(?:en\s+el|en\s+la)\s+"
+    r"(centr[o0]|cl[ií]nica|hospital(?:\s+veterinari[oa])?)\s+"
+    r"([A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9][^\n,;]{2,100})"
+)
+_CLINIC_STANDALONE_LINE_RE = re.compile(
+    r"(?i)^\s*(hv|h\.?\s*v\.?|hospital(?:\s+veterinari[oa])?|"
+    r"centro(?:\s+veterinari[oa])?|cl[ií]nica(?:\s+veterinari[oa])?)\s+"
+    r"([A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9][^\n,;:]{2,100})\s*$"
+)
+_CLINIC_HEADER_ADDRESS_CONTEXT_RE = re.compile(
+    r"(?i)\b(?:avda?\.?|avenida|calle|c/|portal|piso|puerta|codigo\s+postal|cp\b)\b"
+)
+_CLINIC_HEADER_SECTION_CONTEXT_RE = re.compile(
+    r"(?i)\b(?:datos\s+de\s+la\s+mascota|datos\s+del\s+cliente|especie|raza|n[º°o]\s*chip)\b"
+)
+_CLINIC_HEADER_GENERIC_BLACKLIST = {
+    "HISTORIAL",
+    "INFORME",
+    "FICHA",
+}
 
 
 def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, object]]]:
@@ -84,6 +105,15 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
             if _ADDRESS_LIKE_PATTERN.search(normalized_person):
                 return
             cleaned_value = normalized_person
+        if key == "clinic_name":
+            snippet_folded = snippet.casefold()
+            if "dirección" in snippet_folded or "direccion" in snippet_folded:
+                return
+            if "domicilio" in snippet_folded:
+                return
+            compact_clinic = cleaned_value.casefold()
+            if _ADDRESS_LIKE_PATTERN.search(compact_clinic) and re.search(r"\d", compact_clinic):
+                return
 
         normalized_key = cleaned_value.casefold()
         if normalized_key in seen_values[key]:
@@ -188,6 +218,37 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
         "vacunacion",
     }
     _pet_name_stop_lower = {s.casefold() for s in _pet_name_stop_lower}
+
+    if lines:
+        clinic_header = lines[0]
+        clinic_header_folded = clinic_header.casefold()
+        has_numeric = re.search(r"\d", clinic_header) is not None
+        header_looks_institutional = (
+            clinic_header.isupper()
+            and 3 <= len(clinic_header) <= 60
+            and ":" not in clinic_header
+            and not has_numeric
+            and "-" not in clinic_header
+            and clinic_header not in _CLINIC_HEADER_GENERIC_BLACKLIST
+            and clinic_header_folded not in _pet_name_stop_lower
+        )
+        if header_looks_institutional:
+            context_lines = lines[1:8]
+            context_compact = " ".join(context_lines)
+            has_address_context = (
+                _CLINIC_HEADER_ADDRESS_CONTEXT_RE.search(context_compact) is not None
+                or re.search(r"\b\d{5}\b", context_compact) is not None
+            )
+            has_section_context = (
+                _CLINIC_HEADER_SECTION_CONTEXT_RE.search(context_compact) is not None
+            )
+            if has_address_context and has_section_context:
+                add_candidate(
+                    key="clinic_name",
+                    value=clinic_header,
+                    confidence=COVERAGE_CONFIDENCE_FALLBACK,
+                    snippet="\n".join(lines[:4]),
+                )
 
     for line in lines:
         if ":" in line:
@@ -322,6 +383,38 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
     for index, line in enumerate(lines):
         lower_line = line.casefold()
         normalized_single = _WHITESPACE_PATTERN.sub(" ", lower_line).strip()
+
+        clinic_context_match = _CLINIC_CONTEXT_LINE_RE.search(line)
+        if clinic_context_match is not None:
+            institution_token = clinic_context_match.group(1)
+            institution_name = clinic_context_match.group(2).strip(" .,:;\t\r\n")
+            canonical_institution = (
+                "Centro" if institution_token.casefold() == "centr0" else institution_token
+            )
+            clinic_candidate = f"{canonical_institution} {institution_name}".strip()
+            add_candidate(
+                key="clinic_name",
+                value=clinic_candidate,
+                confidence=COVERAGE_CONFIDENCE_FALLBACK,
+                snippet=line,
+            )
+
+        clinic_standalone_match = _CLINIC_STANDALONE_LINE_RE.match(line)
+        if clinic_standalone_match is not None:
+            institution_token = clinic_standalone_match.group(1).strip()
+            institution_name = clinic_standalone_match.group(2).strip(" .,:;\t\r\n")
+            lowered_name = institution_name.casefold()
+            if not lowered_name.startswith("de "):
+                canonical_institution = institution_token
+                if re.fullmatch(r"(?i)h\.?\s*v\.?", institution_token):
+                    canonical_institution = "HV"
+                clinic_candidate = f"{canonical_institution} {institution_name}".strip()
+                add_candidate(
+                    key="clinic_name",
+                    value=clinic_candidate,
+                    confidence=COVERAGE_CONFIDENCE_FALLBACK,
+                    snippet=line,
+                )
 
         birthline_match = _PET_NAME_BIRTHLINE_RE.match(line)
         if birthline_match:
@@ -482,5 +575,26 @@ def _candidate_sort_key(item: dict[str, object], key: str) -> tuple[float, float
             and 2 <= len(raw_value) <= 40
         )
         return (1.0 if is_clean else 0.0), confidence
+
+    if key == "clinic_name":
+        raw_value = str(item.get("value", "")).strip()
+        lower_value = raw_value.casefold()
+        has_hv_abbrev = bool(re.search(r"\bh\.?\s*v\.?\b", lower_value))
+        has_clinic_token = bool(
+            re.search(
+                r"\b(?:cl[ií]nic|veterinari|hospital|centro|vet|h\.?\s*v\.?)\b",
+                lower_value,
+            )
+        )
+        looks_address_like = bool(_ADDRESS_LIKE_PATTERN.search(lower_value)) and bool(
+            re.search(r"\d", lower_value)
+        )
+        if has_hv_abbrev and not looks_address_like:
+            return 3.0, confidence
+        if has_clinic_token and not looks_address_like:
+            return 2.0, confidence
+        if has_clinic_token:
+            return 1.0, confidence
+        return 0.0, confidence
 
     return 0.0, confidence
