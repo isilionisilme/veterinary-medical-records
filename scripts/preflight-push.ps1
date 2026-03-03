@@ -5,6 +5,6 @@ param(
     [switch]$ForceFrontend
 )
 
-$scriptPath = Join-Path $PSScriptRoot "preflight-ci-local.ps1"
-& $scriptPath -Mode Push -BaseRef $BaseRef -SkipDocker:$SkipDocker -ForceFrontend:$ForceFrontend
+$scriptPath = Join-Path $PSScriptRoot "test-L2.ps1"
+& $scriptPath -BaseRef $BaseRef -SkipDocker:$SkipDocker -ForceFrontend:$ForceFrontend
 exit $LASTEXITCODE

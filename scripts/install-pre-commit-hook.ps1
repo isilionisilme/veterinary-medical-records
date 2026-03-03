@@ -15,4 +15,4 @@ if (-not (Test-Path $sourceHook)) {
 
 Copy-Item -Path $sourceHook -Destination $targetHook -Force
 Write-Host "Installed pre-commit hook at: $targetHook"
-Write-Host "This hook runs scripts/preflight-quick.ps1 before every commit."
+Write-Host "This hook runs scripts/test-L1.ps1 before every commit."

@@ -7,6 +7,6 @@ param(
     [switch]$ForceFull
 )
 
-$scriptPath = Join-Path $PSScriptRoot "preflight-ci-local.ps1"
-& $scriptPath -Mode Full -BaseRef $BaseRef -SkipDocker:$SkipDocker -SkipE2E:$SkipE2E -ForceFrontend:$ForceFrontend -ForceFull:$ForceFull
+$scriptPath = Join-Path $PSScriptRoot "test-L3.ps1"
+& $scriptPath -BaseRef $BaseRef -SkipDocker:$SkipDocker -SkipE2E:$SkipE2E -ForceFrontend:$ForceFrontend -ForceFull:$ForceFull
 exit $LASTEXITCODE
