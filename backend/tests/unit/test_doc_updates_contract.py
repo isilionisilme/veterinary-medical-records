@@ -21,6 +21,18 @@ DOC_UPDATES_TEST_IMPACT_MAP = (
 DOC_UPDATES_ROUTER_PARITY_MAP = (
     REPO_ROOT / "docs" / "agent_router" / "01_WORKFLOW" / "DOC_UPDATES" / "router_parity_map.json"
 )
+ENGINEERING_PLAYBOOK = REPO_ROOT / "docs" / "shared" / "03-ops" / "engineering-playbook.md"
+CODE_REVIEW_OWNER = (
+    REPO_ROOT
+    / "docs"
+    / "agent_router"
+    / "03_SHARED"
+    / "ENGINEERING_PLAYBOOK"
+    / "220_code-reviews.md"
+)
+CODE_REVIEW_ENTRY = (
+    REPO_ROOT / "docs" / "agent_router" / "01_WORKFLOW" / "CODE_REVIEW" / "00_entry.md"
+)
 EXECUTION_RULES = (
     REPO_ROOT / "docs" / "projects" / "veterinary-medical-records" / "03-ops" / "execution-rules.md"
 )
@@ -243,6 +255,28 @@ def test_router_parity_map_has_product_design_rule() -> None:
         '76_conceptual-model-local-schema-global-schema-and-mapping.md"' in text
     )
     assert '"required_terms"' in text
+
+
+def test_code_review_guidance_terms_are_propagated() -> None:
+    source_text = _read_text(ENGINEERING_PLAYBOOK)
+    owner_text = _read_text(CODE_REVIEW_OWNER)
+    entry_text = _read_text(CODE_REVIEW_ENTRY)
+
+    required_terms = (
+        "Pre-review checklist",
+        "Severity classification criteria",
+        "Database migrations and schema changes",
+        "Large diff policy",
+        "Pre-existing issues policy",
+    )
+
+    for term in required_terms:
+        assert term in source_text
+        assert term in owner_text
+
+    assert "Pre-review gate (required before diff reading)" in entry_text
+    assert "Database migrations/schema safety" in entry_text
+    assert "Pre-existing issues" in entry_text
 
 
 def test_owner_entries_track_iteration_4_doc_propagation() -> None:
