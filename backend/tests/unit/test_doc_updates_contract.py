@@ -302,13 +302,11 @@ def test_preflight_levels_policy_is_documented_for_pr_flow() -> None:
         "L2 — Push",
         "L3 — Full",
         "before PR creation/update",
-        "before merge",
         "Auto-fix policy when preflight fails",
         "Maximum automatic remediation loop: 2 attempts",
         "ForceFrontend",
         "ForceFull",
-        "Before merge to `main`",
-        "Relevant change",
+        "CI is green",
     )
 
     for term in required_terms:
@@ -318,9 +316,6 @@ def test_preflight_levels_policy_is_documented_for_pr_flow() -> None:
     assert "test-L1.ps1" in readme_text
     assert "test-L2.ps1" in readme_text
     assert "test-L3.ps1" in readme_text
-    assert "preflight-quick.ps1" in readme_text
-    assert "preflight-push.ps1" in readme_text
-    assert "preflight-full.ps1" in readme_text
     assert "install-pre-commit-hook.ps1" in readme_text
     assert "Maximum automatic remediation loop: 2 attempts" in pr_router_text
 
@@ -410,5 +405,3 @@ def test_execution_rules_reference_preflight_levels() -> None:
     assert "L1 —" in rules_text or "L1 — Quick" in rules_text
     assert "L2 —" in rules_text or "L2 — Push" in rules_text
     assert "L3 —" in rules_text or "L3 — Full" in rules_text
-    # ForceFull merge policy
-    assert "ForceFull" in rules_text

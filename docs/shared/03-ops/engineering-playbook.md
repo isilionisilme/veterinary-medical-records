@@ -435,21 +435,19 @@ Use the local preflight system with three levels:
   - Entry points: `scripts/ci/test-L2.ps1` / `scripts/ci/test-L2.bat`
   - Frontend checks run only when frontend-impact paths changed, unless `-ForceFrontend` is provided.
   - Enforced by git hook: `.githooks/pre-push`.
-- **L3 — Full (before PR creation/update and before merge):** broadest local validation.
+- **L3 — Full (before PR creation/update):** broadest local validation.
   - Entry points: `scripts/ci/test-L3.ps1` / `scripts/ci/test-L3.bat`
   - Runs path-scoped backend/frontend/docker checks by default.
   - Use `-ForceFull` to execute full backend/frontend/docker scope regardless of diff.
   - Use `-ForceFrontend` to force frontend checks even when frontend-impact paths did not change.
   - E2E runs only for frontend-impact changes, unless `-ForceFrontend` or `-ForceFull` is provided.
-  - Legacy aliases remain available: `scripts/ci/preflight-quick.ps1`, `scripts/ci/preflight-push.ps1`, `scripts/ci/preflight-full.ps1`.
 
 Rules:
 - For interactive local commits, run L1 by default.
 - Before every `git push`, L2 must run (automatically via pre-push hook).
-- Before opening/updating a PR and before merge execution, run L3.
+- Before opening/updating a PR, run L3.
 - L3 runs path-scoped by default for day-to-day development branches.
-- Before merge to `main`, if the change is relevant, L3 must be executed with `-ForceFull`.
-- Relevant change for this rule means any diff touching: `backend/**`, `frontend/**`, `shared/**`, docker files/compose, root/frontend package manifests, or environment/config entrypoints (`backend/app/main.py`, `backend/app/config.py`, `backend/app/settings.py`, `.env.example`).
+- Before merge to `main`, verify CI is green. Local L3 is not required when CI has already passed — CI runs a superset of L3 checks (including Docker and E2E).
 - If a level fails, STOP and resolve failures (or explicitly document why a failure is unrelated/pre-existing).
 
 Auto-fix policy when preflight fails:
@@ -551,7 +549,7 @@ For docs-only PRs, no review comment is required (review is skipped by policy).
 
 After the user confirms that a Pull Request has been **merged into `main`**, the AI assistant must run the following **post-merge cleanup** procedure automatically.
 
-Before executing a user-requested merge operation, the assistant must run local L3 preflight and stop on failures.
+Before executing a user-requested merge operation, the assistant must verify CI is green on the PR. Local L3 is not required when CI has passed.
 
 Only STOP and ask for confirmation if the repository state is unsafe or ambiguous (examples: uncommitted changes, rebase/merge in progress, conflicts, or unclear stash purpose/ownership).
 
