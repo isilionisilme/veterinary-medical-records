@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-03-03
 **Rama:** `chore/execution-rules-preflight-integration`
-**PR:** _pendiente_
+**PR:** #192
 **Objetivo:** Cerrar el gap entre los scripts de preflight L1/L2/L3 y `execution-rules.md`, que es el documento que los agentes AI siguen paso a paso.
 
 ## Contexto
@@ -65,7 +65,7 @@ La rama ya tiene 8 commits con scripts, hooks, docs y tests. Falta integrar L1/L
 
 ### Fase 4 — PR
 
-- [ ] P4-A 🔄 — Push + crear PR draft + ejecutar L3 (Claude)
+- [x] P4-A 🔄 — Push + crear PR draft + ejecutar L3 (Claude) — ✅ PR #192 created
 
 ## Riesgos
 
