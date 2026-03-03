@@ -106,9 +106,9 @@ Scripts with **NO path fix needed** (use CWD-relative paths): `check_doc_test_sy
 
 ### S1 — Create folder structure + README (Commit 1) · **Claude Opus 4.6**
 
-- [ ] S1-A: Create empty directories: `scripts/ci/`, `scripts/docs/`, `scripts/quality/`, `scripts/dev/`
-- [ ] S1-B: Create `scripts/README.md` with directory guide
-- [ ] S1-C: Commit. **Gate:** `tree scripts/` shows 4 new folders + README; no script moved.
+- [x] S1-A: Create empty directories: `scripts/ci/`, `scripts/docs/`, `scripts/quality/`, `scripts/dev/`
+- [x] S1-B: Create `scripts/README.md` with directory guide
+- [ ] S1-C: Commit. **Gate:** `tree scripts/` shows 4 new folders + README; no script moved. ⏳ EN PROGRESO (Claude Opus 4.6, 2026-03-03)
 
 ### S2 — Move CI scripts (Commit 2) · **Claude Opus 4.6**
 
