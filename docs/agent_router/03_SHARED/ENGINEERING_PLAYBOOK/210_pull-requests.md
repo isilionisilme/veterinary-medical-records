@@ -28,8 +28,6 @@ Apply these levels automatically at the corresponding moments:
 - **L2 — Push (before every push):** `scripts/ci/test-L2.ps1` (or `.bat`), enforced by `.githooks/pre-push`
 - **L3 — Full (before PR creation/update and before merge):** `scripts/ci/test-L3.ps1` (or `.bat`)
 
-Legacy aliases remain available: `scripts/ci/preflight-quick.ps1`, `scripts/ci/preflight-push.ps1`, `scripts/ci/preflight-full.ps1`.
-
 Operational defaults:
 - L2 and L3 are path-scoped for frontend: run frontend checks only when frontend-impact paths changed.
 - `-ForceFrontend` forces frontend checks when no frontend-impact paths changed.

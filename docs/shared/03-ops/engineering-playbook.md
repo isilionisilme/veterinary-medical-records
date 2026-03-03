@@ -441,7 +441,6 @@ Use the local preflight system with three levels:
   - Use `-ForceFull` to execute full backend/frontend/docker scope regardless of diff.
   - Use `-ForceFrontend` to force frontend checks even when frontend-impact paths did not change.
   - E2E runs only for frontend-impact changes, unless `-ForceFrontend` or `-ForceFull` is provided.
-  - Legacy aliases remain available: `scripts/ci/preflight-quick.ps1`, `scripts/ci/preflight-push.ps1`, `scripts/ci/preflight-full.ps1`.
 
 Rules:
 - For interactive local commits, run L1 by default.

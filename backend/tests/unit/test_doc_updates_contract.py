@@ -318,9 +318,6 @@ def test_preflight_levels_policy_is_documented_for_pr_flow() -> None:
     assert "test-L1.ps1" in readme_text
     assert "test-L2.ps1" in readme_text
     assert "test-L3.ps1" in readme_text
-    assert "preflight-quick.ps1" in readme_text
-    assert "preflight-push.ps1" in readme_text
-    assert "preflight-full.ps1" in readme_text
     assert "install-pre-commit-hook.ps1" in readme_text
     assert "Maximum automatic remediation loop: 2 attempts" in pr_router_text
 

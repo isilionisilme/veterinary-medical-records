@@ -273,7 +273,6 @@ Files:
 - Hook entrypoints: `.githooks/pre-commit`, `.githooks/pre-push`
 - Core runner: `scripts/ci/preflight-ci-local.ps1`
 - Level wrappers: `scripts/ci/test-L1.ps1`, `scripts/ci/test-L2.ps1`, `scripts/ci/test-L3.ps1`
-- Legacy aliases (backward compatible): `scripts/ci/preflight-quick.ps1`, `scripts/ci/preflight-push.ps1`, `scripts/ci/preflight-full.ps1`
 
 ### Administrative commands
 
