@@ -181,10 +181,10 @@ Move 9 scripts → `scripts/dev/`: `start-all.ps1/.bat`, `reset-dev-db.ps1/.bat`
 
 ### S7 — Final verification + cleanup (Commit 7) · **Claude Opus 4.6**
 
-- [ ] S7-A: Run full grep: `git grep -n 'scripts/[a-z_]' -- '*.py' '*.yml' '*.json' '*.mjs' '*.ps1' '*.bat' '*.sh'` — verify all references use subfolder paths
-- [ ] S7-B: Remove `scripts/__pycache__/` if present
-- [ ] S7-C: Run full test suite: `pytest backend/tests/unit -x -q -o addopts=`
-- [ ] S7-D: Commit if cleanup needed. **Gate:** All tests pass, no stale refs.
+- [x] S7-A: Run full grep: `git grep -n 'scripts/[a-z_]' -- '*.py' '*.yml' '*.json' '*.mjs' '*.ps1' '*.bat' '*.sh'` — verify all references use subfolder paths
+- [x] S7-B: Remove `scripts/__pycache__/` if present — not present, no action needed
+- [x] S7-C: Run full test suite: `pytest backend/tests/unit -x -q -o addopts=` — ✅ 346 passed
+- [x] S7-D: Commit if cleanup needed. **Gate:** All tests pass, no stale refs. — No cleanup needed.
 
 ---
 
