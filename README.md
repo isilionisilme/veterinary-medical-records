@@ -243,14 +243,14 @@ Use the preflight scripts by level:
 
 - **L1 — Quick (before commit):**
   - PowerShell: `./scripts/ci/test-L1.ps1`
-  - Windows launcher: `scripts\test-L1.bat`
+  - Windows launcher: `scripts\ci\test-L1.bat`
 - **L2 — Push (before every push):**
   - PowerShell: `./scripts/ci/test-L2.ps1`
-  - Windows launcher: `scripts\test-L2.bat`
+  - Windows launcher: `scripts\ci\test-L2.bat`
   - Frontend checks run only for frontend-impact changes by default.
 - **L3 — Full (before PR create/update and before merge):**
   - PowerShell: `./scripts/ci/test-L3.ps1`
-  - Windows launcher: `scripts\test-L3.bat`
+  - Windows launcher: `scripts\ci\test-L3.bat`
   - Path-scoped by default; use `-ForceFull` to run full backend/frontend/docker scope.
   - Before merge to `main`, run with `-ForceFull` whenever the diff is relevant.
   - Relevant change for this rule: touches `backend/**`, `frontend/**`, `shared/**`, docker files/compose, root/frontend package manifests, or `backend/app/main.py`, `backend/app/config.py`, `backend/app/settings.py`, `.env.example`.
