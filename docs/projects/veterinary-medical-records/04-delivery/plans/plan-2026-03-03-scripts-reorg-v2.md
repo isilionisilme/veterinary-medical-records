@@ -151,13 +151,13 @@ Move 6 scripts → `scripts/docs/`: `check_docs_links.mjs`, `check_doc_test_sync
 
 Move 2 scripts → `scripts/quality/`: `check_brand_compliance.py`, `check_design_system.mjs`
 
-- [ ] S4-A: `git mv` 2 scripts to `scripts/quality/`
-- [ ] S4-B: Fix `check_design_system.mjs` — `path.resolve(scriptDir, "..")` → `path.resolve(scriptDir, "../..")`
-- [ ] S4-C: Update `frontend/package.json` — `../scripts/check_design_system.mjs` → `../scripts/quality/check_design_system.mjs`
-- [ ] S4-D: Update `.github/workflows/ci.yml` — `scripts/check_brand_compliance.py` → `scripts/quality/check_brand_compliance.py`
-- [ ] S4-E: Update `test_impact_map.json` — `scripts/check_brand_compliance.py` → `scripts/quality/check_brand_compliance.py`
-- [ ] S4-F: Update `test_brand_compliance_guard.py` — SCRIPT_PATH → `"scripts" / "quality" / "check_brand_compliance.py"`
-- [ ] S4-G: Commit. **Gate:** Run `pytest backend/tests/unit/test_brand_compliance_guard.py -x -q -o addopts=`. Verify no stale flat refs via grep.
+- [x] S4-A: `git mv` 2 scripts to `scripts/quality/`
+- [x] S4-B: Fix `check_design_system.mjs` — `path.resolve(scriptDir, "..")` → `path.resolve(scriptDir, "../..")`
+- [x] S4-C: Update `frontend/package.json` — `../scripts/check_design_system.mjs` → `../scripts/quality/check_design_system.mjs`
+- [x] S4-D: Update `.github/workflows/ci.yml` — `scripts/check_brand_compliance.py` → `scripts/quality/check_brand_compliance.py`
+- [x] S4-E: Update `test_impact_map.json` — `scripts/check_brand_compliance.py` → `scripts/quality/check_brand_compliance.py`
+- [x] S4-F: Update `test_brand_compliance_guard.py` — SCRIPT_PATH → `"scripts" / "quality" / "check_brand_compliance.py"`
+- [x] S4-G: Commit. **Gate:** Run `pytest backend/tests/unit/test_brand_compliance_guard.py -x -q -o addopts=`. Verify no stale flat refs via grep.
 
 ### S5 — Move dev scripts (Commit 5) · **Claude Opus 4.6**
 

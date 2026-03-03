@@ -139,7 +139,7 @@ jobs:
           python-version: 3.11
       - name: Run brand compliance guard (frontend added lines)
         run: |
-          python scripts/check_brand_compliance.py --base-ref "${{ github.event.pull_request.base.sha }}"
+          python scripts/quality/check_brand_compliance.py --base-ref "${{ github.event.pull_request.base.sha }}"
 
   frontend_design_system_guard:
     needs: changes

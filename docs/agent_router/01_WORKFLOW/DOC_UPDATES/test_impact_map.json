@@ -49,7 +49,7 @@
         "docs/agent_router/03_SHARED/BRAND_GUIDELINES/**/*.md"
       ],
       "required_any": [
-        "scripts/check_brand_compliance.py",
+        "scripts/quality/check_brand_compliance.py",
         "backend/tests/unit/test_doc_updates_contract.py",
         "backend/tests/unit/test_doc_updates_e2e_contract.py"
       ]

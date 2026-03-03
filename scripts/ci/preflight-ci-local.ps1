@@ -419,7 +419,7 @@ if ($runE2E) {
 
 if ($runFrontendGuards) {
     Invoke-Step "Brand guard (frontend changed)" {
-        & $python "scripts/check_brand_compliance.py" "--base-ref" $BaseRef
+        & $python "scripts/quality/check_brand_compliance.py" "--base-ref" $BaseRef
     }
 
     Invoke-Step "Frontend design system guard" {
