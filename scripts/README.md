@@ -7,7 +7,7 @@ Utility scripts organized by domain. Run from the **repo root**.
 | Folder | Purpose | Examples |
 |--------|---------|----------|
 | `ci/` | CI pipeline, pre-commit/pre-push hooks, preflight checks | `test-L1.ps1`, `preflight-ci-local.ps1`, `install-pre-push-hook.ps1` |
-| `docs/` | Documentation validation and sync | `check_docs_links.mjs`, `check_doc_test_sync.py`, `sync_docs_to_wiki.py` |
+| `docs/` | Documentation validation, sync, and local preview | `check_docs_links.mjs`, `check_doc_test_sync.py`, `sync_docs_to_wiki.py`, `docs-local-preview.ps1` |
 | `quality/` | Brand and design-system compliance guards | `check_brand_compliance.py`, `check_design_system.mjs` |
 | `dev/` | Local development helpers | `start-all.ps1`, `reset-dev-db.ps1`, `clear-documents.bat` |
 
