@@ -1,8 +1,13 @@
 [CmdletBinding()]
 param(
     [string]$BaseRef = "main",
+    [ValidateSet("Quick", "Push", "Full")]
+    [string]$Mode = "Push",
     [switch]$All,
-    [switch]$SkipDocker
+    [switch]$ForceFrontend,
+    [switch]$ForceFull,
+    [switch]$SkipDocker,
+    [switch]$SkipE2E
 )
 
 $ErrorActionPreference = "Stop"
@@ -63,6 +68,43 @@ function Get-ChangedFiles {
     return @($set | Sort-Object)
 }
 
+function Filter-ChangedFiles {
+    param(
+        [Parameter(Mandatory = $true)][string[]]$Files,
+        [Parameter(Mandatory = $true)][string[]]$Patterns
+    )
+
+    $result = @()
+
+    foreach ($filePath in $Files) {
+        if (Test-MatchesAny -Path $filePath -Patterns $Patterns) {
+            $result += $filePath
+        }
+    }
+
+    return @($result)
+}
+
+function Filter-ChangedExtensions {
+    param(
+        [Parameter(Mandatory = $true)][string[]]$Files,
+        [Parameter(Mandatory = $true)][string[]]$Extensions
+    )
+
+    $result = @()
+
+    foreach ($filePath in $Files) {
+        foreach ($ext in $Extensions) {
+            if ($filePath.EndsWith($ext, [System.StringComparison]::OrdinalIgnoreCase)) {
+                $result += $filePath
+                break
+            }
+        }
+    }
+
+    return @($result)
+}
+
 function Test-MatchesAny {
     param(
         [Parameter(Mandatory = $true)][string]$Path,
@@ -79,9 +121,16 @@ function Test-MatchesAny {
 }
 
 function Resolve-PythonCommand {
-    $venvPython = Join-Path $repoRoot ".venv/Scripts/python.exe"
-    if (Test-Path $venvPython) {
-        return $venvPython
+    $localVenvPython = Join-Path $repoRoot ".venv/Scripts/python.exe"
+    if (Test-Path $localVenvPython) {
+        return $localVenvPython
+    }
+
+    if ($env:VIRTUAL_ENV) {
+        $activeVenvPython = Join-Path $env:VIRTUAL_ENV "Scripts/python.exe"
+        if (Test-Path $activeVenvPython) {
+            return $activeVenvPython
+        }
     }
 
     return "python"
@@ -98,9 +147,14 @@ function Resolve-NpmCommand {
 
 $python = Resolve-PythonCommand
 $npm = Resolve-NpmCommand
+
+if ($All.IsPresent) {
+    $Mode = "Full"
+}
+
 $changedFiles = Get-ChangedFiles -BaseRefValue $BaseRef
 
-Write-Host "preflight-ci-local: base-ref=$BaseRef"
+Write-Host "preflight-ci-local: mode=$Mode base-ref=$BaseRef"
 if ($changedFiles.Count -eq 0) {
     Write-Host "No changed files detected (branch diff + staged + unstaged)."
 }
@@ -118,6 +172,20 @@ $backendPatterns = @(
 
 $frontendPatterns = @(
     "frontend/*"
+)
+
+$frontendImpactPatterns = @(
+    "frontend/*",
+    "shared/*",
+    "package.json",
+    "frontend/package.json",
+    "frontend/package-lock.json",
+    "backend/app/api/*",
+    "backend/app/domain/models.py",
+    "backend/app/application/global_schema.py",
+    "docker-compose.yml",
+    "docker-compose.dev.yml",
+    "Dockerfile.frontend"
 )
 
 $docsPatterns = @(
@@ -139,23 +207,67 @@ $dockerPackagingPatterns = @(
     "frontend/*"
 )
 
-$backendChanged = $changedFiles | Where-Object { Test-MatchesAny -Path $_ -Patterns $backendPatterns } | Select-Object -First 1
-$frontendChanged = $changedFiles | Where-Object { Test-MatchesAny -Path $_ -Patterns $frontendPatterns } | Select-Object -First 1
-$docsChanged = $changedFiles | Where-Object { Test-MatchesAny -Path $_ -Patterns $docsPatterns } | Select-Object -First 1
-$dockerChanged = $changedFiles | Where-Object { Test-MatchesAny -Path $_ -Patterns $dockerPackagingPatterns } | Select-Object -First 1
+$backendChangedFiles = Filter-ChangedFiles -Files $changedFiles -Patterns $backendPatterns
+$frontendChangedFiles = Filter-ChangedFiles -Files $changedFiles -Patterns $frontendPatterns
+$frontendImpactFiles = Filter-ChangedFiles -Files $changedFiles -Patterns $frontendImpactPatterns
+$docsChangedFiles = Filter-ChangedFiles -Files $changedFiles -Patterns $docsPatterns
+$dockerChangedFiles = Filter-ChangedFiles -Files $changedFiles -Patterns $dockerPackagingPatterns
 
-$runDocs = $All.IsPresent -or [bool]$docsChanged
-$runBackend = $All.IsPresent -or [bool]$backendChanged
-$runFrontend = $All.IsPresent -or [bool]$frontendChanged -or [bool]$backendChanged
-$runFrontendGuards = $All.IsPresent -or [bool]$frontendChanged
-$runDocker = -not $SkipDocker.IsPresent -and ($All.IsPresent -or [bool]$dockerChanged)
+$backendChanged = [bool]($backendChangedFiles | Select-Object -First 1)
+$frontendChanged = [bool]($frontendChangedFiles | Select-Object -First 1)
+$frontendImpacted = [bool]($frontendImpactFiles | Select-Object -First 1)
+$docsChanged = [bool]($docsChangedFiles | Select-Object -First 1)
+$dockerChanged = [bool]($dockerChangedFiles | Select-Object -First 1)
+
+$forceFrontendChecks = $ForceFrontend.IsPresent -or $ForceFull.IsPresent
+$forceAllChecks = $All.IsPresent -or $ForceFull.IsPresent
+
+$runDocs = $false
+$runBackendQuick = $false
+$runBackendFull = $false
+$runFrontendQuick = $false
+$runFrontendFull = $false
+$runFrontendGuards = $false
+$runDocker = $false
+$runE2E = $false
+
+switch ($Mode) {
+    "Quick" {
+        $runDocs = $docsChanged
+        $runBackendQuick = $backendChanged
+        $runFrontendQuick = $frontendChanged
+        $runFrontendGuards = $false
+        $runDocker = $false
+        $runE2E = $false
+    }
+    "Push" {
+        $runDocs = $docsChanged
+        $runBackendFull = $backendChanged
+        $runFrontendFull = $frontendImpacted -or $forceFrontendChecks
+        $runFrontendGuards = $frontendImpacted -or $forceFrontendChecks
+        $runDocker = -not $SkipDocker.IsPresent -and $dockerChanged
+        $runE2E = $false
+    }
+    "Full" {
+        $runDocs = $true
+        $runBackendFull = $backendChanged -or $forceAllChecks
+        $runFrontendFull = $frontendImpacted -or $forceFrontendChecks
+        $runFrontendGuards = $frontendImpacted -or $forceFrontendChecks
+        $runDocker = -not $SkipDocker.IsPresent -and ($dockerChanged -or $forceAllChecks)
+        $runE2E = -not $SkipE2E.IsPresent -and ($frontendImpacted -or $forceFrontendChecks)
+    }
+}
 
 Write-Host "`nExecution plan:"
 Write-Host " - Docs guards:      $runDocs"
-Write-Host " - Backend quality:  $runBackend"
-Write-Host " - Frontend build:   $runFrontend"
+Write-Host " - Backend quick:    $runBackendQuick"
+Write-Host " - Backend full:     $runBackendFull"
+Write-Host " - Frontend quick:   $runFrontendQuick"
+Write-Host " - Frontend full:    $runFrontendFull"
 Write-Host " - Frontend guards:  $runFrontendGuards"
 Write-Host " - Docker guard:     $runDocker"
+Write-Host " - E2E:              $runE2E"
+Write-Host " - Frontend impacted:$frontendImpacted"
 
 if ($runDocs) {
     Invoke-Step "Docs canonical guard" {
@@ -171,13 +283,45 @@ if ($runDocs) {
     }
 }
 
-if ($runBackend) {
+if ($runBackendQuick) {
+    $backendPythonFiles = Filter-ChangedExtensions -Files $backendChangedFiles -Extensions @(".py")
+    if ($backendPythonFiles.Count -gt 0) {
+        Invoke-Step "Backend quick lint (Ruff changed files)" {
+            foreach ($backendPythonFile in $backendPythonFiles) {
+                & $python -m ruff check $backendPythonFile
+                if (-not $?) {
+                    throw "Ruff lint failed for $backendPythonFile"
+                }
+                if ($LASTEXITCODE -ne 0) {
+                    throw "Ruff lint failed for $backendPythonFile with exit code ${LASTEXITCODE}"
+                }
+            }
+        }
+
+        Invoke-Step "Backend quick format check (Ruff changed files)" {
+            foreach ($backendPythonFile in $backendPythonFiles) {
+                & $python -m ruff format --check $backendPythonFile
+                if (-not $?) {
+                    throw "Ruff format check failed for $backendPythonFile"
+                }
+                if ($LASTEXITCODE -ne 0) {
+                    throw "Ruff format check failed for $backendPythonFile with exit code ${LASTEXITCODE}"
+                }
+            }
+        }
+    }
+    else {
+        Write-Host "No changed Python backend files for quick backend checks."
+    }
+}
+
+if ($runBackendFull) {
     Invoke-Step "Backend lint (Ruff)" {
-        & ruff check .
+        & $python -m ruff check .
     }
 
     Invoke-Step "Backend format check (Ruff)" {
-        & ruff format --check .
+        & $python -m ruff format --check .
     }
 
     Invoke-Step "Backend tests (Pytest + coverage)" {
@@ -189,7 +333,46 @@ if ($runBackend) {
     }
 }
 
-if ($runFrontend) {
+if ($runFrontendQuick) {
+    $frontendLintFiles = Filter-ChangedExtensions -Files $frontendChangedFiles -Extensions @(".ts", ".tsx", ".js", ".jsx")
+    $frontendFormatFiles = Filter-ChangedExtensions -Files $frontendChangedFiles -Extensions @(".ts", ".tsx", ".js", ".jsx", ".css")
+
+    if ($frontendLintFiles.Count -gt 0) {
+        Invoke-Step "Frontend quick lint (changed files)" {
+            foreach ($frontendLintFile in $frontendLintFiles) {
+                & $npm --prefix frontend exec eslint $frontendLintFile
+                if (-not $?) {
+                    throw "ESLint failed for $frontendLintFile"
+                }
+                if ($LASTEXITCODE -ne 0) {
+                    throw "ESLint failed for $frontendLintFile with exit code ${LASTEXITCODE}"
+                }
+            }
+        }
+    }
+    else {
+        Write-Host "No changed frontend lint-target files for quick lint."
+    }
+
+    if ($frontendFormatFiles.Count -gt 0) {
+        Invoke-Step "Frontend quick format check (changed files)" {
+            foreach ($frontendFormatFile in $frontendFormatFiles) {
+                & $npm --prefix frontend exec prettier --check $frontendFormatFile
+                if (-not $?) {
+                    throw "Prettier check failed for $frontendFormatFile"
+                }
+                if ($LASTEXITCODE -ne 0) {
+                    throw "Prettier check failed for $frontendFormatFile with exit code ${LASTEXITCODE}"
+                }
+            }
+        }
+    }
+    else {
+        Write-Host "No changed frontend format-target files for quick format check."
+    }
+}
+
+if ($runFrontendFull) {
     Invoke-Step "Frontend dependencies" {
         & $npm --prefix frontend ci
     }
@@ -208,6 +391,12 @@ if ($runFrontend) {
 
     Invoke-Step "Frontend build" {
         & $npm --prefix frontend run build
+    }
+}
+
+if ($runE2E) {
+    Invoke-Step "Frontend E2E (Playwright)" {
+        & $npm --prefix frontend run test:e2e
     }
 }
 
@@ -265,8 +454,8 @@ if ($runDocker) {
     }
 }
 
-if (-not ($runDocs -or $runBackend -or $runFrontend -or $runFrontendGuards -or $runDocker)) {
-    Write-Host "No CI-equivalent checks selected by changed paths."
+if (-not ($runDocs -or $runBackendQuick -or $runBackendFull -or $runFrontendQuick -or $runFrontendFull -or $runFrontendGuards -or $runDocker -or $runE2E)) {
+    Write-Host "No checks selected for mode $Mode with current changed paths."
 }
 
 Write-Host "`npreflight-ci-local: PASS" -ForegroundColor Green

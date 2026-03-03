@@ -20,6 +20,28 @@ Rules:
 
 When an AI coding assistant or automation tool is used to create or update a Pull Request in this repository, it must follow this procedure automatically. This operational rule complements the existing Pull Request and Code Review policies and does not replace them.
 
+## Local preflight levels (operational default)
+
+Apply these levels automatically at the corresponding moments:
+
+- **L1 — Quick (before commit):** `scripts/preflight-quick.ps1` (or `.bat`)
+- **L2 — Push (before every push):** `scripts/preflight-push.ps1` (or `.bat`), enforced by `.githooks/pre-push`
+- **L3 — Full (before PR creation/update and before merge):** `scripts/preflight-full.ps1` (or `.bat`)
+
+Operational defaults:
+- L2 and L3 are path-scoped for frontend: run frontend checks only when frontend-impact paths changed.
+- `-ForceFrontend` forces frontend checks when no frontend-impact paths changed.
+- `-ForceFull` forces full backend/frontend/docker scope for L3.
+
+If the required level fails, STOP and resolve issues before continuing.
+
+Auto-fix policy when preflight fails:
+- Attempt focused fixes automatically before continuing.
+- Keep fixes within current scope; avoid unrelated refactors.
+- Maximum automatic remediation loop: 2 attempts (fix + rerun the failed level).
+- Never bypass gates (`--no-verify`, disabled tests/checks, weakened assertions).
+- If still failing after the limit, STOP and report root cause and next actions.
+
 ## Manual trigger only: Code reviews (precedence gate)
 
 Code review execution is manual trigger only.
@@ -43,6 +65,10 @@ Code review execution is manual trigger only.
    - Preferred patterns:
      - `gh pr create --body-file <path-to-markdown-file>`
      - PowerShell here-string (`@' ... '@`) assigned to a variable and passed to `--body`
+
+2.1) Run local L3 preflight before creating/updating the PR:
+    - Use `scripts/preflight-full.ps1` (or `.bat`).
+    - If L3 fails, STOP and fix or explicitly justify any accepted exception.
 
 3) Check CI status (if configured):
    - Report whether CI is pending, passing, or failing.
@@ -102,6 +128,7 @@ Only STOP and ask for confirmation if the repository state is unsafe or ambiguou
 ### When user asks "merge this PR"
 
 1) Preconditions (must pass before merge):
+   - Run local L3 preflight (`scripts/preflight-full.ps1` or `.bat`) and stop on failures.
    - Ensure working tree is clean (`git status`).
    - Sync refs and prune (`git fetch --prune`).
    - Verify PR is mergeable without bypassing protections:

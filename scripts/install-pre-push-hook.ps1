@@ -15,4 +15,4 @@ if (-not (Test-Path $sourceHook)) {
 
 Copy-Item -Path $sourceHook -Destination $targetHook -Force
 Write-Host "Installed pre-push hook at: $targetHook"
-Write-Host "This hook runs scripts/pre_push_quality_gate.py before every push."
+Write-Host "This hook runs scripts/preflight-push.ps1 before every push."

@@ -424,6 +424,37 @@ Each release must result in:
 - A change may be implemented through multiple commits.
 - Commit history must remain readable to support reasoning and review.
 
+### Local preflight levels (mandatory workflow)
+
+Use the local preflight system with three levels:
+
+- **L1 — Quick (before commit):** lightweight checks for fast feedback.
+  - Entry points: `scripts/preflight-quick.ps1` / `scripts/preflight-quick.bat`
+  - Purpose: catch obvious lint/format/doc guard failures with minimal delay.
+- **L2 — Push (before every push):** CI-aligned scoped checks.
+  - Entry points: `scripts/preflight-push.ps1` / `scripts/preflight-push.bat`
+  - Frontend checks run only when frontend-impact paths changed, unless `-ForceFrontend` is provided.
+  - Enforced by git hook: `.githooks/pre-push`.
+- **L3 — Full (before PR creation/update and before merge):** broadest local validation.
+  - Entry points: `scripts/preflight-full.ps1` / `scripts/preflight-full.bat`
+  - Runs path-scoped backend/frontend/docker checks by default.
+  - Use `-ForceFull` to execute full backend/frontend/docker scope regardless of diff.
+  - Use `-ForceFrontend` to force frontend checks even when frontend-impact paths did not change.
+  - E2E runs only for frontend-impact changes, unless `-ForceFrontend` or `-ForceFull` is provided.
+
+Rules:
+- For interactive local commits, run L1 by default.
+- Before every `git push`, L2 must run (automatically via pre-push hook).
+- Before opening/updating a PR and before merge execution, run L3.
+- If a level fails, STOP and resolve failures (or explicitly document why a failure is unrelated/pre-existing).
+
+Auto-fix policy when preflight fails:
+- The assistant must attempt focused fixes automatically before proceeding.
+- Auto-fixes must stay within the current change scope and avoid unrelated refactors.
+- Maximum automatic remediation loop: 2 attempts (fix + rerun the failed level).
+- Never bypass quality gates (`--no-verify`, disabling tests/checks, weakening assertions) to force a pass.
+- If failures persist after the limit, STOP and report root cause, impacted files, and next-action options.
+
 ## Pull Requests
 - A pull request is opened for each user story or each technical non user-facing change (refactors, chores, CI, docs, fixes).
 - Pull requests are opened once the change is fully implemented and all automated tests are passing.
@@ -462,6 +493,10 @@ When an AI coding assistant or automation tool is used to create or update a Pul
    - Preferred patterns:
      - `gh pr create --body-file <path-to-markdown-file>`
      - PowerShell here-string (`@' ... '@`) assigned to a variable and passed to `--body`
+
+2.1) Run local L3 preflight before PR creation/update:
+   - `scripts/preflight-full.ps1` (or `scripts/preflight-full.bat`)
+   - If L3 fails, STOP and resolve or explicitly document justified exceptions.
 
 3) Check CI status (if configured):
    - Report whether CI is pending, passing, or failing.
@@ -511,6 +546,8 @@ For docs-only PRs, no review comment is required (review is skipped by policy).
 ### Post-merge Cleanup (AI Assistants)
 
 After the user confirms that a Pull Request has been **merged into `main`**, the AI assistant must run the following **post-merge cleanup** procedure automatically.
+
+Before executing a user-requested merge operation, the assistant must run local L3 preflight and stop on failures.
 
 Only STOP and ask for confirmation if the repository state is unsafe or ambiguous (examples: uncommitted changes, rebase/merge in progress, conflicts, or unclear stash purpose/ownership).
 
