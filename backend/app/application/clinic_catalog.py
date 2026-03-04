@@ -2,11 +2,13 @@
 
 This module resolves addresses via Nominatim (OpenStreetMap) on-demand.
 It is called via API (user-initiated), never auto-enriched.
+It is a production component and emits fallback events for operational monitoring.
 """
 
 from __future__ import annotations
 
 import html
+import logging
 import re
 from urllib.parse import quote_plus
 
@@ -21,6 +23,7 @@ _WEB_SEARCH_HEADERS = {"User-Agent": "Mozilla/5.0"}
 _WEB_SEARCH_PROXY_PREFIX = "https://r.jina.ai/http://duckduckgo.com/?q="
 
 _CLINIC_CATALOG: list[dict[str, object]] = []
+logger = logging.getLogger(__name__)
 
 
 def _normalize_text(value: str) -> str:
@@ -143,6 +146,7 @@ def _lookup_address_via_web_search(name: str) -> str | None:
 
     proxy_url = _WEB_SEARCH_PROXY_PREFIX + quote_plus(query)
     try:
+        logger.info("clinic_lookup_web_proxy_fallback_attempted")
         proxy_response = httpx.get(
             proxy_url,
             headers=_WEB_SEARCH_HEADERS,
@@ -156,6 +160,7 @@ def _lookup_address_via_web_search(name: str) -> str | None:
 
     proxy_address = _extract_address_from_text_block(proxy_content)
     if proxy_address:
+        logger.info("clinic_lookup_web_proxy_fallback_succeeded")
         return proxy_address
 
     return None
@@ -167,13 +172,13 @@ def lookup_address_by_name(name: str) -> dict[str, object]:
     Returns a dict with keys:
       - found (bool): whether a unique match was found
       - address (str | None): the matched address, or None
-            - source (str): "nominatim" | "web_search"
+            - source (str): "nominatim" | "web_search" | "clinic_catalog" | "none"
       - catalog_version (str): version of the catalog used
     """
     result: dict[str, object] = {
         "found": False,
         "address": None,
-        "source": "nominatim",
+        "source": "none",
         "catalog_version": CATALOG_VERSION,
     }
 

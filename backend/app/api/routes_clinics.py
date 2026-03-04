@@ -20,8 +20,9 @@ router = APIRouter(tags=["Clinics"])
     summary="Look up a clinic address by name",
     description=(
         "Search for a clinic address given a clinic name. "
-        "Uses Nominatim (OpenStreetMap) as online resolver. "
-        "Returns found=false when there is no usable online result."
+        "Uses Nominatim first, then web search fallback (including proxy fallback) "
+        "when needed. Response field 'source' indicates which resolver produced "
+        "the result, or 'none' when no usable address is found."
     ),
 )
 def lookup_clinic_address(body: ClinicAddressLookupRequest) -> ClinicAddressLookupResponse:
@@ -29,5 +30,5 @@ def lookup_clinic_address(body: ClinicAddressLookupRequest) -> ClinicAddressLook
     return ClinicAddressLookupResponse(
         found=bool(result.get("found", False)),
         address=result.get("address") if result.get("found") else None,
-        source=str(result.get("source", "clinic_catalog")),
+        source=str(result.get("source", "none")),
     )

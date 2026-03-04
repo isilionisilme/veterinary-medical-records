@@ -78,7 +78,7 @@ def test_lookup_clinic_address_not_found(monkeypatch) -> None:
     monkeypatch.setattr(
         routes_clinics,
         "lookup_address_by_name",
-        lambda _name: {"found": False, "address": None, "source": "nominatim"},
+        lambda _name: {"found": False, "address": None, "source": "none"},
     )
 
     response = client.post(
@@ -89,6 +89,7 @@ def test_lookup_clinic_address_not_found(monkeypatch) -> None:
     data = response.json()
     assert data["found"] is False
     assert data["address"] is None
+    assert data["source"] == "none"
 
 
 def test_lookup_clinic_address_empty_name() -> None:
