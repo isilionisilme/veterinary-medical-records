@@ -77,11 +77,11 @@ Este plan establece 7 documentos canónicos (5 shared, 2 project) como single so
 - [x] F1-B 🚧 — **Create `docs/shared/02-tech/documentation-guidelines.md`** — Migrar de engineering-playbook.md §documentation + parte humana de DOC_UPDATES (cuándo actualizar, clasificación R/C/N, verificación). Añadir governance header. Commit C2. (Claude Opus 4.6)
 - [x] F1-C 🚧 — **Create `docs/shared/03-ops/way-of-working.md`** — Migrar de engineering-playbook.md §branch-first, §branching, §commits, §preflight, §PRs, §code-reviews, §delivery-model, §kickoff, §DoD, §execution-rule + contenido de 01_WORKFLOW/*. Añadir governance header. Commit C3. (Claude Opus 4.6)
 - [x] F1-D 🚧 — **Create `docs/projects/.../03-ops/plan-execution-protocol.md`** — Absorber execution-rules.md completo, reescrito para legibilidad humana manteniendo todas las reglas operativas. Añadir governance header. Commit C4. (Claude Opus 4.6)
-- [ ] F1-E 🚧 — **Create `docs/projects/.../02-tech/extraction-quality.md`** — Consolidar extraction/STRATEGY.md, FIELD_GUARDRAILS.md, OBSERVABILITY.md, extraction-tracking/INDEX.md, risk-matrix.md. Añadir governance header. Commit C5. (Claude Opus 4.6) ⏳ EN PROGRESO (Claude Opus 4.6, 2026-03-04)
+- [x] F1-E 🚧 — **Create `docs/projects/.../02-tech/extraction-quality.md`** — Consolidar extraction/STRATEGY.md, FIELD_GUARDRAILS.md, OBSERVABILITY.md, extraction-tracking/INDEX.md, risk-matrix.md. Añadir governance header. Commit C5. (Claude Opus 4.6)
 
 ### Phase 2 — Update existing docs + cleanup **[PR-1]**
 
-- [ ] F2-A 🚧 — **Add governance headers** a `brand-guidelines.md` y `ux-guidelines.md`. Directiva de direccionalidad canonical → router. Commit C6. (Claude Opus 4.6)
+- [ ] F2-A 🚧 — **Add governance headers** a `brand-guidelines.md` y `ux-guidelines.md`. Directiva de direccionalidad canonical → router. Commit C6. (Claude Opus 4.6) ⏳ EN PROGRESO (Claude Opus 4.6, 2026-03-04)
 - [ ] F2-B 🚧 — **Delete `engineering-playbook.md`** — Sustituido por coding-standards + documentation-guidelines + way-of-working. Commit C7. (Claude Opus 4.6)
 - [ ] F2-C 🔄 — **Update wiki section indexes** — Actualizar ficheros índice de `docs/shared/02-tech/` y `docs/shared/03-ops/` para que listen los nuevos documentos. Commit C8. (Codex)
 - [ ] F2-D 🔄 — **Fix all cross-references** — Grep todos los links a engineering-playbook.md en el repo, reemplazar por el canónico correspondiente (coding-standards, documentation-guidelines, o way-of-working según la sección referenciada). Commit C9. (Codex)
