@@ -12,7 +12,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot ".." ".." )).Path
+$repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 Set-Location $repoRoot
 
 function Invoke-Step {
