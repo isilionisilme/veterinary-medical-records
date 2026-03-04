@@ -246,36 +246,107 @@ Commit:
 
 ⚠️ STOP (next steps depend on created canonicals and/or Codex tasks)
 
+### F2-C — update wiki section indexes
+
+```text
+Update the documentation indexes to reflect the new canonical documents created in Phase 1 and the deletion of engineering-playbook.md.
+
+Files to update:
+1) docs/README.md — Sitemap section (around line 49):
+   - Remove `03-ops/engineering-playbook.md`
+   - Add `02-tech/coding-standards.md`
+   - Add `02-tech/documentation-guidelines.md`
+   - Add `03-ops/way-of-working.md`
+   Also add project-level canonical docs to the sitemap under `docs/projects/veterinary-medical-records/`:
+   - `02-tech/extraction-quality.md`
+   - `03-ops/plan-execution-protocol.md`
+
+2) docs/README.md — Shared Documentation section (around line 77):
+   - Remove the line: `- [engineering-playbook.md](shared/03-ops/engineering-playbook.md) — engineering standards and working agreements.`
+   - Add these lines:
+     - `- [coding-standards.md](shared/02-tech/coding-standards.md) — code style, architecture, contracts, naming, and technical standards.`
+     - `- [documentation-guidelines.md](shared/02-tech/documentation-guidelines.md) — documentation rules, change classification, and verification.`
+     - `- [way-of-working.md](shared/03-ops/way-of-working.md) — branch→commit→PR→review→merge lifecycle and working agreements.`
+
+Requirements:
+- Keep all other content in these files intact.
+- Ensure the sitemap ordering is consistent (01-product before 02-tech before 03-ops).
+- Do not edit unrelated files.
+
+Commit:
+- `docs(shared): update wiki section indexes for new canonical docs`
+```
+
+⚠️ AUTO-CHAIN → F2-D
+
+### F2-D — fix all cross-references to engineering-playbook.md
+
+```text
+Find and fix all remaining cross-references to engineering-playbook.md across the repository.
+
+Known references to fix (confirmed via grep):
+1) README.md (repo root, around line 132):
+   Current:
+     📄 **[`docs/shared/03-ops/engineering-playbook.md`](docs/shared/03-ops/engineering-playbook.md)**
+     Engineering standards for implementation and changes.
+   Replace with:
+     📄 **[`docs/shared/02-tech/coding-standards.md`](docs/shared/02-tech/coding-standards.md)**
+     Technical coding standards and architecture rules.
+
+     📄 **[`docs/shared/03-ops/way-of-working.md`](docs/shared/03-ops/way-of-working.md)**
+     Workflow lifecycle and working agreements.
+
+2) Run a full scan to catch any other references:
+   grep -r "engineering-playbook" docs/ AGENTS.md --include="*.md" | grep -v "completed/" | grep -v "PLAN_2026-03-04"
+   Fix any hits found (replace with the most appropriate canonical doc based on context).
+
+Do NOT modify:
+- The PLAN file itself (PLAN_2026-03-04_CANONICAL-DOC-RESTRUCTURE.md) — historical references are fine.
+- Completed plan files under `docs/projects/.../plans/completed/`.
+
+Commit:
+- `docs: fix all cross-references from engineering-playbook.md to new canonicals`
+```
+
+⚠️ STOP (F2-E is a hard-gate: user review before PR-1 merge)
+
 ---
 
 ## Prompt activo
 
 ### Paso objetivo
 
-F1-A 🚧 — Create `docs/shared/02-tech/coding-standards.md`.
+F2-C 🔄 — Update wiki section indexes.
 
 ### Prompt
 
 ```text
-Create `docs/shared/02-tech/coding-standards.md` by extracting and normalizing the technical standards content currently spread across:
-- docs/shared/03-ops/engineering-playbook.md (code-style, structure, contracts, state/workflow safety, traceability, error handling, observability, testing discipline, data handling, config/env, versioning, dependencies, naming for API/domain/lifecycle/persistence)
+Update the documentation indexes to reflect the new canonical documents created in Phase 1 and the deletion of engineering-playbook.md.
+
+Files to update:
+1) docs/README.md — Sitemap section (around line 49):
+   - Remove `03-ops/engineering-playbook.md`
+   - Add `02-tech/coding-standards.md`
+   - Add `02-tech/documentation-guidelines.md`
+   - Add `03-ops/way-of-working.md`
+   Also add project-level canonical docs to the sitemap under `docs/projects/veterinary-medical-records/`:
+   - `02-tech/extraction-quality.md`
+   - `03-ops/plan-execution-protocol.md`
+
+2) docs/README.md — Shared Documentation section (around line 77):
+   - Remove the line: `- [engineering-playbook.md](shared/03-ops/engineering-playbook.md) — engineering standards and working agreements.`
+   - Add these lines:
+     - `- [coding-standards.md](shared/02-tech/coding-standards.md) — code style, architecture, contracts, naming, and technical standards.`
+     - `- [documentation-guidelines.md](shared/02-tech/documentation-guidelines.md) — documentation rules, change classification, and verification.`
+     - `- [way-of-working.md](shared/03-ops/way-of-working.md) — branch→commit→PR→review→merge lifecycle and working agreements.`
 
 Requirements:
-1) Human-readable canonical format (not router format), wiki-ready.
-2) Keep all normative rules (MUST/NEVER style meaning) intact.
-3) Add explicit governance section with directionality:
-	- Canonical source of truth
-	- Flow is canonical → router only
-	- Router files are derived outputs and must not be manually edited
-4) Include clear section headers and concise rationale per section where helpful.
-5) Do not edit unrelated files.
-
-Validation:
-- Ensure internal links in the new file resolve.
-- Run a quick markdown sanity pass if available.
+- Keep all other content in these files intact.
+- Ensure the sitemap ordering is consistent (01-product before 02-tech before 03-ops).
+- Do not edit unrelated files.
 
 Commit:
-- `docs(shared): add coding-standards.md — tech standards canonical`
+- `docs(shared): update wiki section indexes for new canonical docs`
 ```
 
 ---
