@@ -153,6 +153,9 @@ def test_doc_b_golden_goal_fields_regression(monkeypatch) -> None:
     clinic_name = schema.get("clinic_name")
     assert clinic_name in ("", None)
 
+    clinic_address = schema.get("clinic_address")
+    assert clinic_address in ("", None)
+
     _assert_owner_or_vet_invariant(
         schema=schema,
         candidates=candidates,
@@ -240,3 +243,24 @@ def test_owner_name_trim_does_not_convert_pure_address_into_owner() -> None:
     candidates = _mine_interpretation_candidates(synthetic)
 
     assert candidates.get("owner_name", []) == []
+
+
+def test_clinic_address_labeled_disambiguates_owner_address(monkeypatch) -> None:
+    raw_text = "\n".join(
+        [
+            "Propietario: Ana Pérez",
+            "Dirección del propietario: C/ Luna 5, 28080 Madrid",
+            "Clínica: Centro Vet Norte",
+            "Dirección de la clínica: Av. Moratalaz 10, 28030 Madrid",
+            "Paciente: Rocky",
+        ]
+    )
+    data = _build_with_candidates(
+        monkeypatch,
+        doc_id="golden-doc-clinic-address-disambiguation",
+        raw_text=raw_text,
+    )
+
+    schema = data["global_schema"]
+    assert isinstance(schema, dict)
+    assert schema.get("clinic_address") == "Av. Moratalaz 10, 28030 Madrid"

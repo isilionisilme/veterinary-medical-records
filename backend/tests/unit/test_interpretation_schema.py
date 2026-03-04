@@ -377,6 +377,62 @@ def test_mvp_coverage_labeled_fields_are_extracted_with_label_confidence() -> No
     assert candidates["clinic_address"][0]["confidence"] == 0.66
 
 
+def test_clinic_address_generic_owner_direction_is_not_promoted_to_clinic_address() -> None:
+    payload = _build_interpretation_artifact(
+        document_id="doc-owner-generic-address",
+        run_id="run-owner-generic-address",
+        raw_text=(
+            "Propietario: Luis García\n"
+            "Dirección: C/ Falsa 123, 28080 Madrid\n"
+            "Paciente: Toby\n"
+            "Especie: Canina"
+        ),
+    )
+
+    schema = payload["data"]["global_schema"]
+    assert schema["clinic_address"] is None
+
+
+def test_clinic_address_unlabeled_line_after_clinic_header_is_detected() -> None:
+    payload = _build_interpretation_artifact(
+        document_id="doc-clinic-unlabeled-address",
+        run_id="run-clinic-unlabeled-address",
+        raw_text=("HOSPITAL VETERINARIO AGORA\nC/ SAN VICENTE 24, 03004 ALICANTE\nPaciente: Luna"),
+    )
+
+    schema = payload["data"]["global_schema"]
+    assert schema["clinic_address"] == "Calle SAN VICENTE 24, 03004 ALICANTE"
+
+
+def test_clinic_address_combined_clinic_direction_label_is_detected() -> None:
+    payload = _build_interpretation_artifact(
+        document_id="doc-clinic-combined-address-label",
+        run_id="run-clinic-combined-address-label",
+        raw_text=("Centro Veterinario / Dirección: C/ Mayor 45, 46001 Valencia\nPaciente: Nilo"),
+    )
+
+    schema = payload["data"]["global_schema"]
+    assert schema["clinic_address"] == "Calle Mayor 45, 46001 Valencia"
+
+
+def test_clinic_address_header_block_with_postal_line_is_detected() -> None:
+    payload = _build_interpretation_artifact(
+        document_id="doc-clinic-header-block-address",
+        run_id="run-clinic-header-block-address",
+        raw_text=(
+            "PARQUE OESTE\n"
+            "AVDA EUROPA\n"
+            "Linea 4\n"
+            "28922 ALCORCÓN\n"
+            "Datos de la Mascota\n"
+            "Paciente: Marley"
+        ),
+    )
+
+    schema = payload["data"]["global_schema"]
+    assert schema["clinic_address"] == "Avenida EUROPA Linea 4 28922 ALCORCÓN"
+
+
 def test_mvp_coverage_fallback_candidate_uses_low_medium_confidence() -> None:
     candidates = _mine_interpretation_candidates("Amoxicilina 250 mg cada 12h durante 7 dias")
 

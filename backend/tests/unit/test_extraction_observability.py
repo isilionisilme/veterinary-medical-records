@@ -211,8 +211,13 @@ def test_build_extraction_triage_flags_suspicious_accepted_fields() -> None:
                 "confidence": "high",
                 "valueNormalized": "x" * 120,
             },
+            "clinic_address": {
+                "status": "accepted",
+                "confidence": "mid",
+                "valueNormalized": "PO Box 123 contacto@vet.es",
+            },
         },
-        "counts": {"accepted": 5, "missing": 0, "rejected": 0, "low": 2, "mid": 2, "high": 1},
+        "counts": {"accepted": 6, "missing": 0, "rejected": 0, "low": 2, "mid": 3, "high": 1},
     }
 
     triage = extraction_observability.build_extraction_triage(snapshot)
@@ -223,6 +228,9 @@ def test_build_extraction_triage_flags_suspicious_accepted_fields() -> None:
     assert "species_outside_allowed_set" in suspicious_by_field["species"]["flags"]
     assert "sex_outside_allowed_set" in suspicious_by_field["sex"]["flags"]
     assert "value_too_long" in suspicious_by_field["notes"]["flags"]
+    clinic_address_flags = suspicious_by_field["clinic_address"]["flags"]
+    assert "clinic_address_contains_email" in clinic_address_flags
+    assert "clinic_address_po_box_without_street" in clinic_address_flags
 
 
 def test_build_extraction_triage_keeps_top_candidates_shape() -> None:

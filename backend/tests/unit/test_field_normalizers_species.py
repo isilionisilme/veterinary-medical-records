@@ -31,3 +31,25 @@ def test_species_contract_constants_match_current_canonical_set() -> None:
     assert field_normalizers.CANONICAL_SPECIES == frozenset({"canino", "felino"})
     for value in field_normalizers.SPECIES_TOKEN_TO_CANONICAL.values():
         assert value in field_normalizers.CANONICAL_SPECIES
+
+
+def test_clinic_address_normalizer_expands_abbreviations_and_compacts_whitespace() -> None:
+    normalized = field_normalizers.normalize_canonical_fields(
+        {"clinic_address": "Dir.:  C/  Mayor  45 ,  46001   Valencia"}
+    )
+
+    assert normalized["clinic_address"] == "Calle Mayor 45, 46001 Valencia"
+
+
+def test_clinic_address_normalizer_collapses_multiline_into_single_line() -> None:
+    normalized = field_normalizers.normalize_canonical_fields(
+        {"clinic_address": "Dirección:\nAvda. de la Ilustración 22, 1º B\n28029 Madrid"}
+    )
+
+    assert normalized["clinic_address"] == "Avenida de la Ilustración 22, 1º B 28029 Madrid"
+
+
+def test_clinic_address_normalizer_returns_none_for_non_string_value() -> None:
+    normalized = field_normalizers.normalize_canonical_fields({"clinic_address": None})
+
+    assert normalized["clinic_address"] is None
