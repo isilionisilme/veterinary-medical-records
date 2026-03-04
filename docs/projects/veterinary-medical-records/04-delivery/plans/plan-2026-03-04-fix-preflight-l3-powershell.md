@@ -24,8 +24,8 @@ Root cause candidate is the repository root resolution using `Join-Path` with mu
 
 ## Estado de ejecución
 
-- [ ] C1 🔄 — Fix PowerShell 5.1 compatibility in affected `scripts/ci/*.ps1` root-path resolution logic (Codex)
-- [ ] C2 🔄 — Validate local preflight execution: `scripts/ci/test-L1.ps1`, `scripts/ci/test-L2.ps1`, `scripts/ci/test-L3.ps1` (Codex)
+- [x] C1 🔄 — Fix PowerShell 5.1 compatibility in affected `scripts/ci/*.ps1` root-path resolution logic (Codex) — ✅ `2c52f3db`
+- [x] C2 🔄 — Validate local preflight execution: `scripts/ci/test-L1.ps1`, `scripts/ci/test-L2.ps1`, `scripts/ci/test-L3.ps1` (Codex) — ✅ `2c52f3db`
 
 ---
 
