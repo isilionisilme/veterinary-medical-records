@@ -55,7 +55,7 @@
 - [x] P3-A 🔄 — Añadir/ajustar regresiones golden de `microchip_id` y ejecutar suite focalizada (unit + golden + benchmark + observability) (GPT-5.3-Codex) — ✅ regresiones añadidas: `transponder` y dígitos con separadores en `test_golden_extraction_regression.py`
 - [x] P3-B 🔄 — Preparar evidencia reproducible para body de PR (totales, pass/fail, EM, null misses, false positives, delta vs threshold) (GPT-5.3-Codex) — ✅ suite focalizada: 53 passed; benchmark: 18/18 (100%), baseline previo 14/18 (77.8%), null_misses: 4→0, false_positives: 0→0
 - [x] P3-C 🚧 — Hard-gate: validación de usuario con ejemplos reales/sintéticos y decisión go/no-go (Claude Opus 4.6) — ✅ GO aprobado: 18/18 EM (100%), 0 FP, 0 null misses, 72 benchmarks verdes, doc real validado
-- [x] P3-D 🔄 — Post-gate closure: actualizar umbral `MIN_EXACT_MATCH_RATE` con margen de 5% y cerrar evidencia final de PR (GPT-5.3-Codex) — ✅ threshold=0.95 (100%-5pp), benchmark microchip 19/19, benchmark global 72/72
+- [x] P3-D 🔄 — Post-gate closure: actualizar umbral `MIN_EXACT_MATCH_RATE` con margen de 5% y cerrar evidencia final de PR (GPT-5.3-Codex) — ✅ threshold=0.95 (100%-5pp), benchmark microchip 19/19, benchmark global 72/72, `7e32e946`
 
 ---
 
