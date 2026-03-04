@@ -12,6 +12,7 @@ from backend.app.application.global_schema import GLOBAL_SCHEMA_KEYS, REPEATABLE
 from .constants import (
     _ADDRESS_LIKE_PATTERN,
     _MICROCHIP_DIGITS_PATTERN,
+    _OWNER_CONTEXT_PATTERN,
     _VET_OR_CLINIC_CONTEXT_PATTERN,
     _WHITESPACE_PATTERN,
     COVERAGE_CONFIDENCE_FALLBACK,
@@ -76,7 +77,7 @@ _CLINIC_ADDRESS_START_RE = re.compile(
 _CLINIC_OR_HOSPITAL_CONTEXT_RE = re.compile(
     r"(?i)\b(?:cl[ií]nica|centro|hospital|veterinari[oa]|vet)\b"
 )
-_OWNER_CONTEXT_RE = re.compile(r"(?i)\b(?:propietari[oa]|dueñ[oa]|titular|tutor)\b")
+_OWNER_CONTEXT_RE = _OWNER_CONTEXT_PATTERN
 _POSTAL_HINT_RE = re.compile(r"(?i)\b(?:cp\b|c[oó]digo\s+postal|\d{5})\b")
 _SIMPLE_FIELD_LABEL_RE = re.compile(r"^[^\n]{1,40}\s*[:\-]\s*")
 _HEADER_BLOCK_SCAN_WINDOW = 8
@@ -439,6 +440,11 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
         if _CLINIC_HEADER_SECTION_CONTEXT_RE.search(third_line.casefold()) is not None:
             continue
         if not (re.search(r"\d", first_line) or re.search(r"\d", second_line)):
+            continue
+        owner_block_context = " ".join(
+            lines[max(0, index - 1) : min(len(lines), index + 4)]
+        ).casefold()
+        if _OWNER_CONTEXT_RE.search(owner_block_context) is not None:
             continue
 
         candidate_value = " ".join(
