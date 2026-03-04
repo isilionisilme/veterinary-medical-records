@@ -203,6 +203,9 @@ def lookup_address_by_name(name: str) -> dict[str, object]:
             result["source"] = "clinic_catalog"
             return result
 
+    if len(matches) > 1:
+        return result
+
     nominatim_address = _lookup_address_via_nominatim(name)
     if nominatim_address:
         result["found"] = True
