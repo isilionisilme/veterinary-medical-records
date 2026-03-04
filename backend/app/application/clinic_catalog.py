@@ -7,7 +7,12 @@ Future: add online geocoder fallback when catalog misses.
 
 from __future__ import annotations
 
+import httpx
+
 CATALOG_VERSION = "1.0.0"
+_NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
+_NOMINATIM_TIMEOUT_SECONDS = 5.0
+_NOMINATIM_HEADERS = {"User-Agent": "veterinary-medical-records/1.0"}
 
 _CLINIC_CATALOG: list[dict[str, object]] = [
     {
@@ -19,6 +24,41 @@ _CLINIC_CATALOG: list[dict[str, object]] = [
 
 def _normalize_text(value: str) -> str:
     return value.strip().casefold()
+
+
+def _lookup_address_via_nominatim(name: str) -> str | None:
+    params = {
+        "q": name,
+        "format": "jsonv2",
+        "addressdetails": 1,
+        "limit": 1,
+        "countrycodes": "es",
+    }
+
+    try:
+        response = httpx.get(
+            _NOMINATIM_URL,
+            params=params,
+            headers=_NOMINATIM_HEADERS,
+            timeout=_NOMINATIM_TIMEOUT_SECONDS,
+        )
+        response.raise_for_status()
+        payload = response.json()
+    except (httpx.HTTPError, ValueError):
+        return None
+
+    if not isinstance(payload, list) or not payload:
+        return None
+
+    first_result = payload[0]
+    if not isinstance(first_result, dict):
+        return None
+
+    display_name = first_result.get("display_name")
+    if not isinstance(display_name, str) or not display_name.strip():
+        return None
+
+    return display_name.strip()
 
 
 def lookup_address_by_name(name: str) -> dict[str, object]:
@@ -60,6 +100,13 @@ def lookup_address_by_name(name: str) -> dict[str, object]:
         if isinstance(address, str) and address.strip():
             result["found"] = True
             result["address"] = address
+            return result
+
+    nominatim_address = _lookup_address_via_nominatim(name)
+    if nominatim_address:
+        result["found"] = True
+        result["address"] = nominatim_address
+        result["source"] = "nominatim"
 
     return result
 
