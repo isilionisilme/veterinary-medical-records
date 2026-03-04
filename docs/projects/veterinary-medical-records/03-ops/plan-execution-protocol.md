@@ -15,6 +15,8 @@
 
 This protocol governs how AI agents (Claude and Codex) execute plan steps in a structured, auditable, and semi-unattended manner. It defines execution rules, completion integrity, CI verification, handoff conventions, and the full iteration lifecycle.
 
+AI assistants must stop and report the blocker when a protocol step cannot be completed as defined.
+
 ---
 
 ## File Structure
@@ -459,3 +461,38 @@ For each recommendation/finding:
 - **Impact** on evaluation
 - **Effort** (S/M/L)
 - **Regression risk**
+
+---
+
+## 21. How to Add a New User Story
+
+When asked to add a new User Story, update [`IMPLEMENTATION_PLAN.md`](../04-delivery/IMPLEMENTATION_PLAN.md) in two places:
+
+1. Add the story in the relevant **User Stories (in order)** list for its release.
+2. Add or update the full **User Story Details** section for that story.
+
+If the requested story is not yet scheduled in any release, schedule it in the Release Plan:
+- Add it to an existing release, or
+- Create a new release section when needed.
+
+### Minimal required fields
+
+- **ID** (e.g., `US-22`)
+- **Title**
+- **Goal** (via `User Story` statement)
+- **Acceptance Criteria**
+- **Tech Requirements** (in `Authoritative References`)
+- **Dependencies** (in `Scope Clarification` and/or ordering references)
+
+### Release assignment rules
+
+- If the requester names a release explicitly, use that release.
+- Otherwise, assign to the earliest viable release based on dependencies and existing story order.
+- If no existing release is viable, create a new release after the last dependent release.
+
+### Completion checklist
+
+- Story appears in release-level **User Stories (in order)**.
+- Story appears in **User Story Details** with required fields.
+- Formatting and section structure remain consistent with existing stories.
+- No unrelated documentation edits are bundled.

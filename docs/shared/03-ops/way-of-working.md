@@ -16,6 +16,8 @@
 This document defines the **mandatory operational workflow** for all contributors (human and AI).
 It covers the full lifecycle: starting work → branching → committing → preflight → pull request → code review → merge → done.
 
+AI assistants must stop and explain the conflict before proceeding when instructions contradict these workflow rules.
+
 ---
 
 ## 1. Starting New Work (Branch First)
