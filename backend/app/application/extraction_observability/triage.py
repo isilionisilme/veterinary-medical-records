@@ -20,6 +20,7 @@ _uvicorn_logger = logging.getLogger("uvicorn.error")
 _GOAL_FIELDS = (
     "pet_name",
     "clinic_name",
+    "clinic_address",
     "microchip_id",
     "owner_name",
     "weight",
@@ -109,6 +110,29 @@ def _suspicious_accepted_flags(field_key: str, value: str | None) -> list[str]:
             flags.append("clinic_name_address_like")
         if not re.search(r"\b(?:clinica|veterinari|hospital|centro|vet)\b", compact):
             flags.append("clinic_name_missing_institution_token")
+    if normalized_key == "clinic_address":
+        compact = _normalize_text(normalized_value)
+        if normalized_value.isdigit():
+            flags.append("clinic_address_numeric_only")
+        if len(normalized_value.strip()) < 10:
+            flags.append("clinic_address_too_short")
+        if re.search(r"(?i)\b[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}\b", normalized_value):
+            flags.append("clinic_address_contains_email")
+        if re.search(r"(?i)\b(?:tel(?:[eé]fono)?|movil|m[oó]vil)\b", normalized_value):
+            flags.append("clinic_address_contains_phone_token")
+        if re.search(r"\b\d{9,}\b", normalized_value):
+            flags.append("clinic_address_contains_phone_number")
+        has_po_box = bool(
+            re.search(r"(?i)\b(?:po\s*box|apartado\s+postal|apdo\.?\s*postal)\b", compact)
+        )
+        has_street_token = bool(
+            re.search(
+                r"(?i)\b(?:c/|calle|av\.?|avenida|plaza|paseo|camino|carretera|ctra\.?|portal|puerta)\b",
+                normalized_value,
+            )
+        )
+        if has_po_box and not has_street_token:
+            flags.append("clinic_address_po_box_without_street")
     return flags
 
 

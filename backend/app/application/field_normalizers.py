@@ -28,6 +28,17 @@ _CLINIC_NAME_LEADING_LABEL = re.compile(
 _CLINIC_NAME_ADDRESS_LIKE = re.compile(
     r"(?i)\b(?:c/|calle|av\.?|avenida|cp\b|portal|piso|puerta|direcci[oó]n|domicilio)\b"
 )
+_CLINIC_ADDRESS_LEADING_LABEL = re.compile(
+    r"(?i)^(?:direcci[oó]n(?:\s+de\s+la\s+cl[ií]nica)?|"
+    r"domicilio(?:\s+de\s+la\s+cl[ií]nica)?|dir\.?)\s*[:\-]\s*"
+)
+_CLINIC_ADDRESS_ABBREVIATIONS: tuple[tuple[re.Pattern[str], str], ...] = (
+    (re.compile(r"(?i)\bc/\s*"), "Calle "),
+    (re.compile(r"(?i)\bavda\.?(?=\s|$)"), "Avenida"),
+    (re.compile(r"(?i)\bpza\.?(?=\s|$)"), "Plaza"),
+    (re.compile(r"(?i)\bctra\.?(?=\s|$)"), "Carretera"),
+    (re.compile(r"(?i)\bn[º°o]\.?(?=\s|\d)"), "Número"),
+)
 
 CANONICAL_SPECIES: frozenset[str] = frozenset({"canino", "felino"})
 
@@ -53,6 +64,7 @@ def normalize_canonical_fields(
 
     normalized["pet_name"] = _normalize_pet_name_value(normalized.get("pet_name"))
     normalized["clinic_name"] = _normalize_clinic_name_value(normalized.get("clinic_name"))
+    normalized["clinic_address"] = _normalize_clinic_address_value(normalized.get("clinic_address"))
     normalized["species"] = _normalize_species_value(normalized.get("species"))
     normalized["breed"] = _normalize_scalar_with_labels(normalized.get("breed"), ("raza", "breed"))
     normalized = _normalize_species_and_breed_pair(normalized, evidence_map)
@@ -164,6 +176,30 @@ def _normalize_clinic_name_value(value: object) -> str | None:
 
     lower_cleaned = cleaned.casefold()
     if _CLINIC_NAME_ADDRESS_LIKE.search(lower_cleaned) and re.search(r"\d", lower_cleaned):
+        return None
+
+    return cleaned
+
+
+def _normalize_clinic_address_value(value: object) -> str | None:
+    if not isinstance(value, str):
+        return None
+
+    cleaned = value.replace("\n", " ")
+    cleaned = _normalize_whitespace(cleaned)
+    if not cleaned:
+        return None
+
+    cleaned = _CLINIC_ADDRESS_LEADING_LABEL.sub("", cleaned).strip(" -:;,.")
+    if not cleaned:
+        return None
+
+    for pattern, replacement in _CLINIC_ADDRESS_ABBREVIATIONS:
+        cleaned = pattern.sub(replacement, cleaned)
+
+    cleaned = re.sub(r"\s*,\s*", ", ", cleaned)
+    cleaned = _normalize_whitespace(cleaned).strip(" ,;.")
+    if not cleaned:
         return None
 
     return cleaned
