@@ -3,7 +3,7 @@
 > **Operational rules:** See [execution-rules.md](../../03-ops/execution-rules.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
 
 **Rama:** `feat/clinic-enrichment-bidirectional-2026-03-04`
-**PR:** _(pending)_
+**PR:** #198
 **Prerequisito:** `main` estable con tests verdes. PR #196 (golden-loop clinic_address) merged.
 
 ## Context
