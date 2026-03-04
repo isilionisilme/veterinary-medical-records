@@ -1,11 +1,14 @@
-"""Versioned local catalog for on-demand clinic address lookup.
+"""On-demand clinic address lookup with online geocoder.
 
-This module provides a local catalog as a fast-path lookup.
-It is called on-demand via API (user-initiated), never auto-enriched.
-Future: add online geocoder fallback when catalog misses.
+This module resolves addresses via Nominatim (OpenStreetMap) on-demand.
+It is called via API (user-initiated), never auto-enriched.
 """
 
 from __future__ import annotations
+
+import html
+import re
+from urllib.parse import quote_plus
 
 import httpx
 
@@ -13,13 +16,11 @@ CATALOG_VERSION = "1.0.0"
 _NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 _NOMINATIM_TIMEOUT_SECONDS = 5.0
 _NOMINATIM_HEADERS = {"User-Agent": "veterinary-medical-records/1.0"}
+_WEB_SEARCH_URL = "https://duckduckgo.com/html/"
+_WEB_SEARCH_HEADERS = {"User-Agent": "Mozilla/5.0"}
+_WEB_SEARCH_PROXY_PREFIX = "https://r.jina.ai/http://duckduckgo.com/?q="
 
-_CLINIC_CATALOG: list[dict[str, object]] = [
-    {
-        "names": ["CENTRO COSTA AZAHAR", "HV COSTA AZAHAR"],
-        "address": "Rosa Molas 6, Bajo, 12003 Castelló",
-    }
-]
+_CLINIC_CATALOG: list[dict[str, object]] = []
 
 
 def _normalize_text(value: str) -> str:
@@ -61,19 +62,118 @@ def _lookup_address_via_nominatim(name: str) -> str | None:
     return display_name.strip()
 
 
+def _extract_address_from_web_snippet(snippet: str) -> str | None:
+    cleaned = html.unescape(re.sub(r"<[^>]+>", " ", snippet))
+    cleaned = " ".join(cleaned.split())
+
+    pattern = re.compile(
+        r"(?:Carrer|Calle|Avenida|Av\.?|Plaza|Paseo|Camino|Ronda|Rua|C/|C\.)"
+        r"[^.;]{0,120}?\b\d{1,4}\b[^.;]{0,120}?\b\d{5}\b[^.;]{0,120}",
+        flags=re.IGNORECASE,
+    )
+    direct_match = pattern.search(cleaned)
+    if direct_match:
+        return _sanitize_address_candidate(direct_match.group(0))
+
+    direccion_pattern = re.compile(
+        r"Direcci[oó]n\s*:?\s*([^.;]{10,220})",
+        flags=re.IGNORECASE,
+    )
+    direccion_match = direccion_pattern.search(cleaned)
+    if direccion_match:
+        candidate = _sanitize_address_candidate(direccion_match.group(1))
+        if re.search(r"\b\d{5}\b", candidate):
+            return candidate
+
+    return None
+
+
+def _extract_address_from_text_block(text_block: str) -> str | None:
+    cleaned = " ".join(text_block.split())
+    pattern = re.compile(
+        r"(?:Carrer|Calle|Avenida|Av\.?|Plaza|Paseo|Camino|Ronda|Rua|C/|C\.)"
+        r"[^.;\n]{0,120}?\b\d{1,4}\b[^.;\n]{0,120}?\b\d{5}\b[^.;\n]{0,120}",
+        flags=re.IGNORECASE,
+    )
+    match = pattern.search(cleaned)
+    return _sanitize_address_candidate(match.group(0)) if match else None
+
+
+def _sanitize_address_candidate(candidate: str) -> str:
+    sanitized = re.sub(r"\[[^\]]+\]\([^\)]+\)", "", candidate)
+    sanitized = re.sub(r"!\[[^\]]*\]\([^\)]+\)", "", sanitized)
+    sanitized = sanitized.split("![", 1)[0]
+    sanitized = re.split(
+        r"(?:\bTel[eé]fono\b|tel:|\bHorario\b|\bCódigo Postal\b)",
+        sanitized,
+        maxsplit=1,
+        flags=re.IGNORECASE,
+    )[0]
+    sanitized = re.sub(r"\s{2,}", " ", sanitized)
+    sanitized = re.sub(r"\s+\d(?:[\.,]\d)?$", "", sanitized)
+    return sanitized.strip(" ,;.-")
+
+
+def _lookup_address_via_web_search(name: str) -> str | None:
+    query = f"hospital veterinario {name} direccion"
+
+    try:
+        response = httpx.get(
+            _WEB_SEARCH_URL,
+            params={"q": query},
+            headers=_WEB_SEARCH_HEADERS,
+            timeout=_NOMINATIM_TIMEOUT_SECONDS,
+            follow_redirects=True,
+        )
+        response.raise_for_status()
+        content = response.text
+    except (httpx.HTTPError, AttributeError):
+        return None
+
+    snippets = re.findall(
+        r'<a[^>]*class="result__snippet"[^>]*>(.*?)</a>',
+        content,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+
+    for snippet in snippets[:10]:
+        address = _extract_address_from_web_snippet(snippet)
+        if address:
+            return address
+
+    proxy_url = _WEB_SEARCH_PROXY_PREFIX + quote_plus(query)
+    try:
+        proxy_response = httpx.get(
+            proxy_url,
+            headers=_WEB_SEARCH_HEADERS,
+            timeout=_NOMINATIM_TIMEOUT_SECONDS,
+            follow_redirects=True,
+        )
+        proxy_response.raise_for_status()
+        proxy_content = proxy_response.text
+    except (httpx.HTTPError, AttributeError):
+        return None
+
+    proxy_address = _extract_address_from_text_block(proxy_content)
+    if proxy_address:
+        return proxy_address
+
+    return None
+
+
 def lookup_address_by_name(name: str) -> dict[str, object]:
     """Look up a clinic address by name.
 
     Returns a dict with keys:
       - found (bool): whether a unique match was found
       - address (str | None): the matched address, or None
-      - source (str): "clinic_catalog"
+            - source (str): "nominatim" | "web_search"
       - catalog_version (str): version of the catalog used
     """
     result: dict[str, object] = {
         "found": False,
         "address": None,
-        "source": "clinic_catalog",
+        "source": "nominatim",
         "catalog_version": CATALOG_VERSION,
     }
 
@@ -100,6 +200,7 @@ def lookup_address_by_name(name: str) -> dict[str, object]:
         if isinstance(address, str) and address.strip():
             result["found"] = True
             result["address"] = address
+            result["source"] = "clinic_catalog"
             return result
 
     nominatim_address = _lookup_address_via_nominatim(name)
@@ -107,6 +208,13 @@ def lookup_address_by_name(name: str) -> dict[str, object]:
         result["found"] = True
         result["address"] = nominatim_address
         result["source"] = "nominatim"
+        return result
+
+    web_address = _lookup_address_via_web_search(name)
+    if web_address:
+        result["found"] = True
+        result["address"] = web_address
+        result["source"] = "web_search"
 
     return result
 

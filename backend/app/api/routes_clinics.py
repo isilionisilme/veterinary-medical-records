@@ -20,8 +20,8 @@ router = APIRouter(tags=["Clinics"])
     summary="Look up a clinic address by name",
     description=(
         "Search for a clinic address given a clinic name. "
-        "Currently uses a local versioned catalog. "
-        "Returns found=false when no unique match exists."
+        "Uses Nominatim (OpenStreetMap) as online resolver. "
+        "Returns found=false when there is no usable online result."
     ),
 )
 def lookup_clinic_address(body: ClinicAddressLookupRequest) -> ClinicAddressLookupResponse:
