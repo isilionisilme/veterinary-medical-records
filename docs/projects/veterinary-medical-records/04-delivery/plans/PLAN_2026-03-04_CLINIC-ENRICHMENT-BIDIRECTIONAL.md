@@ -50,14 +50,14 @@ This plan introduces a **post-OCR enrichment fallback** using a local versioned 
 
 ### Phase 1 — Implementation
 
-- [ ] E1-A 🔄 — **Create clinic catalog module + enrichment confidence constant:** add `backend/app/application/clinic_catalog.py` with versioned `_CLINIC_CATALOG`, `lookup_address_by_name()`, `lookup_name_by_address()`, and add `COVERAGE_CONFIDENCE_ENRICHMENT = 0.40` to `constants.py`. Seed catalog with known test data. (Claude Opus 4.6)
-- [ ] E1-B 🔄 — **Wire enrichment into `normalize_canonical_fields`:** add `_enrich_clinic_name_and_address_pair()` in `field_normalizers.py`, called after individual clinic normalization, before species/breed pair. Never overwrite existing OCR values. Add enrichment evidence to `evidence_map`. (Claude Opus 4.6)
-- [ ] E1-C 🔄 — **Add unit tests for catalog + enrichment:** create `test_clinic_catalog.py` (exact match, case-insensitive, no match, ambiguous) and `test_clinic_enrichment.py` (6 mandatory cases). (Claude Opus 4.6)
-- [ ] E1-D 🔄 — **Update golden regression for docA enrichment:** update `test_golden_extraction_regression.py` to assert `clinic_address` is enriched from catalog for docA. Verify no regressions. (Claude Opus 4.6)
+- [ ] E1-A 🔄 — **Create clinic catalog module + enrichment confidence constant:** add `backend/app/application/clinic_catalog.py` with versioned `_CLINIC_CATALOG`, `lookup_address_by_name()`, `lookup_name_by_address()`, and add `COVERAGE_CONFIDENCE_ENRICHMENT = 0.40` to `constants.py`. Seed catalog with known test data. (GPT-5.3-Codex)
+- [ ] E1-B 🔄 — **Wire enrichment into `normalize_canonical_fields`:** add `_enrich_clinic_name_and_address_pair()` in `field_normalizers.py`, called after individual clinic normalization, before species/breed pair. Never overwrite existing OCR values. Add enrichment evidence to `evidence_map`. (GPT-5.3-Codex)
+- [ ] E1-C 🔄 — **Add unit tests for catalog + enrichment:** create `test_clinic_catalog.py` (exact match, case-insensitive, no match, ambiguous) and `test_clinic_enrichment.py` (6 mandatory cases). (GPT-5.3-Codex)
+- [ ] E1-D 🔄 — **Update golden regression for docA enrichment:** update `test_golden_extraction_regression.py` to assert `clinic_address` is enriched from catalog for docA. Verify no regressions. (GPT-5.3-Codex)
 
 ### Phase 2 — Validation and closure
 
-- [ ] E2-A 🔄 — **Run full test suite and document results:** execute unit + golden + benchmark tests, document pass/fail/delta in PR body with reproducible evidence. (Claude Opus 4.6)
+- [ ] E2-A 🔄 — **Run full test suite and document results:** execute unit + golden + benchmark tests, document pass/fail/delta in PR body with reproducible evidence. (GPT-5.3-Codex)
 - [ ] E2-B 🚧 — **Hard-gate: user validation with real examples and go/no-go decision.** Review enrichment behavior on docA, verify traceability, confirm scope. (Claude Opus 4.6)
 
 ---
