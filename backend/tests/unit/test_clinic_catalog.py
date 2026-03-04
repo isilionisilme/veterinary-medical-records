@@ -70,6 +70,7 @@ def test_lookup_address_no_match(monkeypatch) -> None:
     result = clinic_catalog.lookup_address_by_name("CLINICA DESCONOCIDA")
     assert result["found"] is False
     assert result["address"] is None
+    assert result["source"] == "none"
 
 
 def test_lookup_name_no_match() -> None:
