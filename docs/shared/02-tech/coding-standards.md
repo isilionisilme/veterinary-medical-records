@@ -16,8 +16,6 @@
 These standards define the **mandatory technical rules** for all code in this project.
 They apply to every approved implementation and must be followed consistently by all contributors (human and AI).
 
-If any standard cannot be satisfied, **STOP and explain the blocker before proceeding**.
-
 ---
 
 ## Change Discipline

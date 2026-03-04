@@ -161,7 +161,7 @@ For any UX decision that depends on:
 This document **must defer** to the corresponding project-level UX document
 (e.g. [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../../projects/veterinary-medical-records/01-product/ux-design.md)).
 
-If no such document exists, **STOP and ask** before inventing UX behavior.
+If no such document exists, do not invent UX behavior — consult the team first.
 
 ---
 

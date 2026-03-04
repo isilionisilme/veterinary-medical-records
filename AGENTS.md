@@ -24,6 +24,7 @@ AI assistant entrypoint. Keep reads minimal and route by intent.
 
 ## Global rules
 - **No direct commits to `main` (hard rule).** All changes go through a feature branch + PR. The only exception is if the user gives explicit, per-instance authorization (e.g. "commitea directo a main"). Without that authorization, STOP and create a branch first.
+- **Blocker escalation (hard rule).** If any standard, instruction, or requirement from a canonical document cannot be satisfied, STOP — explain the blocker and ask for guidance before proceeding. Never silently skip or partially comply.
 - Manual trigger only for code reviews (never start one implicitly).
 - After modifying docs, run the DOC_UPDATES normalization pass once before finishing.
 - Include final `How to test` for user-validatable changes.

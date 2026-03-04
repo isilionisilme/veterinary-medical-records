@@ -15,8 +15,6 @@
 
 This protocol governs how AI agents (Claude and Codex) execute plan steps in a structured, auditable, and semi-unattended manner. It defines execution rules, completion integrity, CI verification, handoff conventions, and the full iteration lifecycle.
 
-If any rule cannot be satisfied, **STOP and explain the blocker before proceeding**.
-
 ---
 
 ## File Structure
