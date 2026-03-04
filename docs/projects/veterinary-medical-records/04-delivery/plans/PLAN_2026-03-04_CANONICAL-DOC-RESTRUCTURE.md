@@ -83,8 +83,8 @@ Este plan establece 7 documentos canónicos (5 shared, 2 project) como single so
 
 - [x] F2-A 🚧 — **Add governance headers** a `brand-guidelines.md` y `ux-guidelines.md`. Directiva de direccionalidad canonical → router. Commit C6. (Claude Opus 4.6)
 - [x] F2-B 🚧 — **Delete `engineering-playbook.md`** — Sustituido por coding-standards + documentation-guidelines + way-of-working. Commit C7. (Claude Opus 4.6)
-- [ ] F2-C 🔄 — **Update wiki section indexes** — Actualizar ficheros índice de `docs/shared/02-tech/` y `docs/shared/03-ops/` para que listen los nuevos documentos. Commit C8. (Codex)
-- [ ] F2-D 🔄 — **Fix all cross-references** — Grep todos los links a engineering-playbook.md en el repo, reemplazar por el canónico correspondiente (coding-standards, documentation-guidelines, o way-of-working según la sección referenciada). Commit C9. (Codex)
+- [x] F2-C 🔄 — **Update wiki section indexes** — Actualizar ficheros índice de `docs/shared/02-tech/` y `docs/shared/03-ops/` para que listen los nuevos documentos. Commit C8. (Codex)
+- [x] F2-D 🔄 — **Fix all cross-references** — Grep todos los links a engineering-playbook.md en el repo, reemplazar por el canónico correspondiente (coding-standards, documentation-guidelines, o way-of-working según la sección referenciada). Commit C9. (Codex)
 - [ ] F2-E 🚧 — **Hard-gate: user review** — El usuario revisa los 5 canónicos, valida contenido, tono, completitud. Go/no-go para merge PR-1. (Claude Opus 4.6)
 
 ### Phase 3 — Router derivation + governance **[PR-2]**
@@ -316,37 +316,27 @@ Commit:
 
 ### Paso objetivo
 
-F2-C 🔄 — Update wiki section indexes.
+F2-E 🚧 — Hard-gate: user review.
 
 ### Prompt
 
 ```text
-Update the documentation indexes to reflect the new canonical documents created in Phase 1 and the deletion of engineering-playbook.md.
+Review and validate the five canonical documents created in PR-1 before merge:
+- docs/shared/02-tech/coding-standards.md
+- docs/shared/02-tech/documentation-guidelines.md
+- docs/shared/03-ops/way-of-working.md
+- docs/projects/veterinary-medical-records/03-ops/plan-execution-protocol.md
+- docs/projects/veterinary-medical-records/02-tech/extraction-quality.md
 
-Files to update:
-1) docs/README.md — Sitemap section (around line 49):
-   - Remove `03-ops/engineering-playbook.md`
-   - Add `02-tech/coding-standards.md`
-   - Add `02-tech/documentation-guidelines.md`
-   - Add `03-ops/way-of-working.md`
-   Also add project-level canonical docs to the sitemap under `docs/projects/veterinary-medical-records/`:
-   - `02-tech/extraction-quality.md`
-   - `03-ops/plan-execution-protocol.md`
+Validation checklist:
+1) Completeness: no missing operational rules from original sources.
+2) Clarity: readable structure and consistent terminology.
+3) Directionality: canonical → router only, no reverse dependencies.
+4) Link integrity: no broken links from deleted engineering-playbook.
 
-2) docs/README.md — Shared Documentation section (around line 77):
-   - Remove the line: `- [engineering-playbook.md](shared/03-ops/engineering-playbook.md) — engineering standards and working agreements.`
-   - Add these lines:
-     - `- [coding-standards.md](shared/02-tech/coding-standards.md) — code style, architecture, contracts, naming, and technical standards.`
-     - `- [documentation-guidelines.md](shared/02-tech/documentation-guidelines.md) — documentation rules, change classification, and verification.`
-     - `- [way-of-working.md](shared/03-ops/way-of-working.md) — branch→commit→PR→review→merge lifecycle and working agreements.`
-
-Requirements:
-- Keep all other content in these files intact.
-- Ensure the sitemap ordering is consistent (01-product before 02-tech before 03-ops).
-- Do not edit unrelated files.
-
-Commit:
-- `docs(shared): update wiki section indexes for new canonical docs`
+Output:
+- GO: continue to PR-1 merge preparation.
+- NO-GO: list exact sections requiring edits.
 ```
 
 ---
