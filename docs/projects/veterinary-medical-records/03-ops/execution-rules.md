@@ -187,7 +187,7 @@ Commit A → push → start working on B locally (do NOT wait for CI of A)
      The fix will be validated at the next CI checkpoint (before committing step N+2).
 3. **A step is NOT marked `[x]` until its CI run is green.** The plan-update commit happens after CI green, per PLAN-UPDATE-IMMEDIATO below.
 4. **Always run the targeted preflight level** for step N+1's area before committing, regardless of CI result.
-   Use the **L1/L2/L3 preflight system** (see [Engineering Playbook § Local preflight levels](../../../shared/03-ops/engineering-playbook.md#local-preflight-levels-mandatory-workflow)) as the primary validation tool. The table below lists the individual commands that each level covers — use them for focused debugging, but prefer running the appropriate preflight level as a single command.
+   Use the **L1/L2/L3 preflight system** (see [Way of Working § Local Preflight Levels](../../../shared/03-ops/way-of-working.md#4-local-preflight-levels)) as the primary validation tool. The table below lists the individual commands that each level covers — use them for focused debugging, but prefer running the appropriate preflight level as a single command.
 
    | Preflight level | When to run | Command |
    |-----------------|-------------|---------|
@@ -307,7 +307,7 @@ are met.** This is the final safety net against premature handoffs.
 
 ### Local preflight integration (mandatory — maps SCOPE BOUNDARY to L1/L2/L3)
 
-The local preflight system (defined in [Engineering Playbook § Local preflight levels](../../../shared/03-ops/engineering-playbook.md#local-preflight-levels-mandatory-workflow)) provides three validation levels. Each SCOPE BOUNDARY moment has a **minimum required preflight level**:
+The local preflight system (defined in [Way of Working § Local Preflight Levels](../../../shared/03-ops/way-of-working.md#4-local-preflight-levels)) provides three validation levels. Each SCOPE BOUNDARY moment has a **minimum required preflight level**:
 
 | SCOPE BOUNDARY moment | Min. level | Command |
 |---|---|---|
