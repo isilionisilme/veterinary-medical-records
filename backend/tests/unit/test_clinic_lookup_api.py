@@ -4,12 +4,23 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
+from backend.app.api import routes_clinics
 from backend.app.main import app
 
 client = TestClient(app)
 
 
-def test_lookup_clinic_address_found() -> None:
+def test_lookup_clinic_address_found(monkeypatch) -> None:
+    monkeypatch.setattr(
+        routes_clinics,
+        "lookup_address_by_name",
+        lambda _name: {
+            "found": True,
+            "address": "Avinguda del Mar, 12, 12003 Castelló, España",
+            "source": "nominatim",
+        },
+    )
+
     response = client.post(
         "/clinics/lookup-address",
         json={"clinic_name": "CENTRO COSTA AZAHAR"},
@@ -17,11 +28,21 @@ def test_lookup_clinic_address_found() -> None:
     assert response.status_code == 200
     data = response.json()
     assert data["found"] is True
-    assert data["address"] == "Rosa Molas 6, Bajo, 12003 Castelló"
-    assert data["source"] == "clinic_catalog"
+    assert data["address"] == "Avinguda del Mar, 12, 12003 Castelló, España"
+    assert data["source"] == "nominatim"
 
 
-def test_lookup_clinic_address_case_insensitive() -> None:
+def test_lookup_clinic_address_case_insensitive(monkeypatch) -> None:
+    monkeypatch.setattr(
+        routes_clinics,
+        "lookup_address_by_name",
+        lambda _name: {
+            "found": True,
+            "address": "Avinguda del Mar, 12, 12003 Castelló, España",
+            "source": "nominatim",
+        },
+    )
+
     response = client.post(
         "/clinics/lookup-address",
         json={"clinic_name": "centro costa azahar"},
@@ -29,10 +50,20 @@ def test_lookup_clinic_address_case_insensitive() -> None:
     assert response.status_code == 200
     data = response.json()
     assert data["found"] is True
-    assert data["address"] == "Rosa Molas 6, Bajo, 12003 Castelló"
+    assert data["address"] == "Avinguda del Mar, 12, 12003 Castelló, España"
 
 
-def test_lookup_clinic_address_alias() -> None:
+def test_lookup_clinic_address_alias(monkeypatch) -> None:
+    monkeypatch.setattr(
+        routes_clinics,
+        "lookup_address_by_name",
+        lambda _name: {
+            "found": True,
+            "address": "Avinguda del Mar, 12, 12003 Castelló, España",
+            "source": "nominatim",
+        },
+    )
+
     response = client.post(
         "/clinics/lookup-address",
         json={"clinic_name": "HV COSTA AZAHAR"},
@@ -40,10 +71,16 @@ def test_lookup_clinic_address_alias() -> None:
     assert response.status_code == 200
     data = response.json()
     assert data["found"] is True
-    assert data["address"] == "Rosa Molas 6, Bajo, 12003 Castelló"
+    assert data["address"] == "Avinguda del Mar, 12, 12003 Castelló, España"
 
 
-def test_lookup_clinic_address_not_found() -> None:
+def test_lookup_clinic_address_not_found(monkeypatch) -> None:
+    monkeypatch.setattr(
+        routes_clinics,
+        "lookup_address_by_name",
+        lambda _name: {"found": False, "address": None, "source": "nominatim"},
+    )
+
     response = client.post(
         "/clinics/lookup-address",
         json={"clinic_name": "CLINICA DESCONOCIDA"},
