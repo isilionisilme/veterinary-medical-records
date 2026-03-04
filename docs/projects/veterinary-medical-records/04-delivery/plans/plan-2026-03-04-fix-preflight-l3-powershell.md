@@ -1,7 +1,7 @@
 # Plan: Fix preflight L3 PowerShell compatibility (Windows)
 
 **Rama:** `chore/fix-preflight-l3-powershell`
-**PR:** _(pendiente)_
+**PR:** [#200](https://github.com/isilionisilme/veterinary-medical-records/pull/200)
 **Tipo:** `chore/ci`
 
 ## Context

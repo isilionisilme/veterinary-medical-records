@@ -1,6 +1,7 @@
 $ErrorActionPreference = 'Stop'
 
-$repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+. (Join-Path $PSScriptRoot 'lib\repo-root.ps1')
+$repoRoot = Get-RepoRoot -ScriptRoot $PSScriptRoot
 $hooksDir = Join-Path $repoRoot '.git/hooks'
 $sourceHook = Join-Path $repoRoot '.githooks/pre-push'
 $targetHook = Join-Path $hooksDir 'pre-push'
