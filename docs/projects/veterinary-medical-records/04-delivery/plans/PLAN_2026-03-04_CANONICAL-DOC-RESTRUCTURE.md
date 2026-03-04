@@ -3,7 +3,7 @@
 > **Operational rules:** See [execution-rules.md](../../03-ops/execution-rules.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
 
 **Rama:** `docs/canonical-doc-restructure`
-**PR:** _(pending)_
+**PR:** [#197](https://github.com/isilionisilme/veterinary-medical-records/pull/197)
 **Prerequisito:** `main` estable.
 
 ## Context
@@ -100,6 +100,183 @@ Este plan establece 7 documentos canónicos (5 shared, 2 project) como single so
 - [ ] F4-A 🔄 — **Add CI directionality check** — Step en CI que falla si archivos bajo `docs/agent_router/03_SHARED/` o `01_WORKFLOW/` son modificados sin cambio en canónico correspondiente. Commit C15. (Codex)
 - [ ] F4-B 🔄 — **Add CI drift check** — Step que ejecuta `generate-router-files.py` y compara output con committed. Falla si difieren. Commit C16. (Codex)
 - [ ] F4-C 🚧 — **Hard-gate: user validation of full pipeline** — Verificar ciclo canonical → generate → router → agent-use. Go/no-go para merge PR-2. (Claude Opus 4.6)
+
+---
+
+## Cola de prompts
+
+### F1-A — coding-standards canonical
+
+```text
+Create `docs/shared/02-tech/coding-standards.md` by extracting and normalizing the technical standards content currently spread across:
+- docs/shared/03-ops/engineering-playbook.md (code-style, structure, contracts, state/workflow safety, traceability, error handling, observability, testing discipline, data handling, config/env, versioning, dependencies, naming for API/domain/lifecycle/persistence)
+
+Requirements:
+1) Human-readable canonical format (not router format), wiki-ready.
+2) Keep all normative rules (MUST/NEVER style meaning) intact.
+3) Add explicit governance section with directionality:
+	- Canonical source of truth
+	- Flow is canonical → router only
+	- Router files are derived outputs and must not be manually edited
+4) Include clear section headers and concise rationale per section where helpful.
+5) Do not edit unrelated files.
+
+Validation:
+- Ensure internal links in the new file resolve.
+- Run a quick markdown sanity pass if available.
+
+Commit:
+- `docs(shared): add coding-standards.md — tech standards canonical`
+```
+
+⚠️ AUTO-CHAIN → F1-B
+
+### F1-B — documentation-guidelines canonical
+
+```text
+Create `docs/shared/02-tech/documentation-guidelines.md` by consolidating:
+- Documentation section from docs/shared/03-ops/engineering-playbook.md
+- Human-facing rules from docs/agent_router/01_WORKFLOW/DOC_UPDATES/* (triggers, R/C/N classification, normalization intent, verification checklist)
+
+Requirements:
+1) Keep operational meaning intact, remove router-specific wording.
+2) Distinguish clearly:
+	- Human policy/rules (canonical)
+	- Agent/router mechanics (derived, references only)
+3) Add governance section with canonical → router directionality.
+4) Include a practical “when docs must be updated” section and a concise verification checklist.
+5) Do not edit unrelated files.
+
+Validation:
+- Verify links and markdown structure.
+
+Commit:
+- `docs(shared): add documentation-guidelines.md — doc standards canonical`
+```
+
+⚠️ AUTO-CHAIN → F1-C
+
+### F1-C — way-of-working canonical
+
+```text
+Create `docs/shared/03-ops/way-of-working.md` as the canonical human-readable operations doc by consolidating:
+- workflow and delivery sections from docs/shared/03-ops/engineering-playbook.md
+- duplicated operational content from docs/agent_router/01_WORKFLOW/{START_WORK,BRANCHING,PULL_REQUESTS,CODE_REVIEW,TESTING}/*
+
+Include (in this order):
+1) Starting new work (branch-first)
+2) Branching strategy and naming
+3) Commit discipline
+4) Local preflight levels (L1/L2/L3)
+5) Pull request workflow
+6) Code review workflow and output expectations
+7) Delivery model and user story kickoff
+8) Definition of done
+
+Requirements:
+- Resolve duplicated rules into one canonical wording per rule.
+- Keep all mandatory constraints intact.
+- Add governance section with canonical → router directionality.
+
+Commit:
+- `docs(shared): add way-of-working.md — ops workflow canonical`
+```
+
+⚠️ AUTO-CHAIN → F1-D
+
+### F1-D — plan-execution-protocol canonical (project)
+
+```text
+Create `docs/projects/veterinary-medical-records/03-ops/plan-execution-protocol.md` as canonical project-level execution protocol by restructuring content from:
+- docs/projects/veterinary-medical-records/03-ops/execution-rules.md
+
+Requirements:
+1) Preserve all operational rules and hard gates (no semantic loss).
+2) Improve human readability with a coherent structure and explicit section boundaries.
+3) Keep agent names and handoff messages exactly where they are normative.
+4) Add governance section indicating this is canonical and router files are derived.
+5) Keep links valid and update references if needed.
+
+Commit:
+- `docs(project): add plan-execution-protocol.md — agent execution canonical`
+```
+
+⚠️ AUTO-CHAIN → F1-E
+
+### F1-E — extraction-quality canonical (project)
+
+```text
+Create `docs/projects/veterinary-medical-records/02-tech/extraction-quality.md` by consolidating extraction operational rules from:
+- docs/agent_router/extraction/STRATEGY.md
+- docs/agent_router/extraction/FIELD_GUARDRAILS.md
+- docs/agent_router/extraction/OBSERVABILITY.md
+- docs/agent_router/extraction-tracking/INDEX.md
+- docs/agent_router/extraction-tracking/risk-matrix.md
+
+Requirements:
+1) Capture only stable operational rules and guardrails (not transient run logs).
+2) Keep field-level acceptance/rejection criteria explicit.
+3) Keep observability and risk policy sections.
+4) Add governance section with canonical → router directionality.
+
+Commit:
+- `docs(project): add extraction-quality.md — extraction rules canonical`
+```
+
+⚠️ AUTO-CHAIN → F2-A
+
+### F2-A — governance headers in existing canonical docs
+
+```text
+Update these existing canonical docs:
+- docs/shared/01-product/brand-guidelines.md
+- docs/shared/01-product/ux-guidelines.md
+
+Add a short governance header/section in both files stating:
+- They are canonical sources.
+- Router files are derived outputs.
+- Directionality is canonical → router only.
+- Direct manual edits to router files are invalid and may be overwritten/regenerated.
+
+Keep all current content intact; make minimal targeted edits only.
+
+Commit:
+- `docs(shared): add governance headers to brand-guidelines and ux-guidelines`
+```
+
+⚠️ STOP (next steps depend on created canonicals and/or Codex tasks)
+
+---
+
+## Prompt activo
+
+### Paso objetivo
+
+F1-A 🚧 — Create `docs/shared/02-tech/coding-standards.md`.
+
+### Prompt
+
+```text
+Create `docs/shared/02-tech/coding-standards.md` by extracting and normalizing the technical standards content currently spread across:
+- docs/shared/03-ops/engineering-playbook.md (code-style, structure, contracts, state/workflow safety, traceability, error handling, observability, testing discipline, data handling, config/env, versioning, dependencies, naming for API/domain/lifecycle/persistence)
+
+Requirements:
+1) Human-readable canonical format (not router format), wiki-ready.
+2) Keep all normative rules (MUST/NEVER style meaning) intact.
+3) Add explicit governance section with directionality:
+	- Canonical source of truth
+	- Flow is canonical → router only
+	- Router files are derived outputs and must not be manually edited
+4) Include clear section headers and concise rationale per section where helpful.
+5) Do not edit unrelated files.
+
+Validation:
+- Ensure internal links in the new file resolve.
+- Run a quick markdown sanity pass if available.
+
+Commit:
+- `docs(shared): add coding-standards.md — tech standards canonical`
+```
 
 ---
 
