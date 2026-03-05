@@ -86,9 +86,9 @@
 - [x] P3-A 🔄 — Añadir/ajustar assertions golden para `dob` en `test_golden_extraction_regression.py` y ejecutar suite focalizada (benchmark dob + unit normalización + observability + regresión golden) (GPT-5.3-Codex) — ✅ `f0fd5398`
 - [x] P3-B 🔄 — Ejecutar suite completa y preparar evidencia reproducible para body de PR (totales, pass/fail, EM, null misses, false positives, delta vs baseline) (GPT-5.3-Codex) — ✅ `f0fd5398` — evidencia: EM 16/18 (88.9%), null_misses=2, false_positives=0; golden docB dob visible tras reprocess/build
 - [x] CT-4 🔄 — Commit task: scope P3-A + P3-B → `test(plan-p3): dob golden regression and validation evidence` → push (GPT-5.3-Codex) — ✅ `f0fd5398`
-- [ ] P3-C 🚧 — Hard-gate: validación de usuario con evidencia y decisión go/no-go (Claude Opus 4.6)
-- [ ] P3-D 🔄 — Post-gate: ajustar `MIN_EXACT_MATCH_RATE` al valor alcanzado menos 5 pp, actualizar guardrails de `dob` en `extraction-quality.md`, añadir a Golden Fields status (GPT-5.3-Codex)
-- [ ] CT-5 🔄 — Commit task: scope P3-D → `docs(plan-p3): dob threshold lock and extraction-quality update` → push (GPT-5.3-Codex)
+- [x] P3-C 🚧 — Hard-gate: validación de usuario con evidencia y decisión go/no-go (Claude Opus 4.6) — ✅ GO (88.9% EM, 0 FP, 2 null misses)
+- [x] P3-D 🔄 — Post-gate: ajustar `MIN_EXACT_MATCH_RATE` al valor alcanzado menos 5 pp, actualizar guardrails de `dob` en `extraction-quality.md`, añadir a Golden Fields status (GPT-5.3-Codex) — ✅ `acab884e`
+- [x] CT-5 🔄 — Commit task: scope P3-D → `docs(plan-p3): dob threshold lock and extraction-quality update` → push (GPT-5.3-Codex) — ✅ `acab884e`
 
 ---
 
