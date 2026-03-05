@@ -18,9 +18,8 @@ AI assistant entrypoint. Keep reads minimal and route by intent.
 - Merge request: execute `docs/agent_router/03_SHARED/WAY_OF_WORKING/50_pull-requests.md`.
 - Code PRs: `docs/agent_router/01_WORKFLOW/CODE_REVIEW/00_entry.md`.
 - User-visible changes: `docs/agent_router/02_PRODUCT/USER_VISIBLE/00_entry.md`.
-- If user indicates docs changed (any language or paraphrase): `docs/agent_router/01_WORKFLOW/DOC_UPDATES/00_entry.md`.
-  If files are unspecified, run DOC_UPDATES discovery from git diff/status and normalize.
-- If the user says documentation was updated, route to `docs/agent_router/01_WORKFLOW/DOC_UPDATES/00_entry.md`.
+- If user indicates docs changed / documentation was updated (any language or paraphrase): `docs/agent_router/01_WORKFLOW/DOC_UPDATES/00_entry.md`.
+  If files unspecified, run DOC_UPDATES discovery from git diff/status and normalize.
 
 ## Global rules
 - **Mandatory rule override protocol.** When the user asks to bypass a rule marked as mandatory (e.g., "Never", "must not", "hard rule") in any canonical document, the assistant must: (1) explain which rule would be violated, (2) ask for explicit confirmation. If the user confirms, proceed. Never silently skip a mandatory rule, but never permanently block the user either.
