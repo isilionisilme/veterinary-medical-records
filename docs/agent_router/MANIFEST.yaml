@@ -74,27 +74,27 @@ outputs:
     source: docs/shared/02-tech/coding-standards.md
     sections: ["Error Handling & Observability"]
 
-  - target: docs/agent_router/03_SHARED/CODING_STANDARDS/100_testing-discipline.md
+  - target: docs/agent_router/03_SHARED/CODING_STANDARDS/90_testing-discipline.md
     source: docs/shared/02-tech/coding-standards.md
     sections: ["Testing Discipline"]
 
-  - target: docs/agent_router/03_SHARED/CODING_STANDARDS/110_data-handling-safety.md
+  - target: docs/agent_router/03_SHARED/CODING_STANDARDS/100_data-handling-safety.md
     source: docs/shared/02-tech/coding-standards.md
     sections: ["Data Handling & Safety"]
 
-  - target: docs/agent_router/03_SHARED/CODING_STANDARDS/120_configuration-environment-separation.md
+  - target: docs/agent_router/03_SHARED/CODING_STANDARDS/110_configuration-environment-separation.md
     source: docs/shared/02-tech/coding-standards.md
     sections: ["Configuration & Environment Separation"]
 
-  - target: docs/agent_router/03_SHARED/CODING_STANDARDS/130_versioning-evolution.md
+  - target: docs/agent_router/03_SHARED/CODING_STANDARDS/120_versioning-evolution.md
     source: docs/shared/02-tech/coding-standards.md
     sections: ["Versioning & Evolution"]
 
-  - target: docs/agent_router/03_SHARED/CODING_STANDARDS/140_dependency-management.md
+  - target: docs/agent_router/03_SHARED/CODING_STANDARDS/130_dependency-management.md
     source: docs/shared/02-tech/coding-standards.md
     sections: ["Dependency Management"]
 
-  - target: docs/agent_router/03_SHARED/CODING_STANDARDS/160_naming-conventions.md
+  - target: docs/agent_router/03_SHARED/CODING_STANDARDS/140_naming-conventions.md
     source: docs/shared/02-tech/coding-standards.md
     sections: ["Naming Conventions"]
 
@@ -215,39 +215,39 @@ outputs:
     sources:
       - docs/shared/01-product/ux-guidelines.md
 
-  - target: docs/agent_router/03_SHARED/UX_GUIDELINES/20_scope-and-authority.md
+  - target: docs/agent_router/03_SHARED/UX_GUIDELINES/10_scope-and-authority.md
     source: docs/shared/01-product/ux-guidelines.md
     sections: ["Scope and Authority"]
 
-  - target: docs/agent_router/03_SHARED/UX_GUIDELINES/30_core-ux-principles.md
+  - target: docs/agent_router/03_SHARED/UX_GUIDELINES/20_core-ux-principles.md
     source: docs/shared/01-product/ux-guidelines.md
     sections: ["Core UX Principles"]
 
-  - target: docs/agent_router/03_SHARED/UX_GUIDELINES/40_human-in-the-loop-shared-principle.md
+  - target: docs/agent_router/03_SHARED/UX_GUIDELINES/30_human-in-the-loop-shared-principle.md
     source: docs/shared/01-product/ux-guidelines.md
     sections: ["Human-in-the-Loop (Shared Principle)"]
 
-  - target: docs/agent_router/03_SHARED/UX_GUIDELINES/50_confidence-uncertainty-shared-principle.md
+  - target: docs/agent_router/03_SHARED/UX_GUIDELINES/40_confidence-uncertainty-shared-principle.md
     source: docs/shared/01-product/ux-guidelines.md
     sections: ["Confidence & Uncertainty (Shared Principle)"]
 
-  - target: docs/agent_router/03_SHARED/UX_GUIDELINES/60_accessibility-usability.md
+  - target: docs/agent_router/03_SHARED/UX_GUIDELINES/50_accessibility-usability.md
     source: docs/shared/01-product/ux-guidelines.md
     sections: ["Accessibility & Usability"]
 
-  - target: docs/agent_router/03_SHARED/UX_GUIDELINES/70_role-specific-workflows.md
+  - target: docs/agent_router/03_SHARED/UX_GUIDELINES/60_role-specific-workflows.md
     source: docs/shared/01-product/ux-guidelines.md
     sections: ["Role-Specific Workflows"]
 
-  - target: docs/agent_router/03_SHARED/UX_GUIDELINES/80_governance-review-shared-boundary.md
+  - target: docs/agent_router/03_SHARED/UX_GUIDELINES/70_governance-review-shared-boundary.md
     source: docs/shared/01-product/ux-guidelines.md
     sections: ["Governance & Review (Shared Boundary)"]
 
-  - target: docs/agent_router/03_SHARED/UX_GUIDELINES/90_delegation-rule-mandatory.md
+  - target: docs/agent_router/03_SHARED/UX_GUIDELINES/80_delegation-rule-mandatory.md
     source: docs/shared/01-product/ux-guidelines.md
     sections: ["Delegation Rule (Mandatory)"]
 
-  - target: docs/agent_router/03_SHARED/UX_GUIDELINES/100_final-rule.md
+  - target: docs/agent_router/03_SHARED/UX_GUIDELINES/90_final-rule.md
     source: docs/shared/01-product/ux-guidelines.md
     sections: ["Final Rule"]
 

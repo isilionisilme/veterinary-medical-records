@@ -15,12 +15,12 @@ Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for i
 - `60_state-management-workflow-safety.md` — State Management & Workflow Safety
 - `70_traceability-human-control.md` — Traceability & Human Control
 - `80_error-handling-observability.md` — Error Handling & Observability
-- `100_testing-discipline.md` — Testing Discipline
-- `110_data-handling-safety.md` — Data Handling & Safety
-- `120_configuration-environment-separation.md` — Configuration & Environment Separation
-- `130_versioning-evolution.md` — Versioning & Evolution
-- `140_dependency-management.md` — Dependency Management
-- `160_naming-conventions.md` — Naming Conventions
+- `90_testing-discipline.md` — Testing Discipline
+- `100_data-handling-safety.md` — Data Handling & Safety
+- `110_configuration-environment-separation.md` — Configuration & Environment Separation
+- `120_versioning-evolution.md` — Versioning & Evolution
+- `130_dependency-management.md` — Dependency Management
+- `140_naming-conventions.md` — Naming Conventions
 
 ## Canonical sources
 
