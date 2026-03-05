@@ -37,7 +37,7 @@ docs/projects/veterinary-medical-records/04-delivery/plans/
 │   └── COMPLETED_<date>_<slug>.md
 ```
 
-**Active plan file:** The agent attaches the relevant `PLAN_*.md` file when executing a continuation-intent request (for example: "continue", "go", "let's go", "adelante", "continúa", "comienza").
+**Active plan file:** The agent attaches the relevant `PLAN_*.md` file when executing a continuation-intent request (for example: "continue", "go", "let's go", "proceed", "resume").
 Each plan file contains: Execution Status (checkboxes), Prompt Queue, Active Prompt, and iteration-specific context.
 
 ---
@@ -91,7 +91,7 @@ For visibility and traceability, mark the active step with the appropriate label
 
 ## 4. Step Eligibility Rule (Hard Rule)
 
-**If the user expresses continuation intent (for example: "continue", "go", "let's go", "adelante", "continúa", "comienza"):**
+**If the user expresses continuation intent (for example: "continue", "go", "let's go", "proceed", "resume"):**
 Interpret continuation intent semantically, not as a literal command token.
 1. Read the Execution Status and find the first `[ ]` (includes lines with `⏳ IN PROGRESS` or `🚫 BLOCKED` labels).
 2. Apply the **decision table in §10** to determine the action (auto-chain, stop, or report).
@@ -106,6 +106,47 @@ Interpret continuation intent semantically, not as a literal command token.
 2. Respond with two options: continue with the exact next plan step, or switch scope and ask the planning agent to update the plan and prompt.
 3. Execute only after the user explicitly confirms one option.
 
+### Task Chaining Policy
+
+Defines how AI assistants must behave when executing chained plan steps.
+
+#### Default behavior in chained mode
+
+- Do **not** auto-fix failures by default when chaining steps.
+- Record the failure with evidence (what failed, which files, and error output).
+- Continue to the next step only if the failure is **non-blocking** for the current step.
+- **STOP and escalate** on blocking conditions.
+
+#### Blocking conditions (must STOP)
+
+- A required preflight or CI gate failed and the step depends on it.
+- Instructions contradict a canonical document or plan constraint.
+- A dependency, permission, or required tool is missing.
+- A security or data-loss risk is identified.
+- An explicit hard-gate in the plan requires user review before proceeding.
+
+#### Non-blocking failures (may continue)
+
+- Pre-existing lint/test failures unrelated to the current step.
+- Cosmetic or formatting issues that do not affect correctness.
+- Warnings that do not block commit/push/PR gates.
+
+#### Auto-fix allowance
+
+- In **interactive single-task mode** (no plan), the assistant may attempt focused auto-fixes (max 2 attempts, scoped to the current change).
+- In **chained-plan mode**, auto-fix is **not default**. The assistant documents the failure and lets the plan dictate the next action (continue, escalation, or explicit fix step).
+- Auto-fixes must never go beyond the current change scope or introduce unrelated refactors.
+- **Never bypass quality gates** (`--no-verify`, disabling tests/checks, weakening assertions) to force a pass.
+
+#### Required output per step
+
+Before handoff or auto-chain to the next step, each completed step must include:
+
+- What changed (files and commits)
+- Evidence (test output, CI status, and verification)
+- Risks or open items
+- Next-step handoff decision (continue, STOP, or handoff)
+
 ---
 
 ## 6. Rollback Procedure
@@ -119,59 +160,27 @@ If a completed step causes an issue not detected by tests:
 
 ## 7. Plan Governance
 
-### Plan scope principle (hard rule)
-**Plans contain ONLY product/engineering tasks and well-defined operational override steps.** Generic or unscoped operational mentions are NEVER plan steps.
+### Plan Structure Rules
 
-| ✅ Valid plan step | ⚙️ Operational Override Step (allowed) | ❌ NOT a plan step (generic) |
-|---|---|---|
-| "Add Playwright smoke test for upload flow" | `commit-task`: Commit F1-1 + F1-2 (scope, message, push defined) | "Commit and push" (unscoped) |
-| "Configure CI job for E2E tests" | `create-pr`: Create draft PR for iteration branch | "Create PR" (unscoped) |
-| "Add data-testid attributes to components" | `merge-pr`: Squash-merge PR #42 after user approval | "Merge PR" (unscoped) |
+For plan scope principle, operational override step schema, and commit task specification rules, see [`plan-management.md` §5 - Plan Scope Principle](plan-management.md#5-plan-scope-principle-hard-rule).
 
-### Operational Override Steps
+These rules are enforced at plan creation time. The execution agent validates override step schema completeness before executing any operational step. If a required field is missing, STOP and ask the planning agent to update the plan.
 
-Certain operational actions (commits, PRs, merges) are allowed as plan steps **only** when they follow the strict schema below. Generic mentions without the required fields are rejected.
+### Approval Enforcement (Execution-Time)
 
-#### Required schema
+When executing operational override steps, the execution agent enforces the `approval` field declared in the plan:
 
-Each operational override step in `PLAN_*.md` MUST include:
+- `approval: auto` -> execute without requesting additional user confirmation.
+- `approval: explicit-user-approval` -> STOP and request explicit user confirmation before executing.
 
-| Field | Description | Required |
-|---|---|---|
-| `type` | One of: `commit-task`, `create-pr`, `merge-pr` | Yes |
-| `trigger` | When this step executes (e.g., "after F1-1 and F1-2") | Yes |
-| `preconditions` | What must be true before execution (e.g., "CI green for all prior steps") | Yes |
-| `commands` | Exact command set to execute | Yes |
-| `approval` | `auto` or `explicit-user-approval` | Yes |
-| `fallback` | What to do if execution fails | Yes |
+For standard override types, runtime behavior is:
 
-#### Approval rules
-
-- `commit-task`: `auto` (executes without user confirmation).
-- `create-pr`: `auto` (draft PR creation is safe and reversible).
-- `merge-pr`: **always `explicit-user-approval`** (merge is irreversible).
-
-#### Validation
-
-If an operational step in the plan is missing any required field, the agent MUST stop and ask the planning agent to complete the schema before executing it.
+- `commit-task` -> `auto`
+- `create-pr` -> `auto`
+- `merge-pr` -> `explicit-user-approval`
 
 ### Pull Request progress tracking (mandatory)
 Every completed step must be reflected in the active Pull Request. After push, the agent updates the PR body with `gh pr edit <pr_number> --body "..."`.
-
-### Commit Task Specification (Mandatory at Plan Creation)
-
-When generating `PLAN_*.md`, the agent MUST define explicit commit tasks as first-class plan steps.
-
-Each commit task MUST include:
-
-1. **Trigger point** — when the commit task is executed (for example: after steps `F1-1` and `F1-2`).
-2. **Scope** — exact files and/or step IDs included in that commit.
-3. **Commit message** — exact message to use.
-4. **Push expectation** — whether the commit is pushed immediately or grouped with a later plan-update commit.
-
-Execution rule:
-- The agent MUST NOT create ad-hoc commits outside a defined commit task.
-- If commit scope/message must change, update the plan first and then execute.
 
 ### Execution Worktree Selection (Mandatory Plan-Start Choice)
 
@@ -360,22 +369,17 @@ On completing a step, the agent ALWAYS tells the user the next move with concret
 
 ## 11. Prompt Strategy
 
-### Prompt types
+For prompt types and creation lifecycle, see [`plan-management.md` §6 - Prompt Strategy](plan-management.md#6-prompt-strategy).
 
-- **Pre-written prompts** (Prompt Queue): written by the planning agent at iteration start for tasks whose content does not depend on prior results. Enables semi-unattended execution.
-- **Just-in-time prompts** (Active Prompt): written by the planning agent when a task depends on a prior task's result.
+### Resolution Priority (Execution-Time)
 
-### Resolution priority
+Prompt Queue -> Active Prompt -> STOP (ask the planning agent).
 
-Prompt Queue → Active Prompt → STOP (ask the planning agent).
-
-### Prompt lifecycle
+### Prompt Consumption (Execution Agent)
 
 | Operation | Who | When |
 |---|---|---|
-| **Create** (pre-written) | Planning agent | At iteration start, in Prompt Queue |
-| **Create** (just-in-time) | Planning agent | Before the step that needs it, in Active Prompt |
-| **Consume** | Execution agent | On step start, per resolution priority above |
+| **Consume** | Execution agent | On step start, per resolution priority in this section |
 | **Clean** | Execution agent | After step execution, clear `## Active Prompt` section content |
 
 ### Routing for Continuation Intent

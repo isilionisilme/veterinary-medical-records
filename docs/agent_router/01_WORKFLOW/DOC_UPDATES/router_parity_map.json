@@ -251,6 +251,19 @@
       ]
     },
     {
+      "source_doc": "docs/projects/veterinary-medical-records/03-ops/plan-management.md",
+      "description": "Project PLAN_MANAGEMENT must remain discoverable through execution rule routing references.",
+      "router_modules": [
+        {
+          "path": "docs/agent_router/03_SHARED/WAY_OF_WORKING/90_execution-rule.md",
+          "required_terms": [
+            "Execution Rule",
+            "plan-execution-protocol.md"
+          ]
+        }
+      ]
+    },
+    {
       "source_doc": "docs/shared/01-product/ux-guidelines.md",
       "description": "Shared UX_GUIDELINES must map to shared owner entry module.",
       "router_modules": [
