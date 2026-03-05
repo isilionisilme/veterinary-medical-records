@@ -37,7 +37,7 @@ docs/projects/veterinary-medical-records/04-delivery/plans/
 │   └── COMPLETED_<date>_<slug>.md
 ```
 
-**Active plan file:** The agent attaches the relevant `PLAN_*.md` file when executing a continuation-intent request (for example: "continue", "go", "let's go", "adelante", "continúa", "comienza").
+**Active plan file:** The agent attaches the relevant `PLAN_*.md` file when executing a continuation-intent request (for example: "continue", "go", "let's go", "proceed", "resume").
 Each plan file contains: Execution Status (checkboxes), Prompt Queue, Active Prompt, and iteration-specific context.
 
 ---
@@ -91,7 +91,7 @@ For visibility and traceability, mark the active step with the appropriate label
 
 ## 4. Step Eligibility Rule (Hard Rule)
 
-**If the user expresses continuation intent (for example: "continue", "go", "let's go", "adelante", "continúa", "comienza"):**
+**If the user expresses continuation intent (for example: "continue", "go", "let's go", "proceed", "resume"):**
 Interpret continuation intent semantically, not as a literal command token.
 1. Read the Execution Status and find the first `[ ]` (includes lines with `⏳ IN PROGRESS` or `🚫 BLOCKED` labels).
 2. Apply the **decision table in §10** to determine the action (auto-chain, stop, or report).

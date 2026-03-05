@@ -27,9 +27,9 @@ Every new plan MUST include:
 1. Title: `# Plan: <name>`
 2. Operational rules pointer: `> **Operational rules:** See [plan-execution-protocol.md](...)`
 3. Metadata:
-	- `**Rama:**`
+	- `**Branch:**`
 	- `**PR:**`
-	- `**Prerequisito:**`
+	- `**Prerequisite:**`
 	- `**Worktree:**`
 	- `**CI Mode:**`
 	- `**Agents:**`
@@ -38,9 +38,9 @@ Every new plan MUST include:
 6. `## Scope Boundary`
 7. `## Commit plan`
 8. `## Operational override steps`
-9. `## Estado de ejecucion`
-10. `## Cola de prompts`
-11. `## Prompt activo`
+9. `## Execution Status`
+10. `## Prompt Queue`
+11. `## Active Prompt`
 12. `## Acceptance criteria`
 13. `## How to test`
 
@@ -63,7 +63,7 @@ Execution is governed by [`plan-execution-protocol.md`](plan-execution-protocol.
 
 Before step 1, run the mandatory plan-start choices (execution worktree, CI mode, and available agents). During execution, the flow is:
 
-`Continua` intent -> step eligibility -> execute step -> SCOPE BOUNDARY -> chain or stop.
+Continuation intent -> step eligibility -> execute step -> SCOPE BOUNDARY -> chain or stop.
 
 See [`plan-execution-protocol.md`](plan-execution-protocol.md) for the complete execution protocol.
 
@@ -71,7 +71,7 @@ See [`plan-execution-protocol.md`](plan-execution-protocol.md) for the complete 
 
 ## 3. Task Chaining Policy
 
-Defines how AI assistants must behave when executing chained plan steps (e.g., triggered by `Continúa`).
+Defines how AI assistants must behave when executing chained plan steps (for example, when triggered by continuation intent).
 
 ### Default behavior in chained mode
 
