@@ -177,6 +177,8 @@ Classify the Pull Request by file types:
 
 ### Pull Request Procedure
 
+When an AI coding assistant or automation tool creates or updates a Pull Request, it must follow this procedure automatically:
+
 1. Confirm repository state (branch, base, working tree).
 2. Create/update the Pull Request targeting `main`.
 3. Apply the preflight rules from Section 4 before Pull Request creation and for subsequent updates.
@@ -201,7 +203,7 @@ When a plan spans multiple Pull Requests, it must include a **Pull Request Roadm
 
 ### Post-Merge Cleanup Procedure
 
-After a Pull Request is merged into `main`:
+After a Pull Request is merged into `main`, the AI assistant must run this cleanup automatically:
 1. Ensure the working tree is clean.
 2. Check for stashes related to the merged branch; clean up where safe.
 3. Switch to `main` and pull latest changes.
