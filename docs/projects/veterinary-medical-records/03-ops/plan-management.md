@@ -100,13 +100,13 @@ Each operational override step in `PLAN_*.md` MUST include:
 
 #### Approval rules
 
-- `commit-task`: `auto` (executes without user confirmation).
-- `create-pr`: `auto` (draft PR creation is safe and reversible).
-- `merge-pr`: always `explicit-user-approval` (merge is irreversible).
+- `commit-task`: approval value MUST be `auto`.
+- `create-pr`: approval value MUST be `auto`.
+- `merge-pr`: approval value MUST be `explicit-user-approval`.
 
 #### Validation
 
-If an operational step in the plan is missing any required field, the execution agent MUST stop and ask the planning agent to complete the schema before execution.
+At authoring time, the planning agent MUST ensure every operational override step includes all required fields before the plan is handed off for execution.
 
 ### Commit Task Specification (Mandatory at Plan Creation)
 
@@ -119,10 +119,10 @@ Each commit task MUST include:
 3. **Commit message** - exact message to use.
 4. **Push expectation** - whether the commit is pushed immediately or grouped with a later plan-update commit.
 
-Execution rule:
+Authoring constraint:
 
-- The execution agent MUST NOT create ad-hoc commits outside a defined commit task.
-- If commit scope/message must change, update the plan first and then execute.
+- The planning agent MUST define commit tasks explicitly before execution starts.
+- If commit scope/message must change, the planning agent updates the plan first, then execution continues from the updated plan.
 
 ---
 
@@ -132,10 +132,6 @@ Execution rule:
 
 - **Pre-written prompts** (Prompt Queue): written by the planning agent at iteration start for tasks whose content does not depend on prior results.
 - **Just-in-time prompts** (Active Prompt): written by the planning agent when a task depends on a prior task's result.
-
-### Resolution priority
-
-Prompt Queue -> Active Prompt -> STOP (ask the planning agent).
 
 ### Prompt creation lifecycle
 

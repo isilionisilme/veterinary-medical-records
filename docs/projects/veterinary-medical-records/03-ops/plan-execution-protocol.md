@@ -166,6 +166,19 @@ For plan scope principle, operational override step schema, and commit task spec
 
 These rules are enforced at plan creation time. The execution agent validates override step schema completeness before executing any operational step. If a required field is missing, STOP and ask the planning agent to update the plan.
 
+### Approval Enforcement (Execution-Time)
+
+When executing operational override steps, the execution agent enforces the `approval` field declared in the plan:
+
+- `approval: auto` -> execute without requesting additional user confirmation.
+- `approval: explicit-user-approval` -> STOP and request explicit user confirmation before executing.
+
+For standard override types, runtime behavior is:
+
+- `commit-task` -> `auto`
+- `create-pr` -> `auto`
+- `merge-pr` -> `explicit-user-approval`
+
 ### Pull Request progress tracking (mandatory)
 Every completed step must be reflected in the active Pull Request. After push, the agent updates the PR body with `gh pr edit <pr_number> --body "..."`.
 
@@ -356,13 +369,17 @@ On completing a step, the agent ALWAYS tells the user the next move with concret
 
 ## 11. Prompt Strategy
 
-For prompt types, creation lifecycle, and resolution priority, see [`plan-management.md` §6 - Prompt Strategy](plan-management.md#6-prompt-strategy).
+For prompt types and creation lifecycle, see [`plan-management.md` §6 - Prompt Strategy](plan-management.md#6-prompt-strategy).
+
+### Resolution Priority (Execution-Time)
+
+Prompt Queue -> Active Prompt -> STOP (ask the planning agent).
 
 ### Prompt Consumption (Execution Agent)
 
 | Operation | Who | When |
 |---|---|---|
-| **Consume** | Execution agent | On step start, per resolution priority in `plan-management.md` §6 |
+| **Consume** | Execution agent | On step start, per resolution priority in this section |
 | **Clean** | Execution agent | After step execution, clear `## Active Prompt` section content |
 
 ### Routing for Continuation Intent
