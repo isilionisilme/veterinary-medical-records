@@ -1,0 +1,96 @@
+{
+  "description": "Synthetic raw-text fixtures with expected weight extraction",
+  "version": "2026-03-05",
+  "cases": [
+    {
+      "id": "weight_label_peso_comma_decimal",
+      "expected_weight": "3.5 kg",
+      "text": "Paciente: Luna\nPeso: 3,5 kg\nEspecie: Canina"
+    },
+    {
+      "id": "weight_label_peso_dot_decimal",
+      "expected_weight": "12.8 kg",
+      "text": "Paciente: Toby\nPeso: 12.8 kg\nRaza: Labrador"
+    },
+    {
+      "id": "weight_label_weight_kgs",
+      "expected_weight": "25 kg",
+      "text": "Patient: Milo\nWeight: 25 kgs\nBreed: Boxer"
+    },
+    {
+      "id": "weight_label_peso_corporal",
+      "expected_weight": "7 kg",
+      "text": "Nombre: Kira\nPeso corporal: 7 kg\nSexo: Hembra"
+    },
+    {
+      "id": "weight_label_abbrev_p",
+      "expected_weight": "4.2 kg",
+      "text": "Paciente: Nilo\nP.: 4.2 kg\nEspecie: Felina"
+    },
+    {
+      "id": "weight_label_peso_parenthesis_kg",
+      "expected_weight": "18 kg",
+      "text": "Datos paciente\nPeso (kg): 18\nEdad: 4 años"
+    },
+    {
+      "id": "weight_small_valid_value",
+      "expected_weight": "0.8 kg",
+      "text": "Paciente: Kiwi\nPeso: 0.8 kg\nEspecie: Aviar"
+    },
+    {
+      "id": "weight_grams_to_kg",
+      "expected_weight": "0.5 kg",
+      "text": "Paciente: Misi\nPeso: 500 g\nEspecie: Felina"
+    },
+    {
+      "id": "weight_ocr_typo_pesso",
+      "expected_weight": "6.4 kg",
+      "text": "Paciente: Duna\nPesso: 6,4 Kg\nMotivo: Revisión"
+    },
+    {
+      "id": "weight_ocr_extra_spaces",
+      "expected_weight": "3.5 kg",
+      "text": "Paciente: Thor\npeso:  3,5  kg\nSexo: Macho"
+    },
+    {
+      "id": "weight_embedded_in_block",
+      "expected_weight": "9.2 kg",
+      "text": "DATOS DEL PACIENTE\nNombre: Max | Especie: Canina | Peso: 9,2 kg | Chip: 941000024967769"
+    },
+    {
+      "id": "weight_unit_ocr_kq",
+      "expected_weight": "11 kg",
+      "text": "Paciente: Rex\nPESO: 11 kq\nRaza: Mestiza"
+    },
+    {
+      "id": "weight_null_no_weight_present",
+      "expected_weight": null,
+      "text": "Paciente: Bimba\nEspecie: Canina\nMotivo: Vacunación anual"
+    },
+    {
+      "id": "weight_null_clinical_only",
+      "expected_weight": null,
+      "text": "Diagnóstico: Otitis externa\nTratamiento: Limpiador ótico\nRevisión en 7 días"
+    },
+    {
+      "id": "weight_null_dose_only_ml_per_kg",
+      "expected_weight": null,
+      "text": "Medicacion: Carprofeno\nDosis: 0.5 ml/kg cada 24h\nPaciente: Nala"
+    },
+    {
+      "id": "weight_with_lab_value_trap",
+      "expected_weight": "8 kg",
+      "text": "Glucosa: 120 mg/dL\nPeso: 8 kg\nCreatinina: 1.1 mg/dL"
+    },
+    {
+      "id": "weight_null_price_only",
+      "expected_weight": null,
+      "text": "Consulta general: 45.00 €\nDescuento: 10%\nTotal: 40.50 €"
+    },
+    {
+      "id": "weight_zero_rejected",
+      "expected_weight": null,
+      "text": "Paciente: Sol\nPeso: 0 kg\nNota: pendiente de control"
+    }
+  ]
+}
