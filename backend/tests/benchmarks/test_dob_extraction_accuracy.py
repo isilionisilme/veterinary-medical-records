@@ -22,7 +22,7 @@ def _load_cases() -> list[dict]:
 
 _CASES = _load_cases()
 
-MIN_EXACT_MATCH_RATE: float = 0.0
+MIN_EXACT_MATCH_RATE: float = 0.839
 
 
 def _normalize_for_comparison(value: str | None) -> str | None:
