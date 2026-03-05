@@ -275,20 +275,46 @@ Compatibility note: this section is also referenced as **Severity classification
 
 ### Review Output Format
 
-Produce the review using this mandatory output format:
-- Must-fix (blocking maintainability or correctness issues)
-- Should-fix (strong recommendations)
-- Nice-to-have (optional improvements)
-- Questions / assumptions
+Review comments must follow the `AI Code Review` template exactly.
 
-For PRs that include `frontend/**` or user-visible behavior/copy changes, include:
-- UX/Brand Compliance (mandatory section)
-- Any UX/Brand non-compliance must be reported under Must-fix.
+In deep reviews, use `## AI Code Review — <Lens>` as title.
 
-Each finding must include:
-- File reference(s)
-- Short rationale
-- Minimal suggested change
+Template (copy/paste):
+
+    ## AI Code Review
+
+    ### Must-fix
+    1. **None**
+       - **File:** `N/A`
+       - **Why:** <reason>
+       - **Minimal change:** <comment or None.>
+
+    ### Should-fix
+    1. **<finding title>**
+       - **File:** `<path:line>`
+       - **Why:** <reason>
+       - **Minimal change:** <smallest acceptable fix>
+
+    ### Nice-to-have
+    1. **<finding title>**
+       - **File:** `<path:line>`
+       - **Why:** <reason>
+       - **Minimal change:** <optional improvement>
+
+    ### Questions / assumptions
+    1. <question>
+
+    ### Pre-existing issues
+    1. **None**
+       - **File:** `N/A`
+       - **Why:** <reason>
+       - **Suggested follow-up:** <comment or None.>
+
+    ### UX/Brand Compliance
+    - **Compliant:**
+      - <evidence or `None`>
+    - **Non-compliant / risk:**
+      - <risk or `None`>
 
 ### Review Publication
 
