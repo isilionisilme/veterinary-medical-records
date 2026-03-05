@@ -78,8 +78,8 @@
 
 ### Phase 2 — Observability and quality gates
 
-- [ ] P2-A 🔄 — Añadir señales de observabilidad/triage para `dob` sospechoso (fecha futura, implausiblemente antigua > 40 años, coincidencia con visit_date) + tests (GPT-5.3-Codex)
-- [ ] CT-3 🔄 — Commit task: scope P2-A → `feat(plan-p2): dob observability flags` → push (GPT-5.3-Codex)
+- [x] P2-A 🔄 — Añadir señales de observabilidad/triage para `dob` sospechoso (fecha futura, implausiblemente antigua > 40 años, coincidencia con visit_date) + tests (GPT-5.3-Codex) — ✅ `c62f6586` (3 tests passed)
+- [x] CT-3 🔄 — Commit task: scope P2-A → `feat(plan-p2): dob observability flags` → push (GPT-5.3-Codex) — ✅ `c62f6586`
 
 ### Phase 3 — Tests, validation, and closure
 
