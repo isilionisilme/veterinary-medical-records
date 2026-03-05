@@ -73,22 +73,9 @@ Task chaining policy is part of execution behavior and is defined in [`plan-exec
 
 ## 4. Plan Lifecycle
 
-### States
+Lifecycle states, archival flow, and close-out behavior are execution concerns and are defined in [`plan-execution-protocol.md` §14](plan-execution-protocol.md#14-iteration-lifecycle-protocol).
 
-- **Active**: Plan is in execution and remains in `.../04-delivery/plans/`.
-- **Paused**: Execution is intentionally stopped by user decision; the plan remains active until resumed, updated, or formally closed.
-- **Completed**: All steps are either completed (`[x]`) or reconciled during close-out.
-- **Abandoned**: Plan is intentionally cancelled before completion.
-
-### Archival
-
-- Completed and abandoned plans are archived from active plans into `.../04-delivery/plans/completed/`.
-- Canonical file naming in archive: `COMPLETED_<date>_<slug>.md`.
-- Use `git mv` to preserve traceability in history.
-
-### Close-out authority
-
-The detailed close-out sequence (reconciliation, implementation history update, archive move, normalization, and merge readiness) is defined in [`plan-execution-protocol.md` §14](plan-execution-protocol.md#14-iteration-lifecycle-protocol).
+This file does not define execution-time lifecycle transitions.
 
 ---
 
