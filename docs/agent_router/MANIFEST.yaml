@@ -21,121 +21,141 @@ outputs:
     title: "Shared Docs (Modules)"
     description: "Split, token-optimized versions of `docs/shared/*`."
     subdirectories:
-      - name: ENGINEERING_PLAYBOOK
-        entry: docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/00_entry.md
+      - name: CODING_STANDARDS
+        entry: docs/agent_router/03_SHARED/CODING_STANDARDS/00_entry.md
+      - name: DOCUMENTATION_GUIDELINES
+        entry: docs/agent_router/03_SHARED/DOCUMENTATION_GUIDELINES/00_entry.md
+      - name: WAY_OF_WORKING
+        entry: docs/agent_router/03_SHARED/WAY_OF_WORKING/00_entry.md
       - name: UX_GUIDELINES
         entry: docs/agent_router/03_SHARED/UX_GUIDELINES/00_entry.md
       - name: BRAND_GUIDELINES
         entry: docs/agent_router/03_SHARED/BRAND_GUIDELINES/00_entry.md
 
   # ═══════════════════════════════════════════════════════════════
-  # 03_SHARED/ENGINEERING_PLAYBOOK — from coding-standards + docs-guidelines + way-of-working
+  # 03_SHARED/CODING_STANDARDS — from coding-standards.md
   # ═══════════════════════════════════════════════════════════════
-  - target: docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/00_entry.md
+  - target: docs/agent_router/03_SHARED/CODING_STANDARDS/00_entry.md
     type: index
-    title: "ENGINEERING_PLAYBOOK — Modules"
+    title: "CODING_STANDARDS — Modules"
     sources:
       - docs/shared/02-tech/coding-standards.md
-      - docs/shared/02-tech/documentation-guidelines.md
-      - docs/shared/03-ops/way-of-working.md
 
   # ── From coding-standards.md ──
-  - target: docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/10_preamble.md
+  - target: docs/agent_router/03_SHARED/CODING_STANDARDS/10_preamble.md
     source: docs/shared/02-tech/coding-standards.md
     sections: ["Purpose"]
 
-  - target: docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/20_change-discipline.md
+  - target: docs/agent_router/03_SHARED/CODING_STANDARDS/20_change-discipline.md
     source: docs/shared/02-tech/coding-standards.md
     sections: ["Change Discipline"]
 
-  - target: docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/30_code-style-consistency.md
+  - target: docs/agent_router/03_SHARED/CODING_STANDARDS/30_code-style-consistency.md
     source: docs/shared/02-tech/coding-standards.md
     sections: ["Code Style & Consistency"]
 
-  - target: docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/40_structure-separation-of-concerns.md
+  - target: docs/agent_router/03_SHARED/CODING_STANDARDS/40_structure-separation-of-concerns.md
     source: docs/shared/02-tech/coding-standards.md
     sections: ["Structure & Separation of Concerns"]
 
-  - target: docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/50_explicit-contracts-schemas.md
+  - target: docs/agent_router/03_SHARED/CODING_STANDARDS/50_explicit-contracts-schemas.md
     source: docs/shared/02-tech/coding-standards.md
     sections: ["Explicit Contracts & Schemas"]
 
-  - target: docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/60_state-management-workflow-safety.md
+  - target: docs/agent_router/03_SHARED/CODING_STANDARDS/60_state-management-workflow-safety.md
     source: docs/shared/02-tech/coding-standards.md
     sections: ["State Management & Workflow Safety"]
 
-  - target: docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/70_traceability-human-control.md
+  - target: docs/agent_router/03_SHARED/CODING_STANDARDS/70_traceability-human-control.md
     source: docs/shared/02-tech/coding-standards.md
     sections: ["Traceability & Human Control"]
 
-  - target: docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/80_error-handling-observability.md
+  - target: docs/agent_router/03_SHARED/CODING_STANDARDS/80_error-handling-observability.md
     source: docs/shared/02-tech/coding-standards.md
     sections: ["Error Handling & Observability"]
 
-  - target: docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/100_testing-discipline.md
+  - target: docs/agent_router/03_SHARED/CODING_STANDARDS/100_testing-discipline.md
     source: docs/shared/02-tech/coding-standards.md
     sections: ["Testing Discipline"]
 
-  - target: docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/110_data-handling-safety.md
+  - target: docs/agent_router/03_SHARED/CODING_STANDARDS/110_data-handling-safety.md
     source: docs/shared/02-tech/coding-standards.md
     sections: ["Data Handling & Safety"]
 
-  - target: docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/120_configuration-environment-separation.md
+  - target: docs/agent_router/03_SHARED/CODING_STANDARDS/120_configuration-environment-separation.md
     source: docs/shared/02-tech/coding-standards.md
     sections: ["Configuration & Environment Separation"]
 
-  - target: docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/130_versioning-evolution.md
+  - target: docs/agent_router/03_SHARED/CODING_STANDARDS/130_versioning-evolution.md
     source: docs/shared/02-tech/coding-standards.md
     sections: ["Versioning & Evolution"]
 
-  - target: docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/140_dependency-management.md
+  - target: docs/agent_router/03_SHARED/CODING_STANDARDS/140_dependency-management.md
     source: docs/shared/02-tech/coding-standards.md
     sections: ["Dependency Management"]
 
-  - target: docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/160_naming-conventions.md
+  - target: docs/agent_router/03_SHARED/CODING_STANDARDS/160_naming-conventions.md
     source: docs/shared/02-tech/coding-standards.md
     sections: ["Naming Conventions"]
 
-  # ── From documentation-guidelines.md (full doc) ──
-  - target: docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/150_documentation-guidelines.md
+  # ═══════════════════════════════════════════════════════════════
+  # 03_SHARED/DOCUMENTATION_GUIDELINES — from documentation-guidelines.md
+  # ═══════════════════════════════════════════════════════════════
+  - target: docs/agent_router/03_SHARED/DOCUMENTATION_GUIDELINES/00_entry.md
+    type: index
+    title: "DOCUMENTATION_GUIDELINES — Modules"
+    sources:
+      - docs/shared/02-tech/documentation-guidelines.md
+
+  - target: docs/agent_router/03_SHARED/DOCUMENTATION_GUIDELINES/10_documentation-guidelines.md
     source: docs/shared/02-tech/documentation-guidelines.md
     sections: all
 
+  # ═══════════════════════════════════════════════════════════════
+  # 03_SHARED/WAY_OF_WORKING — from way-of-working.md + plan-execution protocol reference
+  # ═══════════════════════════════════════════════════════════════
+  - target: docs/agent_router/03_SHARED/WAY_OF_WORKING/00_entry.md
+    type: index
+    title: "WAY_OF_WORKING — Modules"
+    sources:
+      - docs/shared/03-ops/way-of-working.md
+      - docs/projects/veterinary-medical-records/03-ops/plan-execution-protocol.md
+
   # ── From way-of-working.md ──
-  - target: docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/170_starting-new-work-branch-first.md
+  - target: docs/agent_router/03_SHARED/WAY_OF_WORKING/10_starting-new-work-branch-first.md
     source: docs/shared/03-ops/way-of-working.md
     sections: ["1. Starting New Work (Branch First)"]
 
-  - target: docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/180_delivery-model-releases.md
+  - target: docs/agent_router/03_SHARED/WAY_OF_WORKING/20_delivery-model-releases.md
     source: docs/shared/03-ops/way-of-working.md
     sections: ["7. Delivery Model"]
 
-  - target: docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/190_branching-strategy.md
+  - target: docs/agent_router/03_SHARED/WAY_OF_WORKING/30_branching-strategy.md
     source: docs/shared/03-ops/way-of-working.md
     sections: ["2. Branching Strategy"]
 
-  - target: docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/200_commit-discipline.md
+  - target: docs/agent_router/03_SHARED/WAY_OF_WORKING/40_commit-discipline.md
     source: docs/shared/03-ops/way-of-working.md
     sections: ["3. Commit Discipline"]
 
-  - target: docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/210_pull-requests.md
+  - target: docs/agent_router/03_SHARED/WAY_OF_WORKING/50_pull-requests.md
     source: docs/shared/03-ops/way-of-working.md
     sections: ["4. Local Preflight Levels", "5. Pull Request Workflow"]
 
-  - target: docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/220_code-reviews.md
+  - target: docs/agent_router/03_SHARED/WAY_OF_WORKING/60_code-reviews.md
     source: docs/shared/03-ops/way-of-working.md
     sections: ["6. Code Review Workflow"]
 
-  - target: docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/230_user-story-kickoff-checklist.md
+  - target: docs/agent_router/03_SHARED/WAY_OF_WORKING/70_user-story-kickoff-checklist.md
     source: docs/shared/03-ops/way-of-working.md
     sections: ["8. User Story Kickoff Procedure"]
 
-  - target: docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/240_definition-of-done.md
+  - target: docs/agent_router/03_SHARED/WAY_OF_WORKING/80_definition-of-done.md
     source: docs/shared/03-ops/way-of-working.md
     sections: ["9. Definition of Done"]
 
   # ── Pointer to plan-execution-protocol ──
-  - target: docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/250_execution-rule.md
+  - target: docs/agent_router/03_SHARED/WAY_OF_WORKING/90_execution-rule.md
     type: reference
     title: "Execution Rule (Reference)"
     source: docs/projects/veterinary-medical-records/03-ops/plan-execution-protocol.md

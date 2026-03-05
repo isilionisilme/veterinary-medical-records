@@ -15,7 +15,7 @@ AI assistant entrypoint. Keep reads minimal and route by intent.
 ## Mandatory triggers
 - Starting new work: `docs/agent_router/01_WORKFLOW/START_WORK/00_entry.md`.
 - Pull requests: `docs/agent_router/01_WORKFLOW/PULL_REQUESTS/00_entry.md`.
-- Merge request: execute `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/210_pull-requests.md`.
+- Merge request: execute `docs/agent_router/03_SHARED/WAY_OF_WORKING/50_pull-requests.md`.
 - Code PRs: `docs/agent_router/01_WORKFLOW/CODE_REVIEW/00_entry.md`.
 - User-visible changes: `docs/agent_router/02_PRODUCT/USER_VISIBLE/00_entry.md`.
 - If user indicates docs changed (any language or paraphrase): `docs/agent_router/01_WORKFLOW/DOC_UPDATES/00_entry.md`.

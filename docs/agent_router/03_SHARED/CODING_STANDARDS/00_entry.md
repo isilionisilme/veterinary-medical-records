@@ -1,7 +1,7 @@
-<!-- AUTO-GENERATED from canonical source: coding-standards.md, documentation-guidelines.md, way-of-working.md — DO NOT EDIT -->
+<!-- AUTO-GENERATED from canonical source: coding-standards.md — DO NOT EDIT -->
 <!-- To update, edit the canonical source and run: python scripts/docs/generate-router-files.py -->
 
-# ENGINEERING_PLAYBOOK — Modules
+# CODING_STANDARDS — Modules
 
 Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for intent routing.
 
@@ -20,20 +20,8 @@ Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for i
 - `120_configuration-environment-separation.md` — Configuration & Environment Separation
 - `130_versioning-evolution.md` — Versioning & Evolution
 - `140_dependency-management.md` — Dependency Management
-- `150_documentation-guidelines.md` — Documentation Guidelines
 - `160_naming-conventions.md` — Naming Conventions
-- `170_starting-new-work-branch-first.md` — 1. Starting New Work (Branch First)
-- `180_delivery-model-releases.md` — 7. Delivery Model
-- `190_branching-strategy.md` — 2. Branching Strategy
-- `200_commit-discipline.md` — 3. Commit Discipline
-- `210_pull-requests.md` — 4. Local Preflight Levels
-- `220_code-reviews.md` — 6. Code Review Workflow
-- `230_user-story-kickoff-checklist.md` — 8. User Story Kickoff Procedure
-- `240_definition-of-done.md` — 9. Definition of Done
-- `250_execution-rule.md` — Execution Rule (Reference)
 
 ## Canonical sources
 
 - `docs/shared/02-tech/coding-standards.md`
-- `docs/shared/02-tech/documentation-guidelines.md`
-- `docs/shared/03-ops/way-of-working.md`
