@@ -273,20 +273,26 @@ def test_technical_design_sufficient_evidence_boundary_is_propagated() -> None:
         assert term in owner_doc
 
 
-def test_engineering_playbook_plan_level_pr_roadmap_is_propagated() -> None:
-    source_doc = _read_text(REPO_ROOT / "docs" / "shared" / "03-ops" / "engineering-playbook.md")
+def test_way_of_working_plan_level_pr_roadmap_is_propagated() -> None:
+    source_doc = _read_text(REPO_ROOT / "docs" / "shared" / "03-ops" / "way-of-working.md")
     owner_doc = _read_text(
         ROUTER_ROOT / "03_SHARED" / "ENGINEERING_PLAYBOOK" / "210_pull-requests.md"
     )
 
-    required_terms = (
+    source_terms = (
+        "Plan-Level Pull Request Roadmap",
+        "Each phase belongs to exactly one Pull Request",
+        "Each execution step carries a `**[PR-X]**` tag",
+    )
+    owner_terms = (
         "Plan-level PR Roadmap",
         "Each phase belongs to exactly one PR",
         "Each execution step in the Execution Status must carry a `**[PR-X]**` tag",
     )
 
-    for term in required_terms:
+    for term in source_terms:
         assert term in source_doc
+    for term in owner_terms:
         assert term in owner_doc
 
 

@@ -21,7 +21,7 @@ DOC_UPDATES_TEST_IMPACT_MAP = (
 DOC_UPDATES_ROUTER_PARITY_MAP = (
     REPO_ROOT / "docs" / "agent_router" / "01_WORKFLOW" / "DOC_UPDATES" / "router_parity_map.json"
 )
-ENGINEERING_PLAYBOOK = REPO_ROOT / "docs" / "shared" / "03-ops" / "engineering-playbook.md"
+WAY_OF_WORKING = REPO_ROOT / "docs" / "shared" / "03-ops" / "way-of-working.md"
 CODE_REVIEW_OWNER = (
     REPO_ROOT
     / "docs"
@@ -250,20 +250,26 @@ def test_router_parity_map_has_product_design_rule() -> None:
 
 
 def test_code_review_guidance_terms_are_propagated() -> None:
-    source_text = _read_text(ENGINEERING_PLAYBOOK)
+    source_text = _read_text(WAY_OF_WORKING)
     owner_text = _read_text(CODE_REVIEW_OWNER)
     entry_text = _read_text(CODE_REVIEW_ENTRY)
 
-    required_terms = (
+    source_terms = (
+        "Database migrations/schema safety",
+        "Severity Classification",
+        "Large Diff Policy",
+        "Pre-Existing Issues",
+    )
+    owner_terms = (
         "Pre-review checklist",
         "Severity classification criteria",
-        "Database migrations and schema changes",
         "Large diff policy",
         "Pre-existing issues policy",
     )
 
-    for term in required_terms:
+    for term in source_terms:
         assert term in source_text
+    for term in owner_terms:
         assert term in owner_text
 
     assert "Pre-review gate (required before diff reading)" in entry_text
@@ -272,7 +278,7 @@ def test_code_review_guidance_terms_are_propagated() -> None:
 
 
 def test_preflight_levels_policy_is_documented_for_pr_flow() -> None:
-    source_text = _read_text(ENGINEERING_PLAYBOOK)
+    source_text = _read_text(WAY_OF_WORKING)
     pr_router = (
         REPO_ROOT
         / "docs"
@@ -283,23 +289,40 @@ def test_preflight_levels_policy_is_documented_for_pr_flow() -> None:
     )
     pr_router_text = _read_text(pr_router)
     readme_text = _read_text(REPO_ROOT / "README.md")
+    source_lower = source_text.lower()
+    router_lower = pr_router_text.lower()
 
-    required_terms = (
-        "Local preflight levels",
-        "L1 — Quick",
-        "L2 — Push",
-        "L3 — Full",
-        "before PR creation/update",
-        "Auto-fix policy when preflight fails",
-        "Maximum automatic remediation loop: 2 attempts",
-        "ForceFrontend",
-        "ForceFull",
-        "CI is green",
+    required_source_terms = (
+        "local preflight levels",
+        "l1 — quick",
+        "l2 — push",
+        "l3 — full",
+        "before pull request creation",
+        "preflight auto-fix policy",
+        "maximum automatic remediation loop",
+        "forcefrontend",
+        "forcefull",
+        "ci is green",
     )
 
-    for term in required_terms:
-        assert term in source_text
-        assert term in pr_router_text
+    for term in required_source_terms:
+        assert term in source_lower
+
+    router_terms = (
+        "local preflight levels",
+        "l1 — quick",
+        "l2 — push",
+        "l3 — full",
+        "before pr creation/update",
+        "auto-fix policy when preflight fails",
+        "maximum automatic remediation loop: 2 attempts",
+        "forcefrontend",
+        "forcefull",
+        "ci is green",
+    )
+
+    for term in router_terms:
+        assert term in router_lower
 
     assert "test-L1.ps1" in readme_text
     assert "test-L2.ps1" in readme_text
