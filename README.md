@@ -129,8 +129,11 @@ Frontend implementation details (“how”).
 📄 **[`AGENTS.md`](AGENTS.md)**  
 Canonical AI assistant entrypoint for this repo.
 
-📄 **[`docs/shared/03-ops/engineering-playbook.md`](docs/shared/03-ops/engineering-playbook.md)**  
-Engineering standards for implementation and changes.
+📄 **[`docs/shared/02-tech/coding-standards.md`](docs/shared/02-tech/coding-standards.md)**  
+Technical coding standards and architecture rules.
+
+📄 **[`docs/shared/03-ops/way-of-working.md`](docs/shared/03-ops/way-of-working.md)**  
+Workflow lifecycle and working agreements.
 
 📄 **[`docs/shared/01-product/ux-guidelines.md`](docs/shared/01-product/ux-guidelines.md)**  
 Shared UX principles referenced by project UX design.

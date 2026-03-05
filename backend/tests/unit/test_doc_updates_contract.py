@@ -21,7 +21,7 @@ DOC_UPDATES_TEST_IMPACT_MAP = (
 DOC_UPDATES_ROUTER_PARITY_MAP = (
     REPO_ROOT / "docs" / "agent_router" / "01_WORKFLOW" / "DOC_UPDATES" / "router_parity_map.json"
 )
-ENGINEERING_PLAYBOOK = REPO_ROOT / "docs" / "shared" / "03-ops" / "engineering-playbook.md"
+WAY_OF_WORKING = REPO_ROOT / "docs" / "shared" / "03-ops" / "way-of-working.md"
 CODE_REVIEW_OWNER = (
     REPO_ROOT
     / "docs"
@@ -104,34 +104,22 @@ def test_agents_routes_docs_updated_intent_to_doc_updates() -> None:
     assert "belongs to the active agent for this chat" in text
 
 
-def test_identity_handoff_message_is_canonical_and_persistent() -> None:
-    codex_message = (
-        '"⚠️ Este paso no corresponde al agente activo. **STOP.** '
-        "El siguiente paso es de **GPT-5.3-Codex**. "
-        "Abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** "
-        '→ adjunta el `PLAN` activo → escribe `Continúa`."'
-    )
-    claude_message = (
-        '"⚠️ Este paso no corresponde al agente activo. **STOP.** '
-        "El siguiente paso es de **Claude Opus 4.6**. "
-        "Abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** "
-        '→ adjunta el `PLAN` activo → escribe `Continúa`."'
-    )
-    ambiguous = "selecciona el agente asignado para ese paso"
-    same_chat_1 = "Vuelve a Claude (este chat)"
-    same_chat_2 = "Vuelve al chat de Claude"
-    no_prompt_handoff = "Vuelve al chat de **Claude Opus 4.6** y pídele que escriba el prompt"
-    agents_text = _read_text(ROOT_AGENTS)
+def test_step_eligibility_rule_is_canonical_and_persistent() -> None:
+    """After the auto-chain redesign, agent identity no longer blocks execution.
+    Hard-gates and missing prompts are the only mandatory stop points.
+    The eligibility rule references the decision table instead of
+    re-declaring the logic inline."""
     rules_text = _read_text(EXECUTION_RULES)
-    assert codex_message in agents_text
-    assert claude_message in agents_text
-    assert codex_message in rules_text
-    assert claude_message in rules_text
-    assert no_prompt_handoff in rules_text
-    assert ambiguous not in agents_text
-    assert ambiguous not in rules_text
-    assert same_chat_1 not in rules_text
-    assert same_chat_2 not in rules_text
+    # New eligibility rule exists and references the decision table
+    assert "Step eligibility rule" in rules_text
+    assert "decision table" in rules_text
+    assert "first `[ ]`" in rules_text
+    # Old agent-identity handoff messages must NOT exist
+    assert "This step does not belong to the active agent" not in rules_text
+    # Old Spanish leftovers must NOT exist
+    assert "selecciona el agente asignado para ese paso" not in rules_text
+    assert "Vuelve a Claude (este chat)" not in rules_text
+    assert "Vuelve al chat de Claude" not in rules_text
 
 
 def test_token_efficiency_policy_persists_for_continue_flow() -> None:
@@ -262,20 +250,26 @@ def test_router_parity_map_has_product_design_rule() -> None:
 
 
 def test_code_review_guidance_terms_are_propagated() -> None:
-    source_text = _read_text(ENGINEERING_PLAYBOOK)
+    source_text = _read_text(WAY_OF_WORKING)
     owner_text = _read_text(CODE_REVIEW_OWNER)
     entry_text = _read_text(CODE_REVIEW_ENTRY)
 
-    required_terms = (
+    source_terms = (
+        "Database migrations/schema safety",
+        "Severity Classification",
+        "Large Diff Policy",
+        "Pre-Existing Issues",
+    )
+    owner_terms = (
         "Pre-review checklist",
         "Severity classification criteria",
-        "Database migrations and schema changes",
         "Large diff policy",
         "Pre-existing issues policy",
     )
 
-    for term in required_terms:
+    for term in source_terms:
         assert term in source_text
+    for term in owner_terms:
         assert term in owner_text
 
     assert "Pre-review gate (required before diff reading)" in entry_text
@@ -284,7 +278,7 @@ def test_code_review_guidance_terms_are_propagated() -> None:
 
 
 def test_preflight_levels_policy_is_documented_for_pr_flow() -> None:
-    source_text = _read_text(ENGINEERING_PLAYBOOK)
+    source_text = _read_text(WAY_OF_WORKING)
     pr_router = (
         REPO_ROOT
         / "docs"
@@ -295,23 +289,40 @@ def test_preflight_levels_policy_is_documented_for_pr_flow() -> None:
     )
     pr_router_text = _read_text(pr_router)
     readme_text = _read_text(REPO_ROOT / "README.md")
+    source_lower = source_text.lower()
+    router_lower = pr_router_text.lower()
 
-    required_terms = (
-        "Local preflight levels",
-        "L1 — Quick",
-        "L2 — Push",
-        "L3 — Full",
-        "before PR creation/update",
-        "Auto-fix policy when preflight fails",
-        "Maximum automatic remediation loop: 2 attempts",
-        "ForceFrontend",
-        "ForceFull",
-        "CI is green",
+    required_source_terms = (
+        "local preflight levels",
+        "l1 — quick",
+        "l2 — push",
+        "l3 — full",
+        "before pull request creation",
+        "preflight auto-fix policy",
+        "maximum automatic remediation loop",
+        "forcefrontend",
+        "forcefull",
+        "ci is green",
     )
 
-    for term in required_terms:
-        assert term in source_text
-        assert term in pr_router_text
+    for term in required_source_terms:
+        assert term in source_lower
+
+    router_terms = (
+        "local preflight levels",
+        "l1 — quick",
+        "l2 — push",
+        "l3 — full",
+        "before pr creation/update",
+        "auto-fix policy when preflight fails",
+        "maximum automatic remediation loop: 2 attempts",
+        "forcefrontend",
+        "forcefull",
+        "ci is green",
+    )
+
+    for term in router_terms:
+        assert term in router_lower
 
     assert "test-L1.ps1" in readme_text
     assert "test-L2.ps1" in readme_text

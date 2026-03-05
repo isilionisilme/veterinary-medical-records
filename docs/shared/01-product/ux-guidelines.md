@@ -8,6 +8,10 @@ last-updated: 2026-03-02
 
 # UX Guidelines — Shared Principles
 
+> **Canonical source of truth.**
+> This file is a canonical document maintained by humans.
+> Router files under `docs/agent_router/` are derived outputs generated from this canonical source.
+> Flow is **canonical → router only**. Router files MUST NOT be edited directly.
 
 **Breadcrumbs:** [Docs](../../README.md) / Shared / 01-product
 
@@ -157,7 +161,7 @@ For any UX decision that depends on:
 This document **must defer** to the corresponding project-level UX document
 (e.g. [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../../projects/veterinary-medical-records/01-product/ux-design.md)).
 
-If no such document exists, **STOP and ask** before inventing UX behavior.
+If no such document exists, AI assistants must **NOT** invent or assume UX behavior — they must consult the team before implementing.
 
 ---
 

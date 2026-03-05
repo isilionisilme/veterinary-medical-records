@@ -45,18 +45,22 @@ docs/
 - `docs/shared/`
   - `01-product/brand-guidelines.md`
   - `01-product/ux-guidelines.md`
+  - `02-tech/coding-standards.md`
+  - `02-tech/documentation-guidelines.md`
   - `02-tech/llm-benchmarks.md`
-  - `03-ops/engineering-playbook.md`
+  - `03-ops/way-of-working.md`
 - `docs/projects/veterinary-medical-records/`
   - `01-product/design-system.md`
   - `01-product/product-design.md`
   - `01-product/ux-design.md`
   - `02-tech/architecture.md`
   - `02-tech/backend-implementation.md`
+  - `02-tech/extraction-quality.md`
   - `02-tech/frontend-implementation.md`
   - `02-tech/technical-design.md`
   - `03-ops/execution-rules.md`
   - `03-ops/manual-qa-regression-checklist.md`
+  - `03-ops/plan-execution-protocol.md`
   - `03-ops/plan-e2e-test-coverage.md`
   - `04-delivery/copilot-usage.md`
   - `04-delivery/delivery-summary.md`
@@ -74,7 +78,9 @@ docs/
 
 Standards that apply across all initiatives:
 
-- [engineering-playbook.md](shared/03-ops/engineering-playbook.md) — engineering standards and working agreements.
+- [coding-standards.md](shared/02-tech/coding-standards.md) — code style, architecture, contracts, naming, and technical standards.
+- [documentation-guidelines.md](shared/02-tech/documentation-guidelines.md) — documentation rules, change classification, and verification.
+- [way-of-working.md](shared/03-ops/way-of-working.md) — branch→commit→PR→review→merge lifecycle and working agreements.
 - [ux-guidelines.md](shared/01-product/ux-guidelines.md) — global UX principles.
 - [brand-guidelines.md](shared/01-product/brand-guidelines.md) — global brand rules.
 - [llm-benchmarks.md](shared/02-tech/llm-benchmarks.md) — LLM benchmarks system explanation.

@@ -8,6 +8,10 @@ last-updated: 2026-03-02
 
 # Barkibu — Brand Guidelines (Project Canonical)
 
+> **Canonical source of truth.**
+> This file is a canonical document maintained by humans.
+> Router files under `docs/agent_router/` are derived outputs generated from this canonical source.
+> Flow is **canonical → router only**. Router files MUST NOT be edited directly.
 
 **Breadcrumbs:** [Docs](../../README.md) / Shared / 01-product
 
