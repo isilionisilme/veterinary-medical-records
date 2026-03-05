@@ -25,6 +25,7 @@ from .date_parsing import (
     extract_clinical_record_candidates,
     extract_date_candidates_with_classification,
     extract_labeled_person_candidates,
+    extract_microchip_adjacent_line_candidates,
     extract_microchip_keyword_candidates,
     extract_ocr_microchip_candidates,
     extract_owner_nombre_candidates,
@@ -117,6 +118,13 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
             if digit_match is None:
                 return
             cleaned_value = digit_match.group(1)
+            # Reject digit sequences assembled from separate numbers
+            # (e.g. date "08/12/19" + time "16:12" → "0812191612").
+            # Spaces, hyphens and dots are legitimate chip-number
+            # separators; slashes, colons, etc. are not.
+            safe_collapsed = re.sub(r"[\s\-.]", "", snippet)
+            if cleaned_value not in safe_collapsed:
+                return
         if key == "owner_name":
             cleaned_value = _split_owner_before_address_tokens(cleaned_value)
             normalized_person = _normalize_person_fragment(cleaned_value)
@@ -196,6 +204,7 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
         extract_owner_nombre_candidates(raw_text, confidence=COVERAGE_CONFIDENCE_LABEL),
         extract_regex_labeled_candidates(raw_text),
         extract_microchip_keyword_candidates(raw_text, confidence=COVERAGE_CONFIDENCE_LABEL),
+        extract_microchip_adjacent_line_candidates(raw_text, confidence=COVERAGE_CONFIDENCE_LABEL),
         extract_clinical_record_candidates(raw_text, confidence=COVERAGE_CONFIDENCE_LABEL),
         extract_ocr_microchip_candidates(raw_text, confidence=COVERAGE_CONFIDENCE_FALLBACK),
         extract_unanchored_document_date_candidates(
