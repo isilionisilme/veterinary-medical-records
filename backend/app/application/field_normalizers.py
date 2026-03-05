@@ -74,6 +74,7 @@ def normalize_canonical_fields(
         value=normalized.get("microchip_id"),
         evidence=(evidence_map.get("microchip_id") if evidence_map else None),
     )
+    normalized["dob"] = _normalize_date_value(normalized.get("dob"))
     normalized["visit_date"] = _normalize_date_value(normalized.get("visit_date"))
     normalized["document_date"] = _normalize_date_value(normalized.get("document_date"))
     normalized["admission_date"] = _normalize_date_value(normalized.get("admission_date"))
@@ -401,14 +402,26 @@ def _normalize_date_value(value: object) -> str | None:
     if len(parts[0]) == 4:
         year, month, day = parts
         normalized = f"{day.zfill(2)}/{month.zfill(2)}/{year}"
-    else:
-        day, month, year = parts
-        normalized = f"{day.zfill(2)}/{month.zfill(2)}/{year}"
-
-    for date_format in ("%d/%m/%Y", "%d/%m/%y"):
         try:
-            datetime.strptime(normalized, date_format)
-            return normalized
+            parsed = datetime.strptime(normalized, "%d/%m/%Y")
+            return parsed.strftime("%d/%m/%Y")
         except ValueError:
-            continue
+            return None
+
+    day, month, year = parts
+    normalized = f"{day.zfill(2)}/{month.zfill(2)}/{year}"
+    if len(year) == 4:
+        try:
+            parsed = datetime.strptime(normalized, "%d/%m/%Y")
+            return parsed.strftime("%d/%m/%Y")
+        except ValueError:
+            return None
+
+    if len(year) == 2:
+        try:
+            parsed = datetime.strptime(normalized, "%d/%m/%y")
+            return parsed.strftime("%d/%m/%Y")
+        except ValueError:
+            return None
+
     return None

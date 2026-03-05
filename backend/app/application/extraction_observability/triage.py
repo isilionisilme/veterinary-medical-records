@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import re
 import unicodedata
+from datetime import date, datetime
 from typing import Any
 
 from backend.app.application.field_normalizers import CANONICAL_SPECIES
@@ -54,7 +55,9 @@ def _extract_first_number(value: str) -> float | None:
         return None
 
 
-def _suspicious_accepted_flags(field_key: str, value: str | None) -> list[str]:
+def _suspicious_accepted_flags(
+    field_key: str, value: str | None, all_fields: dict[str, Any] | None = None
+) -> list[str]:
     if not value:
         return []
     flags: list[str] = []
@@ -140,6 +143,31 @@ def _suspicious_accepted_flags(field_key: str, value: str | None) -> list[str]:
         )
         if has_po_box and not has_street_token:
             flags.append("clinic_address_po_box_without_street")
+    if normalized_key == "dob":
+        # Parse dob value (format: DD/MM/YYYY)
+        try:
+            dob_date = datetime.strptime(normalized_value, "%d/%m/%Y").date()
+            today = date.today()
+            # Flag 1: dob_future_date — date of birth is in the future
+            if dob_date > today:
+                flags.append("dob_future_date")
+            # Flag 2: dob_implausibly_old — animal older than 40 years
+            age_years = (today - dob_date).days / 365.25
+            if age_years > 40:
+                flags.append("dob_implausibly_old")
+            # Flag 3: dob_matches_visit_date — dob == visit_date (possible field confusion)
+            if all_fields:
+                visit_date_payload = all_fields.get("visit_date")
+                if (
+                    isinstance(visit_date_payload, dict)
+                    and visit_date_payload.get("status") == "accepted"
+                ):
+                    visit_date_value = _as_text(visit_date_payload.get("valueNormalized"))
+                    if visit_date_value and visit_date_value == normalized_value:
+                        flags.append("dob_matches_visit_date")
+        except (ValueError, AttributeError):
+            # Invalid date format, skip flags
+            pass
     return flags
 
 
@@ -191,7 +219,7 @@ def build_extraction_triage(snapshot: dict[str, Any]) -> dict[str, Any]:
             )
             continue
         if status == "accepted":
-            flags = _suspicious_accepted_flags(field_key, value_for_triage)
+            flags = _suspicious_accepted_flags(field_key, value_for_triage, fields)
             if flags:
                 suspicious_accepted.append(
                     {

@@ -333,6 +333,18 @@
       ]
     },
     {
+      "source_doc": "docs/projects/veterinary-medical-records/02-tech/extraction-quality.md",
+      "description": "Project EXTRACTION_QUALITY must map to project owner entry module.",
+      "router_modules": [
+        {
+          "path": "docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/00_entry.md",
+          "required_terms": [
+            "TECHNICAL_DESIGN — Modules"
+          ]
+        }
+      ]
+    },
+    {
       "source_doc": "docs/projects/veterinary-medical-records/01-product/ux-design.md",
       "description": "Project UX_DESIGN must map to project owner entry module.",
       "router_modules": [

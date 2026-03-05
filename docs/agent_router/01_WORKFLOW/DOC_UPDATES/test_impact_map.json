@@ -362,6 +362,20 @@
       ]
     },
     {
+      "doc_glob": "docs/projects/veterinary-medical-records/02-tech/extraction-quality.md",
+      "description": "Project EXTRACTION_QUALITY changes require propagation to its owner module and doc-updates guards.",
+      "owner_any": [
+        "docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/*.md",
+        "docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/**/*.md"
+      ],
+      "required_any": [
+        "docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json",
+        "docs/agent_router/01_WORKFLOW/DOC_UPDATES/router_parity_map.json",
+        "scripts/docs/check_doc_test_sync.py",
+        "scripts/docs/check_doc_router_parity.py"
+      ]
+    },
+    {
       "doc_glob": "docs/projects/veterinary-medical-records/01-product/ux-design.md",
       "description": "Project UX_DESIGN changes require propagation to its owner module.",
       "owner_any": [
