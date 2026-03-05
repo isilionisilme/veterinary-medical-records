@@ -125,3 +125,25 @@ def test_normalize_date_value_calendar_validation() -> None:
     assert _normalize_date_value("31/04/2020") is None  # April has 30 days
     assert _normalize_date_value("29/02/2020") == "29/02/2020"  # leap year valid
     assert _normalize_date_value("29/02/2021") is None  # non-leap year invalid
+
+
+def test_normalize_date_value_two_digit_year_99_maps_to_1999() -> None:
+    """Test that %y pivot is respected for two-digit year 99."""
+    assert _normalize_date_value("31/12/99") == "31/12/1999"
+
+
+def test_normalize_canonical_fields_two_digit_year_applies_to_all_date_fields() -> None:
+    """Test that two-digit year parsing behaves consistently across date fields."""
+    raw_fields = {
+        "dob": "31/12/99",
+        "visit_date": "01/01/00",
+        "document_date": "15/03/18",
+        "admission_date": "05/04/21",
+        "discharge_date": "06/04/21",
+    }
+    normalized = normalize_canonical_fields(raw_fields)
+    assert normalized["dob"] == "31/12/1999"
+    assert normalized["visit_date"] == "01/01/2000"
+    assert normalized["document_date"] == "15/03/2018"
+    assert normalized["admission_date"] == "05/04/2021"
+    assert normalized["discharge_date"] == "06/04/2021"
