@@ -82,12 +82,12 @@
 
 ### Phase 2 — Observability and quality gates
 
-- [ ] P2-A 🔄 — Alinear rango de observabilidad en `triage.py` a `[0.5, 120]` (actualmente `0.2`); añadir flag `weight_zero_value` para rechazo explícito de 0; verificar tests existentes y añadir faltantes (GPT-5.3-Codex)
-- [ ] CT-3 🔄 — Commit task: scope P2-A → `feat(plan-p2): weight observability alignment` → push (GPT-5.3-Codex)
+- [x] P2-A 🔄 — Alinear rango de observabilidad en `triage.py` a `[0.5, 120]` (actualmente `0.2`); añadir flag `weight_zero_value` para rechazo explícito de 0; verificar tests existentes y añadir faltantes (GPT-5.3-Codex) — ✅ `d2dff8ed` (3 passed)
+- [x] CT-3 🔄 — Commit task: scope P2-A → `feat(plan-p2): weight observability alignment` → push (GPT-5.3-Codex) — ✅ `d2dff8ed`
 
 ### Phase 3 — Tests, validation, and closure
 
-- [ ] P3-A 🔄 — Añadir/ajustar assertions golden para `weight` en `test_golden_extraction_regression.py` y ejecutar suite focalizada (benchmark weight + unit normalización + observability + regresión golden) (GPT-5.3-Codex)
+- [ ] P3-A 🔄 — Añadir/ajustar assertions golden para `weight` en `test_golden_extraction_regression.py` y ejecutar suite focalizada (benchmark weight + unit normalización + observability + regresión golden) (GPT-5.3-Codex) ⏳ EN PROGRESO (GPT-5.3-Codex, 2026-03-05)
 - [ ] P3-B 🔄 — Ejecutar suite completa y preparar evidencia reproducible para body de PR (totales, pass/fail, EM, null misses, false positives, delta vs baseline) (GPT-5.3-Codex)
 - [ ] CT-4 🔄 — Commit task: scope P3-A + P3-B → `test(plan-p3): weight golden regression and validation evidence` → push (GPT-5.3-Codex)
 - [ ] P3-C 🚧 — Hard-gate: validación de usuario con evidencia y decisión go/no-go (Claude Opus 4.6)
