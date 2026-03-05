@@ -160,6 +160,9 @@ def main() -> int:
     manifest_mapping = _load_manifest_mapping(MANIFEST_PATH)
     exempt_files = _load_exempt_protected_files(CONFIG_PATH)
 
+    manifest_relpath = str(MANIFEST_PATH.relative_to(REPO_ROOT)).replace("\\", "/")
+    manifest_changed = manifest_relpath in changed_set
+
     changed_router_files = [
         path
         for path in changed_files
@@ -167,6 +170,14 @@ def main() -> int:
     ]
     if not changed_router_files:
         print("Router directionality guard: no protected router files changed.")
+        return 0
+
+    if manifest_changed:
+        print(
+            "Router directionality guard: MANIFEST.yaml changed — "
+            "router regeneration is expected. "
+            "Relying on drift guard (--check) for content validation."
+        )
         return 0
 
     findings: list[str] = []

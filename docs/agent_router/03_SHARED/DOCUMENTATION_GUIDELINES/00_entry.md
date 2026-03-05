@@ -7,7 +7,11 @@ Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for i
 
 ## Modules
 
-- `10_documentation-guidelines.md` — Documentation Guidelines
+- `10_purpose-layers.md` — Purpose
+- `20_in-code-types.md` — In-Code Documentation Rules
+- `30_api-interface.md` — API Documentation Rules
+- `40_architecture-comments.md` — Architecture and Design Documentation
+- `50_update-verification.md` — When Documentation Must Be Updated
 
 ## Canonical sources
 

@@ -1,4 +1,4 @@
-<!-- AUTO-GENERATED from canonical source: way-of-working.md, plan-execution-protocol.md — DO NOT EDIT -->
+<!-- AUTO-GENERATED from canonical source: way-of-working.md — DO NOT EDIT -->
 <!-- To update, edit the canonical source and run: python scripts/docs/generate-router-files.py -->
 
 # WAY_OF_WORKING — Modules
@@ -15,9 +15,7 @@ Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for i
 - `60_code-reviews.md` — 6. Code Review Workflow
 - `70_user-story-kickoff-checklist.md` — 8. User Story Kickoff Procedure
 - `80_definition-of-done.md` — 9. Definition of Done
-- `90_execution-rule.md` — Execution Rule (Reference)
 
 ## Canonical sources
 
 - `docs/shared/03-ops/way-of-working.md`
-- `docs/projects/veterinary-medical-records/03-ops/plan-execution-protocol.md`
