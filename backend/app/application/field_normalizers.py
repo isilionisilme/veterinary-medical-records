@@ -74,6 +74,7 @@ def normalize_canonical_fields(
         value=normalized.get("microchip_id"),
         evidence=(evidence_map.get("microchip_id") if evidence_map else None),
     )
+    normalized["dob"] = _normalize_date_value(normalized.get("dob"))
     normalized["visit_date"] = _normalize_date_value(normalized.get("visit_date"))
     normalized["document_date"] = _normalize_date_value(normalized.get("document_date"))
     normalized["admission_date"] = _normalize_date_value(normalized.get("admission_date"))
@@ -403,6 +404,9 @@ def _normalize_date_value(value: object) -> str | None:
         normalized = f"{day.zfill(2)}/{month.zfill(2)}/{year}"
     else:
         day, month, year = parts
+        # Expand 2-digit years to 20xx
+        if len(year) == 2:
+            year = f"20{year}"
         normalized = f"{day.zfill(2)}/{month.zfill(2)}/{year}"
 
     for date_format in ("%d/%m/%Y", "%d/%m/%y"):

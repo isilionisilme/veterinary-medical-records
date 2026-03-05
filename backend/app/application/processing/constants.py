@@ -22,6 +22,7 @@ MVP_COVERAGE_DEBUG_KEYS: tuple[str, ...] = (
     "species",
     "breed",
     "sex",
+    "dob",
     "weight",
     "visit_date",
     "owner_name",
@@ -38,7 +39,9 @@ MVP_COVERAGE_DEBUG_KEYS: tuple[str, ...] = (
     "hair_length",
     "repro_status",
 )
-DATE_TARGET_KEYS = frozenset({"visit_date", "document_date", "admission_date", "discharge_date"})
+DATE_TARGET_KEYS = frozenset(
+    {"visit_date", "document_date", "admission_date", "discharge_date", "dob"}
+)
 _DATE_CANDIDATE_PATTERN = re.compile(
     r"\b(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}|\d{4}[\/\-.]\d{1,2}[\/\-.]\d{1,2})\b"
 )
@@ -60,12 +63,25 @@ _DATE_TARGET_ANCHORS: dict[str, tuple[str, ...]] = {
     ),
     "admission_date": ("admisión", "admision", "ingreso", "hospitaliza"),
     "discharge_date": ("alta", "egreso"),
+    "dob": (
+        "nacimiento",
+        "nac.",
+        "nac",
+        "f. nac",
+        "f/nto",
+        "fnto",
+        "dob",
+        "birth",
+        "fecha de nacimiento",
+        "fecha nac",
+    ),
 }
 _DATE_TARGET_PRIORITY: dict[str, int] = {
     "visit_date": 4,
     "admission_date": 3,
     "discharge_date": 3,
     "document_date": 2,
+    "dob": 1,
 }
 _MICROCHIP_KEYWORD_WINDOW_PATTERN = re.compile(
     r"(?is)(?:microchip|micr0chip|chip|transponder|identificaci[oó]n\s+electr[oó]nica|"
@@ -134,7 +150,7 @@ _LABELED_PATTERNS: tuple[tuple[str, str, float], ...] = (
     ("age", r"(?:edad|age)\s*[:\-]\s*([^\n;]{1,60})", COVERAGE_CONFIDENCE_LABEL),
     (
         "dob",
-        r"(?:f(?:echa)?\s*(?:de\s*)?(?:nacimiento|nac\.|nac)|dob|birth\s*date)\s*[:\-]\s*([0-9]{1,2}[\/\-.][0-9]{1,2}[\/\-.][0-9]{2,4})",
+        r"(?:f\.\s*nac\.?|fcha\s+(?:de\s+)?nacimiento|f(?:echa)?\s*(?:de\s*)?(?:nacimiento|nac\.?|nac|nto)|f[\/\s]?nto|fnto|nacimiento|dob|birth\s*date|fecha\s*nac)\s*[:\-]?\s*([0-9]{1,2}[\/\-.][0-9]{1,2}[\/\-.][0-9]{2,4}|[0-9]{4}[\/\-.][0-9]{1,2}[\/\-.][0-9]{1,2})",
         COVERAGE_CONFIDENCE_LABEL,
     ),
     (
