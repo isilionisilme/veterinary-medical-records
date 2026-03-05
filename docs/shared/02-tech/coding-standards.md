@@ -142,6 +142,8 @@ AI assistants must not silently skip or partially comply with these standards. I
 
 ## Naming Conventions
 
+> Git naming conventions (branches, commits, Pull Requests) are defined in [way-of-working.md §2–§5](../03-ops/way-of-working.md).
+
 ### API and endpoints
 
 - Use clear, predictable REST conventions, for example:

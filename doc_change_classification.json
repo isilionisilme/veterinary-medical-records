@@ -1,8 +1,11 @@
 {
   "files": {
-    "docs/projects/veterinary-medical-records/04-delivery/implementation-history.md": "Clarification",
-    "docs/projects/veterinary-medical-records/04-delivery/plans/PLAN_2026-03-02_GOLDEN-LOOP-CLINIC-NAME.md": "Clarification",
-    "docs/projects/veterinary-medical-records/04-delivery/plans/completed/completed-2026-03-02-golden-loop-clinic-name.md": "Clarification"
+    "docs/agent_router/01_WORKFLOW/PULL_REQUESTS/00_entry.md": "Rule",
+    "docs/agent_router/03_SHARED/CODING_STANDARDS/140_naming-conventions.md": "Clarification",
+    "docs/agent_router/03_SHARED/WAY_OF_WORKING/50_pull-requests.md": "Rule",
+    "docs/projects/veterinary-medical-records/04-delivery/plans/completed/COMPLETED_2026-03-04_CANONICAL-DOC-RESTRUCTURE.md": "Rule",
+    "docs/shared/02-tech/coding-standards.md": "Clarification",
+    "docs/shared/03-ops/way-of-working.md": "Rule"
   },
-  "overall": "Clarification"
+  "overall": "Rule"
 }
