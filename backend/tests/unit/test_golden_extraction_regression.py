@@ -109,6 +109,10 @@ def test_doc_a_golden_goal_fields_regression(monkeypatch) -> None:
         f"got {clinic_address!r}"
     )
 
+    # dob — docA has labeled "Nacimiento: 05/07/2018" on first line
+    dob = schema.get("dob")
+    assert dob == "05/07/2018", f"dob regression: expected '05/07/2018', got {dob!r}"
+
     _assert_owner_or_vet_invariant(
         schema=schema,
         candidates=candidates,
@@ -162,6 +166,10 @@ def test_doc_b_golden_goal_fields_regression(monkeypatch) -> None:
 
     clinic_address = schema.get("clinic_address")
     assert clinic_address in ("", None)
+
+    # dob — docB has top header date near chip context, treated as birth date
+    dob = schema.get("dob")
+    assert dob == "04/10/2019", f"dob regression: expected '04/10/2019', got {dob!r}"
 
     _assert_owner_or_vet_invariant(
         schema=schema,

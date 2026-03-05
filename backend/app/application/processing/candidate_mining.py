@@ -32,6 +32,7 @@ from .date_parsing import (
     extract_regex_labeled_candidates,
     extract_timeline_document_date_candidates,
     extract_unanchored_document_date_candidates,
+    extract_unlabeled_header_dob_candidates,
 )
 
 # Guard pattern for unlabeled pet_name heuristic — rejects lines that look
@@ -207,6 +208,10 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
         extract_microchip_adjacent_line_candidates(raw_text, confidence=COVERAGE_CONFIDENCE_LABEL),
         extract_clinical_record_candidates(raw_text, confidence=COVERAGE_CONFIDENCE_LABEL),
         extract_ocr_microchip_candidates(raw_text, confidence=COVERAGE_CONFIDENCE_FALLBACK),
+        extract_unlabeled_header_dob_candidates(
+            raw_text,
+            confidence=COVERAGE_CONFIDENCE_FALLBACK,
+        ),
         extract_unanchored_document_date_candidates(
             raw_text,
             confidence=COVERAGE_CONFIDENCE_FALLBACK,
