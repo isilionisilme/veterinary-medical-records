@@ -276,6 +276,46 @@ def test_build_extraction_triage_flags_microchip_phone_and_document_context() ->
     assert "microchip_document_id_context" in doc_flags
 
 
+def test_build_extraction_triage_flags_weight_zero_value() -> None:
+    snapshot = {
+        "runId": "run-weight-zero",
+        "documentId": "doc-weight-zero",
+        "createdAt": "2026-02-13T20:06:00Z",
+        "fields": {
+            "weight": {
+                "status": "accepted",
+                "confidence": "mid",
+                "valueNormalized": "0 kg",
+            },
+        },
+        "counts": {"accepted": 1, "missing": 0, "rejected": 0, "low": 0, "mid": 1, "high": 0},
+    }
+
+    triage = extraction_observability.build_extraction_triage(snapshot)
+    suspicious_by_field = {item["field"]: item for item in triage["suspiciousAccepted"]}
+    assert "weight_zero_value" in suspicious_by_field["weight"]["flags"]
+
+
+def test_build_extraction_triage_flags_weight_out_of_range_under_half_kg() -> None:
+    snapshot = {
+        "runId": "run-weight-under-half",
+        "documentId": "doc-weight-under-half",
+        "createdAt": "2026-02-13T20:06:00Z",
+        "fields": {
+            "weight": {
+                "status": "accepted",
+                "confidence": "mid",
+                "valueNormalized": "0.3 kg",
+            },
+        },
+        "counts": {"accepted": 1, "missing": 0, "rejected": 0, "low": 0, "mid": 1, "high": 0},
+    }
+
+    triage = extraction_observability.build_extraction_triage(snapshot)
+    suspicious_by_field = {item["field"]: item for item in triage["suspiciousAccepted"]}
+    assert "weight_out_of_range" in suspicious_by_field["weight"]["flags"]
+
+
 def test_build_extraction_triage_keeps_top_candidates_shape() -> None:
     snapshot = {
         "runId": "run-top-candidates",

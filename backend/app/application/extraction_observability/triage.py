@@ -88,7 +88,9 @@ def _suspicious_accepted_flags(
         numeric_value = _extract_first_number(normalized_value)
         if numeric_value is None:
             flags.append("weight_missing_numeric_value")
-        elif numeric_value < 0.2 or numeric_value > 120:
+        elif numeric_value == 0:
+            flags.append("weight_zero_value")
+        elif numeric_value < 0.5 or numeric_value > 120:
             flags.append("weight_out_of_range")
     if normalized_key == "species" and _normalize_text(normalized_value) not in CANONICAL_SPECIES:
         flags.append("species_outside_allowed_set")
