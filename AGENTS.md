@@ -23,24 +23,18 @@ AI assistant entrypoint. Keep reads minimal and route by intent.
 - If the user says documentation was updated, route to `docs/agent_router/01_WORKFLOW/DOC_UPDATES/00_entry.md`.
 
 ## Global rules
+- **Mandatory rule override protocol.** When the user asks to bypass a rule marked as mandatory (e.g., "Never", "must not", "hard rule") in any canonical document, the assistant must: (1) explain which rule would be violated, (2) ask for explicit confirmation. If the user confirms, proceed. Never silently skip a mandatory rule, but never permanently block the user either.
 - **No direct commits to `main` (hard rule).** All changes go through a feature branch + PR. The only exception is if the user gives explicit, per-instance authorization (e.g. "commitea directo a main"). Without that authorization, STOP and create a branch first.
 - **Blocker escalation (hard rule).** If any standard, instruction, or requirement from a canonical document cannot be satisfied, STOP — explain the blocker and ask for guidance before proceeding. Never silently skip or partially comply.
+- **Procedure auto-tracking.** When a canonical document defines a **Procedure** (a section whose heading contains the word "Procedure" followed by a numbered step list), the agent must load those steps as planned todos before starting execution. Each numbered step becomes one todo item. Mark each todo as completed immediately after finishing it.
 - Manual trigger only for code reviews (never start one implicitly).
 - After modifying docs, run the DOC_UPDATES normalization pass once before finishing.
 - Include final `How to test` for user-validatable changes.
 - Run `git`, `gh`, and `npm` with elevation on first attempt; if unavailable, STOP and ask.
 
 ## Plan execution (`Continúa`)
-- Load: `docs/projects/veterinary-medical-records/03-ops/execution-rules.md`.
-- **Step completion integrity:** before any handoff or auto-chain, enforce § "Step completion integrity" (NO-BATCH, CI-FIRST-BEFORE-HANDOFF, PLAN-UPDATE-IMMEDIATO, STEP-LOCK, EVIDENCE BLOCK, AUTO-HANDOFF GUARD).- **Iteration close:** after merge, execute § "Iteration close-out protocol" in `execution-rules.md` (reconciliation, IMPLEMENTATION_HISTORY, DOC_UPDATES normalization).- Active plans: `docs/projects/veterinary-medical-records/04-delivery/plans/PLAN_*.md`; completed: `docs/projects/veterinary-medical-records/04-delivery/plans/completed/`.
-- Read Estado de ejecución and take the first `[ ]` step.
-- If step belongs to another agent: STOP and hand off to the exact required agent with a new chat + active PLAN + `Continúa`.
-- If step belongs to current agent: execute it and apply token-efficiency (`iterative-retrieval` before execution, `strategic-compact` at step close).
-- If that step belongs to the active agent for this chat: continue with the plan.
-- Canonical handoff (must be exact):
-  "⚠️ Este paso no corresponde al agente activo. **STOP.** El siguiente paso es de **GPT-5.3-Codex**. Abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** → adjunta el `PLAN` activo → escribe `Continúa`."
-  "⚠️ Este paso no corresponde al agente activo. **STOP.** El siguiente paso es de **Claude Opus 4.6**. Abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta el `PLAN` activo → escribe `Continúa`."
-- At step close: auto-continue only when next step is same agent and not a hard-gate; otherwise STOP and hand off.
+- Load: `docs/projects/veterinary-medical-records/03-ops/plan-execution-protocol.md`.
+- For plan execution behavior, follow the protocol as the sole source of truth (do not duplicate plan-operational rules here).
 
 ## Fallback
 If no intent matches, read `docs/agent_router/00_FALLBACK.md` and ask for clarification.

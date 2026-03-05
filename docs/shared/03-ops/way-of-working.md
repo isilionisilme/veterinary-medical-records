@@ -17,6 +17,7 @@ This document defines the **mandatory operational workflow** for all contributor
 It covers the full lifecycle: starting work → branching → committing → preflight → pull request → code review → merge → done.
 
 AI assistants must stop and explain the conflict before proceeding when instructions contradict these workflow rules.
+Do not bypass reviews, tests, or workflow rules to accelerate delivery.
 
 ---
 
@@ -47,6 +48,7 @@ Before making any new changes (code, docs, config, etc.), create a new branch of
 - The default branching strategy is **Feature Branching**.
 - Work is developed in **short-lived branches** on top of a stable `main` branch.
 - `main` always reflects a **runnable, test-passing state**.
+- **No direct commits to `main`.** All changes must go through a feature branch and a pull request.
 - Each change is implemented in a dedicated branch.
 - Branches are merged once the change is complete and reviewed.
 
@@ -106,7 +108,7 @@ Use the local preflight system with three levels before pushing changes.
 - Frontend checks run only when frontend-impact paths changed, unless `-ForceFrontend` is provided.
 - Enforced by git hook: `.githooks/pre-push`.
 
-### L3 — Full (before PR creation/update)
+### L3 — Full (before Pull Request creation)
 
 - Entry points: `scripts/ci/test-L3.ps1` / `scripts/ci/test-L3.bat`
 - Runs path-scoped backend/frontend/docker checks by default.
@@ -118,14 +120,17 @@ Use the local preflight system with three levels before pushing changes.
 
 - For interactive local commits, run **L1** by default.
 - Before every `git push`, **L2** must run (automatically via pre-push hook).
-- Before opening/updating a PR, run **L3**.
+- Before opening a Pull Request, run **L3**.
+- After the Pull Request exists, rely on its CI for subsequent updates unless an explicit local rerun is requested.
 - L3 runs path-scoped by default for day-to-day development branches.
-- Before merge to `main`, verify CI is green. Local L3 is not required when CI has already passed — CI runs a superset of L3 checks (including Docker and E2E).
+- Before merge to `main`, verify CI is green.
 - If a level fails, **STOP** and resolve failures (or explicitly document why a failure is unrelated/pre-existing).
 
-### Auto-Fix Policy
+### Preflight Auto-Fix Policy
 
-- The assistant must attempt focused fixes automatically before proceeding.
+When a preflight level (L1/L2/L3) fails:
+
+- AI assistants must attempt focused fixes automatically before proceeding.
 - Auto-fixes must stay within the current change scope and avoid unrelated refactors.
 - Maximum automatic remediation loop: **2 attempts** (fix + rerun the failed level).
 - **Never bypass quality gates** (`--no-verify`, disabling tests/checks, weakening assertions) to force a pass.
@@ -135,11 +140,11 @@ Use the local preflight system with three levels before pushing changes.
 
 ## 5. Pull Request Workflow
 
-- A pull request is opened for each user story or each technical non-user-facing change.
-- Pull requests are opened once the change is **fully implemented** and **all automated tests are passing**.
-- Each pull request must be small enough to be reviewed comfortably in isolation and should focus on a **single user story or a single technical concern**.
+- Every user story or technical change requires **at least one Pull Request**. A single story or change may be split across multiple Pull Requests when the scope justifies it.
+- Pull Requests are opened once the change (or the slice covered by that Pull Request) is **fully implemented** and **all automated tests are passing**.
+- Each Pull Request must be small enough to be reviewed comfortably in isolation and should focus on a **single user story or a single technical concern**.
 
-### PR Title Conventions
+### Pull Request Title Conventions
 
 **User stories:**
 - `Story <ID> — <Full User Story Title>`
@@ -147,17 +152,17 @@ Use the local preflight system with three levels before pushing changes.
 **Technical work:**
 - `<type>: <short description>`
 
-### PR Body Requirements
+### Pull Request Body Requirements
 
-- PR title, body, and review comments must be written in **English**.
-- When setting the PR description/body from CLI, use real multiline content (heredoc or file input), not escaped `\n` sequences.
+- Pull Request title, body, and review comments must be written in **English**.
+- When setting the Pull Request description/body from CLI, use real multiline content (heredoc or file input), not escaped `\n` sequences.
 - Preferred patterns:
   - `gh pr create --body-file <path-to-markdown-file>`
   - PowerShell here-string assigned to a variable and passed to `--body`
 
-### PR Classification
+### Pull Request Classification
 
-Classify the PR by file types:
+Classify the Pull Request by file types:
 
 | Type | File patterns |
 |------|--------------|
@@ -165,28 +170,29 @@ Classify the PR by file types:
 | **Code** | Any `*.py`, `*.ts`, `*.tsx`, `*.js`, `*.jsx`, `*.css`, `*.scss`, `*.html`, `*.sql` |
 | **Non-code, non-doc** | `*.json`, `*.yaml`, `*.yml`, `*.toml`, `*.ini`, `*.env` |
 
-### PR Procedure
+### Pull Request Procedure
 
 1. Confirm repository state (branch, base, working tree).
-2. Create/update the PR targeting `main`.
-3. Run local L3 preflight before PR creation/update.
+2. Create/update the Pull Request targeting `main`.
+3. Apply the preflight rules from Section 4 before Pull Request creation and for subsequent updates.
 4. Check CI status (pending, passing, or failing).
-5. For PRs that change `frontend/**` or user-visible behavior:
+5. For Pull Requests that change `frontend/**` or user-visible behavior:
    - Review canonical UX/brand sources before implementation/review.
-   - Add a `UX/Brand compliance` section to the PR description.
+   - Add a `UX/Brand compliance` section to the Pull Request description.
 6. Include end-user validation steps when applicable.
+7. Before requesting merge, if the Pull Request includes code changes and no code review has been performed, ask the user whether a review should be done. Include a recommended review depth (see Section 6 — Review Depth) with a brief justification.
 
-### Plan-Level PR Roadmap
+### Plan-Level Pull Request Roadmap
 
-When a plan spans multiple PRs, it must include a **PR Roadmap** section:
-- Table with columns: **PR**, **Rama**, **Fases**, **Alcance**, **Depende de**.
-- Each phase belongs to exactly one PR.
+When a plan spans multiple Pull Requests, it must include a **Pull Request Roadmap** section:
+- Table with columns: **Pull Request**, **Branch**, **Phases**, **Scope**, **Depends on**.
+- Each phase belongs to exactly one Pull Request.
 - Each execution step carries a `**[PR-X]**` tag.
-- A PR is merged only when all its assigned phases pass CI and user review.
+- A Pull Request is merged only when all its assigned phases pass CI and user review.
 
-### Post-Merge Cleanup
+### Post-Merge Cleanup Procedure
 
-After a PR is merged into `main`:
+After a Pull Request is merged into `main`:
 1. Ensure the working tree is clean.
 2. Check for stashes related to the merged branch; clean up where safe.
 3. Switch to `main` and pull latest changes.
@@ -201,7 +207,34 @@ After a PR is merged into `main`:
 
 Code reviews run **only** when explicitly requested by the user. Never start a code review automatically.
 
-For docs-only PRs, review is skipped by policy unless the user explicitly requests one.
+### CI prerequisite (hard rule)
+
+Before starting a code review, the agent must verify CI status:
+- **CI in progress:** wait for it to complete before proceeding.
+- **CI green:** proceed with the review.
+- **CI red:** do NOT start the review. Inform the user that CI is failing and ask whether they want the agent to diagnose and fix the failures first. Only start the review after CI is green.
+
+### Review Depth
+
+When suggesting or starting a review, the agent recommends a depth level based on the Pull Request's risk profile. The user confirms, adjusts, or overrides before the review begins.
+
+| Depth | When to recommend | Parallel lenses | What it covers |
+|-------|-------------------|:---:|----------------|
+| **Light** | Docs-only, config changes, formatting, simple renames | 1 | Correctness, consistency, no regressions |
+| **Standard** | Normal code changes | 1 | Full review focus (all 7 areas below) |
+| **Deep** | Security-sensitive, data-loss risk, architectural changes, critical user paths | 2 | Two parallel reviews with different lenses |
+| **Deep (critical)** | User requests it, or agent recommends when security + architecture + data concerns overlap | 3 | Two parallel reviews with different lenses |
+
+**Deep / Deep (critical) review Procedure:**
+
+1. The orchestrating agent proposes review lenses based on context (e.g., maintainability-first + security-first, or architecture-first + regression-first + data-integrity-first). The user confirms or adjusts the lenses before the reviews start.
+2. Each lens runs as an independent sub-agent in parallel.
+3. Each sub-agent publishes its own findings as a **separate Pull Request comment**, tagged with the lens name (e.g., `## Code Review — Security-First Lens`). This ensures all raw findings are permanently recorded.
+4. After all sub-agent reviews are posted, a **consolidation agent** reads all review comments and publishes a final **consolidated review comment** that:
+   - Deduplicates equivalent findings across lenses.
+   - Assigns the highest severity when lenses disagree.
+   - Uses the standard Review Output Format.
+   - References the original lens comments for traceability.
 
 ### Review Focus (maintainability-first)
 
@@ -235,9 +268,9 @@ Each finding includes: **File**, **Why**, **Minimal change**.
 
 ### Review Publication
 
-- The review MUST be published as a PR comment.
-- A review is not complete until the PR comment is posted and the URL is returned.
-- Follow-up comments are required when findings are addressed in subsequent commits.
+- The review MUST be published as a Pull Request comment.
+- A review is not complete until the Pull Request comment is posted and the URL is returned.
+- **Follow-up verification (hard rule).** When commits address review findings, the agent MUST post a follow-up Pull Request comment confirming which findings are resolved, which remain open, and which introduced new concerns. A review cycle is not closed until this follow-up comment is posted.
 
 ### Safety Rule
 
@@ -245,14 +278,14 @@ After producing a review, **STOP** and wait for explicit user instruction before
 
 ### Pre-Existing Issues
 
-Issues that clearly predate the PR:
-- Do NOT classify as Must-fix for the current PR.
+Issues that clearly predate the Pull Request:
+- Do NOT classify as Must-fix for the current Pull Request.
 - Report in a separate "Pre-existing issues" section.
 - Recommend a follow-up issue when impact is significant.
 
 ### Large Diff Policy
 
-If the PR diff exceeds ~400 lines of non-generated code:
+If the Pull Request diff exceeds ~400 lines of non-generated code:
 - Report a Should-fix noting reduced review confidence.
 - Suggest a split strategy when visible.
 - Continue the review with stated confidence limitations.
@@ -266,6 +299,7 @@ If the PR diff exceeds ~400 lines of non-generated code:
 - A release may span multiple user stories across different epics.
 - Each release must be **coherent, end-to-end, and meaningful** from a user perspective.
 - Releases must NOT be isolated technical components.
+- Always prefer completing a **smaller, well-defined** user story over partially implementing a larger one.
 
 Each release must result in:
 - A runnable and testable system state
@@ -275,7 +309,7 @@ Each release must result in:
 
 ---
 
-## 8. User Story Kickoff Checklist
+## 8. User Story Kickoff Procedure
 
 Before implementing each user story (US-XX):
 
@@ -283,7 +317,7 @@ Before implementing each user story (US-XX):
 2. Identify **decision points** not explicitly specified (e.g., file size limits, storage roots, timeout values, retry counts, error code enums, default configuration values).
 3. Resolve **discoverable facts** by inspecting the repository first (code/config/docs). Do not ask the user questions that can be answered by reading the repo.
 4. Ask the user to confirm or choose for **non-discoverable preferences/tradeoffs**. Present 2–4 meaningful options and recommend a default. Do not proceed while any high-impact ambiguity remains; **STOP and ask**.
-5. Record the resulting decisions/assumptions explicitly in the PR description (and/or ADR-style note when requested).
+5. Record the resulting decisions/assumptions explicitly in the Pull Request description (and/or ADR-style note when requested).
 
 ---
 
@@ -292,6 +326,9 @@ Before implementing each user story (US-XX):
 A change is considered done when it satisfies the criteria that apply to its type.
 
 ### For user stories
+- Before asking the user to validate behavior manually, the agent must start the project in **dev mode with hot reload enabled** and verify endpoints are reachable.
+- Use the **project-specific canonical dev-start command and checks** defined in that project's ops documentation.
+- If a project does not define a canonical command/check set, STOP and ask the user to confirm the execution command before requesting validation.
 
 - It delivers a **complete vertical slice** of user-facing value.
 - It is documented (README and/or ADR if a design decision was made).
@@ -310,14 +347,8 @@ A change is considered done when it satisfies the criteria that apply to its typ
 - Automated tests pass, and test coverage is updated where applicable.
 - For any testable change, the final response must include **clear step-by-step validation instructions** from the end-user point of view.
 - When end-user testing is not possible, explicitly state that and provide the best alternative verification method.
+- **Code review gate.** When all tasks of a plan or Pull Request are completed and the change includes code, the agent must check whether a code review has been performed. If not, offer one to the user with a recommended review depth (see Section 6 — Review Depth) and justification. Do not proceed to merge until the user explicitly accepts or declines the review.
 - The change is merged into `main` via Pull Request.
 - CI has run and passed successfully.
 - `main` remains in a **green (passing)** state after the merge.
-
----
-
-## 10. Execution Rule
-
-- Always prefer completing a **smaller, well-defined** user story over partially implementing a larger one.
-- Validate every implementation explicitly against the **Definition of Done**.
-- Do not bypass reviews, tests, or workflow rules to accelerate delivery.
+- Every implementation must be validated explicitly against this Definition of Done before considering the change complete.
