@@ -3,7 +3,7 @@
 > **Operational rules:** See [execution-rules.md](../../03-ops/execution-rules.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
 
 **Rama:** `feat/golden-loop-paciente-weight`
-**PR:** _(pending)_
+**PR:** #204 (draft)
 **Prerequisito:** `main` estable con tests verdes.
 **Iteración:** 21
 **Modo CI:** `3) End-of-plan gate`
@@ -74,11 +74,11 @@
 
 ### Phase 1 — Extraction improvements (`weight` only)
 
-- [ ] P1-A 🔄 — Implementar `_normalize_weight()` en `field_normalizers.py` y conectar en `normalize_canonical_fields()`: coma→punto, unidad a `kg`, gramos→kg, rango [0.5, 120], rechazo de 0, formato normalizado `X.Y kg` (GPT-5.3-Codex)
-- [ ] P1-B 🔄 — Ampliar regex de `weight` en `_LABELED_PATTERNS` con variantes de label: "Peso corporal", "P.", "peso (kg)", etc.; añadir guards contra falsos positivos (dosis, lab values) (GPT-5.3-Codex)
-- [ ] P1-C 🔄 — Añadir tests unitarios dedicados de normalización de `weight`: formatos válidos (coma, punto, con/sin unidad, gramos), inválidos (0, fuera de rango, None/vacío, dosis) (GPT-5.3-Codex)
-- [ ] P1-D 🔄 — Medir delta de benchmark vs baseline; ajustar confidence/ranking de candidates de `weight` si es necesario (GPT-5.3-Codex)
-- [ ] CT-2 🔄 — Commit task: scope P1-A + P1-B + P1-C + P1-D → `feat(plan-p1): weight extraction hardening — normalizer, labels, unit tests` → push (GPT-5.3-Codex)
+- [x] P1-A 🔄 — Implementar `_normalize_weight()` en `field_normalizers.py` y conectar en `normalize_canonical_fields()`: coma→punto, unidad a `kg`, gramos→kg, rango [0.5, 120], rechazo de 0, formato normalizado `X.Y kg` (GPT-5.3-Codex) — ✅ `1f7f9896`
+- [x] P1-B 🔄 — Ampliar regex de `weight` en `_LABELED_PATTERNS` con variantes de label: "Peso corporal", "P.", "peso (kg)", etc.; añadir guards contra falsos positivos (dosis, lab values) (GPT-5.3-Codex) — ✅ `1f7f9896`
+- [x] P1-C 🔄 — Añadir tests unitarios dedicados de normalización de `weight`: formatos válidos (coma, punto, con/sin unidad, gramos), inválidos (0, fuera de rango, None/vacío, dosis) (GPT-5.3-Codex) — ✅ `1f7f9896` (15 passed)
+- [x] P1-D 🔄 — Medir delta de benchmark vs baseline; ajustar confidence/ranking de candidates de `weight` si es necesario (GPT-5.3-Codex) — ✅ `1f7f9896` — 8/18 (44.4%) → 18/18 (100.0%), null_misses: 4→0, false_positives: 1→0
+- [x] CT-2 🔄 — Commit task: scope P1-A + P1-B + P1-C + P1-D → `feat(plan-p1): weight extraction hardening — normalizer, labels, unit tests` → push (GPT-5.3-Codex) — ✅ `1f7f9896`
 
 ### Phase 2 — Observability and quality gates
 
