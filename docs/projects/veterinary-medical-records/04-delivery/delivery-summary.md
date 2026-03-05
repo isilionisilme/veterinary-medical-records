@@ -391,7 +391,7 @@ First end-to-end test suite for the application, covering the 4 critical user fl
 
 | Improvement | Detail |
 |---|---|
-| Step completion integrity | 6 new hard rules: NO-BATCH, CI-FIRST-BEFORE-HANDOFF, PLAN-UPDATE-IMMEDIATO, STEP-LOCK, EVIDENCE BLOCK, AUTO-HANDOFF GUARD |
+| Step completion integrity | 6 new hard rules: NO-BATCH, CI-FIRST-BEFORE-HANDOFF, PLAN-UPDATE-IMMEDIATE, STEP-LOCK, EVIDENCE BLOCK, AUTO-HANDOFF GUARD |
 | execution-rules.md | New § "Step completion integrity" with post-mortem origin |
 | 🔒 STEP LOCKED state | Explicit plan state blocking progress until CI green + plan commit |
 

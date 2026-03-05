@@ -9,10 +9,10 @@ When a plan (`PLAN_*.md`) spans work large enough to require more than one Pull 
 
 Rules:
 
-- Add a `## PR Roadmap` section after the Scope Boundary and before the Estado de ejecución.
-- The roadmap is a table with columns: **PR** (identifier or link), **Rama** (branch name), **Fases** (which plan phases it covers), **Alcance** (short description), **Depende de** (prerequisite PR).
+- Add a `## PR Roadmap` section after the Scope Boundary and before the Execution Status.
+- The roadmap is a table with columns: **PR** (identifier or link), **Branch** (branch name), **Phases** (which plan phases it covers), **Scope** (short description), **Depends on** (prerequisite PR).
 - Each phase belongs to exactly one PR. A phase must **not** be split across PRs.
-- Each execution step in the Estado de ejecución must carry a `**[PR-X]**` tag indicating which PR it belongs to.
+- Each execution step in the Execution Status must carry a `**[PR-X]**` tag indicating which PR it belongs to.
 - A PR is merged only when all its assigned phases pass CI and user review.
 - The roadmap is written when the plan is created or when scope grows beyond a single PR. It may be updated as phases are completed.
 

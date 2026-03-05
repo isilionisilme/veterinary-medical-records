@@ -282,7 +282,7 @@ def test_engineering_playbook_plan_level_pr_roadmap_is_propagated() -> None:
     required_terms = (
         "Plan-level PR Roadmap",
         "Each phase belongs to exactly one PR",
-        "Each execution step in the Estado de ejecución must carry a `**[PR-X]**` tag",
+        "Each execution step in the Execution Status must carry a `**[PR-X]**` tag",
     )
 
     for term in required_terms:
