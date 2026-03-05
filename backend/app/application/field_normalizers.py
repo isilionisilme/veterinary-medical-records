@@ -11,6 +11,7 @@ _DATE_PATTERN = re.compile(
     r"\b(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}|\d{4}[\/\-.]\d{1,2}[\/\-.]\d{1,2})\b"
 )
 _MICROCHIP_DIGITS_PATTERN = re.compile(r"(?<!\d)(\d{9,15})(?!\d)")
+_WEIGHT_VALUE_PATTERN = re.compile(r"(\d+(?:[\.,]\d+)?)")
 
 # pet_name normalization helpers
 _PET_NAME_TRAILING_NOISE = re.compile(
@@ -70,6 +71,7 @@ def normalize_canonical_fields(
     normalized = _normalize_species_and_breed_pair(normalized, evidence_map)
 
     normalized["sex"] = _normalize_sex_value(normalized.get("sex"))
+    normalized["weight"] = _normalize_weight(normalized.get("weight"))
     normalized["microchip_id"] = _normalize_microchip_id(
         value=normalized.get("microchip_id"),
         evidence=(evidence_map.get("microchip_id") if evidence_map else None),
@@ -383,6 +385,38 @@ def _normalize_microchip_id(
     if not normalized:
         return None
     return normalize_microchip_digits_only(normalized)
+
+
+def _normalize_weight(value: object) -> str:
+    cleaned = _normalize_scalar_with_labels(value, ("peso", "peso corporal", "weight", "p."))
+    if not cleaned:
+        return ""
+
+    compact = _normalize_whitespace(cleaned).casefold()
+    match = _WEIGHT_VALUE_PATTERN.search(compact)
+    if not match:
+        return ""
+
+    numeric_raw = match.group(1).replace(",", ".")
+    try:
+        parsed = float(numeric_raw)
+    except ValueError:
+        return ""
+
+    unit_match = re.search(r"\b(kg|kgs|g|gr|grs)\b", compact)
+    unit = unit_match.group(1) if unit_match else None
+    if unit in {"g", "gr", "grs"}:
+        parsed = parsed / 1000
+
+    if parsed == 0:
+        return ""
+
+    if parsed < 0.5 or parsed > 120:
+        return ""
+
+    if parsed.is_integer():
+        return f"{int(parsed)} kg"
+    return f"{parsed:g} kg"
 
 
 def _normalize_date_value(value: object) -> str | None:
