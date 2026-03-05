@@ -85,7 +85,7 @@ For visibility and traceability, mark the active step with the appropriate label
 2. Before executing a `[ ]` step, mark it `⏳ IN PROGRESS (<agent>, <date>)`.
 3. `IN PROGRESS` and `BLOCKED` are text labels, not checkbox states.
 4. On completion, remove any label and mark `[x]`.
-5. On completion, **append the code commit short SHA** for traceability: `- [x] F?-? — Description — ✅ \`abc1234f\``
+5. On completion, **append the code commit short SHA** for traceability: `- [x] F?-? — Description — ✅ \`abc1234f\``. If the step produced no code change (e.g., a verification or check step), use `✅ \`no-commit (<reason>)\`` instead of a SHA.
 6. For `BLOCKED`, include brief reason and next action.
 7. After code commit but before CI green + plan update, mark `🔒 STEP LOCKED`.
 

@@ -38,7 +38,7 @@ AI assistant entrypoint. Keep reads minimal and route by intent.
 - Never edit auto-generated router files directly; edit the canonical source instead.
 
 ## Plan execution
-- **Trigger:** continuation intent ("Continúa", "continue", "go", "proceed", "resume") OR any git operation request (commit, push, branch, merge) while a `PLAN_*.md` is attached or referenced in the conversation.
+- **Trigger:** continuation intent ("Continúa", "continue", "go", "proceed", "resume") OR any git operation request (commit, push, branch, merge) while an active `PLAN_*.md` is attached or its execution is in progress in the current conversation.
 - Load: `docs/projects/veterinary-medical-records/03-ops/plan-execution-protocol.md`.
 - Read Estado de ejecución and take the first `[ ]` step that belongs to the active agent for this chat.
 - If the next unchecked step does not belong to the active agent, STOP and hand off to the required agent.
