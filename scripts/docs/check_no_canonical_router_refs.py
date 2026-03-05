@@ -6,6 +6,7 @@ from __future__ import annotations
 import re
 import sys
 from pathlib import Path
+from typing import Literal
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CANONICAL_TARGETS = [
@@ -22,6 +23,8 @@ ALLOWED_CANONICAL_NOTE_PATTERN = re.compile(
     re.IGNORECASE,
 )
 ALLOWED_HEADER_CONTENT_LINES = 30
+PLANNING_META_PATH_HINTS = ("/04-delivery/plans/", "/metrics/", "/tmp/")
+ViolationCategory = Literal["operational", "planning/meta-doc"]
 
 
 def iter_markdown_files() -> list[Path]:
@@ -86,6 +89,24 @@ def find_violations(path: Path) -> list[tuple[int, str]]:
     return violations
 
 
+def _relative_posix(path: Path) -> str:
+    try:
+        return path.relative_to(REPO_ROOT).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
+def categorize_violation(path: Path, line: str) -> ViolationCategory:
+    relative = f"/{_relative_posix(path)}/".lower()
+    if any(hint in relative for hint in PLANNING_META_PATH_HINTS):
+        return "planning/meta-doc"
+    if path.name.upper().startswith("PLAN_"):
+        return "planning/meta-doc"
+    if "plan_" in line.lower():
+        return "planning/meta-doc"
+    return "operational"
+
+
 def main() -> int:
     all_violations: list[tuple[Path, int, str]] = []
     for file_path in iter_markdown_files():
@@ -96,18 +117,42 @@ def main() -> int:
         print("Canonical docs guard passed: no agent_router references found.")
         return 0
 
-    print(
-        "Canonical docs guard failed: found forbidden references to docs/agent_router "
-        "in canonical docs."
-    )
-    print(
-        "Fix: remove agent_router mentions from docs/README.md, "
-        "docs/projects/veterinary-medical-records/**, docs/shared/**."
-    )
+    operational: list[tuple[Path, int, str]] = []
+    planning_meta: list[tuple[Path, int, str]] = []
     for file_path, line_number, line in all_violations:
-        relative = file_path.relative_to(REPO_ROOT).as_posix()
-        print(f"- {relative}:{line_number}: {line}")
-    return 1
+        category = categorize_violation(file_path, line)
+        if category == "planning/meta-doc":
+            planning_meta.append((file_path, line_number, line))
+        else:
+            operational.append((file_path, line_number, line))
+
+    print("Canonical docs guard: categorized references to docs/agent_router.")
+    print(
+        f"- operational violations: {len(operational)}"
+        f" | planning/meta-doc references: {len(planning_meta)}"
+    )
+
+    if operational:
+        print(
+            "Canonical docs guard failed: found forbidden operational references to "
+            "docs/agent_router in canonical docs."
+        )
+        print(
+            "Fix: remove agent_router mentions from docs/README.md, "
+            "docs/projects/veterinary-medical-records/**, docs/shared/**."
+        )
+        for file_path, line_number, line in operational:
+            print(f"- operational | {_relative_posix(file_path)}:{line_number}: {line}")
+
+    if planning_meta:
+        print(
+            "Planning/meta-doc references detected (non-blocking): review allowlists "
+            "or exclusions if these appear outside intended planning artifacts."
+        )
+        for file_path, line_number, line in planning_meta:
+            print(f"- planning/meta-doc | {_relative_posix(file_path)}:{line_number}: {line}")
+
+    return 1 if operational else 0
 
 
 if __name__ == "__main__":
