@@ -122,9 +122,9 @@ def test_doc_b_golden_goal_fields_regression(monkeypatch) -> None:
     assert isinstance(candidates, dict)
 
     microchip = schema.get("microchip_id")
-    assert microchip in ("", None)
+    assert microchip == "941000024967769"
     microchip_candidates = candidates.get("microchip_id", [])
-    assert microchip_candidates == []
+    assert microchip_candidates
 
     # pet_name — docB has "NOMBRE DEMO" (actually owner name) picked up by
     # unlabeled heuristic near "chip" context. Known false positive.
