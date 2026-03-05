@@ -5,9 +5,9 @@
 **Rama:** `chore/router-directionality-protection`
 **PR:** #205 (draft)
 **Prerequisito:** ENGINEERING_PLAYBOOK eliminado.
-**Worktree:** _(to be selected at execution time per §7)_
-**CI Mode:** _(to be selected at execution time per §7)_
-**Agents:** _(to be selected at execution time per §7)_
+**Worktree:** `D:/Git/veterinary-medical-records`
+**CI Mode:** `1) Strict step gate`
+**Agents:** `Claude Opus 4.6 + Codex 5.3`
 
 ## Context
 
@@ -89,11 +89,11 @@ Los demás directorios (BRAND_GUIDELINES, DOCUMENTATION_GUIDELINES, WAY_OF_WORKI
 
 ### Phase 1 — Renumber router mini-files
 
-- [ ] F1-A 🔄 — **Update MANIFEST.yaml** — Cambiar los 15 targets afectados (6 CODING_STANDARDS + 9 UX_GUIDELINES) a sus nuevos números según las tablas de renumeración.
-- [ ] F1-B 🔄 — **Regenerate router files** — Ejecutar `python scripts/docs/generate-router-files.py`. Verificar que crea archivos con nuevos nombres.
-- [ ] F1-C 🔄 — **Delete orphan files** — Eliminar los 6 archivos huérfanos de CODING_STANDARDS y los 9 de UX_GUIDELINES (los renumerados que quedan con nombre viejo en disco).
-- [ ] F1-D 🔄 — **Validate** — Ejecutar drift check + 61 contract tests. Todos deben pasar.
-- [ ] F1-E 🔄 — **Commit-task CT-1** — Ejecutar CT-1 (SCOPE BOUNDARY: commit code, commit plan update, push).
+- [x] F1-A 🔄 — **Update MANIFEST.yaml** — Cambiar los 15 targets afectados (6 CODING_STANDARDS + 9 UX_GUIDELINES) a sus nuevos números según las tablas de renumeración. — ✅ `0140262c`
+- [x] F1-B 🔄 — **Regenerate router files** — Ejecutar `python scripts/docs/generate-router-files.py`. Verificar que crea archivos con nuevos nombres. — ✅ `0140262c`
+- [x] F1-C 🔄 — **Delete orphan files** — Eliminar los 6 archivos huérfanos de CODING_STANDARDS y los 9 de UX_GUIDELINES (los renumerados que quedan con nombre viejo en disco). — ✅ `0140262c`
+- [x] F1-D 🔄 — **Validate** — Ejecutar drift check + 61 contract tests. Todos deben pasar. — ✅ `0140262c`
+- [x] F1-E 🔄 — **Commit-task CT-1** — Ejecutar CT-1 (SCOPE BOUNDARY: commit code, commit plan update, push). — ✅ `0140262c`
 
 ---
 
