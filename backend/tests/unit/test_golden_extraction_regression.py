@@ -204,6 +204,44 @@ def test_doc_b_hidden_header_clinic_name_is_detected(monkeypatch) -> None:
     assert schema.get("clinic_name") == "HV COSTA AZAHAR"
 
 
+def test_weight_labeled_value_is_extracted_and_normalized(monkeypatch) -> None:
+    raw_text = "\n".join(
+        [
+            "Paciente: Rocky",
+            "Peso corporal: 3,5 kg",
+            "Especie: Canina",
+        ]
+    )
+    data = _build_with_candidates(
+        monkeypatch,
+        doc_id="golden-doc-weight-positive",
+        raw_text=raw_text,
+    )
+
+    schema = data["global_schema"]
+    assert isinstance(schema, dict)
+    assert schema.get("weight") == "3.5 kg"
+
+
+def test_weight_zero_value_is_rejected(monkeypatch) -> None:
+    raw_text = "\n".join(
+        [
+            "Paciente: Sol",
+            "Peso: 0 kg",
+            "Especie: Felina",
+        ]
+    )
+    data = _build_with_candidates(
+        monkeypatch,
+        doc_id="golden-doc-weight-zero-rejected",
+        raw_text=raw_text,
+    )
+
+    schema = data["global_schema"]
+    assert isinstance(schema, dict)
+    assert schema.get("weight") in ("", None)
+
+
 def test_doc_b_header_context_clinic_name_is_detected(monkeypatch) -> None:
     raw_text = "\n".join(
         [
