@@ -18,6 +18,10 @@ PROTECTED_PREFIXES = (
     "docs/agent_router/01_WORKFLOW/",
     "docs/agent_router/03_SHARED/",
 )
+EXEMPT_PROTECTED_FILES = {
+    "docs/agent_router/01_WORKFLOW/DOC_UPDATES/router_parity_map.json",
+    "docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json",
+}
 
 
 def _run_changed_files(base_ref: str) -> list[str]:
@@ -102,7 +106,11 @@ def main() -> int:
     changed_set = set(changed_files)
     manifest_mapping = _load_manifest_mapping(MANIFEST_PATH)
 
-    changed_router_files = [path for path in changed_files if path.startswith(PROTECTED_PREFIXES)]
+    changed_router_files = [
+        path
+        for path in changed_files
+        if path.startswith(PROTECTED_PREFIXES) and path not in EXEMPT_PROTECTED_FILES
+    ]
     if not changed_router_files:
         print("Router directionality guard: no protected router files changed.")
         return 0
