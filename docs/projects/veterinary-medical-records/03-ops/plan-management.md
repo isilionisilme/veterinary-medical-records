@@ -71,14 +71,6 @@ Task chaining policy is part of execution behavior and is defined in [`plan-exec
 
 ---
 
-## 4. Plan Lifecycle
-
-Lifecycle states, archival flow, and close-out behavior are execution concerns and are defined in [`plan-execution-protocol.md` §14](plan-execution-protocol.md#14-iteration-lifecycle-protocol).
-
-This file does not define execution-time lifecycle transitions.
-
----
-
 ## 5. Plan Scope Principle (Hard Rule)
 
 **Plans contain ONLY product/engineering tasks and well-defined operational override steps.** Generic or unscoped operational mentions are NEVER plan steps.
