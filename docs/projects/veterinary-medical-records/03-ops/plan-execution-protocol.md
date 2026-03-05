@@ -64,6 +64,8 @@ In both cases, the agent MUST explain the reason briefly and wait for explicit u
 
 Never mix scope between steps. Each step in Execution Status is an atomic unit: execute its objective and mark progress. Commits/pushes are executed only when the active step is an explicit commit task defined in the plan. If a step fails, report — do not continue to the next one.
 
+**Plan-mode governance (hard rule):** While a plan is active, all git operations (commit, push, branch) are governed by this protocol. Ad-hoc user requests that imply git operations are interpreted through the lens of the active plan step and routed to SCOPE BOUNDARY (§13). There is no "just commit and push" shortcut.
+
 ---
 
 ## 3. Extended Execution State
@@ -403,6 +405,8 @@ The planning agent records the decision, commits, prepares the prompt, and direc
 ---
 
 ## 13. SCOPE BOUNDARY Procedure (Two-Commit Strategy for Commit Tasks)
+
+> **Activation rule:** Any commit or push during active plan execution MUST go through this procedure. If the user requests "commit", "push", or any git operation while a plan step is active, treat it as a SCOPE BOUNDARY trigger — not as an isolated command.
 
 Execute these steps **IN THIS EXACT ORDER**:
 
