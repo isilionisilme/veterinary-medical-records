@@ -480,3 +480,77 @@ def test_build_snapshot_from_interpretation_uses_first_repeatable_value() -> Non
     assert snapshot["fields"]["medication"]["status"] == "accepted"
     assert snapshot["fields"]["medication"]["valueNormalized"] == "Amoxicilina"
     assert snapshot["fields"]["medication"]["topCandidates"][0]["value"] == "Amoxicilina"
+
+
+def test_build_extraction_triage_flags_dob_future_date() -> None:
+    """Test that dob_future_date flag is added when date of birth is in the future."""
+    snapshot = {
+        "runId": "run-dob-future",
+        "documentId": "doc-dob-future",
+        "createdAt": "2026-02-13T20:00:00Z",
+        "fields": {
+            "dob": {
+                "status": "accepted",
+                "confidence": "mid",
+                "valueNormalized": "01/01/2030",  # future date
+            },
+        },
+        "counts": {"accepted": 1, "missing": 0, "rejected": 0, "low": 0, "mid": 1, "high": 0},
+    }
+
+    triage = extraction_observability.build_extraction_triage(snapshot)
+    suspicious_by_field = {item["field"]: item for item in triage["suspiciousAccepted"]}
+
+    dob_flags = suspicious_by_field["dob"]["flags"]
+    assert "dob_future_date" in dob_flags
+
+
+def test_build_extraction_triage_flags_dob_implausibly_old() -> None:
+    """Test that dob_implausibly_old flag is added when animal appears older than 40 years."""
+    snapshot = {
+        "runId": "run-dob-old",
+        "documentId": "doc-dob-old",
+        "createdAt": "2026-02-13T20:00:00Z",
+        "fields": {
+            "dob": {
+                "status": "accepted",
+                "confidence": "high",
+                "valueNormalized": "15/03/1980",  # 45+ years ago
+            },
+        },
+        "counts": {"accepted": 1, "missing": 0, "rejected": 0, "low": 0, "mid": 0, "high": 1},
+    }
+
+    triage = extraction_observability.build_extraction_triage(snapshot)
+    suspicious_by_field = {item["field"]: item for item in triage["suspiciousAccepted"]}
+
+    dob_flags = suspicious_by_field["dob"]["flags"]
+    assert "dob_implausibly_old" in dob_flags
+
+
+def test_build_extraction_triage_flags_dob_matches_visit_date() -> None:
+    """Test that dob_matches_visit_date flag is added when dob == visit_date."""
+    snapshot = {
+        "runId": "run-dob-visit",
+        "documentId": "doc-dob-visit",
+        "createdAt": "2026-02-13T20:00:00Z",
+        "fields": {
+            "dob": {
+                "status": "accepted",
+                "confidence": "low",
+                "valueNormalized": "10/02/2024",
+            },
+            "visit_date": {
+                "status": "accepted",
+                "confidence": "high",
+                "valueNormalized": "10/02/2024",  # same as dob
+            },
+        },
+        "counts": {"accepted": 2, "missing": 0, "rejected": 0, "low": 1, "mid": 0, "high": 1},
+    }
+
+    triage = extraction_observability.build_extraction_triage(snapshot)
+    suspicious_by_field = {item["field"]: item for item in triage["suspiciousAccepted"]}
+
+    dob_flags = suspicious_by_field["dob"]["flags"]
+    assert "dob_matches_visit_date" in dob_flags
