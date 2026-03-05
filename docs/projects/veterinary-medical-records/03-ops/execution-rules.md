@@ -15,7 +15,7 @@ docs/projects/veterinary-medical-records/04-delivery/plans/
 ```
 
 **Active plan file:** The agent attaches the relevant `PLAN_*.md` file when executing `Continúa`.
-Each plan file contains: Estado de ejecución (checkboxes), Cola de prompts, Prompt activo, and iteration-specific context.
+Each plan file contains: Execution Status (checkboxes), Prompt Queue, Active Prompt, and iteration-specific context.
 
 **PR Roadmap:** When a plan spans multiple PRs, it must include a `## PR Roadmap` section mapping phases to PRs. See [`ENGINEERING_PLAYBOOK.md § Plan-level PR Roadmap`](../../../shared/ENGINEERING_PLAYBOOK.md#plan-level-pr-roadmap) for the mandatory format.
 
@@ -40,20 +40,9 @@ These areas score high with evaluators. Any change must preserve them:
 ### Semi-unattended execution (default mode — hard rule)
 
 The default execution mode is **semi-unattended**. After completing a task
-(CI green, step marked `[x]`, PR updated), the agent **MUST** automatically
-continue with the next task if both conditions are met:
-
-**Conditions to chain (both must hold):**
-1. The next task is assigned to the **same agent** that just completed the current one.
-2. A **pre-written prompt** exists for the next task in the `## Cola de prompts` section of the active plan.
-
-**If both hold:** read the prompt from the Cola, execute it (full SCOPE BOUNDARY),
-and evaluate again when done. **DO NOT EMIT HANDOFF. DO NOT STOP.**
-Each Cola block includes a `⚠️ AUTO-CHAIN` reminder naming the next step explicitly.
-
-**If either fails:** the agent stops and generates the standard handoff message
-(STEP F of SCOPE BOUNDARY) so the user opens a new chat with the correct agent
-or asks Claude to write the just-in-time prompt.
+(CI green, step marked `[x]`, PR updated), the agent applies the
+**[decision table](#next-step-instructions-rule-for-all-agents)** to determine
+whether to chain or stop.
 
 **Safety limit:** if the agent detects context exhaustion (truncated responses,
 state loss), it must stop at the current step, complete it cleanly (full SCOPE
@@ -65,54 +54,48 @@ BOUNDARY) and generate the handoff. The next chat resumes from the first `[ ]`.
 > stops mandatorily after every step.
 
 ### Atomic iterations
-Never mix scope between steps. Each step in Estado de ejecución is an atomic unit: execute, commit, push, mark `[x]`. If it fails, report — do not continue to the next one.
+L Never mix scope between steps. Each step in Execution Status is an atomic unit: execute, commit, push, mark `[x]`. If it fails, report — do not continue to the next one.
 
 ### Extended execution state (pending / in-progress / blocked / completed)
-For visibility and traceability, it is **mandatory** to mark the active step with `⏳ EN PROGRESO` **without changing the base checkbox**.
+For visibility and traceability, it is **mandatory** to mark the active step with `⏳ IN PROGRESS` **without changing the base checkbox**.
 
 - **Pending:** `- [ ] F?-? ...`
-- **In progress:** `- [ ] F?-? ... ⏳ EN PROGRESO (<agent>, <date>)`
-- **Blocked:** `- [ ] F?-? ... 🚫 BLOQUEADO (<short reason>)`
+- **In progress:** `- [ ] F?-? ... ⏳ IN PROGRESS (<agent>, <date>)`
+- **Blocked:** `- [ ] F?-? ... 🚫 BLOCKED (<short reason>)`
 - **Step locked:** `- [ ] F?-? ... 🔒 STEP LOCKED (code committed, awaiting CI + plan update)`
 - **Completed:** `- [x] F?-? ...`
 
 Mandatory rules:
 1. Do not use `[-]`, `[~]`, `[...]` or variants: only `[ ]` or `[x]`.
-2. Before executing a `[ ]` step, the agent must mark it `⏳ EN PROGRESO (<agent>, <date>)`.
-3. `EN PROGRESO` and `BLOQUEADO` are text labels at the end of the line, not checkbox states.
-4. On completion, remove any label (`EN PROGRESO`/`BLOQUEADO`/`STEP LOCKED`) and mark `[x]`.
+2. Before executing a `[ ]` step, the agent must mark it `⏳ IN PROGRESS (<agent>, <date>)`.
+3. `IN PROGRESS` and `BLOCKED` are text labels at the end of the line, not checkbox states.
+4. On completion, remove any label (`IN PROGRESS`/`BLOCKED`/`STEP LOCKED`) and mark `[x]`.
 5. On completion, **append the code commit short SHA** to the line for traceability:
    `- [x] F?-? 🔄 — Description (Agent) — ✅ \`abc1234f\``
    If the step produced multiple commits (e.g. fix after CI failure), record the final one.
-6. For `BLOQUEADO`, include brief reason and next action if applicable.
+6. For `BLOCKED`, include brief reason and next action if applicable.
 7. After code commit but before CI green + plan update, mark `🔒 STEP LOCKED`. While locked, **no other step may begin** and **no handoff may be emitted**.
 
-### Agent identity rule (hard rule — applies before any other)
+### Step eligibility rule (hard rule — applies before any other)
 **If the user writes `Continúa`:**
-1. Read the Estado de ejecución in the active plan file and find the first `[ ]` (includes lines with `⏳ EN PROGRESO` or `🚫 BLOQUEADO` labels).
-2. Identify the agent assigned to that step (🔄 Codex or 🚧 Claude).
-3. If the step belongs to the **active agent in this chat**: proceed normally.
-4. If the step belongs to the **other agent**:
-   - **STOP immediately. Do not read the prompt. Do not implement anything.**
-   - Respond EXACTLY with one of these messages:
-     - If next step is Codex: "⚠️ Este paso no corresponde al agente activo. **STOP.** El siguiente paso es de **GPT-5.3-Codex**. Abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** → adjunta el `PLAN` activo → escribe `Continúa`."
-     - If next step is Claude: "⚠️ Este paso no corresponde al agente activo. **STOP.** El siguiente paso es de **Claude Opus 4.6**. Abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta el `PLAN` activo → escribe `Continúa`."
-5. If ambiguous: STOP and ask the user which agent corresponds.
+1. Read the Execution Status in the active plan file and find the first `[ ]` (includes lines with `⏳ IN PROGRESS` or `🚫 BLOCKED` labels).
+2. Apply the **[decision table](#next-step-instructions-rule-for-all-agents)** to determine the action (auto-chain, stop, or report).
+3. If ambiguous: STOP and ask the user for clarification.
 
 ### "Continúa-only" rule
-**When the user writes `Continúa`, the agent executes ONLY what the plan dictates (Estado + corresponding prompt).** If the user's message includes additional instructions alongside "Continúa" (e.g. "Continúa, but don't touch X" or "Continúa and also do Y"), the agent must:
+**When the user writes `Continúa`, the agent executes ONLY what the plan dictates (Execution Status + corresponding prompt).** If the user's message includes additional instructions alongside "Continúa" (e.g. "Continúa, but don't touch X" or "Continúa and also do Y"), the agent must:
 1. **Ignore the extra instructions.**
-2. Respond: "⚠️ El protocolo Continúa ejecuta exactamente el siguiente paso del plan. Si necesitas modificar el alcance, díselo primero a Claude para que actualice el plan y el prompt."
+2. Respond: "⚠️ The Continúa protocol executes exactly the next step in the plan. If you need to change the scope, tell the planning agent first so it can update the plan and the prompt."
 3. Not execute anything until the user confirms with a clean `Continúa`.
 
 ### Rollback
 If a completed step causes an issue not detected by tests:
 1. `git revert HEAD` (reverts commit without losing history)
-2. Edit Estado de ejecución: change `[x]` back to `[ ]` for the affected step
-3. Report to Claude for diagnosis before retrying
+2. Edit Execution Status: change `[x]` back to `[ ]` for the affected step
+3. Report to the planning agent for diagnosis before retrying
 
 ### Plan = agents only
-**The user does NOT edit plan files manually.** Only the agents (Claude and Codex) modify `PLAN_*.md` files. If the user needs to change something (e.g. add a step, fix a typo), they ask Claude and Claude makes the edit + commit.
+**The user does NOT edit plan files manually.** Only the agents modify `PLAN_*.md` files. If the user needs to change something (e.g. add a step, fix a typo), they ask the planning agent and it makes the edit + commit.
 
 ### Plan scope principle (hard rule)
 **Plans (`PLAN_*.md`) contain ONLY product/engineering tasks** — the work that produces deliverable value (code, tests, configuration, documentation content). **Operational protocol is NEVER a plan step.**
@@ -129,7 +112,7 @@ Operational protocol (commit, push, PR creation, merge, post-merge cleanup, bran
 **Why:** When operational steps appear in a plan, agents treat them as tasks requiring explicit prompts and checkboxes, which conflicts with the automatic protocol in SCOPE BOUNDARY. This causes duplication, skipped protocol steps, and confusion about when to execute operational procedures.
 
 ### PR progress tracking (mandatory)
-**Every completed step must be reflected in the active PR for the current iteration.** After finishing the SCOPE BOUNDARY (after push), the agent updates the PR body with `gh pr edit <pr_number> --body "..."`. This is mandatory for both Codex and Claude. If the command fails, report to the user but do NOT block the step.
+**Every completed step must be reflected in the active PR for the current iteration.** After finishing the SCOPE BOUNDARY (after push), the agent updates the PR body with `gh pr edit <pr_number> --body "..."`. This is mandatory for all agents. If the command fails, report to the user but do NOT block the step.
 
 ### CI verification (mandatory — hard rule)
 **No step is considered completed until GitHub CI is green.** Local tests are necessary but NOT sufficient. After push, the agent MUST:
@@ -152,7 +135,7 @@ but must not **commit** the next step until the previous step's CI is green.
 ### NO-BATCH (hard rule)
 **Prohibited: pushing code for multiple plan steps in a single commit.**
 Each step gets its own commit. This ensures atomicity and traceability.
-The agent MAY start *working* on the next step before CI is green (see CI-PIPELINE below),
+The agent MAY start *working* on the next step before CI is green (see [CI-PIPELINE](#ci-pipeline-pipeline-execution-for--auto-chain-steps)),
 but each step's code must be a separate commit+push.
 
 ### CI-PIPELINE (pipeline execution for 🔄 auto-chain steps)
@@ -185,7 +168,7 @@ Commit A → push → start working on B locally (do NOT wait for CI of A)
    - ❌ Red → `git stash` → fix step N → `git commit --amend` → `git push --force` → `git stash pop`.
      After pushing the fix, **resume immediately** with step N+1 (do not wait for the fix CI).
      The fix will be validated at the next CI checkpoint (before committing step N+2).
-3. **A step is NOT marked `[x]` until its CI run is green.** The plan-update commit happens after CI green, per PLAN-UPDATE-IMMEDIATO below.
+3. **A step is NOT marked `[x]` until its CI run is green.** The plan-update commit happens after CI green, per [PLAN-UPDATE-IMMEDIATE](#plan-update-immediate-hard-rule).
 4. **Always run the targeted preflight level** for step N+1's area before committing, regardless of CI result.
    Use the **L1/L2/L3 preflight system** (see [Way of Working § Local Preflight Levels](../../../shared/03-ops/way-of-working.md#4-local-preflight-levels)) as the primary validation tool. The table below lists the individual commands that each level covers — use them for focused debugging, but prefer running the appropriate preflight level as a single command.
 
@@ -215,7 +198,7 @@ Commit A → push → start working on B locally (do NOT wait for CI of A)
    - The change touches composition root (`main.py`) or configuration (`config.py`).
    - You are unsure which tests are affected — run the directory, not the entire suite.
 5. **Maximum pipeline depth: 1.** Never start step N+2 without CI of step N verified.
-6. **Hard-gates (🚧) and agent handoffs** require CI green for ALL pending steps before proceeding.
+6. **Hard-gates (🚧)** require CI green for ALL pending steps before proceeding.
 7. **Force-push is allowed** only on feature branches where a single agent is working.
 
 #### Cancelled CI runs
@@ -232,11 +215,10 @@ cancels CI-A before it finishes. This is **expected and safe**:
 
 #### CI-FIRST still required for
 
-- Handoffs between agents (Codex ↔ Claude)
 - Hard-gate (🚧) steps
 - The last step of an iteration (before merge — verify CI green)
 
-### PLAN-UPDATE-IMMEDIATO (hard rule)
+### PLAN-UPDATE-IMMEDIATE (hard rule)
 **After CI green for a step, the very next commit MUST be the plan update
 (`[ ]` → `[x]`).** No intermediate code commits are allowed between CI green
 and the plan-update commit. Sequence:
@@ -323,12 +305,10 @@ The local preflight system (defined in [Way of Working § Local Preflight Levels
 - If a preflight level fails, fix the issues before proceeding. Do NOT bypass with `--no-verify`.
 
 ### Iteration boundary (mandatory — hard rule)
-**Auto-chain NEVER crosses from one Fase/iteration to another.** When all tasks of the current Fase are `[x]`, the agent stops and returns control to the user, even if the next Fase already has prompts written. Starting a new iteration requires explicit user approval.
+**Auto-chain NEVER crosses from one Phase/iteration to another.** When all tasks of the current Phase are `[x]`, the agent stops and returns control to the user, even if the next Phase already has prompts written. Starting a new iteration requires explicit user approval.
 
 ### Next-step message (mandatory — hard rule)
-**On completing a step, the agent ALWAYS tells the user the next move with concrete instructions.** Never finish without saying which agent to use and what to do next. If there is no next step, say "Todos los pasos completados." Reference STEP F of the SCOPE BOUNDARY template.
-
-**Mandatory handoff format:** when the next step belongs to a **different agent** or is a **🚧 hard-gate**, always "open a new chat" with the exact next agent name (**GPT-5.3-Codex** or **Claude Opus 4.6**). When the next step belongs to the **same agent** and is not a 🚧 hard-gate, the agent announces completion and continues in the same chat (auto-chain). Never say "return to this chat" when a different agent is needed.
+**On completing a step, the agent ALWAYS tells the user the next move with concrete instructions.** Never finish without saying which agent to use and what to do next. If there is no next step, say "All steps completed." Reference STEP F of the SCOPE BOUNDARY template.
 
 ### Token-efficiency policy (mandatory)
 To avoid context explosion between chats and long steps, ALWAYS apply:
@@ -345,14 +325,14 @@ To avoid context explosion between chats and long steps, ALWAYS apply:
 ---
 
 ## Plan-edit-last (hard constraint)
-**Codex does NOT edit the plan file until tests pass and code is committed.** The mandatory sequence is:
+**The execution agent does NOT edit the plan file until tests pass and code is committed.** The mandatory sequence is:
 1. Commit code (without touching the plan)
 2. Tests green (the commit exists, proving the code works)
-3. Only then: edit the plan (mark `[x]`, clean Prompt activo) in a separate commit
+3. Only then: edit the plan (mark `[x]`, clean Active Prompt) in a separate commit
 4. Push both commits together
 
 ### Hard-gates: structured decision protocol
-In 🚧 steps, Claude presents options as a numbered list:
+In 🚧 steps, the planning agent presents options as a numbered list:
 ```
 Backlog items:
 1. ✅ Centralize config in Settings class — Impact: High, Effort: S
@@ -360,60 +340,38 @@ Backlog items:
 3. ❌ Migrate to PostgreSQL — Impact: High, Effort: L (OUT OF SCOPE)
 ```
 The user responds ONLY with numbers: `1, 2, 4` or `all` or `none`.
-Claude then records the decision, commits, prepares the implementation prompt, and directs the user to Codex.
+The planning agent then records the decision, commits, prepares the implementation prompt, and directs the user to the execution agent.
 
 ---
 
 ## Prompt strategy
 
-- **Pre-written prompts** (Cola de prompts): at iteration start, Claude writes prompts for all tasks whose content does not depend on the result of prior tasks. This enables semi-unattended execution: Codex chains consecutive steps reading directly from the Cola.
-- **Just-in-time prompts** (Prompt activo): for tasks whose prompt depends on a prior task's result, Claude writes them in `## Prompt activo` when appropriate.
-- **Prompt resolution** (priority order): Cola de prompts → Prompt activo → STOP (ask Claude).
+- **Pre-written prompts** (Prompt Queue): at iteration start, the planning agent writes prompts for all tasks whose content does not depend on the result of prior tasks. This enables semi-unattended execution: the execution agent chains consecutive steps reading directly from the Prompt Queue.
+- **Just-in-time prompts** (Active Prompt): for tasks whose prompt depends on a prior task's result, the planning agent writes them in `## Active Prompt` when appropriate.
+- **Prompt resolution** (priority order): Prompt Queue → Active Prompt → STOP (ask the planning agent).
 
 ### "Continúa" protocol
 Each prompt includes at the end an instruction for the agent to:
-1. Mark its step as completed in **Estado de ejecución** (changing `[ ]` to `[x]`).
+1. Mark its step as completed in **Execution Status** (changing `[ ]` to `[x]`).
 2. Auto-commit with the standardized message (without asking permission, informing the user of the commit made).
 3. Stop.
 
 ### Next-step instructions (rule for all agents)
 On completing a step, the agent ALWAYS tells the user the next move with concrete instructions.
 
-**2-step decision:**
-1. Does the next step have a pre-written prompt in `## Cola de prompts`?
-2. Is the next step from the same agent or a different one?
+**Decision table:**
 
-| Prompt exists | Same agent | Action |
+| Prompt exists? | Hard-gate? | Action |
 |---|---|---|
-| YES | YES | **AUTO-CHAIN** (no handoff, execute directly) |
-| YES | NO | → Direct to correct agent: "Abre chat nuevo → **[agent]** → adjunta el `PLAN` activo → `Continúa`." |
-| NO | YES | → Direct to Claude first: "No hay prompt para F?-?. Vuelve al chat de **Claude Opus 4.6** y pídele que escriba el prompt. Luego abre chat nuevo con **[current agent]** → adjunta el plan → `Continúa`." |
-| NO | NO | → Direct to Claude: "Abre chat nuevo → **Claude Opus 4.6** → adjunta el plan → `Continúa`." |
+| YES | NO | **AUTO-CHAIN** — execute the next step directly. |
+| YES | YES (🚧) | **STOP** — report: "The next step is a hard-gate requiring user decision." |
+| NO | NO | **STOP** — report: "No prompt exists for F?-?. The planning agent must write one." |
+| NO | YES (🚧) | **STOP** — report: "The next step is a hard-gate requiring user decision." |
 
-**HARD RULE: NEVER direct the user to Codex when there is no prompt.** If the next step is Codex and there is no prompt in the Cola or in `## Prompt activo`, the message is ALWAYS: go to Claude first.
+### Routing for continuation intent
+When any agent receives `Continúa` with the plan file attached:
 
-### Routing de "Continúa" for Codex
-When Codex receives `Continúa` with the plan file attached:
-
-```
-1. Read Estado de ejecución → find the first `[ ]`.
-2. If the step is Claude's (not Codex):
-   → STOP. Tell the user: "⚠️ Este paso no corresponde al agente activo. **STOP.**
-     El siguiente paso es de **Claude Opus 4.6**. Abre un chat nuevo en Copilot →
-     selecciona **Claude Opus 4.6** → adjunta el `PLAN` activo →
-     escribe `Continúa`."
-3. For any Codex step:
-   → Search for prompt in this priority order:
-     a. `## Cola de prompts` → entry with the current step ID.
-     b. `## Prompt activo` → `### Prompt` section.
-   → If neither has a prompt: STOP.
-     Tell the user: "⚠️ No hay prompt pre-escrito para F?-?. Vuelve al chat de
-     **Claude Opus 4.6** y pídele que escriba el prompt para F?-?. Luego abre un
-     chat nuevo con **GPT-5.3-Codex**, adjunta el PLAN activo y escribe `Continúa`."
-4. After completing the step → execute STEP F of SCOPE BOUNDARY
-   (semi-unattended chain check). If conditions are met, chain
-   to next step automatically.
-```
+Follow the **[Step Eligibility Rule](#step-eligibility-rule-hard-rule--applies-before-any-other)** to determine and execute the next step. After execution, run STEP F of SCOPE BOUNDARY.
 
 ---
 
@@ -422,7 +380,7 @@ When Codex receives `Continúa` with the plan file attached:
 Execute these steps IN THIS EXACT ORDER. Do NOT reorder.
 
 ### STEP 0 — BRANCH VERIFICATION (before any code change)
-1. Read the `**Rama:**` field from the current plan file.
+1. Read the `**Branch:**` field from the current plan file.
 2. Check current branch: `git branch --show-current`
 3. If already on the correct branch: proceed to STEP A.
 4. If not: checkout or create the branch as needed.
@@ -443,7 +401,7 @@ Execute these steps IN THIS EXACT ORDER. Do NOT reorder.
 
 ### STEP B — Commit plan update (only after code is committed)
 1. Edit the active plan file: change `- [ ] F?-?` to `- [x] F?-?`.
-2. Clean `## Prompt activo`: replace content with `_Completado: F?-?_` / `_Vacío._`
+2. Clean `## Active Prompt`: replace content with `_Completed: F?-?_` / `_Empty._`
 3. `git add docs/projects/veterinary-medical-records/04-delivery/plans/PLAN_*.md`
 4. `git commit -m "docs(plan-f?-?): mark step done"`
 
@@ -469,34 +427,24 @@ Update with `gh pr edit <pr_number> --body "..."`. Keep existing structure, mark
 4. If failure: diagnose with `gh run view <id> --log-failed | Select-Object -Last 50`, fix, push, repeat.
 5. If unable to fix after 2 attempts: STOP and ask for help.
 
-### STEP F — CHAIN OR HANDOFF (mandatory)
+### STEP F — CHAIN OR STOP (mandatory)
 
 ⚠️ **PRE-CONDITION:** STEP F may ONLY execute if STEP A completed successfully (code commit exists).
 
 ⚠️ **AUTO-HANDOFF GUARD (mandatory):** Before proceeding, run the guard check from § "Step completion integrity" → AUTO-HANDOFF GUARD. If CI is not green or plan is not committed, STOP here.
 
-⚠️ **ITERATION BOUNDARY:** Before evaluating auto-chain, check if the NEXT unchecked `[ ]` step belongs to the same Fase/iteration. If it belongs to a DIFFERENT Fase: **STOP. Do NOT auto-chain across iteration boundaries.**
+⚠️ **ITERATION BOUNDARY:** Before evaluating auto-chain, check if the NEXT unchecked `[ ]` step belongs to the same Phase/iteration. If it belongs to a DIFFERENT Phase: **STOP. Do NOT auto-chain across iteration boundaries.**
 
-1. Next step = first `[ ]` in Estado de ejecución.
-2. Check: is it YOUR agent? Does `## Cola de prompts` have its prompt?
+1. Next step = first `[ ]` in Execution Status.
+2. Check: does it have a prompt? Is it a hard-gate?
 
-| Your agent? | Prompt exists? | Action |
+| Prompt exists? | Hard-gate? | Action |
 |---|---|---|
-| YES | YES | **AUTO-CHAIN** — execute next prompt NOW |
-| YES | NO | HANDOFF → Claude: "abre chat nuevo → Claude Opus 4.6 → adjunta el plan → Continúa" |
-| NO | any | HANDOFF → next agent |
-| no steps left | — | "✓ Todos los pasos completados." |
-
-**Handoff messages (only when table says HANDOFF):**
-
-- **Case A — Next step is ANOTHER agent AND has prompt:**
-  → "✅ F?-? completado. Siguiente: abre un chat nuevo en Copilot → selecciona **[agent name]** → adjunta el `PLAN` activo → escribe `Continúa`."
-- **Case B — Next step is SAME agent but NO prompt (just-in-time):**
-  → "✅ F?-? completado. No hay prompt pre-escrito para F?-?. Vuelve al chat de **Claude Opus 4.6** y pídele que escriba el prompt para F?-?. Luego abre un chat nuevo con **GPT-5.3-Codex**, adjunta el plan y escribe `Continúa`."
-- **Case C — Next step is ANOTHER agent (hard-gate or Claude task):**
-  → "✅ F?-? completado. Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta el `PLAN` activo → escribe `Continúa`."
-
-**HARD RULE: NEVER direct user to Codex when no prompt exists.**
+| YES | NO | **AUTO-CHAIN** — execute next prompt NOW |
+| YES | YES (🚧) | **STOP** — report: "The next step is a hard-gate requiring user decision." |
+| NO | NO | **STOP** — report: "No prompt exists for F?-?. The planning agent must write one." |
+| NO | YES (🚧) | **STOP** — report: "The next step is a hard-gate requiring user decision." |
+| no steps left | — | "✓ All steps completed." |
 
 **Context safety valve:** if context exhausted, complete current step cleanly and handoff.
 NEVER end without telling the user what to do next.
@@ -515,7 +463,7 @@ Branch creation  →  Plan steps  →  PR readiness  →  User approval  →  Me
 ### Branch creation (mandatory — before ANY plan step)
 **The very first action of every iteration is creating and switching to the feature branch.** This happens before writing prompts, before executing any step, and before any code change.
 
-1. Read the `**Rama:**` field from the active plan file.
+1. Read the `**Branch:**` field from the active plan file.
 2. `git fetch origin`
 3. `git checkout -b <rama> origin/main` (create from latest `main`).
 4. Verify: `git branch --show-current` must match the Rama field.
@@ -552,7 +500,7 @@ When the user says "merge" (or equivalent), the agent executes the full protocol
 
 **If any pre-merge check fails:** STOP and report to the user. Do not attempt to fix merge issues autonomously.
 
-> **Important:** After merge + cleanup, proceed immediately to the **Iteration close-out protocol** below. The merge is not done until close-out completes.
+> **Important:** After merge + cleanup, proceed immediately to the **[Iteration close-out protocol](#iteration-close-out-protocol-automatic--not-a-plan-step)**. The merge is not done until close-out completes.
 
 ### Iteration close-out protocol (automatic — not a plan step)
 

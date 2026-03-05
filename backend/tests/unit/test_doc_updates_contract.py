@@ -104,34 +104,22 @@ def test_agents_routes_docs_updated_intent_to_doc_updates() -> None:
     assert "belongs to the active agent for this chat" in text
 
 
-def test_identity_handoff_message_is_canonical_and_persistent() -> None:
-    codex_message = (
-        '"⚠️ Este paso no corresponde al agente activo. **STOP.** '
-        "El siguiente paso es de **GPT-5.3-Codex**. "
-        "Abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** "
-        '→ adjunta el `PLAN` activo → escribe `Continúa`."'
-    )
-    claude_message = (
-        '"⚠️ Este paso no corresponde al agente activo. **STOP.** '
-        "El siguiente paso es de **Claude Opus 4.6**. "
-        "Abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** "
-        '→ adjunta el `PLAN` activo → escribe `Continúa`."'
-    )
-    ambiguous = "selecciona el agente asignado para ese paso"
-    same_chat_1 = "Vuelve a Claude (este chat)"
-    same_chat_2 = "Vuelve al chat de Claude"
-    no_prompt_handoff = "Vuelve al chat de **Claude Opus 4.6** y pídele que escriba el prompt"
-    agents_text = _read_text(ROOT_AGENTS)
+def test_step_eligibility_rule_is_canonical_and_persistent() -> None:
+    """After the auto-chain redesign, agent identity no longer blocks execution.
+    Hard-gates and missing prompts are the only mandatory stop points.
+    The eligibility rule references the decision table instead of
+    re-declaring the logic inline."""
     rules_text = _read_text(EXECUTION_RULES)
-    assert codex_message in agents_text
-    assert claude_message in agents_text
-    assert codex_message in rules_text
-    assert claude_message in rules_text
-    assert no_prompt_handoff in rules_text
-    assert ambiguous not in agents_text
-    assert ambiguous not in rules_text
-    assert same_chat_1 not in rules_text
-    assert same_chat_2 not in rules_text
+    # New eligibility rule exists and references the decision table
+    assert "Step eligibility rule" in rules_text
+    assert "decision table" in rules_text
+    assert "first `[ ]`" in rules_text
+    # Old agent-identity handoff messages must NOT exist
+    assert "This step does not belong to the active agent" not in rules_text
+    # Old Spanish leftovers must NOT exist
+    assert "selecciona el agente asignado para ese paso" not in rules_text
+    assert "Vuelve a Claude (este chat)" not in rules_text
+    assert "Vuelve al chat de Claude" not in rules_text
 
 
 def test_token_efficiency_policy_persists_for_continue_flow() -> None:
