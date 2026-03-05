@@ -5,9 +5,9 @@
 **Branch:** `docs/plan-mode-routing-fix`
 **PR:** pending
 **Prerequisite:** `main` estable.
-**Worktree:** pending user selection
-**CI Mode:** pending user selection
-**Agents:** pending user selection
+**Worktree:** `D:/Git/veterinary-medical-records`
+**CI Mode:** 2 — Pipeline depth-1 gate
+**Agents:** Codex 5.3
 
 ## Context
 
@@ -58,8 +58,8 @@ Root cause: the routing layer (`AGENTS.md`) has a narrow trigger — continuatio
 
 ### Phase 1 — Routing fix
 
-- [ ] F1-A 🔄 — **Apply 3 edits** — (1) Widen `AGENTS.md` plan execution trigger to cover ad-hoc git operations, (2) Add plan-mode governance hard rule to §2 Atomic Iterations, (3) Add activation rule callout to §13 SCOPE BOUNDARY. Single commit.
-- [ ] F1-B 🔄 — **Commit-task CT-1** — Execute CT-1 per SCOPE BOUNDARY.
+- [x] F1-A 🔄 — **Apply 3 edits** — (1) Widen `AGENTS.md` plan execution trigger to cover ad-hoc git operations, (2) Add plan-mode governance hard rule to §2 Atomic Iterations, (3) Add activation rule callout to §13 SCOPE BOUNDARY. Single commit. — ✅ `6846a9fc`
+- [ ] F1-B 🔄 — **Commit-task CT-1** — Execute CT-1 per SCOPE BOUNDARY. ⏳ IN PROGRESS (Codex, 2026-03-05)
 - [ ] F1-C 🔄 — **Regenerate router files** — Run `python scripts/docs/generate-router-files.py` and verify with `--check`. Commit if files changed.
 
 ## Prompt Queue
