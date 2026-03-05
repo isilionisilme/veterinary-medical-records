@@ -1,14 +1,24 @@
-# Start Work (Branch-First)
+<!-- AUTO-GENERATED from canonical source: way-of-working.md — DO NOT EDIT -->
+<!-- To update, edit the canonical source and run: python scripts/docs/generate-router-files.py -->
 
-Before any change (code, docs, config), create a branch first.
+## 1. Starting New Work (Branch First)
 
-## Steps
-1) Confirm working tree is clean.
-2) Ensure base branch is `main`.
-3) Create a new branch using naming rules.
-4) Keep in mind the universal exit rule: for any implemented and testable change, include `How to test` (steps + expected result) in the final response.
+Before making any new changes (code, docs, config, etc.), create a new branch off the appropriate base (default: `main`) using the branch naming conventions defined below.
 
-If any step is ambiguous, STOP and ask.
+**STOP** and ask for confirmation only if the repository state is unsafe or ambiguous (examples: uncommitted changes, merge/rebase in progress, conflicts, or it is unclear whether the current branch already corresponds to the intended work item).
 
-Next: `docs/agent_router/01_WORKFLOW/BRANCHING/00_entry.md`
+### Procedure
 
+1. Confirm repository state is safe:
+   - Working tree is clean (no uncommitted changes).
+   - No merge/rebase in progress.
+   - If not safe, STOP and ask before proceeding.
+2. Ensure the correct base branch:
+   - Default base is `main` unless the user explicitly specifies another base.
+   - Switch to base and update it (`git switch main` then `git pull origin main`).
+3. Create the branch before editing any files:
+   - If already on a correctly named branch for the same work item, proceed.
+   - Otherwise, create a new branch from the updated base (`git switch -c <branch-name>`).
+   - If it is ambiguous whether the current branch is the correct work branch, STOP and ask.
+
+---

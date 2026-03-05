@@ -1,4 +1,9 @@
-# Execution Rule
-- Always prefer completing a smaller, well-defined user story over partially implementing a larger one.
-- Validate every implementation explicitly against the Definition of Done.
-- Do not bypass reviews, tests, or workflow rules to accelerate delivery.
+<!-- AUTO-GENERATED from canonical source: plan-execution-protocol.md — DO NOT EDIT -->
+<!-- To update, edit the canonical source and run: python scripts/docs/generate-router-files.py -->
+
+# Execution Rule (Reference)
+
+For plan execution protocol, load the canonical source directly.
+
+Canonical source:
+- `docs/projects/veterinary-medical-records/03-ops/plan-execution-protocol.md`

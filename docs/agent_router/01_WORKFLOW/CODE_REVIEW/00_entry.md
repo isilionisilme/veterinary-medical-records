@@ -1,101 +1,120 @@
-# Code Review (Entry)
+<!-- AUTO-GENERATED from canonical source: way-of-working.md — DO NOT EDIT -->
+<!-- To update, edit the canonical source and run: python scripts/docs/generate-router-files.py -->
 
-This module is the operational procedure for code reviews in this repo.
+## 6. Code Review Workflow
 
-## Manual trigger only: hard gate
-- Do not start a code review unless the user explicitly asks to run one.
-- Explicit trigger examples: "Do a code review for PR #...", "Review the diff for ...", "Run a code review now".
-- Starting a review includes: fetching PR context for review, reading diffs for review, generating formal review output/comment, suggesting review commits, or any multi-step review run.
-- If review seems needed/helpful, you may propose it, but STOP and wait for explicit instruction.
-- This gate takes precedence over any workflow hint that would otherwise auto-start review-related actions.
+### Manual trigger only (hard rule)
 
-## Review input
-- `git diff main...HEAD`
+Code reviews run **only** when explicitly requested by the user. Never start a code review automatically.
 
-## Pre-review gate (required before diff reading)
-- CI is green or failures are explicitly explained.
-- PR description exists and matches declared scope.
-- Scope is one user story or one technical concern.
-- If plan-linked, `**[PR-X]**` tags align with PR Roadmap.
+### CI prerequisite (hard rule)
 
-If any gate fails, report it under `Must-fix` first.
+Before starting a code review, the agent must verify CI status:
+- **CI in progress:** wait for it to complete before proceeding.
+- **CI green:** proceed with the review.
+- **CI red:** do NOT start the review. Inform the user that CI is failing and ask whether they want the agent to diagnose and fix the failures first. Only start the review after CI is green.
 
-## Review focus (maintainability-first)
-1) Layering and dependency direction (domain/app/api/infra boundaries)
-2) Maintainability (clear responsibilities, low duplication, cohesive units)
-3) Testability (core logic testable without frameworks; integration tests for wiring)
-4) Simplicity over purity (flag overengineering; prefer removing complexity)
-5) CI/tooling sanity (reproducible lint/tests, justified deps/config/env changes)
-6) Database migrations/schema safety (rollback intent, no unintended data loss, explicit null/default decisions)
-7) UX/Brand compliance for `frontend/**` or user-visible changes (against UX and Brand docs)
+### Review Depth
 
-## Severity criteria (for consistent classification)
-- `Must-fix`: correctness/security/contract/layering breaks, missing tests for changed behavior, data-loss risks.
-- `Should-fix`: maintainability risks that do not immediately block merge.
-- `Nice-to-have`: optional readability/style refinements.
+When suggesting or starting a review, the agent recommends a depth level based on the Pull Request's risk profile. The user confirms, adjusts, or overrides before the review begins.
 
-## Output format (mandatory)
-The PR review comment must follow this exact structure and heading names:
+| Depth | When to recommend | Parallel lenses | What it covers |
+|-------|-------------------|:---:|----------------|
+| **Light** | Docs-only, config changes, formatting, simple renames | 1 | Correctness, consistency, no regressions |
+| **Standard** | Normal code changes | 1 | Full review focus (all 7 areas below) |
+| **Deep** | Security-sensitive, data-loss risk, architectural changes, critical user paths | 2 | Two parallel reviews with different lenses |
+| **Deep (critical)** | User requests it, or agent recommends when security + architecture + data concerns overlap | 3 | Two parallel reviews with different lenses |
 
-```md
-## AI Code Review
+**Deep / Deep (critical) review Procedure:**
 
-### Must-fix
-1. **<short finding title>**
-   - **File:** `<path>:<line>` (or `N/A` if it is not file-specific)
-   - **Why:** <short rationale>
-   - **Minimal change:** <smallest concrete fix>
+1. The orchestrating agent proposes review lenses based on context (e.g., maintainability-first + security-first, or architecture-first + regression-first + data-integrity-first). The user confirms or adjusts the lenses before the reviews start.
+2. Each lens runs as an independent sub-agent in parallel.
+3. Each sub-agent publishes its own findings as a **separate Pull Request comment**, tagged with the lens name (e.g., `## Code Review — Security-First Lens`). This ensures all raw findings are permanently recorded.
+4. After all sub-agent reviews are posted, a **consolidation agent** reads all review comments and publishes a final **consolidated review comment** that:
+   - Deduplicates equivalent findings across lenses.
+   - Assigns the highest severity when lenses disagree.
+   - Uses the standard Review Output Format.
+   - References the original lens comments for traceability.
 
-### Should-fix
-1. **<short finding title>**
-   - **File:** `<path>:<line>` (or `N/A`)
-   - **Why:** <short rationale>
-   - **Minimal change:** <smallest concrete fix>
+### Review Focus (maintainability-first)
 
-### Nice-to-have
-1. **<short finding title>**
-   - **File:** `<path>:<line>` (or `N/A`)
-   - **Why:** <short rationale>
-   - **Minimal change:** <smallest concrete fix>
+### Pre-review checklist
 
-### Questions / assumptions
-1. <question>
+Pre-review gate (required before diff reading):
 
-### Pre-existing issues
-1. **<short finding title>**
-  - **File:** `<path>:<line>` (or `N/A`)
-  - **Why:** <why it predates the current PR>
-  - **Suggested follow-up:** <issue/debt item recommendation>
+Before reading the diff, complete a pre-review checklist:
+- Confirm scope and changed paths.
+- Confirm CI status and required checks.
+- Confirm risk profile and review depth.
 
-### UX/Brand Compliance
-- **Compliant:**
-  - <item>
-- **Non-compliant / risk:**
-  - <item>
-```
+1. **Layering and dependency direction** — `domain/` has no framework/db imports; `application/` depends only on `domain/` + `ports/`; `api/` is thin; `infra/` is persistence/IO only.
+2. **Maintainability** — clear naming, low duplication, cohesive modules, correct layer placement.
+3. **Testability** — core logic testable without frameworks; unit + integration tests.
+4. **Simplicity over purity** — flag overengineering; prefer removing complexity.
+5. **CI/tooling sanity** — reproducible lint/tests, justified dependency/config changes.
+6. **Database migrations/schema safety** — reversible or explicit rollback plan, no unintended data loss.
+7. **UX/Brand compliance** — for `frontend/**` or user-visible changes.
 
-Rules:
-- Keep section order exactly as above.
-- Number findings/questions (`1.`, `2.`, ...), do not use bullets for those lists.
-- For `Must-fix` / `Should-fix` / `Nice-to-have`, every item must include all three fields: `File`, `Why`, `Minimal change`.
-- If pre-existing issues are found, use `Pre-existing issues` and do not block current PR merge with those findings.
-- `UX/Brand Compliance` is mandatory for `frontend/**` or any user-visible change. If not applicable, include:
-  - `- **Compliant:**`
-  - `  - N/A (non-user-visible change).`
-  - `- **Non-compliant / risk:**`
-  - `  - None.`
+### Severity Classification
 
-## Mandatory publication protocol (blocking)
-- If the review is for a PR (or PR id can be resolved), you MUST publish the review output as a PR comment before finishing.
-- A code review is not complete until:
-  1) the PR comment is posted, and
-  2) the PR comment URL is returned to the user.
-- If one or more findings are later addressed in commits, you MUST publish a follow-up PR comment summarizing addressed points and include the follow-up comment URL in your response.
-- This follow-up publication rule applies whenever you perform a code review (always), regardless of how the review was initiated.
-- If PR id/reference is missing, resolve it first. If it cannot be resolved or auth is missing, STOP and ask.
+Compatibility note: this section is also referenced as **Severity classification criteria** in legacy router contracts.
 
-## Safety rule
-After producing the review, STOP and wait for explicit user instruction before making code changes.
+| Severity | Criteria | Blocks merge? |
+|----------|----------|:---:|
+| **Must-fix** | Incorrect behavior, security vulnerability, broken contract, layer violation, missing tests for changed behavior, data-loss risk | Yes |
+| **Should-fix** | Naming/structure that obscures intent, duplicated logic, missing error handling, documentation drift | No (with acceptance) |
+| **Nice-to-have** | Style improvements, small readability refinements, simplification ideas | No |
 
-Next: `docs/agent_router/01_WORKFLOW/CODE_REVIEW/10_review_checklist.md`
-Next: `docs/agent_router/01_WORKFLOW/CODE_REVIEW/20_pr_commenting.md`
+### Review Output Format
+
+Every review must use the mandatory format with sections (in order):
+1. Must-fix
+2. Should-fix
+3. Nice-to-have
+4. Questions / assumptions
+5. Pre-existing issues
+6. UX/Brand Compliance
+
+Each finding includes: **File**, **Why**, **Minimal change**.
+
+### Review Publication
+
+### Mandatory publication protocol (blocking)
+
+Blocking execution sequence:
+1. Publish the review as a Pull Request comment.
+2. Return the published PR comment URL.
+3. When remediation commits are pushed, publish a follow-up PR comment.
+4. Return the follow-up PR comment URL.
+
+A review is blocking until the PR comment URL is returned to the user.
+- A follow-up PR comment is required after remediation commits.
+- This follow-up must be published automatically as part of the remediation workflow (do not wait for a separate user prompt).
+
+- The review MUST be published as a Pull Request comment.
+- A review is not complete until the Pull Request comment is posted and the URL is returned.
+- **Follow-up verification (hard rule).** When commits address review findings, the agent MUST post a follow-up Pull Request comment confirming which findings are resolved, which remain open, and which introduced new concerns. A review cycle is not closed until this follow-up comment is posted.
+
+### Safety Rule
+
+After producing a review, **STOP** and wait for explicit user instruction before making code changes.
+
+### Pre-Existing Issues
+
+Compatibility note: this section is also referenced as **Pre-existing issues policy** in legacy router contracts.
+
+Issues that clearly predate the Pull Request:
+- Do NOT classify as Must-fix for the current Pull Request.
+- Report in a separate "Pre-existing issues" section.
+- Recommend a follow-up issue when impact is significant.
+
+### Large Diff Policy
+
+Compatibility note: this section is also referenced as **Large diff policy** in legacy router contracts.
+
+If the Pull Request diff exceeds ~400 lines of non-generated code:
+- Report a Should-fix noting reduced review confidence.
+- Suggest a split strategy when visible.
+- Continue the review with stated confidence limitations.
+
+---

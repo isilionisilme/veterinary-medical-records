@@ -1,139 +1,120 @@
-# Code Reviews
+<!-- AUTO-GENERATED from canonical source: way-of-working.md — DO NOT EDIT -->
+<!-- To update, edit the canonical source and run: python scripts/docs/generate-router-files.py -->
 
-Apply the following rules by default to every future code review in this repo unless explicitly overridden.
+## 6. Code Review Workflow
 
-- Reviews focus on:
-  - Correctness and alignment with the intended behavior
-  - Clarity, readability, and maintainability
-  - Adherence to the Engineering Guidelines and architectural intent
-  - Explicit handling of edge cases, errors, and state transitions
-  - Test coverage and test quality
+### Manual trigger only (hard rule)
 
-## Code Review stance
+Code reviews run **only** when explicitly requested by the user. Never start a code review automatically.
 
-- Reviews must be constructive and pragmatic.
-- Prioritize shared understanding and long-term code health over stylistic preferences.
-- Optimize for clarity, testability, and low coupling.
-- Prefer small, high-impact fixes over large refactors.
-- Avoid overengineering suggestions.
-- Do not propose new dependencies or new architectural patterns unless explicitly required.
+### CI prerequisite (hard rule)
 
-## Pre-review checklist
+Before starting a code review, the agent must verify CI status:
+- **CI in progress:** wait for it to complete before proceeding.
+- **CI green:** proceed with the review.
+- **CI red:** do NOT start the review. Inform the user that CI is failing and ask whether they want the agent to diagnose and fix the failures first. Only start the review after CI is green.
 
-Before reading the code diff, verify:
-- [ ] CI status is green (or failures are explicitly explained)
-- [ ] PR description exists and matches declared scope
-- [ ] PR scope remains a single user story or single technical concern
-- [ ] If plan-linked, each step carries a valid `**[PR-X]**` tag aligned with the PR Roadmap
+### Review Depth
 
-If any item fails, report it as Must-fix before continuing the code-level review.
+When suggesting or starting a review, the agent recommends a depth level based on the Pull Request's risk profile. The user confirms, adjusts, or overrides before the review begins.
 
-## Severity classification criteria
+| Depth | When to recommend | Parallel lenses | What it covers |
+|-------|-------------------|:---:|----------------|
+| **Light** | Docs-only, config changes, formatting, simple renames | 1 | Correctness, consistency, no regressions |
+| **Standard** | Normal code changes | 1 | Full review focus (all 7 areas below) |
+| **Deep** | Security-sensitive, data-loss risk, architectural changes, critical user paths | 2 | Two parallel reviews with different lenses |
+| **Deep (critical)** | User requests it, or agent recommends when security + architecture + data concerns overlap | 3 | Two parallel reviews with different lenses |
 
-Use these criteria to classify findings consistently:
+**Deep / Deep (critical) review Procedure:**
 
-**Must-fix** (blocks merge):
-- incorrect behavior or logic error
-- security vulnerability or data leak
-- broken contract (API/schema mismatch, missing validation)
-- layer violation (domain imports infra/framework, business logic in API handlers)
-- missing or broken tests for changed behavior
-- data loss risk or silent overwrite of human edits
+1. The orchestrating agent proposes review lenses based on context (e.g., maintainability-first + security-first, or architecture-first + regression-first + data-integrity-first). The user confirms or adjusts the lenses before the reviews start.
+2. Each lens runs as an independent sub-agent in parallel.
+3. Each sub-agent publishes its own findings as a **separate Pull Request comment**, tagged with the lens name (e.g., `## Code Review — Security-First Lens`). This ensures all raw findings are permanently recorded.
+4. After all sub-agent reviews are posted, a **consolidation agent** reads all review comments and publishes a final **consolidated review comment** that:
+   - Deduplicates equivalent findings across lenses.
+   - Assigns the highest severity when lenses disagree.
+   - Uses the standard Review Output Format.
+   - References the original lens comments for traceability.
 
-**Should-fix** (strong recommendation, merge can proceed with explicit acceptance):
-- naming or structure that obscures intent
-- duplicated logic likely to drift
-- missing error handling for realistic failure modes
-- tests that do not validate meaningful behavior
-- documentation drift from implemented behavior
+### Review Focus (maintainability-first)
 
-**Nice-to-have** (optional improvements):
-- style-level improvements within existing conventions
-- small readability refinements
-- simplification ideas that do not affect correctness
+### Pre-review checklist
 
-## Code Review Guidelines
+Pre-review gate (required before diff reading):
 
-When performing code reviews in this repository, use a **maintainability-focused** review style.
+Before reading the diff, complete a pre-review checklist:
+- Confirm scope and changed paths.
+- Confirm CI status and required checks.
+- Confirm risk profile and review depth.
 
-Review emphasis:
-- Keep changes within the requested scope.
-- Keep the dependency footprint minimal; add dependencies only when needed.
-- Keep architecture consistent with the agreed design; introduce new patterns only when a story/design requires it.
-- Keep solutions lightweight and easy to explain to evaluators.
+1. **Layering and dependency direction** — `domain/` has no framework/db imports; `application/` depends only on `domain/` + `ports/`; `api/` is thin; `infra/` is persistence/IO only.
+2. **Maintainability** — clear naming, low duplication, cohesive modules, correct layer placement.
+3. **Testability** — core logic testable without frameworks; unit + integration tests.
+4. **Simplicity over purity** — flag overengineering; prefer removing complexity.
+5. **CI/tooling sanity** — reproducible lint/tests, justified dependency/config changes.
+6. **Database migrations/schema safety** — reversible or explicit rollback plan, no unintended data loss.
+7. **UX/Brand compliance** — for `frontend/**` or user-visible changes.
 
-Primary review focus (in order):
-1) Layering and dependency direction:
-   - `domain` has no framework/db imports
-   - `application` depends only on `domain` + `ports`
-   - `api` is thin (HTTP + mapping only; no SQL/business logic)
-   - `infra` contains persistence/IO only
-2) Maintainability:
-   - clear naming and responsibilities
-   - low duplication
-   - small, cohesive modules/functions
-   - logic located in the correct layer
-3) Testability:
-   - core application logic testable without FastAPI or sqlite
-   - presence and quality of unit tests for services
-   - integration tests cover HTTP + wiring
-4) Simplicity over purity:
-   - flag overengineering risks
-   - prefer removing complexity over adding abstraction
-5) CI and tooling sanity:
-   - workflows valid
-   - tests and lint runnable and reproducible
-   - new environment variables documented with safe defaults
-   - dependency changes in `pyproject.toml` / requirements are justified
-   - Docker/container changes do not break local dev or CI
-6) Database migrations and schema changes:
-   - migration is reversible or has explicit rollback plan
-   - schema change does not cause unintended data loss
-   - defaults and nullability choices are explicit and intentional
-   - migration order matches dependency chain
+### Severity Classification
 
-## Code Review Output Format
+Compatibility note: this section is also referenced as **Severity classification criteria** in legacy router contracts.
 
-Produce the review using this mandatory output format:
-   - Must-fix (blocking maintainability or correctness issues)
-   - Should-fix (strong recommendations)
-   - Nice-to-have (optional improvements)
-   - Questions / assumptions
+| Severity | Criteria | Blocks merge? |
+|----------|----------|:---:|
+| **Must-fix** | Incorrect behavior, security vulnerability, broken contract, layer violation, missing tests for changed behavior, data-loss risk | Yes |
+| **Should-fix** | Naming/structure that obscures intent, duplicated logic, missing error handling, documentation drift | No (with acceptance) |
+| **Nice-to-have** | Style improvements, small readability refinements, simplification ideas | No |
 
-For PRs that include `frontend/**` or user-visible behavior/copy changes, include:
-   - UX/Brand Compliance (mandatory section)
-   - Any UX/Brand non-compliance must be reported under Must-fix.
+### Review Output Format
 
-Each finding must include:
-- File reference(s)
-- Short rationale
-- Minimal suggested change
+Every review must use the mandatory format with sections (in order):
+1. Must-fix
+2. Should-fix
+3. Nice-to-have
+4. Questions / assumptions
+5. Pre-existing issues
+6. UX/Brand Compliance
 
-## Test review criteria
+Each finding includes: **File**, **Why**, **Minimal change**.
 
-When evaluating tests in the PR:
-- tests assert externally observable behavior, not implementation details
-- test names clearly describe scenario and expected outcome
-- changed behavior includes happy path and at least one meaningful failure case
-- tests are independent of execution order and shared mutable state
-- mocks/stubs are minimal and concentrated at infrastructure boundaries
+### Review Publication
 
-## Large diff policy
+### Mandatory publication protocol (blocking)
 
-If the PR diff exceeds approximately 400 lines of non-generated code:
-- report a Should-fix noting reduced review confidence due to size
-- suggest a split strategy when a clear split is visible
-- continue the review and clearly state any confidence limitations
+Blocking execution sequence:
+1. Publish the review as a Pull Request comment.
+2. Return the published PR comment URL.
+3. When remediation commits are pushed, publish a follow-up PR comment.
+4. Return the follow-up PR comment URL.
 
-## Pre-existing issues policy
+A review is blocking until the PR comment URL is returned to the user.
+- A follow-up PR comment is required after remediation commits.
+- This follow-up must be published automatically as part of the remediation workflow (do not wait for a separate user prompt).
 
-If you find issues that clearly predate the PR:
-- do not classify them as Must-fix for the current PR
-- report them in a separate "Pre-existing issues" section
-- recommend a follow-up issue when impact is significant
+- The review MUST be published as a Pull Request comment.
+- A review is not complete until the Pull Request comment is posted and the URL is returned.
+- **Follow-up verification (hard rule).** When commits address review findings, the agent MUST post a follow-up Pull Request comment confirming which findings are resolved, which remain open, and which introduced new concerns. A review cycle is not closed until this follow-up comment is posted.
 
-## Code Review Safety rule
+### Safety Rule
 
-After producing a PR code review, STOP and wait for explicit user instruction before making any code changes.
+After producing a review, **STOP** and wait for explicit user instruction before making code changes.
 
-Do not modify code as part of the review step unless explicitly asked to do so.
+### Pre-Existing Issues
+
+Compatibility note: this section is also referenced as **Pre-existing issues policy** in legacy router contracts.
+
+Issues that clearly predate the Pull Request:
+- Do NOT classify as Must-fix for the current Pull Request.
+- Report in a separate "Pre-existing issues" section.
+- Recommend a follow-up issue when impact is significant.
+
+### Large Diff Policy
+
+Compatibility note: this section is also referenced as **Large diff policy** in legacy router contracts.
+
+If the Pull Request diff exceeds ~400 lines of non-generated code:
+- Report a Should-fix noting reduced review confidence.
+- Suggest a split strategy when visible.
+- Continue the review with stated confidence limitations.
+
+---

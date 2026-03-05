@@ -1,171 +1,170 @@
-# Documentation Guidelines
-
-Documentation is a code quality requirement. All AI coding assistants must treat documentation as part of the deliverable and keep it consistent with the implementation.
+<!-- AUTO-GENERATED from canonical source: documentation-guidelines.md — DO NOT EDIT -->
+<!-- To update, edit the canonical source and run: python scripts/docs/generate-router-files.py -->
 
 ## Purpose
 
-Documentation must make the system understandable, maintainable, and reviewable by other engineers.
-All user-facing written communication must be in English (documentation, pull request titles/descriptions, review comments, ADRs, and release notes).
+Documentation is a **code quality requirement**. All contributors (human and AI) must treat documentation as part of the deliverable and keep it consistent with the implementation.
+
+All user-facing written communication must be in **English** (documentation, pull request titles/descriptions, review comments, ADRs, and release notes).
 
 Document:
 - Intent and responsibility
 - Contracts and schemas
 - Design decisions and tradeoffs
 
-Do not restate obvious code behavior.
+Do **not** restate obvious code behavior.
 
 Documentation is reviewed together with the code.
 
-## Documentation layers
+---
+
+## Documentation Layers
 
 The project uses three complementary documentation layers. All must stay consistent:
 
-- In-code documentation (docstrings and types)
-- API documentation (auto-generated from FastAPI + schemas)
-- Repository and architecture documentation (Engineering Playbook; ADR-style notes when explicitly requested)
+1. **In-code documentation** — docstrings and type annotations
+2. **API documentation** — auto-generated from FastAPI + schemas
+3. **Repository and architecture documentation** — canonical docs, ADR-style notes when explicitly requested
 
-## In-code documentation rules
+---
 
-AI assistants must add docstrings to:
+## In-Code Documentation Rules
 
+### When to add docstrings
+
+Add docstrings to:
 - Public modules
 - Domain and application services
 - Public functions and methods
 - Non-trivial orchestration logic
 - Integration and adapter boundaries
 
-Docstrings must include when relevant:
+### Docstring content
 
+Docstrings must include when relevant:
 - Purpose and responsibility
 - Inputs and outputs
 - Requirements and invariants
 - Error conditions and exceptions
 - Side effects and state changes
 
-Docstring style requirements:
+### Docstring style
 
-- Use Google-style docstrings
-- Follow PEP 257 structure
-- First line: short summary sentence
-- Then structured sections when applicable (Args, Returns, Raises, Side Effects, Notes)
+- Use **Google-style** docstrings.
+- Follow **PEP 257** structure.
+- First line: short summary sentence.
+- Then structured sections when applicable: `Args`, `Returns`, `Raises`, `Side Effects`, `Notes`.
+
+### When NOT to add docstrings
 
 Do NOT add docstrings for:
-
 - Trivial helpers
 - Self-explanatory one-liners
 - Simple pass-through logic
 - Code already fully clear from names and types
 
-## Types and contracts
+---
 
-- All public functions and methods must include type hints.
+## Types and Contracts
+
+- All public functions and methods must include **type hints**.
 - Treat **type annotations, signatures, and schemas** as part of the documentation contract.
 - Ensure all public interfaces include explicit types or schemas when supported.
-- Do not duplicate type information in docstrings when already explicit in signatures.
+- Do **not** duplicate type information in docstrings when already explicit in signatures.
 
-## API documentation rules
+---
 
-For every HTTP endpoint, AI assistants must ensure:
+## API Documentation Rules
 
-- Route includes summary and description
-- Explicit request and response models are defined
-- Schema fields include meaningful descriptions
+For every HTTP endpoint, ensure:
+- Route includes **summary and description**.
+- Explicit **request and response models** are defined.
+- Schema fields include **meaningful descriptions**.
 
-API documentation generated via OpenAPI/Swagger from:
-
+API documentation is generated via OpenAPI/Swagger from:
 - FastAPI route metadata
 - Pydantic model field descriptions
 - Type annotations
 
 This auto-generated API documentation is considered part of the deliverable.
 
-## Public interface documentation
+---
+
+## Public Interface Documentation
 
 For any public interface (API, service, adapter, or module boundary):
-
 - Add a short summary.
 - Add a behavior description if not obvious.
 - Document input/output contracts.
 - Add parameter/field descriptions where they add clarity.
 - Prefer metadata compatible with automatic documentation generators when available.
 
-## Architecture and design documentation
+---
 
-Architecture and structural rules must be documented outside the code in the Engineering Playbook.
+## Architecture and Design Documentation
 
-AI assistants must NOT invent or modify architecture or design documents unless explicitly instructed.
+Architecture and structural rules must be documented outside the code in canonical documents (not inline).
+
+AI assistants must **NOT** invent or modify architecture or design documents unless explicitly instructed.
 
 When explicitly requested, record non-obvious technical decisions as short ADR-style notes including:
-
 - Decision
 - Rationale
 - Tradeoffs
 
-## Commenting rules
+---
+
+## Commenting Rules
 
 Comments must explain:
-
-- Why a decision was made
-- Why alternatives were rejected
+- **Why** a decision was made
+- **Why** alternatives were rejected
 - Domain assumptions
 - Non-obvious requirements
 
-Comments must NOT:
-
+Comments must **NOT**:
 - Repeat what the code literally does
 - Describe syntax-level behavior
 - Drift from the implementation
 
 Outdated comments must be removed or updated in the same change.
 
-## Documentation maintenance rule
+---
 
-When a change modifies:
+## When Documentation Must Be Updated
 
+When a change modifies any of the following, the corresponding documentation must be updated **in the same change set**:
 - Public behavior
 - Contracts
 - Data schemas
 - Module responsibilities
 
-AI assistants must update the corresponding documentation in the same change set.
-
-A change is not complete if implementation and documentation diverge.
-
-## How to add a new User Story
-
-When asked to add a new User Story, update [`docs/projects/veterinary-medical-records/04-delivery/implementation-plan.md`](../../../projects/veterinary-medical-records/04-delivery/implementation-plan.md) in two places:
-
-1) Add the story in the relevant **User Stories (in order)** list for its release.
-2) Add or update the full **User Story Details** section for that story.
-
-If the requested story is not yet scheduled in any release, schedule it in the Release Plan:
-
-- Add it to an existing release, or
-- create a new release section when needed.
-
-Minimal required fields for each story detail entry:
-
-- ID (e.g., `US-22`)
-- Title
-- Goal (via `User Story` statement)
-- Acceptance Criteria
-- Tech Requirements (in `Authoritative References`)
-- Dependencies (in `Scope Clarification` and/or ordering references)
-
-Deterministic release assignment rules:
-
-- If the requester names a release explicitly, use that release.
-- Otherwise assign to the earliest viable release based on dependencies and existing story order.
-- If no existing release is viable, create a new release after the last dependent release.
-
-Completion checklist before finishing:
-
-- Story appears in release-level **User Stories (in order)**.
-- Story appears in **User Story Details** with required fields.
-- Formatting and section structure remain consistent with existing stories.
-- No unrelated documentation edits are bundled.
-
-Workflow reference:
-- Follow `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/65_add-user-story-workflow.md`.
+**A change is not complete if implementation and documentation diverge.**
 
 ---
+
+## Change Classification
+
+Every documentation change falls into one of three categories:
+
+| Code | Classification | Definition |
+|------|---------------|------------|
+| **R** | Rule change | Affects behavior or process. Must be propagated to the owning canonical document. |
+| **C** | Clarification | No behavior change. Improves readability or precision. |
+| **N** | Navigation | Structure, links, or organization changes only. |
+
+Mixed classification is allowed within one file (e.g., a change that both clarifies wording and modifies a rule).
+
+---
+
+## Documentation Verification Checklist
+
+Before considering a documentation change complete, verify:
+
+- [ ] Links are not broken.
+- [ ] Markdown fences are balanced.
+- [ ] No duplicated rules across documents.
+- [ ] All rule changes (**R**) are propagated to the owning canonical document.
+- [ ] Documentation and implementation are consistent.
+- [ ] Docstrings match current behavior of the code they describe.
+- [ ] No outdated comments remain.

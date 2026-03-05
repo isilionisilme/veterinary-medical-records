@@ -1,37 +1,39 @@
-# ENGINEERING_PLAYBOOK — Modules
+<!-- AUTO-GENERATED from canonical source: coding-standards.md, documentation-guidelines.md, way-of-working.md — DO NOT EDIT -->
+<!-- To update, edit the canonical source and run: python scripts/docs/generate-router-files.py -->
 
-This content was split into smaller modules for token-optimized assistant reads.
+# ENGINEERING_PLAYBOOK — Modules
 
 Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for intent routing.
 
-## Index
-- `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/10_preamble.md`
-- `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/20_change-discipline.md`
-- `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/30_code-style-consistency.md`
-- `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/40_structure-separation-of-concerns.md`
-- `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/50_explicit-contracts-schemas.md`
-- `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/60_state-management-workflow-safety.md`
-- `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/70_traceability-human-control.md`
-- `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/80_error-handling-observability.md`
-- `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/90_observability-metrics.md`
-- `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/100_testing-discipline.md`
-- `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/110_data-handling-safety.md`
-- `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/120_configuration-environment-separation.md`
-- `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/130_versioning-evolution.md`
-- `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/140_dependency-management.md`
-- `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/150_documentation-guidelines.md`
-- `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/160_naming-conventions.md`
-- `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/170_starting-new-work-branch-first.md`
-- `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/180_delivery-model-releases.md`
-- `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/190_branching-strategy.md`
-- `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/200_commit-discipline.md`
-- `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/210_pull-requests.md`
-- `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/220_code-reviews.md`
-- `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/230_user-story-kickoff-checklist.md`
-- `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/240_definition-of-done.md`
-- `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/250_execution-rule.md`
+## Modules
 
-## Propagated updates
-- User-story completion discipline includes same-change status propagation to implementation-plan owner modules when requested.
-- Backfill policy for implemented story status/date updates remains allowed when explicitly requested.
-- Shared pull-request guidance now references canonical UX/brand sources directly.
+- `10_preamble.md` — Purpose
+- `20_change-discipline.md` — Change Discipline
+- `30_code-style-consistency.md` — Code Style & Consistency
+- `40_structure-separation-of-concerns.md` — Structure & Separation of Concerns
+- `50_explicit-contracts-schemas.md` — Explicit Contracts & Schemas
+- `60_state-management-workflow-safety.md` — State Management & Workflow Safety
+- `70_traceability-human-control.md` — Traceability & Human Control
+- `80_error-handling-observability.md` — Error Handling & Observability
+- `100_testing-discipline.md` — Testing Discipline
+- `110_data-handling-safety.md` — Data Handling & Safety
+- `120_configuration-environment-separation.md` — Configuration & Environment Separation
+- `130_versioning-evolution.md` — Versioning & Evolution
+- `140_dependency-management.md` — Dependency Management
+- `150_documentation-guidelines.md` — Documentation Guidelines
+- `160_naming-conventions.md` — Naming Conventions
+- `170_starting-new-work-branch-first.md` — 1. Starting New Work (Branch First)
+- `180_delivery-model-releases.md` — 7. Delivery Model
+- `190_branching-strategy.md` — 2. Branching Strategy
+- `200_commit-discipline.md` — 3. Commit Discipline
+- `210_pull-requests.md` — 4. Local Preflight Levels
+- `220_code-reviews.md` — 6. Code Review Workflow
+- `230_user-story-kickoff-checklist.md` — 8. User Story Kickoff Procedure
+- `240_definition-of-done.md` — 9. Definition of Done
+- `250_execution-rule.md` — Execution Rule (Reference)
+
+## Canonical sources
+
+- `docs/shared/02-tech/coding-standards.md`
+- `docs/shared/02-tech/documentation-guidelines.md`
+- `docs/shared/03-ops/way-of-working.md`

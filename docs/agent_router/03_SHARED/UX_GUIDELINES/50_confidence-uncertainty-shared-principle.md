@@ -1,4 +1,7 @@
-# Confidence & Uncertainty (Shared Principle)
+<!-- AUTO-GENERATED from canonical source: ux-guidelines.md — DO NOT EDIT -->
+<!-- To update, edit the canonical source and run: python scripts/docs/generate-router-files.py -->
+
+## Confidence & Uncertainty (Shared Principle)
 
 When confidence, uncertainty, or quality signals are exposed in a UI:
 

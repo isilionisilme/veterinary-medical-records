@@ -121,12 +121,16 @@ Use the local preflight system with three levels before pushing changes.
 - For interactive local commits, run **L1** by default.
 - Before every `git push`, **L2** must run (automatically via pre-push hook).
 - Before opening a Pull Request, run **L3**.
+- Before PR creation/update, run **L3**.
 - After the Pull Request exists, rely on its CI for subsequent updates unless an explicit local rerun is requested.
 - L3 runs path-scoped by default for day-to-day development branches.
 - Before merge to `main`, verify CI is green.
 - If a level fails, **STOP** and resolve failures (or explicitly document why a failure is unrelated/pre-existing).
 
 ### Preflight Auto-Fix Policy
+
+Auto-fix policy when preflight fails: apply focused fixes and rerun the same level.
+Maximum automatic remediation loop: 2 attempts.
 
 When a preflight level (L1/L2/L3) fails:
 
@@ -184,10 +188,14 @@ Classify the Pull Request by file types:
 
 ### Plan-Level Pull Request Roadmap
 
+Compatibility note: this section is also referenced as **Plan-level PR Roadmap** in legacy router contracts.
+
 When a plan spans multiple Pull Requests, it must include a **Pull Request Roadmap** section:
 - Table with columns: **Pull Request**, **Branch**, **Phases**, **Scope**, **Depends on**.
 - Each phase belongs to exactly one Pull Request.
+- Each phase belongs to exactly one PR.
 - Each execution step carries a `**[PR-X]**` tag.
+- Each execution step in the Execution Status must carry a `**[PR-X]**` tag.
 - A Pull Request is merged only when all its assigned phases pass CI and user review.
 
 ### Post-Merge Cleanup Procedure
@@ -238,6 +246,15 @@ When suggesting or starting a review, the agent recommends a depth level based o
 
 ### Review Focus (maintainability-first)
 
+### Pre-review checklist
+
+Pre-review gate (required before diff reading):
+
+Before reading the diff, complete a pre-review checklist:
+- Confirm scope and changed paths.
+- Confirm CI status and required checks.
+- Confirm risk profile and review depth.
+
 1. **Layering and dependency direction** — `domain/` has no framework/db imports; `application/` depends only on `domain/` + `ports/`; `api/` is thin; `infra/` is persistence/IO only.
 2. **Maintainability** — clear naming, low duplication, cohesive modules, correct layer placement.
 3. **Testability** — core logic testable without frameworks; unit + integration tests.
@@ -247,6 +264,8 @@ When suggesting or starting a review, the agent recommends a depth level based o
 7. **UX/Brand compliance** — for `frontend/**` or user-visible changes.
 
 ### Severity Classification
+
+Compatibility note: this section is also referenced as **Severity classification criteria** in legacy router contracts.
 
 | Severity | Criteria | Blocks merge? |
 |----------|----------|:---:|
@@ -268,6 +287,18 @@ Each finding includes: **File**, **Why**, **Minimal change**.
 
 ### Review Publication
 
+### Mandatory publication protocol (blocking)
+
+Blocking execution sequence:
+1. Publish the review as a Pull Request comment.
+2. Return the published PR comment URL.
+3. When remediation commits are pushed, publish a follow-up PR comment.
+4. Return the follow-up PR comment URL.
+
+A review is blocking until the PR comment URL is returned to the user.
+- A follow-up PR comment is required after remediation commits.
+- This follow-up must be published automatically as part of the remediation workflow (do not wait for a separate user prompt).
+
 - The review MUST be published as a Pull Request comment.
 - A review is not complete until the Pull Request comment is posted and the URL is returned.
 - **Follow-up verification (hard rule).** When commits address review findings, the agent MUST post a follow-up Pull Request comment confirming which findings are resolved, which remain open, and which introduced new concerns. A review cycle is not closed until this follow-up comment is posted.
@@ -278,12 +309,16 @@ After producing a review, **STOP** and wait for explicit user instruction before
 
 ### Pre-Existing Issues
 
+Compatibility note: this section is also referenced as **Pre-existing issues policy** in legacy router contracts.
+
 Issues that clearly predate the Pull Request:
 - Do NOT classify as Must-fix for the current Pull Request.
 - Report in a separate "Pre-existing issues" section.
 - Recommend a follow-up issue when impact is significant.
 
 ### Large Diff Policy
+
+Compatibility note: this section is also referenced as **Large diff policy** in legacy router contracts.
 
 If the Pull Request diff exceeds ~400 lines of non-generated code:
 - Report a Should-fix noting reduced review confidence.

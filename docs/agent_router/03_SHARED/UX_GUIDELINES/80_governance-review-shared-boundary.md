@@ -1,4 +1,7 @@
-# Governance & Review (Shared Boundary)
+<!-- AUTO-GENERATED from canonical source: ux-guidelines.md — DO NOT EDIT -->
+<!-- To update, edit the canonical source and run: python scripts/docs/generate-router-files.py -->
+
+## Governance & Review (Shared Boundary)
 
 If a product includes governance, review, or approval mechanisms:
 

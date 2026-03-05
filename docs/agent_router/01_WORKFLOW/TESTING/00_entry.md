@@ -1,7 +1,12 @@
-# Testing (Entry)
+<!-- AUTO-GENERATED from canonical source: coding-standards.md — DO NOT EDIT -->
+<!-- To update, edit the canonical source and run: python scripts/docs/generate-router-files.py -->
 
-Use these modules to decide when and how to run tests.
+## Testing Discipline
 
-Next: `docs/agent_router/01_WORKFLOW/TESTING/10_when_to_add_tests.md`
-Next: `docs/agent_router/01_WORKFLOW/TESTING/20_how_to_run.md`
+- Domain logic must be **testable independently** from frameworks and infrastructure.
+- Automated tests must cover:
+  - Happy paths
+  - Meaningful failure scenarios
+- Integration tests must validate **critical end-to-end flows**.
 
+---

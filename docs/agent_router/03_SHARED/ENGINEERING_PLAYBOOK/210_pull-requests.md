@@ -1,175 +1,118 @@
-# Pull Requests
-- A pull request is opened for each user story or each technical non user-facing change (refactors, chores, CI, docs, fixes).
-- Pull requests are opened once the change is fully implemented and all automated tests are passing.
-- Each pull request must be small enough to be reviewed comfortably in isolation and should focus on a single user story or a single technical concern.
+<!-- AUTO-GENERATED from canonical source: way-of-working.md — DO NOT EDIT -->
+<!-- To update, edit the canonical source and run: python scripts/docs/generate-router-files.py -->
 
-## Plan-level PR Roadmap
+## 4. Local Preflight Levels
 
-When a plan (`PLAN_*.md`) spans work large enough to require more than one Pull Request, the plan must include a **PR Roadmap** section that maps execution phases to PRs.
+Use the local preflight system with three levels before pushing changes.
 
-Rules:
+### L1 — Quick (before commit)
 
-- Add a `## PR Roadmap` section after the Scope Boundary and before the Execution Status.
-- The roadmap is a table with columns: **PR** (identifier or link), **Branch** (branch name), **Phases** (which plan phases it covers), **Scope** (short description), **Depends on** (prerequisite PR).
-- Each phase belongs to exactly one PR. A phase must **not** be split across PRs.
-- Each execution step in the Execution Status must carry a `**[PR-X]**` tag indicating which PR it belongs to.
-- A PR is merged only when all its assigned phases pass CI and user review.
-- The roadmap is written when the plan is created or when scope grows beyond a single PR. It may be updated as phases are completed.
+- Entry points: `scripts/ci/test-L1.ps1` / `scripts/ci/test-L1.bat`
+- Purpose: catch obvious lint/format/doc guard failures with minimal delay.
 
-## Pull Request Automation (AI Assistants)
+### L2 — Push (before every push)
 
-When an AI coding assistant or automation tool is used to create or update a Pull Request in this repository, it must follow this procedure automatically. This operational rule complements the existing Pull Request and Code Review policies and does not replace them.
+- Entry points: `scripts/ci/test-L2.ps1` / `scripts/ci/test-L2.bat`
+- Frontend checks run only when frontend-impact paths changed, unless `-ForceFrontend` is provided.
+- Enforced by git hook: `.githooks/pre-push`.
 
-## Local preflight levels (operational default)
+### L3 — Full (before Pull Request creation)
 
-Apply these levels automatically at the corresponding moments:
+- Entry points: `scripts/ci/test-L3.ps1` / `scripts/ci/test-L3.bat`
+- Runs path-scoped backend/frontend/docker checks by default.
+- Use `-ForceFull` to execute full backend/frontend/docker scope regardless of diff.
+- Use `-ForceFrontend` to force frontend checks even when frontend-impact paths did not change.
+- E2E runs only for frontend-impact changes, unless `-ForceFrontend` or `-ForceFull` is provided.
 
-- **L1 — Quick (before commit):** `scripts/ci/test-L1.ps1` (or `.bat`)
-- **L2 — Push (before every push):** `scripts/ci/test-L2.ps1` (or `.bat`), enforced by `.githooks/pre-push`
-- **L3 — Full (before PR creation/update):** `scripts/ci/test-L3.ps1` (or `.bat`)
+### Preflight Rules
 
-Operational defaults:
-- L2 and L3 are path-scoped for frontend: run frontend checks only when frontend-impact paths changed.
-- `-ForceFrontend` forces frontend checks when no frontend-impact paths changed.
-- `-ForceFull` forces full backend/frontend/docker scope for L3.
-- Before merge to `main`, verify CI is green. Local L3 is not required when CI has already passed (CI runs a superset of L3 checks).
+- For interactive local commits, run **L1** by default.
+- Before every `git push`, **L2** must run (automatically via pre-push hook).
+- Before opening a Pull Request, run **L3**.
+- Before PR creation/update, run **L3**.
+- After the Pull Request exists, rely on its CI for subsequent updates unless an explicit local rerun is requested.
+- L3 runs path-scoped by default for day-to-day development branches.
+- Before merge to `main`, verify CI is green.
+- If a level fails, **STOP** and resolve failures (or explicitly document why a failure is unrelated/pre-existing).
 
-If the required level fails, STOP and resolve issues before continuing.
+### Preflight Auto-Fix Policy
 
-Auto-fix policy when preflight fails:
-- Attempt focused fixes automatically before continuing.
-- Keep fixes within current scope; avoid unrelated refactors.
-- Maximum automatic remediation loop: 2 attempts (fix + rerun the failed level).
-- Never bypass gates (`--no-verify`, disabled tests/checks, weakened assertions).
-- If still failing after the limit, STOP and report root cause and next actions.
+Auto-fix policy when preflight fails: apply focused fixes and rerun the same level.
+Maximum automatic remediation loop: 2 attempts.
 
-## Manual trigger only: Code reviews (precedence gate)
+When a preflight level (L1/L2/L3) fails:
 
-Code review execution is manual trigger only.
-- Do not initiate code review steps from PR events/context unless the user explicitly asks.
-- Explicit trigger examples: "Do a code review for PR #...", "Review the diff for ...", "Run a code review now".
-- Starting a code review includes fetching PR review context, reading diffs for review, generating formal review output/comments, suggesting review commits, or running any multi-step review flow.
-- If a review may be useful, you may propose it, but stop and wait for explicit user instruction.
-- This gate overrides any automatic-review interpretation in this document.
+- AI assistants must attempt focused fixes automatically before proceeding.
+- Auto-fixes must stay within the current change scope and avoid unrelated refactors.
+- Maximum automatic remediation loop: **2 attempts** (fix + rerun the failed level).
+- **Never bypass quality gates** (`--no-verify`, disabling tests/checks, weakening assertions) to force a pass.
+- If failures persist after the limit, STOP and report root cause, impacted files, and next-action options.
 
-## Pull Request Procedure
+---
 
-1) Confirm repository state before creating the PR:
-   - Current branch name
-   - Base branch (main)
-   - Working tree status (report if not clean)
+## 5. Pull Request Workflow
 
-2) Create or update the Pull Request to `main` using the standard branching and naming conventions already defined in this document.
-   - PR title, body, and review comments must be written in English.
-   - When setting the PR description/body from CLI, use real multiline content (heredoc or file input), not escaped `\n` sequences.
-   - Do not submit PR bodies that contain literal `\n`.
-   - Preferred patterns:
-     - `gh pr create --body-file <path-to-markdown-file>`
-     - PowerShell here-string (`@' ... '@`) assigned to a variable and passed to `--body`
+- Every user story or technical change requires **at least one Pull Request**. A single story or change may be split across multiple Pull Requests when the scope justifies it.
+- Pull Requests are opened once the change (or the slice covered by that Pull Request) is **fully implemented** and **all automated tests are passing**.
+- Each Pull Request must be small enough to be reviewed comfortably in isolation and should focus on a **single user story or a single technical concern**.
 
-2.1) Run local L3 preflight before creating/updating the PR:
-   - Use `scripts/ci/test-L3.ps1` (or `.bat`).
-    - If L3 fails, STOP and fix or explicitly justify any accepted exception.
+### Pull Request Title Conventions
 
-3) Check CI status (if configured):
-   - Report whether CI is pending, passing, or failing.
-   - Include end-user validation steps in the PR description when applicable; if not applicable, state why and provide alternative verification steps.
+**User stories:**
+- `Story <ID> — <Full User Story Title>`
 
-4) Classify the PR by file types (use changed file paths; do not require reading full diff content):
-   - **Docs-only PR**: the diff contains **only**:
-     - `docs/**`
-     - `*.md`, `*.txt`, `*.rst`, `*.adoc`
-   - **Code PR**: the diff contains **any** code file, such as:
-     - `*.py`
-     - `*.ts`, `*.tsx`
-     - `*.js`, `*.jsx`
-     - `*.css`, `*.scss`
-     - `*.html`
-     - `*.sql`
-   - **Non-code, non-doc PR**: the diff contains files that are neither docs nor code (examples: `*.json`, `*.yaml`, `*.yml`, `*.toml`, `*.ini`, `*.env`).
+**Technical work:**
+- `<type>: <short description>`
 
-5) For PRs that change `frontend/**` or user-visible behavior/copy:
-   - Load `docs/agent_router/02_PRODUCT/USER_VISIBLE/00_entry.md` before implementation/review.
-   - Add a `UX/Brand compliance` section to the PR description with concrete evidence.
+### Pull Request Body Requirements
 
-6) Code review gate:
-   - Do not ask by default on every PR.
-   - Run a review only when explicitly requested by the user.
-   - For docs-only PRs, review remains skipped by policy unless the user explicitly requests one.
+- Pull Request title, body, and review comments must be written in **English**.
+- When setting the Pull Request description/body from CLI, use real multiline content (heredoc or file input), not escaped `\n` sequences.
+- Preferred patterns:
+  - `gh pr create --body-file <path-to-markdown-file>`
+  - PowerShell here-string assigned to a variable and passed to `--body`
 
-7) Perform a maintainability-focused code review of the PR diff (when user-approved):
-   - Use `git diff main...HEAD` as the review input.
-   - Apply all rules from:
-     "Code Review Guidelines (Maintainability-Focused, Take-Home Pragmatic)"
+### Pull Request Classification
 
-## Pull Request review visibility
+Classify the Pull Request by file types:
 
-After producing a PR code review, the AI assistant must publish the review output as a comment in the Pull Request (or update an existing “AI Code Review” comment), using the mandatory review output format.
+| Type | File patterns |
+|------|--------------|
+| **Docs-only** | `docs/**`, `*.md`, `*.txt`, `*.rst`, `*.adoc` only |
+| **Code** | Any `*.py`, `*.ts`, `*.tsx`, `*.js`, `*.jsx`, `*.css`, `*.scss`, `*.html`, `*.sql` |
+| **Non-code, non-doc** | `*.json`, `*.yaml`, `*.yml`, `*.toml`, `*.ini`, `*.env` |
 
-For `frontend/**` or user-visible changes, that PR review comment must include a dedicated `UX/Brand Compliance` section.
+### Pull Request Procedure
 
-If one or more review findings are addressed in subsequent commits, the AI assistant must add a brief follow-up comment summarizing which findings were addressed.
+1. Confirm repository state (branch, base, working tree).
+2. Create/update the Pull Request targeting `main`.
+3. Apply the preflight rules from Section 4 before Pull Request creation and for subsequent updates.
+4. Check CI status (pending, passing, or failing).
+5. For Pull Requests that change `frontend/**` or user-visible behavior:
+   - Review canonical UX/brand sources before implementation/review.
+   - Add a `UX/Brand compliance` section to the Pull Request description.
+6. Include end-user validation steps when applicable.
+7. Before requesting merge, if the Pull Request includes code changes and no code review has been performed, ask the user whether a review should be done. Include a recommended review depth (see Section 6 — Review Depth) with a brief justification.
 
-If the PR changes after review (new commits that materially affect the diff), the AI assistant must add a follow-up comment summarizing what changed and whether the previous findings are still applicable.
+### Plan-Level Pull Request Roadmap
 
-If the AI assistant cannot post a comment to the Pull Request (for example due to missing PR reference, missing GitHub CLI access, or authentication), STOP and ask the user before proceeding. Do not treat chat-only output as satisfying the “publish to PR” requirement.
+Compatibility note: this section is also referenced as **Plan-level PR Roadmap** in legacy router contracts.
 
-For docs-only PRs, no review comment is required (review is skipped by policy).
+When a plan spans multiple Pull Requests, it must include a **Pull Request Roadmap** section:
+- Table with columns: **Pull Request**, **Branch**, **Phases**, **Scope**, **Depends on**.
+- Each phase belongs to exactly one Pull Request.
+- Each phase belongs to exactly one PR.
+- Each execution step carries a `**[PR-X]**` tag.
+- Each execution step in the Execution Status must carry a `**[PR-X]**` tag.
+- A Pull Request is merged only when all its assigned phases pass CI and user review.
 
-## Merge Execution + Post-merge Cleanup (AI Assistants)
+### Post-Merge Cleanup Procedure
 
-This section supports two entry points:
-- User already merged the PR manually and asks for cleanup.
-- User asks the assistant to merge the PR (for example: "merge this PR").
+After a Pull Request is merged into `main`:
+1. Ensure the working tree is clean.
+2. Check for stashes related to the merged branch; clean up where safe.
+3. Switch to `main` and pull latest changes.
+4. Delete the local branch (safe deletion first; force-delete only if verified no unique commits).
+5. Do NOT delete remote branches unless explicitly requested.
 
-If the user asks the assistant to merge the PR, execute merge and cleanup end-to-end in one flow.
-
-Only STOP and ask for confirmation if the repository state is unsafe or ambiguous (examples: uncommitted changes, rebase/merge in progress, conflicts, or unclear stash purpose/ownership).
-
-### When user asks "merge this PR"
-
-1) Preconditions (must pass before merge):
-   - Run local L3 preflight (`scripts/ci/test-L3.ps1` or `.bat`) and stop on failures.
-   - Ensure working tree is clean (`git status`).
-   - Sync refs and prune (`git fetch --prune`).
-   - Verify PR is mergeable without bypassing protections:
-     - required checks/CI are green,
-     - required approvals are present,
-     - no merge conflicts.
-
-2) Merge strategy:
-   - Default to squash merge unless user requests another strategy.
-   - Use GitHub CLI merge command for the target PR.
-   - If merge queue or pending-check flow requires auto-merge, use auto-merge mode.
-
-3) Branch deletion authorization:
-   - A direct user request to merge a PR is implicit authorization to delete that PR head branch as part of the merge flow.
-   - Delete the PR head branch on remote and local after merge (for that PR only).
-   - Do not delete any branch that is not the PR head branch.
-
-4) Continue with the post-merge cleanup checklist below.
-
-### Post-merge cleanup checklist
-
-1) Ensure the working tree is clean:
-   - If there are uncommitted changes, STOP and ask before proceeding.
-   - If a merge/rebase is in progress, STOP and ask before proceeding.
-
-2) Check for existing stashes:
-   - List stashes (`git stash list`).
-   - If a stash is clearly related to the merged branch and no longer needed, delete it (`git stash drop ...`).
-   - If there is any ambiguity about a stash (purpose unclear, potentially still needed), STOP and ask before deleting it.
-
-3) Switch to `main`.
-
-4) Pull the latest changes from `origin/main` into local `main`.
-
-5) Delete the branch used for the merged PR:
-   - If the branch is currently checked out, switch to `main` first.
-   - If this flow started from "merge this PR", delete remote and local PR head branch.
-   - If this flow started after user-reported manual merge, default to deleting local branch only.
-   - For local deletion, try safe deletion first: `git branch -d <branch>`.
-   - If deletion fails due to "not fully merged" (common with squash merges):
-     - Verify the branch has **no unique commits** relative to `main` (for example: `git log <branch> --not main`).
-     - If there are no unique commits, it is safe to force delete: `git branch -D <branch>`.
-     - If unique commits exist, STOP and ask what to do.
+---

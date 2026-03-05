@@ -55,16 +55,67 @@
       ]
     },
     {
-      "doc_glob": "docs/shared/03-ops/engineering-playbook.md",
-      "description": "Shared ENGINEERING_PLAYBOOK changes require propagation to its owner module.",
+      "doc_glob": "docs/shared/02-tech/coding-standards.md",
+      "description": "Shared CODING_STANDARDS changes require router regeneration and propagation to ENGINEERING_PLAYBOOK.",
       "owner_any": [
-        "docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/*.md",
-        "docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/**/*.md"
+        "docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/*.md"
       ],
       "required_any": [
+        "scripts/docs/generate-router-files.py",
         "backend/tests/unit/test_doc_router_contract.py",
         "backend/tests/unit/test_doc_updates_contract.py",
         "backend/tests/unit/test_doc_updates_e2e_contract.py"
+      ]
+    },
+    {
+      "doc_glob": "docs/shared/02-tech/documentation-guidelines.md",
+      "description": "Shared DOCUMENTATION_GUIDELINES changes require router regeneration and propagation to ENGINEERING_PLAYBOOK.",
+      "owner_any": [
+        "docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/*.md"
+      ],
+      "required_any": [
+        "scripts/docs/generate-router-files.py",
+        "backend/tests/unit/test_doc_router_contract.py",
+        "backend/tests/unit/test_doc_updates_contract.py",
+        "backend/tests/unit/test_doc_updates_e2e_contract.py"
+      ]
+    },
+    {
+      "doc_glob": "docs/shared/03-ops/engineering-playbook.md",
+      "description": "Legacy ENGINEERING_PLAYBOOK path retained for contract compatibility.",
+      "owner_any": [
+        "docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/*.md"
+      ],
+      "required_any": [
+        "scripts/docs/generate-router-files.py",
+        "backend/tests/unit/test_doc_router_contract.py",
+        "backend/tests/unit/test_doc_updates_contract.py",
+        "backend/tests/unit/test_doc_updates_e2e_contract.py"
+      ]
+    },
+    {
+      "doc_glob": "docs/shared/03-ops/way-of-working.md",
+      "description": "Shared WAY_OF_WORKING changes require router regeneration and propagation to ENGINEERING_PLAYBOOK + 01_WORKFLOW.",
+      "owner_any": [
+        "docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/*.md",
+        "docs/agent_router/01_WORKFLOW/**/*.md"
+      ],
+      "required_any": [
+        "scripts/docs/generate-router-files.py",
+        "backend/tests/unit/test_doc_router_contract.py",
+        "backend/tests/unit/test_doc_updates_contract.py",
+        "backend/tests/unit/test_doc_updates_e2e_contract.py"
+      ]
+    },
+    {
+      "doc_glob": "docs/projects/veterinary-medical-records/03-ops/plan-execution-protocol.md",
+      "description": "Project PLAN_EXECUTION_PROTOCOL changes require router regeneration.",
+      "owner_any": [
+        "docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/250_execution-rule.md"
+      ],
+      "required_any": [
+        "scripts/docs/generate-router-files.py",
+        "backend/tests/unit/test_doc_updates_contract.py"
       ]
     },
     {

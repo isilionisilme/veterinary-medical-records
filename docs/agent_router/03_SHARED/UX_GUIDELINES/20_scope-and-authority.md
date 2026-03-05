@@ -1,4 +1,7 @@
-# Scope and Authority
+<!-- AUTO-GENERATED from canonical source: ux-guidelines.md — DO NOT EDIT -->
+<!-- To update, edit the canonical source and run: python scripts/docs/generate-router-files.py -->
+
+## Scope and Authority
 
 This document defines:
 
