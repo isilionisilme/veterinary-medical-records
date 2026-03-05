@@ -8,20 +8,18 @@ without changing their corresponding canonical source document.
 from __future__ import annotations
 
 import argparse
+import json
 import subprocess
 import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 MANIFEST_PATH = REPO_ROOT / "docs" / "agent_router" / "MANIFEST.yaml"
+CONFIG_PATH = REPO_ROOT / "scripts" / "docs" / "router_directionality_guard_config.json"
 PROTECTED_PREFIXES = (
     "docs/agent_router/01_WORKFLOW/",
     "docs/agent_router/03_SHARED/",
 )
-EXEMPT_PROTECTED_FILES = {
-    "docs/agent_router/01_WORKFLOW/DOC_UPDATES/router_parity_map.json",
-    "docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json",
-}
 
 
 def _run_changed_files(base_ref: str) -> list[str]:
@@ -76,25 +74,80 @@ def _strip_yaml_value(raw: str) -> str:
     return value
 
 
-def _load_manifest_mapping(manifest_path: Path) -> dict[str, str]:
+def _load_manifest_mapping(manifest_path: Path) -> dict[str, list[str]]:
     if not manifest_path.exists():
         print(f"Router manifest not found: {manifest_path}", file=sys.stderr)
         sys.exit(2)
 
-    mapping: dict[str, str] = {}
-    current_source: str | None = None
+    mapping: dict[str, list[str]] = {}
+    current_target: str | None = None
+    current_sources: list[str] = []
+    inside_sources_block = False
+
+    def _flush_current() -> None:
+        nonlocal current_target, current_sources, inside_sources_block
+        if current_target and current_target.startswith(PROTECTED_PREFIXES) and current_sources:
+            mapping[current_target] = sorted(set(current_sources))
+        current_target = None
+        current_sources = []
+        inside_sources_block = False
 
     for raw_line in manifest_path.read_text(encoding="utf-8").splitlines():
         line = raw_line.strip()
-        if line.startswith("- source:"):
-            current_source = _strip_yaml_value(line.split(":", 1)[1])
+        if not line or line.startswith("#"):
             continue
+
         if line.startswith("- target:"):
-            target = _strip_yaml_value(line.split(":", 1)[1])
-            if current_source and target.startswith(PROTECTED_PREFIXES):
-                mapping[target] = current_source
+            _flush_current()
+            current_target = _strip_yaml_value(line.split(":", 1)[1])
+            continue
+
+        if current_target is None:
+            continue
+
+        if line.startswith("source:"):
+            current_sources.append(_strip_yaml_value(line.split(":", 1)[1]))
+            inside_sources_block = False
+            continue
+
+        if line.startswith("sources:"):
+            inside_sources_block = True
+            continue
+
+        if inside_sources_block:
+            if line.startswith("- "):
+                current_sources.append(_strip_yaml_value(line[2:]))
+                continue
+            inside_sources_block = False
+
+    _flush_current()
 
     return mapping
+
+
+def _load_exempt_protected_files(config_path: Path) -> set[str]:
+    if not config_path.exists():
+        print(f"Router directionality config not found: {config_path}", file=sys.stderr)
+        sys.exit(2)
+    try:
+        payload = json.loads(config_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        print(f"Invalid JSON in {config_path}: {exc}", file=sys.stderr)
+        sys.exit(2)
+
+    raw_exempt_files = payload.get("exempt_protected_files", [])
+    if not isinstance(raw_exempt_files, list):
+        print(
+            f"Invalid router directionality config in {config_path}: "
+            "exempt_protected_files must be a list.",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
+    exempt_files = {
+        str(path).strip().replace("\\", "/") for path in raw_exempt_files if str(path).strip()
+    }
+    return exempt_files
 
 
 def main() -> int:
@@ -105,11 +158,12 @@ def main() -> int:
     changed_files = _run_changed_files(args.base_ref)
     changed_set = set(changed_files)
     manifest_mapping = _load_manifest_mapping(MANIFEST_PATH)
+    exempt_files = _load_exempt_protected_files(CONFIG_PATH)
 
     changed_router_files = [
         path
         for path in changed_files
-        if path.startswith(PROTECTED_PREFIXES) and path not in EXEMPT_PROTECTED_FILES
+        if path.startswith(PROTECTED_PREFIXES) and path not in exempt_files
     ]
     if not changed_router_files:
         print("Router directionality guard: no protected router files changed.")
@@ -117,16 +171,17 @@ def main() -> int:
 
     findings: list[str] = []
     for router_path in changed_router_files:
-        canonical_source = manifest_mapping.get(router_path)
-        if not canonical_source:
+        canonical_sources = manifest_mapping.get(router_path, [])
+        if not canonical_sources:
             findings.append(
                 f"Router file `{router_path}` is protected but not mapped in MANIFEST.yaml."
             )
             continue
-        if canonical_source not in changed_set:
+        if not any(source in changed_set for source in canonical_sources):
+            expected_sources = ", ".join(f"`{source}`" for source in canonical_sources)
             findings.append(
                 f"Router file `{router_path}` changed without canonical source "
-                f"`{canonical_source}` in the same diff."
+                f"{expected_sources} in the same diff."
             )
 
     if findings:
