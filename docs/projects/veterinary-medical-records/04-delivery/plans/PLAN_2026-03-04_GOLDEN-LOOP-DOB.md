@@ -70,11 +70,11 @@
 
 ### Phase 1 — Extraction improvements (`dob` only)
 
-- [ ] P1-A 🔄 — Conectar `dob` al normalizador de fechas en `normalize_canonical_fields()` y añadir a `MVP_COVERAGE_DEBUG_KEYS` (GPT-5.3-Codex)
-- [ ] P1-B 🔄 — Añadir `dob` a `DATE_TARGET_KEYS` con anchors de nacimiento y guards contra contexto visit/discharge/document; ampliar variantes de label en `_LABELED_PATTERNS` (GPT-5.3-Codex)
-- [ ] P1-C 🔄 — Añadir tests unitarios dedicados de normalización de `dob`: formatos válidos (DD/MM/AAAA, D/M/AA, AAAA-MM-DD), años de 2 dígitos, inválidos, None/vacío (GPT-5.3-Codex)
-- [ ] P1-D 🔄 — Medir delta de benchmark vs baseline; ajustar confidence/ranking de candidates de `dob` si es necesario (GPT-5.3-Codex)
-- [ ] CT-2 🔄 — Commit task: scope P1-A + P1-B + P1-C + P1-D → `feat(plan-p1): dob extraction hardening — normalizer, anchors, labels, unit tests` → push (GPT-5.3-Codex)
+- [x] P1-A 🔄 — Conectar `dob` al normalizador de fechas en `normalize_canonical_fields()` y añadir a `MVP_COVERAGE_DEBUG_KEYS` (GPT-5.3-Codex) — ✅ `a19d6f73`
+- [x] P1-B 🔄 — Añadir `dob` a `DATE_TARGET_KEYS` con anchors de nacimiento y guards contra contexto visit/discharge/document; ampliar variantes de label en `_LABELED_PATTERNS` (GPT-5.3-Codex) — ✅ `a19d6f73`
+- [x] P1-C 🔄 — Añadir tests unitarios dedicados de normalización de `dob`: formatos válidos (DD/MM/AAAA, D/M/AA, AAAA-MM-DD), años de 2 dígitos, inválidos, None/vacío (GPT-5.3-Codex) — ✅ `a19d6f73` (42 passed)
+- [x] P1-D 🔄 — Medir delta de benchmark vs baseline; ajustar confidence/ranking de candidates de `dob` si es necesario (GPT-5.3-Codex) — ✅ `a19d6f73` — **16/18 (88.9%)** (+27.8 pp, 2 null misses: dash separator + embedded pipes)
+- [x] CT-2 🔄 — Commit task: scope P1-A + P1-B + P1-C + P1-D → `feat(plan-p1): dob extraction hardening — normalizer, anchors, labels, unit tests` → push (GPT-5.3-Codex) — ✅ `a19d6f73`
 
 ### Phase 2 — Observability and quality gates
 
