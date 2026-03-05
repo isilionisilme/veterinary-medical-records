@@ -68,9 +68,9 @@
 
 ### Phase 0 — Baseline and fixtures
 
-- [ ] P0-A 🔄 — Crear fixtures sintéticos de `weight` con casos positivos/negativos/ruido OCR bajo `backend/tests/fixtures/synthetic/weight/` (GPT-5.3-Codex)
-- [ ] P0-B 🔄 — Crear benchmark `backend/tests/benchmarks/test_weight_extraction_accuracy.py` y medir baseline inicial (GPT-5.3-Codex)
-- [ ] CT-1 🔄 — Commit task: scope P0-A + P0-B → `test(plan-p0): weight golden-loop baseline fixtures and benchmark` → push (GPT-5.3-Codex)
+- [x] P0-A 🔄 — Crear fixtures sintéticos de `weight` con casos positivos/negativos/ruido OCR bajo `backend/tests/fixtures/synthetic/weight/` (GPT-5.3-Codex) — ✅ `e1c5ab81`
+- [x] P0-B 🔄 — Crear benchmark `backend/tests/benchmarks/test_weight_extraction_accuracy.py` y medir baseline inicial (GPT-5.3-Codex) — ✅ `e1c5ab81` — baseline: 8/18 (44.4%), null_misses=4, false_positives=1
+- [x] CT-1 🔄 — Commit task: scope P0-A + P0-B → `test(plan-p0): weight golden-loop baseline fixtures and benchmark` → push (GPT-5.3-Codex) — ✅ `e1c5ab81`
 
 ### Phase 1 — Extraction improvements (`weight` only)
 
