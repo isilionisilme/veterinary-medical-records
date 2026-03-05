@@ -74,6 +74,7 @@ def normalize_canonical_fields(
         value=normalized.get("microchip_id"),
         evidence=(evidence_map.get("microchip_id") if evidence_map else None),
     )
+    normalized["dob"] = _normalize_date_value(normalized.get("dob"))
     normalized["visit_date"] = _normalize_date_value(normalized.get("visit_date"))
     normalized["document_date"] = _normalize_date_value(normalized.get("document_date"))
     normalized["admission_date"] = _normalize_date_value(normalized.get("admission_date"))
@@ -91,9 +92,13 @@ def normalize_microchip_digits_only(value: object) -> str | None:
         return None
 
     match = _MICROCHIP_DIGITS_PATTERN.search(cleaned)
-    if match is None:
-        return None
-    return match.group(1)
+    if match is not None:
+        return match.group(1)
+
+    compact_digits = re.sub(r"\D", "", cleaned)
+    if 9 <= len(compact_digits) <= 15:
+        return compact_digits
+    return None
 
 
 def _normalize_whitespace(value: str) -> str:
@@ -320,7 +325,18 @@ def _normalize_microchip_id(
     value: object,
     evidence: list[dict[str, object]] | None,
 ) -> str | None:
-    labels = ("microchip", "chip", "nº chip", "n.o chip", "n° chip", "id")
+    labels = (
+        "microchip",
+        "micr0chip",
+        "chip",
+        "transponder",
+        "identificación electrónica",
+        "identificacion electronica",
+        "nº chip",
+        "n.o chip",
+        "n° chip",
+        "id",
+    )
     cleaned = _normalize_scalar_with_labels(value, labels)
 
     if not cleaned and evidence:
@@ -329,7 +345,11 @@ def _normalize_microchip_id(
         snippet = raw_evidence.get("snippet") if isinstance(raw_evidence, dict) else None
         if isinstance(snippet, str):
             match = re.search(
-                r"(?i)(?:microchip|chip)\s*(?:n[ºo]\.?|id)?\s*[:\-]?\s*([^\n;]{3,80})",
+                (
+                    r"(?i)(?:microchip|micr0chip|chip|transponder|"
+                    r"identificaci[oó]n\s+electr[oó]nica)\s*"
+                    r"(?:n[ºo]\.?|nro\.?|id)?\s*[:\-]?\s*([^\n;]{3,80})"
+                ),
                 _normalize_whitespace(snippet),
             )
             if match:
@@ -382,14 +402,26 @@ def _normalize_date_value(value: object) -> str | None:
     if len(parts[0]) == 4:
         year, month, day = parts
         normalized = f"{day.zfill(2)}/{month.zfill(2)}/{year}"
-    else:
-        day, month, year = parts
-        normalized = f"{day.zfill(2)}/{month.zfill(2)}/{year}"
-
-    for date_format in ("%d/%m/%Y", "%d/%m/%y"):
         try:
-            datetime.strptime(normalized, date_format)
-            return normalized
+            parsed = datetime.strptime(normalized, "%d/%m/%Y")
+            return parsed.strftime("%d/%m/%Y")
         except ValueError:
-            continue
+            return None
+
+    day, month, year = parts
+    normalized = f"{day.zfill(2)}/{month.zfill(2)}/{year}"
+    if len(year) == 4:
+        try:
+            parsed = datetime.strptime(normalized, "%d/%m/%Y")
+            return parsed.strftime("%d/%m/%Y")
+        except ValueError:
+            return None
+
+    if len(year) == 2:
+        try:
+            parsed = datetime.strptime(normalized, "%d/%m/%y")
+            return parsed.strftime("%d/%m/%Y")
+        except ValueError:
+            return None
+
     return None

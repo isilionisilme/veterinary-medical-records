@@ -32,6 +32,7 @@ from .date_parsing import (
     extract_regex_labeled_candidates,
     extract_timeline_document_date_candidates,
     extract_unanchored_document_date_candidates,
+    extract_unlabeled_header_dob_candidates,
 )
 
 # Guard pattern for unlabeled pet_name heuristic — rejects lines that look
@@ -207,6 +208,10 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
         extract_microchip_adjacent_line_candidates(raw_text, confidence=COVERAGE_CONFIDENCE_LABEL),
         extract_clinical_record_candidates(raw_text, confidence=COVERAGE_CONFIDENCE_LABEL),
         extract_ocr_microchip_candidates(raw_text, confidence=COVERAGE_CONFIDENCE_FALLBACK),
+        extract_unlabeled_header_dob_candidates(
+            raw_text,
+            confidence=COVERAGE_CONFIDENCE_FALLBACK,
+        ),
         extract_unanchored_document_date_candidates(
             raw_text,
             confidence=COVERAGE_CONFIDENCE_FALLBACK,
@@ -696,11 +701,28 @@ def _candidate_sort_key(item: dict[str, object], key: str) -> tuple[float, float
 
     if key == "microchip_id":
         raw_value = str(item.get("value", "")).strip()
+        evidence = item.get("evidence")
+        snippet = ""
+        if isinstance(evidence, dict):
+            snippet_value = evidence.get("snippet")
+            if isinstance(snippet_value, str):
+                snippet = snippet_value
+        lowered_snippet = snippet.casefold()
+
+        context_quality = 0.0
+        if re.search(
+            r"\b(?:microchip|micr0chip|chip|transponder|identificaci[oó]n\s+electr[oó]nica)\b",
+            lowered_snippet,
+        ):
+            context_quality += 0.5
+        if re.search(r"\b(?:tel(?:[eé]fono)?|movil|m[oó]vil|nif|dni)\b", lowered_snippet):
+            context_quality -= 0.5
+
         if _MICROCHIP_DIGITS_PATTERN.fullmatch(raw_value):
-            return 2.0, confidence
+            return 2.0 + context_quality, confidence
         if _MICROCHIP_DIGITS_PATTERN.search(raw_value):
-            return 1.0, confidence
-        return 0.0, confidence
+            return 1.0 + context_quality, confidence
+        return context_quality, confidence
 
     if key == "pet_name":
         raw_value = str(item.get("value", "")).strip()

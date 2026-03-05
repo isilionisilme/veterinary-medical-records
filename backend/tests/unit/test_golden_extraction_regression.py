@@ -102,6 +102,17 @@ def test_doc_a_golden_goal_fields_regression(monkeypatch) -> None:
         f"clinic_name regression: expected 'CENTRO COSTA AZAHAR', got {clinic_name!r}"
     )
 
+    # clinic_address is NOT auto-enriched — user must trigger lookup explicitly
+    clinic_address = schema.get("clinic_address")
+    assert clinic_address in ("", None), (
+        "clinic_address should be empty for docA (enrichment is now user-initiated), "
+        f"got {clinic_address!r}"
+    )
+
+    # dob — docA has labeled "Nacimiento: 05/07/2018" on first line
+    dob = schema.get("dob")
+    assert dob == "05/07/2018", f"dob regression: expected '05/07/2018', got {dob!r}"
+
     _assert_owner_or_vet_invariant(
         schema=schema,
         candidates=candidates,
@@ -155,6 +166,10 @@ def test_doc_b_golden_goal_fields_regression(monkeypatch) -> None:
 
     clinic_address = schema.get("clinic_address")
     assert clinic_address in ("", None)
+
+    # dob — docB has top header date near chip context, treated as birth date
+    dob = schema.get("dob")
+    assert dob == "04/10/2019", f"dob regression: expected '04/10/2019', got {dob!r}"
 
     _assert_owner_or_vet_invariant(
         schema=schema,
@@ -264,3 +279,41 @@ def test_clinic_address_labeled_disambiguates_owner_address(monkeypatch) -> None
     schema = data["global_schema"]
     assert isinstance(schema, dict)
     assert schema.get("clinic_address") == "Av. Moratalaz 10, 28030 Madrid"
+
+
+def test_microchip_transponder_label_regression(monkeypatch) -> None:
+    raw_text = "\n".join(
+        [
+            "Paciente: Kira",
+            "Transponder 100000123456789",
+            "Especie: Felina",
+        ]
+    )
+    data = _build_with_candidates(
+        monkeypatch,
+        doc_id="golden-doc-microchip-transponder",
+        raw_text=raw_text,
+    )
+
+    schema = data["global_schema"]
+    assert isinstance(schema, dict)
+    assert schema.get("microchip_id") == "100000123456789"
+
+
+def test_microchip_separated_digits_regression(monkeypatch) -> None:
+    raw_text = "\n".join(
+        [
+            "Paciente: Max",
+            "Chip: 941 0000-2496 7769",
+            "Especie: Canina",
+        ]
+    )
+    data = _build_with_candidates(
+        monkeypatch,
+        doc_id="golden-doc-microchip-separated-digits",
+        raw_text=raw_text,
+    )
+
+    schema = data["global_schema"]
+    assert isinstance(schema, dict)
+    assert schema.get("microchip_id") == "941000024967769"

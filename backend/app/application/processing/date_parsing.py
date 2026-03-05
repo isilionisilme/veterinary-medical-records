@@ -272,13 +272,13 @@ def extract_microchip_keyword_candidates(
     payloads: list[dict[str, object]] = []
     for match in _MICROCHIP_KEYWORD_WINDOW_PATTERN.finditer(raw_text):
         window = match.group(1) if isinstance(match.group(1), str) else ""
-        digit_match = _MICROCHIP_DIGITS_PATTERN.search(window)
-        if digit_match is None:
+        digits = _extract_microchip_digits(window)
+        if digits is None:
             continue
         payloads.append(
             {
                 "key": "microchip_id",
-                "value": digit_match.group(1),
+                "value": digits,
                 "confidence": confidence,
                 "snippet": match.group(0),
             }
@@ -389,6 +389,47 @@ def extract_unanchored_document_date_candidates(
                 "snippet": snippet,
             }
         )
+    return payloads
+
+
+def extract_unlabeled_header_dob_candidates(
+    raw_text: str,
+    confidence: float,
+) -> list[dict[str, object]]:
+    payloads: list[dict[str, object]] = []
+    non_empty_lines = [line.strip() for line in raw_text.splitlines() if line.strip()]
+    if not non_empty_lines:
+        return payloads
+
+    header_window = non_empty_lines[:20]
+    date_line_re = re.compile(r"^([0-9]{1,2}[\/\-.][0-9]{1,2}[\/\-.][0-9]{2})$")
+    chip_context_re = re.compile(
+        r"(?i)\b(?:microchip|micr0chip|chip|transponder|identificaci[oó]n\s+electr[oó]nica|n[º°o]?\s*chip)\b"
+    )
+
+    for index, line in enumerate(header_window):
+        date_match = date_line_re.match(line)
+        if date_match is None:
+            continue
+
+        context_lines = header_window[index : min(index + 9, len(header_window))]
+        context_text = "\n".join(context_lines)
+        has_chip_context = bool(chip_context_re.search(context_text))
+        has_chip_digits = bool(_MICROCHIP_DIGITS_PATTERN.search(context_text))
+        if not has_chip_context and not has_chip_digits:
+            continue
+
+        payloads.append(
+            {
+                "key": "dob",
+                "value": date_match.group(1),
+                "confidence": confidence,
+                "snippet": context_text,
+                "target_reason": "header_date_near_chip",
+            }
+        )
+        break
+
     return payloads
 
 

@@ -14,6 +14,7 @@ PDF_EXTRACTOR_FORCE_ENV = "PDF_EXTRACTOR_FORCE"
 INTERPRETATION_DEBUG_INCLUDE_CANDIDATES_ENV = "VET_RECORDS_INCLUDE_INTERPRETATION_CANDIDATES"
 COVERAGE_CONFIDENCE_LABEL = 0.66
 COVERAGE_CONFIDENCE_FALLBACK = 0.50
+COVERAGE_CONFIDENCE_ENRICHMENT = 0.40
 MVP_COVERAGE_DEBUG_KEYS: tuple[str, ...] = (
     "microchip_id",
     "clinical_record_number",
@@ -21,6 +22,7 @@ MVP_COVERAGE_DEBUG_KEYS: tuple[str, ...] = (
     "species",
     "breed",
     "sex",
+    "dob",
     "weight",
     "visit_date",
     "owner_name",
@@ -37,7 +39,9 @@ MVP_COVERAGE_DEBUG_KEYS: tuple[str, ...] = (
     "hair_length",
     "repro_status",
 )
-DATE_TARGET_KEYS = frozenset({"visit_date", "document_date", "admission_date", "discharge_date"})
+DATE_TARGET_KEYS = frozenset(
+    {"visit_date", "document_date", "admission_date", "discharge_date", "dob"}
+)
 _DATE_CANDIDATE_PATTERN = re.compile(
     r"\b(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}|\d{4}[\/\-.]\d{1,2}[\/\-.]\d{1,2})\b"
 )
@@ -59,19 +63,33 @@ _DATE_TARGET_ANCHORS: dict[str, tuple[str, ...]] = {
     ),
     "admission_date": ("admisión", "admision", "ingreso", "hospitaliza"),
     "discharge_date": ("alta", "egreso"),
+    "dob": (
+        "nacimiento",
+        "nac.",
+        "nac",
+        "f. nac",
+        "f/nto",
+        "fnto",
+        "dob",
+        "birth",
+        "fecha de nacimiento",
+        "fecha nac",
+    ),
 }
 _DATE_TARGET_PRIORITY: dict[str, int] = {
     "visit_date": 4,
     "admission_date": 3,
     "discharge_date": 3,
     "document_date": 2,
+    "dob": 1,
 }
 _MICROCHIP_KEYWORD_WINDOW_PATTERN = re.compile(
-    r"(?is)(?:microchip|chip|n[ºo°\uFFFD]\s*chip)\s*(?:n[ºo°\uFFFD]\.?|id)?\s*[:\-]?\s*([^\n]{0,90})"
+    r"(?is)(?:microchip|micr0chip|chip|transponder|identificaci[oó]n\s+electr[oó]nica|"
+    r"n[ºo°\uFFFD]\s*chip)\s*(?:n[ºo°\uFFFD]\.?|nro\.?|id)?\s*[:\-]?\s*([^\n]{0,90})"
 )
 _MICROCHIP_DIGITS_PATTERN = re.compile(r"(?<!\d)(\d{9,15})(?!\d)")
 _MICROCHIP_OCR_PREFIX_WINDOW_PATTERN = re.compile(
-    r"(?is)\bn(?:[º°\uFFFD]|ro)\.?\s*[:\-]?\s*([^\n]{0,60})"
+    r"(?is)\bn(?:[º°\uFFFD]|ro)?\.?\s*[:\-]\s*([^\n]{0,60})"
 )
 _VET_LABEL_LINE_PATTERN = re.compile(
     r"(?i)^\s*(?:veterinari(?:o|a|o/a)|vet|dr\.?|dra\.?|dr/a|doctor|doctora)\b\s*[:\-]?\s*(.*)$"
@@ -132,7 +150,7 @@ _LABELED_PATTERNS: tuple[tuple[str, str, float], ...] = (
     ("age", r"(?:edad|age)\s*[:\-]\s*([^\n;]{1,60})", COVERAGE_CONFIDENCE_LABEL),
     (
         "dob",
-        r"(?:f(?:echa)?\s*(?:de\s*)?(?:nacimiento|nac\.|nac)|dob|birth\s*date)\s*[:\-]\s*([0-9]{1,2}[\/\-.][0-9]{1,2}[\/\-.][0-9]{2,4})",
+        r"(?:f\.\s*nac\.?|fcha\s+(?:de\s+)?nacimiento|f(?:echa)?\s*(?:de\s*)?(?:nacimiento|nac\.?|nac|nto)|f[\/\s]?nto|fnto|nacimiento|dob|birth\s*date|fecha\s*nac)\s*[:\-]?\s*([0-9]{1,2}[\/\-.][0-9]{1,2}[\/\-.][0-9]{2,4}|[0-9]{4}[\/\-.][0-9]{1,2}[\/\-.][0-9]{1,2})",
         COVERAGE_CONFIDENCE_LABEL,
     ),
     (
@@ -142,7 +160,7 @@ _LABELED_PATTERNS: tuple[tuple[str, str, float], ...] = (
     ),
     (
         "microchip_id",
-        r"(?:microchip|chip)\s*(?:n[ºo°\uFFFD]\.?|nro\.?|id)?\s*[:\-]?\s*([A-Za-z0-9][A-Za-z0-9./_\-]{1,30}(?:\s+[A-Za-z0-9][A-Za-z0-9./_\-]{0,20}){0,3})",
+        r"(?:microchip|micr0chip|chip|transponder|identificaci[oó]n\s+electr[oó]nica)\s*(?:n[ºo°\uFFFD]\.?|nro\.?|id)?\s*[:\-]?\s*([A-Za-z0-9][A-Za-z0-9./_\-]{1,30}(?:\s+[A-Za-z0-9][A-Za-z0-9./_\-]{0,20}){0,3})",
         COVERAGE_CONFIDENCE_LABEL,
     ),
     (

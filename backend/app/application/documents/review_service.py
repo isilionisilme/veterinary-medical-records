@@ -165,6 +165,7 @@ def _normalize_review_interpretation_data(data: dict[str, object]) -> dict[str, 
     normalized_global_schema = dict(global_schema)
     normalized_global_schema["microchip_id"] = normalized_microchip
     normalized_data["global_schema"] = normalized_global_schema
+    changed = True
 
     fields_changed = _upsert_microchip_field_from_global_schema(
         normalized_data=normalized_data,

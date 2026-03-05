@@ -91,6 +91,17 @@ For every extraction-fix run:
 | **Implementation** | `frontend/src/extraction/fieldValidators.ts`, `backend/app/application/processing_runner.py`. |
 | **Tests** | `frontend/src/extraction/fieldValidators.test.ts`, `backend/tests/unit/test_interpretation_canonical_fixtures.py`. |
 
+### dob
+
+| Aspect | Rule |
+|--------|------|
+| **Business meaning** | Patient date of birth |
+| **Accept** | Valid calendar date in DD/MM/YYYY, D/M/YY, YYYY-MM-DD. Plausible age (0–40 years). |
+| **Reject** | Future dates, implausibly old (> 40 years), non-date strings. |
+| **Common failures** | `visit_date` promoted as `dob`, unlabeled date captured as `dob`. |
+| **Implementation** | `backend/app/application/field_normalizers.py`, `backend/app/application/processing/constants.py` (`DATE_TARGET_KEYS` + anchors). |
+| **Tests** | `backend/tests/benchmarks/test_dob_extraction_accuracy.py`, `backend/tests/unit/test_dob_normalization.py`, `backend/tests/unit/test_golden_extraction_regression.py`. |
+
 ### vet_name
 
 | Aspect | Rule |
@@ -233,6 +244,7 @@ Promote goal fields from candidates to structured interpretation only when:
 | `weight` | Active (range [0.5,120], reject 0) | ✅ |
 | `vet_name` | Active (person normalization, clinic rejection) | ✅ |
 | `visit_date` | Active (date normalization, birthdate rejection) | ✅ |
+| `dob` | Active (date normalization + birth-date anchors + observability flags) | ✅ |
 | `discharge_date` | Active (label-only context) | ✅ |
 | `vaccinations` | Active (strict label-only) | ✅ |
 | `symptoms` | Active (label-only, treatment noise rejection) | ✅ |
