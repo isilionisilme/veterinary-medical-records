@@ -90,10 +90,10 @@ Los nombres de rama actuales no identifican explicitamente el worktree de origen
 
 ### Phase 4 — Creacion correcta por agente + feedback temprano
 
-- [ ] P4-A 🔄 — Actualizar `docs/shared/03-ops/way-of-working.md` seccion 1 (`Starting New Work`) para exigir que al crear rama nueva el agente derive `<worktree>/<category>/<slug>` y use mapeo de categoria por tipo de trabajo (`feature`, `improvement`, `fix`, `docs`, `chore`, `refactor`, `ci`). (GPT-5.3-Codex)
-- [ ] P4-B 🔄 — Regenerar router docs y verificar que `docs/agent_router/01_WORKFLOW/START_WORK/00_entry.md` y `docs/agent_router/01_WORKFLOW/BRANCHING/00_entry.md` reflejan explicitamente la creacion de rama canonica por el agente. (GPT-5.3-Codex)
-- [ ] P4-C 🔄 — Mantener enforcement en L2 (sin mover branch naming a L1) y agregar/actualizar contrato en `backend/tests/unit/test_doc_router_contract.py` para fijar la propagacion START_WORK/BRANCHING. (GPT-5.3-Codex)
-- [ ] CT-4 🔄 — Commit task: scope P4-A + P4-B + P4-C -> `docs(plan-p4): enforce agent branch creation with canonical naming` -> push. (GPT-5.3-Codex)
+- [x] P4-A 🔄 — Actualizar `docs/shared/03-ops/way-of-working.md` seccion 1 (`Starting New Work`) para exigir que al crear rama nueva el agente derive `<worktree>/<category>/<slug>` y use mapeo de categoria por tipo de trabajo (`feature`, `improvement`, `fix`, `docs`, `chore`, `refactor`, `ci`). (GPT-5.3-Codex) — ✅ `c0467eda`
+- [x] P4-B 🔄 — Regenerar router docs y verificar que `docs/agent_router/01_WORKFLOW/START_WORK/00_entry.md` y `docs/agent_router/01_WORKFLOW/BRANCHING/00_entry.md` reflejan explicitamente la creacion de rama canonica por el agente. (GPT-5.3-Codex) — ✅ `c0467eda`
+- [x] P4-C 🔄 — Mantener enforcement en L2 (sin mover branch naming a L1) y agregar/actualizar contrato en `backend/tests/unit/test_doc_router_contract.py` para fijar la propagacion START_WORK/BRANCHING. (GPT-5.3-Codex) — ✅ `c0467eda`
+- [x] CT-4 🔄 — Commit task: scope P4-A + P4-B + P4-C -> `docs(plan-p4): enforce agent branch creation with canonical naming` -> push. (GPT-5.3-Codex) — ✅ `c0467eda`
 
 ---
 
