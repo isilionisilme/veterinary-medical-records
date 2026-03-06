@@ -230,3 +230,15 @@ Siguiente paso ejecutable: `P5-A` (merge PR a `main` tras CT-5, verificar CI ver
 - `python -m pytest backend/tests/benchmarks/ -v --no-cov`
 - `python -m pytest backend/tests/unit/test_golden_extraction_regression.py -v --no-cov`
 - Validacion manual: cargar `docB` y confirmar multiples visitas detectadas.
+
+---
+
+## Continuation — Multi-Visit Implementation Roadmap
+
+Este plan es la **Parte 1 de 3** de la implementacion completa de multi-visit scoping. La funcionalidad se divide en PRs independientes para mantener diffs manejables (<400 LOC de logica productiva por PR) y facilitar code review, siguiendo la recomendacion de la [AI Code Review de PR #216](https://github.com/isilionisilme/veterinary-medical-records/pull/216#issuecomment-4013104012).
+
+| Parte | Plan | Scope | PR |
+|---|---|---|---|
+| **1 (esta)** | [PLAN_2026-03-06_MULTI-VISIT-RAWTEXT-BOUNDARIES.md](PLAN_2026-03-06_MULTI-VISIT-RAWTEXT-BOUNDARIES.md) | Deteccion de boundaries de visitas desde raw text | [#216](https://github.com/isilionisilme/veterinary-medical-records/pull/216) |
+| **2** | [PLAN_2026-03-07_PER-VISIT-FIELD-EXTRACTION.md](PLAN_2026-03-07_PER-VISIT-FIELD-EXTRACTION.md) | Extraccion de campos clinicos por segmento de visita | Pendiente |
+| **3 (condicional)** | [PLAN_2026-03-07_VISIT-SCOPING-OBSERVABILITY.md](PLAN_2026-03-07_VISIT-SCOPING-OBSERVABILITY.md) | Observabilidad, debug tooling y documentacion de cierre | Pendiente |
