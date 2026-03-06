@@ -485,7 +485,9 @@ def test_document_review_normalizes_microchip_suffix_to_digits_only(test_client)
     assert microchip_fields[0].get("value") == "00023035139"
 
 
-def test_document_review_weight_single_visit_stays_document_scoped_baseline(test_client):
+def test_document_review_weight_single_visit_rolls_into_visit_and_keeps_document_current(
+    test_client,
+):
     document_id = _upload_sample_document(test_client)
     run_id = str(uuid4())
     _insert_run(
@@ -546,17 +548,26 @@ def test_document_review_weight_single_visit_stays_document_scoped_baseline(test
 
     top_level_weight_fields = _extract_top_level_fields_by_key(data, "weight")
     assert len(top_level_weight_fields) == 1
+    assert top_level_weight_fields[0].get("field_id") == "derived-weight-current"
+    assert top_level_weight_fields[0].get("value") == "7.2 kg"
 
     assigned_visits = _extract_assigned_visits(data.get("visits"))
     assert len(assigned_visits) >= 1
-    for visit in assigned_visits:
-        visit_fields = visit.get("fields")
-        assert isinstance(visit_fields, list)
-        visit_keys = {field.get("key") for field in visit_fields if isinstance(field, dict)}
-        assert "weight" not in visit_keys
+    assert any(
+        isinstance(visit.get("fields"), list)
+        and any(
+            isinstance(field, dict)
+            and field.get("key") == "weight"
+            and field.get("value") == "7.2 kg"
+            for field in visit.get("fields", [])
+        )
+        for visit in assigned_visits
+    )
 
 
-def test_document_review_weight_multi_visit_stays_document_scoped_baseline(test_client):
+def test_document_review_weight_multi_visit_rolls_into_visits_and_derives_latest_document_weight(
+    test_client,
+):
     document_id = _upload_sample_document(test_client)
     run_id = str(uuid4())
     _insert_run(
@@ -649,15 +660,28 @@ def test_document_review_weight_multi_visit_stays_document_scoped_baseline(test_
     data = response.json()["active_interpretation"]["data"]
 
     top_level_weight_fields = _extract_top_level_fields_by_key(data, "weight")
-    assert len(top_level_weight_fields) == 2
+    assert len(top_level_weight_fields) == 1
+    assert top_level_weight_fields[0].get("field_id") == "derived-weight-current"
+    assert top_level_weight_fields[0].get("value") == "7.8 kg"
 
     assigned_visits = _extract_assigned_visits(data.get("visits"))
     assert len(assigned_visits) >= 2
+    weights_by_date = {}
     for visit in assigned_visits:
+        visit_date = visit.get("visit_date")
         visit_fields = visit.get("fields")
-        assert isinstance(visit_fields, list)
-        visit_keys = {field.get("key") for field in visit_fields if isinstance(field, dict)}
-        assert "weight" not in visit_keys
+        if not isinstance(visit_date, str) or not isinstance(visit_fields, list):
+            continue
+        weights = [
+            field.get("value")
+            for field in visit_fields
+            if isinstance(field, dict) and field.get("key") == "weight"
+        ]
+        if weights:
+            weights_by_date[visit_date] = weights
+
+    assert weights_by_date.get("2026-02-11") == ["7.2 kg"]
+    assert weights_by_date.get("2026-02-18") == ["7.8 kg"]
 
 
 def test_document_review_weight_global_only_stays_document_scoped_baseline(test_client):
@@ -712,7 +736,9 @@ def test_document_review_weight_global_only_stays_document_scoped_baseline(test_
         assert "weight" not in visit_keys
 
 
-def test_document_review_weight_ambiguous_date_stays_document_scoped_baseline(test_client):
+def test_document_review_weight_ambiguous_date_creates_matched_visit_and_keeps_document_current(
+    test_client,
+):
     document_id = _upload_sample_document(test_client)
     run_id = str(uuid4())
     _insert_run(
@@ -773,14 +799,27 @@ def test_document_review_weight_ambiguous_date_stays_document_scoped_baseline(te
 
     top_level_weight_fields = _extract_top_level_fields_by_key(data, "weight")
     assert len(top_level_weight_fields) == 1
+    assert top_level_weight_fields[0].get("field_id") == "derived-weight-current"
+    assert top_level_weight_fields[0].get("value") == "8.0 kg"
 
     assigned_visits = _extract_assigned_visits(data.get("visits"))
     assert len(assigned_visits) >= 1
+    weight_visit = None
     for visit in assigned_visits:
         visit_fields = visit.get("fields")
-        assert isinstance(visit_fields, list)
-        visit_keys = {field.get("key") for field in visit_fields if isinstance(field, dict)}
-        assert "weight" not in visit_keys
+        if not isinstance(visit_fields, list):
+            continue
+        if any(
+            isinstance(field, dict)
+            and field.get("key") == "weight"
+            and field.get("value") == "8.0 kg"
+            for field in visit_fields
+        ):
+            weight_visit = visit
+            break
+
+    assert weight_visit is not None
+    assert weight_visit.get("visit_date") == "2026-02-20"
 
 
 def test_document_review_moves_visit_scoped_keys_into_visits_group(test_client):
