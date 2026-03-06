@@ -304,6 +304,26 @@ def test_way_of_working_plan_level_pr_roadmap_is_propagated() -> None:
         assert term in owner_doc
 
 
+def test_way_of_working_branch_naming_worktree_prefix_is_propagated() -> None:
+    source_doc = _read_text(REPO_ROOT / "docs" / "shared" / "03-ops" / "way-of-working.md")
+    owner_doc = _read_text(
+        ROUTER_ROOT / "03_SHARED" / "WAY_OF_WORKING" / "30_branching-strategy.md"
+    )
+    workflow_doc = _read_text(ROUTER_ROOT / "01_WORKFLOW" / "BRANCHING" / "00_entry.md")
+
+    required_terms = (
+        "Canonical format:",
+        "<worktree>/<category>/<slug>",
+        "Legacy format `<category>/<slug>` is temporarily allowed during migration.",
+        "Detached HEAD is exempt from this naming convention.",
+    )
+
+    for term in required_terms:
+        assert term in source_doc
+        assert term in owner_doc
+        assert term in workflow_doc
+
+
 def test_pull_request_procedure_ai_automation_clauses_are_propagated() -> None:
     source_doc = _read_text(REPO_ROOT / "docs" / "shared" / "03-ops" / "way-of-working.md")
     owner_doc = _read_text(ROUTER_ROOT / "03_SHARED" / "WAY_OF_WORKING" / "50_pull-requests.md")
