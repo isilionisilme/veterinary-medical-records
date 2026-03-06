@@ -78,9 +78,9 @@ La función `_normalize_canonical_review_scoping()` en `review_service.py` ya se
 
 ### Phase 0 — Baseline y snapshot multi-visita
 
-- [ ] P0-A 🔄 — Crear tests de integración de review scoping que capturen el comportamiento actual de `weight` en escenarios: (1) single-visit con peso, (2) multi-visit con pesos diferentes, (3) global-only sin fecha en snippet, (4) campo de peso en `unassigned`. Verificar que reflejan el status quo (peso global arbitrario). (GPT-5.3-Codex)
-- [ ] P0-B 🔄 — Ampliar fixtures de weight con casos multi-visita y global-only bajo `backend/tests/fixtures/synthetic/weight/`. Registrar expectativas _pre-cambio_ como snapshot de regresión. (GPT-5.3-Codex)
-- [ ] CT-1 🔄 — Commit task: scope P0-A + P0-B → `test(plan-p0): visit-scoped weight baseline tests` → push (GPT-5.3-Codex)
+- [x] P0-A 🔄 — Crear tests de integración de review scoping que capturen el comportamiento actual de `weight` en escenarios: (1) single-visit con peso, (2) multi-visit con pesos diferentes, (3) global-only sin fecha en snippet, (4) campo de peso en `unassigned`. Verificar que reflejan el status quo (peso global arbitrario). (GPT-5.3-Codex) (SHA: d36d8679)
+- [x] P0-B 🔄 — Ampliar fixtures de weight con casos multi-visita y global-only bajo `backend/tests/fixtures/synthetic/weight/`. Registrar expectativas _pre-cambio_ como snapshot de regresión. (GPT-5.3-Codex) (SHA: d36d8679)
+- [x] CT-1 🔄 — Commit task: scope P0-A + P0-B → `test(plan-p0): visit-scoped weight baseline tests` → push (GPT-5.3-Codex) (SHA: d36d8679)
 
 ### Phase 1 — Scoping, mining y ranking
 
