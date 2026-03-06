@@ -1,4 +1,30 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [ADR-ARCH-0002: SQLite as Primary Database](#adr-arch-0002-sqlite-as-primary-database)
+  - [Status](#status)
+  - [Context](#context)
+  - [Decision Drivers](#decision-drivers)
+  - [Considered Options](#considered-options)
+    - [Option A — SQLite (stdlib `sqlite3`)](#option-a--sqlite-stdlib-sqlite3)
+    - [Option B — PostgreSQL](#option-b--postgresql)
+    - [Option C — MongoDB](#option-c--mongodb)
+  - [Decision](#decision)
+  - [Rationale](#rationale)
+  - [Consequences](#consequences)
+    - [Positive](#positive)
+    - [Negative](#negative)
+    - [Risks](#risks)
+  - [Code Evidence](#code-evidence)
+  - [Related Decisions](#related-decisions)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # ADR-ARCH-0002: SQLite as Primary Database
+
+
+**Breadcrumbs:** [Docs](../../../../README.md) / [Projects](../../../README.md) / veterinary-medical-records / 02-tech / adr
 
 ## Status
 - Accepted

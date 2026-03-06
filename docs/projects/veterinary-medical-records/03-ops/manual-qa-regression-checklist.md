@@ -1,4 +1,18 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Manual QA Regression Checklist](#manual-qa-regression-checklist)
+  - [Environment Blocks](#environment-blocks)
+  - [QA Template (recommended execution order)](#qa-template-recommended-execution-order)
+  - [Run Header Template](#run-header-template)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Manual QA Regression Checklist
+
+
+**Breadcrumbs:** [Docs](../../../README.md) / [Projects](../../README.md) / veterinary-medical-records / 03-ops
 
 Purpose: user-centered manual regression checklist grouped by shared environment to minimize context switching between test cases.
 

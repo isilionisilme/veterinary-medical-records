@@ -1,4 +1,29 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [CTO Review Verdict — `veterinary-medical-records`](#cto-review-verdict--veterinary-medical-records)
+  - [Evidence Pack](#evidence-pack)
+    - [1. Critical files & state](#1-critical-files--state)
+    - [2. Known residual gaps](#2-known-residual-gaps)
+    - [3. Doc/implementation consistency assessment](#3-docimplementation-consistency-assessment)
+    - [4. Assumptions (evidence not directly available)](#4-assumptions-evidence-not-directly-available)
+  - [Verdict](#verdict)
+    - [Strengths (what evaluator will notice positively in 10–15 min)](#strengths-what-evaluator-will-notice-positively-in-1015-min)
+    - [Highest-risk gaps (what evaluator will most likely flag)](#highest-risk-gaps-what-evaluator-will-most-likely-flag)
+    - [What evaluator will most likely notice in 10–15 minutes](#what-evaluator-will-most-likely-notice-in-1015-minutes)
+  - [Top 5 Highest-Leverage Improvements](#top-5-highest-leverage-improvements)
+  - ["Do Not Change" List](#do-not-change-list)
+  - [Smoke Checklist (Fast, Concrete, Runnable)](#smoke-checklist-fast-concrete-runnable)
+  - [Final Recommendation](#final-recommendation)
+    - [**Ship now** — with the 5 small improvements above (estimated: 30–45 minutes total).](#ship-now--with-the-5-small-improvements-above-estimated-3045-minutes-total)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # CTO Review Verdict — `veterinary-medical-records`
+
+
+**Breadcrumbs:** [Docs](../../../README.md) / [Projects](../../README.md) / veterinary-medical-records / 99-archive
 
 > **⚠️ Historical snapshot (2026-02-24).** All gaps and improvements identified here were resolved in Iterations 2–12. Current state: ~957 tests, 13 CI jobs, auth boundary present, AppWorkspace at 2,221 LOC. See [delivery-summary.md](../04-delivery/delivery-summary.md) and [implementation-history.md](../04-delivery/implementation-history.md) for current metrics.
 

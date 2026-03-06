@@ -1,4 +1,68 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [E2E Coverage Plan - Playwright](#e2e-coverage-plan---playwright)
+  - [Objective](#objective)
+  - [1. Feature Inventory (user perspective)](#1-feature-inventory-user-perspective)
+    - [A — Application load](#a--application-load)
+    - [B — Document sidebar](#b--document-sidebar)
+    - [C — Document upload](#c--document-upload)
+    - [D — PDF viewer](#d--pdf-viewer)
+    - [E — Viewer toolbar (tabs)](#e--viewer-toolbar-tabs)
+    - [F — Extracted text view (Raw Text)](#f--extracted-text-view-raw-text)
+    - [G — Technical details (processing history)](#g--technical-details-processing-history)
+    - [H — Extracted data panel (Structured Data)](#h--extracted-data-panel-structured-data)
+    - [I — Search and filters in extracted data](#i--search-and-filters-in-extracted-data)
+    - [J — Field editing](#j--field-editing)
+    - [K — Review workflow](#k--review-workflow)
+    - [L — Evidence panel (Source Panel)](#l--evidence-panel-source-panel)
+    - [M — Layout and split panel](#m--layout-and-split-panel)
+    - [N — Toasts and notifications](#n--toasts-and-notifications)
+    - [O — Visits (canonical contract)](#o--visits-canonical-contract)
+  - [2. Detailed Test Specification (Given / When / Then)](#2-detailed-test-specification-given--when--then)
+    - [P0 — Smoke (en cada PR, <30 s cada test)](#p0--smoke-en-cada-pr-30-s-cada-test)
+      - [`app-loads.spec.ts`](#app-loadsspects)
+      - [`upload-smoke.spec.ts`](#upload-smokespects)
+    - [P1 — Core workflows (en cada PR, <60 s cada test)](#p1--core-workflows-en-cada-pr-60-s-cada-test)
+      - [`pdf-viewer.spec.ts`](#pdf-viewerspects)
+      - [`document-sidebar.spec.ts`](#document-sidebarspects)
+      - [`extracted-data.spec.ts`](#extracted-dataspects)
+      - [`field-editing.spec.ts`](#field-editingspects)
+      - [`review-workflow.spec.ts`](#review-workflowspects)
+    - [P2 — Secondary features (nightly / pre-release, <90 s cada test)](#p2--secondary-features-nightly--pre-release-90-s-cada-test)
+      - [`upload-validation.spec.ts`](#upload-validationspects)
+      - [`viewer-tabs.spec.ts`](#viewer-tabsspects)
+      - [`raw-text.spec.ts`](#raw-textspects)
+      - [`structured-filters.spec.ts`](#structured-filtersspects)
+      - [`field-validation.spec.ts`](#field-validationspects)
+      - [`source-panel.spec.ts`](#source-panelspects)
+      - [`sidebar-interactions.spec.ts`](#sidebar-interactionsspects)
+      - [`split-panel.spec.ts`](#split-panelspects)
+      - [`zoom-advanced.spec.ts`](#zoom-advancedspects)
+      - [`reprocess.spec.ts`](#reprocessspects)
+      - [`visit-grouping.spec.ts`](#visit-groupingspects)
+      - [`toasts.spec.ts`](#toastsspects)
+      - [`add-field.spec.ts`](#add-fieldspects)
+  - [3. Execution Strategy](#3-execution-strategy)
+    - [On each PR (CI `e2e` job)](#on-each-pr-ci-e2e-job)
+    - [Nightly / pre-release](#nightly--pre-release)
+    - [Technical configuration](#technical-configuration)
+    - [Proposed npm scripts](#proposed-npm-scripts)
+  - [4. Required fixtures and helpers](#4-required-fixtures-and-helpers)
+  - [5. Additional required `data-testid` values](#5-additional-required-data-testid-values)
+  - [6. Coverage by layer](#6-coverage-by-layer)
+    - [Matriz de trazabilidad Test → Feature](#matriz-de-trazabilidad-test-%E2%86%92-feature)
+  - [7. Recommended implementation order](#7-recommended-implementation-order)
+  - [How to test](#how-to-test)
+  - [Notes](#notes)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # E2E Coverage Plan - Playwright
+
+
+**Breadcrumbs:** [Docs](../../../README.md) / [Projects](../../README.md) / veterinary-medical-records / 03-ops
 
 ## Objective
 

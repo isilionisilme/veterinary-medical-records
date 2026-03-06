@@ -180,8 +180,8 @@ This plan was paused after D4-A (Phase 4 navigation). Since then:
 - [x] D4R-D 🔄 — Apply approved consolidation/correction updates (Execution agent) — ✅ `no-commit (C-1..C-8 applied: 10 files modified, 2026-03-06)`
 - [x] D4R-E 🚧 — QA audit refresh: verify metrics, test counts, architecture trees, and technical data against current codebase (iteration 18+) · skill: `architecture-doc-auditor` (Planning agent) — ✅ `no-commit (14 findings, all approved 2026-03-06)`
 - [x] D4R-F 🔄 — Apply D4R-E corrections + translate plan-e2e-test-coverage.md to English (Execution agent) — ✅ `abbeebb4`
-- [ ] D4R-G 🔄 — Update navigation: sitemap, TOCs, breadcrumbs for all current files · tool: `doctoc` (Execution agent)
-- [ ] D4R-H 🚧 — User validation of full navigation quality (Planning agent) — replaces original D4-B
+- [x] D4R-G 🔄 — Update navigation: sitemap, TOCs, breadcrumbs for all current files · tool: `doctoc` (Execution agent) — ✅ `no-commit (await D4R-H user validation)`
+- [x] D4R-H 🚧 — User validation of full navigation quality (Planning agent) — replaces original D4-B — ✅ `no-commit (user approved via commit/push/PR request, 2026-03-06)`
 
 ### Phase 5 — Format and Markdown standardization
 

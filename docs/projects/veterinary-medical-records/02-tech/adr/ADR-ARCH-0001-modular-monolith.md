@@ -1,4 +1,30 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [ADR-ARCH-0001: Modular Monolith over Microservices](#adr-arch-0001-modular-monolith-over-microservices)
+  - [Status](#status)
+  - [Context](#context)
+  - [Decision Drivers](#decision-drivers)
+  - [Considered Options](#considered-options)
+    - [Option A — Modular monolith with hexagonal architecture](#option-a--modular-monolith-with-hexagonal-architecture)
+    - [Option B — Microservices (upload, extraction, review)](#option-b--microservices-upload-extraction-review)
+    - [Option C — Traditional monolith without explicit boundaries](#option-c--traditional-monolith-without-explicit-boundaries)
+  - [Decision](#decision)
+  - [Rationale](#rationale)
+  - [Consequences](#consequences)
+    - [Positive](#positive)
+    - [Negative](#negative)
+    - [Risks](#risks)
+  - [Code Evidence](#code-evidence)
+  - [Related Decisions](#related-decisions)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # ADR-ARCH-0001: Modular Monolith over Microservices
+
+
+**Breadcrumbs:** [Docs](../../../../README.md) / [Projects](../../../README.md) / veterinary-medical-records / 02-tech / adr
 
 ## Status
 - Accepted

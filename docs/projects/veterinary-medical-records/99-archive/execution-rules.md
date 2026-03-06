@@ -1,4 +1,72 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Execution Rules — Shared Operational Rules for AI Plan Execution](#execution-rules--shared-operational-rules-for-ai-plan-execution)
+  - [File structure](#file-structure)
+  - [Strengths — DO NOT MODIFY WITHOUT EXPLICIT JUSTIFICATION](#strengths--do-not-modify-without-explicit-justification)
+  - [Operational rules](#operational-rules)
+    - [Semi-unattended execution (default mode — hard rule)](#semi-unattended-execution-default-mode--hard-rule)
+    - [Atomic iterations](#atomic-iterations)
+    - [Extended execution state (pending / in-progress / blocked / completed)](#extended-execution-state-pending--in-progress--blocked--completed)
+    - [Step eligibility rule (hard rule — applies before any other)](#step-eligibility-rule-hard-rule--applies-before-any-other)
+    - ["Continúa-only" rule](#contin%C3%BAa-only-rule)
+    - [Rollback](#rollback)
+    - [Plan = agents only](#plan--agents-only)
+    - [Plan scope principle (hard rule)](#plan-scope-principle-hard-rule)
+    - [PR progress tracking (mandatory)](#pr-progress-tracking-mandatory)
+    - [CI verification (mandatory — hard rule)](#ci-verification-mandatory--hard-rule)
+  - [Step completion integrity (hard rules — added 2026-02-26)](#step-completion-integrity-hard-rules--added-2026-02-26)
+    - [NO-BATCH (hard rule)](#no-batch-hard-rule)
+    - [CI-PIPELINE (pipeline execution for 🔄 auto-chain steps)](#ci-pipeline-pipeline-execution-for--auto-chain-steps)
+      - [Core principle](#core-principle)
+      - [Flow](#flow)
+      - [Rules](#rules)
+      - [Cancelled CI runs](#cancelled-ci-runs)
+      - [CI-FIRST still required for](#ci-first-still-required-for)
+    - [PLAN-UPDATE-IMMEDIATE (hard rule)](#plan-update-immediate-hard-rule)
+    - [STEP-LOCK (explicit state — hard rule)](#step-lock-explicit-state--hard-rule)
+    - [EVIDENCE BLOCK (mandatory on every step close)](#evidence-block-mandatory-on-every-step-close)
+    - [AUTO-HANDOFF GUARD (hard rule)](#auto-handoff-guard-hard-rule)
+    - [Format-before-commit (mandatory — hard rule)](#format-before-commit-mandatory--hard-rule)
+    - [Local preflight integration (mandatory — maps SCOPE BOUNDARY to L1/L2/L3)](#local-preflight-integration-mandatory--maps-scope-boundary-to-l1l2l3)
+    - [Iteration boundary (mandatory — hard rule)](#iteration-boundary-mandatory--hard-rule)
+    - [Next-step message (mandatory — hard rule)](#next-step-message-mandatory--hard-rule)
+    - [Token-efficiency policy (mandatory)](#token-efficiency-policy-mandatory)
+  - [Plan-edit-last (hard constraint)](#plan-edit-last-hard-constraint)
+    - [Hard-gates: structured decision protocol](#hard-gates-structured-decision-protocol)
+  - [Prompt strategy](#prompt-strategy)
+    - ["Continúa" protocol](#contin%C3%BAa-protocol)
+    - [Next-step instructions (rule for all agents)](#next-step-instructions-rule-for-all-agents)
+    - [Routing for continuation intent](#routing-for-continuation-intent)
+  - [SCOPE BOUNDARY template (two-commit strategy)](#scope-boundary-template-two-commit-strategy)
+    - [STEP 0 — BRANCH VERIFICATION (before any code change)](#step-0--branch-verification-before-any-code-change)
+    - [STEP A — Commit code (plan file untouched)](#step-a--commit-code-plan-file-untouched)
+    - [STEP B — Commit plan update (only after code is committed)](#step-b--commit-plan-update-only-after-code-is-committed)
+    - [STEP C — Push both commits](#step-c--push-both-commits)
+    - [STEP D — Update active PR description](#step-d--update-active-pr-description)
+    - [STEP E — CI GATE (mandatory — do NOT skip)](#step-e--ci-gate-mandatory--do-not-skip)
+    - [STEP F — CHAIN OR STOP (mandatory)](#step-f--chain-or-stop-mandatory)
+  - [Iteration lifecycle protocol](#iteration-lifecycle-protocol)
+    - [Branch creation (mandatory — before ANY plan step)](#branch-creation-mandatory--before-any-plan-step)
+    - [PR readiness (automatic — not a plan step)](#pr-readiness-automatic--not-a-plan-step)
+    - [Merge + post-merge cleanup (automatic — not a plan step)](#merge--post-merge-cleanup-automatic--not-a-plan-step)
+    - [Iteration close-out protocol (automatic — not a plan step)](#iteration-close-out-protocol-automatic--not-a-plan-step)
+      - [1. Plan reconciliation (mandatory if any steps are `[ ]`)](#1-plan-reconciliation-mandatory-if-any-steps-are--)
+      - [2. Update IMPLEMENTATION_HISTORY.md (mandatory)](#2-update-implementation_historymd-mandatory)
+      - [3. Rename plan → completed archive (mandatory)](#3-rename-plan-%E2%86%92-completed-archive-mandatory)
+      - [4. DOC_UPDATES normalization (conditional)](#4-doc_updates-normalization-conditional)
+      - [5. Commit + push + PR](#5-commit--push--pr)
+      - [6. Mirror to docs repository (if applicable)](#6-mirror-to-docs-repository-if-applicable)
+  - [Commit conventions](#commit-conventions)
+  - [Output format (per iteration finding)](#output-format-per-iteration-finding)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Execution Rules — Shared Operational Rules for AI Plan Execution
+
+
+**Breadcrumbs:** [Docs](../../../README.md) / [Projects](../../README.md) / veterinary-medical-records / 99-archive
 
 > **⚠️ Archived (2026-03-06).** Content fully absorbed into [plan-execution-protocol.md](../03-ops/plan-execution-protocol.md), [plan-management.md](../03-ops/plan-management.md), and [way-of-working.md](../../shared/04-delivery/way-of-working.md). Kept for reference only.
 

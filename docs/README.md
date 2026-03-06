@@ -3,7 +3,7 @@ title: "Wiki — Documentation Index"
 type: index
 status: active
 audience: all
-last-updated: 2026-03-02
+last-updated: 2026-03-06
 ---
 
 # Wiki — Documentation Index
@@ -54,19 +54,28 @@ docs/
   - `01-product/product-design.md`
   - `01-product/ux-design.md`
   - `02-tech/architecture.md`
+  - `02-tech/adr/index.md`
+  - `02-tech/adr/ADR-ARCH-0001-modular-monolith.md`
+  - `02-tech/adr/ADR-ARCH-0002-sqlite-database.md`
+  - `02-tech/adr/ADR-ARCH-0003-raw-sql-repository-pattern.md`
+  - `02-tech/adr/ADR-ARCH-0004-in-process-async-processing.md`
   - `02-tech/backend-implementation.md`
   - `02-tech/extraction-quality.md`
   - `02-tech/frontend-implementation.md`
   - `02-tech/technical-design.md`
   - `03-ops/execution-rules.md`
   - `03-ops/manual-qa-regression-checklist.md`
-  - `03-ops/plan-execution-protocol.md`
   - `03-ops/plan-e2e-test-coverage.md`
+  - `03-ops/plan-execution-protocol.md`
+  - `03-ops/plan-management.md`
   - `04-delivery/copilot-usage.md`
   - `04-delivery/delivery-summary.md`
   - `04-delivery/future-improvements.md`
   - `04-delivery/implementation-history.md`
   - `04-delivery/implementation-plan.md`
+  - `99-archive/12-factor-audit.md`
+  - `99-archive/codebase-audit.md`
+  - `99-archive/cto-review-verdict.md`
 
 ## Documentation governance (normative)
 

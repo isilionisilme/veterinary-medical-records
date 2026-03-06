@@ -1,4 +1,19 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [F1-A — 12-Factor audit (single-machine Docker Compose scope)](#f1-a--12-factor-audit-single-machine-docker-compose-scope)
+  - [Compliance summary](#compliance-summary)
+  - [Out-of-scope notes (explicit)](#out-of-scope-notes-explicit)
+  - [Partial/Weak findings table](#partialweak-findings-table)
+  - [Prioritized backlog (top 5)](#prioritized-backlog-top-5)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # F1-A — 12-Factor audit (single-machine Docker Compose scope)
+
+
+**Breadcrumbs:** [Docs](../../../README.md) / [Projects](../../README.md) / veterinary-medical-records / 99-archive
 
 > **⚠️ Historical snapshot (2026-02-23).** All 5 prioritized backlog items were resolved in Iterations 2–11. See [delivery-summary.md](../04-delivery/delivery-summary.md) and [implementation-history.md](../04-delivery/implementation-history.md) for current state.
 

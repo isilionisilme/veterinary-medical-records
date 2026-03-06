@@ -1,4 +1,27 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Codebase Maintainability Audit](#codebase-maintainability-audit)
+  - [Scope and methodology](#scope-and-methodology)
+  - [Stack/context constraints](#stackcontext-constraints)
+  - [Executive summary](#executive-summary)
+  - [Compliance score table (9 workers/categories)](#compliance-score-table-9-workerscategories)
+  - [Severity summary totals](#severity-summary-totals)
+  - [Detailed findings](#detailed-findings)
+  - [Pre-identified critical targets](#pre-identified-critical-targets)
+    - [1) frontend/src/App.tsx monolithic risk](#1-frontendsrcapptsx-monolithic-risk)
+    - [2) backend/app/application/processing_runner.py mixed responsibilities](#2-backendappapplicationprocessing_runnerpy-mixed-responsibilities)
+    - [3) backend/app/application/document_service.py too many responsibilities](#3-backendappapplicationdocument_servicepy-too-many-responsibilities)
+  - [Prioritized remediation backlog (Top 10)](#prioritized-remediation-backlog-top-10)
+  - [How to test](#how-to-test)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Codebase Maintainability Audit
+
+
+**Breadcrumbs:** [Docs](../../../README.md) / [Projects](../../README.md) / veterinary-medical-records / 99-archive
 
 > **⚠️ Historical snapshot (2026-02-23).** All 15 findings were resolved in Iterations 1–12. Compliance scores below reflect the state at audit time and are no longer current. See [delivery-summary.md](../04-delivery/delivery-summary.md) and [implementation-history.md](../04-delivery/implementation-history.md) for up-to-date metrics.
 

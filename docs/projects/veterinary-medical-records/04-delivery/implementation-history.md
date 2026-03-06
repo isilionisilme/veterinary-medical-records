@@ -1,4 +1,18 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Implementation History — Iterative Improvement Timeline](#implementation-history--iterative-improvement-timeline)
+  - [Active iteration](#active-iteration)
+  - [Timeline](#timeline)
+  - [Cumulative progress](#cumulative-progress)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Implementation History — Iterative Improvement Timeline
+
+
+**Breadcrumbs:** [Docs](../../../README.md) / [Projects](../../README.md) / veterinary-medical-records / 04-delivery
 
 > Consolidated timeline of all improvement iterations. Each row links to a detailed completed file with step-by-step execution logs.
 

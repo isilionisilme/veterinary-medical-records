@@ -48,7 +48,7 @@ last-updated: 2026-03-02
     - [`confidence_policy.yaml` (minimum spec)](#confidence_policyyaml-minimum-spec)
     - [Reviewed signal semantics (deterministic)](#reviewed-signal-semantics-deterministic)
   - [8. Error Handling & States](#8-error-handling--states)
-    - [8.1 User-facing error messages (Iteration 11)](#81-user-facing-error-messages-iteration-11)
+    - [8.1 User-facing error messages](#81-user-facing-error-messages)
   - [9. Observability](#9-observability)
     - [9.1 Logging](#91-logging)
     - [9.2 Future Observability](#92-future-observability)
