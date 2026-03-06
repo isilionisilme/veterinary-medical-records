@@ -3,7 +3,7 @@
 > **Operational rules:** See [plan-execution-protocol.md](../../03-ops/plan-execution-protocol.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
 
 **Branch:** `veterinary-medical-records-golden-loop/fix/multi-visit-rawtext-detection`
-**PR:** pendiente (draft)
+**PR:** [#216](https://github.com/isilionisilme/veterinary-medical-records/pull/216) (draft)
 **Prerequisite:** `main` estable con tests verdes y baseline reproducible en `test_document_review.py`.
 **Worktree:** `d:/Git/veterinary-medical-records-golden-loop`
 **CI Mode:** `2) Pipeline depth-1 gate` (default)
@@ -152,7 +152,7 @@ Se incorpora una fuente adicional de deteccion de visitas basada en `raw_text` c
 
 - [x] P3-A 🔄 - Ejecutar benchmark completo + delta, sin regresiones en golden loops.
 - [x] P3-B 🔄 - Ejecutar suite focalizada de visit detection incluyendo assert duro `detected_visits == expected_visits` para cada fixture.
-- [ ] CT-4 🔄 - Commit task P3-A + P3-B.
+- [x] CT-4 🔄 - Commit task P3-A + P3-B. — ✅ `c070040a`
 - [ ] P3-C 🚧 - Hard-gate: validacion manual de `docB` en entorno dev. Criterio GO: multiples visitas detectadas correctamente.
 - [ ] P3-D 🔄 - Post-gate: actualizacion de documentacion tecnica y umbrales aplicables.
 - [ ] CT-5 🔄 - Commit task P3-D.
@@ -190,7 +190,7 @@ Se incorpora una fuente adicional de deteccion de visitas basada en `raw_text` c
 
 ## Active Prompt
 
-Siguiente paso ejecutable: `CT-4` (commit de P3-A + P3-B).
+Siguiente paso ejecutable: `P3-C` (hard-gate, validacion manual de docB en entorno dev).
 
 ---
 
