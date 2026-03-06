@@ -85,34 +85,34 @@ Re-utilizar `_mine_interpretation_candidates()` sobre el texto de cada segmento 
 
 ### Phase 0 - Baseline
 
-- [ ] P0-A 🔄 - Crear/extender fixtures de integracion con documentos multi-visita que tengan texto clinico rico (sintomas, diagnosticos, medicacion) en cada segmento. Asegurar que el baseline actual produce `fields: []` para visitas detectadas desde raw text.
-- [ ] P0-B 🔄 - Crear tests focalizados que asserten el estado vacio actual como baseline. Estos tests evolucionaran para verificar campos poblados en phases siguientes.
-- [ ] CT-1 🔄 - Commit task P0.
+- [x] P0-A 🔄 - Crear/extender fixtures de integracion con documentos multi-visita que tengan texto clinico rico (sintomas, diagnosticos, medicacion) en cada segmento. Asegurar que el baseline actual produce `fields: []` para visitas detectadas desde raw text.
+- [x] P0-B 🔄 - Crear tests focalizados que asserten el estado vacio actual como baseline. Estos tests evolucionaran para verificar campos poblados en phases siguientes.
+- [x] CT-1 🔄 - Commit task P0.
 
 ### Phase 1 - reason_for_visit
 
-- [ ] P1-A 🔄 - Implementar extraccion de `reason_for_visit` desde el segmento de texto de cada visita. Estrategia: primera linea/clausula significativa del segmento (excluyendo la fecha y prefijos de visita como "Consulta", "Control", "Revision"). Inyectar en el campo `reason_for_visit` de la visita cuando este `None`.
-- [ ] P1-B 🔄 - Tests focalizados: verificar que `reason_for_visit` se extrae correctamente para docB y fixtures sinteticos. Assert de no-regresion en visitas con `reason_for_visit` ya asignado.
-- [ ] CT-2 🔄 - Commit task P1.
+- [x] P1-A 🔄 - Implementar extraccion de `reason_for_visit` desde el segmento de texto de cada visita. Estrategia: primera linea/clausula significativa del segmento (excluyendo la fecha y prefijos de visita como "Consulta", "Control", "Revision"). Inyectar en el campo `reason_for_visit` de la visita cuando este `None`.
+- [x] P1-B 🔄 - Tests focalizados: verificar que `reason_for_visit` se extrae correctamente para docB y fixtures sinteticos. Assert de no-regresion en visitas con `reason_for_visit` ya asignado.
+- [x] CT-2 🔄 - Commit task P1.
 
 ### Phase 2 - diagnosis + symptoms
 
-- [ ] P2-A 🔄 - Implementar extraccion de `diagnosis` y `symptoms` por segmento de visita. Estrategia: re-usar logica de `_mine_interpretation_candidates()` ejecutada sobre el texto del segmento. Campos extraidos se añaden a `visit["fields"]` solo si no hay campos con esa key ya asignados por fuentes de mayor prioridad.
-- [ ] P2-B 🔄 - Tests focalizados: verificar extraccion correcta en fixtures multi-visita. Assert de deduplicacion (no duplicar campos ya presentes). Assert de determinismo.
-- [ ] CT-3 🔄 - Commit task P2.
+- [x] P2-A 🔄 - Implementar extraccion de `diagnosis` y `symptoms` por segmento de visita. Estrategia: re-usar logica de `_mine_interpretation_candidates()` ejecutada sobre el texto del segmento. Campos extraidos se añaden a `visit["fields"]` solo si no hay campos con esa key ya asignados por fuentes de mayor prioridad.
+- [x] P2-B 🔄 - Tests focalizados: verificar extraccion correcta en fixtures multi-visita. Assert de deduplicacion (no duplicar campos ya presentes). Assert de determinismo.
+- [x] CT-3 🔄 - Commit task P2.
 
 ### Phase 3 - medication + procedure
 
-- [ ] P3-A 🔄 - Implementar extraccion de `medication` y `procedure` por segmento de visita, misma estrategia que P2. Incluir patrones de medicacion ya existentes (nombres de farmacos, dosis, frecuencia).
-- [ ] P3-B 🔄 - Tests focalizados con fixtures que contengan lineas de medicacion y procedimientos en distintos segmentos de visita.
-- [ ] CT-4 🔄 - Commit task P3.
+- [x] P3-A 🔄 - Implementar extraccion de `medication` y `procedure` por segmento de visita, misma estrategia que P2. Incluir patrones de medicacion ya existentes (nombres de farmacos, dosis, frecuencia).
+- [x] P3-B 🔄 - Tests focalizados con fixtures que contengan lineas de medicacion y procedimientos en distintos segmentos de visita.
+- [x] CT-4 🔄 - Commit task P3.
 
 ### Phase 4 - Validacion y cierre
 
-- [ ] P4-A 🔄 - Ejecutar benchmark completo + delta. Verificar no regresiones en golden loops existentes.
-- [ ] P4-B 🔄 - Ejecutar suite de integracion completa. Verificar payload determinista e idempotente.
+- [x] P4-A 🔄 - Ejecutar benchmark completo + delta. Verificar no regresiones en golden loops existentes.
+- [x] P4-B 🔄 - Ejecutar suite de integracion completa. Verificar payload determinista e idempotente.
 - [ ] CT-5 🔄 - Commit task P4.
-- [ ] P4-C 🚧 - Hard-gate: revision de campos extraidos en docB. Criterio GO: al menos `reason_for_visit` y un campo clinico por visita.
+- [ ] P4-C 🚧 ⏳ IN PROGRESS - Hard-gate: revision de campos extraidos en docB. Criterio GO: al menos `reason_for_visit` y un campo clinico por visita.
 - [ ] P4-D 🔄 - Merge PR a `main`. Verificar CI verde.
 
 ---
@@ -134,7 +134,7 @@ Re-utilizar `_mine_interpretation_candidates()` sobre el texto de cada segmento 
 
 ## Active Prompt
 
-Pendiente de ejecucion. Primer paso: `P0-A`.
+En ejecucion. Siguiente paso: `P4-C`.
 
 ---
 
