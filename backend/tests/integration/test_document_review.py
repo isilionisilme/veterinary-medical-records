@@ -23,6 +23,7 @@ _US46_BASELINE_PATH = (
     / "review_baselines"
     / f"{_US46_BASELINE_VERSION}.json"
 )
+_RAW_TEXT_FIXTURES_PATH = Path(__file__).resolve().parents[1] / "fixtures" / "raw_text"
 
 _US46_VISIT_SCOPED_KEYS = {
     "symptoms",
@@ -195,6 +196,10 @@ def _collect_visit_grouping_stats(visits: object) -> dict[str, object]:
         "assigned_count": assigned_count,
         "unassigned_count": unassigned_count,
     }
+
+
+def _load_raw_text_fixture(name: str) -> str:
+    return (_RAW_TEXT_FIXTURES_PATH / name).read_text(encoding="utf-8")
 
 
 def _extract_assigned_visits(visits: object) -> list[dict[str, object]]:
@@ -1219,6 +1224,132 @@ def test_document_review_docb_raw_text_multi_visit_detects_multiple_assigned_vis
         visit.get("visit_date") for visit in assigned if isinstance(visit.get("visit_date"), str)
     }
     assert {"2026-02-11", "2026-02-18"}.issubset(assigned_dates)
+
+
+def test_document_review_multi_visit_rich_raw_text_baseline_generates_empty_visit_fields(
+    test_client,
+):
+    """Baseline guardrail: raw-text generated visits still start with empty field lists."""
+
+    document_id = _upload_sample_document(test_client)
+    run_id = str(uuid4())
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(
+        run_id=run_id,
+        data={
+            "document_id": document_id,
+            "processing_run_id": run_id,
+            "created_at": "2026-02-10T10:00:05+00:00",
+            "fields": [
+                {
+                    "field_id": "f-visit-date-1",
+                    "key": "visit_date",
+                    "value": "11/02/2026",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                },
+                {
+                    "field_id": "f-visit-date-2",
+                    "key": "visit_date",
+                    "value": "18/02/2026",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                },
+            ],
+            "visits": [],
+            "other_fields": [],
+        },
+    )
+
+    raw_text_path = get_storage_root() / document_id / "runs" / run_id / "raw-text.txt"
+    raw_text_path.parent.mkdir(parents=True, exist_ok=True)
+    raw_text_path.write_text(
+        _load_raw_text_fixture("docB_multi_visit_rich.txt"),
+        encoding="utf-8",
+    )
+
+    response = test_client.get(f"/documents/{document_id}/review")
+    assert response.status_code == 200
+    visits = response.json()["active_interpretation"]["data"]["visits"]
+    assigned = _extract_assigned_visits(visits)
+
+    assert len(assigned) >= 2
+    for visit in assigned:
+        fields = visit.get("fields")
+        assert isinstance(fields, list)
+        assert fields == []
+
+
+def test_document_review_multi_visit_rich_raw_text_baseline_keeps_reason_for_visit_empty(
+    test_client,
+):
+    document_id = _upload_sample_document(test_client)
+    run_id = str(uuid4())
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(
+        run_id=run_id,
+        data={
+            "document_id": document_id,
+            "processing_run_id": run_id,
+            "created_at": "2026-02-10T10:00:05+00:00",
+            "fields": [
+                {
+                    "field_id": "f-visit-date-1",
+                    "key": "visit_date",
+                    "value": "11/02/2026",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                },
+                {
+                    "field_id": "f-visit-date-2",
+                    "key": "visit_date",
+                    "value": "18/02/2026",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                },
+            ],
+            "visits": [],
+            "other_fields": [],
+        },
+    )
+
+    raw_text_path = get_storage_root() / document_id / "runs" / run_id / "raw-text.txt"
+    raw_text_path.parent.mkdir(parents=True, exist_ok=True)
+    raw_text_path.write_text(
+        _load_raw_text_fixture("docB_multi_visit_rich.txt"),
+        encoding="utf-8",
+    )
+
+    response = test_client.get(f"/documents/{document_id}/review")
+    assert response.status_code == 200
+    visits = response.json()["active_interpretation"]["data"]["visits"]
+    assigned = _extract_assigned_visits(visits)
+
+    assert len(assigned) >= 2
+    for visit in assigned:
+        assert visit.get("reason_for_visit") is None
 
 
 def test_document_review_detects_additional_visit_from_raw_text_context(test_client):
