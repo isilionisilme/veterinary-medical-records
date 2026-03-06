@@ -269,22 +269,33 @@ def _extract_visit_date_candidates_from_text(*, text: object) -> list[str]:
 
 
 def _detect_visit_dates_from_raw_text(*, raw_text: object) -> list[str]:
+    return [
+        normalized_date
+        for normalized_date, _ in _locate_visit_date_occurrences_from_raw_text(raw_text=raw_text)
+    ]
+
+
+def _locate_visit_date_occurrences_from_raw_text(*, raw_text: object) -> list[tuple[str, int]]:
     if not isinstance(raw_text, str):
         return []
 
-    compact = raw_text.strip()
-    if not compact:
+    if not raw_text.strip():
         return []
 
-    lines = [line.strip() for line in compact.splitlines()]
-    dates: list[str] = []
+    date_occurrences: list[tuple[str, int]] = []
+    line_records: list[tuple[str, int]] = []
+    cursor = 0
+    for raw_line in raw_text.splitlines(keepends=True):
+        line = raw_line.strip()
+        line_records.append((line, cursor))
+        cursor += len(raw_line)
 
-    for index, line in enumerate(lines):
+    for index, (line, line_offset) in enumerate(line_records):
         if not line:
             continue
 
         previous_non_empty = ""
-        for previous in reversed(lines[:index]):
+        for previous, _ in reversed(line_records[:index]):
             candidate = previous.strip()
             if candidate:
                 previous_non_empty = candidate
@@ -312,9 +323,9 @@ def _detect_visit_dates_from_raw_text(*, raw_text: object) -> list[str]:
             normalized_date = _normalize_visit_date_candidate(token_match.group(0))
             if normalized_date is None:
                 continue
-            dates.append(normalized_date)
+            date_occurrences.append((normalized_date, line_offset + token_match.start()))
 
-    return dates
+    return date_occurrences
 
 
 def _contains_any_date_token(*, text: object) -> bool:

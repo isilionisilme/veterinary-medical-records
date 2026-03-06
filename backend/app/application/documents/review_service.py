@@ -14,6 +14,7 @@ from backend.app.application.documents._shared import (
     _detect_visit_dates_from_raw_text,
     _extract_evidence_snippet,
     _extract_visit_date_candidates_from_text,
+    _locate_visit_date_occurrences_from_raw_text,
     _normalize_visit_date_candidate,
 )
 from backend.app.application.documents.calibration import (
@@ -297,6 +298,74 @@ def _project_review_payload_to_canonical(
     return _normalize_canonical_review_scoping(projected, raw_text=raw_text)
 
 
+def _resolve_snippet_anchor_offset(*, raw_text: str | None, snippet: str | None) -> int | None:
+    if not isinstance(raw_text, str) or not isinstance(snippet, str):
+        return None
+
+    compact_snippet = " ".join(snippet.split()).strip()
+    if len(compact_snippet) < 8:
+        return None
+
+    raw_text_lower = raw_text.casefold()
+    snippet_lower = compact_snippet.casefold()
+    exact_offset = raw_text_lower.find(snippet_lower)
+    if exact_offset >= 0:
+        return exact_offset
+
+    # Fallback for OCR punctuation drift: anchor with snippet prefix.
+    snippet_prefix = snippet_lower[: min(len(snippet_lower), 48)]
+    if len(snippet_prefix) < 12:
+        return None
+
+    prefix_offset = raw_text_lower.find(snippet_prefix)
+    if prefix_offset >= 0:
+        return prefix_offset
+
+    return None
+
+
+def _resolve_visit_from_anchor(
+    *,
+    candidate_dates: list[str],
+    anchor_offset: int | None,
+    visit_by_date: dict[str, dict[str, object]],
+    visit_occurrences_by_date: dict[str, list[dict[str, object]]],
+    raw_text_offsets_by_date: dict[str, list[int]],
+) -> dict[str, object] | None:
+    if anchor_offset is None:
+        for candidate_date in candidate_dates:
+            target_visit = visit_by_date.get(candidate_date)
+            if target_visit is not None:
+                return target_visit
+        return None
+
+    nearest_target: tuple[int, str, int] | None = None
+    dates_to_check = candidate_dates if candidate_dates else list(raw_text_offsets_by_date.keys())
+    for candidate_date in dates_to_check:
+        offsets = raw_text_offsets_by_date.get(candidate_date, [])
+        if not offsets:
+            continue
+        for occurrence_index, offset in enumerate(offsets):
+            distance = abs(offset - anchor_offset)
+            if nearest_target is None or distance < nearest_target[0]:
+                nearest_target = (distance, candidate_date, occurrence_index)
+
+    if nearest_target is None:
+        for candidate_date in candidate_dates:
+            target_visit = visit_by_date.get(candidate_date)
+            if target_visit is not None:
+                return target_visit
+        return None
+
+    _, target_date, target_occurrence_index = nearest_target
+    date_visits = visit_occurrences_by_date.get(target_date, [])
+    if not date_visits:
+        return visit_by_date.get(target_date)
+
+    visit_index = min(target_occurrence_index, len(date_visits) - 1)
+    return date_visits[visit_index]
+
+
 def _normalize_canonical_review_scoping(
     data: dict[str, object], *, raw_text: str | None = None
 ) -> dict[str, object]:
@@ -311,6 +380,9 @@ def _normalize_canonical_review_scoping(
     detected_visit_dates: list[str] = []
     seen_detected_visit_dates: set[str] = set()
     raw_text_detected_visit_dates = _detect_visit_dates_from_raw_text(raw_text=raw_text)
+    raw_text_offsets_by_date: dict[str, list[int]] = {}
+    for normalized_date, offset in _locate_visit_date_occurrences_from_raw_text(raw_text=raw_text):
+        raw_text_offsets_by_date.setdefault(normalized_date, []).append(offset)
 
     for item in raw_fields:
         if not isinstance(item, dict):
@@ -439,12 +511,36 @@ def _normalize_canonical_review_scoping(
     for visit_field in visit_scoped_fields:
         evidence_snippet = _extract_evidence_snippet(visit_field)
         evidence_visit_dates = _extract_visit_date_candidates_from_text(text=evidence_snippet)
-        target_visit: dict[str, object] | None = None
-        for candidate_visit_date in evidence_visit_dates:
-            target_visit = visit_by_date.get(candidate_visit_date)
-            if target_visit is not None:
-                break
         has_ambiguous_date_token = _contains_any_date_token(text=evidence_snippet)
+        evidence_anchor_offset = _resolve_snippet_anchor_offset(
+            raw_text=raw_text,
+            snippet=evidence_snippet,
+        )
+
+        target_visit: dict[str, object] | None = None
+        if evidence_visit_dates:
+            target_visit = _resolve_visit_from_anchor(
+                candidate_dates=evidence_visit_dates,
+                anchor_offset=evidence_anchor_offset,
+                visit_by_date=visit_by_date,
+                visit_occurrences_by_date=visit_occurrences_by_date,
+                raw_text_offsets_by_date=raw_text_offsets_by_date,
+            )
+
+        if (
+            target_visit is None
+            and not has_ambiguous_date_token
+            and evidence_anchor_offset is not None
+            and len(visit_by_date) > 1
+        ):
+            target_visit = _resolve_visit_from_anchor(
+                candidate_dates=[],
+                anchor_offset=evidence_anchor_offset,
+                visit_by_date=visit_by_date,
+                visit_occurrences_by_date=visit_occurrences_by_date,
+                raw_text_offsets_by_date=raw_text_offsets_by_date,
+            )
+
         if target_visit is None and len(visit_by_date) == 1 and not has_ambiguous_date_token:
             target_visit = next(iter(visit_by_date.values()))
 
