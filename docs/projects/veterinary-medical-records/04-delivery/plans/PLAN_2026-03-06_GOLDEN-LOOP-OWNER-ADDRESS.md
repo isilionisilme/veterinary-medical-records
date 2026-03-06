@@ -175,11 +175,11 @@
 
 ### Phase 4 - docB remediation (real extraction parity)
 
-- [ ] P4-A 🔄 - Implementar heuristica de extraccion para bloque owner no etiquetado en `candidate_mining.py` (patron linea nombre + linea direccion adyacente bajo contexto owner).
-- [ ] P4-B 🔄 - Actualizar `test_doc_b_golden_goal_fields_regression` para exigir `owner_address` poblado y mantener invariantes de no-regresion en `clinic_address`.
-- [ ] P4-C 🔄 - Ejecutar benchmark de `owner_address` + suite focalizada de regresion (`owner_address`, `clinic_address`, `docB`) y reportar delta EM/null misses/false positives.
-- [ ] P4-D 🚧 - Hard-gate: validacion de usuario del comportamiento en `docB` (GO/NO-GO para retomar `P3-D`).
-- [ ] CT-6 🔄 - Commit task: scope P4-A + P4-B + P4-C + P4-D -> `feat(plan-p4): docB owner_address extraction from unlabeled owner block` -> push.
+- [x] P4-A 🔄 - Implementar heuristica de extraccion para bloque owner no etiquetado en `candidate_mining.py` (patron linea nombre + linea direccion adyacente bajo contexto owner). — ✅ `c78bd5bb`
+- [x] P4-B 🔄 - Actualizar `test_doc_b_golden_goal_fields_regression` para exigir `owner_address` poblado y mantener invariantes de no-regresion en `clinic_address`. — ✅ `c78bd5bb`
+- [x] P4-C 🔄 - Ejecutar benchmark de `owner_address` + suite focalizada de regresion (`owner_address`, `clinic_address`, `docB`) y reportar delta EM/null misses/false positives. — ✅ `c78bd5bb`
+- [x] P4-D 🚧 - Hard-gate: validacion de usuario del comportamiento en `docB` (GO/NO-GO para retomar `P3-D`). — ✅ `GO (user confirmation in chat)`
+- [x] CT-6 🔄 - Commit task: scope P4-A + P4-B + P4-C + P4-D -> `feat(plan-p4): docB owner_address extraction from unlabeled owner block` -> push. — ✅ `c78bd5bb`
 
 ---
 
