@@ -5,7 +5,7 @@
 **Branch:** `veterinary-medical-records-golden-loop/fix/multi-visit-rawtext-detection`
 **PR:** pendiente (draft)
 **Prerequisite:** `main` estable con tests verdes y baseline reproducible en `test_document_review.py`.
-**Worktree:** pendiente de seleccion (obligatorio antes de Step 1)
+**Worktree:** `d:/Git/veterinary-medical-records-golden-loop`
 **CI Mode:** `2) Pipeline depth-1 gate` (default)
 **Agents:** `Codex 5.3` (single-agent execution)
 **Iteration:** 23 (propuesta)
@@ -131,27 +131,27 @@ Se incorpora una fuente adicional de deteccion de visitas basada en `raw_text` c
 
 ### Phase 0 - Baseline y diagnostico
 
-- [ ] P0-A 🔄 - Crear test de integracion que reproduzca bug de `docB`: raw text con multiples visitas -> sistema actual detecta una sola visita (snapshot del status quo).
-- [ ] P0-B 🔄 - Crear fixtures sinteticos con al menos 7 variantes: (a) keywords explicitos, (b) variantes implicitas, (c) separadores de seccion, (d) fechas sin keyword, (e) mezcla de formatos, (f) control single-visit, (g) fechas duplicadas en formatos distintos para la misma visita.
-- [ ] CT-1 🔄 - Commit task P0.
+- [x] P0-A 🔄 - Verificar que el test baseline existente reproduce el bug de `docB` (raw text con multiples visitas -> sistema detecta una sola). Extender si la cobertura es insuficiente. No cambiar logica productiva.
+- [x] P0-B 🔄 - Verificar que `visit_detection_cases.json` contiene las 7 variantes (a)-(g). Extender si faltan variantes o ajustar expected values. Asegurar que fixtures tienen campo `raw_text` consumible por la nueva funcion.
+- [x] CT-1 🔄 - Commit task P0.
 
 ### Phase 1 - Deteccion desde raw text (sin offsets)
 
-- [ ] P1-A0 🔄 - Propagar `raw_text` al flujo de normalizacion canonical: `get_document_review()` -> `_normalize_review_interpretation_data()` -> `_project_review_payload_to_canonical()` -> `_normalize_canonical_review_scoping()`.
-- [ ] P1-A 🔄 - Implementar `_detect_visit_dates_from_raw_text(raw_text) -> list[str]` en `_shared.py` usando contexto de visita + parseo de fecha. Evitar `Fecha` generico; usar patron compuesto (`fecha de visita|consulta|cita|atencion|exploracion`) y keywords clinicas de visita.
-- [ ] P1-B 🔄 - Integrar como tercera fuente en `review_service.py` (merge + deduplicacion por fecha normalizada) manteniendo orden estable.
-- [ ] CT-2 🔄 - Commit task P1.
+- [x] P1-A0 🔄 - Propagar `raw_text` al flujo canonical: leer contenido en `get_document_review()` via `storage.resolve_raw_text()`, inyectar bajo key `_raw_text` en `structured_data`, preservar a traves del pipeline hasta `_normalize_canonical_review_scoping()` donde sera consumida y eliminada del output.
+- [x] P1-A 🔄 - Implementar `_detect_visit_dates_from_raw_text(raw_text: str) -> list[str]` en `_shared.py` con estrategia de ventana de contexto (±150 chars por fecha tokenizada). Evaluar `_VISIT_CONTEXT_PATTERN` (extendido con `cita|atencion|exploracion`) y `_NON_VISIT_DATE_CONTEXT_PATTERN` solo sobre la ventana, NO sobre el texto completo. Deduplicar por fecha normalizada.
+- [x] P1-B 🔄 - Integrar como tercera fuente **aditiva** en `_normalize_canonical_review_scoping()`: despues de fuentes 1 y 2, llamar a `_detect_visit_dates_from_raw_text()` con `_raw_text` del dict. Solo añadir fechas no presentes en `seen_detected_visit_dates`. Prioridad: fuente 1 > 2 > 3.
+- [x] CT-2 🔄 - Commit task P1.
 
 ### Phase 2 - Guards y robustez
 
-- [ ] P2-A 🔄 - Endurecer `_NON_VISIT_DATE_CONTEXT_PATTERN` para excluir contextos no-clinicos: facturacion, emision, nacimiento, identificadores y disclaimers comunes.
-- [ ] P2-B 🔄 - Verificar determinismo e idempotencia del payload canonical con tests (misma entrada, misma salida/orden).
-- [ ] CT-3 🔄 - Commit task P2.
+- [x] P2-A 🔄 - Añadir terminos faltantes a `_NON_VISIT_DATE_CONTEXT_PATTERN` (los existentes ya cubren nacimiento/factura/emision). Nuevos: `registro`, `certificado`, `recibo`, `prescripcion`, `expediente`, `identificacion`, `numero de`, `nº`. Verificar que no interfieran con contextos clinicos validos.
+- [x] P2-B 🔄 - Verificar determinismo e idempotencia del payload canonical con tests (misma entrada, misma salida/orden).
+- [x] CT-3 🔄 - Commit task P2.
 
 ### Phase 3 - Validacion y cierre
 
-- [ ] P3-A 🔄 - Ejecutar benchmark completo + delta, sin regresiones en golden loops.
-- [ ] P3-B 🔄 - Ejecutar suite focalizada de visit detection incluyendo assert duro `detected_visits == expected_visits` para cada fixture.
+- [x] P3-A 🔄 - Ejecutar benchmark completo + delta, sin regresiones en golden loops.
+- [x] P3-B 🔄 - Ejecutar suite focalizada de visit detection incluyendo assert duro `detected_visits == expected_visits` para cada fixture.
 - [ ] CT-4 🔄 - Commit task P3-A + P3-B.
 - [ ] P3-C 🚧 - Hard-gate: validacion manual de `docB` en entorno dev. Criterio GO: multiples visitas detectadas correctamente.
 - [ ] P3-D 🔄 - Post-gate: actualizacion de documentacion tecnica y umbrales aplicables.
@@ -159,31 +159,38 @@ Se incorpora una fuente adicional de deteccion de visitas basada en `raw_text` c
 
 ### Phase 4 - Extension condicional (solo si Phase 1 no alcanza)
 
-- [ ] P4-A 🚧 - Decision gate: si `docB` NO queda resuelto solo con fechas desde raw text, habilitar asignacion posicional por offsets.
-- [ ] P4-B 🔄 - Implementar `_detect_visit_boundaries_from_raw_text(raw_text) -> list[DetectedVisit]` con `start_offset/end_offset` y asignacion por proximidad solo para campos sin fecha en snippet.
-- [ ] CT-6 🔄 - Commit task P4.
+- [x] P4-A 🚫 NO-GO - La deteccion por fechas desde raw text resolvio docB sin necesidad de offsets posicionales. No se habilita esta fase.
+- [ ] P4-B ⏭️ SKIPPED - Dependia de P4-A GO.
+- [ ] CT-6 ⏭️ SKIPPED - Dependia de P4-A GO.
+
+### Phase 5 - Merge y cierre de PR
+
+- [ ] P5-A 🔄 - Merge PR a `main` tras CT-5. Verificar CI verde.
+- [ ] P5-B 🔄 - Crear plan separado para nueva PR: extraccion de campos clinicos por segmento de visita (scope: `reason_for_visit`, `diagnosis`, `symptoms`, `medication`, etc.).
 
 ---
 
 ## Prompt Queue
 
-1. `P0-A`: reproducir baseline del bug `docB` en integracion sin cambiar logica productiva.
-2. `P0-B`: crear fixtures sinteticos para coverage de multi-visita y controles anti-regresion.
-3. `P1-A0`: propagar `raw_text` por pipeline canonical hasta scoping.
-4. `P1-A`: implementar deteccion de fechas de visita desde `raw_text` con contexto clinico.
-5. `P1-B`: integrar tercera fuente de visitas con merge + dedupe estable.
-6. `P2-A`: endurecer guard de contexto no-visita.
-7. `P2-B`: asegurar determinismo/idempotencia con tests dedicados.
-8. `P3-A`: ejecutar benchmark y validar no regresiones.
-9. `P3-B`: ejecutar suite focalizada con asserts duros de visit count.
+1. `P0-A`: verificar que el test baseline existente (`test_document_review_docb_raw_text_multi_visit_status_quo_detects_single_assigned_visit`) reproduce el bug de `docB` correctamente. Si no cubre el escenario objetivo (raw text con multiples visitas → sistema detecta una sola), extenderlo. No cambiar logica productiva.
+2. `P0-B`: verificar que `visit_detection_cases.json` ya contiene las 7 variantes (a)-(g). Si falta alguna variante o los expected values necesitan ajuste para la nueva fuente raw_text, extender. Los fixtures deben tener campo `raw_text` consumible por la nueva funcion.
+3. `P1-A0`: propagar `raw_text` al flujo de normalizacion canonical. Concretamente: (a) en `get_document_review()`, leer el contenido via `storage.resolve_raw_text()` cuando `exists_raw_text()` sea True; (b) inyectar `raw_text` en el dict `structured_data` bajo una key reservada (e.g. `_raw_text`) antes de llamar a `_normalize_review_interpretation_data()`; (c) preservar esa key a traves de `_project_review_payload_to_canonical()` hasta `_normalize_canonical_review_scoping()`, donde sera consumida y eliminada del output.
+4. `P1-A`: implementar `_detect_visit_dates_from_raw_text(raw_text: str) -> list[str]` en `_shared.py`. Estrategia: (a) tokenizar todas las fechas con `_VISIT_DATE_TOKEN_PATTERN`; (b) para cada fecha, extraer una **ventana de contexto** (±150 chars o hasta salto de linea/seccion) alrededor del match; (c) evaluar `_VISIT_CONTEXT_PATTERN` y `_NON_VISIT_DATE_CONTEXT_PATTERN` solo sobre la ventana, NO sobre el texto completo; (d) extender `_VISIT_CONTEXT_PATTERN` con keywords adicionales (`cita`, `atencion`, `exploracion`) manteniendo los existentes (`visita`, `consulta`, `control`, `revision`, `seguimiento`, `ingreso`, `alta`); (e) deduplicar por fecha normalizada.
+5. `P1-B`: integrar como tercera fuente **aditiva** en `_normalize_canonical_review_scoping()`: despues de recolectar fechas de fuente 1 (campos `visit_date`) y fuente 2 (snippets de evidencia), llamar a `_detect_visit_dates_from_raw_text()` con el `_raw_text` del dict. Solo añadir fechas que NO esten ya en `seen_detected_visit_dates`. Orden de prioridad: fuente 1 > fuente 2 > fuente 3 (raw_text nunca contradice, solo complementa).
+6. `P2-A`: añadir terminos faltantes a `_NON_VISIT_DATE_CONTEXT_PATTERN`. Terminos NUEVOS a agregar (los demas ya existen): `registro`, `certificado`, `recibo`, `prescripcion`, `expediente`, `identificacion`, `numero de`, `nº`. Verificar que no interfieran con contextos clinicos validos.
+7. `P2-B`: asegurar determinismo/idempotencia con tests dedicados: misma entrada → misma salida (orden de visitas, IDs, fechas). Ejecutar cada test 3 veces para confirmar estabilidad.
+8. `P3-A`: ejecutar benchmark completo y validar no regresiones en golden loops.
+9. `P3-B`: ejecutar suite focalizada con asserts duros de visit count para cada fixture de `visit_detection_cases.json`.
 10. `P3-C`: hard-gate de validacion manual de `docB`.
 11. `P3-D`: documentar cambios y umbrales post-gate.
-12. `P4-A`: decision gate para habilitar offsets.
-13. `P4-B`: implementar asignacion posicional solo si gate GO.
+12. `P4-A`: 🚫 NO-GO — resuelto sin offsets.
+13. `P4-B`: ⏭️ SKIPPED.
+14. `P5-A`: merge PR a `main`.
+15. `P5-B`: crear plan para nueva PR de extraccion de campos por segmento de visita.
 
 ## Active Prompt
 
-Pendiente de carga por planning agent antes del siguiente step ejecutable.
+Siguiente paso ejecutable: `CT-4` (commit de P3-A + P3-B).
 
 ---
 
