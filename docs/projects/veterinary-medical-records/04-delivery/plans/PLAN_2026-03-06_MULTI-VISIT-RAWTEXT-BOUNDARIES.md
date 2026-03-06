@@ -1,12 +1,14 @@
 # Plan: Multi-Visit Detection via Raw Text Boundaries
 
-> **Operational rules:** See [execution-rules.md](../../03-ops/execution-rules.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
+> **Operational rules:** See [plan-execution-protocol.md](../../03-ops/plan-execution-protocol.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
 
-**Rama:** `veterinary-medical-records-golden-loop/fix/multi-visit-rawtext-detection`
+**Branch:** `veterinary-medical-records-golden-loop/fix/multi-visit-rawtext-detection`
 **PR:** pendiente (draft)
-**Prerequisito:** `main` estable con tests verdes y baseline reproducible en `test_document_review.py`.
-**Iteracion:** 23 (propuesta)
-**Modo CI:** `2) Pipeline depth-1 gate` (default)
+**Prerequisite:** `main` estable con tests verdes y baseline reproducible en `test_document_review.py`.
+**Worktree:** pendiente de seleccion (obligatorio antes de Step 1)
+**CI Mode:** `2) Pipeline depth-1 gate` (default)
+**Agents:** `Codex 5.3` (single-agent execution)
+**Iteration:** 23 (propuesta)
 
 ---
 
@@ -43,14 +45,14 @@ Se incorpora una fuente adicional de deteccion de visitas basada en `raw_text` c
 3. Evitar falsos positivos de fechas no clinicas (factura, emision, nacimiento, etc.).
 4. Resolver `docB` sin regresiones en golden loops existentes.
 
-## Scope Boundary (strict)
+## Scope Boundary
 
 - **In scope:** deteccion de visitas desde `raw_text`, merge/deduplicacion con fuentes existentes, guards de contexto no-visita, tests de integracion y benchmark focalizado de visit count.
 - **Out of scope:** cambios UX/frontend, cambios de prompt/LLM, soporte de otros idiomas, refactors no relacionados.
 
 ---
 
-## Commit Task Definitions
+## Commit plan
 
 | ID | After Steps | Scope | Commit Message | Push |
 |---|---|---|---|---|
@@ -63,7 +65,65 @@ Se incorpora una fuente adicional de deteccion de visitas basada en `raw_text` c
 
 ---
 
-## Estado de ejecucion
+## Operational override steps
+
+### CT-1
+
+- `type`: `commit-task`
+- `trigger`: after `P0-A` and `P0-B`
+- `preconditions`: cambios de `P0-A` y `P0-B` completos; preflight L1/L2 verde; sin archivos fuera de scope
+- `commands`: `git add <scope-files> && git commit -m "test(plan-p0): multi-visit raw-text baseline and fixtures" && git push origin veterinary-medical-records-golden-loop/fix/multi-visit-rawtext-detection`
+- `approval`: `auto`
+- `fallback`: si falla commit/push, corregir causa, reintentar una vez; si persiste, marcar paso `🚫 BLOCKED` y escalar
+
+### CT-2
+
+- `type`: `commit-task`
+- `trigger`: after `P1-A0`, `P1-A`, and `P1-B`
+- `preconditions`: plumbing `raw_text` y deteccion fuente 3 listos; preflight L1/L2 verde
+- `commands`: `git add <scope-files> && git commit -m "feat(plan-p1): detect multi-visit boundaries from raw text" && git push origin veterinary-medical-records-golden-loop/fix/multi-visit-rawtext-detection`
+- `approval`: `auto`
+- `fallback`: si falla commit/push, corregir causa, reintentar una vez; si persiste, marcar paso `🚫 BLOCKED` y escalar
+
+### CT-3
+
+- `type`: `commit-task`
+- `trigger`: after `P2-A` and `P2-B`
+- `preconditions`: guards anti-false-positive y pruebas de determinismo completas; preflight L1/L2 verde
+- `commands`: `git add <scope-files> && git commit -m "fix(plan-p2): harden raw-text visit detection guards" && git push origin veterinary-medical-records-golden-loop/fix/multi-visit-rawtext-detection`
+- `approval`: `auto`
+- `fallback`: si falla commit/push, corregir causa, reintentar una vez; si persiste, marcar paso `🚫 BLOCKED` y escalar
+
+### CT-4
+
+- `type`: `commit-task`
+- `trigger`: after `P3-A` and `P3-B`
+- `preconditions`: benchmark y suite focalizada en verde
+- `commands`: `git add <scope-files> && git commit -m "test(plan-p3): validate multi-visit raw-text detection" && git push origin veterinary-medical-records-golden-loop/fix/multi-visit-rawtext-detection`
+- `approval`: `auto`
+- `fallback`: si falla commit/push, corregir causa, reintentar una vez; si persiste, marcar paso `🚫 BLOCKED` y escalar
+
+### CT-5
+
+- `type`: `commit-task`
+- `trigger`: after `P3-D`
+- `preconditions`: hard-gate `P3-C` aprobado por usuario y docs post-gate actualizadas
+- `commands`: `git add <scope-files> && git commit -m "docs(plan-p3): document raw-text multi-visit detection" && git push origin veterinary-medical-records-golden-loop/fix/multi-visit-rawtext-detection`
+- `approval`: `auto`
+- `fallback`: si falla commit/push, corregir causa, reintentar una vez; si persiste, marcar paso `🚫 BLOCKED` y escalar
+
+### CT-6
+
+- `type`: `commit-task`
+- `trigger`: after `P4-A` and `P4-B`
+- `preconditions`: `P4-A` habilitado (decision gate GO) y offsets implementados
+- `commands`: `git add <scope-files> && git commit -m "feat(plan-p4): positional visit assignment by raw-text offsets" && git push origin veterinary-medical-records-golden-loop/fix/multi-visit-rawtext-detection`
+- `approval`: `auto`
+- `fallback`: si falla commit/push, corregir causa, reintentar una vez; si persiste, marcar paso `🚫 BLOCKED` y escalar
+
+---
+
+## Execution Status
 
 **Leyenda**
 - 🔄 auto-chain - ejecutable por Codex
@@ -105,6 +165,28 @@ Se incorpora una fuente adicional de deteccion de visitas basada en `raw_text` c
 
 ---
 
+## Prompt Queue
+
+1. `P0-A`: reproducir baseline del bug `docB` en integracion sin cambiar logica productiva.
+2. `P0-B`: crear fixtures sinteticos para coverage de multi-visita y controles anti-regresion.
+3. `P1-A0`: propagar `raw_text` por pipeline canonical hasta scoping.
+4. `P1-A`: implementar deteccion de fechas de visita desde `raw_text` con contexto clinico.
+5. `P1-B`: integrar tercera fuente de visitas con merge + dedupe estable.
+6. `P2-A`: endurecer guard de contexto no-visita.
+7. `P2-B`: asegurar determinismo/idempotencia con tests dedicados.
+8. `P3-A`: ejecutar benchmark y validar no regresiones.
+9. `P3-B`: ejecutar suite focalizada con asserts duros de visit count.
+10. `P3-C`: hard-gate de validacion manual de `docB`.
+11. `P3-D`: documentar cambios y umbrales post-gate.
+12. `P4-A`: decision gate para habilitar offsets.
+13. `P4-B`: implementar asignacion posicional solo si gate GO.
+
+## Active Prompt
+
+Pendiente de carga por planning agent antes del siguiente step ejecutable.
+
+---
+
 ## Acceptance criteria
 
 1. `docB` pasa de una visita detectada a multiples visitas detectadas correctamente.
@@ -128,7 +210,7 @@ Se incorpora una fuente adicional de deteccion de visitas basada en `raw_text` c
 
 ---
 
-## Verification
+## How to test
 
 - `python -m pytest backend/tests/integration/test_document_review.py -v --no-cov`
 - `python -m pytest backend/tests/benchmarks/ -v --no-cov`
