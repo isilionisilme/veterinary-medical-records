@@ -30,6 +30,7 @@ def test_global_schema_contract_order() -> None:
         "weight",
         "owner_name",
         "owner_id",
+        "owner_address",
         "visit_date",
         "admission_date",
         "discharge_date",
@@ -52,7 +53,7 @@ def test_global_schema_contract_order() -> None:
     ]
 
     assert list(GLOBAL_SCHEMA_KEYS) == expected_keys
-    assert len(GLOBAL_SCHEMA_KEYS) == 34
+    assert len(GLOBAL_SCHEMA_KEYS) == 35
 
 
 def test_global_schema_contract_critical_subset() -> None:
