@@ -1142,6 +1142,91 @@ def test_document_review_detects_multiple_assigned_visits_from_field_evidence(te
     assert first_visits == second_visits
 
 
+def test_document_review_docb_raw_text_multi_visit_status_quo_detects_single_assigned_visit(
+    test_client,
+):
+    """P0-A baseline for docB shape.
+
+    Raw text contains multiple visits but snippet-based scoping assigns only one.
+    """
+
+    document_id = _upload_sample_document(test_client)
+    run_id = str(uuid4())
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(
+        run_id=run_id,
+        data={
+            "document_id": document_id,
+            "processing_run_id": run_id,
+            "created_at": "2026-02-10T10:00:05+00:00",
+            "fields": [
+                {
+                    "field_id": "f-symptoms-visit-1",
+                    "key": "symptoms",
+                    "value": "Otalgia",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {
+                        "page": 1,
+                        "snippet": "Consulta 11/02/2026: dolor de oido",
+                    },
+                },
+                {
+                    "field_id": "f-medication-no-date",
+                    "key": "medication",
+                    "value": "Gotas oticas",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {
+                        "page": 1,
+                        "snippet": "Se indica tratamiento topico",
+                    },
+                },
+            ],
+            "visits": [],
+            "other_fields": [],
+        },
+    )
+
+    raw_text_path = get_storage_root() / document_id / "runs" / run_id / "raw-text.txt"
+    raw_text_path.parent.mkdir(parents=True, exist_ok=True)
+    raw_text_path.write_text(
+        (
+            "Consulta 11/02/2026: dolor de oido.\n"
+            "Control 18/02/2026: persiste inflamacion y se ajusta medicacion.\n"
+        ),
+        encoding="utf-8",
+    )
+
+    response = test_client.get(f"/documents/{document_id}/review")
+    assert response.status_code == 200
+    visits = response.json()["active_interpretation"]["data"]["visits"]
+
+    assigned = [
+        visit
+        for visit in visits
+        if isinstance(visit, dict) and visit.get("visit_id") != "unassigned"
+    ]
+    assert len(assigned) == 1
+    assert assigned[0].get("visit_date") == "2026-02-11"
+    visit_keys = {
+        field.get("key") for field in assigned[0].get("fields", []) if isinstance(field, dict)
+    }
+    assert "symptoms" in visit_keys
+    assert "medication" in visit_keys
+
+
 def test_document_review_non_visit_dates_do_not_create_assigned_visits(test_client):
     document_id = _upload_sample_document(test_client)
     run_id = str(uuid4())
