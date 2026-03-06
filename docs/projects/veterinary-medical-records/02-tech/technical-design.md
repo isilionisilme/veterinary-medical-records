@@ -609,8 +609,8 @@ The current architecture supports this evolution: the hexagonal design and expli
 | 1 | Single-process model — API and scheduler share one event loop | No horizontal scaling for processing | [ADR-ARCH-0004](../adr/ADR-ARCH-0004-in-process-async-processing.md); optional worker profile in [Known Limitations](future-improvements.md) #14 |
 | 2 | SQLite — single-writer constraint | Write contention under concurrent uploads | WAL mode + busy timeout applied (Iteration 2); PostgreSQL adapter in roadmap (#17) |
 | 3 | Minimal authentication boundary | Root endpoints remain open; token auth is optional and static | Optional bearer-token auth implemented (Iteration 3, §13); full authN/authZ is a production evolution |
-| 4 | `AppWorkspace.tsx` at ~2,200 LOC (down from ~5,800) | Core orchestrator still large; 35 hooks + 3 panel components extracted (−62%) | Decomposition across Iterations 3, 7, 8, 13, 14; remaining LOC is render orchestration — further splits yield diminishing returns |
-| 5 | ~~`routes.py` at ~940 LOC~~ **✅ Resolved** | Routes fully decomposed into 5 domain modules (all < 420 LOC) + 18-LOC aggregator | Done (Iteration 6) |
+| 4 | `AppWorkspace.tsx` at ~2,200 LOC (down from ~5,800) | Core orchestrator still large; 28 hooks + 3 panel components extracted (−62%) | Decomposition across Iterations 3, 7, 8, 13, 14; remaining LOC is render orchestration — further splits yield diminishing returns |
+| 5 | ~~`routes.py` at ~940 LOC~~ **✅ Resolved** | Routes fully decomposed into 6 domain modules (all < 420 LOC) + 18-LOC aggregator | Done (Iteration 6) |
 | 6 | ~~No rate limiting on API endpoints~~ **✅ Resolved** | Rate limiting applied via `slowapi` on upload (10/min) and download (30/min) | Done (Iteration 10, F16-D) |
 | 7 | ~~No DB indexes on FK columns~~ **✅ Resolved** | 4 secondary indexes added on `processing_runs`, `artifacts`, `document_status_history` | Done (Iteration 10, F16-A) |
 | 8 | ~~SQLite repository monolith (751 LOC, 4 aggregates)~~ **✅ Resolved** | Split into 3 aggregate modules + façade: `sqlite_document_repo.py` (241), `sqlite_run_repo.py` (302), `sqlite_calibration_repo.py` (123) | Done (Iteration 11, F18-S) |

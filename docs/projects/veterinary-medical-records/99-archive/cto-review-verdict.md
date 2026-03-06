@@ -1,6 +1,6 @@
 # CTO Review Verdict — `veterinary-medical-records`
 
-> **⚠️ Historical snapshot (2026-02-24).** All gaps and improvements identified here were resolved in Iterations 2–12. Current state: 682 tests, 10 CI jobs, auth boundary present, AppWorkspace at 2,221 LOC. See [delivery-summary.md](../04-delivery/delivery-summary.md) and [implementation-history.md](../04-delivery/implementation-history.md) for current metrics.
+> **⚠️ Historical snapshot (2026-02-24).** All gaps and improvements identified here were resolved in Iterations 2–12. Current state: ~957 tests, 13 CI jobs, auth boundary present, AppWorkspace at 2,221 LOC. See [delivery-summary.md](../04-delivery/delivery-summary.md) and [implementation-history.md](../04-delivery/implementation-history.md) for current metrics.
 
 > Late-stage evaluator-perspective review.
 > Date: 2026-02-24

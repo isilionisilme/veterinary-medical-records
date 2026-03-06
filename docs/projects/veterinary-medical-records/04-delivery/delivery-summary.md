@@ -527,7 +527,7 @@ Final iteration: massive E2E expansion (20→65 tests), automated accessibility 
 
 ### Phase A — E2E expansion (20→65 tests, 8→21 specs)
 
-Playwright E2E suite expanded from 20 tests to **65 tests across 22 spec files**, completing all 4 phases of the E2E coverage plan.
+Playwright E2E suite expanded from 20 tests to **64 tests across 21 spec files**, completing all 4 phases of the E2E coverage plan.
 
 | Spec (new) | Tests | Plan step |
 |------------|-------|-----------|
@@ -570,9 +570,9 @@ Playwright E2E suite expanded from 20 tests to **65 tests across 22 spec files**
 
 | Metric | Value |
 |--------|-------|
-| Test suite | **395 backend, 287 frontend, 65 E2E** — all green |
+| Test suite | **566 backend, 327 frontend, 64 E2E** — all green |
 | Backend coverage | **91%** (enforced ≥85%) |
 | Frontend coverage | **~87%** (enforced ≥80%) |
-| E2E specs | **22 files, 65 tests** (up from 20 tests / 8 files) |
+| E2E specs | **21 files, 64 tests** (up from 20 tests / 8 files) |
 | Accessibility | axe-core WCAG 2.1 AA: 0 critical violations |
 | New docs | architecture.md, Known Limitations reframe |
