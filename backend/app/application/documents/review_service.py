@@ -20,7 +20,10 @@ from backend.app.application.documents.calibration import (
     _revert_reviewed_document_calibration,
 )
 from backend.app.application.documents.upload_service import _default_now_iso
-from backend.app.application.field_normalizers import normalize_microchip_digits_only
+from backend.app.application.field_normalizers import (
+    _normalize_weight,
+    normalize_microchip_digits_only,
+)
 from backend.app.domain.models import ReviewStatus
 from backend.app.ports.document_repository import DocumentRepository
 from backend.app.ports.file_storage import FileStorage
@@ -460,6 +463,10 @@ def _normalize_canonical_review_scoping(data: dict[str, object]) -> dict[str, ob
                     restored = dict(wf)
                     restored["scope"] = "document"
                     restored["section"] = "patient"
+                    raw_val = restored.get("value")
+                    normalized_val = _normalize_weight(raw_val)
+                    if normalized_val:
+                        restored["value"] = normalized_val
                     fields_to_keep.append(restored)
                 unassigned_visit["fields"] = [
                     f
@@ -486,11 +493,13 @@ def _normalize_canonical_review_scoping(data: dict[str, object]) -> dict[str, ob
         fields_to_keep = [
             f for f in fields_to_keep if not (isinstance(f, dict) and f.get("key") == "weight")
         ]
+        raw_derived_val = most_recent_weight.get("value")
+        normalized_derived_val = _normalize_weight(raw_derived_val)
         fields_to_keep.append(
             {
                 "field_id": "derived-weight-current",
                 "key": "weight",
-                "value": most_recent_weight.get("value"),
+                "value": normalized_derived_val if normalized_derived_val else raw_derived_val,
                 "value_type": most_recent_weight.get("value_type", "string"),
                 "scope": "document",
                 "section": "patient",
