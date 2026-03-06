@@ -447,6 +447,59 @@ def _normalize_canonical_review_scoping(data: dict[str, object]) -> dict[str, ob
             elif metadata_key not in unassigned_visit:
                 unassigned_visit[metadata_key] = None
 
+    # --- Weight post-processing (hybrid rule) ---
+    # (b) Move weight fields from unassigned back to document-scoped.
+    if unassigned_visit is not None:
+        raw_unassigned_fields = unassigned_visit.get("fields")
+        if isinstance(raw_unassigned_fields, list):
+            weight_fields_in_unassigned = [
+                f for f in raw_unassigned_fields if isinstance(f, dict) and f.get("key") == "weight"
+            ]
+            if weight_fields_in_unassigned:
+                for wf in weight_fields_in_unassigned:
+                    restored = dict(wf)
+                    restored["scope"] = "document"
+                    restored["section"] = "patient"
+                    fields_to_keep.append(restored)
+                unassigned_visit["fields"] = [
+                    f
+                    for f in raw_unassigned_fields
+                    if not (isinstance(f, dict) and f.get("key") == "weight")
+                ]
+
+    # (a) Derive document-level weight from most-recent visit.
+    visit_weights: list[tuple[str, dict[str, object]]] = []
+    for visit in assigned_visits:
+        vd = visit.get("visit_date")
+        if not isinstance(vd, str):
+            continue
+        vf = visit.get("fields")
+        if not isinstance(vf, list):
+            continue
+        for field in vf:
+            if isinstance(field, dict) and field.get("key") == "weight":
+                visit_weights.append((vd, field))
+
+    if visit_weights:
+        visit_weights.sort(key=lambda pair: pair[0])
+        most_recent_weight = visit_weights[-1][1]
+        fields_to_keep = [
+            f for f in fields_to_keep if not (isinstance(f, dict) and f.get("key") == "weight")
+        ]
+        fields_to_keep.append(
+            {
+                "field_id": "derived-weight-current",
+                "key": "weight",
+                "value": most_recent_weight.get("value"),
+                "value_type": most_recent_weight.get("value_type", "string"),
+                "scope": "document",
+                "section": "patient",
+                "classification": most_recent_weight.get("classification", "medical_record"),
+                "origin": "derived",
+                "evidence": most_recent_weight.get("evidence"),
+            }
+        )
+
     assigned_visits.sort(
         key=lambda visit: (
             str(visit.get("visit_date") or "9999-12-31"),

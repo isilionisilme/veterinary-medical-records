@@ -155,7 +155,17 @@ _LABELED_PATTERNS: tuple[tuple[str, str, float], ...] = (
     ),
     (
         "weight",
-        r"(?:peso|weight)\s*[:\-]?\s*([0-9]+(?:[\.,][0-9]+)?\s*(?:kg|kgs|g)?)",
+        r"(?:peso(?:\s+corporal)?|weight|peso\s*\(\s*kg\s*\)|p\.(?!\s*ej\.?\b))\s*[:\-]?\s*([0-9]+(?:[\.,][0-9]+)?\s*(?:kg|kgs|g)?)",
+        COVERAGE_CONFIDENCE_LABEL,
+    ),
+    (
+        "weight",
+        r"(?is)(?:signos?\s+vitales\s*[:\-]?\s*(?:\n\s*)?)(?:peso(?:\s+corporal)?|weight|p\.(?!\s*ej\.?\b))?\s*[:\-]?\s*([0-9]+(?:[\.,][0-9]+)?\s*(?:kg|kgs|g)\b)",
+        COVERAGE_CONFIDENCE_LABEL,
+    ),
+    (
+        "weight",
+        r"(?is)(?:datos\s+de\s+la\s+mascota|datos\s+del\s+paciente|paciente|mascota|especie|raza|sexo|n[º°o]?\s*chip)\b[^\n]{0,90}?([0-9]+(?:[\.,][0-9]+)?\s*(?:kg|kgs|g)\b)",
         COVERAGE_CONFIDENCE_LABEL,
     ),
     (

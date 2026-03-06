@@ -158,6 +158,7 @@ _VISIT_SCOPED_KEYS: tuple[str, ...] = (
     "vaccinations",
     "lab_result",
     "imaging",
+    "weight",
 )
 
 _VISIT_GROUP_METADATA_KEY_SET = set(_VISIT_GROUP_METADATA_KEYS)

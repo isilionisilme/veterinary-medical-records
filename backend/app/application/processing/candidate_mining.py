@@ -11,6 +11,7 @@ from backend.app.application.global_schema import GLOBAL_SCHEMA_KEYS, REPEATABLE
 
 from .constants import (
     _ADDRESS_LIKE_PATTERN,
+    _DATE_CANDIDATE_PATTERN,
     _MICROCHIP_DIGITS_PATTERN,
     _OWNER_CONTEXT_PATTERN,
     _VET_OR_CLINIC_CONTEXT_PATTERN,
@@ -83,6 +84,17 @@ _OWNER_CONTEXT_RE = _OWNER_CONTEXT_PATTERN
 _POSTAL_HINT_RE = re.compile(r"(?i)\b(?:cp\b|c[oó]digo\s+postal|\d{5})\b")
 _SIMPLE_FIELD_LABEL_RE = re.compile(r"^[^\n]{1,40}\s*[:\-]\s*")
 _HEADER_BLOCK_SCAN_WINDOW = 8
+_WEIGHT_EXPLICIT_CONTEXT_RE = re.compile(
+    r"(?i)\b(?:peso(?:\s+corporal)?|weight|signos?\s+vitales|p\.(?!\s*ej\.?\b))\b"
+)
+_WEIGHT_DOSAGE_GUARD_RE = re.compile(r"(?i)\b(?:ml|mg)\s*/\s*kg\b")
+_WEIGHT_LAB_GUARD_RE = re.compile(r"(?i)\b(?:mg\s*/\s*dL|mmol\s*/\s*L|U\s*/\s*L)\b")
+_WEIGHT_PRICE_GUARD_RE = re.compile(r"(?i)(?:\$|\u20ac|\bEUR\b)")
+_WEIGHT_MED_OR_LAB_CONTEXT_RE = re.compile(
+    r"(?i)\b(?:dosis|tratamiento|medicaci[oó]n|prescripci[oó]n|amoxic|clavul|"
+    r"predni|omepra|anal[ií]tica|laboratorio|hemograma|bioqu[ií]mica|glucosa|"
+    r"urea|creatinina|mg\s*/\s*kg|ml\s*/\s*kg|mg\s*/\s*dL|mmol\s*/\s*L|U\s*/\s*L)\b"
+)
 
 
 def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, object]]]:
@@ -166,6 +178,16 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
                     prev_context = " ".join(lines[max(0, line_index - 2) : line_index]).casefold()
                     if _OWNER_CONTEXT_RE.search(prev_context):
                         return
+        if key == "weight":
+            explicit_weight_context = _WEIGHT_EXPLICIT_CONTEXT_RE.search(snippet) is not None
+            has_dosage_units = _WEIGHT_DOSAGE_GUARD_RE.search(snippet) is not None
+            has_lab_units = _WEIGHT_LAB_GUARD_RE.search(snippet) is not None
+            has_price_tokens = _WEIGHT_PRICE_GUARD_RE.search(snippet) is not None
+
+            if (
+                has_dosage_units or has_lab_units or has_price_tokens
+            ) and not explicit_weight_context:
+                return
 
         normalized_key = cleaned_value.casefold()
         if normalized_key in seen_values[key]:
@@ -177,6 +199,8 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
             if confidence >= COVERAGE_CONFIDENCE_LABEL
             else COVERAGE_CONFIDENCE_FALLBACK
         )
+        normalized_snippet = snippet.strip()
+        snippet_offset = raw_text.rfind(normalized_snippet) if normalized_snippet else -1
         candidates[key].append(
             {
                 "value": cleaned_value,
@@ -186,7 +210,8 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
                 "target_reason": target_reason,
                 "evidence": {
                     "page": page,
-                    "snippet": snippet.strip()[:220],
+                    "snippet": normalized_snippet[:220],
+                    "offset": snippet_offset,
                 },
             }
         )
@@ -694,10 +719,10 @@ def _map_candidates_to_global_schema(
     return mapped, evidence_map
 
 
-def _candidate_sort_key(item: dict[str, object], key: str) -> tuple[float, float]:
+def _candidate_sort_key(item: dict[str, object], key: str) -> tuple[float, float, float]:
     confidence = float(item.get("confidence", 0.0))
     if key in DATE_TARGET_KEYS:
-        return float(item.get("anchor_priority", 0)), confidence
+        return float(item.get("anchor_priority", 0)), confidence, -1.0
 
     if key == "microchip_id":
         raw_value = str(item.get("value", "")).strip()
@@ -719,10 +744,10 @@ def _candidate_sort_key(item: dict[str, object], key: str) -> tuple[float, float
             context_quality -= 0.5
 
         if _MICROCHIP_DIGITS_PATTERN.fullmatch(raw_value):
-            return 2.0 + context_quality, confidence
+            return 2.0 + context_quality, confidence, -1.0
         if _MICROCHIP_DIGITS_PATTERN.search(raw_value):
-            return 1.0 + context_quality, confidence
-        return context_quality, confidence
+            return 1.0 + context_quality, confidence, -1.0
+        return context_quality, confidence, -1.0
 
     if key == "pet_name":
         raw_value = str(item.get("value", "")).strip()
@@ -736,7 +761,7 @@ def _candidate_sort_key(item: dict[str, object], key: str) -> tuple[float, float
             and not re.search(r"(?i)^(?:especie|raza|sexo|chip|fecha)", raw_value)
             and 2 <= len(raw_value) <= 40
         )
-        return (1.0 if is_clean else 0.0), confidence
+        return (1.0 if is_clean else 0.0), confidence, -1.0
 
     if key == "clinic_name":
         raw_value = str(item.get("value", "")).strip()
@@ -752,12 +777,12 @@ def _candidate_sort_key(item: dict[str, object], key: str) -> tuple[float, float
             re.search(r"\d", lower_value)
         )
         if has_hv_abbrev and not looks_address_like:
-            return 3.0, confidence
+            return 3.0, confidence, -1.0
         if has_clinic_token and not looks_address_like:
-            return 2.0, confidence
+            return 2.0, confidence, -1.0
         if has_clinic_token:
-            return 1.0, confidence
-        return 0.0, confidence
+            return 1.0, confidence, -1.0
+        return 0.0, confidence, -1.0
 
     if key == "clinic_address":
         raw_value = str(item.get("value", "")).strip()
@@ -785,6 +810,26 @@ def _candidate_sort_key(item: dict[str, object], key: str) -> tuple[float, float
         if is_multiline:
             quality += 0.5
 
-        return quality, confidence
+        return quality, confidence, -1.0
 
-    return 0.0, confidence
+    if key == "weight":
+        evidence = item.get("evidence")
+        snippet = ""
+        offset = -1.0
+        if isinstance(evidence, dict):
+            snippet_value = evidence.get("snippet")
+            if isinstance(snippet_value, str):
+                snippet = snippet_value
+            offset_value = evidence.get("offset")
+            if isinstance(offset_value, int | float):
+                offset = float(offset_value)
+
+        weight_quality = 0.0
+        if _DATE_CANDIDATE_PATTERN.search(snippet) is not None:
+            weight_quality += 1.0
+        if _WEIGHT_MED_OR_LAB_CONTEXT_RE.search(snippet) is not None:
+            weight_quality -= 0.5
+
+        return weight_quality, confidence, offset
+
+    return 0.0, confidence, -1.0
