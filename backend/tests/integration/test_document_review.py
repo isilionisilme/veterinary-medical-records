@@ -1296,6 +1296,63 @@ def test_document_review_detects_additional_visit_from_raw_text_context(test_cli
     assert {"2026-02-11", "2026-02-18"}.issubset(assigned_dates)
 
 
+def test_document_review_keeps_multiple_same_day_visits_from_raw_text_timeline(test_client):
+    document_id = _upload_sample_document(test_client)
+    run_id = str(uuid4())
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(
+        run_id=run_id,
+        data={
+            "document_id": document_id,
+            "processing_run_id": run_id,
+            "created_at": "2026-02-10T10:00:05+00:00",
+            "fields": [
+                {
+                    "field_id": "f-symptoms-base",
+                    "key": "symptoms",
+                    "value": "Dolor",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {
+                        "page": 1,
+                        "snippet": "Consulta 11/02/2026: dolor de oido",
+                    },
+                }
+            ],
+            "visits": [],
+            "other_fields": [],
+        },
+    )
+
+    raw_text_path = get_storage_root() / document_id / "runs" / run_id / "raw-text.txt"
+    raw_text_path.parent.mkdir(parents=True, exist_ok=True)
+    raw_text_path.write_text(
+        ("- 19/09/20 - 12:10 -\n- 19/09/20 - 18:45 -\n- 03/09/20 - 16:36 - LLAMADA\n"),
+        encoding="utf-8",
+    )
+
+    response = test_client.get(f"/documents/{document_id}/review")
+    assert response.status_code == 200
+    visits = response.json()["active_interpretation"]["data"]["visits"]
+
+    assigned = [
+        visit
+        for visit in visits
+        if isinstance(visit, dict) and visit.get("visit_id") != "unassigned"
+    ]
+    same_day_count = sum(1 for visit in assigned if visit.get("visit_date") == "2020-09-19")
+    assert same_day_count == 2
+    assert any(visit.get("visit_date") == "2020-09-03" for visit in assigned)
+
+
 def test_document_review_non_visit_dates_do_not_create_assigned_visits(test_client):
     document_id = _upload_sample_document(test_client)
     run_id = str(uuid4())

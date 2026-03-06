@@ -310,6 +310,7 @@ def _normalize_canonical_review_scoping(
     visit_group_metadata: dict[str, list[object]] = {}
     detected_visit_dates: list[str] = []
     seen_detected_visit_dates: set[str] = set()
+    raw_text_detected_visit_dates = _detect_visit_dates_from_raw_text(raw_text=raw_text)
 
     for item in raw_fields:
         if not isinstance(item, dict):
@@ -348,7 +349,7 @@ def _normalize_canonical_review_scoping(
 
         fields_to_keep.append(item)
 
-    for normalized_visit_date in _detect_visit_dates_from_raw_text(raw_text=raw_text):
+    for normalized_visit_date in raw_text_detected_visit_dates:
         if normalized_visit_date in seen_detected_visit_dates:
             continue
         seen_detected_visit_dates.add(normalized_visit_date)
@@ -367,6 +368,7 @@ def _normalize_canonical_review_scoping(
     unassigned_visit: dict[str, object] | None = None
     assigned_visits: list[dict[str, object]] = []
     visit_by_date: dict[str, dict[str, object]] = {}
+    visit_occurrences_by_date: dict[str, list[dict[str, object]]] = {}
     for visit in visits:
         visit_id = visit.get("visit_id")
         if isinstance(visit_id, str) and visit_id == "unassigned":
@@ -383,25 +385,44 @@ def _normalize_canonical_review_scoping(
         if normalized_visit_date is not None:
             visit["visit_date"] = normalized_visit_date
             visit_by_date.setdefault(normalized_visit_date, visit)
+            visit_occurrences_by_date.setdefault(normalized_visit_date, []).append(visit)
             if normalized_visit_date not in seen_detected_visit_dates:
                 seen_detected_visit_dates.add(normalized_visit_date)
                 detected_visit_dates.append(normalized_visit_date)
 
         assigned_visits.append(visit)
 
-    for index, visit_date in enumerate(detected_visit_dates, start=1):
-        if visit_date in visit_by_date:
+    required_visit_sequence: list[str] = list(detected_visit_dates)
+    raw_visit_occurrence_counts: dict[str, int] = {}
+    for visit_date in raw_text_detected_visit_dates:
+        raw_visit_occurrence_counts[visit_date] = raw_visit_occurrence_counts.get(visit_date, 0) + 1
+    for visit_date, count in raw_visit_occurrence_counts.items():
+        extra_occurrences = max(0, count - 1)
+        if extra_occurrences > 0:
+            required_visit_sequence.extend([visit_date] * extra_occurrences)
+
+    generated_visit_counter = len(assigned_visits) + 1
+    seen_required_occurrences: dict[str, int] = {}
+    for visit_date in required_visit_sequence:
+        occurrence_index = seen_required_occurrences.get(visit_date, 0) + 1
+        seen_required_occurrences[visit_date] = occurrence_index
+
+        existing_occurrences = len(visit_occurrences_by_date.get(visit_date, []))
+        if existing_occurrences >= occurrence_index:
             continue
+
         generated_visit = {
-            "visit_id": f"visit-{index:03d}",
+            "visit_id": f"visit-{generated_visit_counter:03d}",
             "visit_date": visit_date,
             "admission_date": None,
             "discharge_date": None,
             "reason_for_visit": None,
             "fields": [],
         }
+        generated_visit_counter += 1
         assigned_visits.append(generated_visit)
-        visit_by_date[visit_date] = generated_visit
+        visit_by_date.setdefault(visit_date, generated_visit)
+        visit_occurrences_by_date.setdefault(visit_date, []).append(generated_visit)
 
     for visit in assigned_visits:
         for metadata_key in _VISIT_GROUP_METADATA_KEYS:

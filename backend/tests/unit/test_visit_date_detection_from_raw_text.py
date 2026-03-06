@@ -47,3 +47,24 @@ def test_detect_visit_dates_from_raw_text_supports_visit_header_on_previous_line
     detected = _detect_visit_dates_from_raw_text(raw_text=raw_text)
 
     assert "2024-07-17" in detected
+
+
+def test_detect_visit_dates_from_raw_text_supports_timeline_suffix_text() -> None:
+    raw_text = "- 03/09/20 - 16:36 - LLAMADA"
+
+    detected = _detect_visit_dates_from_raw_text(raw_text=raw_text)
+
+    assert detected == ["2020-09-03"]
+
+
+def test_detect_visit_dates_from_raw_text_keeps_repeated_same_day_occurrences() -> None:
+    raw_text = "\n".join(
+        [
+            "- 19/09/20 - 12:10 -",
+            "- 19/09/20 - 18:45 -",
+        ]
+    )
+
+    detected = _detect_visit_dates_from_raw_text(raw_text=raw_text)
+
+    assert detected == ["2020-09-19", "2020-09-19"]

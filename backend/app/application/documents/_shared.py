@@ -183,7 +183,8 @@ _VISIT_CLINICAL_CONTEXT_PATTERN = re.compile(
 _VISIT_TIMELINE_LINE_PATTERN = re.compile(
     (
         r"^\s*[-*•]?\s*\d{1,2}[-\/.]\d{1,2}[-\/.]\d{2,4}"
-        r"\s*[-–—]\s*\d{1,2}:\d{2}(?::\d{2})?\s*[-–—]?\s*$"
+        r"\s*[-–—]\s*\d{1,2}:\d{2}(?::\d{2})?"
+        r"(?:\s*[-–—]\s*.*)?$"
     ),
     re.IGNORECASE,
 )
@@ -277,7 +278,6 @@ def _detect_visit_dates_from_raw_text(*, raw_text: object) -> list[str]:
 
     lines = [line.strip() for line in compact.splitlines()]
     dates: list[str] = []
-    seen_dates: set[str] = set()
 
     for index, line in enumerate(lines):
         if not line:
@@ -310,9 +310,8 @@ def _detect_visit_dates_from_raw_text(*, raw_text: object) -> list[str]:
 
         for token_match in _VISIT_DATE_TOKEN_PATTERN.finditer(line):
             normalized_date = _normalize_visit_date_candidate(token_match.group(0))
-            if normalized_date is None or normalized_date in seen_dates:
+            if normalized_date is None:
                 continue
-            seen_dates.add(normalized_date)
             dates.append(normalized_date)
 
     return dates
