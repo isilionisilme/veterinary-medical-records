@@ -14,6 +14,7 @@ from backend.app.application.documents._shared import (
     _detect_visit_dates_from_raw_text,
     _extract_evidence_snippet,
     _extract_visit_date_candidates_from_text,
+    _locate_visit_boundary_offsets_from_raw_text,
     _locate_visit_date_occurrences_from_raw_text,
     _normalize_visit_date_candidate,
 )
@@ -331,6 +332,7 @@ def _resolve_visit_from_anchor(
     visit_by_date: dict[str, dict[str, object]],
     visit_occurrences_by_date: dict[str, list[dict[str, object]]],
     raw_text_offsets_by_date: dict[str, list[int]],
+    visit_boundary_offsets: list[int],
 ) -> dict[str, object] | None:
     if anchor_offset is None:
         for candidate_date in candidate_dates:
@@ -339,16 +341,49 @@ def _resolve_visit_from_anchor(
                 return target_visit
         return None
 
+    def _find_nearest_target(
+        *,
+        lower_offset_inclusive: int | None,
+        upper_offset_exclusive: int | None,
+    ) -> tuple[int, str, int] | None:
+        nearest: tuple[int, str, int] | None = None
+        dates_to_check = (
+            candidate_dates if candidate_dates else list(raw_text_offsets_by_date.keys())
+        )
+        for candidate_date in dates_to_check:
+            offsets = raw_text_offsets_by_date.get(candidate_date, [])
+            if not offsets:
+                continue
+            for occurrence_index, offset in enumerate(offsets):
+                if lower_offset_inclusive is not None and offset < lower_offset_inclusive:
+                    continue
+                if upper_offset_exclusive is not None and offset >= upper_offset_exclusive:
+                    continue
+                distance = abs(offset - anchor_offset)
+                if nearest is None or distance < nearest[0]:
+                    nearest = (distance, candidate_date, occurrence_index)
+        return nearest
+
     nearest_target: tuple[int, str, int] | None = None
-    dates_to_check = candidate_dates if candidate_dates else list(raw_text_offsets_by_date.keys())
-    for candidate_date in dates_to_check:
-        offsets = raw_text_offsets_by_date.get(candidate_date, [])
-        if not offsets:
-            continue
-        for occurrence_index, offset in enumerate(offsets):
-            distance = abs(offset - anchor_offset)
-            if nearest_target is None or distance < nearest_target[0]:
-                nearest_target = (distance, candidate_date, occurrence_index)
+    if visit_boundary_offsets:
+        lower_offset: int | None = None
+        upper_offset: int | None = None
+        for boundary_offset in visit_boundary_offsets:
+            if boundary_offset <= anchor_offset:
+                lower_offset = boundary_offset
+                continue
+            upper_offset = boundary_offset
+            break
+        nearest_target = _find_nearest_target(
+            lower_offset_inclusive=lower_offset,
+            upper_offset_exclusive=upper_offset,
+        )
+
+    if nearest_target is None:
+        nearest_target = _find_nearest_target(
+            lower_offset_inclusive=None,
+            upper_offset_exclusive=None,
+        )
 
     if nearest_target is None:
         for candidate_date in candidate_dates:
@@ -383,6 +418,7 @@ def _normalize_canonical_review_scoping(
     raw_text_offsets_by_date: dict[str, list[int]] = {}
     for normalized_date, offset in _locate_visit_date_occurrences_from_raw_text(raw_text=raw_text):
         raw_text_offsets_by_date.setdefault(normalized_date, []).append(offset)
+    visit_boundary_offsets = _locate_visit_boundary_offsets_from_raw_text(raw_text=raw_text)
 
     for item in raw_fields:
         if not isinstance(item, dict):
@@ -525,6 +561,7 @@ def _normalize_canonical_review_scoping(
                 visit_by_date=visit_by_date,
                 visit_occurrences_by_date=visit_occurrences_by_date,
                 raw_text_offsets_by_date=raw_text_offsets_by_date,
+                visit_boundary_offsets=visit_boundary_offsets,
             )
 
         if (
@@ -539,6 +576,7 @@ def _normalize_canonical_review_scoping(
                 visit_by_date=visit_by_date,
                 visit_occurrences_by_date=visit_occurrences_by_date,
                 raw_text_offsets_by_date=raw_text_offsets_by_date,
+                visit_boundary_offsets=visit_boundary_offsets,
             )
 
         if target_visit is None and len(visit_by_date) == 1 and not has_ambiguous_date_token:

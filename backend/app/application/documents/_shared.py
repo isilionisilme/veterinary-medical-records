@@ -192,6 +192,10 @@ _VISIT_DAY_LINE_PATTERN = re.compile(
     r"\bd[ií]a\s+\d{1,2}[-\/.]\d{1,2}[-\/.]\d{2,4}\b",
     re.IGNORECASE,
 )
+_NEXT_VISIT_BOUNDARY_PATTERN = re.compile(
+    r"(?:\s*)?visita\s+(?:consulta\s+general|administrativa)\s+del\s+d[ií]a",
+    re.IGNORECASE,
+)
 _NON_VISIT_DATE_CONTEXT_PATTERN = re.compile(
     (
         r"\b("
@@ -326,6 +330,16 @@ def _locate_visit_date_occurrences_from_raw_text(*, raw_text: object) -> list[tu
             date_occurrences.append((normalized_date, line_offset + token_match.start()))
 
     return date_occurrences
+
+
+def _locate_visit_boundary_offsets_from_raw_text(*, raw_text: object) -> list[int]:
+    if not isinstance(raw_text, str):
+        return []
+
+    if not raw_text.strip():
+        return []
+
+    return [match.start() for match in _NEXT_VISIT_BOUNDARY_PATTERN.finditer(raw_text)]
 
 
 def _contains_any_date_token(*, text: object) -> bool:

@@ -1728,6 +1728,105 @@ def test_document_review_ambiguous_date_token_with_raw_text_stays_unassigned(tes
     )
 
 
+def test_document_review_boundary_marker_guides_undated_field_assignment(test_client):
+    document_id = _upload_sample_document(test_client)
+    run_id = str(uuid4())
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(
+        run_id=run_id,
+        data={
+            "document_id": document_id,
+            "processing_run_id": run_id,
+            "created_at": "2026-02-10T10:00:05+00:00",
+            "fields": [
+                {
+                    "field_id": "f-diagnosis-v1",
+                    "key": "diagnosis",
+                    "value": "Otitis externa",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Consulta 11/02/2026: otitis externa"},
+                },
+                {
+                    "field_id": "f-medication-undated-after-boundary",
+                    "key": "medication",
+                    "value": "Mantener gotas oticas",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Mantener gotas oticas cada 12 horas"},
+                },
+                {
+                    "field_id": "f-procedure-v2",
+                    "key": "procedure",
+                    "value": "Limpieza auricular",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Consulta 18/02/2026: limpieza auricular"},
+                },
+            ],
+            "visits": [],
+            "other_fields": [],
+        },
+    )
+
+    raw_text_path = get_storage_root() / document_id / "runs" / run_id / "raw-text.txt"
+    raw_text_path.parent.mkdir(parents=True, exist_ok=True)
+    raw_text_path.write_text(
+        (
+            "Consulta 11/02/2026: otitis externa.\n"
+            "Plan inicial con lavado y control.\n"
+            "VISITA CONSULTA GENERAL DEL DÍA\n"
+            "Mantener gotas oticas cada 12 horas.\n"
+            "Texto administrativo adicional para separar la fecha de control.\n"
+            "Texto administrativo adicional para separar la fecha de control.\n"
+            "Texto administrativo adicional para separar la fecha de control.\n"
+            "Consulta 18/02/2026: limpieza auricular.\n"
+        ),
+        encoding="utf-8",
+    )
+
+    response = test_client.get(f"/documents/{document_id}/review")
+    assert response.status_code == 200
+    visits = response.json()["active_interpretation"]["data"]["visits"]
+    assigned_visits = [
+        visit
+        for visit in visits
+        if isinstance(visit, dict) and isinstance(visit.get("visit_date"), str)
+    ]
+    assigned_by_date = {
+        str(visit["visit_date"]): visit for visit in assigned_visits if isinstance(visit, dict)
+    }
+    assert "2026-02-11" in assigned_by_date
+    assert "2026-02-18" in assigned_by_date
+
+    first_visit_field_ids = {
+        field.get("field_id")
+        for field in assigned_by_date["2026-02-11"].get("fields", [])
+        if isinstance(field, dict)
+    }
+    second_visit_field_ids = {
+        field.get("field_id")
+        for field in assigned_by_date["2026-02-18"].get("fields", [])
+        if isinstance(field, dict)
+    }
+    assert "f-medication-undated-after-boundary" not in first_visit_field_ids
+    assert "f-medication-undated-after-boundary" in second_visit_field_ids
+
+
 def test_document_review_debug_visit_page_renders_html_with_raw_context(test_client):
     document_id = _upload_sample_document(test_client)
     run_id = str(uuid4())
