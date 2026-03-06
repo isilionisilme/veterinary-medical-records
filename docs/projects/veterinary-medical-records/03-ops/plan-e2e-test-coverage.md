@@ -7,11 +7,13 @@ last-updated: 2026-03-06
 ---
 
 ---
+
 title: "E2E Coverage Plan"
 type: plan
 status: active
 audience: contributor
 last-updated: 2026-03-06
+
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -69,7 +71,7 @@ last-updated: 2026-03-06
   - [4. Required fixtures and helpers](#4-required-fixtures-and-helpers)
   - [5. Additional required `data-testid` values](#5-additional-required-data-testid-values)
   - [6. Coverage by layer](#6-coverage-by-layer)
-    - [Matriz de trazabilidad Test → Feature](#matriz-de-trazabilidad-test-%E2%86%92-feature)
+    - [Matriz de trazabilidad Test → Feature](#matriz-de-trazabilidad-test--feature)
   - [7. Recommended implementation order](#7-recommended-implementation-order)
   - [How to test](#how-to-test)
   - [Notes](#notes)

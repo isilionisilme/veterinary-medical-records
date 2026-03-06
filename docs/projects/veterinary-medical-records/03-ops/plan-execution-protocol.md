@@ -7,11 +7,13 @@ last-updated: 2026-03-06
 ---
 
 ---
+
 title: "Plan Execution Protocol"
 type: reference
 status: active
 audience: contributor
 last-updated: 2026-03-06
+
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -676,7 +678,7 @@ Examples:
 
 ## 18. How to Add a New User Story
 
-When asked to add a new User Story, update [`IMPLEMENTATION_PLAN.md`](../04-delivery/IMPLEMENTATION_PLAN.md) in two places:
+When asked to add a new User Story, update [`IMPLEMENTATION_PLAN.md`](../04-delivery/implementation-plan.md) in two places:
 
 1. Add the story in the relevant **User Stories (in order)** list for its release.
 2. Add or update the full **User Story Details** section for that story.

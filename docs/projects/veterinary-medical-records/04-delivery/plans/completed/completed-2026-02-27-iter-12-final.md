@@ -503,7 +503,7 @@ Components currently **without** adequate aria/role/tabIndex coverage:
 
 **Structure:**
 
-````markdown
+```markdown
 # Architecture Overview
 
 > One-page summary for evaluators. For full detail, see [technical-design.md](technical-design.md).
@@ -555,7 +555,7 @@ graph TB
 2. **Extract** → PDF text extraction (pdfplumber → PyMuPDF fallback)
 3. **Interpret** → Field identification via regex + candidate mining + confidence scoring
 4. **Review** → Evaluator sees structured fields, can edit, approve, reprocess
-````
+```
 
 **Adjust:** Read current technical-design.md headings and ADR references to ensure accuracy. Verify tech versions from `pyproject.toml` and `package.json`.
 

@@ -124,7 +124,7 @@ frontend/src/
 ## Related documentation
 
 - [technical-design.md](technical-design.md) — Full architecture, contracts, state machines (~2K lines)
-- [product-design.md](product-design.md) — Product intent and semantics
-- [ux-design.md](ux-design.md) — Interaction contract and confidence UX rules
-- [delivery-summary.md](refactor/delivery-summary.md) — Quantitative delivery evidence
+- [product-design.md](../01-product/product-design.md) — Product intent and semantics
+- [ux-design.md](../01-product/ux-design.md) — Interaction contract and confidence UX rules
+- [delivery-summary.md](../04-delivery/delivery-summary.md) — Quantitative delivery evidence
 - [ADR index](adr/index.md) — All architecture decision records

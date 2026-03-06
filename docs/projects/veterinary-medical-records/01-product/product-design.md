@@ -331,7 +331,7 @@ It does not prescribe storage tables or transport contracts.
 ## Visit grouping (MVP)
 
 - **Visita** means one care episode identified primarily by `visit_date`, with optional `admission_date`, `discharge_date`, and `reason_for_visit`.
-- Clinical concepts are **visit-scoped**. In `canonical contract`, they are grouped under `visits[].fields[]` as defined in [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix D9.
+- Clinical concepts are **visit-scoped**. In `canonical contract`, they are grouped under `visits[].fields[]` as defined in [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix D9.
 - The UI must not infer or heuristic-group visits. Grouping comes from the structured payload (`visits[]`).
 - MVP excludes cross-document deduplication, merge/reconciliation, and longitudinal visit tracking.
 - Review completion remains **document-level**: `Mark as reviewed` applies to the full document, including all its visits.
@@ -381,13 +381,13 @@ E) Información del informe
 
 Visit-level fields:
 
-- Visit-level clinical data is canonical in `canonical contract` under `visits[]` and `visits[].fields[]` (see Appendix D9 in [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md)).
+- Visit-level clinical data is canonical in `canonical contract` under `visits[]` and `visits[].fields[]` (see Appendix D9 in [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md)).
 - Visit fields are not part of the document-level top-level list above.
 
 Panel boundary (Medical Record MVP):
 
 - Non-clinical claim concepts are not part of this canonical panel field-set by definition.
-- Classification and taxonomy boundaries are defined by contract metadata in [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md), not by frontend denylists.
+- Classification and taxonomy boundaries are defined by contract metadata in [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md), not by frontend denylists.
 
 Product compatibility rule:
 
@@ -396,7 +396,7 @@ Product compatibility rule:
 ### CRITICAL_KEYS (Authoritative, closed set)
 
 Historical continuity note: Appendix D7.4 keeps the same closed CRITICAL_KEYS set defined in the historical Global Schema.
-For Medical Record canonical contract critical/taxonomy semantics, the normative authority is [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix D9.
+For Medical Record canonical contract critical/taxonomy semantics, the normative authority is [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix D9.
 
 ## Medical Record MVP panel semantics (US-44)
 
@@ -414,7 +414,7 @@ For Medical Record canonical contract critical/taxonomy semantics, the normative
 
 - [`docs/projects/veterinary-medical-records/01-product/product-design.md`](product-design.md) defines panel meaning and scope (clinical Medical Record view).
 - [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md) defines layout, labels, and empty states.
-- [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) defines canonical payload contracts (`schema_contract` visit-grouped), field taxonomy, and explicit `other/unmapped` contract bucket.
+- [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) defines canonical payload contracts (`schema_contract` visit-grouped), field taxonomy, and explicit `other/unmapped` contract bucket.
 
 ## Appendix: Historical Global Schema Reference (Non-normative)
 

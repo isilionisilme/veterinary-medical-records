@@ -169,7 +169,7 @@ This document is intended to provide structured context to an AI Coding Assistan
 The version of this document written for evaluators and reviewers is available here:
 <https://docs.google.com/document/d/16lgxuT48fA5ZCnEpR4rokl4hLbyM0yfTszlu6vHrHtM>
 
-Reading order and cross-document precedence are defined in [`docs/README.md`](../README.md).
+Reading order and cross-document precedence are defined in [`docs/README.md`](../../../README.md).
 
 # Technical Design — Instructions for Implementation
 
@@ -320,7 +320,7 @@ The pipeline is **observable** and **step-based**.
 - Processing is **asynchronous** and runs in the background.
 - API requests must **never block** waiting for processing to complete.
 - Processing is executed internally (in-process worker or equivalent).
-  This document describes an in-process execution model; story-specific scope boundaries live in [`docs/projects/veterinary-medical-records/04-delivery/implementation-plan.md`](implementation-plan.md).
+  This document describes an in-process execution model; story-specific scope boundaries live in [`docs/projects/veterinary-medical-records/04-delivery/implementation-plan.md`](../04-delivery/implementation-plan.md).
 
 ---
 
@@ -409,7 +409,7 @@ If a client attempts to edit/review while a `RUNNING` run exists, the API MUST r
 
 - Each structured field MUST carry a `confidence` number in range 0–1 (see Appendix D).
 - Confidence is a stored **attention signal** only.
-- The meaning/governance of confidence in veterinarian workflows is defined in [`docs/projects/veterinary-medical-records/01-product/product-design.md`](product-design.md).
+- The meaning/governance of confidence in veterinarian workflows is defined in [`docs/projects/veterinary-medical-records/01-product/product-design.md`](../01-product/product-design.md).
 
 ### Context (Deterministic)
 
@@ -572,7 +572,7 @@ If public exposure, formal versioning, or hardening is introduced, it should be 
 
 ## 11. Scope Ownership
 
-Story-specific scope boundaries are defined per user story in [`docs/projects/veterinary-medical-records/04-delivery/implementation-plan.md`](implementation-plan.md) (Scope Clarification).
+Story-specific scope boundaries are defined per user story in [`docs/projects/veterinary-medical-records/04-delivery/implementation-plan.md`](../04-delivery/implementation-plan.md) (Scope Clarification).
 This Technical Design defines the technical contracts and invariants needed to implement those stories.
 
 ---
@@ -610,28 +610,28 @@ For a production deployment in a regulated veterinary domain, the following woul
 2. **Role-based authorization** on document and processing endpoints.
 3. **Abuse prevention** — rate limiting is now in place (see §14 row 6); advanced patterns (per-user quotas, adaptive limits) would be a production evolution.
 4. **Audit logging** of access events on protected resources.
-5. **Streaming upload with early size rejection** to prevent memory-based DoS (see [future-improvements.md](future-improvements.md) item #9).
+5. **Streaming upload with early size rejection** to prevent memory-based DoS (see [future-improvements.md](../04-delivery/future-improvements.md) item #9).
 
-The current architecture supports this evolution: the hexagonal design and explicit port/adapter boundaries allow inserting an auth adapter without modifying domain or application layers. See [future-improvements.md](future-improvements.md) item #15 for the roadmap entry.
+The current architecture supports this evolution: the hexagonal design and explicit port/adapter boundaries allow inserting an auth adapter without modifying domain or application layers. See [future-improvements.md](../04-delivery/future-improvements.md) item #15 for the roadmap entry.
 
 ---
 
 ## 14. Known Limitations
 
-| #   | Limitation                                                             | Impact                                                                                                                                   | Mitigation / Roadmap                                                                                                                             |
-| --- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1   | Single-process model — API and scheduler share one event loop          | No horizontal scaling for processing                                                                                                     | [ADR-ARCH-0004](../adr/ADR-ARCH-0004-in-process-async-processing.md); optional worker profile in [Known Limitations](future-improvements.md) #14 |
-| 2   | SQLite — single-writer constraint                                      | Write contention under concurrent uploads                                                                                                | WAL mode + busy timeout applied (Iteration 2); PostgreSQL adapter in roadmap (#17)                                                               |
-| 3   | Minimal authentication boundary                                        | Root endpoints remain open; token auth is optional and static                                                                            | Optional bearer-token auth implemented (Iteration 3, §13); full authN/authZ is a production evolution                                            |
-| 4   | `AppWorkspace.tsx` at ~2,200 LOC (down from ~5,800)                    | Core orchestrator still large; 28 hooks + 3 panel components extracted (−62%)                                                            | Decomposition across Iterations 3, 7, 8, 13, 14; remaining LOC is render orchestration — further splits yield diminishing returns                |
-| 5   | ~~`routes.py` at ~940 LOC~~ **✅ Resolved**                            | Routes fully decomposed into 6 domain modules (all < 420 LOC) + 18-LOC aggregator                                                        | Done (Iteration 6)                                                                                                                               |
-| 6   | ~~No rate limiting on API endpoints~~ **✅ Resolved**                  | Rate limiting applied via `slowapi` on upload (10/min) and download (30/min)                                                             | Done (Iteration 10, F16-D)                                                                                                                       |
-| 7   | ~~No DB indexes on FK columns~~ **✅ Resolved**                        | 4 secondary indexes added on `processing_runs`, `artifacts`, `document_status_history`                                                   | Done (Iteration 10, F16-A)                                                                                                                       |
-| 8   | ~~SQLite repository monolith (751 LOC, 4 aggregates)~~ **✅ Resolved** | Split into 3 aggregate modules + façade: `sqlite_document_repo.py` (241), `sqlite_run_repo.py` (302), `sqlite_calibration_repo.py` (123) | Done (Iteration 11, F18-S)                                                                                                                       |
-| 9   | ~~No latency baselines~~ **✅ Resolved**                               | P50/P95 benchmarks for list/get/upload endpoints; P95 < 500ms enforced                                                                   | Done (Iteration 11, F18-P)                                                                                                                       |
-| 10  | ~~Raw API errors shown to users~~ **✅ Resolved**                      | `errorMessages.ts` maps 8 error patterns to user-friendly Spanish toasts                                                                 | Done (Iteration 11, F18-O)                                                                                                                       |
-| 11  | ~~Limited E2E coverage (20 tests)~~ **✅ Resolved**                    | Expanded to 65 tests across 21 spec files covering all 4 phases of the E2E plan                                                          | Done (Iteration 12, F19-A→E)                                                                                                                     |
-| 12  | ~~No accessibility testing~~ **✅ Resolved**                           | `@axe-core/playwright` WCAG 2.1 AA audit integrated; 0 critical violations; aria-labels + focus management added                         | Done (Iteration 12, F19-I + F19-J)                                                                                                               |
+| #   | Limitation                                                             | Impact                                                                                                                                   | Mitigation / Roadmap                                                                                                                                         |
+| --- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | Single-process model — API and scheduler share one event loop          | No horizontal scaling for processing                                                                                                     | [ADR-ARCH-0004](adr/ADR-ARCH-0004-in-process-async-processing.md); optional worker profile in [Known Limitations](../04-delivery/future-improvements.md) #14 |
+| 2   | SQLite — single-writer constraint                                      | Write contention under concurrent uploads                                                                                                | WAL mode + busy timeout applied (Iteration 2); PostgreSQL adapter in roadmap (#17)                                                                           |
+| 3   | Minimal authentication boundary                                        | Root endpoints remain open; token auth is optional and static                                                                            | Optional bearer-token auth implemented (Iteration 3, §13); full authN/authZ is a production evolution                                                        |
+| 4   | `AppWorkspace.tsx` at ~2,200 LOC (down from ~5,800)                    | Core orchestrator still large; 28 hooks + 3 panel components extracted (−62%)                                                            | Decomposition across Iterations 3, 7, 8, 13, 14; remaining LOC is render orchestration — further splits yield diminishing returns                            |
+| 5   | ~~`routes.py` at ~940 LOC~~ **✅ Resolved**                            | Routes fully decomposed into 6 domain modules (all < 420 LOC) + 18-LOC aggregator                                                        | Done (Iteration 6)                                                                                                                                           |
+| 6   | ~~No rate limiting on API endpoints~~ **✅ Resolved**                  | Rate limiting applied via `slowapi` on upload (10/min) and download (30/min)                                                             | Done (Iteration 10, F16-D)                                                                                                                                   |
+| 7   | ~~No DB indexes on FK columns~~ **✅ Resolved**                        | 4 secondary indexes added on `processing_runs`, `artifacts`, `document_status_history`                                                   | Done (Iteration 10, F16-A)                                                                                                                                   |
+| 8   | ~~SQLite repository monolith (751 LOC, 4 aggregates)~~ **✅ Resolved** | Split into 3 aggregate modules + façade: `sqlite_document_repo.py` (241), `sqlite_run_repo.py` (302), `sqlite_calibration_repo.py` (123) | Done (Iteration 11, F18-S)                                                                                                                                   |
+| 9   | ~~No latency baselines~~ **✅ Resolved**                               | P50/P95 benchmarks for list/get/upload endpoints; P95 < 500ms enforced                                                                   | Done (Iteration 11, F18-P)                                                                                                                                   |
+| 10  | ~~Raw API errors shown to users~~ **✅ Resolved**                      | `errorMessages.ts` maps 8 error patterns to user-friendly Spanish toasts                                                                 | Done (Iteration 11, F18-O)                                                                                                                                   |
+| 11  | ~~Limited E2E coverage (20 tests)~~ **✅ Resolved**                    | Expanded to 65 tests across 21 spec files covering all 4 phases of the E2E plan                                                          | Done (Iteration 12, F19-A→E)                                                                                                                                 |
+| 12  | ~~No accessibility testing~~ **✅ Resolved**                           | `@axe-core/playwright` WCAG 2.1 AA audit integrated; 0 critical violations; aria-labels + focus management added                         | Done (Iteration 12, F19-I + F19-J)                                                                                                                           |
 
 ---
 
@@ -1975,8 +1975,8 @@ Rules (technical, authoritative):
 
 Source of truth for `CRITICAL_KEYS`:
 
-- Defined in [`docs/projects/veterinary-medical-records/01-product/product-design.md`](product-design.md) (product authority).
-- The complete Global Schema key list, fixed ordering, section grouping, repeatability rules, and cross-key fallback rules (including `document_date` fallback to `visit_date`) are also governed by [`docs/projects/veterinary-medical-records/01-product/product-design.md`](product-design.md).
+- Defined in [`docs/projects/veterinary-medical-records/01-product/product-design.md`](../01-product/product-design.md) (product authority).
+- The complete Global Schema key list, fixed ordering, section grouping, repeatability rules, and cross-key fallback rules (including `document_date` fallback to `visit_date`) are also governed by [`docs/projects/veterinary-medical-records/01-product/product-design.md`](../01-product/product-design.md).
 
 ---
 
@@ -2277,7 +2277,7 @@ Sufficient evidence boundary for assigned VisitGroup creation (US-45, determinis
 
 - This appendix is the technical source of truth for payload taxonomy and deterministic buckets (`fields[]`, `visits[]`, `other_fields[]`, and classification metadata).
 - Frontend consumers MUST render Medical Record structure from contract metadata only; they MUST NOT infer grouping/classification heuristically.
-- UX labels/copy are defined in [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md); this appendix defines contract semantics only.
+- UX labels/copy are defined in [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../01-product/ux-design.md); this appendix defines contract semantics only.
 
 ---
 

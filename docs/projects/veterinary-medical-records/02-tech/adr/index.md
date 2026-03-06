@@ -7,11 +7,13 @@ last-updated: 2026-03-06
 ---
 
 ---
+
 title: "ADR Index"
 type: index
 status: active
 audience: all
 last-updated: 2026-03-06
+
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -43,4 +45,4 @@ This directory stores architecture decisions that shape the current system desig
 ## Usage
 
 - Read architecture ADRs first for high-level technical trade-offs.
-- Use [`docs/README.md`](../README.md) for full documentation reading order.
+- Use [`docs/README.md`](../../../../README.md) for full documentation reading order.

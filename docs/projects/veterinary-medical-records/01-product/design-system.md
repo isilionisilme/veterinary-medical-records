@@ -66,7 +66,7 @@ All new user-visible UI must use tokens instead of scattered hard-coded values.
 ### Color tokens
 
 > Brand-level color decisions (accent, page bg, text hierarchy, semantic status) are defined in
-> [brand-guidelines.md](../shared/brand-guidelines.md). This table reflects **actual implementation values**
+> [brand-guidelines.md](../../shared/01-product/brand-guidelines.md). This table reflects **actual implementation values**
 > from `frontend/src/index.css`. When brand and implementation diverge, this table tracks the code.
 
 | Token                       | Value                         | Usage                                  |
@@ -124,7 +124,7 @@ Rule:
 
 Brand constraint:
 
-- Barkibu Orange (see [BRAND_GUIDELINES](../shared/brand-guidelines.md)) is used as accent/CTA only.
+- Barkibu Orange (see [BRAND_GUIDELINES](../../shared/01-product/brand-guidelines.md)) is used as accent/CTA only.
 - Semantic status colors stay muted and never use orange.
 
 ### Spacing scale

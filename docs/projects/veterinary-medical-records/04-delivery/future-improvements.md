@@ -34,7 +34,7 @@ last-updated: 2026-03-02
 
 ## Completed improvements (summary)
 
-Across 12 iterations, **15 planned improvements** were fully resolved. For the complete timeline with metrics, see [implementation-history.md](implementation/implementation-history.md).
+Across 12 iterations, **15 planned improvements** were fully resolved. For the complete timeline with metrics, see [implementation-history.md](./implementation-history.md).
 
 <details>
 <summary>Completed items (click to expand)</summary>
@@ -74,7 +74,7 @@ These items were evaluated and intentionally deferred. They do not represent ove
 
 ### 14 — Optional Compose worker profile
 
-**We chose not to** add a dedicated worker service for background processing. The in-process async model ([ADR-ARCH-0004](adr/ADR-ARCH-0004-in-process-async-processing.md)) is sufficient for single-evaluator load, and a worker profile adds operational complexity without demonstrated need at this scale.
+**We chose not to** add a dedicated worker service for background processing. The in-process async model ([ADR-ARCH-0004](../02-tech/adr/ADR-ARCH-0004-in-process-async-processing.md)) is sufficient for single-evaluator load, and a worker profile adds operational complexity without demonstrated need at this scale.
 
 ### 16 — Persistent event tracing and metrics
 
@@ -82,7 +82,7 @@ These items were evaluated and intentionally deferred. They do not represent ove
 
 ### 17 — PostgreSQL adapter
 
-**We chose not to** implement a second database adapter. SQLite with WAL mode handles the target workload. The repository protocol ([ADR-ARCH-0003](adr/ADR-ARCH-0003-raw-sql-repository-pattern.md)) is designed for adapter swapping — adding PostgreSQL would follow the existing interface without architectural changes.
+**We chose not to** implement a second database adapter. SQLite with WAL mode handles the target workload. The repository protocol ([ADR-ARCH-0003](../02-tech/adr/ADR-ARCH-0003-raw-sql-repository-pattern.md)) is designed for adapter swapping — adding PostgreSQL would follow the existing interface without architectural changes.
 
 ### 18 — Schema migration tooling
 

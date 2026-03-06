@@ -1,6 +1,6 @@
 # Plan: Worktree-Prefixed Branch Naming Convention
 
-> **Operational rules:** See [execution-rules.md](../../03-ops/execution-rules.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
+> **Operational rules:** See [execution-rules.md](../../99-archive/execution-rules.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
 
 **Rama:** `improvements/improvement/branch-naming-rules-update`
 **PR:** pendiente (draft)

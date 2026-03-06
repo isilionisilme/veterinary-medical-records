@@ -1,6 +1,6 @@
 # Plan: Visit-Scoped Weight — Separación de visitas y peso por visita
 
-> **Operational rules:** See [execution-rules.md](../../03-ops/execution-rules.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
+> **Operational rules:** See [execution-rules.md](../../99-archive/execution-rules.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
 
 **Rama:** `feat/visit-scoped-weight`
 **PR:** pendiente (draft)

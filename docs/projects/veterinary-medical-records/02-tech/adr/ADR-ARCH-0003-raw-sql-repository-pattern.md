@@ -7,11 +7,13 @@ last-updated: 2026-03-06
 ---
 
 ---
+
 title: "ADR-ARCH-0003: Raw SQL with Repository Pattern"
 type: adr
 status: active
 audience: staff-engineer
 last-updated: 2026-03-06
+
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->

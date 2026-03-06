@@ -7,11 +7,13 @@ last-updated: 2026-03-06
 ---
 
 ---
+
 title: "Execution Rules (Archived)"
 type: reference
 status: archived
 audience: contributor
 last-updated: 2026-03-06
+
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -84,7 +86,7 @@ last-updated: 2026-03-06
 
 **Breadcrumbs:** [Docs](../../../README.md) / [Projects](../../README.md) / veterinary-medical-records / 99-archive
 
-> **⚠️ Archived (2026-03-06).** Content fully absorbed into [plan-execution-protocol.md](../03-ops/plan-execution-protocol.md), [plan-management.md](../03-ops/plan-management.md), and [way-of-working.md](../../shared/04-delivery/way-of-working.md). Kept for reference only.
+> **⚠️ Archived (2026-03-06).** Content fully absorbed into [plan-execution-protocol.md](../03-ops/plan-execution-protocol.md), [plan-management.md](../03-ops/plan-management.md), and [way-of-working.md](../../shared/03-ops/way-of-working.md). Kept for reference only.
 
 > ~~**Canonical source:** This file governs how AI agents execute plan steps across all iterations.~~
 > ~~Referenced by `AGENTS.md`. Do not duplicate these rules elsewhere.~~
@@ -103,7 +105,7 @@ docs/projects/veterinary-medical-records/04-delivery/plans/
 **Active plan file:** The agent attaches the relevant `PLAN_*.md` file when executing `Continúa`.
 Each plan file contains: Execution Status (checkboxes), Prompt Queue, Active Prompt, and iteration-specific context.
 
-**PR Roadmap:** When a plan spans multiple PRs, it must include a `## PR Roadmap` section mapping phases to PRs. See [`ENGINEERING_PLAYBOOK.md § Plan-level PR Roadmap`](../../../shared/ENGINEERING_PLAYBOOK.md#plan-level-pr-roadmap) for the mandatory format.
+**PR Roadmap:** When a plan spans multiple PRs, it must include a `## PR Roadmap` section mapping phases to PRs. See [`ENGINEERING_PLAYBOOK.md § Plan-level PR Roadmap`](../03-ops/plan-management.md#pr-roadmap) for the mandatory format.
 
 ---
 

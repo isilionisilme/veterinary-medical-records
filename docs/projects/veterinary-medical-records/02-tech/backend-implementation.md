@@ -63,7 +63,7 @@ last-updated: 2026-03-02
 
 This document is intended to provide **implementation guidance for backend work** and to provide structured context to an AI Coding Assistant during implementation.
 
-Reading order, document responsibilities, and precedence rules are defined in [`docs/README.md`](../README.md).
+Reading order, document responsibilities, and precedence rules are defined in [`docs/README.md`](../../../README.md).
 
 If any requirement here conflicts with a higher-precedence document, **STOP** and defer to the authority defined in the README.
 
@@ -280,7 +280,7 @@ Authority: [`docs/projects/veterinary-medical-records/02-tech/technical-design.m
 ## Structured interpretation schema
 
 Authority: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix D (Structured Interpretation Schema visit-grouped canonical contract).
-Product semantics for confidence are defined in [`docs/projects/veterinary-medical-records/01-product/product-design.md`](product-design.md); UX behavior remains in [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md).
+Product semantics for confidence are defined in [`docs/projects/veterinary-medical-records/01-product/product-design.md`](../01-product/product-design.md); UX behavior remains in [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../01-product/ux-design.md).
 
 Alignment note:
 
@@ -304,7 +304,7 @@ Implementation responsibility:
 ### Critical keys
 
 `StructuredField.is_critical` MUST be derived from `key ∈ CRITICAL_KEYS`.
-Source of truth: [`docs/projects/veterinary-medical-records/01-product/product-design.md`](product-design.md).
+Source of truth: [`docs/projects/veterinary-medical-records/01-product/product-design.md`](../01-product/product-design.md).
 
 Backend responsibility:
 
@@ -445,7 +445,7 @@ Authority: [`docs/projects/veterinary-medical-records/02-tech/technical-design.m
 If an implementation decision is not explicitly covered by:
 
 - [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) (including appendices), or
-- [`docs/projects/veterinary-medical-records/04-delivery/implementation-plan.md`](implementation-plan.md) (scope and sequencing), or
+- [`docs/projects/veterinary-medical-records/04-delivery/implementation-plan.md`](../04-delivery/implementation-plan.md) (scope and sequencing), or
 - this document,
 
 **STOP and clarify before implementing.** No implicit behavior is allowed.

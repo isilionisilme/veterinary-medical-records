@@ -168,7 +168,7 @@ This document is intended to provide structured context to an AI Coding Assistan
 The version of this document written for evaluators and reviewers is available here:
 <https://docs.google.com/document/d/1b1rvBJu9bGjv8Z42OdDz9qwjecbqDbpilkn0KkYuD-M>
 
-Reading order, document authority, and precedence rules are defined in [`docs/README.md`](../README.md).
+Reading order, document authority, and precedence rules are defined in [`docs/README.md`](../../../README.md).
 If any conflict is detected, **STOP and ask before proceeding**.
 
 # Introduction
@@ -191,7 +191,7 @@ This document does **not** define:
 - cross-cutting implementation principles,
 - backend/frontend implementation details.
 
-Those are defined in their respective authoritative documents as described in [`docs/README.md`](../README.md).
+Those are defined in their respective authoritative documents as described in [`docs/README.md`](../../../README.md).
 
 Features or behaviors not explicitly listed here are not part of this plan.
 
@@ -290,7 +290,7 @@ Automatically process uploaded **PDF** documents in a **non-blocking** way, with
 
 ### Format support note
 
-Supported upload types are defined by [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix B3. DOCX and image format expansion are sequenced as the final stories (US-19 and US-20).
+Supported upload types are defined by [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B3. DOCX and image format expansion are sequenced as the final stories (US-19 and US-20).
 
 ### User Stories (in order)
 
@@ -595,14 +595,14 @@ As a developer, I want an API endpoint that accepts and persists a document so t
 
 - This story delivers the **backend ingestion API only** — no end-user UI. Verification is done through Swagger UI, curl, or equivalent developer tools.
 - This story does not start processing. Background processing is introduced later (US-05).
-- This story supports the upload types defined in [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix B3; format expansion is introduced via later user stories.
+- This story supports the upload types defined in [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B3; format expansion is introduced via later user stories.
 - The end-user upload experience (dropzone, feedback copy, error messages) is introduced in US-21.
 
 **Authoritative References**
 
-- Tech: API surface + upload requirements + errors: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix B3/B3.2
-- Tech: Derived document status: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix A1.2
-- Tech: Filesystem rules: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix B5
+- Tech: API surface + upload requirements + errors: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B3/B3.2
+- Tech: Derived document status: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix A1.2
+- Tech: Filesystem rules: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B5
 
 **Test Expectations**
 
@@ -612,8 +612,8 @@ As a developer, I want an API endpoint that accepts and persists a document so t
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -639,9 +639,9 @@ As a user, I want to see the current status of a document so that I understand i
 
 **Authoritative References**
 
-- Tech: Derived status rules: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix A1.2
-- Tech: Failure types and mapping: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix C3
-- UX: Separation of responsibilities: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md) Sections 1 and 8
+- Tech: Derived status rules: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix A1.2
+- Tech: Failure types and mapping: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix C3
+- UX: Separation of responsibilities: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../01-product/ux-design.md) Sections 1 and 8
 
 **Test Expectations**
 
@@ -650,8 +650,8 @@ As a user, I want to see the current status of a document so that I understand i
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -676,8 +676,8 @@ As a user, I want to download and preview the original uploaded document so that
 
 **Authoritative References**
 
-- Tech: API surface + errors: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix B3/B3.2
-- Tech: Filesystem artifact rules: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix B5
+- Tech: API surface + errors: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B3/B3.2
+- Tech: Filesystem artifact rules: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B5
 
 **Test Expectations**
 
@@ -687,8 +687,8 @@ As a user, I want to download and preview the original uploaded document so that
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -712,8 +712,8 @@ As a user, I want to list uploaded documents and see their status so that I can 
 
 **Authoritative References**
 
-- Tech: Listing semantics and run resolution: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix B3/B3.1
-- Tech: Derived status rules: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix A1.2
+- Tech: Listing semantics and run resolution: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B3/B3.1
+- Tech: Derived status rules: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix A1.2
 
 **Test Expectations**
 
@@ -723,8 +723,8 @@ As a user, I want to list uploaded documents and see their status so that I can 
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -746,17 +746,17 @@ As a veterinarian, I want uploaded PDF documents to be processed automatically s
 
 **Scope Clarification**
 
-- Processing follows the execution model defined in [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix B1.
+- Processing follows the execution model defined in [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B1.
 - This story does not introduce external queues or worker infrastructure; processing runs in-process and is non-blocking.
 - This story does not require OCR for scanned PDFs; extraction relies on embedded text when available.
 - This story does not execute multiple runs concurrently for the same document.
 
 **Authoritative References**
 
-- Tech: Processing model and run invariants: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Sections 3–4 + Appendix A2
-- Tech: Step model + failure mapping: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix C
-- Tech: Reprocess endpoint and idempotency rules: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix B3 + Appendix B4
-- Tech: Extraction library scope (PDF): [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix E
+- Tech: Processing model and run invariants: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Sections 3–4 + Appendix A2
+- Tech: Step model + failure mapping: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix C
+- Tech: Reprocess endpoint and idempotency rules: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B3 + Appendix B4
+- Tech: Extraction library scope (PDF): [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix E
 
 **Test Expectations**
 
@@ -766,8 +766,8 @@ As a veterinarian, I want uploaded PDF documents to be processed automatically s
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -797,9 +797,9 @@ As a veterinarian, I want to upload medical documents through a proper applicati
 **Authoritative References**
 
 - UX: Global upload experience and feedback heuristics: [`docs/shared/01-product/ux-guidelines.md`](../../../shared/01-product/ux-guidelines.md)
-- UX: Project interaction contract: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md) Sections 1–4
+- UX: Project interaction contract: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../01-product/ux-design.md) Sections 1–4
 - UX: User-facing copy tone: [`docs/shared/01-product/brand-guidelines.md`](../../../shared/01-product/brand-guidelines.md)
-- Tech: API contract consumed by the UI: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix B3/B3.2
+- Tech: API contract consumed by the UI: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B3/B3.2
 
 **Test Expectations**
 
@@ -810,8 +810,8 @@ As a veterinarian, I want to upload medical documents through a proper applicati
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -836,8 +836,8 @@ As a veterinarian, I want to see the processing history of a document so that I 
 
 **Authoritative References**
 
-- Tech: Processing history endpoint contract: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix B3.1
-- Tech: Step artifacts are the source of truth: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix C4
+- Tech: Processing history endpoint contract: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B3.1
+- Tech: Step artifacts are the source of truth: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix C4
 
 **Test Expectations**
 
@@ -846,8 +846,8 @@ As a veterinarian, I want to see the processing history of a document so that I 
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -872,8 +872,8 @@ As a veterinarian, I want to view the raw text extracted from a document so that
 
 **Authoritative References**
 
-- Tech: Raw-text artifact endpoint + “not ready vs not available” semantics: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix B3/B3.2
-- Tech: Extraction + language detection libraries: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix E
+- Tech: Raw-text artifact endpoint + “not ready vs not available” semantics: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B3/B3.2
+- Tech: Extraction + language detection libraries: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix E
 
 **Test Expectations**
 
@@ -882,8 +882,8 @@ As a veterinarian, I want to view the raw text extracted from a document so that
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -912,10 +912,10 @@ As a veterinarian, I want to review the system’s interpretation while viewing 
 
 **Authoritative References**
 
-- UX: Review flow + confidence meaning: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md) Sections 2–4
-- Tech: Review endpoint semantics (latest completed run): [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix B3.1
-- Tech: Structured interpretation schema + evidence model: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix D + D6
-- Tech: Extraction/interpretation scope (PDF): [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix E
+- UX: Review flow + confidence meaning: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../01-product/ux-design.md) Sections 2–4
+- Tech: Review endpoint semantics (latest completed run): [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B3.1
+- Tech: Structured interpretation schema + evidence model: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix D + D6
+- Tech: Extraction/interpretation scope (PDF): [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix E
 
 **Test Expectations**
 
@@ -925,8 +925,8 @@ As a veterinarian, I want to review the system’s interpretation while viewing 
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -987,9 +987,9 @@ As a veterinarian reviewer, I want to mark a document as reviewed and unmark it 
 
 **Authoritative References**
 
-- UX: Veterinarian review flow and status visibility: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md) Sections 1, 4, and section **Review UI Rendering Rules (Global Schema Template)**.
-- Product: Human-in-the-loop and non-blocking workflow principles: [`docs/projects/veterinary-medical-records/01-product/product-design.md`](product-design.md) Sections 2 and 5.
-- Tech: Review status model and transition rules: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix A1.3 + Appendix B4.
+- UX: Veterinarian review flow and status visibility: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../01-product/ux-design.md) Sections 1, 4, and section **Review UI Rendering Rules (Global Schema Template)**.
+- Product: Human-in-the-loop and non-blocking workflow principles: [`docs/projects/veterinary-medical-records/01-product/product-design.md`](../01-product/product-design.md) Sections 2 and 5.
+- Tech: Review status model and transition rules: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix A1.3 + Appendix B4.
 
 **Test Expectations**
 
@@ -1002,8 +1002,8 @@ As a veterinarian reviewer, I want to mark a document as reviewed and unmark it 
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -1047,10 +1047,10 @@ As a veterinarian, I want to quickly narrow down structured fields using search 
 
 **Authoritative References**
 
-- Product: Canonical field authority and order: [`docs/projects/veterinary-medical-records/01-product/product-design.md`](product-design.md) section **Global Schema (Canonical Field List)**.
-- UX: Review rendering baseline and deterministic missing/empty behavior: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md) section **Review UI Rendering Rules (Global Schema Template)**.
+- Product: Canonical field authority and order: [`docs/projects/veterinary-medical-records/01-product/product-design.md`](../01-product/product-design.md) section **Global Schema (Canonical Field List)**.
+- UX: Review rendering baseline and deterministic missing/empty behavior: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../01-product/ux-design.md) section **Review UI Rendering Rules (Global Schema Template)**.
 - Brand: UI controls and visual consistency: [`docs/shared/01-product/brand-guidelines.md`](../../../shared/01-product/brand-guidelines.md).
-- Frontend context: review rendering backbone: [`docs/projects/veterinary-medical-records/02-tech/frontend-implementation.md`](frontend-implementation.md) section **Review Rendering Backbone (Global Schema)**.
+- Frontend context: review rendering backbone: [`docs/projects/veterinary-medical-records/02-tech/frontend-implementation.md`](../02-tech/frontend-implementation.md) section **Review Rendering Backbone (Global Schema)**.
 
 **Test Expectations**
 
@@ -1061,8 +1061,8 @@ As a veterinarian, I want to quickly narrow down structured fields using search 
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -1119,9 +1119,9 @@ As a veterinarian reviewer, I want to resize the PDF and structured-data panels 
 
 **Authoritative References**
 
-- UX: Side-by-side review interaction baseline: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md) Sections 2–4.
-- Product: Global Schema canonical ordering invariants: [`docs/projects/veterinary-medical-records/01-product/product-design.md`](product-design.md) section **Global Schema (Canonical Field List)**.
-- Frontend context: review rendering backbone and deterministic structure: [`docs/projects/veterinary-medical-records/02-tech/frontend-implementation.md`](frontend-implementation.md) section **Review Rendering Backbone (Global Schema)**.
+- UX: Side-by-side review interaction baseline: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../01-product/ux-design.md) Sections 2–4.
+- Product: Global Schema canonical ordering invariants: [`docs/projects/veterinary-medical-records/01-product/product-design.md`](../01-product/product-design.md) section **Global Schema (Canonical Field List)**.
+- Frontend context: review rendering backbone and deterministic structure: [`docs/projects/veterinary-medical-records/02-tech/frontend-implementation.md`](../02-tech/frontend-implementation.md) section **Review Rendering Backbone (Global Schema)**.
 
 **Test Expectations**
 
@@ -1133,8 +1133,8 @@ As a veterinarian reviewer, I want to resize the PDF and structured-data panels 
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -1176,10 +1176,10 @@ Introduce a minimal, consistent UI foundation to prevent ad-hoc styling and enab
 
 **Authoritative References**
 
-- UX: Review interaction contract and confidence behavior: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md) Sections 2–4 and section **Review UI Rendering Rules (Global Schema Template)**.
+- UX: Review interaction contract and confidence behavior: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../01-product/ux-design.md) Sections 2–4 and section **Review UI Rendering Rules (Global Schema Template)**.
 - Shared UX boundaries: [`docs/shared/01-product/ux-guidelines.md`](../../../shared/01-product/ux-guidelines.md).
 - Brand constraints and tokenization requirement: [`docs/shared/01-product/brand-guidelines.md`](../../../shared/01-product/brand-guidelines.md).
-- Design system implementation contract: [`docs/projects/veterinary-medical-records/01-product/design-system.md`](design-system.md).
+- Design system implementation contract: [`docs/projects/veterinary-medical-records/01-product/design-system.md`](../01-product/design-system.md).
 
 **Test Expectations**
 
@@ -1221,11 +1221,11 @@ As a veterinarian, I want to edit structured information extracted from a docume
 
 **Authoritative References**
 
-- Tech: Versioning invariants (append-only interpretations): [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix A3 + Appendix B2.4
-- Tech: Field change log contract: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix B2.5
-- Tech: Edit endpoint contract: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix B3.1
-- UX: Immediate local correction, no extra feedback steps: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md) Section 4
-- Tech: Extraction/interpretation scope (PDF): [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix E
+- Tech: Versioning invariants (append-only interpretations): [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix A3 + Appendix B2.4
+- Tech: Field change log contract: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B2.5
+- Tech: Edit endpoint contract: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B3.1
+- UX: Immediate local correction, no extra feedback steps: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../01-product/ux-design.md) Section 4
+- Tech: Extraction/interpretation scope (PDF): [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix E
 
 **Test Expectations**
 
@@ -1235,8 +1235,8 @@ As a veterinarian, I want to edit structured information extracted from a docume
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -1261,9 +1261,9 @@ As a veterinarian, I want the system to record my normal corrections as append-o
 
 **Authoritative References**
 
-- Product: Learning and governance principles: [`docs/projects/veterinary-medical-records/01-product/product-design.md`](product-design.md) Section 6
-- Tech: Field change log is append-only and can serve as correction signal storage: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix B2.5
-- UX: No explicit feedback flows: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md) Section 4
+- Product: Learning and governance principles: [`docs/projects/veterinary-medical-records/01-product/product-design.md`](../01-product/product-design.md) Section 6
+- Tech: Field change log is append-only and can serve as correction signal storage: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B2.5
+- UX: No explicit feedback flows: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../01-product/ux-design.md) Section 4
 
 **Test Expectations**
 
@@ -1272,8 +1272,8 @@ As a veterinarian, I want the system to record my normal corrections as append-o
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -1288,7 +1288,7 @@ As a veterinarian reviewer, I want to see a small list of alternative extracted 
 **Acceptance Criteria**
 Data contract (standard review payload)
 
-- The standard review payload includes optional per-field `candidate_suggestions` as defined in [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) section **Field Candidate Suggestions (standard review payload)**.
+- The standard review payload includes optional per-field `candidate_suggestions` as defined in [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) section **Field Candidate Suggestions (standard review payload)**.
 - Backwards compatible: clients MAY ignore `candidate_suggestions`.
 
 UI (existing edit modal only)
@@ -1316,10 +1316,10 @@ No layout disruption
 
 **Authoritative References**
 
-- [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md)
-- [`docs/projects/veterinary-medical-records/01-product/design-system.md`](design-system.md)
-- [`docs/projects/veterinary-medical-records/01-product/product-design.md`](product-design.md)
-- [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) section **Field Candidate Suggestions (standard review payload)**
+- [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../01-product/ux-design.md)
+- [`docs/projects/veterinary-medical-records/01-product/design-system.md`](../01-product/design-system.md)
+- [`docs/projects/veterinary-medical-records/01-product/product-design.md`](../01-product/product-design.md)
+- [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) section **Field Candidate Suggestions (standard review payload)**
 
 **Test Expectations**
 Backend:
@@ -1355,9 +1355,9 @@ As a veterinarian, I want to change the detected language of a document so that 
 
 **Authoritative References**
 
-- Tech: Language detection rules: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix E
-- Tech: Language override endpoint + rules: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix B3/B3.1
-- Tech: Run persistence of `language_used`: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix B2.2
+- Tech: Language detection rules: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix E
+- Tech: Language override endpoint + rules: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B3/B3.1
+- Tech: Run persistence of `language_used`: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B2.2
 
 **Test Expectations**
 
@@ -1367,8 +1367,8 @@ As a veterinarian, I want to change the detected language of a document so that 
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -1398,10 +1398,10 @@ As a veterinarian, I want the review view to always use the full Global Schema t
 
 **Authoritative References**
 
-- Product: Global schema authority and field list: [`docs/projects/veterinary-medical-records/01-product/product-design.md`](product-design.md) section **Global Schema (Canonical Field List)**.
-- UX: Rendering and placeholder behavior: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md) section **Review UI Rendering Rules (Global Schema Template)**.
-- Tech: Structured interpretation schema and partial payload boundary: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix D.
-- Frontend implementation notes: [`docs/projects/veterinary-medical-records/02-tech/frontend-implementation.md`](frontend-implementation.md) section **Review Rendering Backbone (Global Schema)**.
+- Product: Global schema authority and field list: [`docs/projects/veterinary-medical-records/01-product/product-design.md`](../01-product/product-design.md) section **Global Schema (Canonical Field List)**.
+- UX: Rendering and placeholder behavior: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../01-product/ux-design.md) section **Review UI Rendering Rules (Global Schema Template)**.
+- Tech: Structured interpretation schema and partial payload boundary: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix D.
+- Frontend implementation notes: [`docs/projects/veterinary-medical-records/02-tech/frontend-implementation.md`](../02-tech/frontend-implementation.md) section **Review Rendering Backbone (Global Schema)**.
 
 **Test Expectations**
 
@@ -1412,8 +1412,8 @@ As a veterinarian, I want the review view to always use the full Global Schema t
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -1764,14 +1764,14 @@ As a veterinarian, I want confidence dots/colors in the review UI to reflect map
 
 - This story aligns veterinarian-facing confidence semantics and display only.
 - This story does not redefine policy contracts, persistence shape, or backend threshold logic.
-- This story depends on the backend exposing `policy_version` + confidence band cutoffs in the document/schema payload per [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md).
+- This story depends on the backend exposing `policy_version` + confidence band cutoffs in the document/schema payload per [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md).
 
 **Authoritative References**
 
-- Product: Confidence meaning and veterinarian-facing signal intent: [`docs/projects/veterinary-medical-records/01-product/product-design.md`](product-design.md).
-- UX: Confidence visualization behavior in review surfaces: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md).
-- Tech: Policy-provided confidence configuration and response semantics: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md).
-- Frontend context: Confidence rendering implementation points: [`docs/projects/veterinary-medical-records/02-tech/frontend-implementation.md`](frontend-implementation.md).
+- Product: Confidence meaning and veterinarian-facing signal intent: [`docs/projects/veterinary-medical-records/01-product/product-design.md`](../01-product/product-design.md).
+- UX: Confidence visualization behavior in review surfaces: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../01-product/ux-design.md).
+- Tech: Policy-provided confidence configuration and response semantics: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md).
+- Frontend context: Confidence rendering implementation points: [`docs/projects/veterinary-medical-records/02-tech/frontend-implementation.md`](../02-tech/frontend-implementation.md).
 
 **Test Expectations**
 
@@ -1781,8 +1781,8 @@ As a veterinarian, I want confidence dots/colors in the review UI to reflect map
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -1803,7 +1803,7 @@ As a veterinarian, I want to understand why a field confidence looks the way it 
 - Edge cases are rendered deterministically: no history shows adjustment `0`; missing extraction reliability shows `No disponible`.
 - Dot/band behavior remains unchanged and continues to use `field_mapping_confidence` as the primary visible signal.
 - Confidence computation/propagation behavior is unchanged.
-- Tooltip copy and structure align with [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md) section **4.3 Confidence Tooltip Breakdown (Veterinarian UI)**.
+- Tooltip copy and structure align with [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../01-product/ux-design.md) section **4.3 Confidence Tooltip Breakdown (Veterinarian UI)**.
 
 **Scope Clarification**
 
@@ -1829,11 +1829,11 @@ As a veterinarian, I want to understand why a field confidence looks the way it 
 
 **Authoritative References**
 
-- UX tooltip contract: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md) section **4.3 Confidence Tooltip Breakdown (Veterinarian UI)**.
-- Design system tooltip pattern: [`docs/projects/veterinary-medical-records/01-product/design-system.md`](design-system.md).
-- Technical contract and visibility invariants: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md).
-- Backend sourcing responsibilities: [`docs/projects/veterinary-medical-records/02-tech/backend-implementation.md`](backend-implementation.md).
-- Frontend rendering responsibilities: [`docs/projects/veterinary-medical-records/02-tech/frontend-implementation.md`](frontend-implementation.md).
+- UX tooltip contract: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../01-product/ux-design.md) section **4.3 Confidence Tooltip Breakdown (Veterinarian UI)**.
+- Design system tooltip pattern: [`docs/projects/veterinary-medical-records/01-product/design-system.md`](../01-product/design-system.md).
+- Technical contract and visibility invariants: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md).
+- Backend sourcing responsibilities: [`docs/projects/veterinary-medical-records/02-tech/backend-implementation.md`](../02-tech/backend-implementation.md).
+- Frontend rendering responsibilities: [`docs/projects/veterinary-medical-records/02-tech/frontend-implementation.md`](../02-tech/frontend-implementation.md).
 
 **Test Expectations**
 
@@ -1845,8 +1845,8 @@ As a veterinarian, I want to understand why a field confidence looks the way it 
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -1869,9 +1869,9 @@ As a reviewer, I want to review aggregated pending structural changes so that I 
 
 **Authoritative References**
 
-- Product: Separation of responsibilities and governance boundary: [`docs/projects/veterinary-medical-records/01-product/product-design.md`](product-design.md) Sections 5 and 4.3
-- Tech: Governance invariants: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix A7
-- Tech: Governance persistence + endpoints: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix B2.8–B2.9 + Appendix B3.1
+- Product: Separation of responsibilities and governance boundary: [`docs/projects/veterinary-medical-records/01-product/product-design.md`](../01-product/product-design.md) Sections 5 and 4.3
+- Tech: Governance invariants: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix A7
+- Tech: Governance persistence + endpoints: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B2.8–B2.9 + Appendix B3.1
 
 **Test Expectations**
 
@@ -1880,8 +1880,8 @@ As a reviewer, I want to review aggregated pending structural changes so that I 
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -1903,9 +1903,9 @@ As a reviewer, I want to filter and prioritize pending structural changes so I c
 
 **Authoritative References**
 
-- Product: Critical keys policy: [`docs/projects/veterinary-medical-records/01-product/product-design.md`](product-design.md) CRITICAL_KEYS
-- Tech: Critical concept derivation: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix D7.4
-- Tech: Governance endpoints: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix B3
+- Product: Critical keys policy: [`docs/projects/veterinary-medical-records/01-product/product-design.md`](../01-product/product-design.md) CRITICAL_KEYS
+- Tech: Critical concept derivation: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix D7.4
+- Tech: Governance endpoints: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B3
 
 **Test Expectations**
 
@@ -1914,8 +1914,8 @@ As a reviewer, I want to filter and prioritize pending structural changes so I c
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -1939,9 +1939,9 @@ As a reviewer, I want to approve structural changes so that future interpretatio
 
 **Authoritative References**
 
-- Tech: Schema contract persistence and current schema rule: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix B2.7
-- Tech: `schema_contract_used` persisted per run: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix B2.2
-- Tech: Governance invariants: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix A7
+- Tech: Schema contract persistence and current schema rule: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B2.7
+- Tech: `schema_contract_used` persisted per run: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B2.2
+- Tech: Governance invariants: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix A7
 
 **Test Expectations**
 
@@ -1951,8 +1951,8 @@ As a reviewer, I want to approve structural changes so that future interpretatio
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -1975,9 +1975,9 @@ As a reviewer, I want to reject or defer structural changes so that unsafe or lo
 
 **Authoritative References**
 
-- Tech: Governance decision log: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix B2.9
-- Tech: Governance endpoints: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix B3
-- Tech: Governance invariants: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix A7
+- Tech: Governance decision log: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B2.9
+- Tech: Governance endpoints: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B3
+- Tech: Governance invariants: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix A7
 
 **Test Expectations**
 
@@ -1986,8 +1986,8 @@ As a reviewer, I want to reject or defer structural changes so that unsafe or lo
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -2010,9 +2010,9 @@ As a reviewer, I want stricter handling for critical structural changes so that 
 
 **Authoritative References**
 
-- Product: Critical concept policy: [`docs/projects/veterinary-medical-records/01-product/product-design.md`](product-design.md) Section 4
-- Tech: Critical derivation rule: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix D7.4
-- UX: Sensitive changes never add veterinarian friction: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md) Section 6
+- Product: Critical concept policy: [`docs/projects/veterinary-medical-records/01-product/product-design.md`](../01-product/product-design.md) Section 4
+- Tech: Critical derivation rule: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix D7.4
+- UX: Sensitive changes never add veterinarian friction: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../01-product/ux-design.md) Section 6
 
 **Test Expectations**
 
@@ -2021,8 +2021,8 @@ As a reviewer, I want stricter handling for critical structural changes so that 
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -2044,9 +2044,9 @@ As a reviewer, I want to see an audit trail of schema governance decisions so th
 
 **Authoritative References**
 
-- Tech: Governance decision log persistence: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix B2.9
-- Tech: Audit trail endpoint: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix B3
-- Tech: Audit immutability and separation: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix A8
+- Tech: Governance decision log persistence: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B2.9
+- Tech: Audit trail endpoint: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B3
+- Tech: Audit immutability and separation: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix A8
 
 **Test Expectations**
 
@@ -2055,8 +2055,8 @@ As a reviewer, I want to see an audit trail of schema governance decisions so th
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -2077,14 +2077,14 @@ As a user, I want to upload, access, and process DOCX documents so that the same
 
 - This story changes format support only; the processing pipeline, contracts, versioning rules, and review workflow semantics remain unchanged.
 - This story does not require preview for DOCX; if preview is unavailable, the UI must clearly fall back to download-only without blocking workflows.
-- This story requires updating the authoritative format support contract in [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) (supported upload types and any related filesystem rules).
+- This story requires updating the authoritative format support contract in [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) (supported upload types and any related filesystem rules).
 
 **Authoritative References**
 
-- Tech: Endpoint surface and error semantics: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix B3/B3.2
-- Tech: Processing model and run invariants: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Sections 3–4 + Appendix A2
-- Tech: Step model + failure mapping: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix C
-- UX: Review flow guarantees and rendering contract: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md) sections **Confidence — UX Definition**, **Veterinarian Review Flow**, **Review-in-Context Contract**, and **Review UI Rendering Rules (Global Schema Template)**.
+- Tech: Endpoint surface and error semantics: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B3/B3.2
+- Tech: Processing model and run invariants: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Sections 3–4 + Appendix A2
+- Tech: Step model + failure mapping: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix C
+- UX: Review flow guarantees and rendering contract: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../01-product/ux-design.md) sections **Confidence — UX Definition**, **Veterinarian Review Flow**, **Review-in-Context Contract**, and **Review UI Rendering Rules (Global Schema Template)**.
 
 **Story-specific technical requirements**
 
@@ -2100,8 +2100,8 @@ As a user, I want to upload, access, and process DOCX documents so that the same
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -2122,20 +2122,20 @@ As a user, I want to upload, access, and process image documents so that scans a
 **Scope Clarification**
 
 - This story changes format support only; the processing pipeline, contracts, versioning rules, and review workflow semantics remain unchanged.
-- This story requires updating the authoritative format support contract in [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) (supported upload types and any related filesystem rules).
+- This story requires updating the authoritative format support contract in [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) (supported upload types and any related filesystem rules).
 
 **Authoritative References**
 
-- Tech: Endpoint surface and error semantics: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix B3/B3.2
-- Tech: Processing model and run invariants: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Sections 3–4 + Appendix A2
-- Tech: Step model + failure mapping: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix C
-- Tech: Extraction library decisions (appendix): [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix E
-- UX: Review flow guarantees and rendering contract: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md) sections **Confidence — UX Definition**, **Veterinarian Review Flow**, **Review-in-Context Contract**, and **Review UI Rendering Rules (Global Schema Template)**.
+- Tech: Endpoint surface and error semantics: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B3/B3.2
+- Tech: Processing model and run invariants: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Sections 3–4 + Appendix A2
+- Tech: Step model + failure mapping: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix C
+- Tech: Extraction library decisions (appendix): [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix E
+- UX: Review flow guarantees and rendering contract: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../01-product/ux-design.md) sections **Confidence — UX Definition**, **Veterinarian Review Flow**, **Review-in-Context Contract**, and **Review UI Rendering Rules (Global Schema Template)**.
 
 **Story-specific technical requirements**
 
 - Add server-side type detection for images based on server-side inspection.
-- Define the OCR extraction approach in [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix E during this story, then implement it.
+- Define the OCR extraction approach in [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix E during this story, then implement it.
 - Store the original under the deterministic path rules with the appropriate extension (e.g., `original.png`, `original.jpg`).
 
 **Test Expectations**
@@ -2146,8 +2146,8 @@ As a user, I want to upload, access, and process image documents so that scans a
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -2176,10 +2176,10 @@ As a user, I want optional OCR support for scanned records so that documents wit
 
 **Authoritative References**
 
-- Tech: Processing model and run invariants: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Sections 3–4 + Appendix A2
-- Tech: Endpoint surface and failure semantics: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix B3/B3.2
-- Tech: Step model and failure mapping: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix C
-- Tech: Extraction/OCR library decisions: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix E
+- Tech: Processing model and run invariants: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Sections 3–4 + Appendix A2
+- Tech: Endpoint surface and failure semantics: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B3/B3.2
+- Tech: Step model and failure mapping: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix C
+- Tech: Extraction/OCR library decisions: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix E
 
 **Story-specific technical requirements**
 
@@ -2196,8 +2196,8 @@ As a user, I want optional OCR support for scanned records so that documents wit
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -2221,7 +2221,7 @@ As a user, I want document names to be more readable in the list so that I can i
 
 **Authoritative References**
 
-- UX: Document list behavior and responsive interaction principles: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md)
+- UX: Document list behavior and responsive interaction principles: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../01-product/ux-design.md)
 - UX: Accessibility and interaction consistency: [`docs/shared/01-product/ux-guidelines.md`](../../../shared/01-product/ux-guidelines.md)
 
 **Test Expectations**
@@ -2232,8 +2232,8 @@ As a user, I want document names to be more readable in the list so that I can i
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -2257,8 +2257,8 @@ As a user, I want to drag and drop a PDF from multiple relevant screens so that 
 
 **Authoritative References**
 
-- Tech: Existing upload contract and validation behavior: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix B3/B3.2
-- UX: Upload interaction consistency and fallbacks: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md)
+- Tech: Existing upload contract and validation behavior: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B3/B3.2
+- UX: Upload interaction consistency and fallbacks: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../01-product/ux-design.md)
 
 **Test Expectations**
 
@@ -2268,8 +2268,8 @@ As a user, I want to drag and drop a PDF from multiple relevant screens so that 
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -2293,8 +2293,8 @@ As a user, I want to upload an entire folder of PDFs so that I can ingest many r
 
 **Authoritative References**
 
-- Tech: Upload validation and failure behavior: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix B3/B3.2
-- UX: Bulk upload feedback and fallback behavior: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md)
+- Tech: Upload validation and failure behavior: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B3/B3.2
+- UX: Bulk upload feedback and fallback behavior: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../01-product/ux-design.md)
 
 **Test Expectations**
 
@@ -2304,8 +2304,8 @@ As a user, I want to upload an entire folder of PDFs so that I can ingest many r
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -2329,7 +2329,7 @@ As a user, I want keyboard shortcuts for frequent actions so that I can work fas
 **Authoritative References**
 
 - UX: Keyboard accessibility and modal behavior: [`docs/shared/01-product/ux-guidelines.md`](../../../shared/01-product/ux-guidelines.md)
-- UX: Project interaction patterns: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md)
+- UX: Project interaction patterns: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../01-product/ux-design.md)
 
 **Test Expectations**
 
@@ -2339,8 +2339,8 @@ As a user, I want keyboard shortcuts for frequent actions so that I can work fas
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -2365,7 +2365,7 @@ As a user, I want an in-app help wiki with a globally accessible entry point so 
 
 **Authoritative References**
 
-- Product/UX language and workflow semantics: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md)
+- Product/UX language and workflow semantics: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../01-product/ux-design.md)
 - Brand and copy tone: [`docs/shared/01-product/brand-guidelines.md`](../../../shared/01-product/brand-guidelines.md)
 
 **Test Expectations**
@@ -2376,8 +2376,8 @@ As a user, I want an in-app help wiki with a globally accessible entry point so 
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -2401,8 +2401,8 @@ As a user, I want to remove an uploaded document from my active list so that I c
 
 **Authoritative References**
 
-- Tech: Existing document listing/status contracts: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix B3/B3.1
-- UX: Destructive action confirmation and recoverability patterns: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md)
+- Tech: Existing document listing/status contracts: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B3/B3.1
+- UX: Destructive action confirmation and recoverability patterns: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../01-product/ux-design.md)
 
 **Test Expectations**
 
@@ -2412,8 +2412,8 @@ As a user, I want to remove an uploaded document from my active list so that I c
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -2437,7 +2437,7 @@ As a user, I want notification toasts to behave predictably when multiple events
 **Authoritative References**
 
 - UX: Notification feedback and accessibility patterns: [`docs/shared/01-product/ux-guidelines.md`](../../../shared/01-product/ux-guidelines.md)
-- UX: Project-wide interaction consistency: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md)
+- UX: Project-wide interaction consistency: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../01-product/ux-design.md)
 
 **Test Expectations**
 
@@ -2447,8 +2447,8 @@ As a user, I want notification toasts to behave predictably when multiple events
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -2472,8 +2472,8 @@ As a user, I want to change the application display language so that I can use t
 
 **Authoritative References**
 
-- UX: Product language and interaction patterns: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md)
-- Tech: Existing document-language processing boundaries: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) Appendix E + Appendix B3/B3.1
+- UX: Product language and interaction patterns: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../01-product/ux-design.md)
+- Tech: Existing document-language processing boundaries: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix E + Appendix B3/B3.1
 
 **Test Expectations**
 
@@ -2483,8 +2483,8 @@ As a user, I want to change the application display language so that I can use t
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -2508,8 +2508,8 @@ As an operator, I want key runtime configuration externalized and visible in-app
 
 **Authoritative References**
 
-- Tech: Runtime contracts and operational constraints: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md)
-- UX: Settings readability and information architecture: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md)
+- Tech: Runtime contracts and operational constraints: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md)
+- UX: Settings readability and information architecture: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../01-product/ux-design.md)
 
 **Test Expectations**
 
@@ -2519,8 +2519,8 @@ As an operator, I want key runtime configuration externalized and visible in-app
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---
@@ -2546,8 +2546,8 @@ As a veterinarian reviewer, I want to zoom in/out the PDF viewer so I can read s
 
 **Authoritative References**
 
-- UX: Review workflow and side-by-side behavior: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md)
-- Tech: Existing review/document surface boundaries: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md)
+- UX: Review workflow and side-by-side behavior: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../01-product/ux-design.md)
+- Tech: Existing review/document surface boundaries: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md)
 
 **Test Expectations**
 
@@ -2558,8 +2558,8 @@ As a veterinarian reviewer, I want to zoom in/out the PDF viewer so I can read s
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
 
 ---

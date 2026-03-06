@@ -42,7 +42,7 @@ last-updated: 2026-03-02
 
 This document describes **how the frontend should be implemented** to satisfy the UX and backend contracts
 defined elsewhere in the repository documentation.
-Reading order, document authority, and cross-document precedence are defined in [`docs/README.md`](../README.md).
+Reading order, document authority, and cross-document precedence are defined in [`docs/README.md`](../../../README.md).
 If anything here appears to conflict with other documentation, **STOP and ask**.
 
 It must remain **implementation-only**:
@@ -78,7 +78,7 @@ The frontend is implemented using:
   and justify any new dependency.
 
 - **Lean design system contract**
-  Follow [`docs/projects/veterinary-medical-records/01-product/design-system.md`](design-system.md) for tokens, primitives, wrappers, and guard rules.
+  Follow [`docs/projects/veterinary-medical-records/01-product/design-system.md`](../01-product/design-system.md) for tokens, primitives, wrappers, and guard rules.
 
 - **TanStack Query**  
   Used for server state management (loading, error, invalidation) without introducing global client state complexity.
@@ -100,7 +100,7 @@ The repository uses a single repo with explicit separation:
 
 - `/frontend` contains all React code.
 - `/backend` remains the FastAPI application.
-- `/docs` contains repository documentation (see [`docs/README.md`](../README.md) for structure and reading order).
+- `/docs` contains repository documentation (see [`docs/README.md`](../../../README.md) for structure and reading order).
 
 The frontend is built and served independently but lives in the same repository.
 
@@ -134,7 +134,7 @@ State rules:
 Document review is implemented using **evidence-based navigation**, not precise spatial annotation.
 
 The frontend must consume the "evidence" fields exactly as defined by backend contracts
-in the authoritative documentation (see [`docs/README.md`](../README.md)) (do not invent fields or semantics here).
+in the authoritative documentation (see [`docs/README.md`](../../../README.md)) (do not invent fields or semantics here).
 
 Frontend behavior:
 
@@ -153,7 +153,7 @@ This ensures:
 ## Review Rendering Backbone (Global Schema)
 
 Rendering authority for the full key universe, ordering, section grouping, repeatability, and fallback rules is
-[`docs/projects/veterinary-medical-records/01-product/product-design.md`](product-design.md) (Global Schema).
+[`docs/projects/veterinary-medical-records/01-product/product-design.md`](../01-product/product-design.md) (Global Schema).
 
 Frontend implementation guidance:
 
@@ -216,7 +216,7 @@ Frontend implications:
 
 ## Additional File Types
 
-Format expansion is handled by dedicated user stories in [`docs/projects/veterinary-medical-records/04-delivery/implementation-plan.md`](implementation-plan.md) (US-19 and US-20).
+Format expansion is handled by dedicated user stories in [`docs/projects/veterinary-medical-records/04-delivery/implementation-plan.md`](../04-delivery/implementation-plan.md) (US-19 and US-20).
 
 ---
 
@@ -241,7 +241,7 @@ If matching fails:
 ## Confidence Rendering
 
 Confidence values are rendered as **visual attention signals**, not as control mechanisms.
-Confidence semantics are owned by [`docs/projects/veterinary-medical-records/01-product/product-design.md`](product-design.md), and interaction behavior is owned by [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md).
+Confidence semantics are owned by [`docs/projects/veterinary-medical-records/01-product/product-design.md`](../01-product/product-design.md), and interaction behavior is owned by [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../01-product/ux-design.md).
 
 Frontend representation:
 
@@ -320,7 +320,7 @@ No custom caching or duplication of server state logic is introduced.
 
 ## Sequencing (Authority)
 
-Implementation sequencing and scope are owned by [`docs/projects/veterinary-medical-records/04-delivery/implementation-plan.md`](implementation-plan.md).
+Implementation sequencing and scope are owned by [`docs/projects/veterinary-medical-records/04-delivery/implementation-plan.md`](../04-delivery/implementation-plan.md).
 This document must not introduce or reorder stories; it only provides implementation notes within each story.
 
 ---
