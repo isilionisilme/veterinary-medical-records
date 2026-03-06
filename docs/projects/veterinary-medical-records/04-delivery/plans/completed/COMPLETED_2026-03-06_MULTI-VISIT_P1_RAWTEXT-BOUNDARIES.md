@@ -239,6 +239,6 @@ Este plan es la **Parte 1 de 3** de la implementacion completa de multi-visit sc
 
 | Parte | Plan | Scope | PR |
 |---|---|---|---|
-| **1 (esta)** | [PLAN_2026-03-06_MULTI-VISIT-RAWTEXT-BOUNDARIES.md](PLAN_2026-03-06_MULTI-VISIT-RAWTEXT-BOUNDARIES.md) | Deteccion de boundaries de visitas desde raw text | [#216](https://github.com/isilionisilme/veterinary-medical-records/pull/216) |
-| **2** | [PLAN_2026-03-07_PER-VISIT-FIELD-EXTRACTION.md](PLAN_2026-03-07_PER-VISIT-FIELD-EXTRACTION.md) | Extraccion de campos clinicos por segmento de visita | Pendiente |
-| **3 (condicional)** | [PLAN_2026-03-07_VISIT-SCOPING-OBSERVABILITY.md](PLAN_2026-03-07_VISIT-SCOPING-OBSERVABILITY.md) | Observabilidad, debug tooling y documentacion de cierre | Pendiente |
+| **1 (esta)** | [COMPLETED_2026-03-06_MULTI-VISIT_P1_RAWTEXT-BOUNDARIES.md](COMPLETED_2026-03-06_MULTI-VISIT_P1_RAWTEXT-BOUNDARIES.md) | Deteccion de boundaries de visitas desde raw text | [#216](https://github.com/isilionisilme/veterinary-medical-records/pull/216) |
+| **2** | [PLAN_2026-03-07_MULTI-VISIT_P2_PER-VISIT-FIELD-EXTRACTION.md](../PLAN_2026-03-07_MULTI-VISIT_P2_PER-VISIT-FIELD-EXTRACTION.md) | Extraccion de campos clinicos por segmento de visita | Pendiente |
+| **3 (condicional)** | [PLAN_2026-03-07_MULTI-VISIT_P3_VISIT-SCOPING-OBSERVABILITY.md](../PLAN_2026-03-07_MULTI-VISIT_P3_VISIT-SCOPING-OBSERVABILITY.md) | Observabilidad, debug tooling y documentacion de cierre | Pendiente |
