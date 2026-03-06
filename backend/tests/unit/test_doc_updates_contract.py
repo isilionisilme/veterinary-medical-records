@@ -329,11 +329,20 @@ def test_post_merge_cleanup_requires_remote_branch_deletion() -> None:
         REPO_ROOT / "docs" / "agent_router" / "01_WORKFLOW" / "PULL_REQUESTS" / "00_entry.md"
     )
 
-    required_term = "Delete the remote branch (`git push origin --delete <branch-name>`)."
+    required_term = (
+        "Attempt to delete the remote branch (`git push origin --delete <branch-name>`)."
+    )
+    fallback_term = (
+        "If it fails because the branch is missing, protected, or you lack permissions, "
+        "report it and continue cleanup."
+    )
 
     assert required_term in source_text
     assert required_term in shared_pr_router
     assert required_term in workflow_pr_router
+    assert fallback_term in source_text
+    assert fallback_term in shared_pr_router
+    assert fallback_term in workflow_pr_router
 
 
 def test_commit_confirmation_policy_is_documented_across_general_and_plan_modes() -> None:
