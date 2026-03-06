@@ -166,7 +166,7 @@ Se incorpora una fuente adicional de deteccion de visitas basada en `raw_text` c
 ### Phase 5 - Merge y cierre de PR
 
 - [ ] P5-A 🔄 - Merge PR a `main` tras CT-5. Verificar CI verde.
-- [ ] P5-B 🔄 - Crear plan separado para nueva PR: extraccion de campos clinicos por segmento de visita (scope: `reason_for_visit`, `diagnosis`, `symptoms`, `medication`, etc.).
+- [x] P5-B 🔄 - Crear plan separado para nueva PR: extraccion de campos clinicos por segmento de visita (scope: `reason_for_visit`, `diagnosis`, `symptoms`, `medication`, etc.). — ✅ `6ea7781c`
 
 ---
 
@@ -190,7 +190,7 @@ Se incorpora una fuente adicional de deteccion de visitas basada en `raw_text` c
 
 ## Active Prompt
 
-Siguiente paso ejecutable: `P5-A` (merge PR a `main` tras CT-5, verificar CI verde).
+Siguiente paso ejecutable: `P5-A` (merge PR a `main`, verificar CI verde).
 
 ---
 
