@@ -726,6 +726,7 @@ def test_document_review_weight_global_only_stays_document_scoped(test_client):
 
     visits = data.get("visits")
     assert isinstance(visits, list)
+    assert visits == []
     for visit in visits:
         if not isinstance(visit, dict):
             continue

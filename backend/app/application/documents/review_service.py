@@ -518,7 +518,16 @@ def _normalize_canonical_review_scoping(data: dict[str, object]) -> dict[str, ob
 
     normalized_visits: list[dict[str, object]] = list(assigned_visits)
     if unassigned_visit is not None:
-        normalized_visits.append(unassigned_visit)
+        unassigned_fields = unassigned_visit.get("fields")
+        has_unassigned_fields = isinstance(unassigned_fields, list) and any(
+            isinstance(field, dict) for field in unassigned_fields
+        )
+        has_unassigned_metadata = any(
+            unassigned_visit.get(metadata_key) not in (None, "")
+            for metadata_key in _VISIT_GROUP_METADATA_KEYS
+        )
+        if has_unassigned_fields or has_unassigned_metadata:
+            normalized_visits.append(unassigned_visit)
 
     projected["fields"] = fields_to_keep
     projected["visits"] = normalized_visits

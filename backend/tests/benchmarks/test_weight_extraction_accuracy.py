@@ -22,8 +22,8 @@ def _load_cases() -> list[dict]:
 
 _CASES = _load_cases()
 
-# Baseline floor; plan step P3-D will lock the non-regression threshold.
-MIN_EXACT_MATCH_RATE: float = 0.0
+# Non-regression floor for this synthetic benchmark.
+MIN_EXACT_MATCH_RATE: float = 0.95
 
 
 def _normalize_for_comparison(value: str | None) -> str | None:
