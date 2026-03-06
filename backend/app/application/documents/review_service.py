@@ -832,7 +832,7 @@ def _normalize_canonical_review_scoping(
     _populate_visit_scoped_fields_from_segment_candidates(
         assigned_visits=assigned_visits,
         visit_segments_by_id=visit_segments_by_id,
-        candidate_keys=("diagnosis", "symptoms"),
+        candidate_keys=("diagnosis", "symptoms", "medication", "procedure"),
     )
 
     metadata_values_for_unassigned: dict[str, object] = {}
