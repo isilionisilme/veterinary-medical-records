@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -30,6 +31,14 @@ from backend.app.application.field_normalizers import (
 from backend.app.domain.models import ReviewStatus
 from backend.app.ports.document_repository import DocumentRepository
 from backend.app.ports.file_storage import FileStorage
+
+_VISIT_REASON_LABEL_PREFIX_RE = re.compile(
+    r"^(?:visita|consulta|control|revisi[oó]n|seguimiento|ingreso|alta)\b",
+    re.IGNORECASE,
+)
+_DATE_TOKEN_RE = re.compile(
+    r"^(?:\d{4}[-\/.]\d{1,2}[-\/.]\d{1,2}|\d{1,2}[-\/.]\d{1,2}[-\/.]\d{2,4})\b"
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -401,6 +410,149 @@ def _resolve_visit_from_anchor(
     return date_visits[visit_index]
 
 
+def _find_line_start_offset(*, text: str, offset: int) -> int:
+    safe_offset = max(0, min(offset, len(text)))
+    previous_break = text.rfind("\n", 0, safe_offset)
+    return 0 if previous_break < 0 else previous_break + 1
+
+
+def _resolve_visit_segment_bounds(
+    *,
+    anchor_offset: int,
+    raw_text: str,
+    visit_boundary_offsets: list[int],
+    ordered_anchor_offsets: list[int],
+) -> tuple[int, int]:
+    line_start = _find_line_start_offset(text=raw_text, offset=anchor_offset)
+
+    start_offset = line_start
+    for boundary_offset in visit_boundary_offsets:
+        if boundary_offset > anchor_offset:
+            break
+        if boundary_offset >= line_start:
+            start_offset = boundary_offset
+
+    end_offset = len(raw_text)
+    for boundary_offset in visit_boundary_offsets:
+        if boundary_offset > anchor_offset:
+            end_offset = min(end_offset, boundary_offset)
+            break
+
+    for candidate_anchor in ordered_anchor_offsets:
+        if candidate_anchor <= anchor_offset:
+            continue
+        candidate_line_start = _find_line_start_offset(text=raw_text, offset=candidate_anchor)
+        end_offset = min(end_offset, candidate_line_start)
+        break
+
+    if end_offset < start_offset:
+        end_offset = start_offset
+    return start_offset, end_offset
+
+
+def _extract_reason_for_visit_from_segment(*, segment_text: str) -> str | None:
+    for raw_line in segment_text.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+
+        # Normalize common prefixes so the first clause becomes clinical content.
+        line = line.lstrip("-*• \t")
+        line = _VISIT_REASON_LABEL_PREFIX_RE.sub("", line, count=1).strip()
+
+        while True:
+            compact = line.lstrip(" :,-\t")
+            date_match = _DATE_TOKEN_RE.match(compact)
+            if date_match is None:
+                line = compact
+                break
+            line = compact[date_match.end() :].strip()
+
+        if not line:
+            continue
+
+        line = line.lstrip(":,- \t")
+        if not line:
+            continue
+
+        for separator in (".", ";"):
+            if separator in line:
+                line = line.split(separator, 1)[0].strip()
+                break
+
+        normalized = " ".join(line.split()).strip()
+        if normalized:
+            return normalized
+
+    return None
+
+
+def _build_visit_segment_text_by_visit_id(
+    *,
+    raw_text: str | None,
+    visit_occurrences_by_date: dict[str, list[dict[str, object]]],
+    raw_text_date_occurrences: list[tuple[str, int]],
+    visit_boundary_offsets: list[int],
+) -> dict[str, str]:
+    if not isinstance(raw_text, str) or not raw_text.strip():
+        return {}
+
+    ordered_anchor_offsets = [offset for _, offset in raw_text_date_occurrences]
+    consumed_occurrences: dict[str, int] = {}
+    visit_segments: dict[str, str] = {}
+
+    for visit_date, anchor_offset in raw_text_date_occurrences:
+        date_visits = visit_occurrences_by_date.get(visit_date, [])
+        if not date_visits:
+            continue
+
+        visit_index = consumed_occurrences.get(visit_date, 0)
+        if visit_index >= len(date_visits):
+            visit_index = len(date_visits) - 1
+        consumed_occurrences[visit_date] = consumed_occurrences.get(visit_date, 0) + 1
+
+        target_visit = date_visits[visit_index]
+        visit_id = target_visit.get("visit_id")
+        if not isinstance(visit_id, str) or not visit_id:
+            continue
+        if visit_id in visit_segments:
+            continue
+
+        start_offset, end_offset = _resolve_visit_segment_bounds(
+            anchor_offset=anchor_offset,
+            raw_text=raw_text,
+            visit_boundary_offsets=visit_boundary_offsets,
+            ordered_anchor_offsets=ordered_anchor_offsets,
+        )
+        segment_text = raw_text[start_offset:end_offset].strip()
+        if segment_text:
+            visit_segments[visit_id] = segment_text
+
+    return visit_segments
+
+
+def _populate_missing_reason_for_visit_from_segments(
+    *,
+    assigned_visits: list[dict[str, object]],
+    visit_segments_by_id: dict[str, str],
+) -> None:
+    for visit in assigned_visits:
+        if visit.get("reason_for_visit") is not None:
+            continue
+
+        visit_id = visit.get("visit_id")
+        if not isinstance(visit_id, str) or not visit_id:
+            continue
+
+        segment_text = visit_segments_by_id.get(visit_id)
+        if not isinstance(segment_text, str) or not segment_text.strip():
+            continue
+
+        extracted_reason = _extract_reason_for_visit_from_segment(segment_text=segment_text)
+        if extracted_reason is not None:
+            visit["reason_for_visit"] = extracted_reason
+
+
 def _normalize_canonical_review_scoping(
     data: dict[str, object], *, raw_text: str | None = None
 ) -> dict[str, object]:
@@ -415,8 +567,9 @@ def _normalize_canonical_review_scoping(
     detected_visit_dates: list[str] = []
     seen_detected_visit_dates: set[str] = set()
     raw_text_detected_visit_dates = _detect_visit_dates_from_raw_text(raw_text=raw_text)
+    raw_text_date_occurrences = _locate_visit_date_occurrences_from_raw_text(raw_text=raw_text)
     raw_text_offsets_by_date: dict[str, list[int]] = {}
-    for normalized_date, offset in _locate_visit_date_occurrences_from_raw_text(raw_text=raw_text):
+    for normalized_date, offset in raw_text_date_occurrences:
         raw_text_offsets_by_date.setdefault(normalized_date, []).append(offset)
     visit_boundary_offsets = _locate_visit_boundary_offsets_from_raw_text(raw_text=raw_text)
 
@@ -604,6 +757,17 @@ def _normalize_canonical_review_scoping(
             target_visit_fields = []
             target_visit["fields"] = target_visit_fields
         target_visit_fields.append(visit_field)
+
+    visit_segments_by_id = _build_visit_segment_text_by_visit_id(
+        raw_text=raw_text,
+        visit_occurrences_by_date=visit_occurrences_by_date,
+        raw_text_date_occurrences=raw_text_date_occurrences,
+        visit_boundary_offsets=visit_boundary_offsets,
+    )
+    _populate_missing_reason_for_visit_from_segments(
+        assigned_visits=assigned_visits,
+        visit_segments_by_id=visit_segments_by_id,
+    )
 
     metadata_values_for_unassigned: dict[str, object] = {}
     for metadata_key in _VISIT_GROUP_METADATA_KEYS:

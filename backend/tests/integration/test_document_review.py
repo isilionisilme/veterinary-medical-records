@@ -1291,7 +1291,7 @@ def test_document_review_multi_visit_rich_raw_text_baseline_generates_empty_visi
         assert fields == []
 
 
-def test_document_review_multi_visit_rich_raw_text_baseline_keeps_reason_for_visit_empty(
+def test_document_review_multi_visit_rich_raw_text_extracts_reason_for_visit_from_segments(
     test_client,
 ):
     document_id = _upload_sample_document(test_client)
@@ -1348,8 +1348,76 @@ def test_document_review_multi_visit_rich_raw_text_baseline_keeps_reason_for_vis
     assigned = _extract_assigned_visits(visits)
 
     assert len(assigned) >= 2
-    for visit in assigned:
-        assert visit.get("reason_for_visit") is None
+    assigned_by_date = {
+        visit.get("visit_date"): visit
+        for visit in assigned
+        if isinstance(visit.get("visit_date"), str)
+    }
+
+    assert (
+        assigned_by_date["2026-02-11"].get("reason_for_visit")
+        == "dolor de oido y prurito auricular"
+    )
+    assert (
+        assigned_by_date["2026-02-18"].get("reason_for_visit")
+        == "mejora parcial, persiste inflamacion leve"
+    )
+
+
+def test_document_review_multi_visit_reason_for_visit_does_not_override_existing_value(test_client):
+    document_id = _upload_sample_document(test_client)
+    run_id = str(uuid4())
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(
+        run_id=run_id,
+        data={
+            "document_id": document_id,
+            "processing_run_id": run_id,
+            "created_at": "2026-02-10T10:00:05+00:00",
+            "fields": [
+                {
+                    "field_id": "f-visit-date-1",
+                    "key": "visit_date",
+                    "value": "11/02/2026",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                }
+            ],
+            "visits": [
+                {
+                    "visit_id": "visit-existing-1",
+                    "visit_date": "2026-02-11",
+                    "admission_date": None,
+                    "discharge_date": None,
+                    "reason_for_visit": "Motivo original preservado",
+                    "fields": [],
+                }
+            ],
+            "other_fields": [],
+        },
+    )
+
+    raw_text_path = get_storage_root() / document_id / "runs" / run_id / "raw-text.txt"
+    raw_text_path.parent.mkdir(parents=True, exist_ok=True)
+    raw_text_path.write_text(
+        "Consulta 11/02/2026: dolor de oido y prurito auricular.\n",
+        encoding="utf-8",
+    )
+
+    response = test_client.get(f"/documents/{document_id}/review")
+    assert response.status_code == 200
+    visits = response.json()["active_interpretation"]["data"]["visits"]
+    assigned = _extract_assigned_visits(visits)
+    assert len(assigned) == 1
+    assert assigned[0].get("reason_for_visit") == "Motivo original preservado"
 
 
 def test_document_review_detects_additional_visit_from_raw_text_context(test_client):
