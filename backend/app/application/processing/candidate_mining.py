@@ -73,6 +73,14 @@ _CLINIC_ADDRESS_LABEL_LINE_RE = re.compile(
     r"(direcci[oó]n(?:\s+de\s+la\s+cl[ií]nica)?|"
     r"domicilio(?:\s+de\s+la\s+cl[ií]nica)?|dir\.?)\s*(?:[:\-]\s*(.*))?$"
 )
+_AMBIGUOUS_ADDRESS_LABEL_LINE_RE = re.compile(
+    r"(?i)^\s*(?:direcci[oó]n|domicilio|dir\.?)\s*(?:[:\-]\s*(.*))?$"
+)
+_OWNER_ADDRESS_LABEL_LINE_RE = re.compile(
+    r"(?i)^\s*(?:direcci[oó]n\s+del\s+(?:propietari[oa]|titular)|"
+    r"domicilio\s+del\s+(?:propietari[oa]|titular)|"
+    r"dir\.?\s*(?:propietari[oa]|titular))\s*(?:[:\-]\s*(.*))?$"
+)
 _CLINIC_ADDRESS_START_RE = re.compile(
     r"(?i)(?:^|\s)(?:c/\s*|calle\b|avda?\.?\b|avenida\b|plaza\b|"
     r"pza\.?\b|paseo\b|camino\b|carretera\b|ctra\.?\b)"
@@ -81,9 +89,19 @@ _CLINIC_OR_HOSPITAL_CONTEXT_RE = re.compile(
     r"(?i)\b(?:cl[ií]nica|centro|hospital|veterinari[oa]|vet)\b"
 )
 _OWNER_CONTEXT_RE = _OWNER_CONTEXT_PATTERN
+_OWNER_ADDRESS_CONTEXT_RE = re.compile(
+    r"(?i)\b(?:propietari[oa]|titular|dueñ(?:o|a)|owner|tutor|"
+    r"datos\s+del\s+cliente|cliente)\b"
+)
+_OWNER_HEADER_RE = re.compile(r"(?i)\b(?:propietari[oa]|titular|dueñ(?:o|a)|owner|cliente|tutor)\b")
+_CLINIC_ADDRESS_CONTEXT_RE = re.compile(
+    r"(?i)\b(?:cl[ií]nica|hospital|centro\s+veterinario|"
+    r"veterinari[oa]|vet\b|dr\.?|dra\.?|doctor(?:a)?)\b"
+)
 _POSTAL_HINT_RE = re.compile(r"(?i)\b(?:cp\b|c[oó]digo\s+postal|\d{5})\b")
 _SIMPLE_FIELD_LABEL_RE = re.compile(r"^[^\n]{1,40}\s*[:\-]\s*")
 _HEADER_BLOCK_SCAN_WINDOW = 8
+_AMBIGUOUS_ADDRESS_CONTEXT_WINDOW_LINES = 5
 _WEIGHT_EXPLICIT_CONTEXT_RE = re.compile(
     r"(?i)\b(?:peso(?:\s+corporal)?|weight|signos?\s+vitales|p\.(?!\s*ej\.?\b))\b"
 )
@@ -111,6 +129,21 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
             if line == first_line:
                 return idx
         return None
+
+    def _classify_address_context(line_index: int) -> str:
+        start = max(0, line_index - _AMBIGUOUS_ADDRESS_CONTEXT_WINDOW_LINES)
+        end = min(len(lines), line_index + _AMBIGUOUS_ADDRESS_CONTEXT_WINDOW_LINES + 1)
+        context_lines = lines[start:line_index] + lines[line_index + 1 : end]
+        context_text = " ".join(context_lines).casefold()
+
+        owner_hits = bool(_OWNER_ADDRESS_CONTEXT_RE.search(context_text))
+        clinic_hits = bool(_CLINIC_ADDRESS_CONTEXT_RE.search(context_text))
+
+        if owner_hits and not clinic_hits:
+            return "owner"
+        if clinic_hits and not owner_hits:
+            return "clinic"
+        return "ambiguous"
 
     def add_candidate(
         *,
@@ -164,7 +197,9 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
                 return
         if key == "clinic_address":
             snippet_folded = snippet.casefold()
-            if _OWNER_CONTEXT_RE.search(snippet_folded):
+            has_owner_context = _OWNER_CONTEXT_RE.search(snippet_folded) is not None
+            has_clinic_context = _CLINIC_ADDRESS_CONTEXT_RE.search(snippet_folded) is not None
+            if has_owner_context and not has_clinic_context:
                 return
             has_generic_address_label = bool(
                 re.search(r"\b(?:direcci[oó]n|domicilio|dir\.?)\s*[:\-]", snippet_folded)
@@ -178,6 +213,12 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
                     prev_context = " ".join(lines[max(0, line_index - 2) : line_index]).casefold()
                     if _OWNER_CONTEXT_RE.search(prev_context):
                         return
+        if key == "owner_address":
+            snippet_folded = snippet.casefold()
+            has_owner_context = _OWNER_ADDRESS_CONTEXT_RE.search(snippet_folded) is not None
+            has_clinic_context = _CLINIC_ADDRESS_CONTEXT_RE.search(snippet_folded) is not None
+            if has_clinic_context and not has_owner_context:
+                return
         if key == "weight":
             explicit_weight_context = _WEIGHT_EXPLICIT_CONTEXT_RE.search(snippet) is not None
             has_dosage_units = _WEIGHT_DOSAGE_GUARD_RE.search(snippet) is not None
@@ -341,6 +382,19 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
 
         lower_header = header.casefold()
         if value:
+            if _OWNER_HEADER_RE.search(lower_header):
+                owner_value = value.strip(" .,:;\t\r\n")
+                address_start = _CLINIC_ADDRESS_START_RE.search(owner_value)
+                if address_start is not None:
+                    address_fragment = owner_value[address_start.start() :].strip(" .,:;\t\r\n")
+                    if address_fragment:
+                        add_candidate(
+                            key="owner_address",
+                            value=address_fragment,
+                            confidence=COVERAGE_CONFIDENCE_LABEL,
+                            snippet=line,
+                        )
+
             if any(token in lower_header for token in ("diagn", "impresi")):
                 add_candidate(
                     key="diagnosis",
@@ -500,16 +554,41 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
         lower_line = line.casefold()
         normalized_single = _WHITESPACE_PATTERN.sub(" ", lower_line).strip()
 
+        owner_address_label_match = _OWNER_ADDRESS_LABEL_LINE_RE.match(line)
+        if owner_address_label_match is not None:
+            raw_inline_value = owner_address_label_match.group(1) or ""
+            inline_value = raw_inline_value.strip(" .,:;\t\r\n")
+            address_parts: list[str] = []
+
+            if inline_value:
+                address_parts.append(inline_value)
+            elif index + 1 < len(lines):
+                next_line = lines[index + 1]
+                if _SIMPLE_FIELD_LABEL_RE.match(next_line) is None:
+                    address_parts.append(next_line.strip(" .,:;\t\r\n"))
+
+            if address_parts and index + 2 < len(lines):
+                maybe_second_line = lines[index + 2]
+                if (
+                    _SIMPLE_FIELD_LABEL_RE.match(maybe_second_line) is None
+                    and _POSTAL_HINT_RE.search(maybe_second_line) is not None
+                ):
+                    address_parts.append(maybe_second_line.strip(" .,:;\t\r\n"))
+
+            if address_parts:
+                add_candidate(
+                    key="owner_address",
+                    value=" ".join(part for part in address_parts if part),
+                    confidence=COVERAGE_CONFIDENCE_LABEL,
+                    snippet="\n".join(lines[index : min(len(lines), index + 3)]),
+                )
+
         address_label_match = _CLINIC_ADDRESS_LABEL_LINE_RE.match(line)
         if address_label_match is not None:
             raw_label = address_label_match.group(1).strip().casefold()
             raw_inline_value = address_label_match.group(2) or ""
             inline_value = raw_inline_value.strip(" .,:;\t\r\n")
-            lookback_context = " ".join(lines[max(0, index - 2) : index]).casefold()
-            owner_context_nearby = _OWNER_CONTEXT_RE.search(lookback_context) is not None
             explicit_clinic_label = "clínica" in raw_label or "clinica" in raw_label
-            if owner_context_nearby and not explicit_clinic_label:
-                inline_value = ""
 
             address_parts: list[str] = []
             if inline_value:
@@ -530,12 +609,41 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
 
             if address_parts:
                 candidate_value = " ".join(part for part in address_parts if part)
-                add_candidate(
-                    key="clinic_address",
-                    value=candidate_value,
-                    confidence=COVERAGE_CONFIDENCE_LABEL,
-                    snippet="\n".join(lines[index : min(len(lines), index + 3)]),
+                snippet_block = "\n".join(lines[index : min(len(lines), index + 3)])
+                context_decision = _classify_address_context(index)
+                is_ambiguous_generic_label = (
+                    not explicit_clinic_label
+                    and _AMBIGUOUS_ADDRESS_LABEL_LINE_RE.match(line) is not None
                 )
+
+                if explicit_clinic_label:
+                    add_candidate(
+                        key="clinic_address",
+                        value=candidate_value,
+                        confidence=COVERAGE_CONFIDENCE_LABEL,
+                        snippet=snippet_block,
+                    )
+                elif context_decision == "owner" and is_ambiguous_generic_label:
+                    add_candidate(
+                        key="owner_address",
+                        value=candidate_value,
+                        confidence=COVERAGE_CONFIDENCE_LABEL,
+                        snippet=snippet_block,
+                    )
+                elif context_decision == "clinic" and is_ambiguous_generic_label:
+                    add_candidate(
+                        key="clinic_address",
+                        value=candidate_value,
+                        confidence=COVERAGE_CONFIDENCE_LABEL,
+                        snippet=snippet_block,
+                    )
+                else:
+                    add_candidate(
+                        key="clinic_address",
+                        value=candidate_value,
+                        confidence=COVERAGE_CONFIDENCE_FALLBACK,
+                        snippet=snippet_block,
+                    )
 
         if _CLINIC_ADDRESS_START_RE.search(line) is not None and re.search(r"\d", line):
             previous_line = lines[index - 1] if index > 0 else ""
@@ -808,6 +916,34 @@ def _candidate_sort_key(item: dict[str, object], key: str) -> tuple[float, float
         if has_postal:
             quality += 1.0
         if is_multiline:
+            quality += 0.5
+
+        return quality, confidence, -1.0
+
+    if key == "owner_address":
+        raw_value = str(item.get("value", "")).strip()
+        evidence = item.get("evidence")
+        snippet = ""
+        if isinstance(evidence, dict):
+            snippet_value = evidence.get("snippet")
+            if isinstance(snippet_value, str):
+                snippet = snippet_value
+
+        folded_value = raw_value.casefold()
+        folded_snippet = snippet.casefold()
+        has_owner_context = bool(_OWNER_ADDRESS_CONTEXT_RE.search(folded_snippet))
+        has_clinic_context = bool(_CLINIC_ADDRESS_CONTEXT_RE.search(folded_snippet))
+        has_postal = bool(re.search(r"\b\d{5}\b", raw_value)) or "cp" in folded_value
+        has_digits = bool(re.search(r"\d", raw_value))
+
+        quality = 0.0
+        if has_owner_context:
+            quality += 2.0
+        if has_clinic_context and not has_owner_context:
+            quality -= 2.0
+        if has_postal:
+            quality += 0.5
+        if has_digits:
             quality += 0.5
 
         return quality, confidence, -1.0

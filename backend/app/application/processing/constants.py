@@ -214,8 +214,9 @@ _LABELED_PATTERNS: tuple[tuple[str, str, float], ...] = (
     (
         "owner_address",
         (
-            r"(?:direcci[oó]n\s*(?:del\s*propietari[oa])?|domicilio\s*"
-            r"(?:del\s*propietari[oa])?)\s*[:\-]\s*([^\n;]{4,160})"
+            r"(?:direcci[oó]n\s+del\s+(?:propietari[oa]|titular)|"
+            r"domicilio\s+del\s+(?:propietari[oa]|titular)|"
+            r"dir\.\s*(?:propietari[oa]|titular))\s*[:\-]\s*([^\n;]{4,160})"
         ),
         COVERAGE_CONFIDENCE_LABEL,
     ),
