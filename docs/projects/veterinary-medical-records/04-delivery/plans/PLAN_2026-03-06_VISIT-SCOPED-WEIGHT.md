@@ -97,9 +97,9 @@ La función `_normalize_canonical_review_scoping()` en `review_service.py` ya se
 
 ### Phase 3 — Tests, validación y cierre
 
-- [ ] P3-A 🔄 — Ejecutar benchmark de weight y comparar delta: EM, null misses, false positives. Actualizar expected values en fixtures si la nueva semántica (visit-scoped) cambia las expectativas de forma justificada. (GPT-5.3-Codex)
-- [ ] P3-B 🔄 — Ejecutar suite completa (golden regression + benchmark + scoping integration + normalization unit) y preparar evidencia para PR: totales pass/fail, EM, null misses, false positives, delta vs baseline, escenarios docA/docB. (GPT-5.3-Codex)
-- [ ] CT-4 🔄 — Commit task: scope P3-A + P3-B → `test(plan-p3): visit-scoped weight benchmark and golden regression` → push (GPT-5.3-Codex)
+- [x] P3-A 🔄 — Ejecutar benchmark de weight y comparar delta: EM, null misses, false positives. Actualizar expected values en fixtures si la nueva semántica (visit-scoped) cambia las expectativas de forma justificada. (GPT-5.3-Codex) (SHA: b8add2bb)
+- [x] P3-B 🔄 — Ejecutar suite completa (golden regression + benchmark + scoping integration + normalization unit) y preparar evidencia para PR: totales pass/fail, EM, null misses, false positives, delta vs baseline, escenarios docA/docB. (GPT-5.3-Codex) (SHA: b8add2bb)
+- [x] CT-4 🔄 — Commit task: scope P3-A + P3-B → `test(plan-p3): visit-scoped weight benchmark and golden regression` → push (GPT-5.3-Codex) (SHA: b8add2bb)
 - [ ] P3-C 🚧 — Hard-gate: validación manual en entorno dev levantado. Verificar: (1) docA muestra peso global de cabecera, (2) docB muestra peso correcto por visita y peso actual = último cronológico. Decisión go/no-go. (Claude Opus 4.6)
 - [ ] P3-D 🔄 — Post-gate: actualizar `MIN_EXACT_MATCH_RATE` con margen -5pp, actualizar guardrails de `weight` en `extraction-quality.md` para referenciar scoping por visita, actualizar Golden Fields status. (GPT-5.3-Codex)
 - [ ] CT-5 🔄 — Commit task: scope P3-D → `docs(plan-p3): visit-scoped weight threshold lock and docs update` → push (GPT-5.3-Codex)
