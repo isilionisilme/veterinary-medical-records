@@ -55,15 +55,16 @@ last-updated: 2026-03-02
   - [Phase D — Testing depth + architecture](#phase-d--testing-depth--architecture)
   - [Operational improvements (Iter 11)](#operational-improvements-iter-11)
 - [Iteration 12 — E2E Coverage Expansion + Accessibility + Project Close-Out (Phase 19)](#iteration-12--e2e-coverage-expansion--accessibility--project-close-out-phase-19)
-  - [Phase A — E2E expansion (20→65 tests, 8→22 specs)](#phase-a--e2e-expansion-20%E2%86%9265-tests-8%E2%86%9222-specs)
+  - [Phase A — E2E expansion (20→65 tests, 8→21 specs)](#phase-a--e2e-expansion-20%E2%86%9265-tests-8%E2%86%9221-specs)
   - [Phase B — WCAG accessibility](#phase-b--wcag-accessibility)
   - [Phase C — Architecture & README](#phase-c--architecture--readme)
   - [Phase D — Documentation close-out](#phase-d--documentation-close-out)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-> Quantitative record of what was delivered across 7 phases + Iterations 2–9.  
-> Source of truth for execution details: [`implementation-history.md`](../implementation/implementation-history.md).
+> Quantitative record of what was delivered across 7 phases + Iterations 2–12.  
+> **Scope:** This document covers the `improvement/refactor` worktree (Iterations 1–12). For iterations 13+ and current state, see [`implementation-history.md`](implementation-history.md).  
+> Source of truth for execution details: [`implementation-history.md`](implementation-history.md).
 
 ---
 
@@ -73,7 +74,7 @@ last-updated: 2026-03-02
 |--------|-------------------|--------|--------|--------|---------|---------|-------------------|
 | Backend tests | 263 | 317 | 372 | 372+ | 372+ | 395 | **395** |
 | Frontend tests | 168 | 226 | 263 | 263+ | 263+ | 287 | **287** |
-| E2E tests | 0 | 0 | 0 | **5 specs** | 5 specs | 20 tests (8 specs) | **64 tests (21 specs)** |
+| E2E tests | 0 | 0 | 0 | **5 specs** | 5 specs | 20 tests (8 specs) | **65 tests (21 specs)** |
 | Backend coverage | 87% | 90% | 90% | 90% | 90% (≥85% enforced) | 91% (≥85% enforced) | **91%** (≥85% enforced) |
 | Frontend coverage | ~65% | 82.6% | 85% | 85% | 85% (≥80% enforced) | ~87% (≥80% enforced) | **~87%** (≥80% enforced) |
 | CI jobs | 7 | 6 | 8 | 9 (+E2E) | 9 (path-filtered + cached) | 9 (path-filtered + cached) | 10 (+ a11y audit) |
@@ -524,7 +525,7 @@ Infrastructure: 17 new `data-testid` attributes, `e2e/helpers.ts` reusable helpe
 
 Final iteration: massive E2E expansion (20→65 tests), automated accessibility auditing, architecture documentation, and project close-out documentation.
 
-### Phase A — E2E expansion (20→65 tests, 8→22 specs)
+### Phase A — E2E expansion (20→65 tests, 8→21 specs)
 
 Playwright E2E suite expanded from 20 tests to **65 tests across 22 spec files**, completing all 4 phases of the E2E coverage plan.
 

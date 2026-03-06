@@ -1,7 +1,9 @@
 # Execution Rules — Shared Operational Rules for AI Plan Execution
 
-> **Canonical source:** This file governs how AI agents execute plan steps across all iterations.
-> Referenced by `AGENTS.md`. Do not duplicate these rules elsewhere.
+> **⚠️ Archived (2026-03-06).** Content fully absorbed into [plan-execution-protocol.md](../03-ops/plan-execution-protocol.md), [plan-management.md](../03-ops/plan-management.md), and [way-of-working.md](../../shared/04-delivery/way-of-working.md). Kept for reference only.
+
+> ~~**Canonical source:** This file governs how AI agents execute plan steps across all iterations.~~
+> ~~Referenced by `AGENTS.md`. Do not duplicate these rules elsewhere.~~
 
 ## File structure
 

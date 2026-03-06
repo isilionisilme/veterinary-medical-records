@@ -1,6 +1,6 @@
 # F1-A — 12-Factor audit (single-machine Docker Compose scope)
 
-> **⚠️ Historical snapshot (2026-02-23).** All 5 prioritized backlog items were resolved in Iterations 2–11. See [DELIVERY_SUMMARY](delivery-summary.md) for current state.
+> **⚠️ Historical snapshot (2026-02-23).** All 5 prioritized backlog items were resolved in Iterations 2–11. See [delivery-summary.md](../04-delivery/delivery-summary.md) and [implementation-history.md](../04-delivery/implementation-history.md) for current state.
 
 Date: 2026-02-23
 Scope: backend FastAPI + frontend React, local Docker Compose deployment model

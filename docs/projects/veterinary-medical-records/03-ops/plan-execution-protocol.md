@@ -15,6 +15,8 @@
 
 This protocol governs how AI agents execute plan steps in a structured, auditable, and semi-unattended manner. It defines execution rules, completion integrity, CI verification, handoff conventions, and the full iteration lifecycle.
 
+> **Companion document:** For plan lifecycle management (creation, approval gates, archival), see [plan-management.md](plan-management.md).
+
 ### Role taxonomy (availability-safe)
 
 - **Planning agent**: owns plan authoring/updates, hard-gate decisions, and prompt preparation.

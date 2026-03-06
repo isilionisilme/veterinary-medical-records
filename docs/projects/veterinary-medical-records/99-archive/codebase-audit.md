@@ -1,6 +1,6 @@
 # Codebase Maintainability Audit
 
-> **⚠️ Historical snapshot (2026-02-23).** All 15 findings were resolved in Iterations 1–12. Compliance scores below reflect the state at audit time and are no longer current. See [DELIVERY_SUMMARY](delivery-summary.md) for up-to-date metrics.
+> **⚠️ Historical snapshot (2026-02-23).** All 15 findings were resolved in Iterations 1–12. Compliance scores below reflect the state at audit time and are no longer current. See [delivery-summary.md](../04-delivery/delivery-summary.md) and [implementation-history.md](../04-delivery/implementation-history.md) for up-to-date metrics.
 
 Date: 2026-02-23
 
