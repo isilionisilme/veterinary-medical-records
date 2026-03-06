@@ -204,7 +204,7 @@ This plan was paused after D4-A (Phase 4 navigation). Since then:
 
 ### Phase 6 — Readability and style
 
-- [ ] D6-A 🚧 — Readability analysis and prioritized report (**Claude Opus 4.6**)
+- [x] D6-A 🚧 — Readability analysis and prioritized report (**Claude Opus 4.6**) — ✅ `no-commit (analysis delivered 2026-03-06)`
 - [ ] D6-B 🚧 — Rewrite key pages for clarity/scannability with Mermaid diagrams and source citations · skill: `microsoft-wiki-page-writer` (**Claude Opus 4.6**)
 - [ ] D6-C 🚧 — User validation of rewritten technical content (**Claude Opus 4.6**)
 - [ ] D6-D 🚧 — Define canonical glossary and approved terminology · skill: `terminology-enforcer` (**Claude Opus 4.6**)
@@ -500,6 +500,31 @@ _Empty._
 - **`ENGINEERING_PLAYBOOK.md`** → successor `plan-management.md`: 1 link
 
 **Validation:** `npx markdown-link-check` on all 17 affected files: 0 broken links.
+
+### D6-A — Readability analysis and prioritized report (2026-03-06)
+
+**Scope analyzed:** 34 canonical wiki files.
+
+**Outcome summary:**
+
+- Good readability baseline on 25/34 files.
+- High-density set identified on 9/34 files.
+- Critical rewrite candidates: `technical-design.md` and `implementation-plan.md`.
+
+**Prioritized list approved for D6-B preparation:**
+
+1. `docs/projects/veterinary-medical-records/02-tech/technical-design.md`
+2. `docs/projects/veterinary-medical-records/04-delivery/implementation-plan.md`
+3. `docs/projects/veterinary-medical-records/01-product/product-design.md`
+4. `docs/projects/veterinary-medical-records/03-ops/plan-execution-protocol.md`
+5. `docs/shared/03-ops/way-of-working.md`
+6. `docs/projects/veterinary-medical-records/03-ops/plan-e2e-test-coverage.md`
+7. `docs/projects/veterinary-medical-records/04-delivery/delivery-summary.md`
+
+**Notes:**
+
+- Diagram coverage is low (2 files with Mermaid); D6-B should prioritize adding architecture/process diagrams on high-density files.
+- Archive files remain out of rewrite scope unless explicitly requested.
 
 ### D2-A — Approved taxonomy (v2 — implemented)
 
