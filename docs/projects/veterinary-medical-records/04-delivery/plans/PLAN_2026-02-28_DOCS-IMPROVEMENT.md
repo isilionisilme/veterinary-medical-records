@@ -2,7 +2,7 @@
 
 > **Operational rules:** See [plan-execution-protocol.md](../../03-ops/plan-execution-protocol.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
 
-**Branch:** _TBD — new branch required for Phase 5+ execution_
+**Branch:** `veterinary-medical-records/docs/d4r-consolidation-corrections` (Phase 4R + Phase 5+ execution)
 **PR (historical):** [#154](https://github.com/isilionisilme/veterinary-medical-records/pull/154) — merged Phases 0–4.
 **Prerequisite:** Iteration 12 merged to `main`.
 **Worktree:** `D:/Git/veterinary-medical-records` (default — single worktree)
@@ -192,29 +192,29 @@ This plan was paused after D4-A (Phase 4 navigation). Since then:
 > **Note (2026-03-06):** Tooling exists (`.markdownlint.yml` config, `.markdown-link-check.json`, `markdownlint-cli2` + `prettier` in devDeps).
 > Frontmatter coverage: 16/34 files (47%). 18 files missing frontmatter — see updated D1-A inventory.
 
-- [ ] D5-A 🔄 — Run markdown lint autofix + prettier write on docs scope · tools: `markdownlint-cli2`, `prettier` (Execution agent)
-- [ ] D5-B 🚧 — User review formatting diff (Planning agent)
-- [ ] D5-C 🚧 — Define frontmatter schema(s) and validation approach · skill: `frontmatter-validator` (Planning agent)
-- [ ] D5-D 🔄 — Apply frontmatter + implement validator script · skill: `frontmatter-validator` (Execution agent)
-- [ ] D5-E 🚧 — User review metadata correctness (Planning agent)
-- [ ] D5-F 🔄 — Run broken link/anchor checks → produce report · tool: `markdown-link-check` (Execution agent)
-- [ ] D5-G 🔄 — Fix broken links/anchors · tool: `markdown-link-check` (Execution agent)
+- [ ] D5-A 🔄 — Run markdown lint autofix + prettier write on docs scope · tools: `markdownlint-cli2`, `prettier` (**Codex 5.3**)
+- [ ] D5-B 🚧 — User review formatting diff (**Claude Opus 4.6**)
+- [ ] D5-C 🚧 — Define frontmatter schema(s) and validation approach · skill: `frontmatter-validator` (**Claude Opus 4.6**)
+- [ ] D5-D 🔄 — Apply frontmatter + implement validator script · skill: `frontmatter-validator` (**Codex 5.3**)
+- [ ] D5-E 🚧 — User review metadata correctness (**Claude Opus 4.6**)
+- [ ] D5-F 🔄 — Run broken link/anchor checks → produce report · tool: `markdown-link-check` (**Codex 5.3**)
+- [ ] D5-G 🔄 — Fix broken links/anchors · tool: `markdown-link-check` (**Codex 5.3**)
 
 ### Phase 6 — Readability and style
 
-- [ ] D6-A 🚧 — Readability analysis and prioritized report (Planning agent)
-- [ ] D6-B 🚧 — Rewrite key pages for clarity/scannability with Mermaid diagrams and source citations · skill: `microsoft-wiki-page-writer` (Planning agent)
-- [ ] D6-C 🚧 — User validation of rewritten technical content (Planning agent)
-- [ ] D6-D 🚧 — Define canonical glossary and approved terminology · skill: `terminology-enforcer` (Planning agent)
-- [ ] D6-E 🚧 — User approval of glossary (Planning agent)
-- [ ] D6-F 🔄 — Apply terminology consistency updates across scope · skill: `terminology-enforcer` (Execution agent)
+- [ ] D6-A 🚧 — Readability analysis and prioritized report (**Claude Opus 4.6**)
+- [ ] D6-B 🚧 — Rewrite key pages for clarity/scannability with Mermaid diagrams and source citations · skill: `microsoft-wiki-page-writer` (**Claude Opus 4.6**)
+- [ ] D6-C 🚧 — User validation of rewritten technical content (**Claude Opus 4.6**)
+- [ ] D6-D 🚧 — Define canonical glossary and approved terminology · skill: `terminology-enforcer` (**Claude Opus 4.6**)
+- [ ] D6-E 🚧 — User approval of glossary (**Claude Opus 4.6**)
+- [ ] D6-F 🔄 — Apply terminology consistency updates across scope · skill: `terminology-enforcer` (**Codex 5.3**)
 
 ### Phase 7 — Onboarding and changelog
 
-- [ ] D7-A 🚧 — Generate audience-tailored onboarding guides (Contributor, Staff Engineer, Executive, PM) · skill: `microsoft-wiki-onboarding` (Planning agent)
-- [ ] D7-B 🚧 — User review + approve onboarding guides (Planning agent)
-- [ ] D7-C 🚧 — Generate structured changelog from git history · skill: `microsoft-wiki-changelog` (Planning agent)
-- [ ] D7-D 🚧 — User review changelog (Planning agent)
+- [ ] D7-A 🚧 — Generate audience-tailored onboarding guides (Contributor, Staff Engineer, Executive, PM) · skill: `microsoft-wiki-onboarding` (**Claude Opus 4.6**)
+- [ ] D7-B 🚧 — User review + approve onboarding guides (**Claude Opus 4.6**)
+- [ ] D7-C 🚧 — Generate structured changelog from git history · skill: `microsoft-wiki-changelog` (**Claude Opus 4.6**)
+- [ ] D7-D 🚧 — User review changelog (**Claude Opus 4.6**)
 
 ### Phase 8 — Maintenance and automation
 
@@ -222,13 +222,13 @@ This plan was paused after D4-A (Phase 4 navigation). Since then:
 > canonical-router guard, doc-test sync, doc-router parity, router directionality, router drift, doc change classification.
 > Plus: Prettier format check (frontend scope only). Missing from CI: markdownlint, link-check, frontmatter validation.
 
-- [ ] D8-A 🚧 — Design docs QA CI pipeline (delta: markdownlint + link-check + frontmatter gates) · skill: `docs-pr-gatekeeper` (Planning agent)
-- [ ] D8-B 🔄 — Implement CI workflow additions + script wiring · skill: `docs-pr-gatekeeper` (Execution agent)
-- [ ] D8-C 🚧 — User verifies expected pass/fail behavior in CI (Planning agent)
+- [ ] D8-A 🚧 — Design docs QA CI pipeline (delta: markdownlint + link-check + frontmatter gates) · skill: `docs-pr-gatekeeper` (**Claude Opus 4.6**)
+- [ ] D8-B 🔄 — Implement CI workflow additions + script wiring · skill: `docs-pr-gatekeeper` (**Codex 5.3**)
+- [ ] D8-C 🚧 — User verifies expected pass/fail behavior in CI (**Claude Opus 4.6**)
 
 ### Closure
 
-- [ ] D9-A 🚧 — Final smoke review and acceptance decision for merge readiness · skill: `microsoft-wiki-qa` (Planning agent)
+- [ ] D9-A 🚧 — Final smoke review and acceptance decision for merge readiness · skill: `microsoft-wiki-qa` (**Claude Opus 4.6**)
 
 ---
 
