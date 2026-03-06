@@ -197,6 +197,25 @@ def _collect_visit_grouping_stats(visits: object) -> dict[str, object]:
     }
 
 
+def _extract_assigned_visits(visits: object) -> list[dict[str, object]]:
+    if not isinstance(visits, list):
+        return []
+    return [
+        visit
+        for visit in visits
+        if isinstance(visit, dict)
+        and isinstance(visit.get("visit_id"), str)
+        and visit.get("visit_id") != "unassigned"
+    ]
+
+
+def _extract_top_level_fields_by_key(data: dict[str, object], key: str) -> list[dict[str, object]]:
+    fields = data.get("fields")
+    if not isinstance(fields, list):
+        return []
+    return [field for field in fields if isinstance(field, dict) and field.get("key") == key]
+
+
 def _get_calibration_counts(
     *,
     context_key: str,
@@ -464,6 +483,304 @@ def test_document_review_normalizes_microchip_suffix_to_digits_only(test_client)
     ]
     assert microchip_fields
     assert microchip_fields[0].get("value") == "00023035139"
+
+
+def test_document_review_weight_single_visit_stays_document_scoped_baseline(test_client):
+    document_id = _upload_sample_document(test_client)
+    run_id = str(uuid4())
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(
+        run_id=run_id,
+        data={
+            "document_id": document_id,
+            "processing_run_id": run_id,
+            "created_at": "2026-02-10T10:00:05+00:00",
+            "fields": [
+                {
+                    "field_id": "f-visit-date-1",
+                    "key": "visit_date",
+                    "value": "2026-02-11",
+                    "value_type": "date",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Consulta 11/02/2026"},
+                },
+                {
+                    "field_id": "f-diagnosis-1",
+                    "key": "diagnosis",
+                    "value": "Otitis",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Consulta 11/02/2026: otitis"},
+                },
+                {
+                    "field_id": "f-weight-1",
+                    "key": "weight",
+                    "value": "7.2 kg",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "patient",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Consulta 11/02/2026: Peso 7.2 kg"},
+                },
+            ],
+            "visits": [],
+            "other_fields": [],
+        },
+    )
+
+    response = test_client.get(f"/documents/{document_id}/review")
+    assert response.status_code == 200
+    data = response.json()["active_interpretation"]["data"]
+
+    top_level_weight_fields = _extract_top_level_fields_by_key(data, "weight")
+    assert len(top_level_weight_fields) == 1
+
+    assigned_visits = _extract_assigned_visits(data.get("visits"))
+    assert len(assigned_visits) >= 1
+    for visit in assigned_visits:
+        visit_fields = visit.get("fields")
+        assert isinstance(visit_fields, list)
+        visit_keys = {field.get("key") for field in visit_fields if isinstance(field, dict)}
+        assert "weight" not in visit_keys
+
+
+def test_document_review_weight_multi_visit_stays_document_scoped_baseline(test_client):
+    document_id = _upload_sample_document(test_client)
+    run_id = str(uuid4())
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(
+        run_id=run_id,
+        data={
+            "document_id": document_id,
+            "processing_run_id": run_id,
+            "created_at": "2026-02-10T10:00:05+00:00",
+            "fields": [
+                {
+                    "field_id": "f-visit-date-1",
+                    "key": "visit_date",
+                    "value": "2026-02-11",
+                    "value_type": "date",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Consulta 11/02/2026"},
+                },
+                {
+                    "field_id": "f-visit-date-2",
+                    "key": "visit_date",
+                    "value": "2026-02-18",
+                    "value_type": "date",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Consulta 18/02/2026"},
+                },
+                {
+                    "field_id": "f-diagnosis-1",
+                    "key": "diagnosis",
+                    "value": "Otitis",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Consulta 11/02/2026: otitis"},
+                },
+                {
+                    "field_id": "f-medication-2",
+                    "key": "medication",
+                    "value": "Gotas",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Consulta 18/02/2026: gotas"},
+                },
+                {
+                    "field_id": "f-weight-1",
+                    "key": "weight",
+                    "value": "7.2 kg",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "patient",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Consulta 11/02/2026: Peso 7.2 kg"},
+                },
+                {
+                    "field_id": "f-weight-2",
+                    "key": "weight",
+                    "value": "7.8 kg",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "patient",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Consulta 18/02/2026: Peso 7.8 kg"},
+                },
+            ],
+            "visits": [],
+            "other_fields": [],
+        },
+    )
+
+    response = test_client.get(f"/documents/{document_id}/review")
+    assert response.status_code == 200
+    data = response.json()["active_interpretation"]["data"]
+
+    top_level_weight_fields = _extract_top_level_fields_by_key(data, "weight")
+    assert len(top_level_weight_fields) == 2
+
+    assigned_visits = _extract_assigned_visits(data.get("visits"))
+    assert len(assigned_visits) >= 2
+    for visit in assigned_visits:
+        visit_fields = visit.get("fields")
+        assert isinstance(visit_fields, list)
+        visit_keys = {field.get("key") for field in visit_fields if isinstance(field, dict)}
+        assert "weight" not in visit_keys
+
+
+def test_document_review_weight_global_only_stays_document_scoped_baseline(test_client):
+    document_id = _upload_sample_document(test_client)
+    run_id = str(uuid4())
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(
+        run_id=run_id,
+        data={
+            "document_id": document_id,
+            "processing_run_id": run_id,
+            "created_at": "2026-02-10T10:00:05+00:00",
+            "fields": [
+                {
+                    "field_id": "f-weight-global",
+                    "key": "weight",
+                    "value": "7.2 kg",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "patient",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Peso: 7.2 kg"},
+                }
+            ],
+            "visits": [],
+            "other_fields": [],
+        },
+    )
+
+    response = test_client.get(f"/documents/{document_id}/review")
+    assert response.status_code == 200
+    data = response.json()["active_interpretation"]["data"]
+
+    top_level_weight_fields = _extract_top_level_fields_by_key(data, "weight")
+    assert len(top_level_weight_fields) == 1
+
+    visits = data.get("visits")
+    assert isinstance(visits, list)
+    for visit in visits:
+        if not isinstance(visit, dict):
+            continue
+        visit_fields = visit.get("fields")
+        if not isinstance(visit_fields, list):
+            continue
+        visit_keys = {field.get("key") for field in visit_fields if isinstance(field, dict)}
+        assert "weight" not in visit_keys
+
+
+def test_document_review_weight_ambiguous_date_stays_document_scoped_baseline(test_client):
+    document_id = _upload_sample_document(test_client)
+    run_id = str(uuid4())
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(
+        run_id=run_id,
+        data={
+            "document_id": document_id,
+            "processing_run_id": run_id,
+            "created_at": "2026-02-10T10:00:05+00:00",
+            "fields": [
+                {
+                    "field_id": "f-visit-date-1",
+                    "key": "visit_date",
+                    "value": "2026-02-11",
+                    "value_type": "date",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Consulta 11/02/2026"},
+                },
+                {
+                    "field_id": "f-diagnosis-1",
+                    "key": "diagnosis",
+                    "value": "Otitis",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Consulta 11/02/2026: otitis"},
+                },
+                {
+                    "field_id": "f-weight-ambiguous",
+                    "key": "weight",
+                    "value": "8.0 kg",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "patient",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Consulta 20/02/2026: Peso 8.0 kg"},
+                },
+            ],
+            "visits": [],
+            "other_fields": [],
+        },
+    )
+
+    response = test_client.get(f"/documents/{document_id}/review")
+    assert response.status_code == 200
+    data = response.json()["active_interpretation"]["data"]
+
+    top_level_weight_fields = _extract_top_level_fields_by_key(data, "weight")
+    assert len(top_level_weight_fields) == 1
+
+    assigned_visits = _extract_assigned_visits(data.get("visits"))
+    assert len(assigned_visits) >= 1
+    for visit in assigned_visits:
+        visit_fields = visit.get("fields")
+        assert isinstance(visit_fields, list)
+        visit_keys = {field.get("key") for field in visit_fields if isinstance(field, dict)}
+        assert "weight" not in visit_keys
 
 
 def test_document_review_moves_visit_scoped_keys_into_visits_group(test_client):
