@@ -84,10 +84,10 @@ La función `_normalize_canonical_review_scoping()` en `review_service.py` ya se
 
 ### Phase 1 — Scoping, mining y ranking
 
-- [ ] P1-A 🔄 — En `_shared.py`, añadir `"weight"` a `_VISIT_SCOPED_KEYS` para que `_normalize_canonical_review_scoping` lo asigne a visitas cuando tenga fecha en snippet. Conservar fallback: si no hay fecha y solo hay una visita, asignar a esa visita; si no hay fecha y hay múltiples visitas, dejar en `fields_to_keep` (document-scoped) en lugar de mandarlo a `unassigned`. (Claude Opus 4.6)
-- [ ] P1-B 🔄 — En `constants.py`, ampliar regex de `weight` en `_LABELED_PATTERNS` para cubrir variantes faltantes en docA: "Signos Vitales" seguido de peso, peso sin label explícito en bloque de datos de paciente, etc. Añadir guards contra falsos positivos (`ml/kg`, `mg/dL`, precios). (GPT-5.3-Codex)
-- [ ] P1-C 🔄 — En `candidate_mining.py`, añadir lógica de ranking específica para `weight` en `_candidate_sort_key`: priorizar candidatos con contexto de visita (snippet con fecha), penalizar candidatos en líneas de medicación/lab, preferir última ocurrencia en texto cuando haya empate de confidence. (GPT-5.3-Codex)
-- [ ] CT-2 🔄 — Commit task: scope P1-A + P1-B + P1-C → `feat(plan-p1): weight visit-scoped assignment and mining improvements` → push (GPT-5.3-Codex)
+- [x] P1-A 🔄 — En `_shared.py`, añadir `"weight"` a `_VISIT_SCOPED_KEYS` para que `_normalize_canonical_review_scoping` lo asigne a visitas cuando tenga fecha en snippet. Conservar fallback: si no hay fecha y solo hay una visita, asignar a esa visita; si no hay fecha y hay múltiples visitas, dejar en `fields_to_keep` (document-scoped) en lugar de mandarlo a `unassigned`. (Claude Opus 4.6)
+- [x] P1-B 🔄 — En `constants.py`, ampliar regex de `weight` en `_LABELED_PATTERNS` para cubrir variantes faltantes en docA: "Signos Vitales" seguido de peso, peso sin label explícito en bloque de datos de paciente, etc. Añadir guards contra falsos positivos (`ml/kg`, `mg/dL`, precios). (GPT-5.3-Codex) (SHA: cad71c37)
+- [x] P1-C 🔄 — En `candidate_mining.py`, añadir lógica de ranking específica para `weight` en `_candidate_sort_key`: priorizar candidatos con contexto de visita (snippet con fecha), penalizar candidatos en líneas de medicación/lab, preferir última ocurrencia en texto cuando haya empate de confidence. (GPT-5.3-Codex) (SHA: cad71c37)
+- [x] CT-2 🔄 — Commit task: scope P1-A + P1-B + P1-C → `feat(plan-p1): weight visit-scoped assignment and mining improvements` → push (GPT-5.3-Codex) (SHA: cad71c37)
 
 ### Phase 2 — Derivación de peso actual y normalización
 
