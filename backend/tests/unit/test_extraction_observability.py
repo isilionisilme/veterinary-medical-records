@@ -276,6 +276,78 @@ def test_build_extraction_triage_flags_microchip_phone_and_document_context() ->
     assert "microchip_document_id_context" in doc_flags
 
 
+def test_build_extraction_triage_flags_owner_address_signals() -> None:
+    snapshot = {
+        "runId": "run-owner-address-flags",
+        "documentId": "doc-owner-address-flags",
+        "createdAt": "2026-02-13T20:06:00Z",
+        "fields": {
+            "owner_address": {
+                "status": "accepted",
+                "confidence": "mid",
+                "valueNormalized": "Calle Mayor 12, 28013 Madrid",
+            },
+            "clinic_address": {
+                "status": "accepted",
+                "confidence": "high",
+                "valueNormalized": "Calle Mayor 12, 28013 Madrid",
+            },
+        },
+        "counts": {"accepted": 2, "missing": 0, "rejected": 0, "low": 0, "mid": 1, "high": 1},
+    }
+
+    triage = extraction_observability.build_extraction_triage(snapshot)
+    suspicious_by_field = {item["field"]: item for item in triage["suspiciousAccepted"]}
+    owner_flags = suspicious_by_field["owner_address"]["flags"]
+
+    assert "owner_address_matches_clinic_address" in owner_flags
+
+    short_snapshot = {
+        **snapshot,
+        "fields": {
+            "owner_address": {
+                "status": "accepted",
+                "confidence": "mid",
+                "valueNormalized": "S/N",
+            },
+            "clinic_address": {
+                "status": "accepted",
+                "confidence": "high",
+                "valueNormalized": "Avenida Vet 45, 28001 Madrid",
+            },
+        },
+    }
+    short_triage = extraction_observability.build_extraction_triage(short_snapshot)
+    short_flags = {item["field"]: item for item in short_triage["suspiciousAccepted"]}[
+        "owner_address"
+    ]["flags"]
+
+    assert "owner_address_too_short" in short_flags
+    assert "owner_address_no_address_tokens" in short_flags
+
+    long_snapshot = {
+        **snapshot,
+        "fields": {
+            "owner_address": {
+                "status": "accepted",
+                "confidence": "mid",
+                "valueNormalized": "Calle " + ("muylarga " * 20) + "12, 28013 Madrid",
+            },
+            "clinic_address": {
+                "status": "accepted",
+                "confidence": "high",
+                "valueNormalized": "Avenida Vet 45, 28001 Madrid",
+            },
+        },
+    }
+    long_triage = extraction_observability.build_extraction_triage(long_snapshot)
+    long_flags = {item["field"]: item for item in long_triage["suspiciousAccepted"]}[
+        "owner_address"
+    ]["flags"]
+
+    assert "owner_address_too_long" in long_flags
+
+
 def test_build_extraction_triage_keeps_top_candidates_shape() -> None:
     snapshot = {
         "runId": "run-top-candidates",
