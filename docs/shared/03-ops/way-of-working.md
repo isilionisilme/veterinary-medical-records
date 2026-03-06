@@ -1,4 +1,55 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Way of Working](#way-of-working)
+  - [Purpose](#purpose)
+  - [1. Starting New Work (Branch First)](#1-starting-new-work-branch-first)
+    - [Procedure](#procedure)
+  - [2. Branching Strategy](#2-branching-strategy)
+    - [Branch Naming Conventions](#branch-naming-conventions)
+  - [3. Commit Discipline](#3-commit-discipline)
+    - [Commit Message Conventions](#commit-message-conventions)
+  - [4. Local Preflight Levels](#4-local-preflight-levels)
+    - [L1 — Quick (before commit)](#l1--quick-before-commit)
+    - [L2 — Push (before every push)](#l2--push-before-every-push)
+    - [L3 — Full (before Pull Request creation)](#l3--full-before-pull-request-creation)
+    - [Preflight Rules](#preflight-rules)
+    - [Preflight Auto-Fix Policy](#preflight-auto-fix-policy)
+  - [5. Pull Request Workflow](#5-pull-request-workflow)
+    - [Pull Request Title Conventions](#pull-request-title-conventions)
+    - [Pull Request Body Requirements](#pull-request-body-requirements)
+    - [Pull Request Classification](#pull-request-classification)
+    - [Pull Request Procedure](#pull-request-procedure)
+    - [Plan-Level Pull Request Roadmap](#plan-level-pull-request-roadmap)
+    - [Post-Merge Cleanup Procedure](#post-merge-cleanup-procedure)
+  - [6. Code Review Workflow](#6-code-review-workflow)
+    - [Manual trigger only (hard rule)](#manual-trigger-only-hard-rule)
+    - [CI prerequisite (hard rule)](#ci-prerequisite-hard-rule)
+    - [Review Depth](#review-depth)
+    - [Review Focus (maintainability-first)](#review-focus-maintainability-first)
+    - [Pre-review checklist](#pre-review-checklist)
+    - [Severity Classification](#severity-classification)
+    - [Review Output Format](#review-output-format)
+    - [Review Publication](#review-publication)
+    - [Pull Request review visibility](#pull-request-review-visibility)
+    - [Mandatory publication protocol (blocking)](#mandatory-publication-protocol-blocking)
+    - [Safety Rule](#safety-rule)
+    - [Pre-Existing Issues](#pre-existing-issues)
+    - [Large Diff Policy](#large-diff-policy)
+  - [7. Delivery Model](#7-delivery-model)
+  - [8. User Story Kickoff Procedure](#8-user-story-kickoff-procedure)
+  - [9. Definition of Done](#9-definition-of-done)
+    - [For user stories](#for-user-stories)
+    - [For technical non-user-facing changes](#for-technical-non-user-facing-changes)
+    - [For all changes](#for-all-changes)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Way of Working
+
+
+**Breadcrumbs:** [Docs](../../README.md) / Shared / 03-ops
 
 > **Canonical source of truth.**
 > This document is the single authoritative reference for all operational workflow rules in this project.

@@ -1,4 +1,30 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [ADR-ARCH-0004: In-Process Async Processing (No External Task Queue)](#adr-arch-0004-in-process-async-processing-no-external-task-queue)
+  - [Status](#status)
+  - [Context](#context)
+  - [Decision Drivers](#decision-drivers)
+  - [Considered Options](#considered-options)
+    - [Option A — In-process async scheduler with DB-backed queue](#option-a--in-process-async-scheduler-with-db-backed-queue)
+    - [Option B — Celery + Redis/RabbitMQ](#option-b--celery--redisrabbitmq)
+    - [Option C — Redis Queue alternatives (RQ/arq/Dramatiq)](#option-c--redis-queue-alternatives-rqarqdramatiq)
+  - [Decision](#decision)
+  - [Rationale](#rationale)
+  - [Consequences](#consequences)
+    - [Positive](#positive)
+    - [Negative](#negative)
+    - [Risks](#risks)
+  - [Code Evidence](#code-evidence)
+  - [Related Decisions](#related-decisions)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # ADR-ARCH-0004: In-Process Async Processing (No External Task Queue)
+
+
+**Breadcrumbs:** [Docs](../../../../README.md) / [Projects](../../../README.md) / veterinary-medical-records / 02-tech / adr
 
 ## Status
 - Accepted

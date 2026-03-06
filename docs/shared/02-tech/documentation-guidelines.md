@@ -1,4 +1,30 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Documentation Guidelines](#documentation-guidelines)
+  - [Purpose](#purpose)
+  - [Documentation Layers](#documentation-layers)
+  - [In-Code Documentation Rules](#in-code-documentation-rules)
+    - [When to add docstrings](#when-to-add-docstrings)
+    - [Docstring content](#docstring-content)
+    - [Docstring style](#docstring-style)
+    - [When NOT to add docstrings](#when-not-to-add-docstrings)
+  - [Types and Contracts](#types-and-contracts)
+  - [API Documentation Rules](#api-documentation-rules)
+  - [Public Interface Documentation](#public-interface-documentation)
+  - [Architecture and Design Documentation](#architecture-and-design-documentation)
+  - [Commenting Rules](#commenting-rules)
+  - [When Documentation Must Be Updated](#when-documentation-must-be-updated)
+  - [Change Classification](#change-classification)
+  - [Documentation Verification Checklist](#documentation-verification-checklist)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Documentation Guidelines
+
+
+**Breadcrumbs:** [Docs](../../README.md) / Shared / 02-tech
 
 > **Canonical source of truth.**
 > This document is the single authoritative reference for all documentation standards and practices in this project.

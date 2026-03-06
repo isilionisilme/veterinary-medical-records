@@ -1,4 +1,31 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Plan Management](#plan-management)
+  - [1. How to Create a Plan](#1-how-to-create-a-plan)
+    - [Ownership](#ownership)
+    - [Naming and location](#naming-and-location)
+    - [Required plan template](#required-plan-template)
+    - [Approval to start execution](#approval-to-start-execution)
+  - [2. How to Execute a Plan](#2-how-to-execute-a-plan)
+  - [3. Task Chaining Policy](#3-task-chaining-policy)
+  - [5. Plan Scope Principle (Hard Rule)](#5-plan-scope-principle-hard-rule)
+    - [Operational Override Steps](#operational-override-steps)
+      - [Required schema](#required-schema)
+      - [Approval rules](#approval-rules)
+      - [Validation](#validation)
+    - [Commit Task Specification (Mandatory at Plan Creation)](#commit-task-specification-mandatory-at-plan-creation)
+  - [6. Prompt Strategy](#6-prompt-strategy)
+    - [Prompt types](#prompt-types)
+    - [Prompt creation lifecycle](#prompt-creation-lifecycle)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Plan Management
+
+
+**Breadcrumbs:** [Docs](../../../README.md) / [Projects](../../README.md) / veterinary-medical-records / 03-ops
 
 > **Project-specific operational document.**
 > Defines how plans are created, structured, and executed in the `veterinary-medical-records` project.

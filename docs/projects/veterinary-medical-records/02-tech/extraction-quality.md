@@ -1,4 +1,45 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Extraction Quality](#extraction-quality)
+  - [Purpose](#purpose)
+  - [1. Extraction Quality Strategy](#1-extraction-quality-strategy)
+    - [Operating Loop](#operating-loop)
+    - [Decision Rules](#decision-rules)
+    - [Field Done Criteria](#field-done-criteria)
+    - [Default Maintenance Policy](#default-maintenance-policy)
+  - [2. Field Guardrails Catalog](#2-field-guardrails-catalog)
+    - [microchip_id](#microchip_id)
+    - [weight](#weight)
+    - [Date Fields (visit_date, discharge_date, document_date)](#date-fields-visit_date-discharge_date-document_date)
+    - [dob](#dob)
+    - [vet_name](#vet_name)
+    - [owner_name](#owner_name)
+    - [owner_id](#owner_id)
+    - [symptoms](#symptoms)
+    - [vaccinations](#vaccinations)
+    - [reason_for_visit](#reason_for_visit)
+  - [3. Observability](#3-observability)
+    - [What We Capture](#what-we-capture)
+    - [Storage](#storage)
+    - [Backend Endpoints](#backend-endpoints)
+    - [Summary Outputs](#summary-outputs)
+    - [Practical Interpretation Rule](#practical-interpretation-rule)
+    - [Snapshot Ownership](#snapshot-ownership)
+  - [4. Risk Matrix (Golden Fields)](#4-risk-matrix-golden-fields)
+    - [Reviewer Checklist](#reviewer-checklist)
+  - [5. Confidence Policy](#5-confidence-policy)
+    - [Promotion Rules](#promotion-rules)
+  - [6. Golden Fields — Current Status](#6-golden-fields--current-status)
+    - [Pending Fields (No Guardrails Yet)](#pending-fields-no-guardrails-yet)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Extraction Quality
+
+
+**Breadcrumbs:** [Docs](../../../README.md) / [Projects](../../README.md) / veterinary-medical-records / 02-tech
 
 > **Canonical source of truth.**
 > This document is the single authoritative reference for extraction quality rules, guardrails, and observability policies in this project.

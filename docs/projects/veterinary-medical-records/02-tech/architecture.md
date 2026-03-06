@@ -20,7 +20,7 @@ last-updated: 2026-03-02
 - [Key architectural decisions](#key-architectural-decisions)
 - [Data flow](#data-flow)
 - [Project structure](#project-structure)
-- [Quality metrics (post-Iteration 12)](#quality-metrics-post-iteration-12)
+- [Quality metrics (as of 2026-03-06)](#quality-metrics-as-of-2026-03-06)
 - [Related documentation](#related-documentation)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -37,7 +37,7 @@ last-updated: 2026-03-02
 | PDF parsing | PyMuPDF 1.24 | High-fidelity text extraction with built-in fallback |
 | Unit testing | Vitest 4 + Pytest | Fast, parallel test runners for both stacks |
 | E2E testing | Playwright 1.58 | Cross-browser automation with trace/video on failure |
-| CI/CD | GitHub Actions (10 jobs) | Path-filtered, cached, cancel-in-progress |
+| CI/CD | GitHub Actions (13 jobs) | Path-filtered, cached, cancel-in-progress |
 | Containers | Docker Compose | One-command `docker compose up --build` |
 
 ## System diagram
@@ -51,7 +51,7 @@ graph TB
     end
 
     subgraph "Backend — FastAPI"
-        Routes["API Routes<br/>(5 domain modules)"]
+        Routes["API Routes<br/>(6 domain modules)"]
         Services["Application Services<br/>(orchestrator, processing runner)"]
         Ports["Repository Protocol<br/>(DocumentRepository)"]
         SQLite[("SQLite DB<br/>WAL mode")]
@@ -94,9 +94,11 @@ graph TB
 
 ```
 backend/app/
-├── api/           → 5 route modules (documents, review, processing, calibration, health)
+├── api/           → 6 route modules (documents, review, processing, calibration, health, clinics)
 ├── application/   → orchestrator, processing runner, document services, extraction observability
-│   └── processing/→ PDF extraction, interpretation, confidence scoring
+│   ├── documents/  → document_service modules
+│   ├── extraction_observability/ → telemetry, transforms, aggregates
+│   └── processing/ → PDF extraction, interpretation, confidence scoring
 ├── domain/        → entities (models.py), status derivation
 ├── infra/         → SQLite repos (3 aggregates + façade), file storage
 └── ports/         → repository protocols, file storage interface
@@ -106,19 +108,19 @@ frontend/src/
 ├── components/    → workspace/, viewer/, review/, structured/, ui/, app/, toast/
 ├── constants/     → shared constants
 ├── extraction/    → candidateSuggestions, fieldValidators
-├── hooks/         → 8 custom hooks (upload, editing, sidebar, filters, split-panel, rawTextActions, reviewedEditBlocker, sourcePanelState)
+├── hooks/         → 28 custom hooks (upload, editing, sidebar, filters, split-panel, rawTextActions, reviewedEditBlocker, sourcePanelState, ...)
 ├── lib/           → utils, filters, validators
 └── types/         → shared TypeScript interfaces
 ```
 
-## Quality metrics (post-Iteration 12)
+## Quality metrics (as of 2026-03-06)
 
 | Metric | Value |
 |--------|-------|
-| Backend tests | ~395 (≥91% coverage) |
-| Frontend tests | ~287 (≥87% coverage) |
+| Backend tests | ~566 (67 files) |
+| Frontend tests | ~327 (52 files) |
 | E2E specs | 64 (21 spec files) |
-| CI jobs | 10 (path-filtered, ~4 min) |
+| CI jobs | 13 (path-filtered, ~4 min) |
 | Lint errors | 0 |
 
 ## Related documentation

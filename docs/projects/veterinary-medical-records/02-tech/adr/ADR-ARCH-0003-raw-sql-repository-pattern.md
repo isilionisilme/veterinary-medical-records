@@ -1,4 +1,30 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [ADR-ARCH-0003: Raw SQL with Repository Pattern (No ORM)](#adr-arch-0003-raw-sql-with-repository-pattern-no-orm)
+  - [Status](#status)
+  - [Context](#context)
+  - [Decision Drivers](#decision-drivers)
+  - [Considered Options](#considered-options)
+    - [Option A — Raw SQL + Repository Pattern](#option-a--raw-sql--repository-pattern)
+    - [Option B — SQLAlchemy ORM](#option-b--sqlalchemy-orm)
+    - [Option C — SQL query builder / SQLAlchemy Core](#option-c--sql-query-builder--sqlalchemy-core)
+  - [Decision](#decision)
+  - [Rationale](#rationale)
+  - [Consequences](#consequences)
+    - [Positive](#positive)
+    - [Negative](#negative)
+    - [Risks](#risks)
+  - [Code Evidence](#code-evidence)
+  - [Related Decisions](#related-decisions)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # ADR-ARCH-0003: Raw SQL with Repository Pattern (No ORM)
+
+
+**Breadcrumbs:** [Docs](../../../../README.md) / [Projects](../../../README.md) / veterinary-medical-records / 02-tech / adr
 
 ## Status
 - Accepted

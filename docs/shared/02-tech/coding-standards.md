@@ -1,4 +1,36 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Coding Standards](#coding-standards)
+  - [Purpose](#purpose)
+  - [Change Discipline](#change-discipline)
+  - [Code Style & Consistency](#code-style--consistency)
+  - [Structure & Separation of Concerns](#structure--separation-of-concerns)
+  - [Explicit Contracts & Schemas](#explicit-contracts--schemas)
+  - [State Management & Workflow Safety](#state-management--workflow-safety)
+  - [Traceability & Human Control](#traceability--human-control)
+  - [Error Handling & Observability](#error-handling--observability)
+    - [Error classification](#error-classification)
+    - [Observability & metrics](#observability--metrics)
+  - [Testing Discipline](#testing-discipline)
+  - [Data Handling & Safety](#data-handling--safety)
+  - [Configuration & Environment Separation](#configuration--environment-separation)
+  - [Versioning & Evolution](#versioning--evolution)
+  - [Dependency Management](#dependency-management)
+  - [Naming Conventions](#naming-conventions)
+    - [API and endpoints](#api-and-endpoints)
+    - [Domain concepts and models](#domain-concepts-and-models)
+    - [Lifecycle states](#lifecycle-states)
+    - [Persistence artifacts](#persistence-artifacts)
+  - [Architectural Layering (Review Criteria)](#architectural-layering-review-criteria)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Coding Standards
+
+
+**Breadcrumbs:** [Docs](../../README.md) / Shared / 02-tech
 
 > **Canonical source of truth.**
 > This document is the single authoritative reference for all technical coding standards in this project.
