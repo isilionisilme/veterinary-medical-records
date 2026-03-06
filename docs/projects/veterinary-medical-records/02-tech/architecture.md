@@ -8,12 +8,10 @@ last-updated: 2026-03-02
 
 # Architecture Overview
 
-
 **Breadcrumbs:** [Docs](../../../README.md) / [Projects](../../README.md) / veterinary-medical-records / 02-tech
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-
 
 - [Tech stack](#tech-stack)
 - [System diagram](#system-diagram)
@@ -29,16 +27,16 @@ last-updated: 2026-03-02
 
 ## Tech stack
 
-| Layer | Technology | Why |
-|-------|-----------|-----|
-| Frontend | React 18 + TypeScript 5 + Tailwind CSS 3 | Type-safe SPA with utility-first styling |
-| Backend | Python 3.11 + FastAPI 0.115 | Async-first framework, auto-generated OpenAPI |
-| Database | SQLite (WAL mode) | Zero-config, ACID, portable — see [ADR-ARCH-0002](adr/ADR-ARCH-0002-sqlite-database.md) |
-| PDF parsing | PyMuPDF 1.24 | High-fidelity text extraction with built-in fallback |
-| Unit testing | Vitest 4 + Pytest | Fast, parallel test runners for both stacks |
-| E2E testing | Playwright 1.58 | Cross-browser automation with trace/video on failure |
-| CI/CD | GitHub Actions (13 jobs) | Path-filtered, cached, cancel-in-progress |
-| Containers | Docker Compose | One-command `docker compose up --build` |
+| Layer        | Technology                               | Why                                                                                     |
+| ------------ | ---------------------------------------- | --------------------------------------------------------------------------------------- |
+| Frontend     | React 18 + TypeScript 5 + Tailwind CSS 3 | Type-safe SPA with utility-first styling                                                |
+| Backend      | Python 3.11 + FastAPI 0.115              | Async-first framework, auto-generated OpenAPI                                           |
+| Database     | SQLite (WAL mode)                        | Zero-config, ACID, portable — see [ADR-ARCH-0002](adr/ADR-ARCH-0002-sqlite-database.md) |
+| PDF parsing  | PyMuPDF 1.24                             | High-fidelity text extraction with built-in fallback                                    |
+| Unit testing | Vitest 4 + Pytest                        | Fast, parallel test runners for both stacks                                             |
+| E2E testing  | Playwright 1.58                          | Cross-browser automation with trace/video on failure                                    |
+| CI/CD        | GitHub Actions (13 jobs)                 | Path-filtered, cached, cancel-in-progress                                               |
+| Containers   | Docker Compose                           | One-command `docker compose up --build`                                                 |
 
 ## System diagram
 
@@ -76,12 +74,12 @@ graph TB
 
 ## Key architectural decisions
 
-| Decision | Rationale | Record |
-|----------|-----------|--------|
-| Modular monolith | Single deploy, clear boundaries, Docker-first | [ADR-ARCH-0001](adr/ADR-ARCH-0001-modular-monolith.md) |
-| SQLite as primary DB | Zero-config, ACID, portable; PostgreSQL migration path documented | [ADR-ARCH-0002](adr/ADR-ARCH-0002-sqlite-database.md) |
-| Raw SQL + repository pattern | Explicit queries, no ORM abstraction leaks | [ADR-ARCH-0003](adr/ADR-ARCH-0003-raw-sql-repository-pattern.md) |
-| In-process async processing | No external queue for MVP; worker profile path documented | [ADR-ARCH-0004](adr/ADR-ARCH-0004-in-process-async-processing.md) |
+| Decision                     | Rationale                                                         | Record                                                            |
+| ---------------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Modular monolith             | Single deploy, clear boundaries, Docker-first                     | [ADR-ARCH-0001](adr/ADR-ARCH-0001-modular-monolith.md)            |
+| SQLite as primary DB         | Zero-config, ACID, portable; PostgreSQL migration path documented | [ADR-ARCH-0002](adr/ADR-ARCH-0002-sqlite-database.md)             |
+| Raw SQL + repository pattern | Explicit queries, no ORM abstraction leaks                        | [ADR-ARCH-0003](adr/ADR-ARCH-0003-raw-sql-repository-pattern.md)  |
+| In-process async processing  | No external queue for MVP; worker profile path documented         | [ADR-ARCH-0004](adr/ADR-ARCH-0004-in-process-async-processing.md) |
 
 ## Data flow
 
@@ -115,13 +113,13 @@ frontend/src/
 
 ## Quality metrics (as of 2026-03-06)
 
-| Metric | Value |
-|--------|-------|
-| Backend tests | ~566 (67 files) |
-| Frontend tests | ~327 (52 files) |
-| E2E specs | 64 (21 spec files) |
-| CI jobs | 13 (path-filtered, ~4 min) |
-| Lint errors | 0 |
+| Metric         | Value                      |
+| -------------- | -------------------------- |
+| Backend tests  | ~566 (67 files)            |
+| Frontend tests | ~327 (52 files)            |
+| E2E specs      | 64 (21 spec files)         |
+| CI jobs        | 13 (path-filtered, ~4 min) |
+| Lint errors    | 0                          |
 
 ## Related documentation
 

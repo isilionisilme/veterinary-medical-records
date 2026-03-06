@@ -17,12 +17,14 @@
 El peso (`weight`) se extrae actualmente a nivel de documento (document-scoped). Cuando un PDF contiene múltiples visitas con pesos diferentes, el sistema puede mostrar un peso incorrecto para la visita que el usuario está viendo.
 
 **Bugs reportados:**
+
 - **docA:** el peso existe en el PDF (cabecera del paciente) pero no se muestra — posible fallo en candidate mining (label no reconocido o candidato filtrado).
 - **docB:** se muestra un peso erróneo porque hay varias visitas con pesos diferentes y se toma uno arbitrario (el primero encontrado, sin ranking temporal).
 
 ### Sistema actual de visitas
 
 La función `_normalize_canonical_review_scoping()` en `review_service.py` ya separa campos en tres categorías:
+
 1. **Metadata de visita** (`_VISIT_GROUP_METADATA_KEYS`): `visit_date`, `admission_date`, `discharge_date`, `reason_for_visit`.
 2. **Campos visit-scoped** (`_VISIT_SCOPED_KEYS`): `symptoms`, `diagnosis`, `procedure`, `medication`, `treatment_plan`, `allergies`, `vaccinations`, `lab_result`, `imaging`.
 3. **Campos document-scoped**: todo lo demás, incluyendo `weight`.
@@ -60,19 +62,20 @@ La función `_normalize_canonical_review_scoping()` en `review_service.py` ya se
 
 ## Commit Task Definitions
 
-| ID | After Steps | Scope | Commit Message | Push |
-|---|---|---|---|---|
-| CT-1 | P0-A, P0-B | Tests de baseline + snapshot multi-Visit | `test(plan-p0): visit-scoped weight baseline tests` | Inmediato |
-| CT-2 | P1-A, P1-B, P1-C | Scoping + mining + ranking | `feat(plan-p1): weight visit-scoped assignment and mining improvements` | Inmediato |
-| CT-3 | P2-A, P2-B | Derivación de peso actual + normalización | `feat(plan-p2): weight current-value derivation rule` | Inmediato |
-| CT-4 | P3-A, P3-B | Benchmark delta + golden regression | `test(plan-p3): visit-scoped weight benchmark and golden regression` | Inmediato |
-| CT-5 | P3-D | Docs + threshold | `docs(plan-p3): visit-scoped weight threshold lock and docs update` | Inmediato |
+| ID   | After Steps      | Scope                                     | Commit Message                                                          | Push      |
+| ---- | ---------------- | ----------------------------------------- | ----------------------------------------------------------------------- | --------- |
+| CT-1 | P0-A, P0-B       | Tests de baseline + snapshot multi-Visit  | `test(plan-p0): visit-scoped weight baseline tests`                     | Inmediato |
+| CT-2 | P1-A, P1-B, P1-C | Scoping + mining + ranking                | `feat(plan-p1): weight visit-scoped assignment and mining improvements` | Inmediato |
+| CT-3 | P2-A, P2-B       | Derivación de peso actual + normalización | `feat(plan-p2): weight current-value derivation rule`                   | Inmediato |
+| CT-4 | P3-A, P3-B       | Benchmark delta + golden regression       | `test(plan-p3): visit-scoped weight benchmark and golden regression`    | Inmediato |
+| CT-5 | P3-D             | Docs + threshold                          | `docs(plan-p3): visit-scoped weight threshold lock and docs update`     | Inmediato |
 
 ---
 
 ## Estado de ejecución
 
 **Leyenda**
+
 - 🔄 auto-chain — ejecutable por Codex
 - 🚧 hard-gate — revisión/decisión de usuario
 
@@ -117,10 +120,12 @@ Este plan es **complementario** al golden loop de weight (PR #204, branch `feat/
 ### Stash pendiente en golden loop
 
 En `feat/golden-loop-paciente-weight` hay un `git stash@{0}` con:
+
 - Fix de `docker-compose.dev.yml` (Vite dev en puerto 8080 interno).
 - WIP de P3-C.
 
 **Secuencia para cerrar PR #204 tras este plan:**
+
 1. En worktree `veterinary-medical-records-golden-loop`: `git stash pop`.
 2. Borrar `backend/data/documents.db`.
 3. `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build`.
@@ -145,16 +150,16 @@ En `feat/golden-loop-paciente-weight` hay un `git stash@{0}` con:
 
 ## Archivos clave
 
-| Archivo | Rol |
-|---|---|
-| `backend/app/application/documents/review_service.py` | `_normalize_canonical_review_scoping` — lógica de agrupación por visita |
-| `backend/app/application/documents/_shared.py` | `_VISIT_SCOPED_KEYS`, `_VISIT_GROUP_METADATA_KEYS`, parseo de fechas |
-| `backend/app/application/processing/constants.py` | Regex de `weight` en `_LABELED_PATTERNS` |
-| `backend/app/application/processing/candidate_mining.py` | Ranking/selección de candidatos (`_candidate_sort_key`) |
-| `backend/app/application/field_normalizers.py` | `_normalize_weight()` y conexión canónica |
-| `backend/tests/integration/test_document_review.py` | Contratos de scoping y estabilidad de payload |
-| `backend/tests/benchmarks/test_weight_extraction_accuracy.py` | Benchmark de weight (en golden loop branch) |
-| `backend/tests/fixtures/synthetic/weight/` | Fixtures de peso (en golden loop branch) |
+| Archivo                                                       | Rol                                                                     |
+| ------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `backend/app/application/documents/review_service.py`         | `_normalize_canonical_review_scoping` — lógica de agrupación por visita |
+| `backend/app/application/documents/_shared.py`                | `_VISIT_SCOPED_KEYS`, `_VISIT_GROUP_METADATA_KEYS`, parseo de fechas    |
+| `backend/app/application/processing/constants.py`             | Regex de `weight` en `_LABELED_PATTERNS`                                |
+| `backend/app/application/processing/candidate_mining.py`      | Ranking/selección de candidatos (`_candidate_sort_key`)                 |
+| `backend/app/application/field_normalizers.py`                | `_normalize_weight()` y conexión canónica                               |
+| `backend/tests/integration/test_document_review.py`           | Contratos de scoping y estabilidad de payload                           |
+| `backend/tests/benchmarks/test_weight_extraction_accuracy.py` | Benchmark de weight (en golden loop branch)                             |
+| `backend/tests/fixtures/synthetic/weight/`                    | Fixtures de peso (en golden loop branch)                                |
 
 ---
 

@@ -46,19 +46,20 @@
 
 ## Commit Task Definitions
 
-| ID | After Steps | Scope | Commit Message | Push |
-|---|---|---|---|---|
-| CT-1 | P0-A, P0-B | Fixtures + benchmark (baseline) | `test(plan-p0): dob golden-loop baseline fixtures and benchmark` | Inmediato |
+| ID   | After Steps            | Scope                                       | Commit Message                                                                      | Push      |
+| ---- | ---------------------- | ------------------------------------------- | ----------------------------------------------------------------------------------- | --------- |
+| CT-1 | P0-A, P0-B             | Fixtures + benchmark (baseline)             | `test(plan-p0): dob golden-loop baseline fixtures and benchmark`                    | Inmediato |
 | CT-2 | P1-A, P1-B, P1-C, P1-D | Normalizador + anchors + regex + unit tests | `feat(plan-p1): dob extraction hardening — normalizer, anchors, labels, unit tests` | Inmediato |
-| CT-3 | P2-A | Observability flags + tests | `feat(plan-p2): dob observability flags` | Inmediato |
-| CT-4 | P3-A, P3-B | Golden regression + validation evidence | `test(plan-p3): dob golden regression and validation evidence` | Inmediato |
-| CT-5 | P3-D | Threshold lock + extraction-quality doc | `docs(plan-p3): dob threshold lock and extraction-quality update` | Inmediato |
+| CT-3 | P2-A                   | Observability flags + tests                 | `feat(plan-p2): dob observability flags`                                            | Inmediato |
+| CT-4 | P3-A, P3-B             | Golden regression + validation evidence     | `test(plan-p3): dob golden regression and validation evidence`                      | Inmediato |
+| CT-5 | P3-D                   | Threshold lock + extraction-quality doc     | `docs(plan-p3): dob threshold lock and extraction-quality update`                   | Inmediato |
 
 ---
 
 ## Estado de ejecución
 
 **Leyenda**
+
 - 🔄 auto-chain — ejecutable por Codex
 - 🚧 hard-gate — revisión/decisión de usuario
 

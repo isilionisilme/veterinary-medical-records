@@ -19,7 +19,8 @@ Post-merge Iteration 8: all files >500 LOC are modularized, backend coverage 90%
 > **Protocolo "Continúa":** open a new chat, select the correct agent, attach this file and write `Continúa`. The agent reads the state, executes the next step, and stops on completion.
 
 **Automation legend:**
-- 🔄 **auto-chain** — Codex executes alone; you review the result *afterwards*.
+
+- 🔄 **auto-chain** — Codex executes alone; you review the result _afterwards_.
 - 🚧 **hard-gate** — Requires your decision before continuing. Do not skip.
 
 ### Fase 15 — Iteration 9 (E2E testing + evaluator experience polish)
@@ -59,6 +60,7 @@ Post-merge Iteration 8: all files >500 LOC are modularized, backend coverage 90%
 **Objective:** Prepare the E2E infrastructure — verify config/CI, then add `data-testid` attributes to UI elements that E2E tests will target.
 
 **Pre-flight context (do not re-discover — trust these facts):**
+
 - `frontend/playwright.config.ts` exists: Chromium-only, headless, `baseURL: http://localhost:80`, HTML reporter. **No changes needed.**
 - `.github/workflows/ci.yml` has an `e2e` job depending on `docker_packaging_guard`. Starts Docker stack, runs `npm run test:e2e`, uploads artifacts on failure. **No changes needed.**
 - Existing E2E specs: `e2e/app-loads.spec.ts`, `e2e/upload-smoke.spec.ts`. **Leave them untouched.**
@@ -77,12 +79,14 @@ Post-merge Iteration 8: all files >500 LOC are modularized, backend coverage 90%
 3. **`frontend/src/components/review/ReviewFieldRenderers.tsx`** — The pencil/edit `<IconButton label="Editar">` (around lines 212-222 inside the value area) has no testid. Add `data-testid={`field-edit-btn-${item.id}`}` to it.
 
 **Validation:**
+
 - `cd frontend && npm test` → all existing unit tests pass (no regressions from adding attributes).
 - `cd frontend && npx tsc --noEmit` → no type errors.
 
 **Commit:** `feat(plan-f15a): add data-testid attributes for E2E test targets`
 
 **Post-push (STEP C rule):** This is the first push of the iteration — create a **draft PR**:
+
 ```bash
 gh pr create --draft --base main \
   --title "feat: iteration 9 — E2E testing + evaluator polish" \
@@ -101,6 +105,7 @@ gh pr create --draft --base main \
 - [ ] F15-J — Docker healthcheck
 - [x] F15-K — FUTURE_IMPROVEMENTS + smoke"
 ```
+
 Record the PR number: update `**PR:** TBD` in the plan header to `**PR:** #<number>` (plan-update commit).
 
 ⚠️ AUTO-CHAIN → F15-B
@@ -120,6 +125,7 @@ Record the PR number: update `**PR:** TBD` in the plan header to `**PR:** #<numb
 **Objective:** Review and enhance `frontend/e2e/upload-smoke.spec.ts` to cover: navigate → upload PDF → verify document appears → verify processing status is visible.
 
 **Pre-flight context:**
+
 - `upload-smoke.spec.ts` already tests: navigate → upload → intercept upload API (201) → wait for `doc-row-${documentId}` in sidebar. Timeout is 90 s.
 - API: `POST /documents/upload` returns `{ document_id }`.
 - Sidebar doc rows show a status text and/or icon. After upload, documents start in a non-reviewed processing state.
@@ -129,16 +135,18 @@ Record the PR number: update `**PR:** TBD` in the plan header to `**PR:** #<numb
 
 1. Read the existing `upload-smoke.spec.ts`. If it already covers navigate + upload + doc-row verification, the core test is done.
 2. **Enhance:** After the `doc-row-${id}` assertion, add a check that verifies the document row exists in the sidebar and is interactive:
-   - Assert `doc-row-${id}` is clickable (use `page.getByTestId(\`doc-row-${id}\`).click()` and verify the center panel reacts — e.g., `document-layout-grid` or `review-split-grid` becomes visible).
+   - Assert `doc-row-${id}` is clickable (use `page.getByTestId(\`doc-row-${id}\`).click()`and verify the center panel reacts — e.g.,`document-layout-grid`or`review-split-grid` becomes visible).
 3. If the document status text is visible in the sidebar row (e.g., "Procesando", "Completado"), add a comment explaining what states are expected but do NOT assert a specific final status (processing may not complete in CI).
 4. Add a brief description comment at the top of the test: `// E2E: full upload flow — upload PDF → verify sidebar → verify document is selectable`.
 
 **Guardrails:**
+
 - Do NOT break the existing passing test flow.
 - Keep the 90 s timeout.
 - Use `data-testid` selectors and Playwright best practices.
 
 **Validation:**
+
 - `cd frontend && npx tsc --noEmit` → no type errors in E2E files.
 - Test code is structurally correct and follows existing patterns.
 
@@ -161,6 +169,7 @@ Record the PR number: update `**PR:** TBD` in the plan header to `**PR:** #<numb
 **Objective:** Create `frontend/e2e/review-flow.spec.ts` testing the document review workspace layout.
 
 **Pre-flight context:**
+
 - The app is a single-page workspace (no routing). Clicking `doc-row-${id}` in sidebar sets `activeId` state, which triggers PDF download and data queries.
 - Key `data-testid` values already present:
   - Sidebar: `documents-sidebar`, `doc-row-${id}`
@@ -178,7 +187,9 @@ Record the PR number: update `**PR:** TBD` in the plan header to `**PR:** #<numb
 import fs from "node:fs";
 import { expect, test } from "@playwright/test";
 
-test("selecting a document shows PDF viewer and structured panel", async ({ page }) => {
+test("selecting a document shows PDF viewer and structured panel", async ({
+  page,
+}) => {
   test.setTimeout(90_000);
   const pdfBuffer = fs.readFileSync("e2e/fixtures/sample.pdf");
   let docId: string | null = null;
@@ -191,7 +202,7 @@ test("selecting a document shows PDF viewer and structured panel", async ({ page
   // Capture document_id from upload response
   await page.route("**/documents/upload", async (route) => {
     const response = await route.fetch();
-    const json = await response.json() as { document_id?: string };
+    const json = (await response.json()) as { document_id?: string };
     docId = json.document_id ?? null;
     await route.fulfill({ response });
   });
@@ -214,9 +225,13 @@ test("selecting a document shows PDF viewer and structured panel", async ({ page
   await row.click();
 
   // Verify PDF viewer renders
-  await expect(page.getByTestId("pdf-toolbar-shell")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId("pdf-toolbar-shell")).toBeVisible({
+    timeout: 30_000,
+  });
   await expect(page.getByTestId("pdf-scroll-container")).toBeVisible();
-  await expect(page.getByTestId("pdf-page").first()).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId("pdf-page").first()).toBeVisible({
+    timeout: 30_000,
+  });
 
   // Verify structured panel area is visible
   await expect(page.getByTestId("structured-column-stack")).toBeVisible();
@@ -226,6 +241,7 @@ test("selecting a document shows PDF viewer and structured panel", async ({ page
 Adapt if needed after reading the upload-smoke pattern and verifying testid names. If any testid doesn't match, fix the test to use the correct attribute.
 
 **Validation:**
+
 - `cd frontend && npx tsc --noEmit` → no type errors.
 - Review the test: it should work against the Docker stack started by CI.
 
@@ -248,6 +264,7 @@ Adapt if needed after reading the upload-smoke pattern and verifying testid name
 **Objective:** Create `frontend/e2e/edit-flow.spec.ts` testing the field editing round-trip.
 
 **Pre-flight context:**
+
 - Field editing flow in the UI:
   1. With a processed document selected, the structured panel shows fields with `data-testid="field-trigger-${id}"`.
   2. Hovering/focusing a field reveals a pencil `<IconButton>` with `data-testid="field-edit-btn-${id}"` (added in F15-A).
@@ -258,6 +275,7 @@ Adapt if needed after reading the upload-smoke pattern and verifying testid name
 - **Solution:** Use `page.route()` to mock the review/interpretation API response so the structured panel renders fields regardless of processing.
 
 **Strategy:**
+
 1. Upload PDF and capture `document_id` (reuse upload pattern).
 2. After clicking the doc row, intercept `GET **/documents/${docId}/review` and fulfill with a **minimal valid mock** that includes at least one editable field. Read the real response shape from `frontend/src/api/documentApi.ts` (the `fetchDocumentReview` function) and `frontend/src/types/` to construct a valid mock. The mock should include a run with at least one interpretation containing a scalar field (e.g., `species` with value `"Canino"`).
 3. Also intercept `GET **/documents/${docId}` to return a document with `status: "PROCESSED"` and `review_status: "IN_REVIEW"`.
@@ -268,12 +286,14 @@ Adapt if needed after reading the upload-smoke pattern and verifying testid name
 8. Verify the API call was made with the correct payload shape.
 
 **Guardrails:**
+
 - `test.setTimeout(90_000)`.
 - Pin sidebar: `localStorage.setItem("docsSidebarPinned", "1")`.
 - If constructing a valid mock is too complex (deeply nested types), **simplify:** just verify that the field edit dialog opens and closes correctly when triggered. A partial test is better than no test.
 - Do NOT hardcode run IDs — extract them from the mock you create.
 
 **Validation:**
+
 - `cd frontend && npx tsc --noEmit` → no type errors.
 - Test code is structurally sound.
 
@@ -296,6 +316,7 @@ Adapt if needed after reading the upload-smoke pattern and verifying testid name
 **Objective:** Create `frontend/e2e/mark-reviewed.spec.ts` testing the "mark as reviewed" flow.
 
 **Pre-flight context:**
+
 - Review toggle button: `data-testid="review-toggle-btn"` (added in F15-A).
   - Not reviewed → text "Marcar revisado".
   - Reviewed → text "Reabrir" with RefreshCw icon.
@@ -317,11 +338,13 @@ Adapt if needed after reading the upload-smoke pattern and verifying testid name
 10. **(Bonus)** Click "Reabrir", mock `DELETE **/documents/${docId}/reviewed`, verify text reverts to "Marcar revisado".
 
 **Guardrails:**
+
 - `test.setTimeout(90_000)`.
 - Pin sidebar.
 - The optimistic cache update should handle the UI transition; the mock just needs to return a non-error response.
 
 **Validation:**
+
 - `cd frontend && npx tsc --noEmit` → no type errors.
 - Test code is structurally sound.
 
@@ -344,8 +367,9 @@ Adapt if needed after reading the upload-smoke pattern and verifying testid name
 **Objective:** Create `backend/tests/test_cli.py` with comprehensive tests for `backend/app/cli.py` (currently 0% → target ≥80%).
 
 **Pre-flight context:**
+
 - `cli.py` (80 lines) contains:
-  - `_mask_config(key, value)` — masks sensitive config values (tokens with "secret"/"token"/"password"/"key" in key name). Short values → "****", longer → "ab***ef".
+  - `_mask_config(key, value)` — masks sensitive config values (tokens with "secret"/"token"/"password"/"key" in key name). Short values → "\****", longer → "ab***ef".
   - `command_db_schema()` → calls `database.ensure_schema()`, prints success, returns 0.
   - `command_db_check()` → reads DB path, checks existence, counts tables, prints info, returns 0.
   - `command_config_check()` → dumps masked settings as JSON, returns 0.
@@ -356,7 +380,7 @@ Adapt if needed after reading the upload-smoke pattern and verifying testid name
 
 **Tests to write (at minimum):**
 
-1. `_mask_config`: sensitive key with long value → partial mask. Sensitive key with short value (≤4 chars) → "****". Non-sensitive key → value unchanged. Non-string value with sensitive key → value unchanged.
+1. `_mask_config`: sensitive key with long value → partial mask. Sensitive key with short value (≤4 chars) → "\*\*\*\*". Non-sensitive key → value unchanged. Non-string value with sensitive key → value unchanged.
 2. `command_db_schema`: mock `database.ensure_schema()`, verify it's called, verify return 0, verify stdout contains "Schema ensured".
 3. `command_db_check`: mock `database.get_database_path()` and `database.get_connection()` (context manager returning a mock connection with `.execute().fetchone()` returning `(5,)`). Verify output contains path, existence, table count.
 4. `command_config_check`: mock `get_settings()` returning a simple object with attributes (include one sensitive key). Verify JSON output is valid and values are masked.
@@ -364,6 +388,7 @@ Adapt if needed after reading the upload-smoke pattern and verifying testid name
 6. `main`: mock `sys.argv` and the corresponding command function for each subcommand. Verify dispatch and return value.
 
 **Validation:**
+
 - `cd backend && python -m pytest tests/test_cli.py -v` → all pass.
 - `cd backend && python -m pytest tests/test_cli.py --cov=backend.app.cli --cov-report=term-missing` → coverage ≥80%.
 
@@ -386,6 +411,7 @@ Adapt if needed after reading the upload-smoke pattern and verifying testid name
 **Objective:** Add `HEALTHCHECK` instruction to `Dockerfile.frontend` runtime stage so the image is self-sufficient for health monitoring.
 
 **Pre-flight context:**
+
 - `Dockerfile.frontend` has 3 stages: `dev` (Node 20 Alpine, port 5173), `build` (Vite build), `runtime` (nginx:alpine, port 8080).
 - The runtime stage serves the Vite build output at port 8080.
 - `docker-compose.yml` has a healthcheck (`wget -q -O /dev/null http://127.0.0.1:8080/`), but the Dockerfile itself has **no** `HEALTHCHECK`.
@@ -394,10 +420,12 @@ Adapt if needed after reading the upload-smoke pattern and verifying testid name
 **Changes required:**
 
 1. In `Dockerfile.frontend`, in the `runtime` stage (after `COPY` and `EXPOSE`, before or after `CMD`), add:
+
    ```dockerfile
    HEALTHCHECK --interval=10s --timeout=5s --retries=3 --start-period=5s \
      CMD wget -q -O /dev/null http://127.0.0.1:8080/index.html || exit 1
    ```
+
    nginx:alpine includes `wget` by default. Use `/index.html` explicitly to verify the app is served.
 
 2. Verify Docker build: `docker build -f Dockerfile.frontend --target runtime -t vmr-frontend-hc-test .` (from repo root, next to Dockerfile.frontend).
@@ -405,6 +433,7 @@ Adapt if needed after reading the upload-smoke pattern and verifying testid name
 3. Quick sanity (optional if Docker Desktop is available): run the image briefly and check health status.
 
 **Validation:**
+
 - Docker build succeeds without errors.
 - Existing `docker-compose.yml` healthcheck still works (compose healthcheck overrides Dockerfile healthcheck when present, so no conflict).
 
@@ -417,7 +446,9 @@ Adapt if needed after reading the upload-smoke pattern and verifying testid name
 ## Prompt activo
 
 ### Paso objetivo
-_Vacío._
+
+\_Vacío.\*
 
 ### Prompt
-_Vacío._
+
+\_Vacío.\*

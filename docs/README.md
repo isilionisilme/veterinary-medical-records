@@ -8,12 +8,10 @@ last-updated: 2026-03-06
 
 # Wiki — Documentation Index
 
-
 **Breadcrumbs:** Docs
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-
 
 - [Folder structure](#folder-structure)
 - [Sitemap](#sitemap)
@@ -31,6 +29,7 @@ last-updated: 2026-03-06
 Human-oriented index for all canonical documentation in this repository.
 
 ## Folder structure
+
 ```
 docs/
 ├── shared/           ← standards and guidelines shared across all projects

@@ -18,7 +18,6 @@ last-updated: 2026-03-02
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
-
 - [Scope and Authority](#scope-and-authority)
 - [Core UX Principles](#core-ux-principles)
 - [Human-in-the-Loop (Shared Principle)](#human-in-the-loop-shared-principle)

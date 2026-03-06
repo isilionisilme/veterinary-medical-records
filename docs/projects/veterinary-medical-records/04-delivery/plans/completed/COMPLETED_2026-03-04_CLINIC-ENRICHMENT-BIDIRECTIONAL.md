@@ -9,6 +9,7 @@
 ## Context
 
 After hardening `clinic_address` OCR extraction (PR #196), a real-world gap remains:
+
 - **docA** (`7f35011c-9377-4407-8a55-6ffd33e3e73b`): `clinic_name = "CENTRO COSTA AZAHAR"`, `clinic_address = None`. The raw text contains **no usable address candidates** — OCR alone cannot fill this field.
 
 The inverse case is also plausible: a document showing an address header but no clinic name.
@@ -31,23 +32,24 @@ The inverse case is also plausible: a document showing an address header but no 
 
 ## Commit plan
 
-| # | Commit message | Files touched | Step |
-|---|---|---|---|
-| C1 | `feat(enrichment): add clinic catalog module with versioned name↔address mapping` | `backend/app/application/clinic_catalog.py` | E1-A |
-| C2 | `feat(enrichment): add COVERAGE_CONFIDENCE_ENRICHMENT constant` | `backend/app/application/processing/constants.py` | E1-A |
-| C3 | `refactor(enrichment): remove auto-enrichment from field_normalizers` | `backend/app/application/field_normalizers.py` | E3-A |
-| C4 | `feat(enrichment): add POST /clinics/lookup-address API endpoint` | `backend/app/api/routes_clinics.py`, `backend/app/api/schemas.py`, `backend/app/api/routes.py` | E3-C |
-| C5 | `feat(enrichment): add ClinicAddressEnrichmentPrompt component + hook` | `frontend/src/components/review/ClinicAddressEnrichmentPrompt.tsx`, `frontend/src/hooks/useClinicAddressLookup.ts` | E3-D, E3-E |
-| C6 | `feat(enrichment): wire clinic enrichment into review renderers` | `frontend/src/components/review/ReviewFieldRenderers.tsx`, `frontend/src/hooks/useReviewRenderers.ts`, `frontend/src/AppWorkspace.tsx`, `frontend/src/api/documentApi.ts` | E3-F |
-| C7 | `test(enrichment): update tests for on-demand enrichment architecture` | `backend/tests/unit/test_clinic_catalog.py`, `test_clinic_enrichment.py`, `test_clinic_lookup_api.py`, `test_golden_extraction_regression.py` | E3-G |
-| C8 | `feat(enrichment): add httpx dep + Nominatim online fallback` | `backend/requirements.txt`, `backend/app/application/clinic_catalog.py` | E3-H1, E3-H2 |
-| C9 | `test(enrichment): add mocked HTTP tests for Nominatim fallback` | `backend/tests/unit/test_clinic_catalog.py` | E3-H3 |
+| #   | Commit message                                                                    | Files touched                                                                                                                                                             | Step         |
+| --- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| C1  | `feat(enrichment): add clinic catalog module with versioned name↔address mapping` | `backend/app/application/clinic_catalog.py`                                                                                                                               | E1-A         |
+| C2  | `feat(enrichment): add COVERAGE_CONFIDENCE_ENRICHMENT constant`                   | `backend/app/application/processing/constants.py`                                                                                                                         | E1-A         |
+| C3  | `refactor(enrichment): remove auto-enrichment from field_normalizers`             | `backend/app/application/field_normalizers.py`                                                                                                                            | E3-A         |
+| C4  | `feat(enrichment): add POST /clinics/lookup-address API endpoint`                 | `backend/app/api/routes_clinics.py`, `backend/app/api/schemas.py`, `backend/app/api/routes.py`                                                                            | E3-C         |
+| C5  | `feat(enrichment): add ClinicAddressEnrichmentPrompt component + hook`            | `frontend/src/components/review/ClinicAddressEnrichmentPrompt.tsx`, `frontend/src/hooks/useClinicAddressLookup.ts`                                                        | E3-D, E3-E   |
+| C6  | `feat(enrichment): wire clinic enrichment into review renderers`                  | `frontend/src/components/review/ReviewFieldRenderers.tsx`, `frontend/src/hooks/useReviewRenderers.ts`, `frontend/src/AppWorkspace.tsx`, `frontend/src/api/documentApi.ts` | E3-F         |
+| C7  | `test(enrichment): update tests for on-demand enrichment architecture`            | `backend/tests/unit/test_clinic_catalog.py`, `test_clinic_enrichment.py`, `test_clinic_lookup_api.py`, `test_golden_extraction_regression.py`                             | E3-G         |
+| C8  | `feat(enrichment): add httpx dep + Nominatim online fallback`                     | `backend/requirements.txt`, `backend/app/application/clinic_catalog.py`                                                                                                   | E3-H1, E3-H2 |
+| C9  | `test(enrichment): add mocked HTTP tests for Nominatim fallback`                  | `backend/tests/unit/test_clinic_catalog.py`                                                                                                                               | E3-H3        |
 
 ---
 
 ## Estado de ejecución
 
 **Leyenda**
+
 - 🔄 auto-chain — ejecutable por Codex
 - 🚧 hard-gate — revisión/decisión de usuario (Claude)
 
@@ -76,6 +78,7 @@ The inverse case is also plausible: a document showing an address header but no 
 - [x] E3-E — **Frontend: add `useClinicAddressLookup` hook:** manages lookup lifecycle, calls API, applies result via `onSubmitInterpretationChanges`. (Claude Opus 4.6)
 - [x] E3-F — **Frontend: wire enrichment into `ReviewFieldRenderers` → `useReviewRenderers` → `AppWorkspace`:** added `clinicEnrichment` context prop through the rendering pipeline. (Claude Opus 4.6)
 - [x] E3-G — **Update tests:** catalog tests adapted to new dict API, enrichment tests now verify NO auto-enrichment, golden regression expects `clinic_address=None` for docA, new `test_clinic_lookup_api.py` with 5 endpoint tests. **373 unit tests pass.** (Claude Opus 4.6)
+
 #### E3-H — Online geocoder integration (Nominatim fallback)
 
 > **Rationale:** The UI promises "¿La intento buscar yo en internet?" but the code only searches a local catalog with 1 entry. Without an actual internet search, the UX is dishonest. This is now a required step before merging PR #198.
@@ -110,34 +113,34 @@ The inverse case is also plausible: a document showing an address header but no 
 1. ~~Missing `clinic_address` is completed from catalog automatically~~ → **REPLACED:** When `clinic_address` is empty and `clinic_name` is present, the UI shows an enrichment prompt.
 2. User can choose "Buscar" to trigger on-demand address lookup via `POST /clinics/lookup-address`.
 3. If a match is found, user sees the address and can accept ("Usar esta dirección") or discard.
-5. 0 matches → "No se encontró la dirección de la clínica." message.
-6. Existing OCR values are never overwritten (prompt only appears for missing fields).
-7. No regression in existing golden tests (8/8), benchmark, and unit suite (373 passed).
-8. The lookup falls back to Nominatim (OpenStreetMap) when the local catalog has no match; timeout/error returns `found: false`.
-9. httpx is added as a backend dependency.
+4. 0 matches → "No se encontró la dirección de la clínica." message.
+5. Existing OCR values are never overwritten (prompt only appears for missing fields).
+6. No regression in existing golden tests (8/8), benchmark, and unit suite (373 passed).
+7. The lookup falls back to Nominatim (OpenStreetMap) when the local catalog has no match; timeout/error returns `found: false`.
+8. httpx is added as a backend dependency.
 
 ## Design decisions
 
-| Decision | Choice | Rationale |
-|---|---|---|
-| ~~Enrichment location~~ | ~~Inside `normalize_canonical_fields`~~ | ~~Follows species/breed pair precedent~~ → **Superseded in Phase 3** |
-| Enrichment location (Phase 3) | On-demand API endpoint `POST /clinics/lookup-address` | User explicitly requests the lookup; no silent pipeline changes |
-| User consent | Frontend prompt (`ClinicAddressEnrichmentPrompt`) | User sees the empty field, chooses to search or skip; transparent UX |
-| Catalog format | In-code Python list of dicts | Simple, versionable, fast-path before online fallback |
-| Match strategy | Exact casefold + strip | No fuzzy matching in v1; reduces false positives to zero |
-| ~~Confidence level~~ | ~~`0.40` (`COVERAGE_CONFIDENCE_ENRICHMENT`)~~ | ~~Below fallback for clear provenance~~ → **Not used** (no pipeline evidence needed for on-demand) |
-| Ambiguity rule | 0 or >1 matches → `found: false` | Conservative; user sees "No se encontró" message |
-| Traceability | API response includes `source` field | Audit trail via API call logs + user-initiated action |
+| Decision                      | Choice                                                | Rationale                                                                                          |
+| ----------------------------- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| ~~Enrichment location~~       | ~~Inside `normalize_canonical_fields`~~               | ~~Follows species/breed pair precedent~~ → **Superseded in Phase 3**                               |
+| Enrichment location (Phase 3) | On-demand API endpoint `POST /clinics/lookup-address` | User explicitly requests the lookup; no silent pipeline changes                                    |
+| User consent                  | Frontend prompt (`ClinicAddressEnrichmentPrompt`)     | User sees the empty field, chooses to search or skip; transparent UX                               |
+| Catalog format                | In-code Python list of dicts                          | Simple, versionable, fast-path before online fallback                                              |
+| Match strategy                | Exact casefold + strip                                | No fuzzy matching in v1; reduces false positives to zero                                           |
+| ~~Confidence level~~          | ~~`0.40` (`COVERAGE_CONFIDENCE_ENRICHMENT`)~~         | ~~Below fallback for clear provenance~~ → **Not used** (no pipeline evidence needed for on-demand) |
+| Ambiguity rule                | 0 or >1 matches → `found: false`                      | Conservative; user sees "No se encontró" message                                                   |
+| Traceability                  | API response includes `source` field                  | Audit trail via API call logs + user-initiated action                                              |
 
 ## Risks and limitations
 
-| Risk | Mitigation |
-|---|---|
-| **Catalog maintenance:** manual update when new clinics appear | Now a fast-path only; Nominatim covers unknown clinics |
-| **Exact match fragility:** minor OCR variants won't match unless aliased | Register known aliases per catalog entry (e.g. `["CENTRO COSTA AZAHAR", "HV COSTA AZAHAR"]`) |
-| **Costa Azahar address** | Real address confirmed: "Rosa Molas 6, Bajo, 12003 Castelló" (from official website) |
-| **User may skip enrichment** | By design — user has full control; field remains empty if declined |
-| **Online geocoder dependency** (E3-H) | Timeout 5s + graceful degradation to `found: false`; Nominatim is free, no API key needed; `countrycodes=es` limits scope |
+| Risk                                                                     | Mitigation                                                                                                                |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| **Catalog maintenance:** manual update when new clinics appear           | Now a fast-path only; Nominatim covers unknown clinics                                                                    |
+| **Exact match fragility:** minor OCR variants won't match unless aliased | Register known aliases per catalog entry (e.g. `["CENTRO COSTA AZAHAR", "HV COSTA AZAHAR"]`)                              |
+| **Costa Azahar address**                                                 | Real address confirmed: "Rosa Molas 6, Bajo, 12003 Castelló" (from official website)                                      |
+| **User may skip enrichment**                                             | By design — user has full control; field remains empty if declined                                                        |
+| **Online geocoder dependency** (E3-H)                                    | Timeout 5s + graceful degradation to `found: false`; Nominatim is free, no API key needed; `countrycodes=es` limits scope |
 
 ---
 

@@ -32,6 +32,7 @@
 ## Estado de ejecución
 
 **Leyenda**
+
 - 🔄 auto-chain — ejecutable por Codex
 - 🚧 hard-gate — revisión/decisión de usuario
 

@@ -28,7 +28,8 @@ Post-Iter 11 (estimated): ~390 backend tests (≥92%), ~280 frontend tests (≥8
 > **Protocolo "Continúa":** open a new chat, select the correct agent, attach this file and write `Continúa`. The agent reads the state, executes the next step, and stops on completion.
 
 **Automation legend:**
-- 🔄 **auto-chain** — Codex executes alone; you review the result *afterwards*.
+
+- 🔄 **auto-chain** — Codex executes alone; you review the result _afterwards_.
 - 🚧 **hard-gate** — Requires your decision before continuing. Do not skip.
 
 ### Fase 19 — Iteration 12 (Final)
@@ -101,6 +102,7 @@ Post-Iter 11 (estimated): ~390 backend tests (≥92%), ~280 frontend tests (≥8
    - Test 51: Zoom persists in localStorage across reload
 
 **Validation:**
+
 - `cd frontend && npx playwright test viewer-tabs.spec.ts raw-text.spec.ts zoom-advanced.spec.ts --project=extended` → 10 tests pass
 
 **Commit:** `feat(plan-f19a): add viewer-tabs, raw-text, zoom-advanced E2E tests (10 tests)`
@@ -141,6 +143,7 @@ Post-Iter 11 (estimated): ~390 backend tests (≥92%), ~280 frontend tests (≥8
    - Test 61: Editing blocked on reviewed document → shows toast
 
 **Validation:**
+
 - `cd frontend && npx playwright test structured-filters.spec.ts field-validation.spec.ts add-field.spec.ts --project=extended` → 13 tests pass
 
 **Commit:** `feat(plan-f19b): add structured-filters, field-validation, add-field E2E tests (13 tests)`
@@ -171,6 +174,7 @@ Post-Iter 11 (estimated): ~390 backend tests (≥92%), ~280 frontend tests (≥8
    - Test 59: Manual close toast via X button
 
 **Validation:**
+
 - `cd frontend && npx playwright test reprocess.spec.ts toasts.spec.ts --project=extended` → 5 tests pass
 
 **Commit:** `feat(plan-f19c): add reprocess and toasts E2E tests (5 tests)`
@@ -206,6 +210,7 @@ Post-Iter 11 (estimated): ~390 backend tests (≥92%), ~280 frontend tests (≥8
    - Test 47: Hover expands collapsed sidebar
 
 **Validation:**
+
 - `cd frontend && npx playwright test source-panel.spec.ts split-panel.spec.ts sidebar-interactions.spec.ts --project=extended` → 8 tests pass
 
 **Commit:** `feat(plan-f19d): add source-panel, split-panel, sidebar-interactions E2E tests (8 tests)`
@@ -236,6 +241,7 @@ Post-Iter 11 (estimated): ~390 backend tests (≥92%), ~280 frontend tests (≥8
    - Test 21: Drag & drop on viewer triggers upload overlay
 
 **Validation:**
+
 - `cd frontend && npx playwright test visit-grouping.spec.ts upload-validation.spec.ts --project=extended` → 5 tests pass
 
 **Commit:** `feat(plan-f19e): add visit-grouping and upload-validation E2E tests (5 tests)`
@@ -257,6 +263,7 @@ Post-Iter 11 (estimated): ~390 backend tests (≥92%), ~280 frontend tests (≥8
 **Objective:** End-to-end validation of the full test suite.
 
 **Steps:**
+
 1. `docker compose up -d --build --wait`
 2. `cd frontend && npm run test:e2e:all` → 61 tests pass
 3. Measure total time: target < 10 minutes
@@ -286,6 +293,7 @@ Post-Iter 11 (estimated): ~390 backend tests (≥92%), ~280 frontend tests (≥8
 - `frontend/e2e/mark-reviewed.spec.ts` → replaced by `review-workflow.spec.ts` (if renamed in Iter 11)
 
 **Validation:**
+
 - `cd frontend && npm run test:e2e:all` → still 61 tests (no fewer, no duplicates)
 
 **Commit:** `chore(plan-f19g): remove legacy E2E specs superseded by coverage expansion`
@@ -301,6 +309,7 @@ Post-Iter 11 (estimated): ~390 backend tests (≥92%), ~280 frontend tests (≥8
 **Prompt:**
 
 **Steps:**
+
 1. Update `plan-e2e-test-coverage.md` §7 checkboxes
 2. Update this plan's Estado de ejecución
 3. Record in `implementation-history.md`
@@ -324,6 +333,7 @@ Post-Iter 11 (estimated): ~390 backend tests (≥92%), ~280 frontend tests (≥8
 **Objective:** Integrate `@axe-core/playwright` into the E2E test suite to catch WCAG 2.1 AA violations automatically, then fix any critical/serious findings.
 
 **Pre-flight context:**
+
 - Playwright E2E tests exist under `frontend/e2e/`.
 - Playwright config at `frontend/playwright.config.ts` with smoke/core/extended projects (set up in Iter 11).
 - ~14 of ~30 component files already have aria attributes; key gaps include `ui/` primitives, `AddFieldDialog`, `FieldEditDialog`, `WorkspaceDialogs`, and several `app/` components.
@@ -332,11 +342,13 @@ Post-Iter 11 (estimated): ~390 backend tests (≥92%), ~280 frontend tests (≥8
 **Changes required:**
 
 1. **Install dependency:**
+
    ```bash
    cd frontend && npm install --save-dev @axe-core/playwright
    ```
 
 2. **Create `frontend/e2e/accessibility.spec.ts`** — Axe audit on 3 key views:
+
    ```typescript
    import { test, expect } from "@playwright/test";
    import AxeBuilder from "@axe-core/playwright";
@@ -347,7 +359,9 @@ Post-Iter 11 (estimated): ~390 backend tests (≥92%), ~280 frontend tests (≥8
        const results = await new AxeBuilder({ page })
          .withTags(["wcag2a", "wcag2aa"])
          .analyze();
-       expect(results.violations.filter(v => v.impact === "critical")).toEqual([]);
+       expect(
+         results.violations.filter((v) => v.impact === "critical"),
+       ).toEqual([]);
      });
 
      test("review view has no critical violations", async ({ page }) => {
@@ -357,7 +371,9 @@ Post-Iter 11 (estimated): ~390 backend tests (≥92%), ~280 frontend tests (≥8
        const results = await new AxeBuilder({ page })
          .withTags(["wcag2a", "wcag2aa"])
          .analyze();
-       expect(results.violations.filter(v => v.impact === "critical")).toEqual([]);
+       expect(
+         results.violations.filter((v) => v.impact === "critical"),
+       ).toEqual([]);
      });
 
      test("full app audit — serious violations < 5", async ({ page }) => {
@@ -366,11 +382,14 @@ Post-Iter 11 (estimated): ~390 backend tests (≥92%), ~280 frontend tests (≥8
          .withTags(["wcag2a", "wcag2aa"])
          .analyze();
        const serious = results.violations.filter(
-         v => v.impact === "critical" || v.impact === "serious"
+         (v) => v.impact === "critical" || v.impact === "serious",
        );
        // Log for visibility
        if (serious.length > 0) {
-         console.log("Serious a11y violations:", JSON.stringify(serious, null, 2));
+         console.log(
+           "Serious a11y violations:",
+           JSON.stringify(serious, null, 2),
+         );
        }
        expect(serious.length).toBeLessThan(5);
      });
@@ -387,6 +406,7 @@ Post-Iter 11 (estimated): ~390 backend tests (≥92%), ~280 frontend tests (≥8
 4. **Add to Playwright extended project** — The accessibility spec should run as part of the extended E2E suite (not smoke).
 
 **Validation:**
+
 - `cd frontend && npx playwright test e2e/accessibility.spec.ts` → all pass.
 - `cd frontend && npx vitest run` → existing unit tests unaffected.
 - `cd frontend && npm run lint` → 0 errors.
@@ -411,6 +431,7 @@ Post-Iter 11 (estimated): ~390 backend tests (≥92%), ~280 frontend tests (≥8
 
 **Pre-flight context:**
 Components currently **without** adequate aria/role/tabIndex coverage:
+
 - `frontend/src/components/ui/badge.tsx`
 - `frontend/src/components/ui/button.tsx`
 - `frontend/src/components/ui/card.tsx`
@@ -456,6 +477,7 @@ Components currently **without** adequate aria/role/tabIndex coverage:
 5. **Color contrast** — Check Tailwind classes. If any text uses `text-gray-400` or similar on white bg, bump to `text-gray-500` minimum (4.5:1 ratio for AA).
 
 **Validation:**
+
 - `cd frontend && npx playwright test e2e/accessibility.spec.ts` → all pass (critical + serious < 5).
 - `cd frontend && npx vitest run` → existing unit tests pass.
 - `cd frontend && npm run lint` → 0 errors.
@@ -481,26 +503,26 @@ Components currently **without** adequate aria/role/tabIndex coverage:
 
 **Structure:**
 
-```markdown
+````markdown
 # Architecture Overview
 
 > One-page summary for evaluators. For full detail, see [technical-design.md](technical-design.md).
 
 ## Tech stack
 
-| Layer | Technology | Why |
-|-------|-----------|-----|
-| Frontend | React 18 + TypeScript + Tailwind CSS | Type-safe SPA with utility-first styling |
-| Backend | Python 3.11 + FastAPI | Async-first, auto-generated OpenAPI |
-| Database | SQLite (WAL mode) | Zero-config, ACID, portable |
-| PDF parsing | pdfplumber + PyMuPDF | Dual-engine extraction with fallback |
-| Testing | Vitest + Pytest + Playwright | Unit → integration → E2E pyramid |
-| CI/CD | GitHub Actions (10 jobs) | Path-filtered, cached, parallel |
-| Containers | Docker Compose | One-command `docker compose up` |
+| Layer       | Technology                           | Why                                      |
+| ----------- | ------------------------------------ | ---------------------------------------- |
+| Frontend    | React 18 + TypeScript + Tailwind CSS | Type-safe SPA with utility-first styling |
+| Backend     | Python 3.11 + FastAPI                | Async-first, auto-generated OpenAPI      |
+| Database    | SQLite (WAL mode)                    | Zero-config, ACID, portable              |
+| PDF parsing | pdfplumber + PyMuPDF                 | Dual-engine extraction with fallback     |
+| Testing     | Vitest + Pytest + Playwright         | Unit → integration → E2E pyramid         |
+| CI/CD       | GitHub Actions (10 jobs)             | Path-filtered, cached, parallel          |
+| Containers  | Docker Compose                       | One-command `docker compose up`          |
 
 ## System diagram
 
-​```mermaid
+​`mermaid
 graph TB
     subgraph "Frontend (React SPA)"
         UI[AppWorkspace] --> API[documentApi.ts]
@@ -516,15 +538,15 @@ graph TB
     Processing --> Extraction[PDF Extraction]
     Processing --> Interpretation[Field Interpretation]
     Processing --> Confidence[Confidence Scoring]
-​```
+​`
 
 ## Key architectural decisions
 
-| Decision | Record |
-|----------|--------|
-| Hexagonal architecture | [ADR-ARCH-0001](adr/ADR-ARCH-0001-modular-monolith.md) |
-| SQLite as primary DB | [ADR-ARCH-0002](adr/ADR-ARCH-0002-sqlite-database.md) |
-| Raw SQL over ORM | [ADR-ARCH-0003](adr/ADR-ARCH-0003-raw-sql-repository-pattern.md) |
+| Decision                    | Record                                                            |
+| --------------------------- | ----------------------------------------------------------------- |
+| Hexagonal architecture      | [ADR-ARCH-0001](adr/ADR-ARCH-0001-modular-monolith.md)            |
+| SQLite as primary DB        | [ADR-ARCH-0002](adr/ADR-ARCH-0002-sqlite-database.md)             |
+| Raw SQL over ORM            | [ADR-ARCH-0003](adr/ADR-ARCH-0003-raw-sql-repository-pattern.md)  |
 | In-process async processing | [ADR-ARCH-0004](adr/ADR-ARCH-0004-in-process-async-processing.md) |
 
 ## Data flow
@@ -533,7 +555,7 @@ graph TB
 2. **Extract** → PDF text extraction (pdfplumber → PyMuPDF fallback)
 3. **Interpret** → Field identification via regex + candidate mining + confidence scoring
 4. **Review** → Evaluator sees structured fields, can edit, approve, reprocess
-```
+````
 
 **Adjust:** Read current technical-design.md headings and ADR references to ensure accuracy. Verify tech versions from `pyproject.toml` and `package.json`.
 
@@ -560,28 +582,34 @@ graph TB
 **Changes required:**
 
 1. **Add badges** after the title (line 1):
+
    ```markdown
    ![CI](https://github.com/isilionisilme/veterinary-medical-records/actions/workflows/ci.yml/badge.svg?branch=main)
    ![License](https://img.shields.io/badge/license-MIT-blue)
    ![Python](https://img.shields.io/badge/python-3.11-blue)
    ![React](https://img.shields.io/badge/react-18-61dafb)
    ```
+
    Verify the CI badge URL matches the actual workflow file name.
 
 2. **Add tech stack summary** right after badges (before TL;DR):
+
    ```markdown
    > **Stack:** Python 3.11 · FastAPI · React 18 · TypeScript · SQLite · Docker · Playwright · GitHub Actions
    ```
 
 3. **Add demo screenshot placeholder** section after TL;DR:
+
    ```markdown
    ## Demo
 
    <!-- Replace with actual screenshot or GIF -->
+
    > 📸 _Screenshot placeholder — run `docker compose up --build` and visit `http://localhost:5173` to see the app._
    ```
 
 4. **Add link to `architecture.md`** in the "Architecture at a glance" section:
+
    ```markdown
    For a visual overview, see [architecture.md](docs/projects/veterinary-medical-records/02-tech/architecture.md).
    ```
@@ -589,6 +617,7 @@ graph TB
 5. **Verify existing links** — All relative links in README must still resolve.
 
 **Validation:**
+
 - All badge URLs resolve (test in browser).
 - No dead links.
 - README renders properly on GitHub's Markdown viewer.
@@ -608,6 +637,7 @@ graph TB
 _Just-in-time — depends on Iter 11+12 actual results. Claude writes this after F19-L._
 
 **Changes required:**
+
 1. Update "At a glance" metrics table with final numbers (backend/frontend tests, E2E count, coverage %).
 2. Add Iter 11 and Iter 12 sections with key outcomes.
 3. Add final PR references.
@@ -635,6 +665,7 @@ _Just-in-time — depends on Iter 11+12 actual results. Claude writes this after
 1. **Rename title** → `# Known Limitations & Future Directions`
 
 2. **Add preamble:**
+
    ```markdown
    > After 12 iterations, this project has reached its target quality bar. The items
    > below represent conscious scope decisions — not gaps. Each was evaluated and
@@ -665,6 +696,7 @@ _Just-in-time — depends on Iter 11+12 actual results. Claude writes this after
 _Just-in-time — depends on Iter 11+12 actual results. Claude writes specifics after all code steps complete._
 
 **Changes required:**
+
 1. Mark resolved limitations (repo split, E2E coverage, accessibility).
 2. Update metrics to final numbers.
 3. Cross-reference architecture.md and KNOWN_LIMITATIONS.md.
@@ -678,13 +710,13 @@ _Just-in-time — depends on Iter 11+12 actual results. Claude writes specifics 
 
 ## Risks & mitigations
 
-| Risk | Impact | Mitigation |
-|------|--------|-----------|
-| Iter 11 not merged when starting Iter 12 | Blocker | Wait for Iter 11 merge; plan is branch-independent |
-| E2E Phase 3 tests flaky in CI | High | Retry logic + worker=1 already configured; `test.setTimeout(90_000)` |
-| axe-core finds >50 violations | Medium | Filter to critical/serious only; `ui/` Radix components likely pass |
-| Demo GIF not captured | Low | Placeholder is acceptable; screenshot can be added post-merge |
-| Mermaid diagram doesn't render on GitHub | Low | Use simple `graph TB` syntax; verified compatible |
+| Risk                                     | Impact  | Mitigation                                                           |
+| ---------------------------------------- | ------- | -------------------------------------------------------------------- |
+| Iter 11 not merged when starting Iter 12 | Blocker | Wait for Iter 11 merge; plan is branch-independent                   |
+| E2E Phase 3 tests flaky in CI            | High    | Retry logic + worker=1 already configured; `test.setTimeout(90_000)` |
+| axe-core finds >50 violations            | Medium  | Filter to critical/serious only; `ui/` Radix components likely pass  |
+| Demo GIF not captured                    | Low     | Placeholder is acceptable; screenshot can be added post-merge        |
+| Mermaid diagram doesn't render on GitHub | Low     | Use simple `graph TB` syntax; verified compatible                    |
 
 ---
 

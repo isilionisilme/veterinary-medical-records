@@ -1,9 +1,11 @@
 # Plan de ejecución AI — Playwright E2E (Producción)
 
 ## Objetivo
+
 Integrar y estabilizar Playwright E2E en este repositorio para uso local (VS Code) y CI, dejando una PR lista para merge a `main`.
 
 Focos:
+
 - Setup técnico Playwright en `frontend/`
 - Smoke tests E2E confiables
 - Señal CI reproducible
@@ -16,10 +18,12 @@ Focos:
 > **Protocolo `Continúa`:** abre un chat nuevo, selecciona el agente correcto, adjunta este archivo y escribe `Continúa`. El agente leerá el estado, ejecutará el siguiente paso sin completar y se detendrá al terminar.
 
 **Leyenda de automatización:**
+
 - 🔄 **auto-chain** — Codex ejecuta solo; revisión posterior.
 - 🚧 **hard-gate** — requiere decisión/validación humana antes de continuar.
 
 ### Fase P1 — Integración Playwright E2E
+
 - [x] P1-A 🔄 — Verificación de estado actual y gap analysis (Codex)
 - [x] P1-B 🔄 — Setup Playwright en `frontend/` (dependencia, config, scripts, fixture) (Codex)
 - [x] P1-C 🔄 — Selectores `data-testid` E2E estables (Codex)
@@ -84,39 +88,47 @@ Estas reglas son de cumplimiento estricto para este plan y replican la política
    4. `git add` del plan actualizado + `git commit -m "docs(plan): mark P?-? complete"`.
    5. `git push origin improvement/playwright`.
    6. Registrar evidencia (regla 6).
-   Solo después de los 6 sub-pasos se considera el paso cerrado.
-   **Omitir cualquiera de estos sub-pasos es una violación operativa.**
+      Solo después de los 6 sub-pasos se considera el paso cerrado.
+      **Omitir cualquiera de estos sub-pasos es una violación operativa.**
 
 10. **Handoff obligatorio al cerrar paso (hard rule):**
-   - Si el siguiente paso es del **mismo agente** y no es 🚧: anunciar cierre y continuar en el mismo chat.
-   - Si el siguiente paso es de **otro agente** o es 🚧: STOP. Abrir chat nuevo + agente exacto + adjuntar este archivo + escribir `Continúa`.
 
-11. **Mensajes de handoff (obligatorios):**
-   - Caso A (siguiente paso otro agente y prompt listo):
-     - "✅ P?-? completado. Siguiente: abre un chat nuevo en Copilot → selecciona **[agente]** → adjunta `PLAN_2026-02-26_INSTALL_PLAYWRIGHT.md` → escribe `Continúa`."
-   - Caso B (siguiente paso Codex sin prompt listo):
-     - Claude **debe escribir el prompt del siguiente paso directamente en la sección "Prompt activo" del plan** antes de emitir el handoff. Nunca dar el prompt solo como texto de chat.
-     - "✅ P?-? completado. Prompt de P?-? escrito en el plan. Siguiente: abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** → adjunta `PLAN_2026-02-26_INSTALL_PLAYWRIGHT.md` → escribe `Continúa`."
-   - Caso C (siguiente paso Claude/hard-gate):
-     - "✅ P?-? completado. Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `PLAN_2026-02-26_INSTALL_PLAYWRIGHT.md` → escribe `Continúa`."
+- Si el siguiente paso es del **mismo agente** y no es 🚧: anunciar cierre y continuar en el mismo chat.
+- Si el siguiente paso es de **otro agente** o es 🚧: STOP. Abrir chat nuevo + agente exacto + adjuntar este archivo + escribir `Continúa`.
 
-12. **No-review implícito:**
-   - No iniciar code review automáticamente salvo instrucción explícita del usuario.
+1. **Mensajes de handoff (obligatorios):**
 
-13. **No implementación fuera de pedido:**
-   - Si el objetivo es plan/documentación, no ejecutar implementación técnica en ese turno.
+- Caso A (siguiente paso otro agente y prompt listo):
+  - "✅ P?-? completado. Siguiente: abre un chat nuevo en Copilot → selecciona **[agente]** → adjunta `PLAN_2026-02-26_INSTALL_PLAYWRIGHT.md` → escribe `Continúa`."
+- Caso B (siguiente paso Codex sin prompt listo):
+  - Claude **debe escribir el prompt del siguiente paso directamente en la sección "Prompt activo" del plan** antes de emitir el handoff. Nunca dar el prompt solo como texto de chat.
+  - "✅ P?-? completado. Prompt de P?-? escrito en el plan. Siguiente: abre un chat nuevo en Copilot → selecciona **GPT-5.3-Codex** → adjunta `PLAN_2026-02-26_INSTALL_PLAYWRIGHT.md` → escribe `Continúa`."
+- Caso C (siguiente paso Claude/hard-gate):
+  - "✅ P?-? completado. Siguiente: abre un chat nuevo en Copilot → selecciona **Claude Opus 4.6** → adjunta `PLAN_2026-02-26_INSTALL_PLAYWRIGHT.md` → escribe `Continúa`."
 
-14. **Control de regresión:**
-   - No marcar un paso como completo sin validaciones mínimas definidas para ese paso.
+1. **No-review implícito:**
 
-15. **Context safety valve:**
-   - Si el contexto del chat se agota, cerrar paso actual limpiamente y emitir handoff.
+- No iniciar code review automáticamente salvo instrucción explícita del usuario.
 
-16. **Regla de finalización de iteración:**
-   - Ningún cierre sin "siguiente acción" concreta.
+1. **No implementación fuera de pedido:**
 
-17. **Prohibición de saltos:**
-   - No saltar hard-gates.
+- Si el objetivo es plan/documentación, no ejecutar implementación técnica en ese turno.
+
+1. **Control de regresión:**
+
+- No marcar un paso como completo sin validaciones mínimas definidas para ese paso.
+
+1. **Context safety valve:**
+
+- Si el contexto del chat se agota, cerrar paso actual limpiamente y emitir handoff.
+
+1. **Regla de finalización de iteración:**
+
+- Ningún cierre sin "siguiente acción" concreta.
+
+1. **Prohibición de saltos:**
+
+- No saltar hard-gates.
 
 ---
 
@@ -135,6 +147,7 @@ _Vacío._
 **Objetivo:** Hacer el smoke de upload determinístico usando `document_id` de la respuesta API en vez de texto.
 
 **Contexto técnico:**
+
 - `POST /documents/upload` responde HTTP 201 con `{ document_id: string, status: string, created_at: string }`.
 - El sidebar ya renderiza `data-testid="doc-row-${item.document_id}"` por cada documento.
 - El test actual usa `toContainText("sample.pdf")` que es frágil si hay documentos previos con el mismo nombre.
@@ -155,6 +168,7 @@ _Vacío._
 7. Commit: `test(plan-p1e): stabilize upload smoke by document_id assertion`
 
 **Criterio de aceptación:**
+
 - `npx playwright test e2e/upload-smoke.spec.ts` pasa 3/3 veces.
 - La assertion usa `document_id` del response, no texto de filename.
 - `cd frontend && npm run test:e2e` (suite completa) en verde.
@@ -166,6 +180,7 @@ _Vacío._
 **Objetivo:** Añadir un job `e2e` al CI que ejecute los tests de Playwright y preserve artifacts (traces, screenshots, video) en caso de fallo.
 
 **Contexto técnico:**
+
 - CI en `.github/workflows/ci.yml`.
 - Jobs actuales: `frontend_test_build`, `quality`, `docker_packaging_guard`, más guards de PR.
 - El job `docker_packaging_guard` ya hace `docker compose build` y valida contratos — reutilizar patrón.
@@ -190,6 +205,7 @@ _Vacío._
 6. Commit: `ci(plan-p1f): add e2e job with playwright artifacts on failure`
 
 **Criterio de aceptación:**
+
 - Job `e2e` presente en `ci.yml`.
 - Artifacts configurados para `playwright-report/` y `test-results/` solo en fallo.
 - `npx playwright install chromium` en el pipeline.
@@ -217,6 +233,7 @@ _Vacío._
 7. Commit (solo si hay fixes): `fix(plan-p1g): resolve quality gate findings`
 
 **Criterio de aceptación:**
+
 - `npm run test:e2e` verde.
 - `tsc --noEmit` limpio.
 - `eslint .` limpio (o solo warnings pre-existentes documentados).
@@ -231,14 +248,18 @@ _Vacío._
 **Instrucciones para el usuario:**
 
 1. **Prerequisito:** Docker stack corriendo en `localhost:80`:
+
    ```bash
    $env:FRONTEND_PORT='80'; docker compose up -d --build --wait
    ```
+
 2. Ejecutar tests en modo headed:
+
    ```bash
    cd frontend
    npm run test:e2e:headed
    ```
+
 3. **Checklist funcional (verificar visualmente):**
    - [ ] `app-loads`: el navegador abre y se ven el sidebar y la zona de upload.
    - [ ] `upload-smoke`: se sube un PDF, aparece el toast de progreso, y el documento aparece en el sidebar.
@@ -249,6 +270,7 @@ _Vacío._
    - Si algo falla → describir el problema específico; Claude propondrá fix y se iterará.
 
 **Criterio de aceptación:**
+
 - Checklist 4/4 marcado.
 - Sin hallazgos bloqueantes.
 
@@ -270,6 +292,7 @@ _Vacío._
    - Body debe incluir:
      - **Qué cambia:** setup Playwright, 2 smoke tests, job CI e2e.
      - **How to test:**
+
        ```bash
        $env:FRONTEND_PORT='80'; docker compose up -d --build --wait
        cd frontend
@@ -277,13 +300,17 @@ _Vacío._
        npx tsc --noEmit
        npx eslint .
        ```
+
      - **Checklist:** links a criterios de aceptación global del plan.
+
    - Base: `main`.
    - Labels: si disponibles, `test`, `e2e`.
+
 6. Capturar URL de la PR creada.
 7. **No hacer merge** — eso es decisión de P1-J.
 
 **Criterio de aceptación:**
+
 - `git status` limpio.
 - PR abierta hacia `main` con sección `How to test`.
 - URL de PR capturada en evidencia.
@@ -307,6 +334,7 @@ _Vacío._
 4. **Si hay problemas:** listar hallazgos con formato estándar del plan y proponer iteración.
 
 **Criterio de aceptación:**
+
 - PR revisada con veredicto explícito (APPROVE / REQUEST_CHANGES).
 - Si APPROVE: merge ejecutado o autorizado por usuario.
 - Plan marcado como completado.
@@ -340,11 +368,13 @@ npx eslint .
 ```
 
 Resultado esperado:
+
 - Todos los tests E2E pasan.
 - TypeScript y ESLint sin errores.
 
 ---
 
 ## Notas de gobierno documental
+
 - Este plan se rige por las políticas de handoff iterativo del plan maestro.
 - Cualquier cambio operativo adicional debe registrarse aquí antes de ejecución.

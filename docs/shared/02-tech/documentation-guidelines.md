@@ -1,6 +1,7 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+**Table of Contents** _generated with [DocToc](https://github.com/thlorenz/doctoc)_
 
 - [Documentation Guidelines](#documentation-guidelines)
   - [Purpose](#purpose)
@@ -23,13 +24,13 @@
 
 # Documentation Guidelines
 
-
 **Breadcrumbs:** [Docs](../../README.md) / Shared / 02-tech
 
 > **Canonical source of truth.**
 > This document is the single authoritative reference for all documentation standards and practices in this project.
 >
 > **Governance:**
+>
 > - This file is a canonical document maintained by humans.
 > - Router files under `docs/agent_router/` are derived outputs generated from this canonical source.
 > - Flow is **canonical → router only**. Router files MUST NOT be edited directly.
@@ -44,6 +45,7 @@ Documentation is a **code quality requirement**. All contributors (human and AI)
 All user-facing written communication must be in **English** (documentation, pull request titles/descriptions, review comments, ADRs, and release notes).
 
 Document:
+
 - Intent and responsibility
 - Contracts and schemas
 - Design decisions and tradeoffs
@@ -69,6 +71,7 @@ The project uses three complementary documentation layers. All must stay consist
 ### When to add docstrings
 
 Add docstrings to:
+
 - Public modules
 - Domain and application services
 - Public functions and methods
@@ -78,6 +81,7 @@ Add docstrings to:
 ### Docstring content
 
 Docstrings must include when relevant:
+
 - Purpose and responsibility
 - Inputs and outputs
 - Requirements and invariants
@@ -94,6 +98,7 @@ Docstrings must include when relevant:
 ### When NOT to add docstrings
 
 Do NOT add docstrings for:
+
 - Trivial helpers
 - Self-explanatory one-liners
 - Simple pass-through logic
@@ -113,11 +118,13 @@ Do NOT add docstrings for:
 ## API Documentation Rules
 
 For every HTTP endpoint, ensure:
+
 - Route includes **summary and description**.
 - Explicit **request and response models** are defined.
 - Schema fields include **meaningful descriptions**.
 
 API documentation is generated via OpenAPI/Swagger from:
+
 - FastAPI route metadata
 - Pydantic model field descriptions
 - Type annotations
@@ -129,6 +136,7 @@ This auto-generated API documentation is considered part of the deliverable.
 ## Public Interface Documentation
 
 For any public interface (API, service, adapter, or module boundary):
+
 - Add a short summary.
 - Add a behavior description if not obvious.
 - Document input/output contracts.
@@ -144,6 +152,7 @@ Architecture and structural rules must be documented outside the code in canonic
 AI assistants must **NOT** invent or modify architecture or design documents unless explicitly instructed.
 
 When explicitly requested, record non-obvious technical decisions as short ADR-style notes including:
+
 - Decision
 - Rationale
 - Tradeoffs
@@ -153,12 +162,14 @@ When explicitly requested, record non-obvious technical decisions as short ADR-s
 ## Commenting Rules
 
 Comments must explain:
+
 - **Why** a decision was made
 - **Why** alternatives were rejected
 - Domain assumptions
 - Non-obvious requirements
 
 Comments must **NOT**:
+
 - Repeat what the code literally does
 - Describe syntax-level behavior
 - Drift from the implementation
@@ -170,6 +181,7 @@ Outdated comments must be removed or updated in the same change.
 ## When Documentation Must Be Updated
 
 When a change modifies any of the following, the corresponding documentation must be updated **in the same change set**:
+
 - Public behavior
 - Contracts
 - Data schemas
@@ -183,11 +195,11 @@ When a change modifies any of the following, the corresponding documentation mus
 
 Every documentation change falls into one of three categories:
 
-| Code | Classification | Definition |
-|------|---------------|------------|
-| **R** | Rule change | Affects behavior or process. Must be propagated to the owning canonical document. |
-| **C** | Clarification | No behavior change. Improves readability or precision. |
-| **N** | Navigation | Structure, links, or organization changes only. |
+| Code  | Classification | Definition                                                                        |
+| ----- | -------------- | --------------------------------------------------------------------------------- |
+| **R** | Rule change    | Affects behavior or process. Must be propagated to the owning canonical document. |
+| **C** | Clarification  | No behavior change. Improves readability or precision.                            |
+| **N** | Navigation     | Structure, links, or organization changes only.                                   |
 
 Mixed classification is allowed within one file (e.g., a change that both clarifies wording and modifies a rule).
 

@@ -8,12 +8,10 @@ last-updated: 2026-03-02
 
 # UX Design — Project Interaction Contract
 
-
 **Breadcrumbs:** [Docs](../../../README.md) / [Projects](../../README.md) / veterinary-medical-records / 01-product
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-
 
 - [1. User Roles & UX Goals](#1-user-roles--ux-goals)
   - [1.1 Veterinarian — Document Review Under Time Pressure](#11-veterinarian--document-review-under-time-pressure)
@@ -61,13 +59,15 @@ Veterinarians review medical documents as part of their normal clinical
 and operational work.
 
 **UX Goals**
+
 - Reduce cognitive load.
 - Minimize context switching.
 - Make uncertainty, confidence, and provenance explicit.
 - Optimize for scanning, not reading.
-- Every screen answers: *“What do I need to decide or fix now?”*
+- Every screen answers: _“What do I need to decide or fix now?”_
 
 **Mental Model**
+
 - “I am reviewing this document.”
 - “I fix what is wrong and move on.”
 - I am not managing schemas, learning, or system behavior.
@@ -84,12 +84,14 @@ They do not resolve individual documents and do not participate
 in operational review workflows.
 
 **UX Goals**
+
 - Make global impact explicit and inspectable.
 - Support deliberate, high-stakes decisions.
 - Prioritize safety, auditability, and coherence over speed.
 - Focus attention on patterns, not individual actions.
 
 **Mental Model**
+
 - “I am reviewing system behavior over time.”
 - “I decide what should change globally.”
 - My decisions never affect past documents.
@@ -105,6 +107,7 @@ From a UX perspective, confidence means:
 > “How stable a given interpretation appears across similar documents.”
 
 UX rules:
+
 - Confidence guides **attention**, not decisions.
 - Confidence never blocks actions.
 - Confidence never overrides human judgment.
@@ -138,6 +141,7 @@ Exact thresholds and scoring models are product decisions, not UX logic.
 ### Step 1 — Document & Interpretation Together
 
 The veterinarian reviews, in a single unified context:
+
 - the original document,
 - the structured interpretation,
 - confidence indicators per field.
@@ -151,18 +155,20 @@ These elements must never be split into separate screens.
 - Low-confidence fields stand out visually.
 - High-confidence fields recede into the background.
 
-The UI guides *where to look first*, not *what to decide*.
+The UI guides _where to look first_, not _what to decide_.
 
 ---
 
 ### Step 3 — Immediate Local Correction
 
 The veterinarian can:
+
 - edit existing values,
 - reassign information,
 - create new fields when needed.
 
 UX rules:
+
 - Changes apply immediately to the current document.
 - No explicit actions exist to submit feedback or “teach” the system.
 - No explicit per-field confirmation is required in the current phase.
@@ -172,6 +178,7 @@ UX rules:
 - This implicit signal must not introduce extra steps or friction in veterinarian flow.
 
 From the veterinarian’s perspective:
+
 > “I am done with this document.”
 
 ---
@@ -181,6 +188,7 @@ From the veterinarian’s perspective:
 The veterinarian can explicitly toggle review state from document view.
 
 UX rules:
+
 - A single action button `Mark as reviewed` is available in document view.
 - `Mark as reviewed` is the canonical user action that completes review for a document.
 - When marked as reviewed, the document list shows a checkmark indicator and the status label `Reviewed`.
@@ -195,6 +203,7 @@ UX rules:
 The review experience must remain usable and explainable even when evidence rendering is imperfect.
 
 Normative behavior:
+
 - Selecting a field must navigate the document viewer to the field evidence context (at minimum, page jump).
 - `View evidence` must always present useful context (page + snippet), including when precise highlighting is unavailable.
 - Highlighting should be treated as progressive enhancement (best effort only), and failure to highlight must not block review flow.
@@ -206,10 +215,12 @@ Normative behavior:
 ## Review UI Rendering Rules (Extracted Data / Informe — Medical Record MVP)
 
 Panel definition and scope:
+
 - The panel represents a **Medical Record** (clinical summary).
 - In Medical Record MVP, non-clinical concepts are excluded from this panel by contract taxonomy (`medical_record_view`, `scope`, `section`, `classification`, `other_fields[]`), not by UI heuristics or denylists.
 
 Section structure and order (fixed):
+
 1. **Centro Veterinario**
 2. **Paciente**
 3. **Propietario**
@@ -219,15 +230,18 @@ Section structure and order (fixed):
 7. **Información del informe** (bottom)
 
 Layout note:
+
 - Sections render as normal blocks (no tabs), preserving the current visual system without redesign.
 
 Schema-aware rendering mode (deterministic):
+
 - Medical Record MVP panel uses a single canonical structured contract (non-versioned).
 - Render the fixed section order above, with **Visitas** sourced from `visits[]` (per [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md), Appendix D9).
 - Required document-level placeholders (for example NHC when missing) are driven by `medical_record_view.field_slots[]` in Appendix D9, not by UI hardcoding.
 - No heuristics grouping in UI; grouping comes from `visits[]` in the canonical contract.
 
 Display labels (UI-only; internal keys unchanged):
+
 - **Centro Veterinario**
   - `clinic_name` -> `Nombre`
   - `clinic_address` -> `Dirección`
@@ -248,24 +262,25 @@ Display labels (UI-only; internal keys unchanged):
 
 Key -> UI label -> Section (UI):
 
-| Key | UI label | Section (UI) |
-|---|---|---|
-| clinic_name | Nombre | Centro Veterinario |
-| clinic_address | Dirección | Centro Veterinario |
-| vet_name | Veterinario/a | Centro Veterinario |
-| nhc | NHC | Centro Veterinario |
-| medical_record_number | NHC | Centro Veterinario |
-| pet_name | Nombre | Paciente |
-| dob | Nacimiento | Paciente |
-| reproductive_status | Estado reproductivo | Paciente |
-| owner_name | Nombre | Propietario |
-| owner_address | Dirección | Propietario |
-| visit_date | Fecha | Visitas |
-| admission_date | Admisión | Visitas |
-| discharge_date | Alta | Visitas |
-| reason_for_visit | Motivo | Visitas |
+| Key                   | UI label            | Section (UI)       |
+| --------------------- | ------------------- | ------------------ |
+| clinic_name           | Nombre              | Centro Veterinario |
+| clinic_address        | Dirección           | Centro Veterinario |
+| vet_name              | Veterinario/a       | Centro Veterinario |
+| nhc                   | NHC                 | Centro Veterinario |
+| medical_record_number | NHC                 | Centro Veterinario |
+| pet_name              | Nombre              | Paciente           |
+| dob                   | Nacimiento          | Paciente           |
+| reproductive_status   | Estado reproductivo | Paciente           |
+| owner_name            | Nombre              | Propietario        |
+| owner_address         | Dirección           | Propietario        |
+| visit_date            | Fecha               | Visitas            |
+| admission_date        | Admisión            | Visitas            |
+| discharge_date        | Alta                | Visitas            |
+| reason_for_visit      | Motivo              | Visitas            |
 
 Visit rendering rules for the canonical contract:
+
 - UI does not infer visits and does not regroup items by date/content.
 - Render one visual unit per `VisitGroup` from `visits[]` only (Appendix D9 is authoritative).
 - Recommended in-visit rendering order (display-only):
@@ -279,23 +294,28 @@ Visit rendering rules for the canonical contract:
 - If synthetic/unassigned visit group is present (`visit_id = "unassigned"`), show fixed group label `Sin asignar`.
 
 Missing vs loading (deterministic):
+
 - While structured data is loading, show a clear loading state and do not show missing placeholders yet.
 - Once the run is ready, any absent/non-extracted value must render an explicit placeholder.
 
 Empty states (deterministic):
+
 - If `visits = []`, render **Visitas** with empty state.
 - If a visit exists but `fields[]` is empty, show `Sin campos detectados en esta visita.`
 - If `Otros campos detectados` is empty, show `Sin otros campos detectados.`
 
 Otros campos detectados:
+
 - This section is a contract-driven bucket for explicit unmapped/other items only; no UI-side classification.
 - If the contract does not expose an explicit unmapped bucket (for example `unmapped_fields[]` / `other_fields[]`), implementation is blocked until technical alignment is defined in [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md).
 
 Información del informe:
+
 - This section is always rendered as the final block.
 - It includes report metadata such as detected language when present in payload.
 
 No governance terminology in veterinarian UX:
+
 - The veterinarian UI copy must not expose terms such as `pending_review`, `governance`, or `reviewer`.
 
 ## 4.2 Confidence Propagation & Calibration (UX Contract)
@@ -314,6 +334,7 @@ No governance terminology in veterinarian UX:
 - `candidate_confidence` and `field_mapping_confidence` must not be conflated in UI copy or semantics.
 
 Tooltip structure (Spanish, standard copy):
+
 - First line: `Confianza: 72% (Media)`
 - Explanation sentence: `Indica qué tan fiable es el valor extraído automáticamente.`
 - `Desglose:`
@@ -321,14 +342,17 @@ Tooltip structure (Spanish, standard copy):
   - `Ajuste por histórico de revisiones: +7%`
 
 Semantic rules:
+
 - `Fiabilidad de la extracción de texto` is a per-document diagnostic component tied to extraction quality for the current run.
 - `Ajuste por histórico de revisiones` is an aggregated cross-document, system-level adjustment and is not about this single document only.
 - The displayed confidence remains a field-level result; no document-level confidence policy UI is shown.
 
 Visual rule:
+
 - Adjustment value color is green when `> 0`, red when `< 0`, and neutral/muted when `= 0`.
 
 Edge cases:
+
 - If there is no review history, show `Ajuste por histórico de revisiones: 0%`.
 - If extraction reliability is unavailable, show `Fiabilidad de la extracción de texto: No disponible`.
 
@@ -349,12 +373,14 @@ Some user actions may have **system-level consequences**.
 From a UX standpoint:
 
 ### Veterinarian UX Rules
+
 - These consequences are **not exposed** to veterinarians.
 - No warnings, confirmations, or explanations are shown.
 - No responsibility beyond the current document is implied.
 - Workflows remain identical regardless of downstream effects.
 
 ### Reviewer UX Rules
+
 - Reviewers may see aggregated effects of repeated actions.
 - Signals are presented as patterns, never as individual blame.
 - High-impact patterns are visually distinguishable.
@@ -366,6 +392,7 @@ From a UX standpoint:
 Some edits may be considered more sensitive at system level.
 
 UX implications:
+
 - Veterinarians can always edit fields without friction.
 - No additional confirmations are introduced.
 - Sensitive edits never block completion of review.
@@ -380,11 +407,13 @@ is **not defined by this document** and must not surface in the veterinarian UI.
 Reviewers interact with **aggregated patterns**, not individual edits.
 
 UX principles:
+
 - Patterns emerge over time.
 - Single actions have no standalone meaning.
 - Review focuses on trends, stability, and risk.
 
 Reviewer decisions:
+
 - never block veterinary work,
 - never affect past documents,
 - apply prospectively only.
@@ -398,6 +427,7 @@ Reviewer decisions:
 - The workflows are asymmetric and decoupled.
 
 The veterinarian UI must not:
+
 - surface reviewer decisions,
 - preempt governance workflows,
 - imply responsibility for system behavior.
@@ -409,6 +439,7 @@ The veterinarian UI must not:
 This document defines **how the system feels and behaves to users**.
 
 It does not define:
+
 - product strategy,
 - system semantics,
 - governance rules,

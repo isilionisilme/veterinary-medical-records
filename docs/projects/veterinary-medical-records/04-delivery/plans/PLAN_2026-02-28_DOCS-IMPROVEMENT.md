@@ -49,16 +49,16 @@ This plan was paused after D4-A (Phase 4 navigation). Since then:
 > This plan predates the formal commit-task schema. Phases 0–4 were executed with ad-hoc commits.
 > From Phase 5 onward, commit tasks follow the required operational override step schema.
 
-| Commit task | Trigger | Scope | Message | Push |
-|---|---|---|---|---|
-| CT-D5-1 | After D5-A | Lint/format fixes in `docs/` scope | `docs(plan-d5a): markdown lint autofix + prettier` | Immediate |
-| CT-D5-2 | After D5-D | Frontmatter + validator script | `docs(plan-d5d): apply frontmatter schema + validator` | Immediate |
-| CT-D5-3 | After D5-G | Broken link fixes | `docs(plan-d5g): fix broken links and anchors` | Immediate |
-| CT-D6-1 | After D6-B | Rewritten pages | `docs(plan-d6b): rewrite key pages for readability` | Immediate |
-| CT-D6-2 | After D6-F | Terminology updates | `docs(plan-d6f): apply terminology consistency` | Immediate |
-| CT-D7-1 | After D7-A | Onboarding guides | `docs(plan-d7a): add onboarding guides` | Immediate |
-| CT-D7-2 | After D7-C | Changelog | `docs(plan-d7c): add structured changelog` | Immediate |
-| CT-D8-1 | After D8-B | CI pipeline + scripts | `ci(plan-d8b): docs QA CI pipeline` | Immediate |
+| Commit task | Trigger    | Scope                              | Message                                                | Push      |
+| ----------- | ---------- | ---------------------------------- | ------------------------------------------------------ | --------- |
+| CT-D5-1     | After D5-A | Lint/format fixes in `docs/` scope | `docs(plan-d5a): markdown lint autofix + prettier`     | Immediate |
+| CT-D5-2     | After D5-D | Frontmatter + validator script     | `docs(plan-d5d): apply frontmatter schema + validator` | Immediate |
+| CT-D5-3     | After D5-G | Broken link fixes                  | `docs(plan-d5g): fix broken links and anchors`         | Immediate |
+| CT-D6-1     | After D6-B | Rewritten pages                    | `docs(plan-d6b): rewrite key pages for readability`    | Immediate |
+| CT-D6-2     | After D6-F | Terminology updates                | `docs(plan-d6f): apply terminology consistency`        | Immediate |
+| CT-D7-1     | After D7-A | Onboarding guides                  | `docs(plan-d7a): add onboarding guides`                | Immediate |
+| CT-D7-2     | After D7-C | Changelog                          | `docs(plan-d7c): add structured changelog`             | Immediate |
+| CT-D8-1     | After D8-B | CI pipeline + scripts              | `ci(plan-d8b): docs QA CI pipeline`                    | Immediate |
 
 ## Operational override steps
 
@@ -129,14 +129,16 @@ This plan was paused after D4-A (Phase 4 navigation). Since then:
 > decide what stays and how it's organized (structure) → normalize format → polish style → automate.
 
 **Agent model mapping:**
+
 - `Planning agent` = `Claude Opus 4.6`
 - `Execution agent` = `Codex 5.3`
 
 **Legend:**
+
 - 🔄 **auto-chain** — Execution agent (`Codex 5.3`) executes; user reviews afterwards.
 - 🚧 **hard-gate** — Planning agent (`Claude Opus 4.6`); requires user decision.
 
-> **Note:** 🔄/🚧 classify step *type* (auto-chain vs hard-gate). The protocol's ⏳/🚫/🔒 markers in §3 classify *execution state* at runtime.
+> **Note:** 🔄/🚧 classify step _type_ (auto-chain vs hard-gate). The protocol's ⏳/🚫/🔒 markers in §3 classify _execution state_ at runtime.
 
 ### Phase 0 — Bootstrap
 
@@ -240,27 +242,28 @@ This plan was paused after D4-A (Phase 4 navigation). Since then:
 ### D4R-F — Apply D4R-E corrections + translate Spanish file
 
 Apply all 14 approved corrections from the D4R-E audit. User decisions:
+
 - **Policy:** Use latest test counts (not historical Iter 11 freeze).
 - **E-14:** Translate `plan-e2e-test-coverage.md` to English (do NOT archive).
 
 #### Corrections to apply
 
-| # | File | Change |
-|---|---|---|
-| E-1 | `docs/projects/.../02-tech/architecture.md` L122 | E2E specs: `65 (21 spec files)` → `64 (21 spec files)` |
-| E-2 | `docs/projects/.../02-tech/architecture.md` L120 | Backend tests: `~395 (≥91% coverage)` → `~566 (67 files)` |
-| E-3 | `docs/projects/.../02-tech/architecture.md` L121 | Frontend tests: `~287 (≥87% coverage)` → `~327 (52 files)` |
-| E-4 | `docs/projects/.../02-tech/architecture.md` L111 | `35 custom hooks` → `28 custom hooks` |
-| E-5 | `docs/projects/.../02-tech/architecture.md` L123 | CI jobs: `10 (path-filtered, ~4 min)` → `13 (path-filtered, ~4 min)` |
-| E-6 | `docs/projects/.../02-tech/architecture.md` L97 | `5 route modules (documents, review, processing, calibration, health)` → `6 route modules (documents, review, processing, calibration, health, clinics)` |
-| E-7 | `docs/projects/.../02-tech/technical-design.md` L612 | `35 hooks + 3 panel components` → `28 hooks + 3 panel components` |
-| E-8 | `docs/projects/.../02-tech/technical-design.md` L613 | `5 domain modules` → `6 domain modules` |
-| E-9 | `docs/projects/.../04-delivery/delivery-summary.md` L530 | `65 tests across 22 spec files` → `64 tests across 21 spec files` |
-| E-10 | `docs/projects/.../04-delivery/delivery-summary.md` L573 | `395 backend, 287 frontend, 65 E2E` → `566 backend, 327 frontend, 64 E2E` |
-| E-11 | `docs/projects/.../04-delivery/delivery-summary.md` L576 | `22 files, 65 tests` → `21 files, 64 tests` |
-| E-12 | `docs/projects/.../02-tech/architecture.md` L54 | Mermaid: `(5 domain modules)` → `(6 domain modules)` |
-| E-13 | `docs/projects/.../99-archive/cto-review-verdict.md` L3 | Archive banner: `682 tests, 10 CI jobs` → `957 tests, 13 CI jobs` |
-| E-14 | `docs/projects/.../03-ops/plan-e2e-test-coverage.md` | Translate entire file from Spanish to English. Preserve structure, section numbering, tables, test IDs, and data-testid selectors exactly. |
+| #    | File                                                     | Change                                                                                                                                                   |
+| ---- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| E-1  | `docs/projects/.../02-tech/architecture.md` L122         | E2E specs: `65 (21 spec files)` → `64 (21 spec files)`                                                                                                   |
+| E-2  | `docs/projects/.../02-tech/architecture.md` L120         | Backend tests: `~395 (≥91% coverage)` → `~566 (67 files)`                                                                                                |
+| E-3  | `docs/projects/.../02-tech/architecture.md` L121         | Frontend tests: `~287 (≥87% coverage)` → `~327 (52 files)`                                                                                               |
+| E-4  | `docs/projects/.../02-tech/architecture.md` L111         | `35 custom hooks` → `28 custom hooks`                                                                                                                    |
+| E-5  | `docs/projects/.../02-tech/architecture.md` L123         | CI jobs: `10 (path-filtered, ~4 min)` → `13 (path-filtered, ~4 min)`                                                                                     |
+| E-6  | `docs/projects/.../02-tech/architecture.md` L97          | `5 route modules (documents, review, processing, calibration, health)` → `6 route modules (documents, review, processing, calibration, health, clinics)` |
+| E-7  | `docs/projects/.../02-tech/technical-design.md` L612     | `35 hooks + 3 panel components` → `28 hooks + 3 panel components`                                                                                        |
+| E-8  | `docs/projects/.../02-tech/technical-design.md` L613     | `5 domain modules` → `6 domain modules`                                                                                                                  |
+| E-9  | `docs/projects/.../04-delivery/delivery-summary.md` L530 | `65 tests across 22 spec files` → `64 tests across 21 spec files`                                                                                        |
+| E-10 | `docs/projects/.../04-delivery/delivery-summary.md` L573 | `395 backend, 287 frontend, 65 E2E` → `566 backend, 327 frontend, 64 E2E`                                                                                |
+| E-11 | `docs/projects/.../04-delivery/delivery-summary.md` L576 | `22 files, 65 tests` → `21 files, 64 tests`                                                                                                              |
+| E-12 | `docs/projects/.../02-tech/architecture.md` L54          | Mermaid: `(5 domain modules)` → `(6 domain modules)`                                                                                                     |
+| E-13 | `docs/projects/.../99-archive/cto-review-verdict.md` L3  | Archive banner: `682 tests, 10 CI jobs` → `957 tests, 13 CI jobs`                                                                                        |
+| E-14 | `docs/projects/.../03-ops/plan-e2e-test-coverage.md`     | Translate entire file from Spanish to English. Preserve structure, section numbering, tables, test IDs, and data-testid selectors exactly.               |
 
 #### Additional delivery-summary updates (affected by latest counts)
 
@@ -319,41 +322,41 @@ _Empty._
 
 **34 canonical wiki files** in scope (excluding plans/completed) | Collected 2026-03-06
 
-| Path | Title | Type | Audience | Status | Has Frontmatter | Notes |
-|---|---|---|---|---|---|---|
-| docs/README.md | Wiki — Documentation Index | index | all | active | ✅ | Root wiki index, sitemap, reading order |
-| docs/shared/01-product/brand-guidelines.md | Brand Guidelines (Project Canonical) | reference | all | active | ✅ | |
-| docs/shared/01-product/ux-guidelines.md | UX Guidelines — Shared Principles | explanation | all | active | ✅ | |
-| docs/shared/02-tech/coding-standards.md | Coding Standards | reference | contributor | active | ❌ | **NEW** since original inventory |
-| docs/shared/02-tech/documentation-guidelines.md | Documentation Guidelines | reference | contributor | active | ❌ | **NEW** since original inventory |
-| docs/shared/02-tech/llm-benchmarks.md | LLM Benchmarks System | explanation | all | active | ✅ | **NEW** since original inventory |
-| docs/shared/03-ops/way-of-working.md | Way of Working | reference | contributor | active | ❌ | **NEW** since original inventory |
-| docs/projects/.../01-product/design-system.md | Lean Design System | reference | contributor | active | ✅ | |
-| docs/projects/.../01-product/product-design.md | Product Design | explanation | all | active | ✅ | |
-| docs/projects/.../01-product/ux-design.md | UX Design | reference | contributor | active | ✅ | |
-| docs/projects/.../02-tech/architecture.md | Architecture Overview | reference | all | active | ✅ | |
-| docs/projects/.../02-tech/backend-implementation.md | Backend Implementation Notes | reference | contributor | active | ✅ | |
-| docs/projects/.../02-tech/extraction-quality.md | Extraction Quality | reference | contributor | active | ❌ | **NEW** since original inventory |
-| docs/projects/.../02-tech/frontend-implementation.md | Frontend Implementation Notes | reference | contributor | active | ✅ | |
-| docs/projects/.../02-tech/technical-design.md | Technical Design | reference | contributor | active | ✅ | |
-| docs/projects/.../02-tech/adr/index.md | ADR Index | index | all | active | ❌ | |
-| docs/projects/.../02-tech/adr/ADR-ARCH-0001-modular-monolith.md | ADR-ARCH-0001 | adr | staff-engineer | active | ❌ | |
-| docs/projects/.../02-tech/adr/ADR-ARCH-0002-sqlite-database.md | ADR-ARCH-0002 | adr | staff-engineer | active | ❌ | |
-| docs/projects/.../02-tech/adr/ADR-ARCH-0003-raw-sql-repository-pattern.md | ADR-ARCH-0003 | adr | staff-engineer | active | ❌ | |
-| docs/projects/.../02-tech/adr/ADR-ARCH-0004-in-process-async-processing.md | ADR-ARCH-0004 | adr | staff-engineer | active | ❌ | |
-| docs/projects/.../03-ops/execution-rules.md | Execution Rules | reference | contributor | active | ❌ | Agent protocol |
-| docs/projects/.../03-ops/manual-qa-regression-checklist.md | Manual QA Regression Checklist | how-to | all | active | ❌ | |
-| docs/projects/.../03-ops/plan-e2e-test-coverage.md | Plan E2E Test Coverage | plan | contributor | active | ❌ | Spanish; large |
-| docs/projects/.../03-ops/plan-execution-protocol.md | Plan Execution Protocol | reference | contributor | active | ⚠️ | **NEW**; partial frontmatter |
-| docs/projects/.../03-ops/plan-management.md | Plan Management | reference | contributor | active | ❌ | **NEW** since original inventory |
-| docs/projects/.../04-delivery/copilot-usage.md | Copilot Usage Metrics | reference | all | active | ✅ | |
-| docs/projects/.../04-delivery/delivery-summary.md | Delivery Summary | reference | all | active | ✅ | |
-| docs/projects/.../04-delivery/future-improvements.md | Known Limitations & Future Directions | explanation | staff-engineer | active | ✅ | |
-| docs/projects/.../04-delivery/implementation-history.md | Implementation History | changelog | all | active | ❌ | |
-| docs/projects/.../04-delivery/implementation-plan.md | Implementation Plan | plan | contributor | active | ✅ | Very large |
-| docs/projects/.../99-archive/12-factor-audit.md | 12-Factor Audit | audit | staff-engineer | archived | ❌ | Archived |
-| docs/projects/.../99-archive/codebase-audit.md | Codebase Maintainability Audit | audit | staff-engineer | archived | ❌ | Archived |
-| docs/projects/.../99-archive/cto-review-verdict.md | CTO Review Verdict | audit | staff-engineer | archived | ❌ | Archived |
+| Path                                                                       | Title                                 | Type        | Audience       | Status   | Has Frontmatter | Notes                                   |
+| -------------------------------------------------------------------------- | ------------------------------------- | ----------- | -------------- | -------- | --------------- | --------------------------------------- |
+| docs/README.md                                                             | Wiki — Documentation Index            | index       | all            | active   | ✅              | Root wiki index, sitemap, reading order |
+| docs/shared/01-product/brand-guidelines.md                                 | Brand Guidelines (Project Canonical)  | reference   | all            | active   | ✅              |                                         |
+| docs/shared/01-product/ux-guidelines.md                                    | UX Guidelines — Shared Principles     | explanation | all            | active   | ✅              |                                         |
+| docs/shared/02-tech/coding-standards.md                                    | Coding Standards                      | reference   | contributor    | active   | ❌              | **NEW** since original inventory        |
+| docs/shared/02-tech/documentation-guidelines.md                            | Documentation Guidelines              | reference   | contributor    | active   | ❌              | **NEW** since original inventory        |
+| docs/shared/02-tech/llm-benchmarks.md                                      | LLM Benchmarks System                 | explanation | all            | active   | ✅              | **NEW** since original inventory        |
+| docs/shared/03-ops/way-of-working.md                                       | Way of Working                        | reference   | contributor    | active   | ❌              | **NEW** since original inventory        |
+| docs/projects/.../01-product/design-system.md                              | Lean Design System                    | reference   | contributor    | active   | ✅              |                                         |
+| docs/projects/.../01-product/product-design.md                             | Product Design                        | explanation | all            | active   | ✅              |                                         |
+| docs/projects/.../01-product/ux-design.md                                  | UX Design                             | reference   | contributor    | active   | ✅              |                                         |
+| docs/projects/.../02-tech/architecture.md                                  | Architecture Overview                 | reference   | all            | active   | ✅              |                                         |
+| docs/projects/.../02-tech/backend-implementation.md                        | Backend Implementation Notes          | reference   | contributor    | active   | ✅              |                                         |
+| docs/projects/.../02-tech/extraction-quality.md                            | Extraction Quality                    | reference   | contributor    | active   | ❌              | **NEW** since original inventory        |
+| docs/projects/.../02-tech/frontend-implementation.md                       | Frontend Implementation Notes         | reference   | contributor    | active   | ✅              |                                         |
+| docs/projects/.../02-tech/technical-design.md                              | Technical Design                      | reference   | contributor    | active   | ✅              |                                         |
+| docs/projects/.../02-tech/adr/index.md                                     | ADR Index                             | index       | all            | active   | ❌              |                                         |
+| docs/projects/.../02-tech/adr/ADR-ARCH-0001-modular-monolith.md            | ADR-ARCH-0001                         | adr         | staff-engineer | active   | ❌              |                                         |
+| docs/projects/.../02-tech/adr/ADR-ARCH-0002-sqlite-database.md             | ADR-ARCH-0002                         | adr         | staff-engineer | active   | ❌              |                                         |
+| docs/projects/.../02-tech/adr/ADR-ARCH-0003-raw-sql-repository-pattern.md  | ADR-ARCH-0003                         | adr         | staff-engineer | active   | ❌              |                                         |
+| docs/projects/.../02-tech/adr/ADR-ARCH-0004-in-process-async-processing.md | ADR-ARCH-0004                         | adr         | staff-engineer | active   | ❌              |                                         |
+| docs/projects/.../03-ops/execution-rules.md                                | Execution Rules                       | reference   | contributor    | active   | ❌              | Agent protocol                          |
+| docs/projects/.../03-ops/manual-qa-regression-checklist.md                 | Manual QA Regression Checklist        | how-to      | all            | active   | ❌              |                                         |
+| docs/projects/.../03-ops/plan-e2e-test-coverage.md                         | Plan E2E Test Coverage                | plan        | contributor    | active   | ❌              | Spanish; large                          |
+| docs/projects/.../03-ops/plan-execution-protocol.md                        | Plan Execution Protocol               | reference   | contributor    | active   | ⚠️              | **NEW**; partial frontmatter            |
+| docs/projects/.../03-ops/plan-management.md                                | Plan Management                       | reference   | contributor    | active   | ❌              | **NEW** since original inventory        |
+| docs/projects/.../04-delivery/copilot-usage.md                             | Copilot Usage Metrics                 | reference   | all            | active   | ✅              |                                         |
+| docs/projects/.../04-delivery/delivery-summary.md                          | Delivery Summary                      | reference   | all            | active   | ✅              |                                         |
+| docs/projects/.../04-delivery/future-improvements.md                       | Known Limitations & Future Directions | explanation | staff-engineer | active   | ✅              |                                         |
+| docs/projects/.../04-delivery/implementation-history.md                    | Implementation History                | changelog   | all            | active   | ❌              |                                         |
+| docs/projects/.../04-delivery/implementation-plan.md                       | Implementation Plan                   | plan        | contributor    | active   | ✅              | Very large                              |
+| docs/projects/.../99-archive/12-factor-audit.md                            | 12-Factor Audit                       | audit       | staff-engineer | archived | ❌              | Archived                                |
+| docs/projects/.../99-archive/codebase-audit.md                             | Codebase Maintainability Audit        | audit       | staff-engineer | archived | ❌              | Archived                                |
+| docs/projects/.../99-archive/cto-review-verdict.md                         | CTO Review Verdict                    | audit       | staff-engineer | archived | ❌              | Archived                                |
 
 **Frontmatter coverage:** 16/34 files (47%) ✅ — 18 files (53%) missing frontmatter.
 
@@ -371,30 +374,30 @@ _Empty._
 
 #### Stale files (content-based; all committed within 90 days but content outdated)
 
-| File | Severity | Evidence |
-|---|---|---|
-| DESIGN_SYSTEM.md | **High** | 6+ color tokens diverge from actual CSS in `index.css`; active implementation contract |
-| refactor/CTO_REVIEW_VERDICT.md | **High** | Metrics (411 tests→682, 7 CI→10), all gaps resolved; broken link `../production/` |
-| refactor/codebase_audit.md | **High** | All 15 findings resolved in Iter 1-12; score table misleading |
-| refactor/12_FACTOR_AUDIT.md | Medium | All 5 backlog items resolved |
+| File                           | Severity | Evidence                                                                               |
+| ------------------------------ | -------- | -------------------------------------------------------------------------------------- |
+| DESIGN_SYSTEM.md               | **High** | 6+ color tokens diverge from actual CSS in `index.css`; active implementation contract |
+| refactor/CTO_REVIEW_VERDICT.md | **High** | Metrics (411 tests→682, 7 CI→10), all gaps resolved; broken link `../production/`      |
+| refactor/codebase_audit.md     | **High** | All 15 findings resolved in Iter 1-12; score table misleading                          |
+| refactor/12_FACTOR_AUDIT.md    | Medium   | All 5 backlog items resolved                                                           |
 
 #### Duplicate / near-duplicate pairs
 
-| File A | File B | Score | Suggested action |
-|---|---|---|---|
-| BRAND_GUIDELINES.md | DESIGN_SYSTEM.md | 0.70 | **MERGE** — DS should reference BRAND for color values, keep DS-only tokens |
-| DELIVERY_SUMMARY.md | IMPLEMENTATION_HISTORY.md | 0.90 | **DEDUPLICATE** — remove cumulative table from HISTORY, keep in DELIVERY |
-| CTO_REVIEW_VERDICT.md | codebase_audit.md | 0.85 | **ARCHIVE both** — historical artifacts, knowledge in completed files |
-| COMPLETED_ITER-9.md | COMPLETED_2026-02-26_ITER-9-E2E.md | 0.85 | **CONSOLIDATE** — keep one canonical file per iteration |
-| DELIVERY_SUMMARY.md | completed/* (collective) | 0.75 | **REVIEW** — acceptable rollup, no action now |
+| File A                | File B                             | Score | Suggested action                                                            |
+| --------------------- | ---------------------------------- | ----- | --------------------------------------------------------------------------- |
+| BRAND_GUIDELINES.md   | DESIGN_SYSTEM.md                   | 0.70  | **MERGE** — DS should reference BRAND for color values, keep DS-only tokens |
+| DELIVERY_SUMMARY.md   | IMPLEMENTATION_HISTORY.md          | 0.90  | **DEDUPLICATE** — remove cumulative table from HISTORY, keep in DELIVERY    |
+| CTO_REVIEW_VERDICT.md | codebase_audit.md                  | 0.85  | **ARCHIVE both** — historical artifacts, knowledge in completed files       |
+| COMPLETED_ITER-9.md   | COMPLETED_2026-02-26_ITER-9-E2E.md | 0.85  | **CONSOLIDATE** — keep one canonical file per iteration                     |
+| DELIVERY_SUMMARY.md   | completed/\* (collective)          | 0.75  | **REVIEW** — acceptable rollup, no action now                               |
 
 #### Contradictions
 
-| Files | Topic | Severity |
-|---|---|---|
-| BRAND_GUIDELINES ↔ DESIGN_SYSTEM ↔ index.css | Color tokens (3-way divergence, 6+ tokens) | **High** |
-| DELIVERY_SUMMARY ↔ ARCHITECTURE.md | CI job count (9+1 vs 10) | Low |
-| CTO_REVIEW_VERDICT ↔ current state | Test counts, gap status | Medium (resolved by archiving) |
+| Files                                        | Topic                                      | Severity                       |
+| -------------------------------------------- | ------------------------------------------ | ------------------------------ |
+| BRAND_GUIDELINES ↔ DESIGN_SYSTEM ↔ index.css | Color tokens (3-way divergence, 6+ tokens) | **High**                       |
+| DELIVERY_SUMMARY ↔ ARCHITECTURE.md           | CI job count (9+1 vs 10)                   | Low                            |
+| CTO_REVIEW_VERDICT ↔ current state           | Test counts, gap status                    | Medium (resolved by archiving) |
 
 #### Recommended action priority
 
@@ -410,21 +413,21 @@ _Empty._
 
 **13 findings** — Critical: 2, High: 2, Medium: 6, Low: 3 | Collected 2026-02-28
 
-| # | Sev | File | Finding | Suggested fix |
-|---|---|---|---|---|
-| 1 | **Crit** | ARCHITECTURE.md | `processing/` shown as top-level under `backend/app/`; actual: `application/processing/` | Nest under `application/` in tree |
-| 2 | **Crit** | ARCHITECTURE.md | E2E metrics say "20 (8 spec files)" — actual: 64 tests, 21 specs | Update to `64 (21 spec files)` |
-| 3 | **High** | ARCHITECTURE.md | `ports/` layer entirely missing from project tree | Add `ports/` entry |
-| 4 | **High** | ARCHITECTURE.md | Tree says `infrastructure/` but folder is `infra/` | Rename in tree |
-| 5 | **Med** | ARCHITECTURE.md | `domain/` described as "entities, protocols (DocumentRepository)" — protocols are in `ports/` | Fix description |
-| 6 | **Med** | ARCHITECTURE.md | Hooks: "5 custom hooks" — actual: 8 hook files | Update count + list |
-| 7 | **Med** | ARCHITECTURE.md | Frontend tree missing `api/`, `constants/`, `extraction/` dirs | Add 3 dirs |
-| 8 | **Med** | ARCHITECTURE.md | `application/` description omits documents/, confidence_calibration, etc. | Expand description |
-| 9 | **Med** | TECHNICAL_DESIGN.md | §14 says "5 hooks + 3 panel components" — hooks = 8 | Update to 8 |
-| 10 | **Med** | DELIVERY_SUMMARY + TECHNICAL_DESIGN | "65 tests across 22 spec files" — actual: 64/21 | Update both |
-| 11 | **Low** | DELIVERY_SUMMARY | CI count "9 (+ a11y audit)" vs "10" in ARCHITECTURE | Align convention |
-| 12 | **Low** | DESIGN_SYSTEM.md | Primitives list missing Badge, Card, Dialog | Add 3 primitives |
-| 13 | **Low** | DELIVERY_SUMMARY | Iter 11 references deleted `review-flow.spec.ts` | Note merged file |
+| #   | Sev      | File                                | Finding                                                                                       | Suggested fix                     |
+| --- | -------- | ----------------------------------- | --------------------------------------------------------------------------------------------- | --------------------------------- |
+| 1   | **Crit** | ARCHITECTURE.md                     | `processing/` shown as top-level under `backend/app/`; actual: `application/processing/`      | Nest under `application/` in tree |
+| 2   | **Crit** | ARCHITECTURE.md                     | E2E metrics say "20 (8 spec files)" — actual: 64 tests, 21 specs                              | Update to `64 (21 spec files)`    |
+| 3   | **High** | ARCHITECTURE.md                     | `ports/` layer entirely missing from project tree                                             | Add `ports/` entry                |
+| 4   | **High** | ARCHITECTURE.md                     | Tree says `infrastructure/` but folder is `infra/`                                            | Rename in tree                    |
+| 5   | **Med**  | ARCHITECTURE.md                     | `domain/` described as "entities, protocols (DocumentRepository)" — protocols are in `ports/` | Fix description                   |
+| 6   | **Med**  | ARCHITECTURE.md                     | Hooks: "5 custom hooks" — actual: 8 hook files                                                | Update count + list               |
+| 7   | **Med**  | ARCHITECTURE.md                     | Frontend tree missing `api/`, `constants/`, `extraction/` dirs                                | Add 3 dirs                        |
+| 8   | **Med**  | ARCHITECTURE.md                     | `application/` description omits documents/, confidence_calibration, etc.                     | Expand description                |
+| 9   | **Med**  | TECHNICAL_DESIGN.md                 | §14 says "5 hooks + 3 panel components" — hooks = 8                                           | Update to 8                       |
+| 10  | **Med**  | DELIVERY_SUMMARY + TECHNICAL_DESIGN | "65 tests across 22 spec files" — actual: 64/21                                               | Update both                       |
+| 11  | **Low**  | DELIVERY_SUMMARY                    | CI count "9 (+ a11y audit)" vs "10" in ARCHITECTURE                                           | Align convention                  |
+| 12  | **Low**  | DESIGN_SYSTEM.md                    | Primitives list missing Badge, Card, Dialog                                                   | Add 3 primitives                  |
+| 13  | **Low**  | DELIVERY_SUMMARY                    | Iter 11 references deleted `review-flow.spec.ts`                                              | Note merged file                  |
 
 **Verified correct:** DESIGN_SYSTEM tokens (post-D1-D), tech stack versions, backend test count (~396), frontend test count (287), all 4 ADRs, cross-references, language compliance, API route count, AppWorkspace LOC.
 
@@ -434,38 +437,38 @@ _Empty._
 
 **Codebase reality baseline:**
 
-| Metric | Actual | Source |
-|---|---|---|
-| E2E spec files | 21 | `frontend/e2e/*.spec.ts` |
-| E2E test cases | 64 | `test(` in spec files |
-| Custom hooks | 28 | `frontend/src/hooks/use*.ts` (non-test) |
-| Frontend test files | 52 | `*.test.ts*` in `frontend/src/` |
-| Frontend test functions | 327 | `it(`/`test(` matches |
-| Backend test files | 67 | `test_*.py` in `backend/tests/` |
-| Backend test functions | 566 | `def test_` matches |
-| API route modules | 6 | documents, review, processing, calibration, health, clinics |
-| API endpoints | 18 | across 6 route modules |
-| CI jobs | 13 | `.github/workflows/ci.yml` |
-| GitHub workflows | 3 | ci.yml, llm-benchmarks.yml, wiki-sync.yml |
+| Metric                  | Actual | Source                                                      |
+| ----------------------- | ------ | ----------------------------------------------------------- |
+| E2E spec files          | 21     | `frontend/e2e/*.spec.ts`                                    |
+| E2E test cases          | 64     | `test(` in spec files                                       |
+| Custom hooks            | 28     | `frontend/src/hooks/use*.ts` (non-test)                     |
+| Frontend test files     | 52     | `*.test.ts*` in `frontend/src/`                             |
+| Frontend test functions | 327    | `it(`/`test(` matches                                       |
+| Backend test files      | 67     | `test_*.py` in `backend/tests/`                             |
+| Backend test functions  | 566    | `def test_` matches                                         |
+| API route modules       | 6      | documents, review, processing, calibration, health, clinics |
+| API endpoints           | 18     | across 6 route modules                                      |
+| CI jobs                 | 13     | `.github/workflows/ci.yml`                                  |
+| GitHub workflows        | 3      | ci.yml, llm-benchmarks.yml, wiki-sync.yml                   |
 
 **14 findings** — Critical: 3, High: 3, Medium: 5, Low: 2, Language: 1
 
-| # | Sev | File | Finding | Correct value |
-|---|---|---|---|---|
-| E-1 | Crit | architecture.md L122 | E2E: "65 (21 spec files)" | 64 (21 spec files) |
-| E-2 | Crit | architecture.md L120 | Backend tests: "~395 (≥91%)" | ~566 (67 files) |
-| E-3 | Crit | architecture.md L121 | Frontend tests: "~287 (≥87%)" | ~327 (52 files) |
-| E-4 | High | architecture.md L111 | "35 custom hooks" | 28 hooks |
-| E-5 | High | architecture.md L123 | CI jobs: 10 | 13 |
-| E-6 | High | architecture.md L97 | 5 route modules | 6 (+clinics) |
-| E-7 | Med | technical-design.md L612 | 35 hooks | 28 hooks |
-| E-8 | Med | technical-design.md L613 | 5 domain modules | 6 domain modules |
-| E-9 | Med | delivery-summary.md L530 | "65 tests across 22 spec files" | 64 / 21 |
-| E-10 | Med | delivery-summary.md L573 | "395 backend, 287 frontend, 65 E2E" | 566 / 327 / 64 |
-| E-11 | Med | delivery-summary.md L576 | "22 files, 65 tests" | 21 / 64 |
-| E-12 | Low | architecture.md L54 | Mermaid: "5 domain modules" | 6 |
-| E-13 | Low | cto-review-verdict.md L3 | "682 tests, 10 CI jobs" | ~957 / 13 |
-| E-14 | Lang | plan-e2e-test-coverage.md | Entire file in Spanish | Translate to English |
+| #    | Sev  | File                      | Finding                             | Correct value        |
+| ---- | ---- | ------------------------- | ----------------------------------- | -------------------- |
+| E-1  | Crit | architecture.md L122      | E2E: "65 (21 spec files)"           | 64 (21 spec files)   |
+| E-2  | Crit | architecture.md L120      | Backend tests: "~395 (≥91%)"        | ~566 (67 files)      |
+| E-3  | Crit | architecture.md L121      | Frontend tests: "~287 (≥87%)"       | ~327 (52 files)      |
+| E-4  | High | architecture.md L111      | "35 custom hooks"                   | 28 hooks             |
+| E-5  | High | architecture.md L123      | CI jobs: 10                         | 13                   |
+| E-6  | High | architecture.md L97       | 5 route modules                     | 6 (+clinics)         |
+| E-7  | Med  | technical-design.md L612  | 35 hooks                            | 28 hooks             |
+| E-8  | Med  | technical-design.md L613  | 5 domain modules                    | 6 domain modules     |
+| E-9  | Med  | delivery-summary.md L530  | "65 tests across 22 spec files"     | 64 / 21              |
+| E-10 | Med  | delivery-summary.md L573  | "395 backend, 287 frontend, 65 E2E" | 566 / 327 / 64       |
+| E-11 | Med  | delivery-summary.md L576  | "22 files, 65 tests"                | 21 / 64              |
+| E-12 | Low  | architecture.md L54       | Mermaid: "5 domain modules"         | 6                    |
+| E-13 | Low  | cto-review-verdict.md L3  | "682 tests, 10 CI jobs"             | ~957 / 13            |
+| E-14 | Lang | plan-e2e-test-coverage.md | Entire file in Spanish              | Translate to English |
 
 **Language audit:** All canonical wiki files (non-plan) confirmed English. One exception: `plan-e2e-test-coverage.md` (in `03-ops/`, not `04-delivery/plans/`) — approved for translation.
 
@@ -479,6 +482,7 @@ _Empty._
 > The taxonomy below was approved 2026-03-01 and implemented via PR #154 merge + `COMPLETED_2026-03-04_CANONICAL-DOC-RESTRUCTURE` (kebab-case migration).
 
 **Revision history:**
+
 - v1 (2026-02-28): initial proposal with architecture/design/guides/ categories
 - v2 (2026-03-01): user feedback — eliminated overlap; adopted intent-based grouping
 - v3 (2026-03-04): kebab-case migration applied to all filenames
@@ -543,13 +547,13 @@ docs/
 
 #### Category rationale (unchanged)
 
-| Folder | Question it answers | Content |
-|---|---|---|
-| `01-product/` | ¿Qué construimos y para quién? | Product design, UX design, design system |
-| `02-tech/` | ¿Cómo está construido? | Architecture, technical design, backend/frontend impl, ADRs |
-| `03-ops/` | ¿Cómo trabajamos? | Execution rules, QA checklist, E2E test plan, plan protocol |
-| `04-delivery/` | ¿Qué hicimos y cómo fue? | Plans, history, delivery summary, future improvements, copilot usage |
-| `99-archive/` | Información histórica | Archived audits |
+| Folder         | Question it answers            | Content                                                              |
+| -------------- | ------------------------------ | -------------------------------------------------------------------- |
+| `01-product/`  | ¿Qué construimos y para quién? | Product design, UX design, design system                             |
+| `02-tech/`     | ¿Cómo está construido?         | Architecture, technical design, backend/frontend impl, ADRs          |
+| `03-ops/`      | ¿Cómo trabajamos?              | Execution rules, QA checklist, E2E test plan, plan protocol          |
+| `04-delivery/` | ¿Qué hicimos y cómo fue?       | Plans, history, delivery summary, future improvements, copilot usage |
+| `99-archive/`  | Información histórica          | Archived audits                                                      |
 
 #### File move map — ✅ COMPLETED
 
@@ -559,45 +563,45 @@ docs/
 <details>
 <summary>Original file move map (26 files + 3 new) — collapsed</summary>
 
-| Current path | Target path | Reason |
-|---|---|---|
-| `project/PRODUCT_DESIGN.md` | `projects/veterinary-medical-records/01-product/PRODUCT_DESIGN.md` | design/ |
-| `project/UX_DESIGN.md` | `projects/veterinary-medical-records/01-product/UX_DESIGN.md` | design/ |
-| `project/DESIGN_SYSTEM.md` | `projects/veterinary-medical-records/01-product/DESIGN_SYSTEM.md` | design/ |
-| `project/ARCHITECTURE.md` | `projects/veterinary-medical-records/02-tech/ARCHITECTURE.md` | tech/ |
-| `project/TECHNICAL_DESIGN.md` | `projects/veterinary-medical-records/02-tech/TECHNICAL_DESIGN.md` | tech/ |
-| `project/BACKEND_IMPLEMENTATION.md` | `projects/veterinary-medical-records/02-tech/BACKEND_IMPLEMENTATION.md` | tech/ |
-| `project/FRONTEND_IMPLEMENTATION.md` | `projects/veterinary-medical-records/02-tech/FRONTEND_IMPLEMENTATION.md` | tech/ |
-| `project/adr/index.md` | `projects/veterinary-medical-records/02-tech/adr/index.md` | tech/adr/ |
-| `project/adr/ADR-ARCH-0001*.md` | `projects/veterinary-medical-records/02-tech/adr/ADR-ARCH-0001*.md` | tech/adr/ |
-| `project/adr/ADR-ARCH-0002*.md` | `projects/veterinary-medical-records/02-tech/adr/ADR-ARCH-0002*.md` | tech/adr/ |
-| `project/adr/ADR-ARCH-0003*.md` | `projects/veterinary-medical-records/02-tech/adr/ADR-ARCH-0003*.md` | tech/adr/ |
-| `project/adr/ADR-ARCH-0004*.md` | `projects/veterinary-medical-records/02-tech/adr/ADR-ARCH-0004*.md` | tech/adr/ |
-| `project/implementation/EXECUTION_RULES.md` | `projects/veterinary-medical-records/03-ops/EXECUTION_RULES.md` | ops/ |
-| `project/MANUAL_QA_REGRESSION_CHECKLIST.md` | `projects/veterinary-medical-records/03-ops/MANUAL_QA_REGRESSION_CHECKLIST.md` | ops/ |
-| `project/testing/PLAN_E2E_TEST_COVERAGE.md` | `projects/veterinary-medical-records/03-ops/PLAN_E2E_TEST_COVERAGE.md` | ops/ |
-| `project/IMPLEMENTATION_PLAN.md` | `projects/veterinary-medical-records/04-delivery/IMPLEMENTATION_PLAN.md` | delivery/ |
-| `project/implementation/IMPLEMENTATION_HISTORY.md` | `projects/veterinary-medical-records/04-delivery/IMPLEMENTATION_HISTORY.md` | delivery/ |
-| `project/refactor/DELIVERY_SUMMARY.md` | `projects/veterinary-medical-records/04-delivery/DELIVERY_SUMMARY.md` | delivery/ |
-| `project/FUTURE_IMPROVEMENTS.md` | `projects/veterinary-medical-records/04-delivery/FUTURE_IMPROVEMENTS.md` | delivery/ |
-| `project/implementation/PLAN_*.md` | `projects/veterinary-medical-records/04-delivery/plans/PLAN_*.md` | delivery/plans/ |
-| `project/implementation/completed/*` (14 files) | `projects/veterinary-medical-records/04-delivery/plans/completed/*` | delivery/plans/completed/ |
-| `project/metrics/COPILOT_USAGE.md` | `projects/veterinary-medical-records/04-delivery/COPILOT_USAGE.md` | metrics/ |
-| `project/refactor/12_FACTOR_AUDIT.md` | `projects/veterinary-medical-records/99-archive/12_FACTOR_AUDIT.md` | archive/ |
-| `project/refactor/CTO_REVIEW_VERDICT.md` | `projects/veterinary-medical-records/99-archive/CTO_REVIEW_VERDICT.md` | archive/ |
-| `project/refactor/codebase_audit.md` | `projects/veterinary-medical-records/99-archive/codebase_audit.md` | archive/ |
+| Current path                                       | Target path                                                                    | Reason                    |
+| -------------------------------------------------- | ------------------------------------------------------------------------------ | ------------------------- |
+| `project/PRODUCT_DESIGN.md`                        | `projects/veterinary-medical-records/01-product/PRODUCT_DESIGN.md`             | design/                   |
+| `project/UX_DESIGN.md`                             | `projects/veterinary-medical-records/01-product/UX_DESIGN.md`                  | design/                   |
+| `project/DESIGN_SYSTEM.md`                         | `projects/veterinary-medical-records/01-product/DESIGN_SYSTEM.md`              | design/                   |
+| `project/ARCHITECTURE.md`                          | `projects/veterinary-medical-records/02-tech/ARCHITECTURE.md`                  | tech/                     |
+| `project/TECHNICAL_DESIGN.md`                      | `projects/veterinary-medical-records/02-tech/TECHNICAL_DESIGN.md`              | tech/                     |
+| `project/BACKEND_IMPLEMENTATION.md`                | `projects/veterinary-medical-records/02-tech/BACKEND_IMPLEMENTATION.md`        | tech/                     |
+| `project/FRONTEND_IMPLEMENTATION.md`               | `projects/veterinary-medical-records/02-tech/FRONTEND_IMPLEMENTATION.md`       | tech/                     |
+| `project/adr/index.md`                             | `projects/veterinary-medical-records/02-tech/adr/index.md`                     | tech/adr/                 |
+| `project/adr/ADR-ARCH-0001*.md`                    | `projects/veterinary-medical-records/02-tech/adr/ADR-ARCH-0001*.md`            | tech/adr/                 |
+| `project/adr/ADR-ARCH-0002*.md`                    | `projects/veterinary-medical-records/02-tech/adr/ADR-ARCH-0002*.md`            | tech/adr/                 |
+| `project/adr/ADR-ARCH-0003*.md`                    | `projects/veterinary-medical-records/02-tech/adr/ADR-ARCH-0003*.md`            | tech/adr/                 |
+| `project/adr/ADR-ARCH-0004*.md`                    | `projects/veterinary-medical-records/02-tech/adr/ADR-ARCH-0004*.md`            | tech/adr/                 |
+| `project/implementation/EXECUTION_RULES.md`        | `projects/veterinary-medical-records/03-ops/EXECUTION_RULES.md`                | ops/                      |
+| `project/MANUAL_QA_REGRESSION_CHECKLIST.md`        | `projects/veterinary-medical-records/03-ops/MANUAL_QA_REGRESSION_CHECKLIST.md` | ops/                      |
+| `project/testing/PLAN_E2E_TEST_COVERAGE.md`        | `projects/veterinary-medical-records/03-ops/PLAN_E2E_TEST_COVERAGE.md`         | ops/                      |
+| `project/IMPLEMENTATION_PLAN.md`                   | `projects/veterinary-medical-records/04-delivery/IMPLEMENTATION_PLAN.md`       | delivery/                 |
+| `project/implementation/IMPLEMENTATION_HISTORY.md` | `projects/veterinary-medical-records/04-delivery/IMPLEMENTATION_HISTORY.md`    | delivery/                 |
+| `project/refactor/DELIVERY_SUMMARY.md`             | `projects/veterinary-medical-records/04-delivery/DELIVERY_SUMMARY.md`          | delivery/                 |
+| `project/FUTURE_IMPROVEMENTS.md`                   | `projects/veterinary-medical-records/04-delivery/FUTURE_IMPROVEMENTS.md`       | delivery/                 |
+| `project/implementation/PLAN_*.md`                 | `projects/veterinary-medical-records/04-delivery/plans/PLAN_*.md`              | delivery/plans/           |
+| `project/implementation/completed/*` (14 files)    | `projects/veterinary-medical-records/04-delivery/plans/completed/*`            | delivery/plans/completed/ |
+| `project/metrics/COPILOT_USAGE.md`                 | `projects/veterinary-medical-records/04-delivery/COPILOT_USAGE.md`             | metrics/                  |
+| `project/refactor/12_FACTOR_AUDIT.md`              | `projects/veterinary-medical-records/99-archive/12_FACTOR_AUDIT.md`            | archive/                  |
+| `project/refactor/CTO_REVIEW_VERDICT.md`           | `projects/veterinary-medical-records/99-archive/CTO_REVIEW_VERDICT.md`         | archive/                  |
+| `project/refactor/codebase_audit.md`               | `projects/veterinary-medical-records/99-archive/codebase_audit.md`             | archive/                  |
 
 </details>
 
 #### Design principles (unchanged)
 
-| Principle | Applied how |
-|---|---|
-| **Intent-based grouping** | Each folder answers exactly one question — no overlap |
-| **Multi-project ready** | `projects/` allows adding initiatives without restructuring |
-| **Kebab-case naming** | All filenames migrated from ALL_CAPS to kebab-case |
-| **Explicit lifecycle** | `99-archive/` separates stale from active unambiguously |
-| **Max depth = 4** | Deepest: `projects/veterinary-medical-records/04-delivery/plans/completed/` |
+| Principle                 | Applied how                                                                 |
+| ------------------------- | --------------------------------------------------------------------------- |
+| **Intent-based grouping** | Each folder answers exactly one question — no overlap                       |
+| **Multi-project ready**   | `projects/` allows adding initiatives without restructuring                 |
+| **Kebab-case naming**     | All filenames migrated from ALL_CAPS to kebab-case                          |
+| **Explicit lifecycle**    | `99-archive/` separates stale from active unambiguously                     |
+| **Max depth = 4**         | Deepest: `projects/veterinary-medical-records/04-delivery/plans/completed/` |
 
 ### D6-A — Readability report
 

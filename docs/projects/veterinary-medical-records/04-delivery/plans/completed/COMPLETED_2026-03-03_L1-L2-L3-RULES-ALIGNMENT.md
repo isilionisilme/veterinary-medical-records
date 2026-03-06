@@ -17,16 +17,16 @@ La rama ya tiene 8 commits con scripts, hooks, docs y tests. Falta integrar L1/L
 
 ## Inventario de commits existentes
 
-| # | SHA corto | Mensaje | Veredicto |
-|---|-----------|---------|-----------|
-| 1 | `00a0d66a` | `docs(code-review): strengthen review policy and router guidance` | ⚠️ Fuera de alcance L1/L2/L3 — decidir en P1-A |
-| 2 | `8f441820` | `chore(ci): add local preflight runner and bat launcher` | ✅ Conservar |
-| 3 | `9a2ce6dd` | `chore(preflight): make L2/L3 frontend checks path-scoped with force overrides` | ✅ Conservar |
-| 4 | `1e8946c3` | `chore(preflight): broaden frontend impact scope and log skip rationale` | ✅ Conservar |
-| 5 | `e3b4f636` | `docs(preflight): require L3 -ForceFull before merge to main for relevant changes` | ✅ Conservar |
-| 6 | `3fd2f42e` | `test(docs-contract): enforce relevant-change and ForceFull policy terms` | ✅ Conservar |
-| 7 | `1a094b55` | `chore(preflight): add L1/L2/L3 script entrypoints with legacy aliases` | ✅ Conservar |
-| 8 | `218f6795` | `docs(preflight): adopt L1/L2/L3 naming in docs and contract tests` | ✅ Conservar |
+| #   | SHA corto  | Mensaje                                                                            | Veredicto                                      |
+| --- | ---------- | ---------------------------------------------------------------------------------- | ---------------------------------------------- |
+| 1   | `00a0d66a` | `docs(code-review): strengthen review policy and router guidance`                  | ⚠️ Fuera de alcance L1/L2/L3 — decidir en P1-A |
+| 2   | `8f441820` | `chore(ci): add local preflight runner and bat launcher`                           | ✅ Conservar                                   |
+| 3   | `9a2ce6dd` | `chore(preflight): make L2/L3 frontend checks path-scoped with force overrides`    | ✅ Conservar                                   |
+| 4   | `1e8946c3` | `chore(preflight): broaden frontend impact scope and log skip rationale`           | ✅ Conservar                                   |
+| 5   | `e3b4f636` | `docs(preflight): require L3 -ForceFull before merge to main for relevant changes` | ✅ Conservar                                   |
+| 6   | `3fd2f42e` | `test(docs-contract): enforce relevant-change and ForceFull policy terms`          | ✅ Conservar                                   |
+| 7   | `1a094b55` | `chore(preflight): add L1/L2/L3 script entrypoints with legacy aliases`            | ✅ Conservar                                   |
+| 8   | `218f6795` | `docs(preflight): adopt L1/L2/L3 naming in docs and contract tests`                | ✅ Conservar                                   |
 
 ## Estado de ejecución
 
@@ -48,11 +48,11 @@ La rama ya tiene 8 commits con scripts, hooks, docs y tests. Falta integrar L1/L
   - Archivo: `docs/projects/veterinary-medical-records/03-ops/execution-rules.md`
   - Nuevo bloque que mapea momentos del SCOPE BOUNDARY a niveles de preflight:
 
-    | Momento SCOPE BOUNDARY | Nivel mínimo | Comando |
-    |---|---|---|
-    | Antes de STEP A (commit) | L1 | `scripts/ci/test-L1.ps1 -BaseRef HEAD` |
-    | Antes de STEP C (push) | L2 | `scripts/ci/test-L2.ps1 -BaseRef main` |
-    | Antes de crear/actualizar PR | L3 | `scripts/ci/test-L3.ps1 -BaseRef main` |
+    | Momento SCOPE BOUNDARY                   | Nivel mínimo  | Comando                                           |
+    | ---------------------------------------- | ------------- | ------------------------------------------------- |
+    | Antes de STEP A (commit)                 | L1            | `scripts/ci/test-L1.ps1 -BaseRef HEAD`            |
+    | Antes de STEP C (push)                   | L2            | `scripts/ci/test-L2.ps1 -BaseRef main`            |
+    | Antes de crear/actualizar PR             | L3            | `scripts/ci/test-L3.ps1 -BaseRef main`            |
     | Antes de merge a main (cambio relevante) | L3 -ForceFull | `scripts/ci/test-L3.ps1 -BaseRef main -ForceFull` |
 
 ### Fase 3 — Tests de contrato y validación
@@ -69,6 +69,6 @@ La rama ya tiene 8 commits con scripts, hooks, docs y tests. Falta integrar L1/L
 
 ## Riesgos
 
-| Riesgo | Mitigación |
-|---|---|
+| Riesgo                                       | Mitigación                                                                                                   |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | Inconsistencia entre tabla ad-hoc y L1/L2/L3 | No eliminar la tabla ad-hoc — anotar que L1/L2/L3 la sustituyen y dejar los comandos como referencia interna |

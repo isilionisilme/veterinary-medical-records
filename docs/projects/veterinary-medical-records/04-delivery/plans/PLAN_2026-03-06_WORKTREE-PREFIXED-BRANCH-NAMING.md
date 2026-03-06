@@ -55,11 +55,11 @@ Los nombres de rama actuales no identifican explicitamente el worktree de origen
 
 ## Commit Task Definitions
 
-| ID | After Steps | Scope | Commit Message | Push |
-|---|---|---|---|---|
-| CT-1 | P1-A, P1-B | Convencion canonica + router regenerado | `docs(plan-p1): adopt worktree-prefixed branch naming convention` | Inmediato |
-| CT-2 | P2-A, P2-B | Validador + integracion preflight L2 | `ci(plan-p2): enforce worktree-prefixed branch naming on pre-push` | Inmediato |
-| CT-3 | P3-A, P3-B | Evidencia de validacion + cierre del plan | `docs(plan-p3): document branch naming validation evidence` | Inmediato |
+| ID   | After Steps      | Scope                                                                      | Commit Message                                                       | Push      |
+| ---- | ---------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------- | --------- |
+| CT-1 | P1-A, P1-B       | Convencion canonica + router regenerado                                    | `docs(plan-p1): adopt worktree-prefixed branch naming convention`    | Inmediato |
+| CT-2 | P2-A, P2-B       | Validador + integracion preflight L2                                       | `ci(plan-p2): enforce worktree-prefixed branch naming on pre-push`   | Inmediato |
+| CT-3 | P3-A, P3-B       | Evidencia de validacion + cierre del plan                                  | `docs(plan-p3): document branch naming validation evidence`          | Inmediato |
 | CT-4 | P4-A, P4-B, P4-C | Creacion de rama guiada para agentes + contrato de propagacion + evidencia | `docs(plan-p4): enforce agent branch creation with canonical naming` | Inmediato |
 
 ---
@@ -67,6 +67,7 @@ Los nombres de rama actuales no identifican explicitamente el worktree de origen
 ## Estado de ejecucion
 
 **Leyenda**
+
 - 🔄 auto-chain — ejecutable por Codex
 - 🚧 hard-gate — revision/decision de usuario
 
@@ -112,16 +113,16 @@ Los nombres de rama actuales no identifican explicitamente el worktree de origen
 
 ## Archivos clave
 
-| Archivo | Rol |
-|---|---|
-| `docs/shared/03-ops/way-of-working.md` | Fuente canonica de convencion de ramas |
-| `docs/agent_router/03_SHARED/WAY_OF_WORKING/30_branching-strategy.md` | Router derivado para branching strategy |
-| `docs/agent_router/01_WORKFLOW/BRANCHING/00_entry.md` | Entrada routing para intent de branch naming |
-| `docs/agent_router/01_WORKFLOW/START_WORK/00_entry.md` | Entrada routing para creacion de rama por agente |
-| `scripts/ci/validate-branch-name.ps1` | Validador de branch naming (nuevo) |
-| `scripts/ci/preflight-ci-local.ps1` | Punto de integracion enforcement en L2 |
-| `backend/tests/unit/test_doc_router_contract.py` | Contrato de propagacion source -> router (START_WORK/BRANCHING) |
-| `.githooks/pre-push` | Hook que dispara L2 antes del push |
+| Archivo                                                               | Rol                                                             |
+| --------------------------------------------------------------------- | --------------------------------------------------------------- |
+| `docs/shared/03-ops/way-of-working.md`                                | Fuente canonica de convencion de ramas                          |
+| `docs/agent_router/03_SHARED/WAY_OF_WORKING/30_branching-strategy.md` | Router derivado para branching strategy                         |
+| `docs/agent_router/01_WORKFLOW/BRANCHING/00_entry.md`                 | Entrada routing para intent de branch naming                    |
+| `docs/agent_router/01_WORKFLOW/START_WORK/00_entry.md`                | Entrada routing para creacion de rama por agente                |
+| `scripts/ci/validate-branch-name.ps1`                                 | Validador de branch naming (nuevo)                              |
+| `scripts/ci/preflight-ci-local.ps1`                                   | Punto de integracion enforcement en L2                          |
+| `backend/tests/unit/test_doc_router_contract.py`                      | Contrato de propagacion source -> router (START_WORK/BRANCHING) |
+| `.githooks/pre-push`                                                  | Hook que dispara L2 antes del push                              |
 
 ---
 
@@ -160,10 +161,10 @@ Regenera los router files tras el cambio canonico de branching:
 
 1) Ejecutar: python scripts/docs/generate-router-files.py
 2) Verificar que cambiaron:
-	- docs/agent_router/03_SHARED/WAY_OF_WORKING/30_branching-strategy.md
-	- docs/agent_router/01_WORKFLOW/BRANCHING/00_entry.md
+ - docs/agent_router/03_SHARED/WAY_OF_WORKING/30_branching-strategy.md
+ - docs/agent_router/01_WORKFLOW/BRANCHING/00_entry.md
 3) Validar drift limpio con:
-	- python scripts/docs/generate-router-files.py --check
+ - python scripts/docs/generate-router-files.py --check
 
 ```
 
@@ -176,7 +177,7 @@ Crea `scripts/ci/validate-branch-name.ps1` con esta logica:
 2) Si rama vacia (detached) o `main`: exit 0.
 3) Detectar worktree esperado con `git rev-parse --show-toplevel` + `Split-Path -Leaf`.
 4) Validar formato nuevo:
-	^<worktree>/(feature|fix|docs|chore|refactor|ci|improvement)/[a-z0-9][a-z0-9-]*[a-z0-9]$
+ ^<worktree>/(feature|fix|docs|chore|refactor|ci|improvement)/[a-z0-9][a-z0-9-]*[a-z0-9]$
 5) Si no matchea formato nuevo pero si legacy (`^(feature|fix|docs|chore|refactor|ci|improvement)/`): warning + exit 0.
 6) Si no matchea ninguno: error + exit 1.
 7) Mensajes claros con formato esperado y worktree detectado.
@@ -220,10 +221,10 @@ Preparar evidencia final:
 1) Ejecutar: python scripts/docs/generate-router-files.py --check
 2) Consolidar resultados de la matriz de validacion del hook.
 3) Preparar resumen para PR body:
-	- formato nuevo,
-	- compatibilidad legacy temporal,
-	- casos bloqueados,
-	- archivos modificados.
+ - formato nuevo,
+ - compatibilidad legacy temporal,
+ - casos bloqueados,
+ - archivos modificados.
 
 NO toques el archivo PLAN. NO hagas commit.
 ```
@@ -249,10 +250,10 @@ Regenera los router files tras el cambio en `Starting New Work`:
 
 1) Ejecutar: python scripts/docs/generate-router-files.py
 2) Verificar que cambiaron:
-	- docs/agent_router/01_WORKFLOW/START_WORK/00_entry.md
-	- docs/agent_router/01_WORKFLOW/BRANCHING/00_entry.md
+ - docs/agent_router/01_WORKFLOW/START_WORK/00_entry.md
+ - docs/agent_router/01_WORKFLOW/BRANCHING/00_entry.md
 3) Validar drift limpio con:
-	- python scripts/docs/generate-router-files.py --check
+ - python scripts/docs/generate-router-files.py --check
 
 NO toques el archivo PLAN. NO hagas commit.
 ```

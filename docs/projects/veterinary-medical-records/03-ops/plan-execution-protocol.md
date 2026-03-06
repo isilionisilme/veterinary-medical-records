@@ -1,6 +1,7 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+**Table of Contents** _generated with [DocToc](https://github.com/thlorenz/doctoc)_
 
 - [Plan Execution Protocol](#plan-execution-protocol)
   - [Purpose](#purpose)
@@ -74,13 +75,13 @@
 
 # Plan Execution Protocol
 
-
 **Breadcrumbs:** [Docs](../../../README.md) / [Projects](../../README.md) / veterinary-medical-records / 03-ops
 
 > **Canonical source of truth.**
 > This document is the single authoritative reference for how AI agents execute plan steps in this project.
 >
 > **Governance:**
+>
 > - This file is a canonical document maintained by humans.
 > - Router files under `docs/agent_router/` are derived outputs generated from this canonical source.
 > - Flow is **canonical → router only**. Router files MUST NOT be edited directly.
@@ -130,6 +131,7 @@ The default execution mode is **semi-unattended**. After completing the current 
 Keep execution in the current chat by default.
 
 The agent may recommend switching chat only when:
+
 1. expected token-efficiency benefit is significant, or
 2. a hard capability blocker requires another agent/model.
 
@@ -151,20 +153,21 @@ Never mix scope between steps. Each step in Execution Status is an atomic unit: 
 
 For visibility and traceability, mark the active step with the appropriate label **without changing the base checkbox**.
 
-| State | Syntax |
-|-------|--------|
-| Pending | `- [ ] F?-? ...` |
-| In progress | `- [ ] F?-? ... ⏳ IN PROGRESS (<agent>, <date>)` |
-| Blocked | `- [ ] F?-? ... 🚫 BLOCKED (<short reason>)` |
+| State       | Syntax                                                                      |
+| ----------- | --------------------------------------------------------------------------- |
+| Pending     | `- [ ] F?-? ...`                                                            |
+| In progress | `- [ ] F?-? ... ⏳ IN PROGRESS (<agent>, <date>)`                           |
+| Blocked     | `- [ ] F?-? ... 🚫 BLOCKED (<short reason>)`                                |
 | Step locked | `- [ ] F?-? ... 🔒 STEP LOCKED (code committed, awaiting CI + plan update)` |
-| Completed | `- [x] F?-? ...` |
+| Completed   | `- [x] F?-? ...`                                                            |
 
 **Mandatory rules:**
+
 1. Do not use `[-]`, `[~]`, `[...]` or variants: only `[ ]` or `[x]`.
 2. Before executing a `[ ]` step, mark it `⏳ IN PROGRESS (<agent>, <date>)`.
 3. `IN PROGRESS` and `BLOCKED` are text labels, not checkbox states.
 4. On completion, remove any label and mark `[x]`.
-5. On completion, **append the code commit short SHA** for traceability: `- [x] F?-? — Description — ✅ \`abc1234f\``. If the step produced no code change (e.g., a verification or check step), use `✅ \`no-commit (<reason>)\`` instead of a SHA.
+5. On completion, **append the code commit short SHA** for traceability: `- [x] F?-? — Description — ✅ \`abc1234f\``. If the step produced no code change (e.g., a verification or check step), use`✅ \`no-commit (<reason>)\`` instead of a SHA.
 6. For `BLOCKED`, include brief reason and next action.
 7. After code commit but before CI green + plan update, mark `🔒 STEP LOCKED`.
 
@@ -174,6 +177,7 @@ For visibility and traceability, mark the active step with the appropriate label
 
 **If the user expresses continuation intent (for example: "continue", "go", "let's go", "proceed", "resume"):**
 Interpret continuation intent semantically, not as a literal command token.
+
 1. Read the Execution Status and find the first `[ ]` (includes lines with `⏳ IN PROGRESS` or `🚫 BLOCKED` labels).
 2. Apply the **decision table in §10** to determine the action (auto-chain, stop, or report).
 3. If ambiguous: STOP and ask the user for clarification.
@@ -183,6 +187,7 @@ Interpret continuation intent semantically, not as a literal command token.
 ## 5. Continuation-Intent-Only Rule
 
 **When the user expresses continuation intent, the agent executes ONLY what the plan dictates.** If the user's message includes additional instructions alongside the continuation request, the agent must:
+
 1. **Pause and request scope confirmation** (do not silently ignore extra instructions).
 2. Respond with two options: continue with the exact next plan step, or switch scope and ask the planning agent to update the plan and prompt.
 3. Execute only after the user explicitly confirms one option.
@@ -233,6 +238,7 @@ Before handoff or auto-chain to the next step, each completed step must include:
 ## 6. Rollback Procedure
 
 If a completed step causes an issue not detected by tests:
+
 1. `git revert HEAD` (reverts commit without losing history)
 2. Edit Execution Status: change `[x]` back to `[ ]` for the affected step
 3. Report to the planning agent for diagnosis before retrying
@@ -261,6 +267,7 @@ For standard override types, runtime behavior is:
 - `merge-pr` -> `explicit-user-approval`
 
 ### Pull Request progress tracking (mandatory)
+
 Every completed step must be reflected in the active Pull Request. After push, the agent updates the PR body with `gh pr edit <pr_number> --body "..."`.
 
 ### Execution Worktree Selection (Mandatory Plan-Start Choice)
@@ -268,6 +275,7 @@ Every completed step must be reflected in the active Pull Request. After push, t
 Before executing the first step of a plan, the agent must ask the user where to execute the plan.
 
 **Mandatory behavior:**
+
 - List **all existing worktrees** first (for example using `git worktree list`).
 - Offer two choices:
   1. Use one of the listed existing worktrees.
@@ -285,6 +293,7 @@ Before executing the first step of a plan, the agent must offer the user exactly
 3. **End-of-plan gate** — CI is not checked between steps; CI is checked after all planned implementation steps are done.
 
 **Mandatory behavior:**
+
 - Ask the user to choose one mode before step 1 starts.
 - Record the selected mode in the active `PLAN_*.md`.
 - If the user does not choose, default to **Mode 2 (Pipeline depth-1 gate)**.
@@ -307,6 +316,7 @@ Before executing the first step of a plan, the agent must ask the user which age
 Claude Opus 4.6 costs ~3x more tokens than Codex 5.3. When both agents are available, the planning agent MUST default to Codex unless the task has characteristics that clearly benefit from Claude (e.g., complex multi-file refactors, nuanced architectural decisions, tasks requiring deep contextual reasoning across many files). In equal conditions, always prefer Codex.
 
 **Mandatory behavior:**
+
 - Ask the user which agents are available before step 1 starts.
 - Record the selected configuration in the active `PLAN_*.md` metadata (e.g., `**Agents:** <agent-1> + <agent-2>`).
 - The planning agent uses this information to assign steps and determine handoff routing.
@@ -317,13 +327,14 @@ Claude Opus 4.6 costs ~3x more tokens than Codex 5.3. When both agents are avail
 ## 8. Step Completion Integrity (Hard Rules)
 
 ### NO-BATCH
+
 **Prohibited: creating commits that do not match the active commit task definition.**
 
 A single commit may include one or more implementation steps only if those steps are explicitly listed in that commit task's scope.
 
 ### CI Mode 2 — Pipeline Execution (Depth-1)
 
-**Core principle:** Do not wait for CI between auto-chain steps. After pushing the commit bundle defined by the active commit task, immediately start the next implementation step. CI is checked *before starting* step N+2, keeping a maximum pipeline depth of 1.
+**Core principle:** Do not wait for CI between auto-chain steps. After pushing the commit bundle defined by the active commit task, immediately start the next implementation step. CI is checked _before starting_ step N+2, keeping a maximum pipeline depth of 1.
 
 #### Flow
 
@@ -349,6 +360,7 @@ Commit A → push → start working on B locally (do NOT wait for CI of A)
 #### Cancelled CI Runs
 
 The CI workflow uses `cancel-in-progress: true` — a new push cancels the running CI for the same branch. This is expected and safe:
+
 - CI-B validates the cumulative code (A + B). If CI-B is green, A is implicitly validated.
 - Accept the **most recent completed green run** even if triggered by a later push.
 - If the only completed run is cancelled, wait for the next run or re-trigger with `git commit --allow-empty`.
@@ -359,11 +371,15 @@ The CI workflow uses `cancel-in-progress: true` — a new push cancels the runni
 - The last step of an iteration (before merge)
 
 ### PLAN-UPDATE-IMMEDIATE
+
 **After CI green for a step, the very next commit MUST be the plan update.** No intermediate code commits allowed. Sequence:
+
 1. Code commit → Push → CI green → Plan-update commit → Push → Proceed
 
 ### STEP-LOCK
+
 When a step has code pushed but CI has not yet passed:
+
 - Mark: `🔒 STEP LOCKED (code committed, awaiting CI + plan update)`
 - While LOCKED: no other step may begin execution, no handoff may be emitted, no auto-chain commit may occur.
 - Lock released only when CI is green AND plan-update commit is pushed.
@@ -389,18 +405,19 @@ Before emitting ANY handoff or auto-chain message:
 1. Is the most recent CI run **green**?
 2. Does the most recent commit correspond to the **plan-update commit**?
 
-| CI green? | Plan committed? | Action |
-|---|---|---|
-| YES | YES | Proceed with handoff/chain |
-| YES | NO | Commit plan update first |
-| NO | any | **BLOCKED** — fix CI |
-| unknown | any | **WAIT** — poll CI |
+| CI green? | Plan committed? | Action                     |
+| --------- | --------------- | -------------------------- |
+| YES       | YES             | Proceed with handoff/chain |
+| YES       | NO              | Commit plan update first   |
+| NO        | any             | **BLOCKED** — fix CI       |
+| unknown   | any             | **WAIT** — poll CI         |
 
 ---
 
 ## 9. Format-Before-Commit (Mandatory)
 
 **Before every `git commit`, the agent ALWAYS runs the project formatters:**
+
 1. `cd frontend && npx prettier --write 'src/**/*.{ts,tsx,css}' && cd ..`
 2. `ruff check backend/ --fix --quiet && ruff format backend/ --quiet`
 3. If commit fails: re-run formatters, re-add, retry ONCE. Second failure: STOP.
@@ -409,24 +426,27 @@ Before emitting ANY handoff or auto-chain message:
 
 ### Local Preflight Integration
 
-| SCOPE BOUNDARY moment | Min. level | Command |
-|---|---|---|
-| Before commit (STEP A) | L1 | `scripts/ci/test-L1.ps1 -BaseRef HEAD` |
-| Before push (STEP C) | L2 | `scripts/ci/test-L2.ps1 -BaseRef main` |
-| Before PR creation/update | L3 | `scripts/ci/test-L3.ps1 -BaseRef main` |
-| Before merge to main | CI green | No local run needed |
+| SCOPE BOUNDARY moment     | Min. level | Command                                |
+| ------------------------- | ---------- | -------------------------------------- |
+| Before commit (STEP A)    | L1         | `scripts/ci/test-L1.ps1 -BaseRef HEAD` |
+| Before push (STEP C)      | L2         | `scripts/ci/test-L2.ps1 -BaseRef main` |
+| Before PR creation/update | L3         | `scripts/ci/test-L3.ps1 -BaseRef main` |
+| Before merge to main      | CI green   | No local run needed                    |
 
 ### User Validation Environment (Mandatory)
 
 When the agent asks the user to validate or test behavior manually, the agent MUST first start the project in **dev mode with hot reload enabled**.
 
 Canonical command (this project):
+
 1. `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build`
 
 Canonical stop command (this project):
+
 1. `docker compose -f docker-compose.yml -f docker-compose.dev.yml down`
 
 Mandatory checks before asking user validation:
+
 1. Backend reachable: `http://localhost:8000/health` returns HTTP 200.
 2. Frontend reachable: `http://localhost:5173` returns HTTP 200.
 3. If either check fails, STOP and report the blocker instead of asking the user to test.
@@ -439,12 +459,12 @@ On completing a step, the agent ALWAYS tells the user the next move with concret
 
 **Decision table:**
 
-| Prompt exists? | Hard-gate? | Action |
-|---|---|---|
-| YES | NO | **AUTO-CHAIN** — execute the next step directly. |
-| YES | YES (🚧) | **STOP** — report: "The next step is a hard-gate requiring user decision." |
-| NO | NO | **STOP** — report: "No prompt exists for F?-?. The planning agent must write one." |
-| NO | YES (🚧) | **STOP** — report: "The next step is a hard-gate requiring user decision." |
+| Prompt exists? | Hard-gate? | Action                                                                             |
+| -------------- | ---------- | ---------------------------------------------------------------------------------- |
+| YES            | NO         | **AUTO-CHAIN** — execute the next step directly.                                   |
+| YES            | YES (🚧)   | **STOP** — report: "The next step is a hard-gate requiring user decision."         |
+| NO             | NO         | **STOP** — report: "No prompt exists for F?-?. The planning agent must write one." |
+| NO             | YES (🚧)   | **STOP** — report: "The next step is a hard-gate requiring user decision."         |
 
 ---
 
@@ -458,10 +478,10 @@ Prompt Queue -> Active Prompt -> STOP (ask the planning agent).
 
 ### Prompt Consumption (Execution Agent)
 
-| Operation | Who | When |
-|---|---|---|
-| **Consume** | Execution agent | On step start, per resolution priority in this section |
-| **Clean** | Execution agent | After step execution, clear `## Active Prompt` section content |
+| Operation   | Who             | When                                                           |
+| ----------- | --------------- | -------------------------------------------------------------- |
+| **Consume** | Execution agent | On step start, per resolution priority in this section         |
+| **Clean**   | Execution agent | After step execution, clear `## Active Prompt` section content |
 
 ### Routing for Continuation Intent
 
@@ -472,12 +492,14 @@ Follow the **Step Eligibility Rule (§4)** to determine and execute the next ste
 ## 12. Hard-Gates: Structured Decision Protocol
 
 In 🚧 steps, the planning agent presents options as a numbered list:
+
 ```
 Backlog items:
 1. ✅ Centralize config — Impact: High, Effort: S
 2. ✅ Add health check — Impact: Medium, Effort: S
 3. ❌ Migrate to PostgreSQL — Impact: High, Effort: L (OUT OF SCOPE)
 ```
+
 The user responds with numbers: `1, 2, 4` or `all` or `none`.
 The planning agent records the decision, commits, prepares the prompt, and directs to the execution agent.
 
@@ -490,31 +512,38 @@ The planning agent records the decision, commits, prepares the prompt, and direc
 Execute these steps **IN THIS EXACT ORDER**:
 
 ### STEP 0 — Branch Verification
+
 1. Read `**Branch:**` from the plan file.
 2. Check current branch: `git branch --show-current`.
 3. If correct: proceed. If not: checkout or create.
 
 ### STEP A — Commit Code (plan file untouched)
+
 1. Stage files defined in the commit task scope (never the plan file).
 2. Commit with test proof in message.
 
 ### STEP B — Commit Plan Update
+
 1. Apply completion rules per §3.
 2. Stage and commit plan file only.
 
 ### STEP C — Push Both Commits
+
 1. `git push origin <branch>`
 2. Apply draft PR creation rules per §14.
 
 ### STEP D — Update Active PR Description
+
 Update PR body per §7.
 
 ### STEP E — CI Gate
+
 1. Check CI: `gh run list --branch <branch> --limit 1 --json status,conclusion,databaseId`
 2. If in_progress: wait 30s and retry (up to 10).
 3. Apply CI failure rules per §7 and AUTO-HANDOFF GUARD per §8.
 
 ### STEP F — Chain or Stop
+
 - **PRE-CONDITION:** STEP A must have completed.
 - Apply AUTO-HANDOFF GUARD per §8.
 - Apply decision table per §10.
@@ -529,16 +558,20 @@ Branch creation → Plan steps → PR readiness → User approval → Close-out 
 ```
 
 ### Branch Creation (Before Any Plan Step)
+
 1. Read `**Branch:**` from the plan.
 2. `git fetch origin`
 3. Create from latest main: `git checkout -b <branch> origin/main`.
 4. If branch exists remotely: checkout and pull.
 
 ### Draft PR Creation (On First Push)
+
 On the first push to a feature branch, create a draft PR immediately and record the PR number in the plan. If a PR already exists for the branch, skip creation.
 
 ### PR Readiness (Automatic)
+
 When all steps are `[x]` and CI is green:
+
 1. Convert draft PR to ready: `gh pr ready <pr_number>`.
 2. Update title, body, classification.
 3. Report PR number and URL to user.
@@ -562,6 +595,7 @@ When user says "merge", execute close-out first:
 ### Merge (Automatic, After Close-Out)
 
 Only after close-out is committed and CI is green:
+
 1. Confirm PR is mergeable (CI green, no conflicts).
 2. Squash merge: `gh pr merge <number> --squash --delete-branch`.
 3. Switch to main, pull, delete local branch, clean stashes.
@@ -592,12 +626,14 @@ During plan execution, the agent MUST project plan progress into chat todos.
 ## 16. Token-Efficiency Policy
 
 To avoid context explosion:
+
 1. **iterative-retrieval** before each step: load only current state, step objective, target files, guardrails, validation outputs.
 2. **strategic-compact** at step close: summarize only the delta, validation, risks, and next move.
 3. Do not carry full chat history if not necessary.
 4. For chat-switch decisions, apply the **Single-Chat Execution Rule**.
 
 > **Mandatory compact template:**
+>
 > - Step: F?-?
 > - Delta: <concrete changes>
 > - Validation: <tests/guards + result>
@@ -608,10 +644,13 @@ To avoid context explosion:
 ## 17. Commit Conventions
 
 All commits in this flow follow the format:
+
 ```
 <type>(plan-<id>): <short description>
 ```
+
 Examples:
+
 - `audit(plan-f1a): 12-factor compliance report + backlog`
 - `refactor(plan-f2c): split App.tsx into page and API modules`
 - `test(plan-f4c): add frontend coverage gaps for upload flow`
@@ -627,6 +666,7 @@ When asked to add a new User Story, update [`IMPLEMENTATION_PLAN.md`](../04-deli
 2. Add or update the full **User Story Details** section for that story.
 
 If the requested story is not yet scheduled in any release, schedule it in the Release Plan:
+
 - Add it to an existing release, or
 - Create a new release section when needed.
 

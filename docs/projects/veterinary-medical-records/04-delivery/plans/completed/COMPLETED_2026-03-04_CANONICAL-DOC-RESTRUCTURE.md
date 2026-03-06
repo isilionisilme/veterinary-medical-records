@@ -29,43 +29,43 @@ Este plan establece 7 documentos canónicos (5 shared, 2 project) como single so
 
 ## Design decisions
 
-| Decision | Choice | Rationale |
-|---|---|---|
-| Canonical doc count | 7 (5 shared + 2 project) | Natural topic clustering; each doc reads as a coherent unit |
-| `contributing.md` vs `way-of-working.md` | `way-of-working.md` | More descriptive of content (branch→commit→PR→review→done lifecycle) |
-| engineering-playbook.md fate | Delete after migration | Content fully covered by 3 new canonicals |
-| Directionality enforcement | CI check + regeneration script | Convention alone is insufficient; automated protection required |
-| brand/ux guidelines | Keep as-is, add governance header only | Already well-structured canonical docs |
-| Router mini-files | Derived via script + manifest | Single source of truth; no manual edits to router |
-| Derived router files strategy | Delete ~58 derived files, regenerate from scratch | Cleaner than incremental update; avoids stale content. Keep routing infra (00_AUTHORITY, 00_FALLBACK, 00_RULES_INDEX, README), DOC_UPDATES, 02_PRODUCT pointers, 04_PROJECT (out of scope), extraction ADR/ITERATIONS, extraction-tracking |
+| Decision                                 | Choice                                            | Rationale                                                                                                                                                                                                                                  |
+| ---------------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Canonical doc count                      | 7 (5 shared + 2 project)                          | Natural topic clustering; each doc reads as a coherent unit                                                                                                                                                                                |
+| `contributing.md` vs `way-of-working.md` | `way-of-working.md`                               | More descriptive of content (branch→commit→PR→review→done lifecycle)                                                                                                                                                                       |
+| engineering-playbook.md fate             | Delete after migration                            | Content fully covered by 3 new canonicals                                                                                                                                                                                                  |
+| Directionality enforcement               | CI check + regeneration script                    | Convention alone is insufficient; automated protection required                                                                                                                                                                            |
+| brand/ux guidelines                      | Keep as-is, add governance header only            | Already well-structured canonical docs                                                                                                                                                                                                     |
+| Router mini-files                        | Derived via script + manifest                     | Single source of truth; no manual edits to router                                                                                                                                                                                          |
+| Derived router files strategy            | Delete ~58 derived files, regenerate from scratch | Cleaner than incremental update; avoids stale content. Keep routing infra (00_AUTHORITY, 00_FALLBACK, 00_RULES_INDEX, README), DOC_UPDATES, 02_PRODUCT pointers, 04_PROJECT (out of scope), extraction ADR/ITERATIONS, extraction-tracking |
 
 ## PR Roadmap
 
-| PR | Rama | Fases | Alcance | Depende de |
-|---|---|---|---|---|
-| **PR-1** | `docs/canonical-doc-restructure` | F1, F2 | Crear 5 canónicos nuevos, governance headers, eliminar engineering-playbook.md, fix refs | — |
-| **PR-2** | `chore/router-directionality-protection` | F3, F4 | Regenerar router desde canónicos, manifest, CI directionality + drift checks | PR-1 merged |
+| PR       | Rama                                     | Fases  | Alcance                                                                                  | Depende de  |
+| -------- | ---------------------------------------- | ------ | ---------------------------------------------------------------------------------------- | ----------- |
+| **PR-1** | `docs/canonical-doc-restructure`         | F1, F2 | Crear 5 canónicos nuevos, governance headers, eliminar engineering-playbook.md, fix refs | —           |
+| **PR-2** | `chore/router-directionality-protection` | F3, F4 | Regenerar router desde canónicos, manifest, CI directionality + drift checks             | PR-1 merged |
 
 ## Commit plan
 
-| # | Commit message | Files touched | Step |
-|---|---|---|---|
-| C1 | `docs(shared): add coding-standards.md — tech standards canonical` | `docs/shared/02-tech/coding-standards.md` | F1-A |
-| C2 | `docs(shared): add documentation-guidelines.md — doc standards canonical` | `docs/shared/02-tech/documentation-guidelines.md` | F1-B |
-| C3 | `docs(shared): add way-of-working.md — ops workflow canonical` | `docs/shared/03-ops/way-of-working.md` | F1-C |
-| C4 | `docs(project): add plan-execution-protocol.md — agent execution canonical` | `docs/projects/.../03-ops/plan-execution-protocol.md` | F1-D |
-| C5 | `docs(project): add extraction-quality.md — extraction rules canonical` | `docs/projects/.../02-tech/extraction-quality.md` | F1-E |
-| C6 | `docs(shared): add governance headers to brand-guidelines and ux-guidelines` | `docs/shared/01-product/brand-guidelines.md`, `docs/shared/01-product/ux-guidelines.md` | F2-A |
-| C7 | `docs(shared): delete engineering-playbook.md — replaced by 3 canonicals` | `docs/shared/03-ops/engineering-playbook.md` (delete) | F2-B |
-| C8 | `docs(shared): update wiki section indexes for new canonical docs` | `docs/shared/02-tech/`, `docs/shared/03-ops/` index files | F2-C |
-| C9 | `docs: fix all cross-references from engineering-playbook.md to new canonicals` | Multiple files (grep + replace) | F2-D |
-| C10 | `docs(router): add MANIFEST.yaml — canonical-to-router derivation map` | `docs/agent_router/MANIFEST.yaml` | F3-A |
-| C11 | `chore(scripts): add generate-router-files.py — canonical→router derivation` | `scripts/docs/generate-router-files.py` | F3-B |
-| C12 | `docs(router): delete derived router files and regenerate from canonicals` | `docs/agent_router/01_WORKFLOW/{BRANCHING,CODE_REVIEW,PULL_REQUESTS,START_WORK,TESTING}/`, `docs/agent_router/03_SHARED/{ENGINEERING_PLAYBOOK,BRAND_GUIDELINES,UX_GUIDELINES}/`, `docs/agent_router/extraction/{STRATEGY,FIELD_GUARDRAILS,OBSERVABILITY}.md` | F3-C |
-| C13 | `docs(router): update AGENTS.md and 00_AUTHORITY.md — remove embedded rules` | `AGENTS.md`, `docs/agent_router/00_AUTHORITY.md` | F3-D |
-| C14 | `docs(router): update parity and impact maps for new canonical paths` | `docs/agent_router/01_WORKFLOW/DOC_UPDATES/router_parity_map.json`, `test_impact_map.json` | F3-E |
-| C15 | `ci: add canonical→router directionality check` | `.github/workflows/` or `scripts/ci/` | F4-A |
-| C16 | `ci: add router drift check — regenerate and compare` | `.github/workflows/` or `scripts/ci/` | F4-B |
+| #   | Commit message                                                                  | Files touched                                                                                                                                                                                                                                                | Step |
+| --- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---- |
+| C1  | `docs(shared): add coding-standards.md — tech standards canonical`              | `docs/shared/02-tech/coding-standards.md`                                                                                                                                                                                                                    | F1-A |
+| C2  | `docs(shared): add documentation-guidelines.md — doc standards canonical`       | `docs/shared/02-tech/documentation-guidelines.md`                                                                                                                                                                                                            | F1-B |
+| C3  | `docs(shared): add way-of-working.md — ops workflow canonical`                  | `docs/shared/03-ops/way-of-working.md`                                                                                                                                                                                                                       | F1-C |
+| C4  | `docs(project): add plan-execution-protocol.md — agent execution canonical`     | `docs/projects/.../03-ops/plan-execution-protocol.md`                                                                                                                                                                                                        | F1-D |
+| C5  | `docs(project): add extraction-quality.md — extraction rules canonical`         | `docs/projects/.../02-tech/extraction-quality.md`                                                                                                                                                                                                            | F1-E |
+| C6  | `docs(shared): add governance headers to brand-guidelines and ux-guidelines`    | `docs/shared/01-product/brand-guidelines.md`, `docs/shared/01-product/ux-guidelines.md`                                                                                                                                                                      | F2-A |
+| C7  | `docs(shared): delete engineering-playbook.md — replaced by 3 canonicals`       | `docs/shared/03-ops/engineering-playbook.md` (delete)                                                                                                                                                                                                        | F2-B |
+| C8  | `docs(shared): update wiki section indexes for new canonical docs`              | `docs/shared/02-tech/`, `docs/shared/03-ops/` index files                                                                                                                                                                                                    | F2-C |
+| C9  | `docs: fix all cross-references from engineering-playbook.md to new canonicals` | Multiple files (grep + replace)                                                                                                                                                                                                                              | F2-D |
+| C10 | `docs(router): add MANIFEST.yaml — canonical-to-router derivation map`          | `docs/agent_router/MANIFEST.yaml`                                                                                                                                                                                                                            | F3-A |
+| C11 | `chore(scripts): add generate-router-files.py — canonical→router derivation`    | `scripts/docs/generate-router-files.py`                                                                                                                                                                                                                      | F3-B |
+| C12 | `docs(router): delete derived router files and regenerate from canonicals`      | `docs/agent_router/01_WORKFLOW/{BRANCHING,CODE_REVIEW,PULL_REQUESTS,START_WORK,TESTING}/`, `docs/agent_router/03_SHARED/{ENGINEERING_PLAYBOOK,BRAND_GUIDELINES,UX_GUIDELINES}/`, `docs/agent_router/extraction/{STRATEGY,FIELD_GUARDRAILS,OBSERVABILITY}.md` | F3-C |
+| C13 | `docs(router): update AGENTS.md and 00_AUTHORITY.md — remove embedded rules`    | `AGENTS.md`, `docs/agent_router/00_AUTHORITY.md`                                                                                                                                                                                                             | F3-D |
+| C14 | `docs(router): update parity and impact maps for new canonical paths`           | `docs/agent_router/01_WORKFLOW/DOC_UPDATES/router_parity_map.json`, `test_impact_map.json`                                                                                                                                                                   | F3-E |
+| C15 | `ci: add canonical→router directionality check`                                 | `.github/workflows/` or `scripts/ci/`                                                                                                                                                                                                                        | F4-A |
+| C16 | `ci: add router drift check — regenerate and compare`                           | `.github/workflows/` or `scripts/ci/`                                                                                                                                                                                                                        | F4-B |
 
 ## Operational override steps (commit-task schema)
 
@@ -75,9 +75,9 @@ Este plan establece 7 documentos canónicos (5 shared, 2 project) como single so
 - `trigger`: after F3-A, F3-B, F3-C, F3-D, F3-E are `[x]`
 - `preconditions`: targeted docs/router tests green; `python scripts/docs/generate-router-files.py --check` passes
 - `commands`:
-   - `git add docs/agent_router/MANIFEST.yaml scripts/docs/generate-router-files.py requirements-dev.txt AGENTS.md docs/shared/03-ops/way-of-working.md docs/agent_router/00_AUTHORITY.md docs/agent_router/00_RULES_INDEX.md docs/agent_router/01_WORKFLOW/DOC_UPDATES/router_parity_map.json docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json docs/agent_router/01_WORKFLOW/CODE_REVIEW/ docs/agent_router/01_WORKFLOW/BRANCHING/ docs/agent_router/01_WORKFLOW/PULL_REQUESTS/ docs/agent_router/01_WORKFLOW/START_WORK/ docs/agent_router/01_WORKFLOW/TESTING/ docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/ docs/agent_router/03_SHARED/BRAND_GUIDELINES/ docs/agent_router/03_SHARED/UX_GUIDELINES/ docs/agent_router/03_SHARED/00_entry.md docs/agent_router/extraction/STRATEGY.md docs/agent_router/extraction/FIELD_GUARDRAILS.md docs/agent_router/extraction/OBSERVABILITY.md`
-   - `git commit -m "docs(router): F3 canonical->router derivation, regeneration, and contract alignment"`
-   - `git push origin chore/router-directionality-protection`
+  - `git add docs/agent_router/MANIFEST.yaml scripts/docs/generate-router-files.py requirements-dev.txt AGENTS.md docs/shared/03-ops/way-of-working.md docs/agent_router/00_AUTHORITY.md docs/agent_router/00_RULES_INDEX.md docs/agent_router/01_WORKFLOW/DOC_UPDATES/router_parity_map.json docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json docs/agent_router/01_WORKFLOW/CODE_REVIEW/ docs/agent_router/01_WORKFLOW/BRANCHING/ docs/agent_router/01_WORKFLOW/PULL_REQUESTS/ docs/agent_router/01_WORKFLOW/START_WORK/ docs/agent_router/01_WORKFLOW/TESTING/ docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/ docs/agent_router/03_SHARED/BRAND_GUIDELINES/ docs/agent_router/03_SHARED/UX_GUIDELINES/ docs/agent_router/03_SHARED/00_entry.md docs/agent_router/extraction/STRATEGY.md docs/agent_router/extraction/FIELD_GUARDRAILS.md docs/agent_router/extraction/OBSERVABILITY.md`
+  - `git commit -m "docs(router): F3 canonical->router derivation, regeneration, and contract alignment"`
+  - `git push origin chore/router-directionality-protection`
 - `approval`: `auto`
 - `fallback`: if commit fails due to scope mismatch, split into CT-1a/CT-1b in this plan before retrying
 
@@ -87,9 +87,9 @@ Este plan establece 7 documentos canónicos (5 shared, 2 project) como single so
 - `trigger`: after F4-A and F4-B are `[x]`
 - `preconditions`: CI checks added and passing in branch validation run
 - `commands`:
-   - `git add .github/workflows/ci.yml scripts/docs/check_router_directionality.py`
-   - `git commit -m "ci(plan-f4): add canonical-router directionality and drift checks"`
-   - `git push origin chore/canonical-doc-restructure-ci-guards`
+  - `git add .github/workflows/ci.yml scripts/docs/check_router_directionality.py`
+  - `git commit -m "ci(plan-f4): add canonical-router directionality and drift checks"`
+  - `git push origin chore/canonical-doc-restructure-ci-guards`
 - `approval`: `auto`
 - `fallback`: if checks fail, keep F4 steps in `🚫 BLOCKED` until focused fix is committed
 
@@ -98,6 +98,7 @@ Este plan establece 7 documentos canónicos (5 shared, 2 project) como single so
 ## Estado de ejecución
 
 **Leyenda**
+
 - 🔄 — Codex (auto-chain)
 - 🚧 — Claude (hard-gate / redacción)
 
@@ -105,7 +106,7 @@ Este plan establece 7 documentos canónicos (5 shared, 2 project) como single so
 
 - [x] F1-A 🚧 — **Create `docs/shared/02-tech/coding-standards.md`** — Migrar de engineering-playbook.md: code style, architecture, contracts, state mgmt, traceability, error handling, observability, data handling, config/env, versioning, dependencies, naming (domain/API/lifecycle/persistence). Añadir governance header. Commit C1. (Claude Opus 4.6) — ✅ `33fbf0f9`
 - [x] F1-B 🚧 — **Create `docs/shared/02-tech/documentation-guidelines.md`** — Migrar de engineering-playbook.md §documentation + parte humana de DOC_UPDATES (cuándo actualizar, clasificación R/C/N, verificación). Añadir governance header. Commit C2. (Claude Opus 4.6) — ✅ `0dc88c60`
-- [x] F1-C 🚧 — **Create `docs/shared/03-ops/way-of-working.md`** — Migrar de engineering-playbook.md §branch-first, §branching, §commits, §preflight, §PRs, §code-reviews, §delivery-model, §kickoff, §DoD, §execution-rule + contenido de 01_WORKFLOW/*. Añadir governance header. Commit C3. (Claude Opus 4.6) — ✅ `28e60da0`
+- [x] F1-C 🚧 — **Create `docs/shared/03-ops/way-of-working.md`** — Migrar de engineering-playbook.md §branch-first, §branching, §commits, §preflight, §PRs, §code-reviews, §delivery-model, §kickoff, §DoD, §execution-rule + contenido de 01_WORKFLOW/\*. Añadir governance header. Commit C3. (Claude Opus 4.6) — ✅ `28e60da0`
 - [x] F1-D 🚧 — **Create `docs/projects/.../03-ops/plan-execution-protocol.md`** — Absorber execution-rules.md completo, reescrito para legibilidad humana manteniendo todas las reglas operativas. Añadir governance header. Commit C4. (Claude Opus 4.6) — ✅ `e47a60d4`
 - [x] F1-E 🚧 — **Create `docs/projects/.../02-tech/extraction-quality.md`** — Consolidar extraction/STRATEGY.md, FIELD_GUARDRAILS.md, OBSERVABILITY.md, extraction-tracking/INDEX.md, risk-matrix.md. Añadir governance header. Commit C5. (Claude Opus 4.6) — ✅ `b514b44b`
 
@@ -148,9 +149,9 @@ Requirements:
 1) Human-readable canonical format (not router format), wiki-ready.
 2) Keep all normative rules (MUST/NEVER style meaning) intact.
 3) Add explicit governance section with directionality:
-	- Canonical source of truth
-	- Flow is canonical → router only
-	- Router files are derived outputs and must not be manually edited
+ - Canonical source of truth
+ - Flow is canonical → router only
+ - Router files are derived outputs and must not be manually edited
 4) Include clear section headers and concise rationale per section where helpful.
 5) Do not edit unrelated files.
 
@@ -174,8 +175,8 @@ Create `docs/shared/02-tech/documentation-guidelines.md` by consolidating:
 Requirements:
 1) Keep operational meaning intact, remove router-specific wording.
 2) Distinguish clearly:
-	- Human policy/rules (canonical)
-	- Agent/router mechanics (derived, references only)
+ - Human policy/rules (canonical)
+ - Agent/router mechanics (derived, references only)
 3) Add governance section with canonical → router directionality.
 4) Include a practical “when docs must be updated” section and a concise verification checklist.
 5) Do not edit unrelated files.
@@ -488,13 +489,13 @@ Output:
 
 ## Risks and limitations
 
-| Risk | Mitigation |
-|---|---|
-| PR-1 diff grande (muchos archivos) | Contenido es move/reorganize, no creación. Review por secciones temáticas. |
-| PLANs activos referenciando engineering-playbook.md | F2-D actualiza todas las refs antes del delete. |
-| Script de generación introduce drift sutil | F4-B CI drift check como safety net. |
-| Periodo entre PR-1 y PR-2 sin protección CI | Aceptable: PR-2 se ejecuta inmediatamente tras merge de PR-1. |
-| Contenido de extraction-quality.md puede necesitar revisión de dominio | F2-E hard-gate permite al usuario validar antes de merge. |
+| Risk                                                                   | Mitigation                                                                 |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| PR-1 diff grande (muchos archivos)                                     | Contenido es move/reorganize, no creación. Review por secciones temáticas. |
+| PLANs activos referenciando engineering-playbook.md                    | F2-D actualiza todas las refs antes del delete.                            |
+| Script de generación introduce drift sutil                             | F4-B CI drift check como safety net.                                       |
+| Periodo entre PR-1 y PR-2 sin protección CI                            | Aceptable: PR-2 se ejecuta inmediatamente tras merge de PR-1.              |
+| Contenido de extraction-quality.md puede necesitar revisión de dominio | F2-E hard-gate permite al usuario validar antes de merge.                  |
 
 ---
 

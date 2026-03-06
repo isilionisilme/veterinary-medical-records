@@ -28,7 +28,8 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 > **Protocolo "Continúa":** open a new chat, select the correct agent, attach this file and write `Continúa`. The agent reads the state, executes the next step, and stops on completion.
 
 **Automation legend:**
-- 🔄 **auto-chain** — Codex executes alone; you review the result *afterwards*.
+
+- 🔄 **auto-chain** — Codex executes alone; you review the result _afterwards_.
 - 🚧 **hard-gate** — Requires your decision before continuing. Do not skip.
 
 ### Fase 18 — Iteration 11
@@ -92,6 +93,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 **Objective:** Eliminate all direct `os.getenv` calls outside `settings.py` and `config.py` by centralizing them in the `Settings` dataclass.
 
 **Pre-flight context (do not re-discover — trust these facts):**
+
 - `backend/app/settings.py` has a frozen `@dataclass` `Settings` with `@lru_cache` singleton via `get_settings()`. All env vars use `_getenv()` helper.
 - `backend/app/application/processing/pdf_extraction.py` line ~48: reads `os.getenv("PDF_EXTRACTOR_FORCE")` at runtime using constant `PDF_EXTRACTOR_FORCE_ENV` from `constants.py`.
 - `backend/app/application/processing/interpretation.py` line ~180: reads `os.getenv("VET_RECORDS_INCLUDE_INTERPRETATION_CANDIDATES")` using constant `INTERPRETATION_DEBUG_INCLUDE_CANDIDATES_ENV` from `constants.py`.
@@ -99,6 +101,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 **Changes required:**
 
 1. **`backend/app/settings.py`** — Add 2 new fields to the `Settings` dataclass:
+
    ```python
    pdf_extractor_force: str = _getenv("PDF_EXTRACTOR_FORCE", "")
    include_interpretation_candidates: bool = _getenv("VET_RECORDS_INCLUDE_INTERPRETATION_CANDIDATES", "") != ""
@@ -111,6 +114,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 4. **`backend/app/application/processing/constants.py`** — Remove or comment out `PDF_EXTRACTOR_FORCE_ENV` and `INTERPRETATION_DEBUG_INCLUDE_CANDIDATES_ENV` if they are no longer referenced anywhere else.
 
 **Validation:**
+
 - `cd backend && python -m pytest tests/ -x -q --tb=short` → all pass.
 - `grep -rn "os\.getenv" backend/app/ --include="*.py" | grep -v settings.py | grep -v config.py | grep -v __pycache__` → 0 results.
 
@@ -133,6 +137,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 **Objective:** Create a Vitest auto-mock for PdfViewer and remove duplicated mock blocks from 9 test files.
 
 **Pre-flight context:**
+
 - 9 test files duplicate a `vi.mock("...PdfViewer", ...)` factory:
   - `frontend/src/App.test.tsx` (~L11)
   - `frontend/src/AppShellFlowsA.test.tsx` (~L11)
@@ -148,10 +153,13 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 **Changes required:**
 
 1. **Create `frontend/src/components/__mocks__/PdfViewer.tsx`** — Vitest auto-mock:
+
    ```tsx
    import { vi } from "vitest";
 
-   const PdfViewer = vi.fn(() => <div data-testid="pdf-viewer-mock">PdfViewer Mock</div>);
+   const PdfViewer = vi.fn(() => (
+     <div data-testid="pdf-viewer-mock">PdfViewer Mock</div>
+   ));
    export default PdfViewer;
    ```
 
@@ -160,6 +168,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 3. **Verify the mock path resolution** works for each test. The `__mocks__` convention in Vitest resolves to sibling `__mocks__/<module>.tsx` relative to the mocked module, not the test.
 
 **Validation:**
+
 - `cd frontend && npx vitest run --reporter=verbose` → all pass, no regressions.
 - Verify the `__mocks__/PdfViewer.tsx` file is picked up correctly.
 
@@ -182,6 +191,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 **Objective:** Polish the existing OpenAPI spec so `/docs` is evaluator-ready with grouped endpoints, documented error responses, and complete response types.
 
 **Pre-flight context:**
+
 - FastAPI app in `backend/app/main.py` (~L136) has `title`, `description`, `version`.
 - Route modules: `routes_documents.py`, `routes_review.py`, `routes_processing.py`, `routes_calibration.py`, `routes_health.py`.
 - Most routes already have `response_model=...` set.
@@ -198,24 +208,29 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
    - `routes_health.py`: `tags=["Health"]`
 
 2. **Add `HealthResponse` model** in `schemas.py`:
+
    ```python
    class HealthResponse(BaseModel):
        status: str = Field(description="Health status: 'healthy' or 'degraded'")
        database: str = Field(description="Database connectivity status")
        storage: str = Field(description="File storage status")
    ```
+
    Wire as `response_model=HealthResponse` on the health endpoint.
 
 3. **Add `ErrorResponse` model** in `schemas.py`:
+
    ```python
    class ErrorResponse(BaseModel):
        detail: str = Field(description="Human-readable error message")
    ```
+
    Add `responses={400: {"model": ErrorResponse}, 422: {"model": ErrorResponse}}` to upload and edit endpoints where validation errors are most common.
 
 4. **Add endpoint descriptions** — Add `summary=` and `description=` to each route decorator where missing. Keep descriptions to one line.
 
 **Validation:**
+
 - `cd backend && python -m pytest tests/ -x -q --tb=short` → all pass.
 - Start the backend locally and verify `http://localhost:8000/docs` renders with tags, error schemas, and health model.
 
@@ -308,11 +323,13 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 **Objective:** Create `frontend/e2e/document-sidebar.spec.ts` with 3 tests.
 
 **Tests to implement:**
+
 - Test 9: Document list shows groups "Para revisar" / "Revisados"
 - Test 10: Selecting a document marks it active (`aria-pressed`, `aria-current`, PDF loads)
 - Test 11: Each document shows its status chip
 
 **Validation:**
+
 - `cd frontend && npm run test:e2e` → includes these new tests (core project)
 
 **Commit:** `feat(plan-f18k): add document-sidebar E2E tests (3 tests)`
@@ -334,11 +351,13 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 **Objective:** Create `frontend/e2e/extracted-data.spec.ts` with 3 tests. Uses real backend — upload PDF, wait for processing to complete.
 
 **Tests to implement:**
+
 - Test 12: Panel shows sections with headers ("Datos extraídos", section titles)
 - Test 13: Fields show formatted values; missing fields show "—"
 - Test 14: Confidence indicators visible; field count summary in toolbar
 
 **Validation:**
+
 - `cd frontend && npx playwright test extracted-data.spec.ts --project=core` → 3 tests pass
 
 **Commit:** `feat(plan-f18l): add extracted-data E2E tests (3 tests)`
@@ -360,11 +379,13 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 **Objective:** Rename `frontend/e2e/edit-flow.spec.ts` to `frontend/e2e/field-editing.spec.ts`. Split the single test into 3 focused tests using shared setup. Import `buildMockReviewPayload` and `buildMockDocumentPayload` from helpers.
 
 **Tests to implement:**
+
 - Test 15: Click on field opens edit dialog (verify dialog title, input pre-populated)
 - Test 16: Edit value + save → dialog closes, value updated, toast shown
 - Test 17: Cancel edit → dialog closes, value unchanged
 
 **Validation:**
+
 - `cd frontend && npx playwright test field-editing.spec.ts --project=core` → 3 tests pass
 
 **Commit:** `feat(plan-f18m): refactor edit-flow into field-editing spec (3 tests)`
@@ -386,10 +407,12 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 **Objective:** Rename `frontend/e2e/mark-reviewed.spec.ts` to `frontend/e2e/review-workflow.spec.ts`. Split into 2 tests.
 
 **Tests to implement:**
+
 - Test 18: Mark as reviewed → button changes to "Reabrir", document moves to "Revisados" group
 - Test 19: Reopen → button changes to "Marcar revisado", document moves to "Para revisar" group
 
 **Validation:**
+
 - `cd frontend && npx playwright test review-workflow.spec.ts --project=core` → 2 tests pass
 
 **Commit:** `feat(plan-f18n): refactor mark-reviewed into review-workflow spec (2 tests)`
@@ -411,6 +434,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 **Objective:** Create a frontend error-code-to-user-message mapping system and wire it into the existing toast infrastructure so users never see raw error text.
 
 **Pre-flight context:**
+
 - Toast system: `frontend/src/components/toast/ToastHost.tsx` + `toast-types.ts` with `UploadFeedback` (success/error) and `ActionFeedback` (success/error/info).
 - API error handling centralized in `frontend/src/api/documentApi.ts` — 11 `catch` blocks, each extracting `error.message` and passing it to callbacks.
 - Hooks consume toasts: `useUploadState.ts`, `useFieldEditing.ts`, `useReviewedEditBlocker.ts`, `useRawTextActions.ts`.
@@ -419,17 +443,40 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 **Changes required:**
 
 1. **Create `frontend/src/lib/errorMessages.ts`**:
+
    ```typescript
    /** Maps known backend error patterns to user-friendly messages. */
    const errorPatterns: Array<{ pattern: RegExp; message: string }> = [
-     { pattern: /rate.?limit|too many/i, message: "Demasiadas solicitudes. Intenta de nuevo en unos segundos." },
-     { pattern: /file.*too large|size.*exceed/i, message: "El archivo es demasiado grande. El límite es 50 MB." },
-     { pattern: /invalid.*uuid|not.*valid.*id/i, message: "Identificador de documento inválido." },
+     {
+       pattern: /rate.?limit|too many/i,
+       message: "Demasiadas solicitudes. Intenta de nuevo en unos segundos.",
+     },
+     {
+       pattern: /file.*too large|size.*exceed/i,
+       message: "El archivo es demasiado grande. El límite es 50 MB.",
+     },
+     {
+       pattern: /invalid.*uuid|not.*valid.*id/i,
+       message: "Identificador de documento inválido.",
+     },
      { pattern: /not found|404/i, message: "Documento no encontrado." },
-     { pattern: /unsupported.*type|invalid.*file/i, message: "Tipo de archivo no soportado. Solo se aceptan PDFs." },
-     { pattern: /processing.*failed|extraction.*error/i, message: "Error durante el procesamiento. Intenta reprocesar el documento." },
-     { pattern: /network|fetch|aborted|timeout/i, message: "Error de conexión. Verifica tu conexión a internet." },
-     { pattern: /server.*error|500|internal/i, message: "Error del servidor. Intenta de nuevo más tarde." },
+     {
+       pattern: /unsupported.*type|invalid.*file/i,
+       message: "Tipo de archivo no soportado. Solo se aceptan PDFs.",
+     },
+     {
+       pattern: /processing.*failed|extraction.*error/i,
+       message:
+         "Error durante el procesamiento. Intenta reprocesar el documento.",
+     },
+     {
+       pattern: /network|fetch|aborted|timeout/i,
+       message: "Error de conexión. Verifica tu conexión a internet.",
+     },
+     {
+       pattern: /server.*error|500|internal/i,
+       message: "Error del servidor. Intenta de nuevo más tarde.",
+     },
    ];
 
    export function getUserFriendlyError(rawError: string): string {
@@ -443,17 +490,20 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 2. **Create `frontend/src/lib/__tests__/errorMessages.test.ts`** — Test each pattern match + fallback case. At least 10 test cases.
 
 3. **Wire into `documentApi.ts`** — Import `getUserFriendlyError` and wrap error messages in each `catch` block before passing to callbacks:
+
    ```typescript
    } catch (err) {
      const raw = err instanceof Error ? err.message : String(err);
      onError?.(getUserFriendlyError(raw));
    }
    ```
+
    Apply to all 11 catch blocks.
 
 4. **Verify toast rendering** — Existing toast components receive the already-mapped friendly string. No changes needed in ToastHost or toast-types.
 
 **Validation:**
+
 - `cd frontend && npx vitest run src/lib/__tests__/errorMessages.test.ts` → all pattern tests pass.
 - `cd frontend && npm run lint` → 0 errors.
 - Manual: start app, trigger a 429 (rapid uploads) → verify friendly toast text.
@@ -477,6 +527,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 **Objective:** Add a `pytest-benchmark` suite that measures latency for upload, list, and document-detail endpoints. Results must be reproducible and documented.
 
 **Pre-flight context:**
+
 - Backend test infrastructure: `pytest` with `httpx.AsyncClient` or `TestClient`.
 - Key endpoints: `POST /api/documents/upload`, `GET /api/documents`, `GET /api/documents/{id}`.
 - No benchmark suite exists. `metrics/llm_benchmarks/` exists for LLM evaluation.
@@ -505,6 +556,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 6. **Document in `docs/projects/veterinary-medical-records/testing/`** — Create or update a brief section noting benchmark existence and how to run them.
 
 **Validation:**
+
 - `cd backend && python -m pytest tests/benchmarks/ -v --benchmark-enable` → all pass with P50/P95 output.
 
 **Commit:** `perf(plan-f18p): add endpoint latency benchmarks P50/P95`
@@ -526,6 +578,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 **Objective:** Cover failure paths in orchestrator and DB layer to push backend coverage from ~90.4% toward ~93%.
 
 **Pre-flight context:**
+
 - `backend/app/application/processing/orchestrator.py` — orchestrates multi-step document processing. Failure paths (partial extraction failure, timeout, corrupt PDF) have low or zero coverage.
 - `backend/app/infra/sqlite_document_repository.py` — uses `PRAGMA busy_timeout=5000` and WAL mode. Lock contention and retry behavior untested.
 - `backend/app/application/processing/processing_runner.py` — runs processing steps. Error propagation paths untested.
@@ -551,6 +604,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
    - Test: runner with empty PDF content → produces meaningful error artifact.
 
 **Validation:**
+
 - `cd backend && python -m pytest tests/test_orchestrator_failures.py tests/test_db_resilience.py -x -q --tb=short` → all pass.
 
 **Commit:** `test(plan-f18q): backend failure-path tests — orchestrator + DB resilience`
@@ -572,6 +626,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 **Objective:** Increase branch/line coverage for SourcePanel and UploadDropzone components by testing interaction edge cases and state transitions.
 
 **Pre-flight context:**
+
 - `frontend/src/components/SourcePanel.tsx` — test file exists at `SourcePanel.test.tsx`.
 - `frontend/src/components/UploadDropzone.tsx` — test file exists at `UploadDropzone.test.tsx`.
 - `frontend/src/hooks/useSourcePanelState.ts` — test file exists.
@@ -601,6 +656,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
    - Unmount during async operations.
 
 **Validation:**
+
 - `cd frontend && npx vitest run src/components/SourcePanel.test.tsx src/components/UploadDropzone.test.tsx --reporter=verbose` → all pass.
 - `cd frontend && npm run lint` → 0 errors.
 
@@ -623,6 +679,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 **Objective:** Split `sqlite_document_repository.py` into 3 aggregate-focused repositories while maintaining the existing public API via a re-exporting facade.
 
 **Pre-flight context:**
+
 - `backend/app/infra/sqlite_document_repository.py`: 751 LOC, single class `SqliteDocumentRepository`.
 - `backend/app/ports/document_repository.py`: single `DocumentRepository` Protocol with ~20 methods.
 - Methods group into 4 aggregates:
@@ -653,6 +710,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 5. **Add/update tests** — Ensure existing repo tests cover each sub-repo independently. Add at least one test per sub-repo verifying isolated construction.
 
 **Validation:**
+
 - `cd backend && python -m pytest tests/test_document_repo.py tests/test_run_repo.py tests/test_calibration_repo.py -x -q --tb=short` → all pass (adjust file names to actual test files).
 - `(Get-Content backend/app/infra/sqlite_document_repo.py).Count` + similar → each < 400 LOC.
 
@@ -688,6 +746,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
    - Note error UX mapping system in frontend architecture section.
 
 **Validation:**
+
 - Read both files and verify accuracy against actual metrics.
 - No broken internal links.
 
@@ -727,6 +786,7 @@ Post-Iter 10: 377 backend tests (90.41%), 266 frontend tests (85%), 5 E2E specs,
 3. **Add E2E progress note** — Note E2E expansion from 5→~20 specs (Iter 11). Remaining: Phase 3 extended (46 tests) deferred.
 
 **Validation:**
+
 - Verify no broken links.
 - Cross-check completed items match actual plan execution.
 

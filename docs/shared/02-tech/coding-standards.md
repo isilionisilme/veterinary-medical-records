@@ -1,6 +1,7 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+**Table of Contents** _generated with [DocToc](https://github.com/thlorenz/doctoc)_
 
 - [Coding Standards](#coding-standards)
   - [Purpose](#purpose)
@@ -29,13 +30,13 @@
 
 # Coding Standards
 
-
 **Breadcrumbs:** [Docs](../../README.md) / Shared / 02-tech
 
 > **Canonical source of truth.**
 > This document is the single authoritative reference for all technical coding standards in this project.
 >
 > **Governance:**
+>
 > - This file is a canonical document maintained by humans.
 > - Router files under `docs/agent_router/` are derived outputs generated from this canonical source.
 > - Flow is **canonical → router only**. Router files MUST NOT be edited directly.
@@ -224,16 +225,19 @@ When reviewing code, validate correct layering and dependency direction:
 4. **Infrastructure layer** (`infra/`): Persistence, I/O, and external service adapters only.
 
 Maintainability priorities (in order):
+
 - Clear naming and responsibilities
 - Low duplication
 - Small, cohesive modules and functions
 - Logic located in the correct layer
 
 Testability requirements:
+
 - Core application logic must be testable without FastAPI or SQLite.
 - Unit tests for services; integration tests for HTTP + wiring.
 
 Simplicity principle:
+
 - Flag overengineering risks.
 - Prefer removing complexity over adding abstraction.
 - Prefer small, high-impact fixes over large refactors.

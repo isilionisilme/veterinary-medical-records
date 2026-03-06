@@ -8,12 +8,10 @@ last-updated: 2026-03-02
 
 # Known Limitations & Future Directions
 
-
 **Breadcrumbs:** [Docs](../../../README.md) / [Projects](../../README.md) / veterinary-medical-records / 04-delivery
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-
 
 - [Completed improvements (summary)](#completed-improvements-summary)
 - [Known limitations — conscious trade-offs](#known-limitations--conscious-trade-offs)
@@ -41,30 +39,30 @@ Across 12 iterations, **15 planned improvements** were fully resolved. For the c
 <details>
 <summary>Completed items (click to expand)</summary>
 
-| # | Improvement | Iteration |
-|---|---|---|
-| 1 | SQLite WAL mode + busy timeout | Iter 2 |
-| 2 | CI coverage threshold gates | Iter 10 |
-| 3 | Centralize env reads in Settings | Iter 11 |
-| 4 | Frontend utils error-path coverage | Iter 8 |
-| 5 | AddFieldDialog + SourcePanel tests | Iter 11 |
-| 6 | Known limitations in TECHNICAL_DESIGN §14 | Iter 9 |
-| 7a | Backend routes decomposition (912 → 18 LOC aggregator) | Iter 6 |
-| 7b | AppWorkspace decomposition (6,100 → 2,221 LOC, −62%) | Iters 3+7+8 |
-| 8 | Extraction observability modularization | Iter 7 |
-| 8a | Interpretation module decomposition (−82%) | Iters 7+8 |
-| 8b | PDF extraction decomposition (−91%) | Iter 7 |
-| 8c | DRY constants consolidation | Iter 7 |
-| 9 | Streaming upload guard | Iter 3 |
-| 10 | Backend failure-path test expansion | Iter 11 |
-| 11 | SourcePanel + UploadDropzone test suites | Iter 11 |
-| 12 | Shared PdfViewer mock helpers | Iter 11 |
-| 13 | Repository split by aggregate | Iter 11 |
-| 15 | Minimal auth/token boundary | Iter 3 |
-| 19 | Performance benchmarks (P50/P95) | Iter 11 |
-| 20 | Error UX mapping | Iter 11 |
-| 22 | OpenAPI auto-generated docs | Iter 11 |
-| 24 | CI dependency caching + path filtering | Iter 10 |
+| #   | Improvement                                            | Iteration   |
+| --- | ------------------------------------------------------ | ----------- |
+| 1   | SQLite WAL mode + busy timeout                         | Iter 2      |
+| 2   | CI coverage threshold gates                            | Iter 10     |
+| 3   | Centralize env reads in Settings                       | Iter 11     |
+| 4   | Frontend utils error-path coverage                     | Iter 8      |
+| 5   | AddFieldDialog + SourcePanel tests                     | Iter 11     |
+| 6   | Known limitations in TECHNICAL_DESIGN §14              | Iter 9      |
+| 7a  | Backend routes decomposition (912 → 18 LOC aggregator) | Iter 6      |
+| 7b  | AppWorkspace decomposition (6,100 → 2,221 LOC, −62%)   | Iters 3+7+8 |
+| 8   | Extraction observability modularization                | Iter 7      |
+| 8a  | Interpretation module decomposition (−82%)             | Iters 7+8   |
+| 8b  | PDF extraction decomposition (−91%)                    | Iter 7      |
+| 8c  | DRY constants consolidation                            | Iter 7      |
+| 9   | Streaming upload guard                                 | Iter 3      |
+| 10  | Backend failure-path test expansion                    | Iter 11     |
+| 11  | SourcePanel + UploadDropzone test suites               | Iter 11     |
+| 12  | Shared PdfViewer mock helpers                          | Iter 11     |
+| 13  | Repository split by aggregate                          | Iter 11     |
+| 15  | Minimal auth/token boundary                            | Iter 3      |
+| 19  | Performance benchmarks (P50/P95)                       | Iter 11     |
+| 20  | Error UX mapping                                       | Iter 11     |
+| 22  | OpenAPI auto-generated docs                            | Iter 11     |
+| 24  | CI dependency caching + path filtering                 | Iter 10     |
 
 </details>
 

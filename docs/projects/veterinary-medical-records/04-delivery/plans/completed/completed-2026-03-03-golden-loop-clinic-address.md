@@ -32,10 +32,10 @@ The `pet_name` and `clinic_name` golden loops proved the pattern: baseline → m
 
 ## PR Roadmap
 
-| PR | Rama | Fases | Alcance | Depende de |
-|---|---|---|---|---|
-| PR-1 | `feat/golden-loop-clinic-address-2026-03-03` | Phase 0 + Phase 1 | Baseline, fixtures, candidate mining, normalization | — |
-| PR-2 | `feat/golden-loop-clinic-address-obs` | Phase 2 + Phase 3 | Observability, validation run, hard-gate, closure | PR-1 merged |
+| PR   | Rama                                         | Fases             | Alcance                                             | Depende de  |
+| ---- | -------------------------------------------- | ----------------- | --------------------------------------------------- | ----------- |
+| PR-1 | `feat/golden-loop-clinic-address-2026-03-03` | Phase 0 + Phase 1 | Baseline, fixtures, candidate mining, normalization | —           |
+| PR-2 | `feat/golden-loop-clinic-address-obs`        | Phase 2 + Phase 3 | Observability, validation run, hard-gate, closure   | PR-1 merged |
 
 > **Rationale:** splitting at the observability boundary keeps PR-1 reviewable (fixtures + core extraction logic) and PR-2 focused on quality gates and evidence. If Phase 1 scope stays small, both PRs can be merged the same day.
 
@@ -44,6 +44,7 @@ The `pet_name` and `clinic_name` golden loops proved the pattern: baseline → m
 ## Estado de ejecución
 
 **Leyenda**
+
 - 🔄 auto-chain — ejecutable por Codex
 - 🚧 hard-gate — revisión/decisión de usuario
 

@@ -1,6 +1,7 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+**Table of Contents** _generated with [DocToc](https://github.com/thlorenz/doctoc)_
 
 - [Way of Working](#way-of-working)
   - [Purpose](#purpose)
@@ -48,13 +49,13 @@
 
 # Way of Working
 
-
 **Breadcrumbs:** [Docs](../../README.md) / Shared / 03-ops
 
 > **Canonical source of truth.**
 > This document is the single authoritative reference for all operational workflow rules in this project.
 >
 > **Governance:**
+>
 > - This file is a canonical document maintained by humans.
 > - Router files under `docs/agent_router/` are derived outputs generated from this canonical source.
 > - Flow is **canonical → router only**. Router files MUST NOT be edited directly.
@@ -111,15 +112,19 @@ Before making any new changes (code, docs, config, etc.), create a new branch of
 ### Branch Naming Conventions
 
 Canonical format:
+
 - `<worktree>/<category>/<slug>`
 
 Creation-time rule:
+
 - During `Starting New Work`, the agent must derive and create branch names in canonical format, using the category mapping defined in Section 1.
 
 Worktree segment:
+
 - `worktree` must match the current worktree folder name exactly.
 
 Allowed categories:
+
 - `feature`
 - `fix`
 - `docs`
@@ -131,13 +136,16 @@ Allowed categories:
 Category-specific branch patterns:
 
 **User stories:**
+
 - `feature/<ID>-<short-representative-slug>`
 - The slug must be concise and describe the purpose of the user story.
 
 **User-facing improvements (to previous implementations):**
+
 - `improvement/<short-slug>`
 
 **Technical non-user-facing work:**
+
 - `refactor/<short-slug>`
 - `chore/<short-slug>`
 - `ci/<short-slug>`
@@ -145,18 +153,22 @@ Category-specific branch patterns:
 - `fix/<short-slug>`
 
 Slug rules:
+
 - Use lowercase letters, numbers, and hyphens.
 - Keep it concise and representative of the work item.
 
 Exemptions:
+
 - `main` is exempt from this naming convention.
 - Detached HEAD is exempt from this naming convention.
 
 Transition policy:
+
 - Legacy format `<category>/<slug>` is temporarily allowed during migration.
 - Legacy branches must emit a warning in branch-name validation but must not be blocked.
 
 Examples:
+
 - `veterinary-medical-records/feature/us-42-pet-owner-export`
 - `veterinary-medical-records-golden-loop/improvement/prescription-print-layout`
 - `golden-2/chore/preflight-branch-name-hook`
@@ -177,9 +189,11 @@ Branches must be **short-lived** and focused on a single user story or a single 
 ### Commit Message Conventions
 
 **User stories:**
+
 - `Story <ID>: <short imperative description>`
 
 **Technical work:**
+
 - `<type>: <short imperative description>`
 - Allowed types: `refactor`, `chore`, `ci`, `docs`, `test`, `build`, `fix`
 
@@ -246,9 +260,11 @@ When a preflight level (L1/L2/L3) fails:
 ### Pull Request Title Conventions
 
 **User stories:**
+
 - `Story <ID> — <Full User Story Title>`
 
 **Technical work:**
+
 - `<type>: <short description>`
 
 ### Pull Request Body Requirements
@@ -263,11 +279,11 @@ When a preflight level (L1/L2/L3) fails:
 
 Classify the Pull Request by file types:
 
-| Type | File patterns |
-|------|--------------|
-| **Docs-only** | `docs/**`, `*.md`, `*.txt`, `*.rst`, `*.adoc` only |
-| **Code** | Any `*.py`, `*.ts`, `*.tsx`, `*.js`, `*.jsx`, `*.css`, `*.scss`, `*.html`, `*.sql` |
-| **Non-code, non-doc** | `*.json`, `*.yaml`, `*.yml`, `*.toml`, `*.ini`, `*.env` |
+| Type                  | File patterns                                                                      |
+| --------------------- | ---------------------------------------------------------------------------------- |
+| **Docs-only**         | `docs/**`, `*.md`, `*.txt`, `*.rst`, `*.adoc` only                                 |
+| **Code**              | Any `*.py`, `*.ts`, `*.tsx`, `*.js`, `*.jsx`, `*.css`, `*.scss`, `*.html`, `*.sql` |
+| **Non-code, non-doc** | `*.json`, `*.yaml`, `*.yml`, `*.toml`, `*.ini`, `*.env`                            |
 
 ### Pull Request Procedure
 
@@ -288,6 +304,7 @@ When an AI coding assistant or automation tool creates or updates a Pull Request
 Compatibility note: this section is also referenced as **Plan-level PR Roadmap** in legacy router contracts.
 
 When a plan spans multiple Pull Requests, it must include a **Pull Request Roadmap** section:
+
 - Table with columns: **Pull Request**, **Branch**, **Phases**, **Scope**, **Depends on**.
 - Each phase belongs to exactly one Pull Request.
 - Each phase belongs to exactly one PR.
@@ -298,6 +315,7 @@ When a plan spans multiple Pull Requests, it must include a **Pull Request Roadm
 ### Post-Merge Cleanup Procedure
 
 After a Pull Request is merged into `main`, the AI assistant must run this cleanup automatically:
+
 1. Ensure the working tree is clean.
 2. Check for stashes related to the merged branch; clean up where safe.
 3. Switch to `main` and pull latest changes.
@@ -315,6 +333,7 @@ Code reviews run **only** when explicitly requested by the user. Never start a c
 ### CI prerequisite (hard rule)
 
 Before starting a code review, the agent must verify CI status:
+
 - **CI in progress:** wait for it to complete before proceeding.
 - **CI green:** proceed with the review.
 - **CI red:** do NOT start the review. Inform the user that CI is failing and ask whether they want the agent to diagnose and fix the failures first. Only start the review after CI is green.
@@ -323,12 +342,12 @@ Before starting a code review, the agent must verify CI status:
 
 When suggesting or starting a review, the agent recommends a depth level based on the Pull Request's risk profile. The user confirms, adjusts, or overrides before the review begins.
 
-| Depth | When to recommend | Parallel lenses | What it covers |
-|-------|-------------------|:---:|----------------|
-| **Light** | Docs-only, config changes, formatting, simple renames | 1 | Correctness, consistency, no regressions |
-| **Standard** | Normal code changes | 1 | Full review focus (all 7 areas below) |
-| **Deep** | Security-sensitive, data-loss risk, architectural changes, critical user paths | 2 | Two parallel reviews with different lenses |
-| **Deep (critical)** | User requests it, or agent recommends when security + architecture + data concerns overlap | 3 | Two parallel reviews with different lenses |
+| Depth               | When to recommend                                                                          | Parallel lenses | What it covers                             |
+| ------------------- | ------------------------------------------------------------------------------------------ | :-------------: | ------------------------------------------ |
+| **Light**           | Docs-only, config changes, formatting, simple renames                                      |        1        | Correctness, consistency, no regressions   |
+| **Standard**        | Normal code changes                                                                        |        1        | Full review focus (all 7 areas below)      |
+| **Deep**            | Security-sensitive, data-loss risk, architectural changes, critical user paths             |        2        | Two parallel reviews with different lenses |
+| **Deep (critical)** | User requests it, or agent recommends when security + architecture + data concerns overlap |        3        | Two parallel reviews with different lenses |
 
 **Deep / Deep (critical) review Procedure:**
 
@@ -348,6 +367,7 @@ When suggesting or starting a review, the agent recommends a depth level based o
 Pre-review gate (required before diff reading):
 
 Before reading the diff, complete a pre-review checklist:
+
 - Confirm scope and changed paths.
 - Confirm CI status and required checks.
 - Confirm risk profile and review depth.
@@ -364,11 +384,11 @@ Before reading the diff, complete a pre-review checklist:
 
 Compatibility note: this section is also referenced as **Severity classification criteria** in legacy router contracts.
 
-| Severity | Criteria | Blocks merge? |
-|----------|----------|:---:|
-| **Must-fix** | Incorrect behavior, security vulnerability, broken contract, layer violation, missing tests for changed behavior, data-loss risk | Yes |
-| **Should-fix** | Naming/structure that obscures intent, duplicated logic, missing error handling, documentation drift | No (with acceptance) |
-| **Nice-to-have** | Style improvements, small readability refinements, simplification ideas | No |
+| Severity         | Criteria                                                                                                                         |    Blocks merge?     |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------- | :------------------: |
+| **Must-fix**     | Incorrect behavior, security vulnerability, broken contract, layer violation, missing tests for changed behavior, data-loss risk |         Yes          |
+| **Should-fix**   | Naming/structure that obscures intent, duplicated logic, missing error handling, documentation drift                             | No (with acceptance) |
+| **Nice-to-have** | Style improvements, small readability refinements, simplification ideas                                                          |          No          |
 
 ### Review Output Format
 
@@ -424,12 +444,14 @@ For `frontend/**` or user-visible changes, that PR review comment must include a
 ### Mandatory publication protocol (blocking)
 
 Blocking execution sequence:
+
 1. Publish the review as a Pull Request comment.
 2. Return the published PR comment URL.
 3. When remediation commits are pushed, publish a follow-up PR comment.
 4. Return the follow-up PR comment URL.
 
 A review is blocking until the PR comment URL is returned to the user.
+
 - A follow-up PR comment is required after remediation commits.
 - This follow-up must be published automatically as part of the remediation workflow (do not wait for a separate user prompt).
 
@@ -446,6 +468,7 @@ After producing a review, **STOP** and wait for explicit user instruction before
 Compatibility note: this section is also referenced as **Pre-existing issues policy** in legacy router contracts.
 
 Issues that clearly predate the Pull Request:
+
 - Do NOT classify as Must-fix for the current Pull Request.
 - Report in a separate "Pre-existing issues" section.
 - Recommend a follow-up issue when impact is significant.
@@ -455,6 +478,7 @@ Issues that clearly predate the Pull Request:
 Compatibility note: this section is also referenced as **Large diff policy** in legacy router contracts.
 
 If the Pull Request diff exceeds ~400 lines of non-generated code:
+
 - Report a Should-fix noting reduced review confidence.
 - Suggest a split strategy when visible.
 - Continue the review with stated confidence limitations.
@@ -471,6 +495,7 @@ If the Pull Request diff exceeds ~400 lines of non-generated code:
 - Always prefer completing a **smaller, well-defined** user story over partially implementing a larger one.
 
 Each release must result in:
+
 - A runnable and testable system state
 - Clear, observable user-facing behavior
 - Explicitly persisted data and state transitions
@@ -495,6 +520,7 @@ Before implementing each user story (US-XX):
 A change is considered done when it satisfies the criteria that apply to its type.
 
 ### For user stories
+
 - Before asking the user to validate behavior manually, the agent must start the project in **dev mode with hot reload enabled** and verify endpoints are reachable.
 - Use the **project-specific canonical dev-start command and checks** defined in that project's ops documentation.
 - If a project does not define a canonical command/check set, STOP and ask the user to confirm the execution command before requesting validation.

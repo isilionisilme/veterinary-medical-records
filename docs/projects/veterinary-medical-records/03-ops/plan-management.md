@@ -1,6 +1,7 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+**Table of Contents** _generated with [DocToc](https://github.com/thlorenz/doctoc)_
 
 - [Plan Management](#plan-management)
   - [1. How to Create a Plan](#1-how-to-create-a-plan)
@@ -23,7 +24,6 @@
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 # Plan Management
-
 
 **Breadcrumbs:** [Docs](../../../README.md) / [Projects](../../README.md) / veterinary-medical-records / 03-ops
 
@@ -54,12 +54,14 @@ Every new plan MUST include:
 1. Title: `# Plan: <name>`
 2. Operational rules pointer: `> **Operational rules:** See [plan-execution-protocol.md](...)`
 3. Metadata:
-	- `**Branch:**`
-	- `**PR:**`
-	- `**Prerequisite:**`
-	- `**Worktree:**`
-	- `**CI Mode:**`
-	- `**Agents:**`
+
+- `**Branch:**`
+- `**PR:**`
+- `**Prerequisite:**`
+- `**Worktree:**`
+- `**CI Mode:**`
+- `**Agents:**`
+
 4. `## Context`
 5. `## Objective`
 6. `## Scope Boundary`
@@ -102,11 +104,11 @@ Task chaining policy is part of execution behavior and is defined in [`plan-exec
 
 **Plans contain ONLY product/engineering tasks and well-defined operational override steps.** Generic or unscoped operational mentions are NEVER plan steps.
 
-| Valid plan step | Operational Override Step (allowed) | NOT a plan step (generic) |
-|---|---|---|
+| Valid plan step                             | Operational Override Step (allowed)                              | NOT a plan step (generic)    |
+| ------------------------------------------- | ---------------------------------------------------------------- | ---------------------------- |
 | "Add Playwright smoke test for upload flow" | `commit-task`: Commit F1-1 + F1-2 (scope, message, push defined) | "Commit and push" (unscoped) |
-| "Configure CI job for E2E tests" | `create-pr`: Create draft PR for iteration branch | "Create PR" (unscoped) |
-| "Add data-testid attributes to components" | `merge-pr`: Squash-merge PR #42 after user approval | "Merge PR" (unscoped) |
+| "Configure CI job for E2E tests"            | `create-pr`: Create draft PR for iteration branch                | "Create PR" (unscoped)       |
+| "Add data-testid attributes to components"  | `merge-pr`: Squash-merge PR #42 after user approval              | "Merge PR" (unscoped)        |
 
 ### Operational Override Steps
 
@@ -116,14 +118,14 @@ Certain operational actions (commits, PRs, merges) are allowed as plan steps onl
 
 Each operational override step in `PLAN_*.md` MUST include:
 
-| Field | Description | Required |
-|---|---|---|
-| `type` | One of: `commit-task`, `create-pr`, `merge-pr` | Yes |
-| `trigger` | When this step executes (e.g., "after F1-1 and F1-2") | Yes |
-| `preconditions` | What must be true before execution (e.g., "CI green for all prior steps") | Yes |
-| `commands` | Exact command set to execute | Yes |
-| `approval` | `auto` or `explicit-user-approval` | Yes |
-| `fallback` | What to do if execution fails | Yes |
+| Field           | Description                                                               | Required |
+| --------------- | ------------------------------------------------------------------------- | -------- |
+| `type`          | One of: `commit-task`, `create-pr`, `merge-pr`                            | Yes      |
+| `trigger`       | When this step executes (e.g., "after F1-1 and F1-2")                     | Yes      |
+| `preconditions` | What must be true before execution (e.g., "CI green for all prior steps") | Yes      |
+| `commands`      | Exact command set to execute                                              | Yes      |
+| `approval`      | `auto` or `explicit-user-approval`                                        | Yes      |
+| `fallback`      | What to do if execution fails                                             | Yes      |
 
 #### Approval rules
 
@@ -162,7 +164,7 @@ Authoring constraint:
 
 ### Prompt creation lifecycle
 
-| Operation | Who | When |
-|---|---|---|
-| **Create** (pre-written) | Planning agent | At iteration start, in Prompt Queue |
+| Operation                 | Who            | When                                            |
+| ------------------------- | -------------- | ----------------------------------------------- |
+| **Create** (pre-written)  | Planning agent | At iteration start, in Prompt Queue             |
 | **Create** (just-in-time) | Planning agent | Before the step that needs it, in Active Prompt |

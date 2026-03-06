@@ -10,21 +10,22 @@ Modularization of 4 monolithic files (>2× 500 LOC guideline): interpretation.py
 
 ## Steps
 
-| ID | Description | Agent | Status |
-|---|---|---|---|
-| F13-A | Consolidate constants.py: migrate ~97 lines of shared constants | Codex | ✅ |
-| F13-B | Extract candidate_mining.py from interpretation.py (648+ LOC) | Codex | ✅ |
-| F13-C | Extract confidence_scoring.py + thin interpretation.py < 400 LOC | Codex | ✅ |
-| F13-D | Shim compatibility: verify re-exports in processing_runner.py | Codex | ✅ |
-| F13-E | Extract pdf_extraction_nodeps.py (~900 LOC fallback no-deps) | Codex | ✅ |
-| F13-F | Thin dispatcher < 300 LOC + verify shim pdf_extraction | Codex | ✅ |
-| F13-G | Extract hooks: useStructuredDataFilters, useFieldEditing, useUploadState | Codex | ✅ |
-| F13-H | Extract hooks: useReviewSplitPanel, useDocumentsSidebar | Codex | ✅ |
-| F13-I | Split extraction_observability.py into 4 modules < 300 LOC | Codex | ✅ |
-| F13-J | Coverage: PdfViewer 47%→60%+, config.py 83%→90%+, documentApi.ts 67%→80%+ | Codex | ✅ |
-| F13-K | FUTURE_IMPROVEMENTS refresh + smoke test + PR → main | Claude | ✅ |
+| ID    | Description                                                               | Agent  | Status |
+| ----- | ------------------------------------------------------------------------- | ------ | ------ |
+| F13-A | Consolidate constants.py: migrate ~97 lines of shared constants           | Codex  | ✅     |
+| F13-B | Extract candidate_mining.py from interpretation.py (648+ LOC)             | Codex  | ✅     |
+| F13-C | Extract confidence_scoring.py + thin interpretation.py < 400 LOC          | Codex  | ✅     |
+| F13-D | Shim compatibility: verify re-exports in processing_runner.py             | Codex  | ✅     |
+| F13-E | Extract pdf_extraction_nodeps.py (~900 LOC fallback no-deps)              | Codex  | ✅     |
+| F13-F | Thin dispatcher < 300 LOC + verify shim pdf_extraction                    | Codex  | ✅     |
+| F13-G | Extract hooks: useStructuredDataFilters, useFieldEditing, useUploadState  | Codex  | ✅     |
+| F13-H | Extract hooks: useReviewSplitPanel, useDocumentsSidebar                   | Codex  | ✅     |
+| F13-I | Split extraction_observability.py into 4 modules < 300 LOC                | Codex  | ✅     |
+| F13-J | Coverage: PdfViewer 47%→60%+, config.py 83%→90%+, documentApi.ts 67%→80%+ | Codex  | ✅     |
+| F13-K | FUTURE_IMPROVEMENTS refresh + smoke test + PR → main                      | Claude | ✅     |
 
 ## Key outcomes
+
 - interpretation.py → candidate_mining.py + confidence_scoring.py + thin dispatcher
 - pdf_extraction.py → pdf_extraction_nodeps.py + thin dispatcher
 - AppWorkspace.tsx: 5 custom hooks extracted (2,955 LOC, −49% from original)

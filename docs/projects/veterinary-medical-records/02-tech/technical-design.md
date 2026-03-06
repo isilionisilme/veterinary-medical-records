@@ -6,13 +6,12 @@ audience: contributor
 last-updated: 2026-03-02
 ---
 
-# Note for readers:
+# Note for readers
 
 **Breadcrumbs:** [Docs](../../../README.md) / [Projects](../../README.md) / veterinary-medical-records / 02-tech
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-
 
 - [Technical Design — Instructions for Implementation](#technical-design--instructions-for-implementation)
   - [Purpose](#purpose)
@@ -168,7 +167,7 @@ last-updated: 2026-03-02
 This document is intended to provide structured context to an AI Coding Assistant during implementation.
 
 The version of this document written for evaluators and reviewers is available here:
-https://docs.google.com/document/d/16lgxuT48fA5ZCnEpR4rokl4hLbyM0yfTszlu6vHrHtM
+<https://docs.google.com/document/d/16lgxuT48fA5ZCnEpR4rokl4hLbyM0yfTszlu6vHrHtM>
 
 Reading order and cross-document precedence are defined in [`docs/README.md`](../README.md).
 
@@ -207,26 +206,31 @@ The system is implemented as a **modular monolith**.
 The implementation follows a logical pipeline (in-process execution) without introducing distributed infrastructure.
 
 ### Upload / Ingestion
+
 - Receive veterinary documents.
 - Generate a `document_id`.
 - Persist basic document metadata.
 - Ensure safe retry behavior on retries (no partial persistence).
 
 ### Text Extraction
+
 - Extract raw text from documents.
 - Attach standard metadata.
 - Produce a canonical representation suitable for downstream processing.
 
 ### Interpretation
+
 - Convert free text into a structured medical record.
 - Attach basic confidence or evidence metadata where applicable.
 
 ### State Management
+
 - Model explicit document lifecycle states.
 - Persist all state transitions.
 - Provide clear visibility into progress and failures.
 
 ### Human Review & Feedback
+
 - Allow veterinarians to review and edit extracted fields.
 - Capture all corrections as structured, append-only feedback.
 
@@ -238,6 +242,7 @@ The system is built around a small set of explicit, persistent domain concepts.
 All relevant domain concepts must be persisted to support auditability, traceability, and human-in-the-loop workflows.
 
 Core concepts (conceptual overview):
+
 - **Document**: submitted medical document with identity, metadata, lifecycle state, and raw file reference.
 - **ProcessingRun / ProcessingStatus**: explicit lifecycle states representing progress through the pipeline.
 - **ExtractedText**: extracted text with provenance and diagnostics.
@@ -256,6 +261,7 @@ Intent:
 Persist the **minimum set of artifacts** required to make the system debuggable, auditable, and safe for human-in-the-loop workflows.
 
 Persistence moments:
+
 - On ingestion: persist document metadata and initial lifecycle state.
 - After each pipeline stage: persist produced artifacts and state transitions.
 - On human edits: persist new append-only revisions; never overwrite silently.
@@ -273,10 +279,10 @@ Storage mapping and invariants are defined normatively in **Appendix B**.
 - Preserve the ability to evolve this modular monolith into independent services.
 
 Technical guardrails:
+
 - Machine-produced structured outputs are stored as run-scoped artifacts; prior artifacts remain unchanged.
 - Structured interpretation outputs MUST conform to the schema in Appendix D (schema validation required).
 - Human edits create new interpretation versions (append-only); machine-produced outputs remain preserved as produced.
- 
 
 ---
 
@@ -314,7 +320,7 @@ The pipeline is **observable** and **step-based**.
 - Processing is **asynchronous** and runs in the background.
 - API requests must **never block** waiting for processing to complete.
 - Processing is executed internally (in-process worker or equivalent).
-This document describes an in-process execution model; story-specific scope boundaries live in [`docs/projects/veterinary-medical-records/04-delivery/implementation-plan.md`](implementation-plan.md).
+  This document describes an in-process execution model; story-specific scope boundaries live in [`docs/projects/veterinary-medical-records/04-delivery/implementation-plan.md`](implementation-plan.md).
 
 ---
 
@@ -327,6 +333,7 @@ This document describes an in-process execution model; story-specific scope boun
 - A document may have many historical runs.
 
 #### Active Run Rule
+
 - **Only one processing run may be `RUNNING` per document at any time**.
 
 - States:
@@ -361,8 +368,9 @@ If a reprocess is requested while a run is `RUNNING`:
 
 UI and API MUST prevent conflicting edits while processing is active.
 If a client attempts to edit/review while a `RUNNING` run exists, the API MUST respond with:
+
 - `409 Conflict` (`error_code = CONFLICT`) and `details.reason = REVIEW_BLOCKED_BY_ACTIVE_RUN`.
- 
+
 ---
 
 ## 6. Data Persistence Rules
@@ -426,6 +434,7 @@ If a client attempts to edit/review while a `RUNNING` run exists, the API MUST r
 ### MVP payload & storage implications
 
 Minimum field-level payload for calibration-aware review must support:
+
 - `field_mapping_confidence` (0–1), the primary veterinarian-facing confidence signal.
 - `policy_state` (`neutral|boosted|demoted|suppressed`).
 - `mapping_id` (stable strategy identifier).
@@ -457,12 +466,14 @@ Minimum field-level payload for calibration-aware review must support:
 ### `confidence_policy.yaml` (minimum spec)
 
 Required keys:
+
 - `policy_version`
 - `band_cutoffs` (`low_max`, `mid_max`)
 - enter/exit thresholds (hysteresis)
 - `min_volume`
 
 Deterministic policy-state selection rules:
+
 - Apply threshold/hysteresis transitions only when `volume >= min_volume`.
 - `neutral` is the default when `volume < min_volume` or no transition rule is matched.
 - Threshold sets must be mutually exclusive by design; if overlap is misconfigured, fail config validation.
@@ -470,6 +481,7 @@ Deterministic policy-state selection rules:
 - If `thresholds.suppressed` is absent, `suppressed` is never entered.
 
 Band mapping rule:
+
 - `low` if `field_mapping_confidence < low_max`; `mid` if `field_mapping_confidence < mid_max`; otherwise `high`.
 
 Compact example:
@@ -508,13 +520,13 @@ min_volume: 5
 
 Raw API error strings are **never shown directly** in toast notifications. The frontend `errorMessages.ts` module applies regex-based pattern matching to classify errors and map them to user-friendly Spanish messages:
 
-| Pattern | User message |
-|---------|-------------|
-| `rate.?limit\|too many` | "Demasiadas solicitudes. Intenta de nuevo en unos segundos." |
-| `file.*too large\|size.*exceed` | "El archivo es demasiado grande. El límite es 50 MB." |
-| `not found\|404` | "Documento no encontrado." |
-| `network\|fetch\|timeout` | "Error de conexión. Verifica tu conexión a internet." |
-| (+ 4 more patterns) | See `frontend/src/lib/errorMessages.ts` for full map |
+| Pattern                         | User message                                                 |
+| ------------------------------- | ------------------------------------------------------------ |
+| `rate.?limit\|too many`         | "Demasiadas solicitudes. Intenta de nuevo en unos segundos." |
+| `file.*too large\|size.*exceed` | "El archivo es demasiado grande. El límite es 50 MB."        |
+| `not found\|404`                | "Documento no encontrado."                                   |
+| `network\|fetch\|timeout`       | "Error de conexión. Verifica tu conexión a internet."        |
+| (+ 4 more patterns)             | See `frontend/src/lib/errorMessages.ts` for full map         |
 
 Unmatched errors fall back to a generic message. This ensures UX consistency regardless of backend error format changes.
 
@@ -527,6 +539,7 @@ Unmatched errors fall back to a generic message. This ensures UX consistency reg
 The system must emit **structured logs** only.
 
 Each log entry must include:
+
 - `document_id`
 - `run_id`
 - `step_name` (if applicable)
@@ -537,6 +550,7 @@ Each log entry must include:
 - old/new `field_mapping_confidence` and any policy-state transition (`neutral|boosted|demoted|suppressed`)
 
 Observability requirement for confidence calibration:
+
 - The system must provide enough traceability to explain why a field is low/high confidence in a given context.
 
 Logs must be best-effort and must **never block processing**.
@@ -604,26 +618,27 @@ The current architecture supports this evolution: the hexagonal design and expli
 
 ## 14. Known Limitations
 
-| # | Limitation | Impact | Mitigation / Roadmap |
-|---|---|---|---|
-| 1 | Single-process model — API and scheduler share one event loop | No horizontal scaling for processing | [ADR-ARCH-0004](../adr/ADR-ARCH-0004-in-process-async-processing.md); optional worker profile in [Known Limitations](future-improvements.md) #14 |
-| 2 | SQLite — single-writer constraint | Write contention under concurrent uploads | WAL mode + busy timeout applied (Iteration 2); PostgreSQL adapter in roadmap (#17) |
-| 3 | Minimal authentication boundary | Root endpoints remain open; token auth is optional and static | Optional bearer-token auth implemented (Iteration 3, §13); full authN/authZ is a production evolution |
-| 4 | `AppWorkspace.tsx` at ~2,200 LOC (down from ~5,800) | Core orchestrator still large; 28 hooks + 3 panel components extracted (−62%) | Decomposition across Iterations 3, 7, 8, 13, 14; remaining LOC is render orchestration — further splits yield diminishing returns |
-| 5 | ~~`routes.py` at ~940 LOC~~ **✅ Resolved** | Routes fully decomposed into 6 domain modules (all < 420 LOC) + 18-LOC aggregator | Done (Iteration 6) |
-| 6 | ~~No rate limiting on API endpoints~~ **✅ Resolved** | Rate limiting applied via `slowapi` on upload (10/min) and download (30/min) | Done (Iteration 10, F16-D) |
-| 7 | ~~No DB indexes on FK columns~~ **✅ Resolved** | 4 secondary indexes added on `processing_runs`, `artifacts`, `document_status_history` | Done (Iteration 10, F16-A) |
-| 8 | ~~SQLite repository monolith (751 LOC, 4 aggregates)~~ **✅ Resolved** | Split into 3 aggregate modules + façade: `sqlite_document_repo.py` (241), `sqlite_run_repo.py` (302), `sqlite_calibration_repo.py` (123) | Done (Iteration 11, F18-S) |
-| 9 | ~~No latency baselines~~ **✅ Resolved** | P50/P95 benchmarks for list/get/upload endpoints; P95 < 500ms enforced | Done (Iteration 11, F18-P) |
-| 10 | ~~Raw API errors shown to users~~ **✅ Resolved** | `errorMessages.ts` maps 8 error patterns to user-friendly Spanish toasts | Done (Iteration 11, F18-O) |
-| 11 | ~~Limited E2E coverage (20 tests)~~ **✅ Resolved** | Expanded to 65 tests across 21 spec files covering all 4 phases of the E2E plan | Done (Iteration 12, F19-A→E) |
-| 12 | ~~No accessibility testing~~ **✅ Resolved** | `@axe-core/playwright` WCAG 2.1 AA audit integrated; 0 critical violations; aria-labels + focus management added | Done (Iteration 12, F19-I + F19-J) |
+| #   | Limitation                                                             | Impact                                                                                                                                   | Mitigation / Roadmap                                                                                                                             |
+| --- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | Single-process model — API and scheduler share one event loop          | No horizontal scaling for processing                                                                                                     | [ADR-ARCH-0004](../adr/ADR-ARCH-0004-in-process-async-processing.md); optional worker profile in [Known Limitations](future-improvements.md) #14 |
+| 2   | SQLite — single-writer constraint                                      | Write contention under concurrent uploads                                                                                                | WAL mode + busy timeout applied (Iteration 2); PostgreSQL adapter in roadmap (#17)                                                               |
+| 3   | Minimal authentication boundary                                        | Root endpoints remain open; token auth is optional and static                                                                            | Optional bearer-token auth implemented (Iteration 3, §13); full authN/authZ is a production evolution                                            |
+| 4   | `AppWorkspace.tsx` at ~2,200 LOC (down from ~5,800)                    | Core orchestrator still large; 28 hooks + 3 panel components extracted (−62%)                                                            | Decomposition across Iterations 3, 7, 8, 13, 14; remaining LOC is render orchestration — further splits yield diminishing returns                |
+| 5   | ~~`routes.py` at ~940 LOC~~ **✅ Resolved**                            | Routes fully decomposed into 6 domain modules (all < 420 LOC) + 18-LOC aggregator                                                        | Done (Iteration 6)                                                                                                                               |
+| 6   | ~~No rate limiting on API endpoints~~ **✅ Resolved**                  | Rate limiting applied via `slowapi` on upload (10/min) and download (30/min)                                                             | Done (Iteration 10, F16-D)                                                                                                                       |
+| 7   | ~~No DB indexes on FK columns~~ **✅ Resolved**                        | 4 secondary indexes added on `processing_runs`, `artifacts`, `document_status_history`                                                   | Done (Iteration 10, F16-A)                                                                                                                       |
+| 8   | ~~SQLite repository monolith (751 LOC, 4 aggregates)~~ **✅ Resolved** | Split into 3 aggregate modules + façade: `sqlite_document_repo.py` (241), `sqlite_run_repo.py` (302), `sqlite_calibration_repo.py` (123) | Done (Iteration 11, F18-S)                                                                                                                       |
+| 9   | ~~No latency baselines~~ **✅ Resolved**                               | P50/P95 benchmarks for list/get/upload endpoints; P95 < 500ms enforced                                                                   | Done (Iteration 11, F18-P)                                                                                                                       |
+| 10  | ~~Raw API errors shown to users~~ **✅ Resolved**                      | `errorMessages.ts` maps 8 error patterns to user-friendly Spanish toasts                                                                 | Done (Iteration 11, F18-O)                                                                                                                       |
+| 11  | ~~Limited E2E coverage (20 tests)~~ **✅ Resolved**                    | Expanded to 65 tests across 21 spec files covering all 4 phases of the E2E plan                                                          | Done (Iteration 12, F19-A→E)                                                                                                                     |
+| 12  | ~~No accessibility testing~~ **✅ Resolved**                           | `@axe-core/playwright` WCAG 2.1 AA audit integrated; 0 critical violations; aria-labels + focus management added                         | Done (Iteration 12, F19-I + F19-J)                                                                                                               |
 
 ---
 
 ## 15. Final Instruction
 
 Follow:
+
 - this document for **architecture and behavior**
 - `implementation-plan.md` for **scope and sequencing**
 
@@ -634,6 +649,7 @@ Optimize only when required by a user story.
 Implement exactly what is described.
 
 ---
+
 # Appendix A — Contracts, States & Invariants (Normative)
 
 This appendix defines **system-wide, authoritative rules**.  
@@ -656,6 +672,7 @@ Each `ProcessingRun` has exactly one state at any time:
 - `TIMED_OUT`
 
 **Rules**
+
 - States are **append-only transitions** (no rollback).
 - Only one run may be `RUNNING` per document.
 - Runs are immutable once terminal (`COMPLETED`, `FAILED`, `TIMED_OUT`).
@@ -668,15 +685,16 @@ Each `ProcessingRun` has exactly one state at any time:
 
 Derivation rules:
 
-| Condition                                   | Document Status |
-|---------------------------------------------|-----------------|
-| No processing run exists                    | `UPLOADED`      |
-| Latest run is `QUEUED` or `RUNNING`         | `PROCESSING`    |
-| Latest run is `COMPLETED`                   | `COMPLETED`     |
-| Latest run is `FAILED`                      | `FAILED`        |
-| Latest run is `TIMED_OUT`                   | `TIMED_OUT`     |
+| Condition                           | Document Status |
+| ----------------------------------- | --------------- |
+| No processing run exists            | `UPLOADED`      |
+| Latest run is `QUEUED` or `RUNNING` | `PROCESSING`    |
+| Latest run is `COMPLETED`           | `COMPLETED`     |
+| Latest run is `FAILED`              | `FAILED`        |
+| Latest run is `TIMED_OUT`           | `TIMED_OUT`     |
 
 **Rule**
+
 - Document status always reflects the **latest run**, not the latest completed run.
 
 ---
@@ -686,10 +704,12 @@ Derivation rules:
 Review status is **independent** from processing.
 
 Allowed values:
+
 - `IN_REVIEW` (default)
 - `REVIEWED`
 
 **Rules**
+
 - Stored at document level.
 - Editing structured data automatically reverts `REVIEWED → IN_REVIEW`.
 - Reprocessing does **not** change review status.
@@ -699,12 +719,12 @@ Allowed values:
 
 ### A1.4 Source of Truth Summary
 
-| Concept              | Source of Truth            |
-|---------------------|----------------------------|
+| Concept             | Source of Truth            |
+| ------------------- | -------------------------- |
 | Processing progress | `ProcessingRun.state`      |
 | Document lifecycle  | Derived from runs          |
 | Human workflow      | `ReviewStatus`             |
-| Interpretation data | Versioned interpretations |
+| Interpretation data | Versioned interpretations  |
 | Governance          | Governance candidates/logs |
 
 ---
@@ -731,10 +751,11 @@ Allowed values:
 - Exactly one interpretation version is **active** at a time per run.
 
 #### Active version invariant (Operational, normative)
+
 - When creating a new InterpretationVersion for a run:
   - It MUST be done in a single transaction:
-    1) set all previous versions for that `run_id` to `is_active = false`
-    2) insert the new version with `is_active = true` and `version_number = previous_max + 1`
+    1. set all previous versions for that `run_id` to `is_active = false`
+    2. insert the new version with `is_active = true` and `version_number = previous_max + 1`
 - At no point may two rows be active for the same `run_id`.
 
 ---
@@ -829,6 +850,7 @@ These principles apply to **all endpoints**:
 `event_type` must be one of the following values.
 
 Run-level:
+
 - `RUN_CREATED`
 - `RUN_STARTED`
 - `RUN_COMPLETED`
@@ -837,12 +859,14 @@ Run-level:
 - `RUN_RECOVERED_AS_FAILED` (startup recovery of orphaned RUNNING runs)
 
 Step-level:
+
 - `STEP_STARTED`
 - `STEP_SUCCEEDED`
 - `STEP_FAILED`
 - `STEP_RETRIED`
 
 User actions:
+
 - `DOCUMENT_UPLOADED`
 - `REPROCESS_REQUESTED`
 - `DOCUMENT_LANGUAGE_OVERRIDDEN`
@@ -850,10 +874,12 @@ User actions:
 - `INTERPRETATION_EDITED`
 
 Reviewer actions:
+
 - `GOVERNANCE_DECISION_RECORDED`
 - `SCHEMA_CONTRACT_CREATED`
 
 Rules:
+
 - Structured logs remain best-effort and never block processing.
 - Each log entry must include:
   - `document_id`
@@ -878,6 +904,7 @@ This appendix is the final authority.
 ---
 
 ---
+
 # Appendix B — Operational Clarifications (Normative)
 
 This appendix adds **explicit operational and implementation-level clarifications** to the Technical Design Document.  
@@ -903,9 +930,11 @@ This choice prioritizes simplicity and debuggability over throughput.
 ### B1.2 Single `RUNNING` Run Guarantee
 
 Definitions:
+
 - A **running run** is a `ProcessingRun` in state `RUNNING`.
 
 Rules:
+
 - At most **one `RUNNING` run per document** is allowed.
 - This invariant is enforced at the **persistence layer**, not in memory.
 - Any attempt to create a new run when a `RUNNING` run exists must:
@@ -921,15 +950,18 @@ No background worker may start a run without verifying this invariant.
 To enforce “at most one `RUNNING` run per document”, run creation and run start transitions must follow a persistence-level guard pattern that prevents race conditions.
 
 Definitions:
+
 - A running run is a run with state `RUNNING`.
 
 Pattern (normative):
+
 - Create or start a run only under a write-locking transaction (e.g., `BEGIN IMMEDIATE` in SQLite).
 - Under the same transaction scope:
-  1) Query whether a `RUNNING` run exists for the target `document_id`.
-  2) Apply the rules below.
+  1. Query whether a `RUNNING` run exists for the target `document_id`.
+  2. Apply the rules below.
 
 Rules:
+
 - Creating a run:
   - Always allowed to insert a new run in `QUEUED` (append-only history).
 - Starting a run (`QUEUED → RUNNING`):
@@ -943,10 +975,12 @@ No worker may transition a run to `RUNNING` without verifying these invariants a
 ### B1.3 Crash & Restart Semantics
 
 On application startup:
+
 - Any run found in state `RUNNING` is considered **orphaned**.
 - Orphaned runs must be transitioned to `FAILED` with `failure_type = PROCESS_TERMINATED`.
 
 Rationale:
+
 - Avoids “stuck” runs.
 - Keeps the state machine monotonic and explainable.
 
@@ -965,6 +999,7 @@ Rationale:
 Reprocessing always creates a **new run**.
 
 ### B1.4.1 Fixed defaults (Normative)
+
 - Step retry limit: 2 attempts total (1 initial + 1 retry).
 - Run timeout: 120 seconds wall-clock from `RUN_STARTED`.
 
@@ -975,6 +1010,7 @@ Reprocessing always creates a **new run**.
 The system includes an in-process scheduler that periodically attempts to start queued runs.
 
 Rules:
+
 - Selection:
   - For each document, the scheduler must prefer the **oldest** `QUEUED` run (by creation time).
 - Start condition:
@@ -988,6 +1024,7 @@ Rules:
 ---
 
 ### B1.5.1 Scheduler tick & fairness (Normative)
+
 - The scheduler runs on a fixed tick (e.g. every 1s).
 - On each tick, it attempts to start runs in FIFO order by `created_at`.
 - It MUST NOT busy-loop; it sleeps between ticks.
@@ -1005,6 +1042,7 @@ It is **not** a SQL schema, but an authoritative structural contract.
 **Purpose**: Represents an uploaded document.
 
 Key fields:
+
 - `document_id` (PK)
 - `original_filename`
 - `content_type`
@@ -1013,13 +1051,16 @@ Key fields:
 - `created_at`
 
 Stored workflow fields:
+
 - `review_status` (`IN_REVIEW | REVIEWED`)
 - `language_override` (nullable; see B3.1 “Language override endpoint”)
 
 Derived / external:
+
 - `status` (derived; see Appendix A)
 
 Invariants:
+
 - A document must exist before any run.
 - A document is never deleted.
 
@@ -1030,6 +1071,7 @@ Invariants:
 **Purpose**: Represents one processing attempt.
 
 Key fields:
+
 - `run_id` (PK)
 - `document_id` (FK)
 - `state`
@@ -1040,6 +1082,7 @@ Key fields:
 - `schema_contract_used`
 
 Invariants:
+
 - Append-only.
 - At most one `RUNNING` run per document (multiple `QUEUED` runs may exist).
 - Terminal states are immutable.
@@ -1051,6 +1094,7 @@ Invariants:
 **Purpose**: Stores run-scoped outputs (raw text, metadata).
 
 Key fields:
+
 - `artifact_id`
 - `run_id` (FK)
 - `artifact_type`
@@ -1058,10 +1102,12 @@ Key fields:
 - `created_at`
 
 Invariants:
+
 - Artifacts are immutable.
 - Artifacts are always linked to exactly one run.
 
 #### ArtifactType (Closed Set, normative)
+
 - `RAW_TEXT` (filesystem reference)
 - `STEP_STATUS` (JSON payload; Appendix C)
 
@@ -1072,6 +1118,7 @@ Invariants:
 **Purpose**: Versioned structured interpretation.
 
 Key fields:
+
 - `interpretation_id`
 - `run_id` (FK)
 - `version_number`
@@ -1080,6 +1127,7 @@ Key fields:
 - `is_active`
 
 Invariants:
+
 - Append-only.
 - Exactly one active version per run.
 
@@ -1090,6 +1138,7 @@ Invariants:
 **Purpose**: Captures human edits.
 
 Key fields:
+
 - `change_id`
 - `interpretation_id`
 - `field_path`
@@ -1099,26 +1148,31 @@ Key fields:
 - `created_at`
 
 Invariants:
+
 - Append-only.
 - Never blocks veterinarian workflow.
 
 ---
 
 #### B2.5.1 Field path format (Authoritative)
+
 `field_path` MUST be stable across versions and MUST NOT rely on array indices.
 
 Format (normative):
+
 - `field_path = "fields.{field_id}.value"`
 
 Notes:
+
 - `field_id` refers to `StructuredField.field_id` in Appendix D.
 - This allows a reviewer to trace changes even if the `fields[]` order changes between versions.
- 
- ---
+
+  ***
 
 ### B2.6 API Error Response Format & Naming Authority (Normative)
 
 ### API Error Response Format (Normative)
+
 All API errors MUST return a JSON body with a stable, machine-readable structure:
 
 ```json
@@ -1130,6 +1184,7 @@ All API errors MUST return a JSON body with a stable, machine-readable structure
 ```
 
 Rules:
+
 - `error_code` is stable and suitable for frontend branching.
 - `message` is safe for user display (no stack traces).
 - `details` is optional and must not expose filesystem paths or secrets.
@@ -1137,6 +1192,7 @@ Rules:
 ---
 
 ### API Naming Authority (Normative)
+
 The authoritative endpoint map is defined in **Appendix B3 (+ B3.1)**.
 
 If any user story lists different endpoint paths, treat them as non-normative examples and implement the authoritative map.
@@ -1148,6 +1204,7 @@ If any user story lists different endpoint paths, treat them as non-normative ex
 **Purpose**: Stores canonical schema contract snapshots used by new processing runs.
 
 Key fields:
+
 - `schema_contract_id` (PK)
 - `version_number` (monotonic integer)
 - `schema_definition` (JSON)
@@ -1156,6 +1213,7 @@ Key fields:
 - `change_summary` (nullable)
 
 Invariants:
+
 - Append-only; schema contract snapshots are immutable.
 - “Current schema” is resolved as the schema contract snapshot with the highest `version_number`.
 - New processing runs MUST persist `schema_contract_used` resolved at run creation time (B2.2).
@@ -1167,6 +1225,7 @@ Invariants:
 **Purpose**: Represents an aggregated, reviewer-facing candidate for schema evolution derived from repeated document-level edit patterns.
 
 Key fields:
+
 - `candidate_id` (PK)
 - `change_type` (closed set; e.g. `NEW_KEY | KEY_RENAME | KEY_DEPRECATION | KEY_MAPPING`)
 - `source_key` (nullable)
@@ -1178,6 +1237,7 @@ Key fields:
 - `evidence_samples` (JSON; small, representative samples: page + snippet + optional document reference)
 
 Invariants:
+
 - Candidates are reviewer-facing only.
 - Candidate details are never exposed in veterinarian workflows.
 - Status changes MUST be traceable via append-only `GovernanceDecision` (B2.9).
@@ -1190,6 +1250,7 @@ Invariants:
 **Purpose**: Append-only audit log of reviewer governance actions (schema evolution decisions).
 
 Key fields:
+
 - `decision_id` (PK)
 - `candidate_id` (nullable)
 - `decision_type` (closed set; `APPROVE | REJECT | DEFER | FLAG_CRITICAL`)
@@ -1201,6 +1262,7 @@ Key fields:
 - `created_at`
 
 Invariants:
+
 - Append-only and immutable.
 - Stored separately from document-level data (Appendix A8).
 - Reviewer actions never modify existing documents or trigger implicit reprocessing (Appendix A7).
@@ -1235,10 +1297,12 @@ This section defines the **minimum endpoint surface**.
 ### Supported upload types (Normative)
 
 The system MUST accept only PDF uploads in the current implementation:
+
 - `.pdf`
 - `application/pdf`
 
 Rules:
+
 - Any other content type MUST return:
   - HTTP 415
   - `error_code = UNSUPPORTED_MEDIA_TYPE`
@@ -1259,6 +1323,7 @@ Rules:
   - Apply veterinarian edits by creating a new interpretation version (append-only).
 
 Rules:
+
 - Status views use **latest run**.
 - Review views use **latest completed run**.
 
@@ -1297,8 +1362,9 @@ Rules:
 - `GET /documents/{id}/review`
   Resolves **latest completed run**:
   - if none exists, return an explicit error (e.g., 409) with reason `NO_COMPLETED_RUN`.
-  
+
 Rationale (authoritative):
+
 - `/documents/{id}/review` is a derived “review view” that requires a completed run; if none exists yet, this is a **state conflict**, not a missing resource.
 
   Returns:
@@ -1307,17 +1373,21 @@ Rationale (authoritative):
   - confidence + evidence.
 
 Rule:
+
 - Status views always use **latest run**.
 - Review views always use **latest completed run**.
 
 #### Response shape (minimum, normative)
+
 `GET /documents/{id}/review` returns:
+
 - `document_id`
 - `latest_completed_run`: { `run_id`, `state`, `completed_at`, `failure_type` }
 - `active_interpretation`: { `interpretation_id`, `version_number`, `data` }
-- `raw_text_artifact`: { `run_id`, `available`: boolean }  (do not inline raw text here)
+- `raw_text_artifact`: { `run_id`, `available`: boolean } (do not inline raw text here)
 
 #### Field Candidate Suggestions (standard review payload)
+
 - Contract location:
   - Candidate suggestions are included inside `active_interpretation.data.fields[]` entries in the standard review payload.
   - The field is optional for backward compatibility.
@@ -1345,7 +1415,9 @@ Rule:
 ---
 
 ### Processing history endpoint (minimum, normative)
+
 `GET /documents/{id}/processing-history` returns:
+
 - `document_id`
 - `runs[]` ordered by `created_at` ascending (chronological)
   - `run_id`
@@ -1362,13 +1434,16 @@ Rule:
     - `error_code` (nullable)
 
 Rules:
+
 - Read-only; does not introduce actions.
 - Uses persisted artifacts as the source of truth (Appendix C4).
 
 ---
 
 ### Language override endpoint (minimum, normative)
+
 `PATCH /documents/{id}/language`:
+
 - Request body:
   - `language_override` (string ISO 639-1 like `"en"`, or `null` to clear)
 - Response body includes:
@@ -1376,6 +1451,7 @@ Rules:
   - `language_override` (nullable)
 
 Rules:
+
 - Does not trigger processing or reprocessing.
 - Affects only **new** runs created after the override is set.
 - Must not block review or editing workflows.
@@ -1383,9 +1459,11 @@ Rules:
 ---
 
 ### Interpretation edit endpoint (minimum, normative)
+
 `POST /runs/{run_id}/interpretations` creates a new, active interpretation version for the run (append-only).
 
 Request body (minimum):
+
 - `base_version_number` (integer; must match the currently active version number)
 - `changes[]`
   - `op` (`ADD | UPDATE | DELETE`)
@@ -1395,12 +1473,14 @@ Request body (minimum):
   - `value_type` (string; required for `ADD | UPDATE`)
 
 Response body (minimum):
+
 - `run_id`
 - `interpretation_id`
 - `version_number` (new active version number)
 - `data` (Structured Interpretation Schema visit-grouped canonical contract; Appendix D)
 
 Rules:
+
 - Human edits MUST produce `origin = "human"` fields (Appendix D) and append `FieldChangeLog` entries (B2.5).
 - This endpoint never mutates existing interpretation versions (Appendix A3).
 
@@ -1409,6 +1489,7 @@ Rules:
 ### Reviewer governance endpoints (minimum, normative)
 
 `GET /reviewer/structural-changes` returns:
+
 - `items[]`
   - `candidate_id`
   - `change_type`
@@ -1421,6 +1502,7 @@ Rules:
   - `updated_at`
 
 `POST /reviewer/structural-changes/{candidate_id}/decision`:
+
 - Request body (minimum):
   - `decision_type` (`APPROVE | REJECT | DEFER | FLAG_CRITICAL`)
   - `reason` (nullable)
@@ -1432,12 +1514,14 @@ Rules:
   - `created_at`
 
 `GET /reviewer/schema/current` returns:
+
 - `schema_contract_id`
 - `version_number`
 - `created_at`
 - `change_summary` (nullable)
 
 `GET /reviewer/governance/audit-trail` returns:
+
 - `items[]` ordered by `created_at` ascending
   - `decision_id`
   - `candidate_id` (nullable)
@@ -1455,6 +1539,7 @@ This section defines **stable HTTP semantics** and `error_code` values.
 It prevents user stories from redefining per-endpoint behavior.
 
 ### Error response format (Authoritative)
+
 All error responses MUST follow Appendix **B2.6**:
 
 - `error_code` (stable enum for frontend branching)
@@ -1502,31 +1587,38 @@ All error responses MUST follow Appendix **B2.6**:
   - `error_code`: `INTERNAL_ERROR`
 
 ### Notes
+
 - Frontend MUST branch on `error_code` (and optional `details.reason`) only.
 - User stories may list example error cases, but must not redefine these semantics.
 - Upload type support is defined in Appendix B3 (“Supported upload types (Normative)”).
 
 ### Upload size limit (Normative)
+
 - Maximum upload size: 20 MB (default).
 - Exceeding the limit returns:
   - HTTP 413
   - `error_code = FILE_TOO_LARGE`
 
 ### GET /runs/{run_id}/artifacts/raw-text (Normative)
+
 Returns:
+
 - `run_id`
 - `artifact_type = RAW_TEXT`
 - `content_type = text/plain`
 - `text` (string)
 
 Errors:
+
 - 404 NOT_FOUND if run does not exist
 - 409 CONFLICT with `details.reason = RAW_TEXT_NOT_READY` if run exists but extraction artifact is not produced yet
 - 409 CONFLICT with `details.reason = RAW_TEXT_NOT_AVAILABLE` if extraction failed or no raw-text artifact exists for the run
 - 410 ARTIFACT_MISSING if the artifact reference exists but filesystem content is missing
 
 ### POST /runs/{run_id}/interpretations (Normative)
+
 Errors (minimum):
+
 - 404 NOT_FOUND if run does not exist
 - 409 CONFLICT with `details.reason = REVIEW_BLOCKED_BY_ACTIVE_RUN` if the run is currently `RUNNING`
 - 409 CONFLICT with `details.reason = STALE_INTERPRETATION_VERSION` if the client’s base version is not the active version
@@ -1536,28 +1628,33 @@ Errors (minimum):
 ## B4. Idempotency & Safe Retry Rules (Authoritative)
 
 The following actions must be safe to retry:
+
 - Upload
 - Reprocess
 - Mark reviewed
 
 Mechanisms:
+
 - Persistence-level guards (see B1.2.1).
 - Explicit checks for invariants (single `RUNNING` run rule + run-start guard).
 - No reliance on client-provided idempotency keys.
 
 “Safe to retry” means:
+
 - Retrying does not corrupt state.
 - Retrying may create additional append-only records (where specified), but must never produce inconsistent state.
 
 ### B4.1 Endpoint Semantics
 
 **POST /documents/upload**
+
 - Retrying may create a new document (no deduplication).
 - The system must avoid partial persistence:
   - no DB row without filesystem artifact on success,
   - no filesystem artifact without DB row on success.
 
 **POST /documents/{id}/reprocess**
+
 - Always creates a new `ProcessingRun` in `QUEUED`.
 - Retrying may create multiple queued runs. This is acceptable.
 - The system must remain consistent:
@@ -1565,11 +1662,13 @@ Mechanisms:
   - only one run may be `RUNNING` per document at any time.
 
 **POST /documents/{id}/reviewed**
+
 - Idempotent:
   - if already `REVIEWED`, return success without change,
   - if `IN_REVIEW`, set to `REVIEWED`.
 
 Non-negotiable invariant:
+
 - The system must never end up with two runs `RUNNING` for the same document, regardless of retries.
 
 ---
@@ -1580,14 +1679,15 @@ Non-negotiable invariant:
   - `/storage/{document_id}/original.pdf`
 
 Note:
+
 - Additional extensions may be introduced when non-PDF upload types are supported.
 
-  
 - Writes must be atomic.
 - DB persistence must complete **before** returning success.
 - Temporary files must be cleaned up on failure.
 
 Inconsistencies:
+
 - FS exists, DB missing → treat as invalid artifact.
 - DB exists, FS missing → surface explicit error on access.
 
@@ -1598,6 +1698,7 @@ No background cleanup is required.
 ## B6. Blocking Rules (Normative)
 
 The following **never block veterinarians**:
+
 - Pending review
 - Low confidence
 - Failed processing
@@ -1610,6 +1711,7 @@ Only explicit user actions change review state.
 ## B7. Testability Expectations
 
 Expected test layers:
+
 - Unit tests:
   - state transitions,
   - derivation rules,
@@ -1624,6 +1726,7 @@ Expected test layers:
 ## Final Rule
 
 If an implementation decision is not explicitly covered by:
+
 - the main Technical Design,
 - Appendix A,
 - or this appendix,
@@ -1646,21 +1749,26 @@ If any conflict exists, Appendix A, Appendix B, and this appendix take precedenc
 ## C1. Processing Step Model (Authoritative)
 
 A `ProcessingRun` is executed as a sequence of steps. Step state is tracked as **run-scoped artifacts**:
+
 - `artifact_type = STEP_STATUS`
 - `payload` is JSON (schema below)
 
 ### C1.1 StepName (Closed Set)
+
 - `EXTRACTION`
 - `INTERPRETATION`
 
 ### C1.2 StepStatus (Closed Set)
+
 - `NOT_STARTED`
 - `RUNNING`
 - `SUCCEEDED`
 - `FAILED`
 
 ### C1.3 Step Artifact Payload (JSON)
+
 Must include:
+
 - `step_name` (StepName)
 - `step_status` (StepStatus)
 - `attempt` (integer, starts at 1)
@@ -1670,6 +1778,7 @@ Must include:
 - `details` (nullable; small JSON)
 
 ### C1.4 Append-Only Rule
+
 - Step changes are append-only: each update is a new artifact record.
 - The “current step status” is derived from the latest `STEP_STATUS` artifact for that `step_name`.
 
@@ -1678,6 +1787,7 @@ Must include:
 ## C2. Run State Derivation from Steps (Authoritative)
 
 Rules:
+
 - A run is `RUNNING` if any required step is `RUNNING`.
 - A run is `FAILED` if any required step ends `FAILED`.
 - A run is `COMPLETED` only if all required steps end `SUCCEEDED`.
@@ -1691,18 +1801,21 @@ Rules:
 - `failure_type` is run-level and recorded on the run.
 
 Mapping:
+
 - Step `EXTRACTION` failure → run `failure_type = EXTRACTION_FAILED`
 - Step `INTERPRETATION` failure → run `failure_type = INTERPRETATION_FAILED`
 - Startup recovery orphaned `RUNNING` → run terminal failure with reason `PROCESS_TERMINATED`
   - Log `RUN_RECOVERED_AS_FAILED`
 
 Rule:
+
 - Step artifacts never overwrite previous artifacts.
 - Terminal run states are immutable.
 
 ---
 
 ## C4. Relationship between Step Artifacts and Logs (Normative)
+
 - Step artifacts (`artifact_type = STEP_STATUS`) are the source of truth for step state.
 - Structured logs emit corresponding `STEP_*` events best-effort.
 - If logs and artifacts disagree, artifacts win.
@@ -1713,6 +1826,7 @@ Rule:
 
 This appendix defines the **authoritative minimum JSON schema** for structured interpretations.
 It exists to remove ambiguity for implementation (especially AI-assisted coding) and to support:
+
 - **Review in context** (US-07)
 - **Editing with traceability** (US-08)
 
@@ -1729,6 +1843,7 @@ This is a deliberately small contract, **not a full medical ontology**.
 - **Canonical structure**: deterministic visit grouping and explicit rendering taxonomy.
 
 Note (materialization boundary):
+
 - Machine interpretation payloads may be partial with respect to Global Schema.
 - Backend contracts in this document define valid structured payload shape; they do not require backend-side full-schema backfilling.
 - UI rendering is expected to materialize and display the full Global Schema (including empty values for missing keys), as defined by product authority.
@@ -1771,16 +1886,16 @@ The JSON object defined in this appendix is stored as the `data` payload of `Int
 }
 ```
 
-| Field | Type | Required | Notes |
-|---|---|---:|---|
-| schema_contract | string | ✓ | Always `"visit-grouped-canonical"` |
-| document_id | uuid | ✓ | Convenience for debugging |
-| processing_run_id | uuid | ✓ | Links to a specific processing attempt |
-| created_at | ISO 8601 string | ✓ | Snapshot creation time |
-| medical_record_view | `MedicalRecordViewTemplate` | ✓ | Deterministic panel template |
-| fields | array of `StructuredField` | ✓ | Non-visit-scoped fields |
-| visits | array of `VisitGroup` | ✓ | Visit-scoped deterministic grouping |
-| other_fields | array of `StructuredField` | ✓ | Explicit unmapped/other bucket |
+| Field               | Type                        | Required | Notes                                  |
+| ------------------- | --------------------------- | -------: | -------------------------------------- |
+| schema_contract     | string                      |        ✓ | Always `"visit-grouped-canonical"`     |
+| document_id         | uuid                        |        ✓ | Convenience for debugging              |
+| processing_run_id   | uuid                        |        ✓ | Links to a specific processing attempt |
+| created_at          | ISO 8601 string             |        ✓ | Snapshot creation time                 |
+| medical_record_view | `MedicalRecordViewTemplate` |        ✓ | Deterministic panel template           |
+| fields              | array of `StructuredField`  |        ✓ | Non-visit-scoped fields                |
+| visits              | array of `VisitGroup`       |        ✓ | Visit-scoped deterministic grouping    |
+| other_fields        | array of `StructuredField`  |        ✓ | Explicit unmapped/other bucket         |
 
 ## D5. StructuredField (Authoritative)
 
@@ -1800,23 +1915,24 @@ A single extracted or edited data point with confidence and optional evidence.
 ```
 
 **Field identity rule (Authoritative)**
+
 - `field_id` identifies a **specific field instance**, not a conceptual slot.
 - Human edits create new interpretation versions (Appendix A3.1) and are tracked via `FieldChangeLog` (Appendix B2.5).
 
-| Field | Type | Required | Notes |
-|---|---|---:|---|
-| field_id | uuid | ✓ | Stable identifier for this field instance |
-| key | string | ✓ | Lowercase `snake_case` |
-| value | string \| number \| boolean \| null | ✓ | Dates stored as ISO strings |
-| value_type | `"string"` \| `"number"` \| `"boolean"` \| `"date"` \| `"unknown"` | ✓ | Explicit typing |
-| scope | `"document"` \| `"visit"` | ✗ | Contract taxonomy hint (canonical preferred). Backward-compatible optional metadata. |
-| section | `"clinic"` \| `"patient"` \| `"owner"` \| `"visits"` \| `"notes"` \| `"other"` \| `"report_info"` | ✗ | Contract section membership hint (canonical preferred). |
-| domain | `"clinical"` \| `"administrative"` \| `"meta"` \| `"other"` | ✗ | Concept domain classification (contract metadata; not UI behavior). |
-| classification | `"medical_record"` \| `"other"` | ✗ | Explicit render taxonomy marker for deterministic consumers. |
-| confidence | number (0–1) | ✓ | Attention signal only |
-| is_critical | boolean | ✓ | Derived: `key ∈ CRITICAL_KEYS` (Appendix D7.4) |
-| origin | `"machine"` \| `"human"` | ✓ | Distinguishes machine output vs human edits |
-| evidence | `Evidence` | ✗ | Optional; expected for machine output when available |
+| Field          | Type                                                                                              | Required | Notes                                                                                |
+| -------------- | ------------------------------------------------------------------------------------------------- | -------: | ------------------------------------------------------------------------------------ |
+| field_id       | uuid                                                                                              |        ✓ | Stable identifier for this field instance                                            |
+| key            | string                                                                                            |        ✓ | Lowercase `snake_case`                                                               |
+| value          | string \| number \| boolean \| null                                                               |        ✓ | Dates stored as ISO strings                                                          |
+| value_type     | `"string"` \| `"number"` \| `"boolean"` \| `"date"` \| `"unknown"`                                |        ✓ | Explicit typing                                                                      |
+| scope          | `"document"` \| `"visit"`                                                                         |        ✗ | Contract taxonomy hint (canonical preferred). Backward-compatible optional metadata. |
+| section        | `"clinic"` \| `"patient"` \| `"owner"` \| `"visits"` \| `"notes"` \| `"other"` \| `"report_info"` |        ✗ | Contract section membership hint (canonical preferred).                              |
+| domain         | `"clinical"` \| `"administrative"` \| `"meta"` \| `"other"`                                       |        ✗ | Concept domain classification (contract metadata; not UI behavior).                  |
+| classification | `"medical_record"` \| `"other"`                                                                   |        ✗ | Explicit render taxonomy marker for deterministic consumers.                         |
+| confidence     | number (0–1)                                                                                      |        ✓ | Attention signal only                                                                |
+| is_critical    | boolean                                                                                           |        ✓ | Derived: `key ∈ CRITICAL_KEYS` (Appendix D7.4)                                       |
+| origin         | `"machine"` \| `"human"`                                                                          |        ✓ | Distinguishes machine output vs human edits                                          |
+| evidence       | `Evidence`                                                                                        |        ✗ | Optional; expected for machine output when available                                 |
 
 ## D6. Evidence (Approximate by Design)
 
@@ -1824,35 +1940,41 @@ A single extracted or edited data point with confidence and optional evidence.
 { "page": 2, "snippet": "Patient: Luna" }
 ```
 
-| Field | Type | Required | Notes |
-|---|---|---:|---|
-| page | integer | ✓ | 1-based page index |
-| snippet | string | ✓ | Short excerpt shown to the user |
+| Field   | Type    | Required | Notes                           |
+| ------- | ------- | -------: | ------------------------------- |
+| page    | integer |        ✓ | 1-based page index              |
+| snippet | string  |        ✓ | Short excerpt shown to the user |
 
 ## D7. Semantics & Rules (Authoritative)
 
 ### D7.1 Confidence
+
 - Confidence never blocks: editing, marking reviewed, or accessing data.
 - UI may render qualitatively (e.g., low / medium / high).
 
 ### D7.2 Multiple Values
+
 Repeated concepts (e.g., medications) are represented by multiple fields with the same `key` and different `field_id`s.
 
 ### D7.3 Governance (Future-Facing)
+
 Structural changes (new keys, key remapping) may later be marked as pending review for schema evolution.
 This is never exposed or actionable in veterinarian-facing workflows.
 
 ### D7.4 Critical Concepts (Authoritative)
 
 Derivation (authoritative):
+
 - `StructuredField.is_critical = (StructuredField.key ∈ CRITICAL_KEYS)`
 
 Rules (technical, authoritative):
+
 - `is_critical` MUST be derived from the field key (not model-decided).
 - `CRITICAL_KEYS` is a closed set (no heuristics, no model output).
 - This designation MUST NOT block workflows; it only drives UI signaling and internal flags.
 
 Source of truth for `CRITICAL_KEYS`:
+
 - Defined in [`docs/projects/veterinary-medical-records/01-product/product-design.md`](product-design.md) (product authority).
 - The complete Global Schema key list, fixed ordering, section grouping, repeatability rules, and cross-key fallback rules (including `document_date` fallback to `visit_date`) are also governed by [`docs/projects/veterinary-medical-records/01-product/product-design.md`](product-design.md).
 
@@ -1868,7 +1990,15 @@ Source of truth for `CRITICAL_KEYS`:
   "created_at": "2026-02-05T12:34:56Z",
   "medical_record_view": {
     "version": "mvp-1",
-    "sections": ["clinic", "patient", "owner", "visits", "notes", "other", "report_info"],
+    "sections": [
+      "clinic",
+      "patient",
+      "owner",
+      "visits",
+      "notes",
+      "other",
+      "report_info"
+    ],
     "field_slots": []
   },
   "fields": [
@@ -1942,16 +2072,16 @@ The canonical visit-grouped contract defines deterministic visit grouping for mu
 }
 ```
 
-| Field | Type | Required | Notes |
-|---|---|---:|---|
-| schema_contract | string | ✓ | Always `"visit-grouped-canonical"` |
-| document_id | uuid | ✓ | Convenience for debugging |
-| processing_run_id | uuid | ✓ | Links to a specific processing attempt |
-| created_at | ISO 8601 string | ✓ | Snapshot creation time |
-| medical_record_view | `MedicalRecordViewTemplate` | ✓ | Deterministic panel template for Medical Record MVP rendering (US-44); contract uses stable section ids (not localized labels). |
-| fields | array of `StructuredField` | ✓ | Non-visit-scoped fields only |
-| visits | array of `VisitGroup` | ✓ | Deterministic grouping container for visit-scoped data |
-| other_fields | array of `StructuredField` | ✓ | Explicit unmapped/other bucket for deterministic rendering; FE MUST render “Otros campos detectados” only from this bucket. |
+| Field               | Type                        | Required | Notes                                                                                                                           |
+| ------------------- | --------------------------- | -------: | ------------------------------------------------------------------------------------------------------------------------------- |
+| schema_contract     | string                      |        ✓ | Always `"visit-grouped-canonical"`                                                                                              |
+| document_id         | uuid                        |        ✓ | Convenience for debugging                                                                                                       |
+| processing_run_id   | uuid                        |        ✓ | Links to a specific processing attempt                                                                                          |
+| created_at          | ISO 8601 string             |        ✓ | Snapshot creation time                                                                                                          |
+| medical_record_view | `MedicalRecordViewTemplate` |        ✓ | Deterministic panel template for Medical Record MVP rendering (US-44); contract uses stable section ids (not localized labels). |
+| fields              | array of `StructuredField`  |        ✓ | Non-visit-scoped fields only                                                                                                    |
+| visits              | array of `VisitGroup`       |        ✓ | Deterministic grouping container for visit-scoped data                                                                          |
+| other_fields        | array of `StructuredField`  |        ✓ | Explicit unmapped/other bucket for deterministic rendering; FE MUST render “Otros campos detectados” only from this bucket.     |
 
 ### D9.1.a Medical Record View Template / Field Slots (Normative, US-44)
 
@@ -1983,6 +2113,7 @@ The canonical visit-grouped contract defines deterministic visit grouping for mu
 ```
 
 `field_slots[]` minimum shape:
+
 - `concept_id` (stable concept identifier, string)
 - `section` (stable section id, string: `clinic|patient|owner|visits|notes|other|report_info`)
 - `scope` (`"document" | "visit"`)
@@ -1991,16 +2122,19 @@ The canonical visit-grouped contract defines deterministic visit grouping for mu
 - `label_key` (optional label token/string)
 
 Minimum MVP document-level slots (required when interpretation is in ready state):
+
 - `clinic_name`, `clinic_address`, `vet_name`, `nhc`
 - `pet_name`, `species`, `breed`, `sex`, `age`, `dob`, `microchip_id`, `weight`, `reproductive_status`
 - `owner_name`, `owner_address`
 - `notes`, `language`
 
 Localization boundary:
+
 - Contract carries stable section ids and canonical keys.
 - Human-readable section labels (for example `Centro Veterinario`, `Notas internas`) are defined by UX, not by contract payload strings.
 
 Normative rendering rules:
+
 1. Frontend MUST render all `scope = "document"` slots from `medical_record_view.field_slots[]` in the section declared by the slot.
 2. If no resolved value exists for a required document slot in ready state, frontend MUST render placeholder `—`.
 3. Frontend MUST NOT infer section membership or required fields from key presence; it MUST use `medical_record_view`.
@@ -2020,24 +2154,26 @@ Normative rendering rules:
 }
 ```
 
-| Field | Type | Required | Notes |
-|---|---|---:|---|
-| visit_id | uuid | ✓ | Stable identifier for the visit group within this interpretation version |
-| visit_date | ISO 8601 date string | ✓ (nullable) | Critical concept; may be `null` if unknown |
-| admission_date | ISO 8601 date string | ✗ | Optional |
-| discharge_date | ISO 8601 date string | ✗ | Optional |
-| reason_for_visit | string | ✗ | Optional |
-| fields | array of `StructuredField` | ✓ | Visit-scoped structured fields (clinical); `StructuredField` is unchanged from D5 |
+| Field            | Type                       |     Required | Notes                                                                             |
+| ---------------- | -------------------------- | -----------: | --------------------------------------------------------------------------------- |
+| visit_id         | uuid                       |            ✓ | Stable identifier for the visit group within this interpretation version          |
+| visit_date       | ISO 8601 date string       | ✓ (nullable) | Critical concept; may be `null` if unknown                                        |
+| admission_date   | ISO 8601 date string       |            ✗ | Optional                                                                          |
+| discharge_date   | ISO 8601 date string       |            ✗ | Optional                                                                          |
+| reason_for_visit | string                     |            ✗ | Optional                                                                          |
+| fields           | array of `StructuredField` |            ✓ | Visit-scoped structured fields (clinical); `StructuredField` is unchanged from D5 |
 
 ### D9.3 Scoping Rules (Normative)
 
 For `canonical contract`:
+
 1. Top-level `fields[]` MUST contain only non-visit-scoped keys (clinic/patient/owner/notes metadata and any future non-visit keys).
 2. Visit-scoped concepts MUST appear inside exactly one `visits[].fields[]` entry set, not in top-level `fields[]`.
 3. “Otros campos detectados” MUST be contract-driven through explicit `other_fields[]`; FE MUST NOT reclassify and MUST NOT source this section from `fields[]` or `visits[]`.
 4. Medical Record panel membership is contract metadata (`scope`, `section`, `domain`, `classification`) and not UI inference.
 
 Visit-scoped keys (MUST be inside `visits[].fields[]`):
+
 - `symptoms`
 - `diagnosis`
 - `procedure`
@@ -2049,45 +2185,54 @@ Visit-scoped keys (MUST be inside `visits[].fields[]`):
 - `imaging`
 
 Visit metadata keys are represented as `VisitGroup` properties:
+
 - `visit_date`
 - `admission_date`
 - `discharge_date`
 - `reason_for_visit`
 
 Document-level Medical Record keys (MUST be represented by `medical_record_view.field_slots[]`; resolved values are emitted in top-level `fields[]` with `scope = "document"`, `classification = "medical_record"`):
+
 - Clinic section (`section = "clinic"`): `clinic_name`, `clinic_address`, `vet_name`, `nhc`.
 - Patient section (`section = "patient"`): `pet_name`, `species`, `breed`, `sex`, `age`, `dob`, `microchip_id`, `weight`, `reproductive_status`.
 - Owner section (`section = "owner"`): `owner_name`, `owner_address`.
 - Notes section (`section = "notes"`): `notes`.
 
 Section-id normalization (normative):
+
 - Producers/contract adapters MUST map `section = "review_notes"` to stable `section = "notes"` before consumer rendering.
 - Producers/contract adapters MUST map `section = "visit"` to stable `section = "visits"` before consumer rendering.
 - Frontend consumers MUST NOT infer or heuristically remap section ids.
 - Report info section (`section = "report_info"`): `language`.
 
 Reproductive status concept (normative):
+
 - Canonical key is `reproductive_status`.
 - `repro_status` aliases MUST be mapped to canonical `reproductive_status` in contract metadata.
 
 Owner address concept (normative):
+
 - `owner_address` is the explicit owner address concept for Medical Record taxonomy.
 - `owner_id` is an identifier concept and MUST NOT be interpreted as address in Medical Record taxonomy.
 
 NHC (normative):
+
 - Preferred key is `nhc` (Número de historial clínico), document-level, clinic section.
 - `medical_record_number` aliases MUST map to `nhc`.
 - Deterministic taxonomy rule: producers MUST map both key variants to the same Medical Record concept (`NHC`) in contract metadata; frontend consumers MUST NOT infer this mapping heuristically.
 
 Age and DOB (normative compatibility):
+
 - `age` and `dob` are both valid patient fields.
 - Backend may emit either or both; the contract does not require deriving one from the other in frontend consumers.
 
 Medical Record boundary (contract taxonomy):
+
 - Medical Record panel rendering MUST rely on contract classification (`classification = "medical_record"` and domain/section metadata), not frontend denylists.
 - Non-clinical claim concepts are excluded from Medical Record taxonomy by classification/domain.
 
 Medical Record panel eligibility taxonomy (normative summary):
+
 - `Centro Veterinario`: `clinic_name`, `clinic_address`, `vet_name`, `nhc`.
 - `Paciente`: `pet_name`, `species`, `breed`, `sex`, `age`, `dob`, `microchip_id`, `weight`, `reproductive_status`.
 - `Propietario`: `owner_name`, `owner_address` (`owner_id` excluded from Medical Record taxonomy).
@@ -2097,12 +2242,14 @@ Medical Record panel eligibility taxonomy (normative summary):
 - `Otros campos detectados`: explicit contract bucket only (`other_fields[]`), never UI-side classification.
 
 Date normalization (canonical contract target):
+
 - Canonical date representation for `visit_date`, `admission_date`, and `discharge_date` is ISO 8601 date string (`YYYY-MM-DD`).
 - Transitional note: non-ISO inputs (for example `dd/mm/yyyy`) may exist upstream; producers should normalize to canonical ISO in payload output.
 
 ### D9.4 Determinism and Unassigned Rule (Normative)
 
 If an extracted clinical field cannot be deterministically linked to a specific visit, it MUST be placed under a synthetic `VisitGroup` with:
+
 - `visit_id = "unassigned"`
 - `visit_date = null`
 - `admission_date = null`
@@ -2110,12 +2257,14 @@ If an extracted clinical field cannot be deterministically linked to a specific 
 - `reason_for_visit = null`
 
 Contract clarification:
+
 - `visit_id = "unassigned"` is an explicit contract value (not a frontend heuristic or fallback label).
 - A payload where all visit-scoped concepts are contained in a single synthetic `unassigned` group is valid for `canonical contract`.
 
 This rule prevents UI-side heuristic grouping and keeps all visit-scoped items contained in `visits[]`.
 
 Sufficient evidence boundary for assigned VisitGroup creation (US-45, deterministic):
+
 - Producer MAY create an assigned `VisitGroup` (`visit_id != "unassigned"`) only when a date token is normalizable to ISO (`YYYY-MM-DD`) and the same evidence includes visit context (`visita|consulta|control|revisión|seguimiento|ingreso|alta`) without non-visit context.
 - Non-visit/administrative contexts (for example DOB/nacimiento, microchip/chip, invoice/factura, report/informe/emisión/documento date references) MUST NOT create assigned VisitGroups.
 - If a field evidence snippet contains ambiguous date tokens without sufficient visit context, that field MUST remain in `unassigned`.
@@ -2135,6 +2284,7 @@ Sufficient evidence boundary for assigned VisitGroup creation (US-45, determinis
 # Appendix E — Minimal Libraries for PDF Text Extraction & Language Detection (Normative)
 
 This appendix closes the minimum dependency decisions required to implement:
+
 - Text extraction (step `EXTRACTION`, Appendix C),
 - Language detection (persisted as `ProcessingRun.language_used`, Appendix B2.2).
 
@@ -2143,31 +2293,38 @@ If any conflict exists, Appendix A and Appendix B take precedence for invariants
 ## E1. PDF Text Extraction
 
 Decision (Authoritative):
+
 - Use **PyMuPDF** (`pymupdf`, imported as `fitz`) as the sole PDF text extraction library.
 
 Rationale:
+
 - Good text extraction quality for “digital text” PDFs.
 - Fast and simple to integrate in an in-process worker.
 - Keeps the dependency surface small (single primary extractor).
 
 Notes:
+
 - If a PDF yields empty/near-empty extracted text, the run may fail as `EXTRACTION_FAILED`.
 
 ## E2. Language Detection
 
 Decision (Authoritative):
+
 - Use **langdetect** as the language detection library.
 
 Rationale:
+
 - Lightweight dependency sufficient for this scope.
 - Provides deterministic-enough output to populate `ProcessingRun.language_used`.
 
 Rules:
+
 - Language detection is best-effort and must never block processing.
 - If detection fails, `language_used` is set to `"unknown"` (or equivalent) and processing continues.
 
 ## E3. Dependency Justification (Repository Requirement)
 
 The repository must include a short justification (e.g., in [`README.md`](../../README.md) or an ADR) explaining:
+
 - Why PyMuPDF was chosen for extraction,
 - Why langdetect was chosen for language detection.

@@ -8,12 +8,10 @@ last-updated: 2026-03-02
 
 # Frontend Implementation Notes
 
-
 **Breadcrumbs:** [Docs](../../../README.md) / [Projects](../../README.md) / veterinary-medical-records / 02-tech
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-
 
 - [Purpose](#purpose)
 - [Frontend Stack](#frontend-stack)
@@ -46,8 +44,9 @@ This document describes **how the frontend should be implemented** to satisfy th
 defined elsewhere in the repository documentation.
 Reading order, document authority, and cross-document precedence are defined in [`docs/README.md`](../README.md).
 If anything here appears to conflict with other documentation, **STOP and ask**.
- 
+
 It must remain **implementation-only**:
+
 - UI stack and technical choices
 - frontend architecture and patterns
 - PDF rendering + scrolling strategy
@@ -55,6 +54,7 @@ It must remain **implementation-only**:
 - frontend testing strategy
 
 It does **not** redefine:
+
 - product meaning / governance
 - UX semantics or workflow guarantees
 - backend contracts (endpoints, payloads, error semantics)
@@ -122,6 +122,7 @@ Suggested structure:
   - Small, reusable UI primitives (buttons, badges, panels).
 
 State rules:
+
 - **Server state** (documents, status, review payloads, raw text) lives in TanStack Query only.
 - **Local UI state** (selected field, raw text panel open, current active page) lives in the view component(s).
 - Avoid introducing a global client-state store.
@@ -136,11 +137,13 @@ The frontend must consume the "evidence" fields exactly as defined by backend co
 in the authoritative documentation (see [`docs/README.md`](../README.md)) (do not invent fields or semantics here).
 
 Frontend behavior:
+
 - when a field is selected, the PDF viewer navigates to the referenced page,
 - the snippet is displayed as explicit evidence,
 - the review flow remains usable even if highlighting fails.
 
 This ensures:
+
 - traceability,
 - explainability,
 - and zero blocking of the review experience.
@@ -153,17 +156,20 @@ Rendering authority for the full key universe, ordering, section grouping, repea
 [`docs/projects/veterinary-medical-records/01-product/product-design.md`](product-design.md) (Global Schema).
 
 Frontend implementation guidance:
+
 - Use Global Schema as the review rendering backbone.
 - Render all keys in stable order, grouped by the same sections (A-G), even when values are missing.
 - Show explicit empty states/placeholders for missing values; do not hide keys only because the model omitted them.
 - If `document_date` is missing, display the Product Design fallback to `visit_date`.
 
 Repeatable keys: `medication`, `diagnosis`, `procedure`, `lab_result`, `line_item`, `symptoms`, `vaccinations`, `imaging`.
+
 - Always render the repeatable field container.
 - Render an explicit empty-list state when there are no items.
 - Scope note: payloads may include billing repeatables (for example `line_item`) even when Medical Record MVP UI scope excludes non-clinical concepts.
 
 Value typing:
+
 - Respect the existing contract value types: `string | date | number | boolean | unknown`.
 - For ambiguous or unit-bearing values, default to `string`.
 - Do not introduce new parsing obligations beyond existing backend/frontend contracts.
@@ -179,16 +185,19 @@ Implementation uses `pdfjs-dist` for PDF rendering. Rendering must be incrementa
 on large PDFs.
 
 ### PDF.js wiring (Vite)
+
 PDF.js must be configured with an explicit worker (required for production builds).
 In Vite, use a worker URL import and assign it to `GlobalWorkerOptions.workerSrc`.
 
 ### Paging and navigation rules
+
 - Evidence `page` values are **1-based** (as defined in [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md)). Keep viewer navigation 1-based.
 - "Next" / "Previous" scroll within the viewer's scroll container only (no global page scroll hijacking).
 - Track active page based on scroll position (IntersectionObserver), keeping the page index in sync with what is visible.
 - Show placeholders while a page is loading/rendering; empty/blank content must be treated as a normal transient state.
 
 Navigation buttons remain available:
+
 - **Next** scrolls to the top of the next page in the continuous stack.
 - **Previous** scrolls to the top of the previous page.
 
@@ -201,6 +210,7 @@ Tests should validate the scroll + navigation behavior at the component level, w
 End-to-end review is implemented for PDFs.
 
 Frontend implications:
+
 - Preview behavior is implemented for PDFs via PDF.js (continuous scroll).
 - Download behavior must work for PDFs via `GET /documents/{id}/download`.
 
@@ -215,11 +225,13 @@ Format expansion is handled by dedicated user stories in [`docs/projects/veterin
 Text highlighting inside the PDF is implemented as **progressive enhancement**, never as a dependency for usability.
 
 Implementation approach:
+
 - render the PDF using PDF.js,
 - use the text layer to search for the provided snippet on the target page,
 - highlight the closest or first matching occurrence.
 
 If matching fails:
+
 - no highlight is shown,
 - page navigation and snippet evidence remain visible,
 - the UI does not attempt to fake precision.
@@ -232,10 +244,12 @@ Confidence values are rendered as **visual attention signals**, not as control m
 Confidence semantics are owned by [`docs/projects/veterinary-medical-records/01-product/product-design.md`](product-design.md), and interaction behavior is owned by [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md).
 
 Frontend representation:
+
 - qualitative signal first (e.g. color or emphasis),
 - numeric confidence value visible inline or via tooltip.
 
 The frontend must treat confidence as:
+
 - non-blocking,
 - non-authoritative,
 - and purely assistive.
@@ -275,18 +289,22 @@ No frontend logic may interpret confidence as correctness or validation.
 Server state is managed exclusively via **TanStack Query**.
 
 ### Contract authority (backend)
+
 - Endpoint paths, payload shapes, and error semantics are owned by [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md) (Appendix B3/B3.2).
 - This document references contracts for implementation convenience only; if any conflict exists, [`technical-design.md`](technical-design.md) wins.
 
 ### Error handling (authoritative rule)
+
 The frontend MUST branch on `error_code` (and optional `details.reason`) only.
 It must not branch on HTTP status alone, message strings, or backend stack traces.
 
 Implement a single API wrapper that:
+
 - Parses the normative error response shape `{ error_code, message, details? }` (Appendix B2.6).
 - Throws/returns a typed error that downstream UI code can switch on via `error_code` and `details.reason`.
 
 Patterns:
+
 - `useQuery` for fetching:
   - document lists,
   - document status,
@@ -312,6 +330,7 @@ This document must not introduce or reorder stories; it only provides implementa
 Use Vitest + React Testing Library (already used by the repository frontend).
 
 Minimum coverage:
+
 - Continuous scroll: Next/Previous navigation scrolls to the correct page container.
 - Active page tracking: scrolling updates the active page label deterministically.
 - Progressive enhancement: highlight failures do not block review (no crashes; snippet still visible).

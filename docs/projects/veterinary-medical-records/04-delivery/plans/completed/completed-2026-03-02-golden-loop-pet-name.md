@@ -29,6 +29,7 @@ Goal: implement an end-to-end golden loop for one field (`pet_name`) as a reusab
 ## Estado de ejecución — actualizar al completar cada paso
 
 **Leyenda**
+
 - 🔄 auto-chain — ejecutable por Codex
 - 🚧 hard-gate — revisión/decisión de usuario
 

@@ -10,28 +10,29 @@ Two-PR strategy: PR A addressed bugs + CI doc governance (PdfViewer hotfix, 3 in
 
 ## Steps — PR A (CI governance)
 
-| ID | Description | Agent | Status |
-|---|---|---|---|
-| F14-A | Hotfix PdfViewer: accept ArrayBuffer, remove fetch indirection | Codex | ✅ |
-| F14-B | Separate doc_test_sync_guard into 3 independent CI jobs | Codex | ✅ |
-| F14-C | Doc change classifier: script + CI integration | Codex | ✅ |
-| F14-D | Navigation exemption + relaxed Clarification mode in check_doc_test_sync.py | Codex | ✅ |
-| F14-E | Unit tests for classifier + calibration | Codex | ✅ |
-| F14-L | Smoke test PR A + merge → main | Claude | ✅ |
+| ID    | Description                                                                 | Agent  | Status |
+| ----- | --------------------------------------------------------------------------- | ------ | ------ |
+| F14-A | Hotfix PdfViewer: accept ArrayBuffer, remove fetch indirection              | Codex  | ✅     |
+| F14-B | Separate doc_test_sync_guard into 3 independent CI jobs                     | Codex  | ✅     |
+| F14-C | Doc change classifier: script + CI integration                              | Codex  | ✅     |
+| F14-D | Navigation exemption + relaxed Clarification mode in check_doc_test_sync.py | Codex  | ✅     |
+| F14-E | Unit tests for classifier + calibration                                     | Codex  | ✅     |
+| F14-L | Smoke test PR A + merge → main                                              | Claude | ✅     |
 
 ## Steps — PR B (refactor + coverage)
 
-| ID | Description | Agent | Status |
-|---|---|---|---|
-| F14-F | Extract render sections: UploadPanel, StructuredDataPanel, PdfViewerPanel | Codex | ✅ |
-| F14-G | Tests for hooks extracted in Iter 7 | Codex | ✅ |
-| F14-H | PdfViewer branch coverage 47%→65%+ | Codex | ✅ |
-| F14-I | documentApi branch coverage 67%→80%+ | Codex | ✅ |
-| F14-J | config.py coverage 83%→90%+ | Codex | ✅ |
-| F14-K | Split candidate_mining.py (789 LOC → 2 modules < 400 LOC) | Codex | ✅ |
-| F14-M | FUTURE_IMPROVEMENTS refresh + smoke test PR B + merge → main | Claude | ✅ |
+| ID    | Description                                                               | Agent  | Status |
+| ----- | ------------------------------------------------------------------------- | ------ | ------ |
+| F14-F | Extract render sections: UploadPanel, StructuredDataPanel, PdfViewerPanel | Codex  | ✅     |
+| F14-G | Tests for hooks extracted in Iter 7                                       | Codex  | ✅     |
+| F14-H | PdfViewer branch coverage 47%→65%+                                        | Codex  | ✅     |
+| F14-I | documentApi branch coverage 67%→80%+                                      | Codex  | ✅     |
+| F14-J | config.py coverage 83%→90%+                                               | Codex  | ✅     |
+| F14-K | Split candidate_mining.py (789 LOC → 2 modules < 400 LOC)                 | Codex  | ✅     |
+| F14-M | FUTURE_IMPROVEMENTS refresh + smoke test PR B + merge → main              | Claude | ✅     |
 
 ## Key outcomes
+
 - 372 backend tests (90% coverage)
 - 263 frontend tests (85% coverage)
 - 3 independent doc guard CI jobs (parity, sync, brand)

@@ -54,51 +54,51 @@ scripts/
 
 ### Path-resolution fixes (scripts that compute repo-root from `__file__` / `$PSScriptRoot`)
 
-| Script | Current | After move | Fix |
-|--------|---------|------------|-----|
-| `pre_push_quality_gate.py` | `parents[1]` | `parents[2]` | depth +1 |
-| `check_doc_router_parity.py` | `parents[1]` | `parents[2]` | depth +1 |
-| `check_no_canonical_router_refs.py` | `parents[1]` | `parents[2]` | depth +1 |
-| `interpretation_debug_snapshot.py` | `parents[1]` | `parents[2]` | depth +1 |
-| `ab_compare_pdf_extractors.py` | `parents[1]` | `parents[2]` | depth +1 |
-| `check_docs_links.mjs` | `__dirname, '..'` | `__dirname, '../..'` | depth +1 |
-| `check_design_system.mjs` | `scriptDir, ".."` | `scriptDir, "../.."` | depth +1 |
-| `install-pre-push-hook.ps1` | `Join-Path $PSScriptRoot '..'` | `Join-Path $PSScriptRoot '../..'` | depth +1 |
-| `install-pre-commit-hook.ps1` | `Join-Path $PSScriptRoot '..'` | `Join-Path $PSScriptRoot '../..'` | depth +1 |
-| `preflight-ci-local.ps1` | `Join-Path $PSScriptRoot ".."` | `Join-Path $PSScriptRoot "../.."` | depth +1 |
-| `start-all.ps1` | `Split-Path -Parent $PSScriptRoot` | one more `Split-Path` | depth +1 |
-| `reset-dev-db.ps1` | `Split-Path -Parent $PSScriptRoot` | one more `Split-Path` | depth +1 |
-| `clear-documents.bat` | `%~dp0..` | `%~dp0..\..` | depth +1 |
+| Script                              | Current                            | After move                        | Fix      |
+| ----------------------------------- | ---------------------------------- | --------------------------------- | -------- |
+| `pre_push_quality_gate.py`          | `parents[1]`                       | `parents[2]`                      | depth +1 |
+| `check_doc_router_parity.py`        | `parents[1]`                       | `parents[2]`                      | depth +1 |
+| `check_no_canonical_router_refs.py` | `parents[1]`                       | `parents[2]`                      | depth +1 |
+| `interpretation_debug_snapshot.py`  | `parents[1]`                       | `parents[2]`                      | depth +1 |
+| `ab_compare_pdf_extractors.py`      | `parents[1]`                       | `parents[2]`                      | depth +1 |
+| `check_docs_links.mjs`              | `__dirname, '..'`                  | `__dirname, '../..'`              | depth +1 |
+| `check_design_system.mjs`           | `scriptDir, ".."`                  | `scriptDir, "../.."`              | depth +1 |
+| `install-pre-push-hook.ps1`         | `Join-Path $PSScriptRoot '..'`     | `Join-Path $PSScriptRoot '../..'` | depth +1 |
+| `install-pre-commit-hook.ps1`       | `Join-Path $PSScriptRoot '..'`     | `Join-Path $PSScriptRoot '../..'` | depth +1 |
+| `preflight-ci-local.ps1`            | `Join-Path $PSScriptRoot ".."`     | `Join-Path $PSScriptRoot "../.."` | depth +1 |
+| `start-all.ps1`                     | `Split-Path -Parent $PSScriptRoot` | one more `Split-Path`             | depth +1 |
+| `reset-dev-db.ps1`                  | `Split-Path -Parent $PSScriptRoot` | one more `Split-Path`             | depth +1 |
+| `clear-documents.bat`               | `%~dp0..`                          | `%~dp0..\..`                      | depth +1 |
 
-Scripts that use `$PSScriptRoot` only for sibling resolution (test-L1/L2/L3, preflight-quick/push/full, start-all.bat, reset-dev-db.bat, reload-vscode-window.*): **NO fix needed** — they reference siblings via `Join-Path $PSScriptRoot "sibling"` and will still work since siblings move together.
+Scripts that use `$PSScriptRoot` only for sibling resolution (test-L1/L2/L3, preflight-quick/push/full, start-all.bat, reset-dev-db.bat, reload-vscode-window.\*): **NO fix needed** — they reference siblings via `Join-Path $PSScriptRoot "sibling"` and will still work since siblings move together.
 
 Scripts with **NO path fix needed** (use CWD-relative paths): `check_doc_test_sync.py`, `classify_doc_change.py`, `sync_docs_to_wiki.py`, `check_brand_compliance.py`.
 
 ### External reference map
 
-| Consumer file | References to update |
-|---------------|---------------------|
-| `.githooks/pre-push` | `scripts/test-L2.ps1` → `scripts/ci/test-L2.ps1`; `scripts/pre_push_quality_gate.py` → `scripts/ci/pre_push_quality_gate.py` |
-| `.githooks/pre-commit` | `scripts/test-L1.ps1` → `scripts/ci/test-L1.ps1` |
-| `.github/workflows/ci.yml` | 5 script paths (canonical, classify, sync, parity, brand) |
-| `.github/workflows/wiki-sync.yml` | `scripts/sync_docs_to_wiki.py` path trigger + run command |
-| `package.json` | `scripts/check_docs_links.mjs` → `scripts/docs/check_docs_links.mjs` |
-| `frontend/package.json` | `../scripts/check_design_system.mjs` → `../scripts/quality/check_design_system.mjs` |
-| `preflight-ci-local.ps1` (internal) | 4 script path strings calling docs/quality guards |
-| `pre_push_quality_gate.py` (internal) | glob patterns for docs scripts |
-| `install-pre-push-hook.ps1` (cosmetic) | message about `scripts/test-L2.ps1` |
-| `install-pre-commit-hook.ps1` (cosmetic) | message about `scripts/test-L1.ps1` |
-| `clear-documents.bat` (cosmetic) | message about `scripts\start-all.bat` |
-| `test_impact_map.json` | `scripts/check_doc_test_sync.py`, `scripts/check_doc_router_parity.py`, `scripts/check_brand_compliance.py` |
-| `test_brand_compliance_guard.py` | `REPO_ROOT / "scripts" / "check_brand_compliance.py"` |
-| `test_doc_test_sync_guard.py` | `REPO_ROOT / "scripts" / "check_doc_test_sync.py"` |
-| `test_doc_router_parity_contract.py` | `REPO_ROOT / "scripts" / "check_doc_router_parity.py"` |
-| `test_classify_doc_change.py` | `REPO_ROOT / "scripts" / "classify_doc_change.py"` and `"scripts" / "check_doc_test_sync.py"` |
-| `test_doc_updates_contract.py` | `REPO_ROOT / "scripts" / "check_doc_test_sync.py"` and `"scripts" / "check_doc_router_parity.py"` |
-| `test_interpretation_debug_snapshot.py` | `from scripts.interpretation_debug_snapshot import build_snapshot` → `.dev.` |
-| `README.md` | ~10 references to `scripts/test-L*`, `scripts/preflight-*`, `scripts/install-pre-*` |
-| `docs/shared/03-ops/engineering-playbook.md` | ~6 references to `scripts/test-L*`, `scripts/preflight-*` |
-| `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/210_pull-requests.md` | ~7 references to `scripts/test-L*`, `scripts/preflight-*` |
+| Consumer file                                                           | References to update                                                                                                         |
+| ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `.githooks/pre-push`                                                    | `scripts/test-L2.ps1` → `scripts/ci/test-L2.ps1`; `scripts/pre_push_quality_gate.py` → `scripts/ci/pre_push_quality_gate.py` |
+| `.githooks/pre-commit`                                                  | `scripts/test-L1.ps1` → `scripts/ci/test-L1.ps1`                                                                             |
+| `.github/workflows/ci.yml`                                              | 5 script paths (canonical, classify, sync, parity, brand)                                                                    |
+| `.github/workflows/wiki-sync.yml`                                       | `scripts/sync_docs_to_wiki.py` path trigger + run command                                                                    |
+| `package.json`                                                          | `scripts/check_docs_links.mjs` → `scripts/docs/check_docs_links.mjs`                                                         |
+| `frontend/package.json`                                                 | `../scripts/check_design_system.mjs` → `../scripts/quality/check_design_system.mjs`                                          |
+| `preflight-ci-local.ps1` (internal)                                     | 4 script path strings calling docs/quality guards                                                                            |
+| `pre_push_quality_gate.py` (internal)                                   | glob patterns for docs scripts                                                                                               |
+| `install-pre-push-hook.ps1` (cosmetic)                                  | message about `scripts/test-L2.ps1`                                                                                          |
+| `install-pre-commit-hook.ps1` (cosmetic)                                | message about `scripts/test-L1.ps1`                                                                                          |
+| `clear-documents.bat` (cosmetic)                                        | message about `scripts\start-all.bat`                                                                                        |
+| `test_impact_map.json`                                                  | `scripts/check_doc_test_sync.py`, `scripts/check_doc_router_parity.py`, `scripts/check_brand_compliance.py`                  |
+| `test_brand_compliance_guard.py`                                        | `REPO_ROOT / "scripts" / "check_brand_compliance.py"`                                                                        |
+| `test_doc_test_sync_guard.py`                                           | `REPO_ROOT / "scripts" / "check_doc_test_sync.py"`                                                                           |
+| `test_doc_router_parity_contract.py`                                    | `REPO_ROOT / "scripts" / "check_doc_router_parity.py"`                                                                       |
+| `test_classify_doc_change.py`                                           | `REPO_ROOT / "scripts" / "classify_doc_change.py"` and `"scripts" / "check_doc_test_sync.py"`                                |
+| `test_doc_updates_contract.py`                                          | `REPO_ROOT / "scripts" / "check_doc_test_sync.py"` and `"scripts" / "check_doc_router_parity.py"`                            |
+| `test_interpretation_debug_snapshot.py`                                 | `from scripts.interpretation_debug_snapshot import build_snapshot` → `.dev.`                                                 |
+| `README.md`                                                             | ~10 references to `scripts/test-L*`, `scripts/preflight-*`, `scripts/install-pre-*`                                          |
+| `docs/shared/03-ops/engineering-playbook.md`                            | ~6 references to `scripts/test-L*`, `scripts/preflight-*`                                                                    |
+| `docs/agent_router/03_SHARED/ENGINEERING_PLAYBOOK/210_pull-requests.md` | ~7 references to `scripts/test-L*`, `scripts/preflight-*`                                                                    |
 
 ---
 
@@ -190,18 +190,18 @@ Move 9 scripts → `scripts/dev/`: `start-all.ps1/.bat`, `reset-dev-db.ps1/.bat`
 
 ## Verification Matrix
 
-| Check | Commands | Steps affected |
-|-------|----------|---------------|
-| Pre-push hook path | `cat .githooks/pre-push` | S2 |
-| Pre-commit hook path | `cat .githooks/pre-commit` | S2 |
-| CI workflow syntax | `python -c "import yaml; yaml.safe_load(open('.github/workflows/ci.yml'))"` | S3, S4 |
-| Wiki-sync syntax | `python -c "import yaml; yaml.safe_load(open('.github/workflows/wiki-sync.yml'))"` | S3 |
-| Unit tests (docs) | `pytest backend/tests/unit/test_doc_test_sync_guard.py test_doc_router_parity_contract.py test_classify_doc_change.py -x` | S3 |
-| Unit tests (brand) | `pytest backend/tests/unit/test_brand_compliance_guard.py -x` | S4 |
-| Unit tests (snapshot) | `pytest backend/tests/unit/test_interpretation_debug_snapshot.py -x` | S5 |
-| Full unit suite | `pytest backend/tests/unit -x -o addopts=` | S7 |
-| No flat scripts left | `Get-ChildItem scripts/ -File` → only `README.md` | S5 |
-| Docs refs clean | `git grep -n 'scripts/[a-z_]' -- '*.md'` → only `scripts/ci/` or `scripts/docs/` etc. | S6 |
+| Check                 | Commands                                                                                                                  | Steps affected |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| Pre-push hook path    | `cat .githooks/pre-push`                                                                                                  | S2             |
+| Pre-commit hook path  | `cat .githooks/pre-commit`                                                                                                | S2             |
+| CI workflow syntax    | `python -c "import yaml; yaml.safe_load(open('.github/workflows/ci.yml'))"`                                               | S3, S4         |
+| Wiki-sync syntax      | `python -c "import yaml; yaml.safe_load(open('.github/workflows/wiki-sync.yml'))"`                                        | S3             |
+| Unit tests (docs)     | `pytest backend/tests/unit/test_doc_test_sync_guard.py test_doc_router_parity_contract.py test_classify_doc_change.py -x` | S3             |
+| Unit tests (brand)    | `pytest backend/tests/unit/test_brand_compliance_guard.py -x`                                                             | S4             |
+| Unit tests (snapshot) | `pytest backend/tests/unit/test_interpretation_debug_snapshot.py -x`                                                      | S5             |
+| Full unit suite       | `pytest backend/tests/unit -x -o addopts=`                                                                                | S7             |
+| No flat scripts left  | `Get-ChildItem scripts/ -File` → only `README.md`                                                                         | S5             |
+| Docs refs clean       | `git grep -n 'scripts/[a-z_]' -- '*.md'` → only `scripts/ci/` or `scripts/docs/` etc.                                     | S6             |
 
 ## Rollback Policy
 

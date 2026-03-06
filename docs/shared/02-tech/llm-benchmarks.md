@@ -8,12 +8,10 @@ last-updated: 2026-03-02
 
 # LLM Benchmarks System
 
-
 **Breadcrumbs:** [Docs](../../README.md) / Shared / 02-tech
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-
 
 - [Purpose](#purpose)
 - [Key concepts](#key-concepts)
@@ -49,11 +47,11 @@ These metrics are meant for **self-assessment and optimization**, not product te
 A **Premium Request** is GitHub Copilot's billing unit for advanced model invocations
 (chat, multi-file edits, agents, refactors, repo analysis).
 
-| Property | Detail |
-|---|---|
-| Price | $0.04 per request |
-| Included per account/month | 300 requests ($12.00) |
-| Token equivalence | **None** — 1 request = 1 model invocation regardless of token count |
+| Property                   | Detail                                                              |
+| -------------------------- | ------------------------------------------------------------------- |
+| Price                      | $0.04 per request                                                   |
+| Included per account/month | 300 requests ($12.00)                                               |
+| Token equivalence          | **None** — 1 request = 1 model invocation regardless of token count |
 
 A single premium request may consume anywhere from a few thousand to over a million tokens
 depending on task complexity. GitHub normalizes this to a flat billing unit.

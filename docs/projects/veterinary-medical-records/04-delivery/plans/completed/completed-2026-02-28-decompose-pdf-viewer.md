@@ -12,6 +12,7 @@
 `frontend/src/components/PdfViewer.tsx` tiene **944 líneas** en un solo componente. Contiene ~7 `useState`, ~13 `useRef`, ~13 `useEffect`, 1 `useMemo`, y ~200 líneas de utilidades de debug diagnóstico embebidas (transform analysis, snapshot capture). Es el segundo archivo más grande del frontend.
 
 El componente mezcla cuatro responsabilidades distintas:
+
 1. **Debug diagnostics** (~200 LOC): `analyzeTransform`, `captureDebugSnapshot`, `getNodeId`, debug flags — funciones puras que no necesitan ser hooks.
 2. **PDF document loading** (~80 LOC): fetch/load PDF, manage `PDFDocumentProxy` lifecycle.
 3. **Page rendering** (~200 LOC): canvas rendering, render task management, text extraction, retry logic.
@@ -20,15 +21,15 @@ El componente mezcla cuatro responsabilidades distintas:
 
 ### Otros archivos analizados (no incluidos en este plan)
 
-| Archivo | Líneas | Decisión |
-|---|---|---|
-| `PdfViewerPanel.tsx` | 559 | Aceptable — mostly JSX props wiring |
-| `ReviewFieldRenderers.tsx` | 546 | Aceptable — factory pattern justified |
-| `ReviewSectionLayout.tsx` | 491 | Aceptable |
-| `appWorkspaceUtils.ts` | 470 | Evaluar en Iter 15 si sigue creciendo |
-| `FieldEditDialog.tsx` | 452 | Aceptable — complex dialog |
-| `DocumentsSidebar.tsx` | 442 | Aceptable |
-| `pdf_extraction_nodeps.py` (backend) | 1014 | **Candidato Iter 15** — fuera de scope frontend |
+| Archivo                              | Líneas | Decisión                                        |
+| ------------------------------------ | ------ | ----------------------------------------------- |
+| `PdfViewerPanel.tsx`                 | 559    | Aceptable — mostly JSX props wiring             |
+| `ReviewFieldRenderers.tsx`           | 546    | Aceptable — factory pattern justified           |
+| `ReviewSectionLayout.tsx`            | 491    | Aceptable                                       |
+| `appWorkspaceUtils.ts`               | 470    | Evaluar en Iter 15 si sigue creciendo           |
+| `FieldEditDialog.tsx`                | 452    | Aceptable — complex dialog                      |
+| `DocumentsSidebar.tsx`               | 442    | Aceptable                                       |
+| `pdf_extraction_nodeps.py` (backend) | 1014   | **Candidato Iter 15** — fuera de scope frontend |
 
 **Entry state:** PdfViewer.tsx = 944 líneas, 1 componente monolítico.
 
@@ -66,6 +67,7 @@ usePdfNavigation (depende de usePdfRenderer.pageRefs, pdfDoc)
 ## Estado de ejecución — update on completion of each step
 
 **Leyenda:**
+
 - 🔄 **auto-chain** — Codex ejecuta; usuario revisa después.
 - 🚧 **hard-gate** — Claude; requiere decisión del usuario.
 
@@ -107,6 +109,7 @@ Crea la rama `refactor/decompose-pdf-viewer` desde `main` y un PR con título
 "refactor: decompose PdfViewer.tsx into hooks and utility modules" y body que resuma el plan.
 No hagas cambios de código aún.
 ```
+
 ⚠️ AUTO-CHAIN → P1-A
 
 ### P1-A — Extract lib/pdfDebug.ts
@@ -128,6 +131,7 @@ Extrae las utilidades de debug de `PdfViewer.tsx` a `frontend/src/lib/pdfDebug.t
 3. En PdfViewer.tsx, reemplaza el código inline con imports de pdfDebug.ts.
 4. `npm run test` verde.
 ```
+
 ⚠️ AUTO-CHAIN → P2-A
 
 ### P2-A — Extract usePdfZoom
@@ -146,6 +150,7 @@ Extrae `usePdfZoom` de `PdfViewer.tsx` a `frontend/src/hooks/usePdfZoom.ts`.
 
 **Reglas:** Extracción mecánica. Test con renderHook + vi. Verde.
 ```
+
 ⚠️ AUTO-CHAIN → P2-B
 
 ### P2-B — Extract usePdfDocument
@@ -166,6 +171,7 @@ Extrae `usePdfDocument` de `PdfViewer.tsx` a `frontend/src/hooks/usePdfDocument.
 
 **Reglas:** Extracción mecánica. Test. Verde.
 ```
+
 ⚠️ AUTO-CHAIN → P2-C
 
 ### P2-C — Extract usePdfRenderer
@@ -185,6 +191,7 @@ Extrae `usePdfRenderer` de `PdfViewer.tsx` a `frontend/src/hooks/usePdfRenderer.
 
 **Reglas:** Este es el hook más grande (~250 líneas). Extracción mecánica cuidadosa. Test. Verde.
 ```
+
 ⚠️ AUTO-CHAIN → P2-D
 
 ### P2-D — Extract usePdfNavigation
@@ -204,6 +211,7 @@ Extrae `usePdfNavigation` de `PdfViewer.tsx` a `frontend/src/hooks/usePdfNavigat
 
 **Reglas:** Extracción mecánica. Test. Verde.
 ```
+
 ⚠️ AUTO-CHAIN → P3-A
 
 ### P3-A — Optional toolbar extraction + cleanup
@@ -215,6 +223,7 @@ Extrae `usePdfNavigation` de `PdfViewer.tsx` a `frontend/src/hooks/usePdfNavigat
 4. `npm run test` verde.
 5. Reporta line count de PdfViewer.tsx.
 ```
+
 ⚠️ AUTO-CHAIN → P4-A
 
 ### P4-A — Integration review (just-in-time)
@@ -254,17 +263,18 @@ _Claude writes after P4-B._
 5. Ejecuta tests e2e: `npx playwright test`.
 6. Reporta line count final de PdfViewer.tsx.
 ```
+
 ⚠️ AUTO-CHAIN → P4-C
 
 ---
 
 ## Risk log
 
-| Risk | Mitigation |
-|---|---|
-| pdf.js canvas lifecycle breaks | `usePdfRenderer` keeps exact same ref patterns; render session guards preserved |
-| Debug snapshots lose component closure | `captureDebugSnapshot` refactored to accept state as params instead of closure |
-| Zoom persistence race condition | Same localStorage write pattern; single source of truth in `usePdfZoom` |
-| IntersectionObserver timing | `usePdfNavigation` preserves exact same observer setup and threshold config |
-| Large P2-C (renderer) | ~250 lines is acceptable for a rendering hook; can split render loop from task management if needed |
-| E2E tests brittle with PdfViewer | Existing data-testid attributes preserved; no DOM structure changes |
+| Risk                                   | Mitigation                                                                                          |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| pdf.js canvas lifecycle breaks         | `usePdfRenderer` keeps exact same ref patterns; render session guards preserved                     |
+| Debug snapshots lose component closure | `captureDebugSnapshot` refactored to accept state as params instead of closure                      |
+| Zoom persistence race condition        | Same localStorage write pattern; single source of truth in `usePdfZoom`                             |
+| IntersectionObserver timing            | `usePdfNavigation` preserves exact same observer setup and threshold config                         |
+| Large P2-C (renderer)                  | ~250 lines is acceptable for a rendering hook; can split render loop from task management if needed |
+| E2E tests brittle with PdfViewer       | Existing data-testid attributes preserved; no DOM structure changes                                 |

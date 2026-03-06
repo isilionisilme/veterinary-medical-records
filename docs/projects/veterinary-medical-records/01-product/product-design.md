@@ -8,12 +8,10 @@ last-updated: 2026-03-02
 
 # Product Design — Document Interpretation & Layout Evolution
 
-
 **Breadcrumbs:** [Docs](../../../README.md) / [Projects](../../README.md) / veterinary-medical-records / 01-product
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-
 
 - [Note for readers](#note-for-readers)
 - [High-level product approach](#high-level-product-approach)
@@ -56,7 +54,7 @@ This repository includes a minimal summary of the product approach for technical
 
 The complete product design — including problem framing, user experience, rationale, and business considerations — is maintained as a single source of truth in the following document:
 
-https://docs.google.com/document/d/1eUCXDTYX3Vw_EJ_nfiJKlRghMO7mZOfitVpMrM5kjFc
+<https://docs.google.com/document/d/1eUCXDTYX3Vw_EJ_nfiJKlRghMO7mZOfitVpMrM5kjFc>
 
 Readers interested in the full product and user experience design should refer to that document.
 
@@ -82,17 +80,20 @@ The system is designed to enable **incremental, human-in-the-loop automation**
 without disrupting existing veterinary workflows.
 
 The product assumes that:
+
 - deterministic checks can eventually be automated safely,
 - interpretative reasoning must remain **assistive**, never authoritative,
 - high-stakes or irreversible decisions always require **explicit human action**.
 
 The long-term goal is to convert **inevitable human corrections**
 into **cumulative system improvement**, without asking users to:
+
 - change how they work,
 - provide explicit feedback,
 - or take responsibility for system behavior.
 
 This strategy deliberately prioritizes:
+
 - safety over speed,
 - clarity over automation depth,
 - evolvability over premature optimization.
@@ -104,6 +105,7 @@ This strategy deliberately prioritizes:
 Human involvement is not a fallback mechanism; it is a **first-class design choice**.
 
 Product-level rules:
+
 - The system may suggest, highlight, and assist.
 - The system must never silently decide or override.
 - All meaningful changes remain observable and auditable.
@@ -119,6 +121,7 @@ well understood, explainable, and reversible.
 Confidence is a **signal about interpretation stability**, not a decision or a truth claim.
 
 Product guarantees:
+
 - Confidence guides attention and prioritization; it never blocks decisions or actions.
 - Confidence reflects consistency over time/context for similar interpretations.
 - Confidence may decrease faster than it increases when new contradictory evidence appears.
@@ -139,6 +142,7 @@ A structural signal represents a **repeated, semantically similar correction**
 observed across multiple documents under comparable conditions.
 
 Structural signals:
+
 - are accumulated over time,
 - are evaluated in aggregate,
 - never trigger automatic system changes.
@@ -153,6 +157,7 @@ Structural signals may enter a `pending_review` state when they indicate a
 potential need for system-level intervention.
 
 Rules:
+
 - `pending_review` is an **internal system state**.
 - It never blocks or alters veterinary workflows.
 - It never affects previously processed documents.
@@ -165,6 +170,7 @@ Pending review exists solely to surface **candidates for human review**.
 ### 3.3 Scope of Impact
 
 Any decision derived from structural signals:
+
 - applies **prospectively only**,
 - never modifies past interpretations,
 - never silently alters system behavior.
@@ -180,6 +186,7 @@ Some concepts are inherently **high-risk or high-impact** if misinterpreted.
 These are referred to as **critical concepts**.
 
 Examples include (non-exhaustive):
+
 - patient or pet identity,
 - species,
 - visit or invoice dates,
@@ -190,11 +197,13 @@ Examples include (non-exhaustive):
 ### 4.1 Semantics
 
 Critical concepts:
+
 - are defined explicitly by product policy,
 - are not inferred dynamically by the system,
 - may evolve only through deliberate human review.
 
 The classification of a concept as “critical” is:
+
 - intentional,
 - explicit,
 - conservative by design.
@@ -204,6 +213,7 @@ The classification of a concept as “critical” is:
 ### 4.2 Interaction with Structural Signals
 
 Edits affecting critical concepts:
+
 - always apply **locally and immediately**,
 - generate **high-priority structural signals**,
 - never block document review or completion.
@@ -230,11 +240,13 @@ Some system-level changes are treated as **critical/non-reversible** because the
 reshape future interpretation semantics and are costly to safely undo.
 
 Critical/non-reversible changes include (non-exhaustive):
+
 - schema-level key add/remove/rename decisions,
 - key remapping that changes canonical meaning,
 - changes affecting the definition/classification of critical concepts.
 
 Product guarantees:
+
 - Veterinarian workflow remains local to single-document resolution and never carries governance burden.
 - Reviewer governance handles cross-document/system-level policy decisions explicitly and prospectively.
 - Stricter handling applies only to governance decisions, never as added friction for veterinarians.
@@ -327,6 +339,7 @@ It does not prescribe storage tables or transport contracts.
 ## Global Schema (Canonical Field List — Medical Record MVP)
 
 Canonical source location:
+
 - This section in `docs/projects/veterinary-medical-records/01-product/product-design.md` is the canonical product source for the Global Schema Medical Record MVP field list.
 - The historical appendix in this document is reference-only and non-normative.
 
@@ -335,12 +348,14 @@ Purpose: define the canonical contract-aligned field universe for the Medical Re
 Document-level sections (top-level fields):
 
 A) Centro Veterinario
+
 - `clinic_name` (string)
 - `clinic_address` (string)
 - `vet_name` (string)
 - `nhc` (string; canonical NHC concept)
 
 B) Paciente
+
 - `pet_name` (string)
 - `species` (string)
 - `breed` (string)
@@ -352,24 +367,30 @@ B) Paciente
 - `reproductive_status` (string)
 
 C) Propietario
+
 - `owner_name` (string)
 - `owner_address` (string; real address concept)
 
 D) Notas internas
+
 - `notes` (string)
 
 E) Información del informe
+
 - `language` (string)
 
 Visit-level fields:
+
 - Visit-level clinical data is canonical in `canonical contract` under `visits[]` and `visits[].fields[]` (see Appendix D9 in [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md)).
 - Visit fields are not part of the document-level top-level list above.
 
 Panel boundary (Medical Record MVP):
+
 - Non-clinical claim concepts are not part of this canonical panel field-set by definition.
 - Classification and taxonomy boundaries are defined by contract metadata in [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md), not by frontend denylists.
 
 Product compatibility rule:
+
 - `age` and `dob` may coexist; any derived display behavior is defined by UX and does not imply new extraction requirements.
 
 ### CRITICAL_KEYS (Authoritative, closed set)
@@ -398,6 +419,7 @@ For Medical Record canonical contract critical/taxonomy semantics, the normative
 ## Appendix: Historical Global Schema Reference (Non-normative)
 
 Status:
+
 - Global Schema here is retained only for historical reference.
 - It is not the canonical schema for the Medical Record MVP panel.
 - For this panel, canonical behavior is defined by Global Schema + contract taxonomy.
@@ -406,6 +428,7 @@ Status:
 Historical reference model:
 
 A) Identificación del caso
+
 - `claim_id`
 - `clinic_name`
 - `clinic_address`
@@ -413,15 +436,19 @@ A) Identificación del caso
 - `document_date`
 
 B) Paciente
+
 - `pet_name`, `species`, `breed`, `sex`, `age`, `dob`, `microchip_id`, `weight`
 
 C) Propietario
+
 - `owner_name`, `owner_id`
 
 D) Visita / episodio
+
 - `visit_date`, `admission_date`, `discharge_date`, `reason_for_visit`
 
 E) Clínico / revisión
+
 - `diagnosis`, `symptoms`, `procedure`, `medication`, `treatment_plan`, `allergies`, `vaccinations`, `lab_result`, `imaging`
 - `notes`, `language`
 
@@ -440,6 +467,7 @@ The product enforces a strict separation of responsibility:
   - Never participate in operational document workflows.
 
 This separation is:
+
 - intentional,
 - asymmetric,
 - non-negotiable.
@@ -464,6 +492,7 @@ This document defines **what the system means and why**.
 It does not define UI layout or interaction patterns, architectural or implementation details, or API/persistence contracts.
 
 If a decision cannot be justified using:
+
 - this document,
 - UX Design,
 - or Technical Design,

@@ -12,6 +12,7 @@
 ## Context
 
 La eliminación de ENGINEERING_PLAYBOOK dejó gaps en la numeración de 2 directorios de router:
+
 - **CODING_STANDARDS**: gaps en 90 y 150 (heredados del monolito original).
 - **UX_GUIDELINES**: gap en 10 (archivos empezaban en 20).
 
@@ -32,42 +33,42 @@ Los demás directorios (BRAND_GUIDELINES, DOCUMENTATION_GUIDELINES, WAY_OF_WORKI
 
 ### CODING_STANDARDS (6 archivos cambian)
 
-| Viejo | Nuevo | Slug |
-|-------|-------|------|
-| 10 | 10 | `preamble` |
-| 20 | 20 | `change-discipline` |
-| 30 | 30 | `code-style-consistency` |
-| 40 | 40 | `structure-separation-of-concerns` |
-| 50 | 50 | `explicit-contracts-schemas` |
-| 60 | 60 | `state-management-workflow-safety` |
-| 70 | 70 | `traceability-human-control` |
-| 80 | 80 | `error-handling-observability` |
-| **100 → 90** | | `testing-discipline` |
-| **110 → 100** | | `data-handling-safety` |
-| **120 → 110** | | `configuration-environment-separation` |
-| **130 → 120** | | `versioning-evolution` |
-| **140 → 130** | | `dependency-management` |
-| **160 → 140** | | `naming-conventions` |
+| Viejo         | Nuevo | Slug                                   |
+| ------------- | ----- | -------------------------------------- |
+| 10            | 10    | `preamble`                             |
+| 20            | 20    | `change-discipline`                    |
+| 30            | 30    | `code-style-consistency`               |
+| 40            | 40    | `structure-separation-of-concerns`     |
+| 50            | 50    | `explicit-contracts-schemas`           |
+| 60            | 60    | `state-management-workflow-safety`     |
+| 70            | 70    | `traceability-human-control`           |
+| 80            | 80    | `error-handling-observability`         |
+| **100 → 90**  |       | `testing-discipline`                   |
+| **110 → 100** |       | `data-handling-safety`                 |
+| **120 → 110** |       | `configuration-environment-separation` |
+| **130 → 120** |       | `versioning-evolution`                 |
+| **140 → 130** |       | `dependency-management`                |
+| **160 → 140** |       | `naming-conventions`                   |
 
 ### UX_GUIDELINES (9 archivos cambian)
 
-| Viejo | Nuevo | Slug |
-|-------|-------|------|
-| **20 → 10** | | `scope-and-authority` |
-| **30 → 20** | | `core-ux-principles` |
-| **40 → 30** | | `human-in-the-loop-shared-principle` |
-| **50 → 40** | | `confidence-uncertainty-shared-principle` |
-| **60 → 50** | | `accessibility-usability` |
-| **70 → 60** | | `role-specific-workflows` |
-| **80 → 70** | | `governance-review-shared-boundary` |
-| **90 → 80** | | `delegation-rule-mandatory` |
-| **100 → 90** | | `final-rule` |
+| Viejo        | Nuevo | Slug                                      |
+| ------------ | ----- | ----------------------------------------- |
+| **20 → 10**  |       | `scope-and-authority`                     |
+| **30 → 20**  |       | `core-ux-principles`                      |
+| **40 → 30**  |       | `human-in-the-loop-shared-principle`      |
+| **50 → 40**  |       | `confidence-uncertainty-shared-principle` |
+| **60 → 50**  |       | `accessibility-usability`                 |
+| **70 → 60**  |       | `role-specific-workflows`                 |
+| **80 → 70**  |       | `governance-review-shared-boundary`       |
+| **90 → 80**  |       | `delegation-rule-mandatory`               |
+| **100 → 90** |       | `final-rule`                              |
 
 ## Commit plan
 
-| # | Commit message | Files touched | Step |
-|---|---|---|---|
-| C1 | `docs(router): renumber CODING_STANDARDS and UX_GUIDELINES — close numbering gaps` | `MANIFEST.yaml`, `03_SHARED/CODING_STANDARDS/*`, `03_SHARED/UX_GUIDELINES/*` | F1-A through F1-D |
+| #   | Commit message                                                                     | Files touched                                                                | Step              |
+| --- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ----------------- |
+| C1  | `docs(router): renumber CODING_STANDARDS and UX_GUIDELINES — close numbering gaps` | `MANIFEST.yaml`, `03_SHARED/CODING_STANDARDS/*`, `03_SHARED/UX_GUIDELINES/*` | F1-A through F1-D |
 
 ## Operational override steps
 

@@ -28,17 +28,17 @@ Root cause: the routing layer (`AGENTS.md`) has a narrow trigger — continuatio
 
 ## Design decisions
 
-| Decision | Choice | Rationale |
-|---|---|---|
-| Where to fix | Routing layer (`AGENTS.md`) + protocol internals (§2, §13) | The routing gap is the primary failure; internal signals are defense-in-depth |
-| New rules? | No — activation signals only | Adding more rules to solve non-compliance of existing rules is counterproductive |
-| `way-of-working.md` changes | None | Plan execution rules belong in the protocol, not in the general workflow doc |
+| Decision                    | Choice                                                     | Rationale                                                                        |
+| --------------------------- | ---------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Where to fix                | Routing layer (`AGENTS.md`) + protocol internals (§2, §13) | The routing gap is the primary failure; internal signals are defense-in-depth    |
+| New rules?                  | No — activation signals only                               | Adding more rules to solve non-compliance of existing rules is counterproductive |
+| `way-of-working.md` changes | None                                                       | Plan execution rules belong in the protocol, not in the general workflow doc     |
 
 ## Commit plan
 
-| # | Commit message | Files touched | Step |
-|---|---|---|---|
-| C1 | `docs(ops): widen plan-execution trigger in AGENTS.md and add activation signals` | `AGENTS.md`, `docs/projects/.../03-ops/plan-execution-protocol.md` | F1-A |
+| #   | Commit message                                                                    | Files touched                                                      | Step |
+| --- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ---- |
+| C1  | `docs(ops): widen plan-execution trigger in AGENTS.md and add activation signals` | `AGENTS.md`, `docs/projects/.../03-ops/plan-execution-protocol.md` | F1-A |
 
 ## Operational override steps
 
@@ -66,7 +66,7 @@ Root cause: the routing layer (`AGENTS.md`) has a narrow trigger — continuatio
 
 ### F1-A — Apply 3 edits
 
-```text
+````text
 Apply exactly these 3 edits to fix the plan-mode routing gap:
 
 1. In `AGENTS.md`, section `## Plan execution (`Continúa`)`:
@@ -81,15 +81,19 @@ Apply exactly these 3 edits to fix the plan-mode routing gap:
 
 2. In `plan-execution-protocol.md`, section `## 2. Atomic Iterations`, append after the existing paragraph:
 
-   ```
-   **Plan-mode governance (hard rule):** While a plan is active, all git operations (commit, push, branch) are governed by this protocol. Ad-hoc user requests that imply git operations are interpreted through the lens of the active plan step and routed to SCOPE BOUNDARY (§13). There is no "just commit and push" shortcut.
-   ```
+````
+
+**Plan-mode governance (hard rule):** While a plan is active, all git operations (commit, push, branch) are governed by this protocol. Ad-hoc user requests that imply git operations are interpreted through the lens of the active plan step and routed to SCOPE BOUNDARY (§13). There is no "just commit and push" shortcut.
+
+```
 
 3. In `plan-execution-protocol.md`, section `## 13. SCOPE BOUNDARY Procedure`, insert before "Execute these steps **IN THIS EXACT ORDER**:":
 
-   ```
-   > **Activation rule:** Any commit or push during active plan execution MUST go through this procedure. If the user requests "commit", "push", or any git operation while a plan step is active, treat it as a SCOPE BOUNDARY trigger — not as an isolated command.
-   ```
+```
+
+> **Activation rule:** Any commit or push during active plan execution MUST go through this procedure. If the user requests "commit", "push", or any git operation while a plan step is active, treat it as a SCOPE BOUNDARY trigger — not as an isolated command.
+
+```
 
 Validation:
 - Run `scripts/ci/test-L1.ps1 -BaseRef HEAD` to verify formatting/linting.

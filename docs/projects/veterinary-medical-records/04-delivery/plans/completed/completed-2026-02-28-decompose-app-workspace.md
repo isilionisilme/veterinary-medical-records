@@ -48,6 +48,7 @@ Orden de extracción: hooks sin dependencias cruzadas primero → hooks que depe
 > **Rationale del orden:** Leaf hooks (sin deps) → hooks con deps simples → pipeline de datos pesado → estado derivado → cleanup final.
 
 **Leyenda:**
+
 - 🔄 **auto-chain** — Codex ejecuta; usuario revisa después.
 - 🚧 **hard-gate** — Claude; requiere decisión del usuario.
 
@@ -85,17 +86,17 @@ Orden de extracción: hooks sin dependencias cruzadas primero → hooks que depe
 
 ### R4-C — Final verdict
 
-| Metric | Original | After R4-B | Target | Verdict |
-|---|---|---|---|---|
-| AppWorkspace.tsx LOC | 2221 | **726** | ≤500 (revised) | ⚠️ Close — 67% reduction |
-| useReviewDataPipeline LOC | 875 | **357** | ≤400 | ✅ Met |
-| useDisplayFieldMapping LOC | — | **362** | ≤400 | ✅ Met |
-| useFieldExtraction LOC | — | **262** | ≤400 | ✅ Met |
-| Unit tests | 309 (44 files) | **318 (48 files)** | All green | ✅ |
-| Hooks count | ~8 pre-existing | **23 total** | — | ✅ |
-| Residual useState in App | ~30 | **2** | Minimal | ✅ |
-| Residual useEffect in App | ~25 | **8** | Minimal | ✅ |
-| Residual useMemo in App | ~20 | **5** | Minimal | ✅ |
+| Metric                     | Original        | After R4-B         | Target         | Verdict                  |
+| -------------------------- | --------------- | ------------------ | -------------- | ------------------------ |
+| AppWorkspace.tsx LOC       | 2221            | **726**            | ≤500 (revised) | ⚠️ Close — 67% reduction |
+| useReviewDataPipeline LOC  | 875             | **357**            | ≤400           | ✅ Met                   |
+| useDisplayFieldMapping LOC | —               | **362**            | ≤400           | ✅ Met                   |
+| useFieldExtraction LOC     | —               | **262**            | ≤400           | ✅ Met                   |
+| Unit tests                 | 309 (44 files)  | **318 (48 files)** | All green      | ✅                       |
+| Hooks count                | ~8 pre-existing | **23 total**       | —              | ✅                       |
+| Residual useState in App   | ~30             | **2**              | Minimal        | ✅                       |
+| Residual useEffect in App  | ~25             | **8**              | Minimal        | ✅                       |
+| Residual useMemo in App    | ~20             | **5**              | Minimal        | ✅                       |
 
 **Verdict: PASS with advisory.**
 
@@ -119,6 +120,7 @@ Crea la rama `refactor/decompose-app-workspace` desde `main` y un PR con título
 "refactor: decompose AppWorkspace.tsx into custom hooks" y body que resuma el plan.
 No hagas cambios de código aún.
 ```
+
 ⚠️ AUTO-CHAIN → R1-A
 
 ### R1-A — Extract useConnectivityToasts
@@ -142,6 +144,7 @@ Extrae el hook `useConnectivityToasts` de `AppWorkspace.tsx` a `frontend/src/hoo
 3. Escribe test en `frontend/src/hooks/useConnectivityToasts.test.ts` usando `renderHook` + `vi` (patrón de useUploadState.test.ts).
 4. Ejecuta `npm run test` en frontend/ y verifica verde.
 ```
+
 ⚠️ AUTO-CHAIN → R1-B
 
 ### R1-B — Extract useDocumentLoader
@@ -166,6 +169,7 @@ Extrae el hook `useDocumentLoader` de `AppWorkspace.tsx` a `frontend/src/hooks/u
 3. Test con renderHook + vi.fn() para fetchOriginalPdf mock.
 4. `npm run test` verde.
 ```
+
 ⚠️ AUTO-CHAIN → R1-C
 
 ### R1-C — Extract useReprocessing
@@ -185,6 +189,7 @@ Extrae `useReprocessing` de `AppWorkspace.tsx` a `frontend/src/hooks/useReproces
 
 **Reglas:** Extracción mecánica. Test. Verde.
 ```
+
 ⚠️ AUTO-CHAIN → R1-D
 
 ### R1-D — Extract useReviewToggle
@@ -202,6 +207,7 @@ Extrae `useReviewToggle` de `AppWorkspace.tsx` a `frontend/src/hooks/useReviewTo
 
 **Reglas:** Extracción mecánica. Test. Verde.
 ```
+
 ⚠️ AUTO-CHAIN → R1-E
 
 ### R1-E — Extract useInterpretationEdit
@@ -219,6 +225,7 @@ Extrae `useInterpretationEdit` de `AppWorkspace.tsx` a `frontend/src/hooks/useIn
 
 **Reglas:** Extracción mecánica. Test. Verde.
 ```
+
 ⚠️ AUTO-CHAIN → R2-A
 
 ### R2-A — Extract useDocumentUpload
@@ -236,6 +243,7 @@ Extrae `useDocumentUpload` de `AppWorkspace.tsx` a `frontend/src/hooks/useDocume
 
 **Reglas:** Extracción mecánica. Test. Verde.
 ```
+
 ⚠️ AUTO-CHAIN → R2-B
 
 ### R2-B — Extract useDocumentListPolling
@@ -255,6 +263,7 @@ Extrae `useDocumentListPolling` de `AppWorkspace.tsx` a `frontend/src/hooks/useD
 
 **Reglas:** Extracción mecánica. Test. Verde.
 ```
+
 ⚠️ AUTO-CHAIN → R2-C
 
 ### R2-C — Extract useRawTextViewer
@@ -275,6 +284,7 @@ Extrae `useRawTextViewer` de `AppWorkspace.tsx` a `frontend/src/hooks/useRawText
 
 **Reglas:** Extracción mecánica. Test. Verde.
 ```
+
 ⚠️ AUTO-CHAIN → R3-A
 
 ### R3-A — Extract useConfidenceDiagnostics
@@ -293,6 +303,7 @@ Extrae `useConfidenceDiagnostics` de `AppWorkspace.tsx` a `frontend/src/hooks/us
 
 **Reglas:** Extracción mecánica. Test. Verde.
 ```
+
 ⚠️ AUTO-CHAIN → R3-B
 
 ### R3-B — Extract useReviewDataPipeline
@@ -312,6 +323,7 @@ Extrae `useReviewDataPipeline` de `AppWorkspace.tsx` a `frontend/src/hooks/useRe
 Este es el hook más grande (~400 líneas). Extracción mecánica cuidadosa.
 Test con datos mock del schema.
 ```
+
 ⚠️ AUTO-CHAIN → R3-C
 
 ### R3-C — Extract useReviewPanelState
@@ -332,21 +344,23 @@ Extrae `useReviewPanelState` (renombrado para no colisionar con el módulo exist
 
 **Reglas:** Extracción mecánica. Test. Verde.
 ```
+
 ⚠️ AUTO-CHAIN → R4-A
 
 ### R4-A — Integration review (just-in-time) ✅
 
 **Findings (Claude review):**
 
-| Metric | Target | Actual | Verdict |
-|---|---|---|---|
-| AppWorkspace.tsx LOC | ≤ 350 | **832** | ❌ Not met |
-| Tests (unit) | All green | **309/309 pass** (44 files) | ✅ |
-| Hook composition | Correct | 19 hooks compose without runtime errors | ✅ |
-| Behavior regressions | None | No regressions detected in test suite | ✅ |
-| useReviewDataPipeline LOC | ≤ 400 (risk log) | **875** | ❌ Needs split |
+| Metric                    | Target           | Actual                                  | Verdict        |
+| ------------------------- | ---------------- | --------------------------------------- | -------------- |
+| AppWorkspace.tsx LOC      | ≤ 350            | **832**                                 | ❌ Not met     |
+| Tests (unit)              | All green        | **309/309 pass** (44 files)             | ✅             |
+| Hook composition          | Correct          | 19 hooks compose without runtime errors | ✅             |
+| Behavior regressions      | None             | No regressions detected in test suite   | ✅             |
+| useReviewDataPipeline LOC | ≤ 400 (risk log) | **875**                                 | ❌ Needs split |
 
 **Root cause for 832 LOC in AppWorkspace:**
+
 - Imports: 58 lines (19 hooks + components + utils)
 - Hook calls + destructuring: ~130 lines
 - Residual effects (11 `useEffect`): ~120 lines (polling, error handling, feedback timers, reset-on-activeId, stale field cleanup)
@@ -459,11 +473,11 @@ _Vacío._
 
 ## Risk log
 
-| Risk | Mitigation |
-|---|---|
-| Circular deps entre hooks | Dependency graph defined above; extract leaves first |
-| QueryClient coupling | Hooks receive queryClient from useQueryClient() internally (same pattern as existing hooks) |
-| Render count regression | Each hook encapsulates related state; no extra re-renders vs current monolith |
-| Test coverage gap | Every new hook gets a test file; existing tests must stay green |
-| Large R3-B (pipeline) | Can split further if >400 lines; Claude reviews at R4-A | **Triggered:** 875 LOC. R4-B extracts `useFieldExtraction` + `useDisplayFieldMapping` |
-| ≤350 target unreachable | Orchestrator floor ~350 LOC (imports + hook calls + JSX); effects add ~150 | Revised to ~500 LOC; R4-B extracts 2 more hooks from AppWorkspace | **Final: 726 LOC** — 67% reduction, remaining code is irreducible orchestration |
+| Risk                      | Mitigation                                                                                  |
+| ------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Circular deps entre hooks | Dependency graph defined above; extract leaves first                                        |
+| QueryClient coupling      | Hooks receive queryClient from useQueryClient() internally (same pattern as existing hooks) |
+| Render count regression   | Each hook encapsulates related state; no extra re-renders vs current monolith               |
+| Test coverage gap         | Every new hook gets a test file; existing tests must stay green                             |
+| Large R3-B (pipeline)     | Can split further if >400 lines; Claude reviews at R4-A                                     | **Triggered:** 875 LOC. R4-B extracts `useFieldExtraction` + `useDisplayFieldMapping` |
+| ≤350 target unreachable   | Orchestrator floor ~350 LOC (imports + hook calls + JSX); effects add ~150                  | Revised to ~500 LOC; R4-B extracts 2 more hooks from AppWorkspace                     | **Final: 726 LOC** — 67% reduction, remaining code is irreducible orchestration |

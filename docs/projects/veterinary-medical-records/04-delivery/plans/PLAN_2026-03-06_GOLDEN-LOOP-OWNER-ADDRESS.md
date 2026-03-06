@@ -50,14 +50,14 @@
 
 ## Commit plan
 
-| ID | After Steps | Scope | Commit Message | Push |
-|---|---|---|---|---|
-| CT-1 | P0-A, P0-B, P0-C | Steps `P0-A + P0-B + P0-C`; files: `shared/global_schema_contract.json`, `backend/app/application/global_schema.py`, `backend/tests/fixtures/synthetic/owner_address/owner_address_cases.json`, `backend/tests/fixtures/synthetic/owner_address/README.md`, `backend/tests/benchmarks/test_owner_address_extraction_accuracy.py` | `test(plan-p0): owner_address schema promotion and golden-loop baseline` | Inmediato |
+| ID   | After Steps            | Scope                                                                                                                                                                                                                                                                                                                                 | Commit Message                                                                                       | Push      |
+| ---- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | --------- |
+| CT-1 | P0-A, P0-B, P0-C       | Steps `P0-A + P0-B + P0-C`; files: `shared/global_schema_contract.json`, `backend/app/application/global_schema.py`, `backend/tests/fixtures/synthetic/owner_address/owner_address_cases.json`, `backend/tests/fixtures/synthetic/owner_address/README.md`, `backend/tests/benchmarks/test_owner_address_extraction_accuracy.py`      | `test(plan-p0): owner_address schema promotion and golden-loop baseline`                             | Inmediato |
 | CT-2 | P1-A, P1-B, P1-C, P1-D | Steps `P1-A + P1-B + P1-C + P1-D`; files: `backend/app/application/field_normalizers.py`, `backend/app/application/processing/candidate_mining.py`, `backend/app/application/processing/constants.py`, `backend/tests/unit/test_owner_address_normalization.py`, `backend/tests/benchmarks/test_owner_address_extraction_accuracy.py` | `feat(plan-p1): owner_address extraction hardening - normalizer, disambiguation, labels, unit tests` | Inmediato |
-| CT-3 | P2-A | Step `P2-A`; files: `backend/app/application/extraction_observability/triage.py`, tests de observabilidad asociados | `feat(plan-p2): owner_address observability flags` | Inmediato |
-| CT-4 | P3-A, P3-B | Steps `P3-A + P3-B`; files: `backend/tests/unit/test_golden_extraction_regression.py`, artefactos de evidencia de validacion para PR | `test(plan-p3): owner_address golden regression and validation evidence` | Inmediato |
-| CT-5 | P3-D | Step `P3-D`; files: `backend/tests/benchmarks/test_owner_address_extraction_accuracy.py`, `docs/projects/veterinary-medical-records/02-tech/extraction-quality.md` | `docs(plan-p3): owner_address threshold lock and extraction-quality update` | Inmediato |
-| CT-6 | P4-A, P4-B, P4-C, P4-D | Steps `P4-A + P4-B + P4-C + P4-D`; files: `backend/app/application/processing/candidate_mining.py`, `backend/tests/unit/test_golden_extraction_regression.py`, `backend/tests/benchmarks/test_owner_address_extraction_accuracy.py`, fixtures de regresion relevantes | `feat(plan-p4): docB owner_address extraction from unlabeled owner block` | Inmediato |
+| CT-3 | P2-A                   | Step `P2-A`; files: `backend/app/application/extraction_observability/triage.py`, tests de observabilidad asociados                                                                                                                                                                                                                   | `feat(plan-p2): owner_address observability flags`                                                   | Inmediato |
+| CT-4 | P3-A, P3-B             | Steps `P3-A + P3-B`; files: `backend/tests/unit/test_golden_extraction_regression.py`, artefactos de evidencia de validacion para PR                                                                                                                                                                                                  | `test(plan-p3): owner_address golden regression and validation evidence`                             | Inmediato |
+| CT-5 | P3-D                   | Step `P3-D`; files: `backend/tests/benchmarks/test_owner_address_extraction_accuracy.py`, `docs/projects/veterinary-medical-records/02-tech/extraction-quality.md`                                                                                                                                                                    | `docs(plan-p3): owner_address threshold lock and extraction-quality update`                          | Inmediato |
+| CT-6 | P4-A, P4-B, P4-C, P4-D | Steps `P4-A + P4-B + P4-C + P4-D`; files: `backend/app/application/processing/candidate_mining.py`, `backend/tests/unit/test_golden_extraction_regression.py`, `backend/tests/benchmarks/test_owner_address_extraction_accuracy.py`, fixtures de regresion relevantes                                                                 | `feat(plan-p4): docB owner_address extraction from unlabeled owner block`                            | Inmediato |
 
 ---
 
@@ -141,6 +141,7 @@
 ## Execution Status
 
 **Leyenda**
+
 - 🔄 auto-chain - ejecutable por agente de ejecucion
 - 🚧 hard-gate - revision/decision de usuario
 
