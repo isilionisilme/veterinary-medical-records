@@ -178,8 +178,8 @@ This plan was paused after D4-A (Phase 4 navigation). Since then:
 - [x] D4R-B 🚧 — Detect duplicate/stale/contradictory content across full inventory → consolidation report · skill: `duplicate-stale-detector` (Planning agent) — ✅ `no-commit (D4R-B report in D4R-A_INVENTORY.md, 2026-03-06)`
 - [x] D4R-C 🚧 — User approves consolidation decisions (Planning agent) — ✅ `no-commit (user approved all 8 actions C-1..C-8, 2026-03-06)`
 - [x] D4R-D 🔄 — Apply approved consolidation/correction updates (Execution agent) — ✅ `no-commit (C-1..C-8 applied: 10 files modified, 2026-03-06)`
-- [ ] D4R-E 🚧 — QA audit refresh: verify metrics, test counts, architecture trees, and technical data against current codebase (iteration 18+) · skill: `architecture-doc-auditor` (Planning agent)
-- [ ] D4R-F 🔄 — Normalize new/changed files to approved Diátaxis templates · skill: `template-normalizer` (Execution agent)
+- [x] D4R-E 🚧 — QA audit refresh: verify metrics, test counts, architecture trees, and technical data against current codebase (iteration 18+) · skill: `architecture-doc-auditor` (Planning agent) — ✅ `no-commit (14 findings, all approved 2026-03-06)`
+- [x] D4R-F 🔄 — Apply D4R-E corrections + translate plan-e2e-test-coverage.md to English (Execution agent) — ✅ `abbeebb4`
 - [ ] D4R-G 🔄 — Update navigation: sitemap, TOCs, breadcrumbs for all current files · tool: `doctoc` (Execution agent)
 - [ ] D4R-H 🚧 — User validation of full navigation quality (Planning agent) — replaces original D4-B
 
@@ -232,6 +232,39 @@ This plan was paused after D4-A (Phase 4 navigation). Since then:
 
 > Pre-written prompts for semi-unattended execution. Execution agent reads these directly.
 > Prompts that depend on prior results are marked "just-in-time" — Planning agent writes them after the dependency resolves.
+
+### D4R-F — Apply D4R-E corrections + translate Spanish file
+
+Apply all 14 approved corrections from the D4R-E audit. User decisions:
+- **Policy:** Use latest test counts (not historical Iter 11 freeze).
+- **E-14:** Translate `plan-e2e-test-coverage.md` to English (do NOT archive).
+
+#### Corrections to apply
+
+| # | File | Change |
+|---|---|---|
+| E-1 | `docs/projects/.../02-tech/architecture.md` L122 | E2E specs: `65 (21 spec files)` → `64 (21 spec files)` |
+| E-2 | `docs/projects/.../02-tech/architecture.md` L120 | Backend tests: `~395 (≥91% coverage)` → `~566 (67 files)` |
+| E-3 | `docs/projects/.../02-tech/architecture.md` L121 | Frontend tests: `~287 (≥87% coverage)` → `~327 (52 files)` |
+| E-4 | `docs/projects/.../02-tech/architecture.md` L111 | `35 custom hooks` → `28 custom hooks` |
+| E-5 | `docs/projects/.../02-tech/architecture.md` L123 | CI jobs: `10 (path-filtered, ~4 min)` → `13 (path-filtered, ~4 min)` |
+| E-6 | `docs/projects/.../02-tech/architecture.md` L97 | `5 route modules (documents, review, processing, calibration, health)` → `6 route modules (documents, review, processing, calibration, health, clinics)` |
+| E-7 | `docs/projects/.../02-tech/technical-design.md` L612 | `35 hooks + 3 panel components` → `28 hooks + 3 panel components` |
+| E-8 | `docs/projects/.../02-tech/technical-design.md` L613 | `5 domain modules` → `6 domain modules` |
+| E-9 | `docs/projects/.../04-delivery/delivery-summary.md` L530 | `65 tests across 22 spec files` → `64 tests across 21 spec files` |
+| E-10 | `docs/projects/.../04-delivery/delivery-summary.md` L573 | `395 backend, 287 frontend, 65 E2E` → `566 backend, 327 frontend, 64 E2E` |
+| E-11 | `docs/projects/.../04-delivery/delivery-summary.md` L576 | `22 files, 65 tests` → `21 files, 64 tests` |
+| E-12 | `docs/projects/.../02-tech/architecture.md` L54 | Mermaid: `(5 domain modules)` → `(6 domain modules)` |
+| E-13 | `docs/projects/.../99-archive/cto-review-verdict.md` L3 | Archive banner: `682 tests, 10 CI jobs` → `957 tests, 13 CI jobs` |
+| E-14 | `docs/projects/.../03-ops/plan-e2e-test-coverage.md` | Translate entire file from Spanish to English. Preserve structure, section numbering, tables, test IDs, and data-testid selectors exactly. |
+
+#### Additional delivery-summary updates (affected by latest counts)
+
+The Iter 12 column in delivery-summary.md progression table (L75-80) shows `395`/`287`/`65 tests (21 specs)`. These are **point-in-time Iter 12 values** — keep them as historical. Only update the **final metrics** rows (L573, L576) which should reflect current state.
+
+#### Commit
+
+After all corrections: `git add docs/; git commit -m "docs(plan-d4r-f): apply QA audit corrections + translate E2E plan to English"; git push origin <branch>`.
 
 ### D5-A — Markdown lint + Prettier
 
@@ -390,6 +423,51 @@ _Empty._
 | 13 | **Low** | DELIVERY_SUMMARY | Iter 11 references deleted `review-flow.spec.ts` | Note merged file |
 
 **Verified correct:** DESIGN_SYSTEM tokens (post-D1-D), tech stack versions, backend test count (~396), frontend test count (287), all 4 ADRs, cross-references, language compliance, API route count, AppWorkspace LOC.
+
+### D4R-E — QA audit refresh (2026-03-06)
+
+**Method:** Full codebase scan against all 34 canonical wiki files (iteration 18+ reality).
+
+**Codebase reality baseline:**
+
+| Metric | Actual | Source |
+|---|---|---|
+| E2E spec files | 21 | `frontend/e2e/*.spec.ts` |
+| E2E test cases | 64 | `test(` in spec files |
+| Custom hooks | 28 | `frontend/src/hooks/use*.ts` (non-test) |
+| Frontend test files | 52 | `*.test.ts*` in `frontend/src/` |
+| Frontend test functions | 327 | `it(`/`test(` matches |
+| Backend test files | 67 | `test_*.py` in `backend/tests/` |
+| Backend test functions | 566 | `def test_` matches |
+| API route modules | 6 | documents, review, processing, calibration, health, clinics |
+| API endpoints | 18 | across 6 route modules |
+| CI jobs | 13 | `.github/workflows/ci.yml` |
+| GitHub workflows | 3 | ci.yml, llm-benchmarks.yml, wiki-sync.yml |
+
+**14 findings** — Critical: 3, High: 3, Medium: 5, Low: 2, Language: 1
+
+| # | Sev | File | Finding | Correct value |
+|---|---|---|---|---|
+| E-1 | Crit | architecture.md L122 | E2E: "65 (21 spec files)" | 64 (21 spec files) |
+| E-2 | Crit | architecture.md L120 | Backend tests: "~395 (≥91%)" | ~566 (67 files) |
+| E-3 | Crit | architecture.md L121 | Frontend tests: "~287 (≥87%)" | ~327 (52 files) |
+| E-4 | High | architecture.md L111 | "35 custom hooks" | 28 hooks |
+| E-5 | High | architecture.md L123 | CI jobs: 10 | 13 |
+| E-6 | High | architecture.md L97 | 5 route modules | 6 (+clinics) |
+| E-7 | Med | technical-design.md L612 | 35 hooks | 28 hooks |
+| E-8 | Med | technical-design.md L613 | 5 domain modules | 6 domain modules |
+| E-9 | Med | delivery-summary.md L530 | "65 tests across 22 spec files" | 64 / 21 |
+| E-10 | Med | delivery-summary.md L573 | "395 backend, 287 frontend, 65 E2E" | 566 / 327 / 64 |
+| E-11 | Med | delivery-summary.md L576 | "22 files, 65 tests" | 21 / 64 |
+| E-12 | Low | architecture.md L54 | Mermaid: "5 domain modules" | 6 |
+| E-13 | Low | cto-review-verdict.md L3 | "682 tests, 10 CI jobs" | ~957 / 13 |
+| E-14 | Lang | plan-e2e-test-coverage.md | Entire file in Spanish | Translate to English |
+
+**Language audit:** All canonical wiki files (non-plan) confirmed English. One exception: `plan-e2e-test-coverage.md` (in `03-ops/`, not `04-delivery/plans/`) — approved for translation.
+
+**Verified correct:** Backend project tree, tech stack versions, 4 ADRs, frontend component dirs, data flow description, historical iteration metrics in implementation-history.md (point-in-time), delivery-summary progression table (historical rows).
+
+**User decisions (2026-03-06):** All 14 approved. E-14: translate (not archive). Policy: reflect latest counts in "current" metrics sections.
 
 ### D2-A — Approved taxonomy (v2 — implemented)
 
