@@ -154,8 +154,8 @@ Se incorpora una fuente adicional de deteccion de visitas basada en `raw_text` c
 - [x] P3-B 🔄 - Ejecutar suite focalizada de visit detection incluyendo assert duro `detected_visits == expected_visits` para cada fixture.
 - [x] CT-4 🔄 - Commit task P3-A + P3-B. — ✅ `c070040a`
 - [x] P3-C 🚧 - Hard-gate: validacion manual de `docB` en entorno dev. Criterio GO: multiples visitas detectadas correctamente. — ✅ `no-commit (GO user confirmation in chat, 2026-03-06)`
-- [ ] P3-D 🔄 - Post-gate: actualizacion de documentacion tecnica y umbrales aplicables. ⏳ IN PROGRESS (Codex, 2026-03-06)
-- [ ] CT-5 🔄 - Commit task P3-D. ⏳ IN PROGRESS (Codex, 2026-03-06)
+- [x] P3-D 🔄 - Post-gate: actualizacion de documentacion tecnica y umbrales aplicables. — ✅ `45284d0c`
+- [x] CT-5 🔄 - Commit task P3-D. — ✅ `45284d0c`
 
 ### Phase 4 - Extension condicional (solo si Phase 1 no alcanza)
 
@@ -190,7 +190,7 @@ Se incorpora una fuente adicional de deteccion de visitas basada en `raw_text` c
 
 ## Active Prompt
 
-Siguiente paso ejecutable: `P3-D` (actualizacion de documentacion tecnica y umbrales), seguido de `CT-5`.
+Siguiente paso ejecutable: `P5-A` (merge PR a `main` tras CT-5, verificar CI verde).
 
 ---
 
