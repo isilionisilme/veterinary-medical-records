@@ -11,6 +11,7 @@ from backend.app.application.documents._shared import (
     _VISIT_GROUP_METADATA_KEYS,
     _VISIT_SCOPED_KEY_SET,
     _contains_any_date_token,
+    _detect_visit_dates_from_raw_text,
     _extract_evidence_snippet,
     _extract_visit_date_candidates_from_text,
     _normalize_visit_date_candidate,
@@ -101,7 +102,19 @@ def get_document_review(
     structured_data = interpretation_payload.get("data")
     if not isinstance(structured_data, dict):
         structured_data = {}
-    structured_data = _normalize_review_interpretation_data(structured_data)
+
+    raw_text: str | None = None
+    raw_text_path = storage.resolve_raw_text(
+        document_id=latest_completed_run.document_id,
+        run_id=latest_completed_run.run_id,
+    )
+    if raw_text_path.exists():
+        try:
+            raw_text = raw_text_path.read_text(encoding="utf-8")
+        except OSError:
+            raw_text = None
+
+    structured_data = _normalize_review_interpretation_data(structured_data, raw_text=raw_text)
 
     return DocumentReviewLookupResult(
         review=DocumentReview(
@@ -132,7 +145,9 @@ def get_document_review(
     )
 
 
-def _normalize_review_interpretation_data(data: dict[str, object]) -> dict[str, object]:
+def _normalize_review_interpretation_data(
+    data: dict[str, object], *, raw_text: str | None = None
+) -> dict[str, object]:
     normalized_data = dict(data)
     changed = False
 
@@ -157,13 +172,13 @@ def _normalize_review_interpretation_data(data: dict[str, object]) -> dict[str, 
     global_schema = normalized_data.get("global_schema")
     if not isinstance(global_schema, dict):
         base_data = normalized_data if changed else data
-        return _project_review_payload_to_canonical(dict(base_data))
+        return _project_review_payload_to_canonical(dict(base_data), raw_text=raw_text)
 
     raw_microchip = global_schema.get("microchip_id")
     normalized_microchip = normalize_microchip_digits_only(raw_microchip)
     if normalized_microchip == raw_microchip:
         base_data = normalized_data if changed else data
-        return _project_review_payload_to_canonical(dict(base_data))
+        return _project_review_payload_to_canonical(dict(base_data), raw_text=raw_text)
 
     normalized_global_schema = dict(global_schema)
     normalized_global_schema["microchip_id"] = normalized_microchip
@@ -177,9 +192,9 @@ def _normalize_review_interpretation_data(data: dict[str, object]) -> dict[str, 
     changed = changed or fields_changed
 
     if changed:
-        return _project_review_payload_to_canonical(normalized_data)
+        return _project_review_payload_to_canonical(normalized_data, raw_text=raw_text)
 
-    return _project_review_payload_to_canonical(dict(data))
+    return _project_review_payload_to_canonical(dict(data), raw_text=raw_text)
 
 
 def _upsert_microchip_field_from_global_schema(
@@ -246,7 +261,9 @@ def _upsert_microchip_field_from_global_schema(
     return True
 
 
-def _project_review_payload_to_canonical(data: dict[str, object]) -> dict[str, object]:
+def _project_review_payload_to_canonical(
+    data: dict[str, object], *, raw_text: str | None = None
+) -> dict[str, object]:
     medical_record_view = data.get("medical_record_view")
     projected = dict(data)
 
@@ -277,10 +294,12 @@ def _project_review_payload_to_canonical(data: dict[str, object]) -> dict[str, o
     if not isinstance(projected.get("other_fields"), list):
         projected["other_fields"] = []
 
-    return _normalize_canonical_review_scoping(projected)
+    return _normalize_canonical_review_scoping(projected, raw_text=raw_text)
 
 
-def _normalize_canonical_review_scoping(data: dict[str, object]) -> dict[str, object]:
+def _normalize_canonical_review_scoping(
+    data: dict[str, object], *, raw_text: str | None = None
+) -> dict[str, object]:
     raw_fields = data.get("fields")
     if not isinstance(raw_fields, list):
         return data
@@ -328,6 +347,12 @@ def _normalize_canonical_review_scoping(data: dict[str, object]) -> dict[str, ob
             continue
 
         fields_to_keep.append(item)
+
+    for normalized_visit_date in _detect_visit_dates_from_raw_text(raw_text=raw_text):
+        if normalized_visit_date in seen_detected_visit_dates:
+            continue
+        seen_detected_visit_dates.add(normalized_visit_date)
+        detected_visit_dates.append(normalized_visit_date)
 
     if not visit_scoped_fields and not visit_group_metadata:
         return projected
