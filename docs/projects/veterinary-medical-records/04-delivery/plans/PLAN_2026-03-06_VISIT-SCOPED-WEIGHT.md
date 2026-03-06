@@ -91,9 +91,9 @@ La función `_normalize_canonical_review_scoping()` en `review_service.py` ya se
 
 ### Phase 2 — Derivación de peso actual y normalización
 
-- [ ] P2-A 🔄 — En `review_service.py`, tras asignar campos a visitas, implementar regla de derivación: si `weight` aparece en al menos una visita asignada, calcular `current_weight` = peso de la visita con `visit_date` más reciente. Exponer como campo document-scoped en `fields_to_keep` con `origin: "derived"` y evidencia del visit_id fuente. Si `weight` no aparece en ninguna visita (caso global-only), preservar el valor document-scoped original sin cambios. (Claude Opus 4.6)
-- [ ] P2-B 🔄 — Verificar que `_normalize_weight()` (ya implementada en golden loop) se aplica correctamente al peso derivado y al peso global. Confirmar formato canónico `X.Y kg` y rango `[0.5, 120]`. (GPT-5.3-Codex)
-- [ ] CT-3 🔄 — Commit task: scope P2-A + P2-B → `feat(plan-p2): weight current-value derivation rule` → push (GPT-5.3-Codex)
+- [x] P2-A 🔄 — En `review_service.py`, tras asignar campos a visitas, implementar regla de derivación: si `weight` aparece en al menos una visita asignada, calcular `current_weight` = peso de la visita con `visit_date` más reciente. Exponer como campo document-scoped en `fields_to_keep` con `origin: "derived"` y evidencia del visit_id fuente. Si `weight` no aparece en ninguna visita (caso global-only), preservar el valor document-scoped original sin cambios. (Claude Opus 4.6) (SHA: 07e7c67b)
+- [x] P2-B 🔄 — Verificar que `_normalize_weight()` (ya implementada en golden loop) se aplica correctamente al peso derivado y al peso global. Confirmar formato canónico `X.Y kg` y rango `[0.5, 120]`. (Claude Opus 4.6) (SHA: 07e7c67b)
+- [x] CT-3 🔄 — Commit task: scope P2-A + P2-B → `feat(plan-p2): weight current-value derivation rule` → push (Claude Opus 4.6) (SHA: 07e7c67b)
 
 ### Phase 3 — Tests, validación y cierre
 
