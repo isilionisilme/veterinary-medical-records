@@ -7,7 +7,7 @@
 **Prerequisite:** Iteration 12 merged to `main`.
 **Worktree:** `D:/Git/veterinary-medical-records` (default — single worktree)
 **CI Mode:** Pipeline depth-1 gate (mode 2, default)
-**Agents:** Planning agent + Execution agent
+**Agents:** Planning agent (Claude Opus 4.6) + Execution agent (Codex 5.3)
 
 ## Objective
 
@@ -128,9 +128,13 @@ This plan was paused after D4-A (Phase 4 navigation). Since then:
 > **Rationale:** First know what we have (inventory + quality audit) →
 > decide what stays and how it's organized (structure) → normalize format → polish style → automate.
 
+**Agent model mapping:**
+- `Planning agent` = `Claude Opus 4.6`
+- `Execution agent` = `Codex 5.3`
+
 **Legend:**
-- 🔄 **auto-chain** — Execution agent executes; user reviews afterwards.
-- 🚧 **hard-gate** — Planning agent; requires user decision.
+- 🔄 **auto-chain** — Execution agent (`Codex 5.3`) executes; user reviews afterwards.
+- 🚧 **hard-gate** — Planning agent (`Claude Opus 4.6`); requires user decision.
 
 > **Note:** 🔄/🚧 classify step *type* (auto-chain vs hard-gate). The protocol's ⏳/🚫/🔒 markers in §3 classify *execution state* at runtime.
 
