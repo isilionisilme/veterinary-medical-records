@@ -18,6 +18,10 @@ from .snapshot import (
 
 logger = logging.getLogger(__name__)
 _uvicorn_logger = logging.getLogger("uvicorn.error")
+_ADDRESS_TOKEN_RE = re.compile(
+    r"(?i)\b(?:c/|calle|av\.?|avenida|plaza|paseo|camino|carretera|ctra\.?|"
+    r"portal|piso|puerta|cp\b|c\.p\.|codigo\s+postal|n[º°o]?)\b"
+)
 _GOAL_FIELDS = (
     "pet_name",
     "clinic_name",
@@ -143,6 +147,25 @@ def _suspicious_accepted_flags(
         )
         if has_po_box and not has_street_token:
             flags.append("clinic_address_po_box_without_street")
+    if normalized_key == "owner_address":
+        compact = _normalize_text(normalized_value)
+        if len(normalized_value.strip()) < 10:
+            flags.append("owner_address_too_short")
+        if len(normalized_value.strip()) > 120:
+            flags.append("owner_address_too_long")
+        has_address_token = bool(_ADDRESS_TOKEN_RE.search(compact))
+        has_digits = bool(re.search(r"\d", normalized_value))
+        if not has_address_token or not has_digits:
+            flags.append("owner_address_no_address_tokens")
+        if all_fields:
+            clinic_address_payload = all_fields.get("clinic_address")
+            if (
+                isinstance(clinic_address_payload, dict)
+                and clinic_address_payload.get("status") == "accepted"
+            ):
+                clinic_address_value = _as_text(clinic_address_payload.get("valueNormalized"))
+                if clinic_address_value and _normalize_text(clinic_address_value) == compact:
+                    flags.append("owner_address_matches_clinic_address")
     if normalized_key == "dob":
         # Parse dob value (format: DD/MM/YYYY)
         try:

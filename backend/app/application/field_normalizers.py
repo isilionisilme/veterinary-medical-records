@@ -46,6 +46,27 @@ _CLINIC_ADDRESS_ABBREVIATIONS: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"(?i)\bctra\.?(?=\s|$)"), "Carretera"),
     (re.compile(r"(?i)\bn[º°o]\.?(?=\s|\d)"), "Número"),
 )
+_OWNER_ADDRESS_LEADING_LABEL = re.compile(
+    r"(?i)^(?:direcci[oó]n|domicilio|dir\.?)"
+    r"(?:\s+(?:(?:de(?:l)?)\s+)?(?:propietari[oa]|titular))?\s*[:\-]?\s*"
+)
+_OWNER_ADDRESS_ABBREVIATIONS: tuple[tuple[re.Pattern[str], str], ...] = (
+    (re.compile(r"(?i)\bc/\s*"), "Calle "),
+    (re.compile(r"(?i)\bavda\.?(?=\s|$)"), "Avenida"),
+    (re.compile(r"(?i)\bav\.?(?=\s|$)"), "Avenida"),
+    (re.compile(r"(?i)\bpza\.?(?=\s|$)"), "Plaza"),
+    (re.compile(r"(?i)\bcp\b"), "C.P."),
+)
+_OWNER_ADDRESS_ADDRESS_TOKEN = re.compile(
+    r"(?i)\b("
+    r"calle|avenida|plaza|carretera|camino|paseo|barrio|urbanizaci[oó]n|"
+    r"c\.?p\.?|codigo\s+postal|portal|piso|puerta|bloque|escalera|"
+    r"km|kil[oó]metro|n[º°o]?|num(?:ero)?|c/"
+    r")\b"
+)
+_OWNER_ADDRESS_RESIDUAL_LABEL = re.compile(
+    r"(?i)\b(?:propietari[oa]|titular|cliente|nombre|tel[eé]fono|telefono|email|dni|nif)\b"
+)
 
 CANONICAL_SPECIES: frozenset[str] = frozenset({"canino", "felino"})
 
@@ -72,6 +93,7 @@ def normalize_canonical_fields(
     normalized["pet_name"] = _normalize_pet_name_value(normalized.get("pet_name"))
     normalized["clinic_name"] = _normalize_clinic_name_value(normalized.get("clinic_name"))
     normalized["clinic_address"] = _normalize_clinic_address_value(normalized.get("clinic_address"))
+    normalized["owner_address"] = _normalize_owner_address_value(normalized.get("owner_address"))
     normalized["species"] = _normalize_species_value(normalized.get("species"))
     normalized["breed"] = _normalize_scalar_with_labels(normalized.get("breed"), ("raza", "breed"))
     normalized = _normalize_species_and_breed_pair(normalized, evidence_map)
@@ -212,6 +234,47 @@ def _normalize_clinic_address_value(value: object) -> str | None:
     cleaned = re.sub(r"\s*,\s*", ", ", cleaned)
     cleaned = _normalize_whitespace(cleaned).strip(" ,;.")
     if not cleaned:
+        return None
+
+    return cleaned
+
+
+def _normalize_owner_address_value(value: object) -> str | None:
+    if not isinstance(value, str):
+        return None
+
+    # Keep at most two meaningful lines; extra breaks are flattened.
+    lines = [line.strip() for line in value.splitlines() if line.strip()]
+    if not lines:
+        return None
+    if len(lines) > 2:
+        compact = " ".join(lines)
+    else:
+        compact = " ".join(lines)
+
+    cleaned = _normalize_whitespace(compact)
+    if not cleaned:
+        return None
+
+    cleaned = _OWNER_ADDRESS_LEADING_LABEL.sub("", cleaned).strip(" -:;,.")
+    if not cleaned:
+        return None
+
+    for pattern, replacement in _OWNER_ADDRESS_ABBREVIATIONS:
+        cleaned = pattern.sub(replacement, cleaned)
+
+    cleaned = re.sub(r"\s*,\s*", ", ", cleaned)
+    cleaned = _normalize_whitespace(cleaned).strip(" ,;.")
+    if not cleaned:
+        return None
+
+    lower_cleaned = cleaned.casefold()
+    has_digits = bool(re.search(r"\d", lower_cleaned))
+    has_address_token = bool(_OWNER_ADDRESS_ADDRESS_TOKEN.search(lower_cleaned))
+    if not has_digits or not has_address_token:
+        return None
+
+    if _OWNER_ADDRESS_RESIDUAL_LABEL.search(lower_cleaned) and ":" in lower_cleaned:
         return None
 
     return cleaned

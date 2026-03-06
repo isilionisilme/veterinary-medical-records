@@ -17,6 +17,7 @@ RUN pip install --no-cache-dir -r /app/backend/requirements.txt
 
 COPY backend /app/backend
 COPY shared /app/shared
+RUN rm -rf /app/backend/tests
 
 RUN adduser --disabled-password --no-create-home appuser \
     && mkdir -p /app/backend/data /app/backend/storage \
@@ -35,6 +36,7 @@ FROM prod AS test
 
 USER root
 
+COPY backend/tests /app/backend/tests
 COPY requirements-dev.txt /app/requirements-dev.txt
 COPY scripts /app/scripts
 COPY AGENTS.md /app/AGENTS.md
