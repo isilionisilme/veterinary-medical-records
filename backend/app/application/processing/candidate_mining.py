@@ -11,6 +11,7 @@ from backend.app.application.global_schema import GLOBAL_SCHEMA_KEYS, REPEATABLE
 
 from .constants import (
     _ADDRESS_LIKE_PATTERN,
+    _ADDRESS_SPLIT_PATTERN,
     _DATE_CANDIDATE_PATTERN,
     _MICROCHIP_DIGITS_PATTERN,
     _OWNER_CONTEXT_PATTERN,
@@ -94,6 +95,14 @@ _OWNER_ADDRESS_CONTEXT_RE = re.compile(
     r"datos\s+del\s+cliente|cliente)\b"
 )
 _OWNER_HEADER_RE = re.compile(r"(?i)\b(?:propietari[oa]|titular|dueñ(?:o|a)|owner|cliente|tutor)\b")
+_OWNER_NAME_LIKE_LINE_RE = re.compile(
+    r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ][A-Za-zÁÉÍÓÚÜÑáéíóúüñ'\.-]*(?:\s+"
+    r"[A-Za-zÁÉÍÓÚÜÑáéíóúüñ][A-Za-zÁÉÍÓÚÜÑáéíóúüñ'\.-]*){1,4}$"
+)
+_OWNER_LOCALITY_LINE_RE = re.compile(r"^[A-ZÁÉÍÓÚÜÑ][A-ZÁÉÍÓÚÜÑ\s'\.-]{1,40}$")
+_OWNER_BLOCK_IDENTIFICATION_CONTEXT_RE = re.compile(
+    r"(?i)\b(?:n[º°o]\s*chip|chip|microchip|paciente|mascota|especie|raza|sexo)\b"
+)
 _CLINIC_ADDRESS_CONTEXT_RE = re.compile(
     r"(?i)\b(?:cl[ií]nica|hospital|centro\s+veterinario|"
     r"veterinari[oa]|vet\b|dr\.?|dra\.?|doctor(?:a)?)\b"
@@ -550,6 +559,67 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
             snippet="\n".join(lines[index : min(len(lines), index + 4)]),
         )
 
+    for index in range(len(lines) - 1):
+        owner_line = lines[index]
+        address_line = lines[index + 1]
+        if _SIMPLE_FIELD_LABEL_RE.match(owner_line) is not None:
+            continue
+        if _SIMPLE_FIELD_LABEL_RE.match(address_line) is not None:
+            continue
+        if _OWNER_NAME_LIKE_LINE_RE.match(owner_line) is None:
+            continue
+        if (
+            _ADDRESS_LIKE_PATTERN.search(address_line) is None
+            or re.search(r"\d", address_line) is None
+        ):
+            continue
+
+        context_window = lines[max(0, index - 3) : min(len(lines), index + 4)]
+        context_text = " ".join(context_window).casefold()
+        has_owner_context = _OWNER_ADDRESS_CONTEXT_RE.search(context_text) is not None
+        has_identification_context = (
+            _OWNER_BLOCK_IDENTIFICATION_CONTEXT_RE.search(context_text) is not None
+        )
+        has_clinic_context = _CLINIC_ADDRESS_CONTEXT_RE.search(context_text) is not None
+
+        if has_clinic_context and not has_owner_context:
+            continue
+        if not has_owner_context and not has_identification_context:
+            continue
+
+        address_parts = [address_line.strip(" .,:;\t\r\n")]
+        tail_index = index + 2
+        tail_limit = min(len(lines), index + 5)
+        while tail_index < tail_limit:
+            tail_line = lines[tail_index]
+            if _SIMPLE_FIELD_LABEL_RE.match(tail_line) is not None:
+                break
+            tail_clean = tail_line.strip(" .,:;\t\r\n")
+            if not tail_clean:
+                break
+            if re.match(r"^\s*-\s*\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}", tail_line):
+                break
+            if _OWNER_NAME_LIKE_LINE_RE.match(tail_clean) is not None:
+                break
+
+            is_postal_like = _POSTAL_HINT_RE.search(tail_clean) is not None
+            is_locality_like = _OWNER_LOCALITY_LINE_RE.fullmatch(tail_clean) is not None
+            if not (is_postal_like or is_locality_like):
+                break
+
+            address_parts.append(tail_clean)
+            tail_index += 1
+
+        candidate_value = " ".join(part for part in address_parts if part)
+        if not candidate_value:
+            continue
+        add_candidate(
+            key="owner_address",
+            value=candidate_value,
+            confidence=COVERAGE_CONFIDENCE_FALLBACK,
+            snippet="\n".join(lines[index : min(len(lines), index + 3)]),
+        )
+
     for index, line in enumerate(lines):
         lower_line = line.casefold()
         normalized_single = _WHITESPACE_PATTERN.sub(" ", lower_line).strip()
@@ -933,18 +1003,28 @@ def _candidate_sort_key(item: dict[str, object], key: str) -> tuple[float, float
         folded_snippet = snippet.casefold()
         has_owner_context = bool(_OWNER_ADDRESS_CONTEXT_RE.search(folded_snippet))
         has_clinic_context = bool(_CLINIC_ADDRESS_CONTEXT_RE.search(folded_snippet))
+        has_explicit_address_token = bool(_ADDRESS_SPLIT_PATTERN.search(folded_value))
         has_postal = bool(re.search(r"\b\d{5}\b", raw_value)) or "cp" in folded_value
         has_digits = bool(re.search(r"\d", raw_value))
+        looks_like_date_only = bool(
+            re.fullmatch(r"\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}", raw_value.strip())
+        )
 
         quality = 0.0
         if has_owner_context:
             quality += 2.0
         if has_clinic_context and not has_owner_context:
             quality -= 2.0
+        if has_explicit_address_token:
+            quality += 1.5
+        else:
+            quality -= 1.0
         if has_postal:
             quality += 0.5
         if has_digits:
             quality += 0.5
+        if looks_like_date_only:
+            quality -= 2.0
 
         return quality, confidence, -1.0
 

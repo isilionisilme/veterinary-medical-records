@@ -152,7 +152,10 @@ def test_doc_b_golden_goal_fields_regression(monkeypatch) -> None:
         field_key="owner_name",
     )
     owner_address = schema.get("owner_address")
-    assert owner_address in ("", None)
+    assert owner_address == "Calle CALLE DEMO 1 PORTAL 3 1F", (
+        "owner_address regression: expected owner block address extraction for docB, "
+        f"got {owner_address!r}"
+    )
 
     weight = schema.get("weight")
     assert weight in ("", None)
@@ -284,6 +287,58 @@ def test_clinic_address_labeled_disambiguates_owner_address(monkeypatch) -> None
     assert isinstance(schema, dict)
     assert schema.get("owner_address") == "Calle Luna 5, 28080 Madrid"
     assert schema.get("clinic_address") == "Av. Moratalaz 10, 28030 Madrid"
+
+
+def test_unlabeled_owner_block_does_not_promote_clinic_context(monkeypatch) -> None:
+    raw_text = "\n".join(
+        [
+            "Clínica Veterinaria Norte",
+            "NOMBRE RECEPCION",
+            "C/ Mayor 10",
+            "28013 Madrid",
+            "Nº Chip",
+            "941000024967769",
+            "Paciente: Rocky",
+        ]
+    )
+    data = _build_with_candidates(
+        monkeypatch,
+        doc_id="golden-doc-clinic-context-owner-address-guard",
+        raw_text=raw_text,
+    )
+
+    schema = data["global_schema"]
+    assert isinstance(schema, dict)
+    assert schema.get("owner_address") in ("", None)
+
+
+def test_owner_address_unlabeled_block_beats_header_noise(monkeypatch) -> None:
+    raw_text = "\n".join(
+        [
+            "PARQUE OESTE",
+            "AVDA EUROPA",
+            "Linea 4",
+            "28922 ALCORCÓN",
+            "Datos del Cliente",
+            "Nº Chip",
+            "BEATRIZ ABARCA",
+            "C/ ORTEGA Y GASSET 1 PORTAL 3 1F",
+            "BOADILLA",
+            "28660",
+            "MADRID",
+        ]
+    )
+    data = _build_with_candidates(
+        monkeypatch,
+        doc_id="golden-doc-owner-address-header-noise",
+        raw_text=raw_text,
+    )
+
+    schema = data["global_schema"]
+    assert isinstance(schema, dict)
+    assert (
+        schema.get("owner_address") == "Calle ORTEGA Y GASSET 1 PORTAL 3 1F BOADILLA 28660 MADRID"
+    )
 
 
 def test_microchip_transponder_label_regression(monkeypatch) -> None:
