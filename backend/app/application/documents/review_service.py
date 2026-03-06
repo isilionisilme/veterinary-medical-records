@@ -28,6 +28,7 @@ from backend.app.application.field_normalizers import (
     _normalize_weight,
     normalize_microchip_digits_only,
 )
+from backend.app.application.processing.candidate_mining import _mine_interpretation_candidates
 from backend.app.domain.models import ReviewStatus
 from backend.app.ports.document_repository import DocumentRepository
 from backend.app.ports.file_storage import FileStorage
@@ -553,6 +554,66 @@ def _populate_missing_reason_for_visit_from_segments(
             visit["reason_for_visit"] = extracted_reason
 
 
+def _populate_visit_scoped_fields_from_segment_candidates(
+    *,
+    assigned_visits: list[dict[str, object]],
+    visit_segments_by_id: dict[str, str],
+    candidate_keys: tuple[str, ...],
+) -> None:
+    for visit in assigned_visits:
+        visit_id = visit.get("visit_id")
+        if not isinstance(visit_id, str) or not visit_id:
+            continue
+
+        segment_text = visit_segments_by_id.get(visit_id)
+        if not isinstance(segment_text, str) or not segment_text.strip():
+            continue
+
+        visit_fields = visit.get("fields")
+        if not isinstance(visit_fields, list):
+            visit_fields = []
+            visit["fields"] = visit_fields
+
+        existing_keys = {
+            field.get("key")
+            for field in visit_fields
+            if isinstance(field, dict) and isinstance(field.get("key"), str)
+        }
+
+        mined_candidates = _mine_interpretation_candidates(segment_text)
+        for candidate_key in candidate_keys:
+            if candidate_key in existing_keys:
+                continue
+
+            key_candidates = mined_candidates.get(candidate_key)
+            if not isinstance(key_candidates, list) or not key_candidates:
+                continue
+
+            first_candidate = key_candidates[0]
+            if not isinstance(first_candidate, dict):
+                continue
+
+            candidate_value = first_candidate.get("value")
+            if not isinstance(candidate_value, str) or not candidate_value.strip():
+                continue
+
+            evidence = first_candidate.get("evidence")
+            visit_fields.append(
+                {
+                    "field_id": f"derived-{candidate_key}-{visit_id}",
+                    "key": candidate_key,
+                    "value": candidate_value,
+                    "value_type": "string",
+                    "scope": "visit",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "derived",
+                    "evidence": evidence if isinstance(evidence, dict) else None,
+                }
+            )
+            existing_keys.add(candidate_key)
+
+
 def _normalize_canonical_review_scoping(
     data: dict[str, object], *, raw_text: str | None = None
 ) -> dict[str, object]:
@@ -767,6 +828,11 @@ def _normalize_canonical_review_scoping(
     _populate_missing_reason_for_visit_from_segments(
         assigned_visits=assigned_visits,
         visit_segments_by_id=visit_segments_by_id,
+    )
+    _populate_visit_scoped_fields_from_segment_candidates(
+        assigned_visits=assigned_visits,
+        visit_segments_by_id=visit_segments_by_id,
+        candidate_keys=("diagnosis", "symptoms"),
     )
 
     metadata_values_for_unassigned: dict[str, object] = {}
