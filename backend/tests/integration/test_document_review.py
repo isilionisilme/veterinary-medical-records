@@ -1939,6 +1939,63 @@ def test_document_review_debug_visit_page_handles_missing_raw_text(test_client):
     assert "Raw text no disponible para este run." in response.text
 
 
+def test_document_review_debug_visit_page_handles_raw_text_read_error(test_client, monkeypatch):
+    document_id = _upload_sample_document(test_client)
+    run_id = str(uuid4())
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(
+        run_id=run_id,
+        data={
+            "document_id": document_id,
+            "processing_run_id": run_id,
+            "created_at": "2026-02-10T10:00:05+00:00",
+            "fields": [
+                {
+                    "field_id": "f-symptoms-1",
+                    "key": "symptoms",
+                    "value": "Otalgia",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {
+                        "page": 1,
+                        "snippet": "Consulta 11/02/2026: dolor de oido",
+                    },
+                }
+            ],
+            "visits": [],
+            "other_fields": [],
+        },
+    )
+
+    raw_text_path = get_storage_root() / document_id / "runs" / run_id / "raw-text.txt"
+    raw_text_path.parent.mkdir(parents=True, exist_ok=True)
+    raw_text_path.write_text(
+        "Consulta 11/02/2026: dolor de oido.\n",
+        encoding="utf-8",
+    )
+
+    original_read_text = Path.read_text
+
+    def _patched_read_text(self: Path, *args, **kwargs):  # type: ignore[no-untyped-def]
+        if self == raw_text_path:
+            raise OSError("simulated read failure")
+        return original_read_text(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", _patched_read_text)
+
+    response = test_client.get(f"/documents/{document_id}/review/debug/visits")
+    assert response.status_code == 200
+    assert "Raw text no disponible para este run." in response.text
+
+
 def test_document_review_debug_visit_page_trims_next_visit_boundary_marker(test_client):
     document_id = _upload_sample_document(test_client)
     run_id = str(uuid4())

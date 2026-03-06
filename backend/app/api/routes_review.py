@@ -297,10 +297,13 @@ def get_document_review_visit_debug_page(
         document_id=document_id,
         run_id=review.review.latest_completed_run.run_id,
     ):
-        raw_text = storage.resolve_raw_text(
-            document_id=document_id,
-            run_id=review.review.latest_completed_run.run_id,
-        ).read_text(encoding="utf-8")
+        try:
+            raw_text = storage.resolve_raw_text(
+                document_id=document_id,
+                run_id=review.review.latest_completed_run.run_id,
+            ).read_text(encoding="utf-8")
+        except OSError:
+            raw_text = None
 
     visits = review.review.active_interpretation.data.get("visits")
     visit_sections = _build_visit_debug_sections(visits=visits, raw_text=raw_text)
