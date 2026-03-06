@@ -100,6 +100,15 @@ _OWNER_NAME_LIKE_LINE_RE = re.compile(
     r"[A-Za-zÁÉÍÓÚÜÑáéíóúüñ][A-Za-zÁÉÍÓÚÜÑáéíóúüñ'\.-]*){1,4}$"
 )
 _OWNER_LOCALITY_LINE_RE = re.compile(r"^[A-ZÁÉÍÓÚÜÑ][A-ZÁÉÍÓÚÜÑ\s'\.-]{1,40}$")
+_OWNER_LOCALITY_SECTION_BLACKLIST = {
+    "historial",
+    "plan",
+    "exploracion",
+    "exploración",
+    "tratamiento",
+    "diagnostico",
+    "diagnóstico",
+}
 _OWNER_BLOCK_IDENTIFICATION_CONTEXT_RE = re.compile(
     r"(?i)\b(?:n[º°o]\s*chip|chip|microchip|paciente|mascota|especie|raza|sexo)\b"
 )
@@ -604,6 +613,9 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
 
             is_postal_like = _POSTAL_HINT_RE.search(tail_clean) is not None
             is_locality_like = _OWNER_LOCALITY_LINE_RE.fullmatch(tail_clean) is not None
+            locality_tail = tail_clean.casefold().strip(" .,:;\t\r\n")
+            if locality_tail in _OWNER_LOCALITY_SECTION_BLACKLIST:
+                break
             if not (is_postal_like or is_locality_like):
                 break
 

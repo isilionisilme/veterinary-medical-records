@@ -341,6 +341,33 @@ def test_owner_address_unlabeled_block_beats_header_noise(monkeypatch) -> None:
     )
 
 
+def test_owner_address_unlabeled_block_skips_clinical_section_headers(monkeypatch) -> None:
+    raw_text = "\n".join(
+        [
+            "Datos del Cliente",
+            "Nº Chip",
+            "BEATRIZ ABARCA",
+            "C/ ORTEGA Y GASSET 1 PORTAL 3 1F",
+            "BOADILLA",
+            "28660",
+            "MADRID",
+            "HISTORIAL",
+            "Paciente con buen estado general",
+        ]
+    )
+    data = _build_with_candidates(
+        monkeypatch,
+        doc_id="golden-doc-owner-address-stops-at-clinical-header",
+        raw_text=raw_text,
+    )
+
+    schema = data["global_schema"]
+    assert isinstance(schema, dict)
+    assert (
+        schema.get("owner_address") == "Calle ORTEGA Y GASSET 1 PORTAL 3 1F BOADILLA 28660 MADRID"
+    )
+
+
 def test_microchip_transponder_label_regression(monkeypatch) -> None:
     raw_text = "\n".join(
         [
