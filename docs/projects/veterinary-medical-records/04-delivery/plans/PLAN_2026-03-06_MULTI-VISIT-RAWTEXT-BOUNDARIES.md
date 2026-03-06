@@ -153,9 +153,9 @@ Se incorpora una fuente adicional de deteccion de visitas basada en `raw_text` c
 - [x] P3-A 🔄 - Ejecutar benchmark completo + delta, sin regresiones en golden loops.
 - [x] P3-B 🔄 - Ejecutar suite focalizada de visit detection incluyendo assert duro `detected_visits == expected_visits` para cada fixture.
 - [x] CT-4 🔄 - Commit task P3-A + P3-B. — ✅ `c070040a`
-- [ ] P3-C 🚧 - Hard-gate: validacion manual de `docB` en entorno dev. Criterio GO: multiples visitas detectadas correctamente.
-- [ ] P3-D 🔄 - Post-gate: actualizacion de documentacion tecnica y umbrales aplicables.
-- [ ] CT-5 🔄 - Commit task P3-D.
+- [x] P3-C 🚧 - Hard-gate: validacion manual de `docB` en entorno dev. Criterio GO: multiples visitas detectadas correctamente. — ✅ `no-commit (GO user confirmation in chat, 2026-03-06)`
+- [ ] P3-D 🔄 - Post-gate: actualizacion de documentacion tecnica y umbrales aplicables. ⏳ IN PROGRESS (Codex, 2026-03-06)
+- [ ] CT-5 🔄 - Commit task P3-D. ⏳ IN PROGRESS (Codex, 2026-03-06)
 
 ### Phase 4 - Extension condicional (solo si Phase 1 no alcanza)
 
@@ -190,9 +190,16 @@ Se incorpora una fuente adicional de deteccion de visitas basada en `raw_text` c
 
 ## Active Prompt
 
-Siguiente paso ejecutable: `P3-C` (hard-gate, validacion manual de docB en entorno dev).
+Siguiente paso ejecutable: `P3-D` (actualizacion de documentacion tecnica y umbrales), seguido de `CT-5`.
 
 ---
+
+## Post-Gate Notes (P3-D)
+
+- Confirmacion hard-gate (`P3-C`): `GO` del usuario para `docB` en entorno dev (multiples visitas detectadas).
+- Suite focalizada de review integration: `47 passed` (`python -m pytest backend/tests/integration/test_document_review.py -v --no-cov`).
+- Benchmark suite: `116 passed, 2 xfailed` (`python -m pytest backend/tests/benchmarks/ -v --no-cov`), sin regresiones blocking.
+- Umbral operativo de cierre: CI de PR en verde para commit de evidencia y commit de plan-update antes de continuar.
 
 ## Acceptance criteria
 
