@@ -85,6 +85,8 @@ def test_doc_a_golden_goal_fields_regression(monkeypatch) -> None:
         candidates=candidates,
         field_key="owner_name",
     )
+    owner_address = schema.get("owner_address")
+    assert owner_address in ("", None)
 
     weight = schema.get("weight")
     assert weight in ("", None)
@@ -149,6 +151,8 @@ def test_doc_b_golden_goal_fields_regression(monkeypatch) -> None:
         candidates=candidates,
         field_key="owner_name",
     )
+    owner_address = schema.get("owner_address")
+    assert owner_address in ("", None)
 
     weight = schema.get("weight")
     assert weight in ("", None)
@@ -278,6 +282,7 @@ def test_clinic_address_labeled_disambiguates_owner_address(monkeypatch) -> None
 
     schema = data["global_schema"]
     assert isinstance(schema, dict)
+    assert schema.get("owner_address") == "Calle Luna 5, 28080 Madrid"
     assert schema.get("clinic_address") == "Av. Moratalaz 10, 28030 Madrid"
 
 
