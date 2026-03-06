@@ -57,6 +57,7 @@
 | CT-3 | P2-A | Step `P2-A`; files: `backend/app/application/extraction_observability/triage.py`, tests de observabilidad asociados | `feat(plan-p2): owner_address observability flags` | Inmediato |
 | CT-4 | P3-A, P3-B | Steps `P3-A + P3-B`; files: `backend/tests/unit/test_golden_extraction_regression.py`, artefactos de evidencia de validacion para PR | `test(plan-p3): owner_address golden regression and validation evidence` | Inmediato |
 | CT-5 | P3-D | Step `P3-D`; files: `backend/tests/benchmarks/test_owner_address_extraction_accuracy.py`, `docs/projects/veterinary-medical-records/02-tech/extraction-quality.md` | `docs(plan-p3): owner_address threshold lock and extraction-quality update` | Inmediato |
+| CT-6 | P4-A, P4-B, P4-C, P4-D | Steps `P4-A + P4-B + P4-C + P4-D`; files: `backend/app/application/processing/candidate_mining.py`, `backend/tests/unit/test_golden_extraction_regression.py`, `backend/tests/benchmarks/test_owner_address_extraction_accuracy.py`, fixtures de regresion relevantes | `feat(plan-p4): docB owner_address extraction from unlabeled owner block` | Inmediato |
 
 ---
 
@@ -123,6 +124,18 @@
 - **approval:** `auto`
 - **fallback:** Revertir solo cambios doc/threshold de P3-D, preservar decision del hard-gate y STOP
 
+### CT-6 - Commit docB remediation bundle
+
+- **type:** `commit-task`
+- **trigger:** After `P4-A`, `P4-B`, `P4-C`, `P4-D`
+- **preconditions:** `docB` extrae `owner_address`; no regresiones blocking en `clinic_address`; `scripts/ci/test-L1.ps1 -BaseRef HEAD` verde
+- **commands:**
+  - `git add -A -- . ':!docs/projects/veterinary-medical-records/04-delivery/plans/PLAN_2026-03-06_GOLDEN-LOOP-OWNER-ADDRESS.md'`
+  - `git commit -m "feat(plan-p4): docB owner_address extraction from unlabeled owner block"`
+  - `git push origin golden-2/feat/golden-loop-propietario-direccion`
+- **approval:** `auto`
+- **fallback:** Revertir cambios de heuristica de `P4`, preservar evidencia de fallos y STOP
+
 ---
 
 ## Execution Status
@@ -133,32 +146,40 @@
 
 ### Phase 0 - Schema promotion, baseline and fixtures
 
-- [ ] P0-A 🔄 - Anadir `owner_address` al contrato global (`global_schema_contract.json`, seccion Propietario, `value_type: string`, `repeatable: false`, `critical: false`, `optional: true`) y a `GLOBAL_SCHEMA_KEYS` en `global_schema.py`.
-- [ ] P0-B 🔄 - Crear fixtures sinteticos bajo `backend/tests/fixtures/synthetic/owner_address/owner_address_cases.json` (>= 18 casos).
-- [ ] P0-C 🔄 - Crear benchmark `backend/tests/benchmarks/test_owner_address_extraction_accuracy.py` y medir baseline inicial.
-- [ ] CT-1 🔄 - Commit task: scope P0-A + P0-B + P0-C -> `test(plan-p0): owner_address schema promotion and golden-loop baseline` -> push.
+- [x] P0-A 🔄 - Anadir `owner_address` al contrato global (`global_schema_contract.json`, seccion Propietario, `value_type: string`, `repeatable: false`, `critical: false`, `optional: true`) y a `GLOBAL_SCHEMA_KEYS` en `global_schema.py`. — ✅ `5884966b`
+- [x] P0-B 🔄 - Crear fixtures sinteticos bajo `backend/tests/fixtures/synthetic/owner_address/owner_address_cases.json` (>= 18 casos). — ✅ `5884966b`
+- [x] P0-C 🔄 - Crear benchmark `backend/tests/benchmarks/test_owner_address_extraction_accuracy.py` y medir baseline inicial. — ✅ `5884966b`
+- [x] CT-1 🔄 - Commit task: scope P0-A + P0-B + P0-C -> `test(plan-p0): owner_address schema promotion and golden-loop baseline` -> push. — ✅ `5884966b`
 
 ### Phase 1 - Extraction improvements (`owner_address` only)
 
-- [ ] P1-A 🔄 - Crear `_normalize_owner_address_value()` en `field_normalizers.py` y conectarlo en `normalize_canonical_fields()`.
-- [ ] P1-B 🔄 - Implementar desambiguacion contextual owner/clinic en `candidate_mining.py` y ampliar variantes de label en `_LABELED_PATTERNS`.
-- [ ] P1-C 🔄 - Anadir tests unitarios dedicados de normalizacion: `backend/tests/unit/test_owner_address_normalization.py`.
-- [ ] P1-D 🔄 - Medir delta de benchmark vs baseline y ajustar confidence/ranking si es necesario para llegar a >= 85%.
-- [ ] CT-2 🔄 - Commit task: scope P1-A + P1-B + P1-C + P1-D -> `feat(plan-p1): owner_address extraction hardening - normalizer, disambiguation, labels, unit tests` -> push.
+- [x] P1-A 🔄 - Crear `_normalize_owner_address_value()` en `field_normalizers.py` y conectarlo en `normalize_canonical_fields()`. — ✅ `521ef468`
+- [x] P1-B 🔄 - Implementar desambiguacion contextual owner/clinic en `candidate_mining.py` y ampliar variantes de label en `_LABELED_PATTERNS`. — ✅ `521ef468`
+- [x] P1-C 🔄 - Anadir tests unitarios dedicados de normalizacion: `backend/tests/unit/test_owner_address_normalization.py`. — ✅ `521ef468`
+- [x] P1-D 🔄 - Medir delta de benchmark vs baseline y ajustar confidence/ranking si es necesario para llegar a >= 85%. — ✅ `521ef468`
+- [x] CT-2 🔄 - Commit task: scope P1-A + P1-B + P1-C + P1-D -> `feat(plan-p1): owner_address extraction hardening - normalizer, disambiguation, labels, unit tests` -> push. — ✅ `521ef468`
 
 ### Phase 2 - Observability and quality gates
 
-- [ ] P2-A 🔄 - Anadir flags de observabilidad para `owner_address` sospechoso (`owner_address_matches_clinic_address`, `owner_address_too_short`, `owner_address_no_address_tokens`, `owner_address_too_long`) + tests.
-- [ ] CT-3 🔄 - Commit task: scope P2-A -> `feat(plan-p2): owner_address observability flags` -> push.
+- [x] P2-A 🔄 - Anadir flags de observabilidad para `owner_address` sospechoso (`owner_address_matches_clinic_address`, `owner_address_too_short`, `owner_address_no_address_tokens`, `owner_address_too_long`) + tests. — ✅ `9f2b70d5`
+- [x] CT-3 🔄 - Commit task: scope P2-A -> `feat(plan-p2): owner_address observability flags` -> push. — ✅ `9f2b70d5`
 
 ### Phase 3 - Tests, validation, and closure
 
-- [ ] P3-A 🔄 - Anadir/ajustar assertions golden para `owner_address` en `test_golden_extraction_regression.py` y ejecutar suite focalizada.
-- [ ] P3-B 🔄 - Ejecutar suite completa y preparar evidencia reproducible para PR body.
-- [ ] CT-4 🔄 - Commit task: scope P3-A + P3-B -> `test(plan-p3): owner_address golden regression and validation evidence` -> push.
-- [ ] P3-C 🚧 - Hard-gate: validacion de usuario con evidencia y decision go/no-go.
-- [ ] P3-D 🔄 - Post-gate: ajustar `MIN_EXACT_MATCH_RATE`, actualizar guardrails en `extraction-quality.md`, marcar campo como completado.
-- [ ] CT-5 🔄 - Commit task: scope P3-D -> `docs(plan-p3): owner_address threshold lock and extraction-quality update` -> push.
+- [x] P3-A 🔄 - Anadir/ajustar assertions golden para `owner_address` en `test_golden_extraction_regression.py` y ejecutar suite focalizada. — ✅ `94593a6a`
+- [x] P3-B 🔄 - Ejecutar suite completa y preparar evidencia reproducible para PR body. — ✅ `94593a6a`
+- [x] CT-4 🔄 - Commit task: scope P3-A + P3-B -> `test(plan-p3): owner_address golden regression and validation evidence` -> push. — ✅ `94593a6a`
+- [x] P3-C 🚧 - Hard-gate: decision explicita = **NO-GO**. Motivo: `docB` contiene direccion de propietario real (`C/ CALLE DEMO 1 PORTAL 3 1F`) pero golden regression actual exige `owner_address` vacio. — ✅ `no-commit (gate decision + remediation required)`
+- [ ] P3-D 🔄 - Post-gate (deferred): ajustar `MIN_EXACT_MATCH_RATE`, actualizar guardrails en `extraction-quality.md`, marcar campo como completado. ⏸️ PAUSADO hasta cierre de `Phase 4`.
+- [ ] CT-5 🔄 - Commit task: scope P3-D -> `docs(plan-p3): owner_address threshold lock and extraction-quality update` -> push. ⏸️ PAUSADO hasta cierre de `Phase 4`.
+
+### Phase 4 - docB remediation (real extraction parity)
+
+- [ ] P4-A 🔄 - Implementar heuristica de extraccion para bloque owner no etiquetado en `candidate_mining.py` (patron linea nombre + linea direccion adyacente bajo contexto owner).
+- [ ] P4-B 🔄 - Actualizar `test_doc_b_golden_goal_fields_regression` para exigir `owner_address` poblado y mantener invariantes de no-regresion en `clinic_address`.
+- [ ] P4-C 🔄 - Ejecutar benchmark de `owner_address` + suite focalizada de regresion (`owner_address`, `clinic_address`, `docB`) y reportar delta EM/null misses/false positives.
+- [ ] P4-D 🚧 - Hard-gate: validacion de usuario del comportamiento en `docB` (GO/NO-GO para retomar `P3-D`).
+- [ ] CT-6 🔄 - Commit task: scope P4-A + P4-B + P4-C + P4-D -> `feat(plan-p4): docB owner_address extraction from unlabeled owner block` -> push.
 
 ---
 
@@ -174,6 +195,7 @@
 8. Guardrails de `owner_address` documentados en `extraction-quality.md`.
 9. `owner_address` deja de estar en pendientes y pasa a estado completado tras cierre.
 10. Cambios limitados al alcance definido del campo.
+11. `docB` (`backend/tests/fixtures/raw_text/docB.txt`) expone `owner_address` en `global_schema` cuando la direccion existe en bloque owner no etiquetado.
 
 ---
 
@@ -413,6 +435,58 @@ SCOPE BOUNDARY:
 - STEP A commit code mensaje: docs(plan-p3): owner_address threshold lock and extraction-quality update
 - STEP B actualizar PLAN (P3-D + CT-5)
 - STEP C/D/E/F push, PR update, CI gate, close iteration
+```
+
+### P4-A - Heuristica docB owner block
+
+```text
+Implementar heuristica en `candidate_mining.py` para `owner_address` sin label explicito en bloques tipo docB:
+- Detectar secuencia de 2 lineas adyacentes: (1) nombre owner-like, (2) direccion address-like con digitos.
+- Requisito de contexto owner: presencia de marcador owner/titular/cliente en ventana cercana o estructura compatible de bloque de identificacion.
+- Excluir contexto clinic/hospital/veterinario para evitar contamination con `clinic_address`.
+- Emitir candidato `owner_address` con confianza conservadora y evidencia multilinea.
+
+No tocar PLAN ni hacer commit.
+```
+
+### P4-B - Golden assertions docB
+
+```text
+Actualizar `backend/tests/unit/test_golden_extraction_regression.py`:
+- En `test_doc_b_golden_goal_fields_regression`, reemplazar assert de vacio por expect de owner_address normalizado.
+- Mantener asserts de no regresion en `clinic_address`.
+- Agregar test negativo para evitar promotion de direccion de clinica como owner en bloques no etiquetados.
+
+No tocar PLAN ni hacer commit.
+```
+
+### P4-C - Benchmark and focused validation
+
+```text
+Ejecutar validacion focalizada y reportar:
+- `pytest backend/tests/benchmarks/test_owner_address_extraction_accuracy.py -v`
+- `pytest backend/tests/unit/test_golden_extraction_regression.py -k "doc_b or owner_address or clinic_address" -v`
+- `pytest backend/tests/unit/test_owner_address_normalization.py -v`
+
+Reportar: exact match rate, null misses, false positives, y estado de no-regresion clinic.
+
+No tocar PLAN ni hacer commit.
+```
+
+### P4-D - Hard-gate remediation
+
+```text
+Hard-gate de usuario: decision GO/NO-GO tras validar que docB ahora muestra `owner_address` en extraccion real sin regresion de `clinic_address`.
+```
+
+### CT-6 - Commit task Phase 4 remediation
+
+```text
+SCOPE BOUNDARY:
+- STEP A commit code (sin PLAN)
+  mensaje: feat(plan-p4): docB owner_address extraction from unlabeled owner block
+- STEP B actualizar PLAN (P4-A, P4-B, P4-C, P4-D, CT-6)
+- STEP C/D/E/F push, PR update, CI gate, chain decision
 ```
 
 ---
