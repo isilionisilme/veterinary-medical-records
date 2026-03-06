@@ -11,8 +11,11 @@ from backend.app.application.documents._shared import (
     _VISIT_GROUP_METADATA_KEYS,
     _VISIT_SCOPED_KEY_SET,
     _contains_any_date_token,
+    _detect_visit_dates_from_raw_text,
     _extract_evidence_snippet,
     _extract_visit_date_candidates_from_text,
+    _locate_visit_boundary_offsets_from_raw_text,
+    _locate_visit_date_occurrences_from_raw_text,
     _normalize_visit_date_candidate,
 )
 from backend.app.application.documents.calibration import (
@@ -101,7 +104,19 @@ def get_document_review(
     structured_data = interpretation_payload.get("data")
     if not isinstance(structured_data, dict):
         structured_data = {}
-    structured_data = _normalize_review_interpretation_data(structured_data)
+
+    raw_text: str | None = None
+    raw_text_path = storage.resolve_raw_text(
+        document_id=latest_completed_run.document_id,
+        run_id=latest_completed_run.run_id,
+    )
+    if raw_text_path.exists():
+        try:
+            raw_text = raw_text_path.read_text(encoding="utf-8")
+        except OSError:
+            raw_text = None
+
+    structured_data = _normalize_review_interpretation_data(structured_data, raw_text=raw_text)
 
     return DocumentReviewLookupResult(
         review=DocumentReview(
@@ -132,7 +147,9 @@ def get_document_review(
     )
 
 
-def _normalize_review_interpretation_data(data: dict[str, object]) -> dict[str, object]:
+def _normalize_review_interpretation_data(
+    data: dict[str, object], *, raw_text: str | None = None
+) -> dict[str, object]:
     normalized_data = dict(data)
     changed = False
 
@@ -157,13 +174,13 @@ def _normalize_review_interpretation_data(data: dict[str, object]) -> dict[str, 
     global_schema = normalized_data.get("global_schema")
     if not isinstance(global_schema, dict):
         base_data = normalized_data if changed else data
-        return _project_review_payload_to_canonical(dict(base_data))
+        return _project_review_payload_to_canonical(dict(base_data), raw_text=raw_text)
 
     raw_microchip = global_schema.get("microchip_id")
     normalized_microchip = normalize_microchip_digits_only(raw_microchip)
     if normalized_microchip == raw_microchip:
         base_data = normalized_data if changed else data
-        return _project_review_payload_to_canonical(dict(base_data))
+        return _project_review_payload_to_canonical(dict(base_data), raw_text=raw_text)
 
     normalized_global_schema = dict(global_schema)
     normalized_global_schema["microchip_id"] = normalized_microchip
@@ -177,9 +194,9 @@ def _normalize_review_interpretation_data(data: dict[str, object]) -> dict[str, 
     changed = changed or fields_changed
 
     if changed:
-        return _project_review_payload_to_canonical(normalized_data)
+        return _project_review_payload_to_canonical(normalized_data, raw_text=raw_text)
 
-    return _project_review_payload_to_canonical(dict(data))
+    return _project_review_payload_to_canonical(dict(data), raw_text=raw_text)
 
 
 def _upsert_microchip_field_from_global_schema(
@@ -246,7 +263,9 @@ def _upsert_microchip_field_from_global_schema(
     return True
 
 
-def _project_review_payload_to_canonical(data: dict[str, object]) -> dict[str, object]:
+def _project_review_payload_to_canonical(
+    data: dict[str, object], *, raw_text: str | None = None
+) -> dict[str, object]:
     medical_record_view = data.get("medical_record_view")
     projected = dict(data)
 
@@ -277,10 +296,114 @@ def _project_review_payload_to_canonical(data: dict[str, object]) -> dict[str, o
     if not isinstance(projected.get("other_fields"), list):
         projected["other_fields"] = []
 
-    return _normalize_canonical_review_scoping(projected)
+    return _normalize_canonical_review_scoping(projected, raw_text=raw_text)
 
 
-def _normalize_canonical_review_scoping(data: dict[str, object]) -> dict[str, object]:
+def _resolve_snippet_anchor_offset(*, raw_text: str | None, snippet: str | None) -> int | None:
+    if not isinstance(raw_text, str) or not isinstance(snippet, str):
+        return None
+
+    compact_snippet = " ".join(snippet.split()).strip()
+    if len(compact_snippet) < 8:
+        return None
+
+    raw_text_lower = raw_text.casefold()
+    snippet_lower = compact_snippet.casefold()
+    exact_offset = raw_text_lower.find(snippet_lower)
+    if exact_offset >= 0:
+        return exact_offset
+
+    # Fallback for OCR punctuation drift: anchor with snippet prefix.
+    snippet_prefix = snippet_lower[: min(len(snippet_lower), 48)]
+    if len(snippet_prefix) < 12:
+        return None
+
+    prefix_offset = raw_text_lower.find(snippet_prefix)
+    if prefix_offset >= 0:
+        return prefix_offset
+
+    return None
+
+
+def _resolve_visit_from_anchor(
+    *,
+    candidate_dates: list[str],
+    anchor_offset: int | None,
+    visit_by_date: dict[str, dict[str, object]],
+    visit_occurrences_by_date: dict[str, list[dict[str, object]]],
+    raw_text_offsets_by_date: dict[str, list[int]],
+    visit_boundary_offsets: list[int],
+) -> dict[str, object] | None:
+    if anchor_offset is None:
+        for candidate_date in candidate_dates:
+            target_visit = visit_by_date.get(candidate_date)
+            if target_visit is not None:
+                return target_visit
+        return None
+
+    def _find_nearest_target(
+        *,
+        lower_offset_inclusive: int | None,
+        upper_offset_exclusive: int | None,
+    ) -> tuple[int, str, int] | None:
+        nearest: tuple[int, str, int] | None = None
+        dates_to_check = (
+            candidate_dates if candidate_dates else list(raw_text_offsets_by_date.keys())
+        )
+        for candidate_date in dates_to_check:
+            offsets = raw_text_offsets_by_date.get(candidate_date, [])
+            if not offsets:
+                continue
+            for occurrence_index, offset in enumerate(offsets):
+                if lower_offset_inclusive is not None and offset < lower_offset_inclusive:
+                    continue
+                if upper_offset_exclusive is not None and offset >= upper_offset_exclusive:
+                    continue
+                distance = abs(offset - anchor_offset)
+                if nearest is None or distance < nearest[0]:
+                    nearest = (distance, candidate_date, occurrence_index)
+        return nearest
+
+    nearest_target: tuple[int, str, int] | None = None
+    if visit_boundary_offsets:
+        lower_offset: int | None = None
+        upper_offset: int | None = None
+        for boundary_offset in visit_boundary_offsets:
+            if boundary_offset <= anchor_offset:
+                lower_offset = boundary_offset
+                continue
+            upper_offset = boundary_offset
+            break
+        nearest_target = _find_nearest_target(
+            lower_offset_inclusive=lower_offset,
+            upper_offset_exclusive=upper_offset,
+        )
+
+    if nearest_target is None:
+        nearest_target = _find_nearest_target(
+            lower_offset_inclusive=None,
+            upper_offset_exclusive=None,
+        )
+
+    if nearest_target is None:
+        for candidate_date in candidate_dates:
+            target_visit = visit_by_date.get(candidate_date)
+            if target_visit is not None:
+                return target_visit
+        return None
+
+    _, target_date, target_occurrence_index = nearest_target
+    date_visits = visit_occurrences_by_date.get(target_date, [])
+    if not date_visits:
+        return visit_by_date.get(target_date)
+
+    visit_index = min(target_occurrence_index, len(date_visits) - 1)
+    return date_visits[visit_index]
+
+
+def _normalize_canonical_review_scoping(
+    data: dict[str, object], *, raw_text: str | None = None
+) -> dict[str, object]:
     raw_fields = data.get("fields")
     if not isinstance(raw_fields, list):
         return data
@@ -291,6 +414,11 @@ def _normalize_canonical_review_scoping(data: dict[str, object]) -> dict[str, ob
     visit_group_metadata: dict[str, list[object]] = {}
     detected_visit_dates: list[str] = []
     seen_detected_visit_dates: set[str] = set()
+    raw_text_detected_visit_dates = _detect_visit_dates_from_raw_text(raw_text=raw_text)
+    raw_text_offsets_by_date: dict[str, list[int]] = {}
+    for normalized_date, offset in _locate_visit_date_occurrences_from_raw_text(raw_text=raw_text):
+        raw_text_offsets_by_date.setdefault(normalized_date, []).append(offset)
+    visit_boundary_offsets = _locate_visit_boundary_offsets_from_raw_text(raw_text=raw_text)
 
     for item in raw_fields:
         if not isinstance(item, dict):
@@ -329,6 +457,12 @@ def _normalize_canonical_review_scoping(data: dict[str, object]) -> dict[str, ob
 
         fields_to_keep.append(item)
 
+    for normalized_visit_date in raw_text_detected_visit_dates:
+        if normalized_visit_date in seen_detected_visit_dates:
+            continue
+        seen_detected_visit_dates.add(normalized_visit_date)
+        detected_visit_dates.append(normalized_visit_date)
+
     if not visit_scoped_fields and not visit_group_metadata:
         return projected
 
@@ -342,6 +476,7 @@ def _normalize_canonical_review_scoping(data: dict[str, object]) -> dict[str, ob
     unassigned_visit: dict[str, object] | None = None
     assigned_visits: list[dict[str, object]] = []
     visit_by_date: dict[str, dict[str, object]] = {}
+    visit_occurrences_by_date: dict[str, list[dict[str, object]]] = {}
     for visit in visits:
         visit_id = visit.get("visit_id")
         if isinstance(visit_id, str) and visit_id == "unassigned":
@@ -358,25 +493,44 @@ def _normalize_canonical_review_scoping(data: dict[str, object]) -> dict[str, ob
         if normalized_visit_date is not None:
             visit["visit_date"] = normalized_visit_date
             visit_by_date.setdefault(normalized_visit_date, visit)
+            visit_occurrences_by_date.setdefault(normalized_visit_date, []).append(visit)
             if normalized_visit_date not in seen_detected_visit_dates:
                 seen_detected_visit_dates.add(normalized_visit_date)
                 detected_visit_dates.append(normalized_visit_date)
 
         assigned_visits.append(visit)
 
-    for index, visit_date in enumerate(detected_visit_dates, start=1):
-        if visit_date in visit_by_date:
+    required_visit_sequence: list[str] = list(detected_visit_dates)
+    raw_visit_occurrence_counts: dict[str, int] = {}
+    for visit_date in raw_text_detected_visit_dates:
+        raw_visit_occurrence_counts[visit_date] = raw_visit_occurrence_counts.get(visit_date, 0) + 1
+    for visit_date, count in raw_visit_occurrence_counts.items():
+        extra_occurrences = max(0, count - 1)
+        if extra_occurrences > 0:
+            required_visit_sequence.extend([visit_date] * extra_occurrences)
+
+    generated_visit_counter = len(assigned_visits) + 1
+    seen_required_occurrences: dict[str, int] = {}
+    for visit_date in required_visit_sequence:
+        occurrence_index = seen_required_occurrences.get(visit_date, 0) + 1
+        seen_required_occurrences[visit_date] = occurrence_index
+
+        existing_occurrences = len(visit_occurrences_by_date.get(visit_date, []))
+        if existing_occurrences >= occurrence_index:
             continue
+
         generated_visit = {
-            "visit_id": f"visit-{index:03d}",
+            "visit_id": f"visit-{generated_visit_counter:03d}",
             "visit_date": visit_date,
             "admission_date": None,
             "discharge_date": None,
             "reason_for_visit": None,
             "fields": [],
         }
+        generated_visit_counter += 1
         assigned_visits.append(generated_visit)
-        visit_by_date[visit_date] = generated_visit
+        visit_by_date.setdefault(visit_date, generated_visit)
+        visit_occurrences_by_date.setdefault(visit_date, []).append(generated_visit)
 
     for visit in assigned_visits:
         for metadata_key in _VISIT_GROUP_METADATA_KEYS:
@@ -393,12 +547,38 @@ def _normalize_canonical_review_scoping(data: dict[str, object]) -> dict[str, ob
     for visit_field in visit_scoped_fields:
         evidence_snippet = _extract_evidence_snippet(visit_field)
         evidence_visit_dates = _extract_visit_date_candidates_from_text(text=evidence_snippet)
-        target_visit: dict[str, object] | None = None
-        for candidate_visit_date in evidence_visit_dates:
-            target_visit = visit_by_date.get(candidate_visit_date)
-            if target_visit is not None:
-                break
         has_ambiguous_date_token = _contains_any_date_token(text=evidence_snippet)
+        evidence_anchor_offset = _resolve_snippet_anchor_offset(
+            raw_text=raw_text,
+            snippet=evidence_snippet,
+        )
+
+        target_visit: dict[str, object] | None = None
+        if evidence_visit_dates:
+            target_visit = _resolve_visit_from_anchor(
+                candidate_dates=evidence_visit_dates,
+                anchor_offset=evidence_anchor_offset,
+                visit_by_date=visit_by_date,
+                visit_occurrences_by_date=visit_occurrences_by_date,
+                raw_text_offsets_by_date=raw_text_offsets_by_date,
+                visit_boundary_offsets=visit_boundary_offsets,
+            )
+
+        if (
+            target_visit is None
+            and not has_ambiguous_date_token
+            and evidence_anchor_offset is not None
+            and len(visit_by_date) > 1
+        ):
+            target_visit = _resolve_visit_from_anchor(
+                candidate_dates=[],
+                anchor_offset=evidence_anchor_offset,
+                visit_by_date=visit_by_date,
+                visit_occurrences_by_date=visit_occurrences_by_date,
+                raw_text_offsets_by_date=raw_text_offsets_by_date,
+                visit_boundary_offsets=visit_boundary_offsets,
+            )
+
         if target_visit is None and len(visit_by_date) == 1 and not has_ambiguous_date_token:
             target_visit = next(iter(visit_by_date.values()))
 
