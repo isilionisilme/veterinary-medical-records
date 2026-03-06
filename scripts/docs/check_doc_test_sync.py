@@ -15,6 +15,13 @@ import sys
 from pathlib import Path
 
 DEFAULT_MAP_PATH = Path("docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json")
+GUARD_INFRA_PATTERNS = [
+    "docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json",
+    "docs/agent_router/01_WORKFLOW/DOC_UPDATES/router_parity_map.json",
+    "scripts/docs/check_doc_test_sync.py",
+    "scripts/docs/check_doc_router_parity.py",
+    "scripts/docs/generate-router-files.py",
+]
 
 
 def _run_changed_files(base_ref: str) -> list[str]:
@@ -111,6 +118,7 @@ def evaluate_sync(
     else:
         scoped_docs = []
     relaxed_mode = os.environ.get("DOC_SYNC_RELAXED") == "1"
+    guard_infra_changed = _matches_any_from_files(changed_files, GUARD_INFRA_PATTERNS)
 
     mapped_scoped_docs: set[str] = set()
     for raw_rule in rules:
@@ -176,6 +184,7 @@ def evaluate_sync(
                 not relaxed_mode
                 and required_patterns
                 and not _matches_any_from_files(changed_files, required_patterns)
+                and not guard_infra_changed
             ):
                 findings.append(
                     f"Doc `{doc}` matched `{doc_glob}`{description_suffix}, "
@@ -183,7 +192,11 @@ def evaluate_sync(
                     f"{', '.join(required_patterns)}"
                 )
 
-            if owner_patterns and not _matches_any_from_files(changed_files, owner_patterns):
+            if (
+                owner_patterns
+                and not _matches_any_from_files(changed_files, owner_patterns)
+                and not guard_infra_changed
+            ):
                 findings.append(
                     f"Doc `{doc}` matched `{doc_glob}`{description_suffix}, "
                     "but no owner propagation file changed. Expected one of: "

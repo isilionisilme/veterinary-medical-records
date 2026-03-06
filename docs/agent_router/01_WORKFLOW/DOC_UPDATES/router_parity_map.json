@@ -58,8 +58,8 @@
       ]
     },
     {
-      "source_doc": "docs/projects/veterinary-medical-records/03-ops/execution-rules.md",
-      "description": "Project EXECUTION_RULES must remain discoverable from project docs entry.",
+      "source_doc": "docs/projects/veterinary-medical-records/99-archive/execution-rules.md",
+      "description": "Archived EXECUTION_RULES must remain discoverable from project docs entry.",
       "router_modules": [
         {
           "path": "docs/agent_router/04_PROJECT/00_entry.md",
@@ -240,25 +240,25 @@
     },
     {
       "source_doc": "docs/projects/veterinary-medical-records/03-ops/plan-execution-protocol.md",
-      "description": "Project PLAN_EXECUTION_PROTOCOL must map to execution rule reference module.",
+      "description": "Project PLAN_EXECUTION_PROTOCOL must map to execution protocol owner module.",
       "router_modules": [
         {
-          "path": "docs/agent_router/03_SHARED/WAY_OF_WORKING/90_execution-rule.md",
+          "path": "docs/agent_router/03_SHARED/EXECUTION_PROTOCOL/00_entry.md",
           "required_terms": [
-            "Execution Rule"
+            "EXECUTION_PROTOCOL — Modules",
+            "plan-execution-protocol.md"
           ]
         }
       ]
     },
     {
       "source_doc": "docs/projects/veterinary-medical-records/03-ops/plan-management.md",
-      "description": "Project PLAN_MANAGEMENT must remain discoverable through execution rule routing references.",
+      "description": "Project PLAN_MANAGEMENT must remain discoverable through project docs owner routing.",
       "router_modules": [
         {
-          "path": "docs/agent_router/03_SHARED/WAY_OF_WORKING/90_execution-rule.md",
+          "path": "docs/agent_router/04_PROJECT/00_entry.md",
           "required_terms": [
-            "Execution Rule",
-            "plan-execution-protocol.md"
+            "Project Docs (Modules)"
           ]
         }
       ]
