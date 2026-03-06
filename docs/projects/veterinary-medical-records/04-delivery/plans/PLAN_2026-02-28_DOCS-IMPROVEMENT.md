@@ -194,13 +194,13 @@ This plan was paused after D4-A (Phase 4 navigation). Since then:
 > **Note (2026-03-06):** Tooling exists (`.markdownlint.yml` config, `.markdown-link-check.json`, `markdownlint-cli2` + `prettier` in devDeps).
 > Frontmatter coverage: 16/34 files (47%). 18 files missing frontmatter — see updated D1-A inventory.
 
-- [ ] D5-A 🔄 — Run markdown lint autofix + prettier write on docs scope · tools: `markdownlint-cli2`, `prettier` (**Codex 5.3**)
-- [ ] D5-B 🚧 — User review formatting diff (**Claude Opus 4.6**)
-- [ ] D5-C 🚧 — Define frontmatter schema(s) and validation approach · skill: `frontmatter-validator` (**Claude Opus 4.6**)
-- [ ] D5-D 🔄 — Apply frontmatter + implement validator script · skill: `frontmatter-validator` (**Codex 5.3**)
-- [ ] D5-E 🚧 — User review metadata correctness (**Claude Opus 4.6**)
-- [ ] D5-F 🔄 — Run broken link/anchor checks → produce report · tool: `markdown-link-check` (**Codex 5.3**)
-- [ ] D5-G 🔄 — Fix broken links/anchors · tool: `markdown-link-check` (**Codex 5.3**)
+- [X] D5-A 🔄 — Run markdown lint autofix + prettier write on docs scope · tools: `markdownlint-cli2`, `prettier` (**Codex 5.3**)
+- [X] D5-B 🚧 — User review formatting diff (**Claude Opus 4.6**)
+- [X] D5-C 🚧 — Define frontmatter schema(s) and validation approach · skill: `frontmatter-validator` (**Claude Opus 4.6**)
+- [X] D5-D 🔄 — Apply frontmatter + implement validator script · skill: `frontmatter-validator` (**Codex 5.3**)
+- [X] D5-E 🚧 — User review metadata correctness (**Claude Opus 4.6**)
+- [X] D5-F 🔄 — Run broken link/anchor checks → produce report · tool: `markdown-link-check` (**Codex 5.3**)
+- [X] D5-G 🔄 — Fix broken links/anchors · tool: `markdown-link-check` (**Codex 5.3**)
 
 ### Phase 6 — Readability and style
 
@@ -344,7 +344,7 @@ _Empty._
 | docs/projects/.../02-tech/adr/ADR-ARCH-0002-sqlite-database.md             | ADR-ARCH-0002                         | adr         | staff-engineer | active   | ❌              |                                         |
 | docs/projects/.../02-tech/adr/ADR-ARCH-0003-raw-sql-repository-pattern.md  | ADR-ARCH-0003                         | adr         | staff-engineer | active   | ❌              |                                         |
 | docs/projects/.../02-tech/adr/ADR-ARCH-0004-in-process-async-processing.md | ADR-ARCH-0004                         | adr         | staff-engineer | active   | ❌              |                                         |
-| docs/projects/.../03-ops/execution-rules.md                                | Execution Rules                       | reference   | contributor    | active   | ❌              | Agent protocol                          |
+| docs/projects/.../99-archive/execution-rules.md                                | Execution Rules                       | reference   | contributor    | archived | ❌              | Moved from 03-ops to 99-archive       |
 | docs/projects/.../03-ops/manual-qa-regression-checklist.md                 | Manual QA Regression Checklist        | how-to      | all            | active   | ❌              |                                         |
 | docs/projects/.../03-ops/plan-e2e-test-coverage.md                         | Plan E2E Test Coverage                | plan        | contributor    | active   | ❌              | Spanish; large                          |
 | docs/projects/.../03-ops/plan-execution-protocol.md                        | Plan Execution Protocol               | reference   | contributor    | active   | ⚠️              | **NEW**; partial frontmatter            |
@@ -475,6 +475,31 @@ _Empty._
 **Verified correct:** Backend project tree, tech stack versions, 4 ADRs, frontend component dirs, data flow description, historical iteration metrics in implementation-history.md (point-in-time), delivery-summary progression table (historical rows).
 
 **User decisions (2026-03-06):** All 14 approved. E-14: translate (not archive). Policy: reflect latest counts in "current" metrics sections.
+
+### Phase 5 — Format and Markdown standardization results
+
+**Completed 2026-03-07** — All 7 tasks (D5-A through D5-G) + 3 commits (CT-D5-1, CT-D5-2, CT-D5-3).
+
+| Task   | Result                                                                                          | Commit     |
+| ------ | ----------------------------------------------------------------------------------------------- | ---------- |
+| D5-A   | `markdownlint-cli2 --fix` + `prettier --write` on 64 files (17,976 ins / 16,804 del)           | `f4af6ad4` |
+| D5-B   | Delegated review: spot-checked 3 diffs, confirmed format-only — no content loss                 | —          |
+| D5-C   | Schema: 5 required fields (`title`, `type`, `status`, `audience`, `last-updated`) with enum set | —          |
+| D5-D   | Frontmatter applied to 18 missing files + `scripts/docs/validate-frontmatter.mjs` created       | `673c5580` |
+| D5-E   | Delegated review: all 33 files pass validator                                                   | —          |
+| D5-F   | 68 broken links across 18 files cataloged (local-only, `.markdown-link-check.json` config)      | —          |
+| D5-G   | All 68 links fixed: cross-folder paths, arrow anchors, case, stale prefixes                     | `9c9d1191` |
+
+**D5-F report — broken link categories (68 total, now resolved):**
+
+- **Cross-folder relative paths** (old flat structure → new taxonomy): 42 links
+- **Arrow-encoded anchor slugs** (`%E2%86%92` not stripped by GH slugifier): 6 anchors
+- **Stale `../adr/` prefixes** (from pre-migration layout): 12 links
+- **`completed/` → `plans/completed/`** prefix in implementation-history: 14 links
+- **File moves** (`execution-rules.md` 03-ops→99-archive, `way-of-working.md` 04-delivery→03-ops): 3 links
+- **`ENGINEERING_PLAYBOOK.md`** → successor `plan-management.md`: 1 link
+
+**Validation:** `npx markdown-link-check` on all 17 affected files: 0 broken links.
 
 ### D2-A — Approved taxonomy (v2 — implemented)
 
