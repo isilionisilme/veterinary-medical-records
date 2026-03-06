@@ -20,7 +20,10 @@ from backend.app.application.documents.calibration import (
     _revert_reviewed_document_calibration,
 )
 from backend.app.application.documents.upload_service import _default_now_iso
-from backend.app.application.field_normalizers import normalize_microchip_digits_only
+from backend.app.application.field_normalizers import (
+    _normalize_weight,
+    normalize_microchip_digits_only,
+)
 from backend.app.domain.models import ReviewStatus
 from backend.app.ports.document_repository import DocumentRepository
 from backend.app.ports.file_storage import FileStorage
@@ -447,6 +450,65 @@ def _normalize_canonical_review_scoping(data: dict[str, object]) -> dict[str, ob
             elif metadata_key not in unassigned_visit:
                 unassigned_visit[metadata_key] = None
 
+    # --- Weight post-processing (hybrid rule) ---
+    # (b) Move weight fields from unassigned back to document-scoped.
+    if unassigned_visit is not None:
+        raw_unassigned_fields = unassigned_visit.get("fields")
+        if isinstance(raw_unassigned_fields, list):
+            weight_fields_in_unassigned = [
+                f for f in raw_unassigned_fields if isinstance(f, dict) and f.get("key") == "weight"
+            ]
+            if weight_fields_in_unassigned:
+                for wf in weight_fields_in_unassigned:
+                    restored = dict(wf)
+                    restored["scope"] = "document"
+                    restored["section"] = "patient"
+                    raw_val = restored.get("value")
+                    normalized_val = _normalize_weight(raw_val)
+                    if normalized_val:
+                        restored["value"] = normalized_val
+                    fields_to_keep.append(restored)
+                unassigned_visit["fields"] = [
+                    f
+                    for f in raw_unassigned_fields
+                    if not (isinstance(f, dict) and f.get("key") == "weight")
+                ]
+
+    # (a) Derive document-level weight from most-recent visit.
+    visit_weights: list[tuple[str, dict[str, object]]] = []
+    for visit in assigned_visits:
+        vd = visit.get("visit_date")
+        if not isinstance(vd, str):
+            continue
+        vf = visit.get("fields")
+        if not isinstance(vf, list):
+            continue
+        for field in vf:
+            if isinstance(field, dict) and field.get("key") == "weight":
+                visit_weights.append((vd, field))
+
+    if visit_weights:
+        visit_weights.sort(key=lambda pair: pair[0])
+        most_recent_weight = visit_weights[-1][1]
+        fields_to_keep = [
+            f for f in fields_to_keep if not (isinstance(f, dict) and f.get("key") == "weight")
+        ]
+        raw_derived_val = most_recent_weight.get("value")
+        normalized_derived_val = _normalize_weight(raw_derived_val)
+        fields_to_keep.append(
+            {
+                "field_id": "derived-weight-current",
+                "key": "weight",
+                "value": normalized_derived_val if normalized_derived_val else raw_derived_val,
+                "value_type": most_recent_weight.get("value_type", "string"),
+                "scope": "document",
+                "section": "patient",
+                "classification": most_recent_weight.get("classification", "medical_record"),
+                "origin": "derived",
+                "evidence": most_recent_weight.get("evidence"),
+            }
+        )
+
     assigned_visits.sort(
         key=lambda visit: (
             str(visit.get("visit_date") or "9999-12-31"),
@@ -456,7 +518,16 @@ def _normalize_canonical_review_scoping(data: dict[str, object]) -> dict[str, ob
 
     normalized_visits: list[dict[str, object]] = list(assigned_visits)
     if unassigned_visit is not None:
-        normalized_visits.append(unassigned_visit)
+        unassigned_fields = unassigned_visit.get("fields")
+        has_unassigned_fields = isinstance(unassigned_fields, list) and any(
+            isinstance(field, dict) for field in unassigned_fields
+        )
+        has_unassigned_metadata = any(
+            unassigned_visit.get(metadata_key) not in (None, "")
+            for metadata_key in _VISIT_GROUP_METADATA_KEYS
+        )
+        if has_unassigned_fields or has_unassigned_metadata:
+            normalized_visits.append(unassigned_visit)
 
     projected["fields"] = fields_to_keep
     projected["visits"] = normalized_visits

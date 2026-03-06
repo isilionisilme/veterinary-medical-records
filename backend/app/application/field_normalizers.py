@@ -12,6 +12,13 @@ _DATE_PATTERN = re.compile(
 )
 _MICROCHIP_DIGITS_PATTERN = re.compile(r"(?<!\d)(\d{9,15})(?!\d)")
 
+_WEIGHT_PATTERN = re.compile(
+    r"(?P<number>\d+(?:[.,]\d+)?)\s*(?P<unit>kg|kgs|g|gr)?\b",
+    re.IGNORECASE,
+)
+_WEIGHT_MIN_KG = 0.5
+_WEIGHT_MAX_KG = 120.0
+
 # pet_name normalization helpers
 _PET_NAME_TRAILING_NOISE = re.compile(
     r"\s*[-–—]\s*(?:nacimiento|nac\.?|dob|birth|f\.?\s*nac).*$",
@@ -425,3 +432,33 @@ def _normalize_date_value(value: object) -> str | None:
             return None
 
     return None
+
+
+def _normalize_weight(value: object) -> str:
+    """Normalize weight to canonical ``X.Y kg`` format within [0.5, 120] kg."""
+    if not isinstance(value, str):
+        return ""
+    cleaned = value.strip()
+    if not cleaned:
+        return ""
+
+    match = _WEIGHT_PATTERN.search(cleaned)
+    if match is None:
+        return ""
+
+    number_str = match.group("number").replace(",", ".")
+    try:
+        number = float(number_str)
+    except ValueError:
+        return ""
+
+    unit = (match.group("unit") or "").lower()
+    if unit in ("g", "gr"):
+        number = number / 1000.0
+
+    if number <= 0 or number < _WEIGHT_MIN_KG or number > _WEIGHT_MAX_KG:
+        return ""
+
+    if number == int(number):
+        return f"{int(number)} kg"
+    return f"{number:g} kg"

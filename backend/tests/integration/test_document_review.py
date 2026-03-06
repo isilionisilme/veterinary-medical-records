@@ -197,6 +197,25 @@ def _collect_visit_grouping_stats(visits: object) -> dict[str, object]:
     }
 
 
+def _extract_assigned_visits(visits: object) -> list[dict[str, object]]:
+    if not isinstance(visits, list):
+        return []
+    return [
+        visit
+        for visit in visits
+        if isinstance(visit, dict)
+        and isinstance(visit.get("visit_id"), str)
+        and visit.get("visit_id") != "unassigned"
+    ]
+
+
+def _extract_top_level_fields_by_key(data: dict[str, object], key: str) -> list[dict[str, object]]:
+    fields = data.get("fields")
+    if not isinstance(fields, list):
+        return []
+    return [field for field in fields if isinstance(field, dict) and field.get("key") == key]
+
+
 def _get_calibration_counts(
     *,
     context_key: str,
@@ -464,6 +483,398 @@ def test_document_review_normalizes_microchip_suffix_to_digits_only(test_client)
     ]
     assert microchip_fields
     assert microchip_fields[0].get("value") == "00023035139"
+
+
+def test_document_review_weight_single_visit_assigned_to_visit_with_derived(test_client):
+    """After P1-A: weight with visit-date snippet is assigned to the visit.
+    A derived document-scoped weight is also created."""
+    document_id = _upload_sample_document(test_client)
+    run_id = str(uuid4())
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(
+        run_id=run_id,
+        data={
+            "document_id": document_id,
+            "processing_run_id": run_id,
+            "created_at": "2026-02-10T10:00:05+00:00",
+            "fields": [
+                {
+                    "field_id": "f-visit-date-1",
+                    "key": "visit_date",
+                    "value": "2026-02-11",
+                    "value_type": "date",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Consulta 11/02/2026"},
+                },
+                {
+                    "field_id": "f-diagnosis-1",
+                    "key": "diagnosis",
+                    "value": "Otitis",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Consulta 11/02/2026: otitis"},
+                },
+                {
+                    "field_id": "f-weight-1",
+                    "key": "weight",
+                    "value": "7.2 kg",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "patient",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Consulta 11/02/2026: Peso 7.2 kg"},
+                },
+            ],
+            "visits": [],
+            "other_fields": [],
+        },
+    )
+
+    response = test_client.get(f"/documents/{document_id}/review")
+    assert response.status_code == 200
+    data = response.json()["active_interpretation"]["data"]
+
+    # Derived document-scoped weight exists
+    top_level_weight_fields = _extract_top_level_fields_by_key(data, "weight")
+    assert len(top_level_weight_fields) == 1
+    derived = top_level_weight_fields[0]
+    assert derived["value"] == "7.2 kg"
+    assert derived["origin"] == "derived"
+
+    # Weight is also assigned to the visit
+    assigned_visits = _extract_assigned_visits(data.get("visits"))
+    assert len(assigned_visits) >= 1
+    visit_weight_found = False
+    for visit in assigned_visits:
+        visit_fields = visit.get("fields", [])
+        for f in visit_fields:
+            if isinstance(f, dict) and f.get("key") == "weight":
+                assert f["value"] == "7.2 kg"
+                visit_weight_found = True
+    assert visit_weight_found
+
+
+def test_document_review_weight_multi_visit_derived_is_most_recent(test_client):
+    """After P1-A: each visit gets its own weight. The derived document-level
+    weight equals the most-recent chronological visit weight (7.8 kg)."""
+    document_id = _upload_sample_document(test_client)
+    run_id = str(uuid4())
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(
+        run_id=run_id,
+        data={
+            "document_id": document_id,
+            "processing_run_id": run_id,
+            "created_at": "2026-02-10T10:00:05+00:00",
+            "fields": [
+                {
+                    "field_id": "f-visit-date-1",
+                    "key": "visit_date",
+                    "value": "2026-02-11",
+                    "value_type": "date",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Consulta 11/02/2026"},
+                },
+                {
+                    "field_id": "f-visit-date-2",
+                    "key": "visit_date",
+                    "value": "2026-02-18",
+                    "value_type": "date",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Consulta 18/02/2026"},
+                },
+                {
+                    "field_id": "f-diagnosis-1",
+                    "key": "diagnosis",
+                    "value": "Otitis",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Consulta 11/02/2026: otitis"},
+                },
+                {
+                    "field_id": "f-medication-2",
+                    "key": "medication",
+                    "value": "Gotas",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Consulta 18/02/2026: gotas"},
+                },
+                {
+                    "field_id": "f-weight-1",
+                    "key": "weight",
+                    "value": "7.2 kg",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "patient",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Consulta 11/02/2026: Peso 7.2 kg"},
+                },
+                {
+                    "field_id": "f-weight-2",
+                    "key": "weight",
+                    "value": "7.8 kg",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "patient",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Consulta 18/02/2026: Peso 7.8 kg"},
+                },
+            ],
+            "visits": [],
+            "other_fields": [],
+        },
+    )
+
+    response = test_client.get(f"/documents/{document_id}/review")
+    assert response.status_code == 200
+    data = response.json()["active_interpretation"]["data"]
+
+    # Derived document-scoped weight = most recent chronological (7.8 kg)
+    top_level_weight_fields = _extract_top_level_fields_by_key(data, "weight")
+    assert len(top_level_weight_fields) == 1
+    derived = top_level_weight_fields[0]
+    assert derived["value"] == "7.8 kg"
+    assert derived["origin"] == "derived"
+
+    # Each visit has its own weight
+    assigned_visits = _extract_assigned_visits(data.get("visits"))
+    assert len(assigned_visits) >= 2
+    visit_weights: dict[str, str] = {}
+    for visit in assigned_visits:
+        vd = visit.get("visit_date")
+        for f in visit.get("fields", []):
+            if isinstance(f, dict) and f.get("key") == "weight":
+                visit_weights[vd] = f["value"]
+    assert visit_weights.get("2026-02-11") == "7.2 kg"
+    assert visit_weights.get("2026-02-18") == "7.8 kg"
+
+
+def test_document_review_weight_global_only_stays_document_scoped(test_client):
+    """Weight without any visit-context date stays document-scoped (not derived)."""
+    document_id = _upload_sample_document(test_client)
+    run_id = str(uuid4())
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(
+        run_id=run_id,
+        data={
+            "document_id": document_id,
+            "processing_run_id": run_id,
+            "created_at": "2026-02-10T10:00:05+00:00",
+            "fields": [
+                {
+                    "field_id": "f-weight-global",
+                    "key": "weight",
+                    "value": "7.2 kg",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "patient",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Peso: 7.2 kg"},
+                }
+            ],
+            "visits": [],
+            "other_fields": [],
+        },
+    )
+
+    response = test_client.get(f"/documents/{document_id}/review")
+    assert response.status_code == 200
+    data = response.json()["active_interpretation"]["data"]
+
+    top_level_weight_fields = _extract_top_level_fields_by_key(data, "weight")
+    assert len(top_level_weight_fields) == 1
+    # Global weight preserves original origin (not "derived")
+    assert top_level_weight_fields[0]["value"] == "7.2 kg"
+    assert top_level_weight_fields[0].get("origin") != "derived"
+
+    visits = data.get("visits")
+    assert isinstance(visits, list)
+    assert visits == []
+    for visit in visits:
+        if not isinstance(visit, dict):
+            continue
+        visit_fields = visit.get("fields")
+        if not isinstance(visit_fields, list):
+            continue
+        visit_keys = {field.get("key") for field in visit_fields if isinstance(field, dict)}
+        assert "weight" not in visit_keys
+
+
+def test_document_review_weight_ambiguous_date_generates_visit_with_derived(test_client):
+    """After P1-A: weight snippet with a visit-context date that doesn't match
+    an existing visit generates a new visit. The derived document-level weight
+    is derived from the most-recent visit weight."""
+    document_id = _upload_sample_document(test_client)
+    run_id = str(uuid4())
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(
+        run_id=run_id,
+        data={
+            "document_id": document_id,
+            "processing_run_id": run_id,
+            "created_at": "2026-02-10T10:00:05+00:00",
+            "fields": [
+                {
+                    "field_id": "f-visit-date-1",
+                    "key": "visit_date",
+                    "value": "2026-02-11",
+                    "value_type": "date",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Consulta 11/02/2026"},
+                },
+                {
+                    "field_id": "f-diagnosis-1",
+                    "key": "diagnosis",
+                    "value": "Otitis",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Consulta 11/02/2026: otitis"},
+                },
+                {
+                    "field_id": "f-weight-ambiguous",
+                    "key": "weight",
+                    "value": "8.0 kg",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "patient",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Consulta 20/02/2026: Peso 8.0 kg"},
+                },
+            ],
+            "visits": [],
+            "other_fields": [],
+        },
+    )
+
+    response = test_client.get(f"/documents/{document_id}/review")
+    assert response.status_code == 200
+    data = response.json()["active_interpretation"]["data"]
+
+    # Derived document-scoped weight exists (from the most recent visit)
+    top_level_weight_fields = _extract_top_level_fields_by_key(data, "weight")
+    assert len(top_level_weight_fields) == 1
+    derived = top_level_weight_fields[0]
+    assert derived["value"] == "8 kg"
+    assert derived["origin"] == "derived"
+
+    # A visit was generated for 2026-02-20, weight assigned there
+    assigned_visits = _extract_assigned_visits(data.get("visits"))
+    assert len(assigned_visits) >= 2
+    visit_weight_found = False
+    for visit in assigned_visits:
+        for f in visit.get("fields", []):
+            if isinstance(f, dict) and f.get("key") == "weight":
+                assert f["value"] == "8.0 kg"
+                visit_weight_found = True
+    assert visit_weight_found
+
+
+def test_document_review_weight_absent_means_no_weight_field(test_client):
+    """When no weight field exists, no document-level or visit-level weight appears."""
+    document_id = _upload_sample_document(test_client)
+    run_id = str(uuid4())
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(
+        run_id=run_id,
+        data={
+            "document_id": document_id,
+            "processing_run_id": run_id,
+            "created_at": "2026-02-10T10:00:05+00:00",
+            "fields": [
+                {
+                    "field_id": "f-visit-date-1",
+                    "key": "visit_date",
+                    "value": "2026-02-11",
+                    "value_type": "date",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Consulta 11/02/2026"},
+                },
+                {
+                    "field_id": "f-diagnosis-1",
+                    "key": "diagnosis",
+                    "value": "Otitis",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Consulta 11/02/2026: otitis"},
+                },
+            ],
+            "visits": [],
+            "other_fields": [],
+        },
+    )
+
+    response = test_client.get(f"/documents/{document_id}/review")
+    assert response.status_code == 200
+    data = response.json()["active_interpretation"]["data"]
+
+    top_level_weight_fields = _extract_top_level_fields_by_key(data, "weight")
+    assert len(top_level_weight_fields) == 0
+
+    assigned_visits = _extract_assigned_visits(data.get("visits"))
+    for visit in assigned_visits:
+        for f in visit.get("fields", []):
+            if isinstance(f, dict):
+                assert f.get("key") != "weight"
 
 
 def test_document_review_moves_visit_scoped_keys_into_visits_group(test_client):
