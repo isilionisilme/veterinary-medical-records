@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-03-03
 **Rama:** `chore/execution-rules-preflight-integration`
-**PR:** #192
+**PRs:** [#187](https://github.com/isilionisilme/veterinary-medical-records/pull/187), [#192](https://github.com/isilionisilme/veterinary-medical-records/pull/192)
 **Objetivo:** Cerrar el gap entre los scripts de preflight L1/L2/L3 y `execution-rules.md`, que es el documento que los agentes AI siguen paso a paso.
 
 ## Contexto
