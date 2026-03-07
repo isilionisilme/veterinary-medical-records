@@ -1,6 +1,8 @@
 # Plan: Processing History UI — Visibility for Evaluators
 
 **Branch:** `veterinary-medical-records/feat/processing-history-ui`
+**PR:** Pending (branch PR not created yet)
+**User Story:** [US-78](../implementation-plan.md#us-78)
 **Prerequisite:** `main` stable with green tests.
 **Iteration:** 20
 **Mode:** lightweight feature — no API changes required.
