@@ -3,7 +3,7 @@
 > **Operational rules:** See [plan-execution-protocol.md](../../03-ops/plan-execution-protocol.md) for agent execution protocol, SCOPE BOUNDARY template, commit-task schema, and handoff rules.
 
 **Branch:** `docs/plan-mode-routing-fix`
-**PR:** `#207`
+**PR:** [#207](https://github.com/isilionisilme/veterinary-medical-records/pull/207)
 **Prerequisite:** `main` estable.
 **Worktree:** `D:/Git/veterinary-medical-records`
 **CI Mode:** 2 — Pipeline depth-1 gate
