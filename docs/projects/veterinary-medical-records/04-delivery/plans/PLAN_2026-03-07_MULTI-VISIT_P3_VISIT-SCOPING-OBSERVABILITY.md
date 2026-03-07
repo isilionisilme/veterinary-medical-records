@@ -3,7 +3,7 @@
 > **Operational rules:** See [plan-execution-protocol.md](../../03-ops/plan-execution-protocol.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
 
 **Branch:** `veterinary-medical-records-golden-loop/feat/visit-scoping-observability`
-**PR:** pendiente
+**PR:** preparado (sin merge)
 **User Story:** [US-66](../implementation-plan.md)
 **Prerequisite:** `main` con Plan 2 (per-visit field extraction) mergeado.
 **Worktree:** `d:/Git/veterinary-medical-records-golden-loop`
@@ -67,18 +67,18 @@ Si ninguna de estas condiciones se cumple, este plan se cierra como **NO-GO** y 
 
 ### Phase 0 - Decision gate
 
-- [ ] P0-A 🚧 - Evaluar si el debug endpoint existente cubre las necesidades post-Plan-2. Decision: GO (continuar plan) / NO-GO (cerrar plan, documentacion minima en Plan 2).
+- [x] P0-A 🚧 - Evaluar si el debug endpoint existente cubre las necesidades post-Plan-2. Decision: GO (continuar plan) / NO-GO (cerrar plan, documentacion minima en Plan 2). — ✅ `no-commit (GO confirmado por usuario)`
 
 ### Phase 1 - Observabilidad (solo si GO)
 
-- [ ] P1-A 🔄 - Extender debug endpoint o crear metricas de cobertura de campos por visita segun necesidad identificada en P0-A.
-- [ ] P1-B 🔄 - Tests de integracion para observabilidad.
-- [ ] CT-1 🔄 - Commit task P1.
+- [x] P1-A 🔄 - Extender debug endpoint o crear metricas de cobertura de campos por visita segun necesidad identificada en P0-A. — ✅ `779534d`
+- [x] P1-B 🔄 - Tests de integracion para observabilidad. — ✅ `779534d`
+- [x] CT-1 🔄 - Commit task P1. — ✅ `779534d`
 
 ### Phase 2 - Documentacion de cierre
 
-- [ ] P2-A 🔄 - Documentar decisiones de arquitectura del ciclo multi-visit completo (Partes 1-3). Actualizar docs tecnicos relevantes.
-- [ ] CT-2 🔄 - Commit task P2.
+- [x] P2-A 🔄 - Documentar decisiones de arquitectura del ciclo multi-visit completo (Partes 1-3). Actualizar docs tecnicos relevantes. — ✅ `no-commit (documentacion actualizada en este plan)`
+- [x] CT-2 🔄 - Commit task P2. — ✅ `no-commit (se registra en el commit de cierre de esta iteracion)`
 - [ ] P2-B 🔄 - Merge PR a `main`. Verificar CI verde.
 
 ---
@@ -93,7 +93,23 @@ Si ninguna de estas condiciones se cumple, este plan se cierra como **NO-GO** y 
 
 ## Active Prompt
 
-Pendiente de activacion condicional tras Plan 2.
+P2-B (merge) pendiente de decision del usuario. No merge ejecutado en este ciclo.
+
+---
+
+## Cierre de arquitectura (Partes 1-3)
+
+1. **Deteccion de visitas por evidencia textual (Parte 1).**
+   - La fuente autoritativa para boundaries de visita es `raw_text`, no heuristicas UI.
+   - La inferencia de offsets por fecha normalizada permite segmentacion deterministica sin alterar el contrato canónico.
+
+2. **Asignacion por visita con preservacion de fallback (Parte 2).**
+   - Campos visit-scoped se proyectan en `visits[]`; la data no asignable se conserva en bucket `unassigned` para trazabilidad.
+   - Se mantiene idempotencia: misma entrada produce mismo agrupamiento y orden de visitas.
+
+3. **Observabilidad separada de la logica de extraccion (Parte 3).**
+   - El endpoint `GET /documents/{document_id}/review/debug/visit-scoping` es diagnostico y no muta interpretaciones.
+   - Las metricas (`assigned_visits`, `anchored_visits`, `unassigned_field_count`) permiten detectar gaps de cobertura sin tocar prompts/LLM.
 
 ---
 
