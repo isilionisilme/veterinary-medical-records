@@ -4,6 +4,7 @@
 
 **Rama:** `feat/golden-loop-paciente-dob`
 **PR:** [#203](https://github.com/isilionisilme/veterinary-medical-records/pull/203)
+**User Story:** [US-61](../implementation-plan.md)
 **Prerequisito:** `main` estable con tests verdes.
 **Iteración:** 20
 **Modo CI:** `3) End-of-plan gate`

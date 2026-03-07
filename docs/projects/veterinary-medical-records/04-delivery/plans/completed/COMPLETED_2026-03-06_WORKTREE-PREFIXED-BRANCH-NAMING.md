@@ -4,6 +4,7 @@
 
 **Rama:** `improvements/improvement/branch-naming-rules-update`
 **PR:** [#214](https://github.com/isilionisilme/veterinary-medical-records/pull/214)
+**User Story:** [US-68](../implementation-plan.md)
 **Prerequisito:** `main` estable con tests verdes y router generator operativo (`python scripts/docs/generate-router-files.py`).
 **Iteracion:** 1
 **Modo CI:** `3) End-of-plan gate`

@@ -4,6 +4,7 @@
 
 **Rama:** `feat/clinic-enrichment-bidirectional-2026-03-04`
 **PR:** [#198](https://github.com/isilionisilme/veterinary-medical-records/pull/198)
+**User Story:** [US-72](../implementation-plan.md)
 **Prerequisito:** `main` estable con tests verdes. PR #196 (golden-loop clinic_address) merged.
 
 ## Context

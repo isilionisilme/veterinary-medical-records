@@ -5,6 +5,7 @@
 **Iteración:** 16  
 **Rama:** `feature/golden-loop-clinic-name`  
 **PR:** [#186](https://github.com/isilionisilme/veterinary-medical-records/pull/186)  
+**User Story:** [US-70](../implementation-plan.md)
 **Prerequisito:** `main` estable con tests verdes.
 
 ## Context

@@ -2,6 +2,7 @@
 
 **Rama:** `chore/fix-preflight-l3-powershell`
 **PR:** [#200](https://github.com/isilionisilme/veterinary-medical-records/pull/200)
+**User Story:** [US-76](../implementation-plan.md)
 **Tipo:** `chore/ci`
 
 ## Context

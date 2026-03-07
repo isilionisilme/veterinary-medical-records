@@ -4,6 +4,7 @@
 
 **Rama:** `improvement/iteration-12-final`
 **PR:** [#169](https://github.com/isilionisilme/veterinary-medical-records/pull/169)
+**User Story:** [US-74](../implementation-plan.md)
 **Prerequisito:** Iteration 11 merged to `main`.
 
 ## Context

@@ -4,6 +4,7 @@
 
 **Branch:** `golden-2/feat/golden-loop-propietario-direccion`
 **PR:** [#215](https://github.com/isilionisilme/veterinary-medical-records/pull/215) (Phase 0 baseline, merged)
+**User Story:** [US-63](../implementation-plan.md)
 **Prerequisite:** `main` estable con tests verdes.
 **Iteracion:** 20 (propuesta)
 **Worktree:** `D:/Git/golden-2`

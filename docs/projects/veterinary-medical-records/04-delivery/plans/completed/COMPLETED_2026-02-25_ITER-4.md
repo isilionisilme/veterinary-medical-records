@@ -2,6 +2,7 @@
 
 **Date:** 2026-02-25
 **PR:** [#150](https://github.com/isilionisilme/veterinary-medical-records/pull/150)
+**User Story:** [US-73](../implementation-plan.md)
 **Branch:** `improvement/iteration-4` → `main`
 
 ## Context
