@@ -889,7 +889,10 @@ def _populate_missing_reason_for_visit_from_segments(
     visit_segments_by_id: dict[str, str],
 ) -> None:
     for visit in assigned_visits:
-        if visit.get("reason_for_visit") is not None:
+        reason_for_visit = visit.get("reason_for_visit")
+        if isinstance(reason_for_visit, str) and reason_for_visit.strip():
+            continue
+        if reason_for_visit is not None and not isinstance(reason_for_visit, str):
             continue
 
         visit_id = visit.get("visit_id")

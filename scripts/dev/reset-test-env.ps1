@@ -5,8 +5,22 @@ param(
 $ErrorActionPreference = "Stop"
 
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-$dbPath = Join-Path $repoRoot "backend\data\documents.db"
+$backendDataDir = if ([string]::IsNullOrWhiteSpace($env:BACKEND_DATA_DIR)) {
+    ".\backend\data"
+} else {
+    $env:BACKEND_DATA_DIR
+}
+if (-not [System.IO.Path]::IsPathRooted($backendDataDir)) {
+    $backendDataDir = Join-Path $repoRoot $backendDataDir
+}
+$dbPath = Join-Path $backendDataDir "documents.db"
 $dbDir = Split-Path -Parent $dbPath
+$frontendPort = if ([string]::IsNullOrWhiteSpace($env:FRONTEND_PORT)) {
+    "5173"
+} else {
+    $env:FRONTEND_PORT
+}
+$frontendUrl = "http://localhost:$frontendPort"
 
 function Invoke-Compose {
     param(
@@ -70,9 +84,9 @@ Invoke-Compose -ComposeArgs $upArgs
 
 Write-Host "Verificando servicios..."
 Wait-Http200 -Url "http://localhost:8000/health"
-Wait-Http200 -Url "http://localhost:5173"
+Wait-Http200 -Url $frontendUrl
 
 Write-Host ""
 Write-Host "Entorno de pruebas reiniciado correctamente."
 Write-Host "- Backend:  http://localhost:8000/health"
-Write-Host "- Frontend: http://localhost:5173"
+Write-Host "- Frontend: $frontendUrl"
