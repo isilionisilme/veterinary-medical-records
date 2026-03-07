@@ -4,6 +4,7 @@
 
 **Rama:** `feat/golden-loop-paciente-microchip`
 **PR:** [#201](https://github.com/isilionisilme/veterinary-medical-records/pull/201)
+**User Story:** [US-62](../implementation-plan.md)
 **Prerequisito:** `main` estable con tests verdes.
 
 ## Context

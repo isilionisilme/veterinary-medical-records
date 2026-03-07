@@ -4,6 +4,7 @@
 
 **Rama:** `chore/canonical-doc-restructure-ci-guards` (PR-2; PR-1 was `docs/canonical-doc-restructure`)
 **PR:** [#197](https://github.com/isilionisilme/veterinary-medical-records/pull/197) (PR-1, merged), PR-2 pending
+**User Story:** [US-77](../implementation-plan.md)
 **Prerequisito:** `main` estable.
 **Worktree:** `D:\Git\veterinary-medical-records`
 **CI Mode:** `1) Strict step gate`

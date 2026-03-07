@@ -2,6 +2,7 @@
 
 **Date:** 2026-02-26
 **PRs:** [#156](https://github.com/isilionisilme/veterinary-medical-records/pull/156) (PR A — CI governance), [#157](https://github.com/isilionisilme/veterinary-medical-records/pull/157) (PR B — refactor + coverage)
+**User Story:** [US-73](../implementation-plan.md)
 **Branches:** `improvement/iteration-8-ci`, `improvement/iteration-8-refactor` → `main`
 
 ## Context
