@@ -4,7 +4,8 @@
 
 **Iteración:** 13
 **Rama:** `refactor/decompose-app-workspace`
-**PR:** #171
+**PR:** [#171](https://github.com/isilionisilme/veterinary-medical-records/pull/171)
+**User Story:** [US-73](../implementation-plan.md)
 **Prerequisito:** `main` estable con tests verdes.
 
 ## Context

@@ -4,6 +4,7 @@
 
 **Branch:** `veterinary-medical-records-golden-loop/feat/visit-scoping-observability`
 **PR:** pendiente
+**User Story:** [US-66](../implementation-plan.md)
 **Prerequisite:** `main` con Plan 2 (per-visit field extraction) mergeado.
 **Worktree:** `d:/Git/veterinary-medical-records-golden-loop`
 **CI Mode:** `2) Pipeline depth-1 gate` (default)
@@ -18,10 +19,10 @@ Este plan es la **Parte 3 de 4** del macro-plan de multi-visit scoping:
 
 | Parte | Plan | Scope | Estado |
 |---|---|---|---|
-| **1** | [COMPLETED_2026-03-06_MULTI-VISIT_P1_RAWTEXT-BOUNDARIES.md](completed/COMPLETED_2026-03-06_MULTI-VISIT_P1_RAWTEXT-BOUNDARIES.md) | Deteccion de boundaries de visitas desde raw text | Completado (PR #216) |
-| **2** | [PLAN_2026-03-07_MULTI-VISIT_P2_PER-VISIT-FIELD-EXTRACTION.md](PLAN_2026-03-07_MULTI-VISIT_P2_PER-VISIT-FIELD-EXTRACTION.md) | Extraccion de campos clinicos por segmento + observations/actions | En progreso |
-| **3 (esta)** | [PLAN_2026-03-07_MULTI-VISIT_P3_VISIT-SCOPING-OBSERVABILITY.md](PLAN_2026-03-07_MULTI-VISIT_P3_VISIT-SCOPING-OBSERVABILITY.md) | Observabilidad, metricas de cobertura y documentacion de cierre | Pendiente (condicional) |
-| **4** | [PLAN_2026-03-07_MULTI-VISIT_P4_NER-LLM-ENRICHMENT.md](PLAN_2026-03-07_MULTI-VISIT_P4_NER-LLM-ENRICHMENT.md) | NER/LLM sobre observations/actions → campos granulares | Pendiente (condicional) |
+| **1** | [COMPLETED_2026-03-06_MULTI-VISIT-RAWTEXT-BOUNDARIES.md](completed/COMPLETED_2026-03-06_MULTI-VISIT-RAWTEXT-BOUNDARIES.md) | Deteccion de boundaries de visitas desde raw text | Completado (PR #216) |
+| **2** | [PLAN_2026-03-07_PER-VISIT-FIELD-EXTRACTION.md](PLAN_2026-03-07_PER-VISIT-FIELD-EXTRACTION.md) | Extraccion de campos clinicos por segmento + observations/actions | En progreso |
+| **3 (este)** | [PLAN_2026-03-07_VISIT-SCOPING-OBSERVABILITY.md](PLAN_2026-03-07_VISIT-SCOPING-OBSERVABILITY.md) | Observabilidad, metricas de cobertura y documentacion de cierre | Pendiente (condicional) |
+| **4** | [PLAN_2026-03-07_NER-LLM-ENRICHMENT.md](PLAN_2026-03-07_NER-LLM-ENRICHMENT.md) | NER/LLM sobre observations/actions -> campos granulares | Pendiente (condicional) |
 
 ---
 

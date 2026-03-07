@@ -3,7 +3,8 @@
 > **Operational rules:** See [execution-rules.md](execution-rules.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
 
 **Rama:** `improvement/iteration-9-e2e`
-**PR:** #163 (single PR → `main`)
+**PR:** [#163](https://github.com/isilionisilme/veterinary-medical-records/pull/163)
+**User Story:** [US-74](../implementation-plan.md)
 **Prerequisito:** Playwright installed by Codex (setup on `improvement/playwright` branch, merged before this iteration starts).
 
 ## Context

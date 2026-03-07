@@ -1,7 +1,8 @@
 # Completed: Iteration 3 — Hardening & Maintainability
 
 **Date:** 2026-02-25
-**PR:** #149
+**PR:** [#149](https://github.com/isilionisilme/veterinary-medical-records/pull/149)
+**User Story:** [US-73](../implementation-plan.md)
 **Branch:** `improvement/refactor-iteration-3` → `main`
 
 ## Context

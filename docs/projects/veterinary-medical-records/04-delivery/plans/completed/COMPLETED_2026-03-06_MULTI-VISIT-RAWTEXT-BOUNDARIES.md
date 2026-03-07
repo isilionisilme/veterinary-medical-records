@@ -3,7 +3,8 @@
 > **Operational rules:** See [plan-execution-protocol.md](../../03-ops/plan-execution-protocol.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
 
 **Branch:** `veterinary-medical-records-golden-loop/fix/multi-visit-rawtext-detection`
-**PR:** [#216](https://github.com/isilionisilme/veterinary-medical-records/pull/216) (draft)
+**PR:** [#216](https://github.com/isilionisilme/veterinary-medical-records/pull/216)
+**User Story:** [US-64](../implementation-plan.md)
 **Prerequisite:** `main` estable con tests verdes y baseline reproducible en `test_document_review.py`.
 **Worktree:** `d:/Git/veterinary-medical-records-golden-loop`
 **CI Mode:** `2) Pipeline depth-1 gate` (default)
@@ -18,10 +19,10 @@ Este plan es la **Parte 1 de 4** del macro-plan de multi-visit scoping:
 
 | Parte | Plan | Scope | Estado |
 |---|---|---|---|
-| **1 (esta)** | [COMPLETED_2026-03-06_MULTI-VISIT_P1_RAWTEXT-BOUNDARIES.md](COMPLETED_2026-03-06_MULTI-VISIT_P1_RAWTEXT-BOUNDARIES.md) | Deteccion de boundaries de visitas desde raw text | Completado (PR #216) |
-| **2** | [PLAN_2026-03-07_MULTI-VISIT_P2_PER-VISIT-FIELD-EXTRACTION.md](../PLAN_2026-03-07_MULTI-VISIT_P2_PER-VISIT-FIELD-EXTRACTION.md) | Extraccion de campos clinicos por segmento de visita + observations/actions | En progreso |
-| **3** | [PLAN_2026-03-07_MULTI-VISIT_P3_VISIT-SCOPING-OBSERVABILITY.md](../PLAN_2026-03-07_MULTI-VISIT_P3_VISIT-SCOPING-OBSERVABILITY.md) | Observabilidad, metricas de cobertura y documentacion de cierre | Pendiente (condicional) |
-| **4** | [PLAN_2026-03-07_MULTI-VISIT_P4_NER-LLM-ENRICHMENT.md](../PLAN_2026-03-07_MULTI-VISIT_P4_NER-LLM-ENRICHMENT.md) | NER/LLM sobre observations/actions → campos granulares | Pendiente (condicional) |
+| **1 (esta)** | [COMPLETED_2026-03-06_MULTI-VISIT-RAWTEXT-BOUNDARIES.md](COMPLETED_2026-03-06_MULTI-VISIT-RAWTEXT-BOUNDARIES.md) | Deteccion de boundaries de visitas desde raw text | Completado (PR #216) |
+| **2** | [PLAN_2026-03-07_PER-VISIT-FIELD-EXTRACTION.md](../PLAN_2026-03-07_PER-VISIT-FIELD-EXTRACTION.md) | Extraccion de campos clinicos por segmento de visita + observations/actions | En progreso |
+| **3** | [PLAN_2026-03-07_VISIT-SCOPING-OBSERVABILITY.md](../PLAN_2026-03-07_VISIT-SCOPING-OBSERVABILITY.md) | Observabilidad, metricas de cobertura y documentacion de cierre | Pendiente (condicional) |
+| **4** | [PLAN_2026-03-07_NER-LLM-ENRICHMENT.md](../PLAN_2026-03-07_NER-LLM-ENRICHMENT.md) | NER/LLM sobre observations/actions -> campos granulares | Pendiente (condicional) |
 
 ---
 
