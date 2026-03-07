@@ -4,6 +4,7 @@
 
 **Branch:** `veterinary-medical-records-golden-loop/feat/visit-scoping-observability`
 **PR:** pendiente
+**User Story:** [US-66](../implementation-plan.md)
 **Prerequisite:** `main` con Plan 2 (per-visit field extraction) mergeado.
 **Worktree:** `d:/Git/veterinary-medical-records-golden-loop`
 **CI Mode:** `2) Pipeline depth-1 gate` (default)

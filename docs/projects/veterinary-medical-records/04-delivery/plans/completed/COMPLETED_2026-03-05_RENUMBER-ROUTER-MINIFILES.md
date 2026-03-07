@@ -4,6 +4,7 @@
 
 **Rama:** `chore/router-directionality-protection`
 **PR:** [#205](https://github.com/isilionisilme/veterinary-medical-records/pull/205)
+**User Story:** [US-77](../implementation-plan.md)
 **Prerequisito:** ENGINEERING_PLAYBOOK eliminado.
 **Worktree:** `D:/Git/veterinary-medical-records`
 **CI Mode:** `1) Strict step gate`

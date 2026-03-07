@@ -4,6 +4,7 @@
 
 **Branch:** `veterinary-medical-records-golden-loop/feat/per-visit-field-extraction`
 **PR:** pendiente (draft)
+**User Story:** [US-65](../implementation-plan.md)
 **Prerequisite:** `main` con PR #216 mergeada (multi-visit raw text boundaries).
 **Worktree:** `d:/Git/veterinary-medical-records-golden-loop`
 **CI Mode:** `2) Pipeline depth-1 gate` (default)

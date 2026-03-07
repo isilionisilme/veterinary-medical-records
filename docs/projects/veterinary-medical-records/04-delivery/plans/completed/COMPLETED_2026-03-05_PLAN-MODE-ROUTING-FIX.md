@@ -4,6 +4,7 @@
 
 **Branch:** `docs/plan-mode-routing-fix`
 **PR:** [#207](https://github.com/isilionisilme/veterinary-medical-records/pull/207)
+**User Story:** [US-77](../implementation-plan.md)
 **Prerequisite:** `main` estable.
 **Worktree:** `D:/Git/veterinary-medical-records`
 **CI Mode:** 2 — Pipeline depth-1 gate

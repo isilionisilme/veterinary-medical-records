@@ -4,6 +4,7 @@
 
 **Rama:** `feature/golden-loop-pet-name`
 **PR:** [#182](https://github.com/isilionisilme/veterinary-medical-records/pull/182)
+**User Story:** [US-69](../implementation-plan.md)
 **Prerequisito:** Branch created from `main` in isolated worktree.
 
 ## Context

@@ -4,6 +4,7 @@
 
 **Branch:** `veterinary-medical-records-golden-loop/fix/multi-visit-rawtext-detection`
 **PR:** [#216](https://github.com/isilionisilme/veterinary-medical-records/pull/216)
+**User Story:** [US-64](../implementation-plan.md)
 **Prerequisite:** `main` estable con tests verdes y baseline reproducible en `test_document_review.py`.
 **Worktree:** `d:/Git/veterinary-medical-records-golden-loop`
 **CI Mode:** `2) Pipeline depth-1 gate` (default)
