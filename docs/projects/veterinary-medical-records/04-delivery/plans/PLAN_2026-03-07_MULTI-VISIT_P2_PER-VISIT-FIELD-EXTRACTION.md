@@ -130,7 +130,7 @@ Re-utilizar `_mine_interpretation_candidates()` sobre el texto de cada segmento 
 
 ### Phase 6 - Validacion y merge
 
-- [ ] P6-A 🚧 - Hard-gate: revision de observations/actions en docB. Criterio GO: ≥80% del texto clinico del segmento clasificado en uno de los dos campos. Campos granulares best-effort se valoran como bonus.
+- [ ] P6-A 🚧 - Hard-gate: revision de observations/actions en docB. Criterio GO: ≥80% del texto clinico del segmento clasificado en uno de los dos campos. Campos granulares best-effort se valoran como bonus. 🚫 BLOCKED (awaiting user decision)
 - [ ] P6-B 🔄 - Merge PR a `main`. Verificar CI verde.
 - [ ] CT-7 🔄 - Commit task P6.
 
