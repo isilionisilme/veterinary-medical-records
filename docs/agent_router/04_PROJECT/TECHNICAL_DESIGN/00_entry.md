@@ -38,6 +38,10 @@ Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for i
 - `docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/290_a10-final-rule.md`
 - `docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/300_b1-asynchronous-in-process-processing-model-authoritative.md`
 - `docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/310_b2-minimal-persistent-data-model-textual-erd.md`
+
+Canonical project references routed here include:
+- `docs/projects/veterinary-medical-records/02-tech/technical-design.md`
+- `docs/projects/veterinary-medical-records/02-tech/extraction-quality.md`
 - `docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/320_b3-minimal-api-endpoint-map-authoritative.md`
 - `docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/330_b3-2-endpoint-error-semantics-error-codes-normative.md`
 - `docs/agent_router/04_PROJECT/TECHNICAL_DESIGN/340_b4-idempotency-safe-retry-rules-authoritative.md`

@@ -71,6 +71,17 @@
 | **Business meaning** | Owner identifier (DNI/NIE-like) |
 | **Tuning focus** | Explicit DNI/NIE candidate extraction and schema mapping checks. |
 
+### owner_address
+
+| Aspect | Rule |
+|--------|------|
+| **Business meaning** | Owner/titular postal address |
+| **Accept** | Owner-labeled or owner-context addresses with address-like tokens (`calle`, `avenida`, `plaza`, `cp`, street number). |
+| **Reject** | Clinic/veterinary center addresses, owner blocks without address tokens, very short/very long garbage values. |
+| **Common failures** | Ambiguous labels (`Direccion:`) mapped to clinic, owner address omitted in unlabeled owner blocks. |
+| **Implementation** | `backend/app/application/processing/candidate_mining.py`, `backend/app/application/field_normalizers.py`, `backend/app/application/extraction_observability/triage.py`. |
+| **Tests** | `backend/tests/benchmarks/test_owner_address_extraction_accuracy.py`, `backend/tests/unit/test_owner_address_normalization.py`, `backend/tests/unit/test_golden_extraction_regression.py`. |
+
 ### symptoms
 
 | Aspect | Rule |

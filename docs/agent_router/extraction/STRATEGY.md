@@ -43,6 +43,7 @@ For every extraction-fix run:
 |-------|-------------|------------------------|------------------|
 | `microchip_id` | Generic long numeric IDs captured as chip | `No:` / `Nro:` invoice/reference near 9–15 digits | Accept only chip-context or explicit OCR chip-like prefixes + digits-only 9–15 |
 | `owner_name` | Patient/vet names promoted as owner | `Datos del Cliente` blocks with ambiguous `Nombre:` | Require explicit owner context or strict header fallback; reject patient/vet/clinic context |
+| `owner_address` | Clinic address promoted as owner address (or owner address dropped) | Ambiguous `Direccion:` labels and unlabeled owner blocks near clinic headers | Owner/clinic contextual disambiguation, owner-block multiline heuristic, and observability flags (`matches_clinic`, `too_short`, `no_tokens`, `too_long`) |
 | `weight` | Dosage/zero values accepted as weight | Treatment lines, `0` values, out-of-range values | Enforce range [0.5,120], reject `0`, prefer label-based weight context |
 | `vet_name` | Clinic/address promoted as veterinarian | Clinic headings and address-rich lines | Person-like normalization + reject clinic/address context |
 | `visit_date` | Birthdate mapped as visit date | Multiple dates in same document | Reject birthdate context, require visit/consult anchors |
@@ -88,10 +89,11 @@ Promote goal fields from candidates to structured interpretation only when:
 | `discharge_date` | Active (label-only context) | ✅ |
 | `vaccinations` | Active (strict label-only) | ✅ |
 | `symptoms` | Active (label-only, treatment noise rejection) | ✅ |
+| `owner_address` | Active (owner/clinic disambiguation + multiline owner-block fallback + benchmark floor 89.7%) | ✅ |
 
 ### Pending Fields (No Guardrails Yet)
 
 - `owner_id` — DNI/NIE extraction pending
 - `reason_for_visit` — anchor coverage pending
 - `clinical_record_number` — MVP coverage pass pending
-- `coat_color`, `hair_length`, `repro_status`, `owner_address` — MVP schema fields pending coverage pass
+- `coat_color`, `hair_length`, `repro_status` — MVP schema fields pending coverage pass
