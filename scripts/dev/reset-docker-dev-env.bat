@@ -2,12 +2,20 @@
 setlocal
 
 set "SCRIPT_DIR=%~dp0"
+set "EXITCODE=0"
 
 if /I "%~1"=="nobuild" (
-    powershell -ExecutionPolicy Bypass -File "%SCRIPT_DIR%reset-docker-dev-env.ps1" -NoBuild
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_DIR%reset-docker-dev-env.ps1" -NoBuild
 ) else (
-    powershell -ExecutionPolicy Bypass -File "%SCRIPT_DIR%reset-docker-dev-env.ps1"
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_DIR%reset-docker-dev-env.ps1"
 )
 
-endlocal
+set "EXITCODE=%ERRORLEVEL%"
+if not "%EXITCODE%"=="0" (
+    echo.
+    echo reset-docker-dev-env failed with exit code %EXITCODE%.
+    echo Check the error above. If Docker is not running, start Docker Desktop and retry.
+    pause
+)
 
+endlocal & exit /b %EXITCODE%

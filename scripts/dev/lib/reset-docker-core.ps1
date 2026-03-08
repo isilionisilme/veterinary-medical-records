@@ -38,6 +38,18 @@ function Invoke-Compose {
     }
 }
 
+function Assert-DockerAvailable {
+    try {
+        & docker info *> $null
+    } catch {
+        throw "Docker CLI is not available. Install Docker Desktop and ensure 'docker' is in PATH."
+    }
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Docker engine is not running. Start Docker Desktop and wait until it is ready, then retry."
+    }
+}
+
 function Wait-Http200 {
     param(
         [Parameter(Mandatory = $true)][string]$Url,
@@ -59,6 +71,8 @@ function Wait-Http200 {
 
     throw "Timeout esperando HTTP 200 en $Url"
 }
+
+Assert-DockerAvailable
 
 Write-Host "Parando entorno docker dev..."
 Invoke-Compose -ComposeArgs @("down")
