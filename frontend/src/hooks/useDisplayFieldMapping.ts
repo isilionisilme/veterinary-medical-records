@@ -12,8 +12,8 @@ import {
 } from "../constants/appWorkspace";
 import {
   clampConfidence,
-  formatFieldValue,
   formatReviewKeyLabel,
+  getReviewFieldDisplayValue,
   getLabelTooltipText,
   getUiSectionLabelFromSectionId,
   isFieldValueEmpty,
@@ -187,7 +187,7 @@ export function useDisplayFieldMapping({
                     section: uiSection,
                     order: definition.order,
                     valueType: candidate.value_type,
-                    displayValue: formatFieldValue(candidate.value, candidate.value_type),
+                    displayValue: getReviewFieldDisplayValue(candidate),
                     source: "core",
                     evidence: candidate.evidence,
                     repeatable: true,
@@ -227,7 +227,7 @@ export function useDisplayFieldMapping({
             );
           })[0];
         const displayValue = bestCandidate
-          ? formatFieldValue(bestCandidate.value, bestCandidate.value_type)
+          ? getReviewFieldDisplayValue(bestCandidate)
           : MISSING_VALUE_PLACEHOLDER;
         const item: ReviewSelectableField = buildSelectableField(
           {
@@ -307,7 +307,7 @@ export function useDisplayFieldMapping({
                   section: OTHER_EXTRACTED_FIELDS_SECTION_TITLE,
                   order: index + 1,
                   valueType: field.value_type,
-                  displayValue: formatFieldValue(field.value, field.value_type),
+                  displayValue: getReviewFieldDisplayValue(field),
                   source: "extracted",
                   evidence: field.evidence,
                   repeatable: true,
@@ -332,9 +332,7 @@ export function useDisplayFieldMapping({
       }
       const field = fields[0];
       const hasValue = Boolean(field && !isFieldValueEmpty(field.value));
-      const displayValue = hasValue
-        ? formatFieldValue(field.value, field.value_type)
-        : MISSING_VALUE_PLACEHOLDER;
+      const displayValue = hasValue ? getReviewFieldDisplayValue(field) : MISSING_VALUE_PLACEHOLDER;
       const item: ReviewSelectableField = buildSelectableField(
         {
           id: field ? `extra:${field.field_id}:0` : `extra:${key}:missing`,

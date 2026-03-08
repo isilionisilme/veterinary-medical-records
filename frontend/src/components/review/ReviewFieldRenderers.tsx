@@ -216,7 +216,12 @@ export function createReviewFieldRenderers(ctx: ReviewFieldRenderersContext): {
   }) => {
     const { item, value, isLongText, longTextTestId, shortTextTestId } = options;
     const isFieldModified = item.rawField?.origin === "human";
-    const modifiedValueClass = isFieldModified ? "!bg-amber-50 ring-1 ring-amber-300/70" : "";
+    const isDerivedField = item.rawField?.origin === "derived";
+    const modifiedValueClass = isFieldModified
+      ? "!bg-amber-50 ring-1 ring-amber-300/70"
+      : isDerivedField
+        ? "!bg-blue-50 ring-1 ring-blue-300/70"
+        : "";
 
     return (
       <div className="relative rounded-control">

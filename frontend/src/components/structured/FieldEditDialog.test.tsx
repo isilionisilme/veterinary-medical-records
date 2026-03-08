@@ -1,7 +1,36 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { FieldEditDialog } from "./FieldEditDialog";
+
+vi.mock("../ui/dialog", () => {
+  type DialogProps = {
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
+    children?: ReactNode;
+  };
+
+  return {
+    Dialog: ({ open, onOpenChange, children }: DialogProps) => (
+      <div data-testid="mock-dialog" data-open={String(Boolean(open))}>
+        <button type="button" onClick={() => onOpenChange?.(false)}>
+          mock-request-close
+        </button>
+        <button type="button" onClick={() => onOpenChange?.(true)}>
+          mock-request-open
+        </button>
+        {children}
+      </div>
+    ),
+    DialogContent: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
+    DialogClose: ({ children }: { children?: ReactNode }) => <>{children}</>,
+    DialogDescription: ({ children }: { children?: ReactNode }) => <p>{children}</p>,
+    DialogFooter: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
+    DialogHeader: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
+    DialogTitle: ({ children }: { children?: ReactNode }) => <h2>{children}</h2>,
+  };
+});
 
 function renderSpeciesDialog(options?: {
   value?: string;
@@ -69,6 +98,7 @@ function renderAgeDialog(options?: {
   value?: string;
   isSaveDisabled?: boolean;
   ageErrorMessage?: string | null;
+  fieldOrigin?: "machine" | "human" | "derived";
 }) {
   const onValueChange = vi.fn();
   const onOpenChange = vi.fn();
@@ -78,6 +108,7 @@ function renderAgeDialog(options?: {
     <FieldEditDialog
       open
       fieldKey="age"
+      fieldOrigin={options?.fieldOrigin}
       fieldLabel="Edad"
       value={options?.value ?? ""}
       isSaving={false}
@@ -264,5 +295,17 @@ describe("FieldEditDialog age", () => {
 
     fireEvent.click(saveButton);
     expect(onSave).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows the derived-age hint when origin is derived", () => {
+    renderAgeDialog({ value: "7", fieldOrigin: "derived" });
+
+    expect(screen.getByText("Edad calculada desde fecha de nacimiento")).toBeInTheDocument();
+  });
+
+  it("does not show the derived-age hint when origin is human", () => {
+    renderAgeDialog({ value: "7", fieldOrigin: "human" });
+
+    expect(screen.queryByText("Edad calculada desde fecha de nacimiento")).not.toBeInTheDocument();
   });
 });

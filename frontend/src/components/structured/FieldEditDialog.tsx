@@ -26,6 +26,7 @@ type DetectedCandidate = {
 type FieldEditDialogProps = {
   open: boolean;
   fieldKey: string | null;
+  fieldOrigin?: "machine" | "human" | "derived";
   fieldLabel: string;
   value: string;
   candidateSuggestions?: CandidateSuggestion[];
@@ -48,6 +49,7 @@ type FieldEditDialogProps = {
 export function FieldEditDialog({
   open,
   fieldKey,
+  fieldOrigin,
   fieldLabel,
   value,
   candidateSuggestions = [],
@@ -392,6 +394,9 @@ export function FieldEditDialog({
             >
               {ageErrorMessage ?? ageHintText}
             </p>
+            {fieldOrigin === "derived" ? (
+              <p className="text-xs text-blue-500">Edad calculada desde fecha de nacimiento</p>
+            ) : null}
           </div>
         ) : isDateField ? (
           <div className="mt-1 space-y-1">
