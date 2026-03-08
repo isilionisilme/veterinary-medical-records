@@ -289,6 +289,30 @@ describe("ReviewFieldRenderers", () => {
     );
   });
 
+  it("renders derived-origin fields with the derived highlight style", () => {
+    const derivedItem = createSelectableField({
+      id: "derived-item",
+      rawField: {
+        field_id: "raw-derived",
+        key: "age",
+        value: "7",
+        value_type: "string",
+        is_critical: true,
+        origin: "derived",
+      },
+    });
+    const field = createDisplayField({
+      id: "display-derived",
+      key: "age",
+      label: "Edad",
+      items: [derivedItem],
+    });
+
+    renderScalarWithContext(field);
+
+    expect(screen.getByText("Gastritis leve").closest("div")).toHaveClass("!bg-blue-50");
+  });
+
   it("wires hover, blur and reviewed edit handlers on repeatable trigger", () => {
     const repeatableItem = createSelectableField({ id: "repeat-events", repeatable: true });
     const field = createDisplayField({

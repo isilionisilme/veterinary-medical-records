@@ -429,6 +429,17 @@ export function formatFieldValue(
   return String(value);
 }
 
+export function getReviewFieldDisplayValue(field: {
+  display_value?: string;
+  value: string | number | boolean | null;
+  value_type: string;
+}): string {
+  if (typeof field.display_value === "string" && field.display_value.trim().length > 0) {
+    return field.display_value;
+  }
+  return formatFieldValue(field.value, field.value_type);
+}
+
 export function getNormalizedVisitId(visit: ReviewVisitGroup, visitIndex: number): string {
   const trimmedVisitId = visit.visit_id.trim();
   if (trimmedVisitId.length > 0) {

@@ -89,14 +89,17 @@ export function App() {
     }
     return `${API_BASE_URL}/documents/${activeId}/download?download=true`;
   }, [activeId]);
+  const clearRefreshFeedbackTimer = useCallback(() => {
+    const refreshTimer = refreshFeedbackTimerRef.current;
+    if (refreshTimer) {
+      window.clearTimeout(refreshTimer);
+    }
+  }, []);
   useEffect(() => {
     return () => {
-      const refreshTimer = refreshFeedbackTimerRef.current;
-      if (refreshTimer) {
-        window.clearTimeout(refreshTimer);
-      }
+      clearRefreshFeedbackTimer();
     };
-  }, []);
+  }, [clearRefreshFeedbackTimer]);
   const { uploadMutation } = useDocumentUpload({
     requestPdfLoad,
     pendingAutoOpenDocumentIdRef,
@@ -296,7 +299,14 @@ export function App() {
     if (documentList.isSuccess && hasShownListErrorToast) {
       setHasShownListErrorToast(false);
     }
-  }, [documentList.isError, documentList.isSuccess, documentList.error, hasShownListErrorToast]);
+  }, [
+    documentList.isError,
+    documentList.isSuccess,
+    documentList.error,
+    hasShownListErrorToast,
+    setHasShownListErrorToast,
+    showConnectivityToast,
+  ]);
   useEffect(() => {
     if (
       !activeId ||
@@ -312,13 +322,14 @@ export function App() {
     documentReview.error,
     documentReview.errorUpdatedAt,
     documentReview.refetch,
+    showConnectivityToast,
   ]);
   useEffect(() => {
     if (!loadPdf.isError || !isConnectivityOrServerError(loadPdf.error)) {
       return;
     }
     showConnectivityToast();
-  }, [loadPdf.error, loadPdf.failureCount, loadPdf.isError]);
+  }, [loadPdf.error, loadPdf.failureCount, loadPdf.isError, showConnectivityToast]);
   const interpretationData = documentReview.data?.active_interpretation.data;
   const schemaContract =
     typeof interpretationData?.schema_contract === "string"

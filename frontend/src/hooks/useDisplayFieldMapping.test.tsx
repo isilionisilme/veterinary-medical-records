@@ -172,4 +172,39 @@ describe("useDisplayFieldMapping", () => {
     expect(weightField?.items[0]?.displayValue).toBe("29.6 kg");
     expect(weightField?.items[0]?.rawField?.field_id).toBe("derived-weight-current");
   });
+
+  it("prefers backend display_value when provided", () => {
+    const derivedAge: ReviewField = {
+      field_id: "derived-age-current",
+      key: "age",
+      value: "0",
+      display_value: "5 meses",
+      value_type: "string",
+      scope: "document",
+      section: "patient",
+      classification: "medical_record",
+      origin: "derived",
+      field_mapping_confidence: 0.95,
+      is_critical: false,
+    };
+    const validatedReviewFields: ReviewField[] = [derivedAge];
+    const matchesByKey = new Map<string, ReviewField[]>([["age", [derivedAge]]]);
+
+    const { result } = renderHook(() =>
+      useDisplayFieldMapping({
+        isCanonicalContract: false,
+        hasMalformedCanonicalFieldSlots: false,
+        interpretationData: buildInterpretationData(),
+        validatedReviewFields,
+        matchesByKey,
+        buildSelectableField,
+        explicitOtherReviewFields: [],
+      }),
+    );
+
+    const ageField = result.current.coreDisplayFields.find((field) => field.key === "age");
+    expect(ageField).toBeDefined();
+    expect(ageField?.items[0]?.displayValue).toBe("5 meses");
+    expect(ageField?.items[0]?.rawField?.value).toBe("0");
+  });
 });

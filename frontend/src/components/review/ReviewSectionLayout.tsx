@@ -18,6 +18,7 @@ import {
 import {
   formatFieldValue,
   formatReviewKeyLabel,
+  getReviewFieldDisplayValue,
   getNormalizedVisitId,
   getVisitTimestamp,
   isFieldValueEmpty,
@@ -236,7 +237,7 @@ export function createReviewSectionLayoutRenderer(
               section: "Visitas",
               order,
               valueType: field.value_type,
-              displayValue: formatFieldValue(field.value, field.value_type),
+              displayValue: getReviewFieldDisplayValue(field),
               source: "core",
               evidence: field.evidence,
               repeatable: true,
@@ -273,7 +274,7 @@ export function createReviewSectionLayoutRenderer(
           valueType,
           displayValue:
             scalarField && hasValue
-              ? formatFieldValue(scalarField.value, scalarField.value_type)
+              ? getReviewFieldDisplayValue(scalarField)
               : MISSING_VALUE_PLACEHOLDER,
           source: "core",
           evidence: scalarField?.evidence,

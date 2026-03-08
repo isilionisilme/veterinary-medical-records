@@ -120,6 +120,7 @@ export type ReviewField = {
   field_id: string;
   key: string;
   value: string | number | boolean | null;
+  display_value?: string;
   value_type: string;
   visit_group_id?: string;
   scope?: "document" | "visit";
@@ -132,7 +133,7 @@ export type ReviewField = {
   text_extraction_reliability?: number | null;
   field_review_history_adjustment?: number;
   is_critical: boolean;
-  origin: "machine" | "human";
+  origin: "machine" | "human" | "derived";
   evidence?: ReviewEvidence;
 };
 

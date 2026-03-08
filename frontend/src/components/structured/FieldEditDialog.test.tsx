@@ -69,6 +69,7 @@ function renderAgeDialog(options?: {
   value?: string;
   isSaveDisabled?: boolean;
   ageErrorMessage?: string | null;
+  fieldOrigin?: "machine" | "human" | "derived";
 }) {
   const onValueChange = vi.fn();
   const onOpenChange = vi.fn();
@@ -78,6 +79,7 @@ function renderAgeDialog(options?: {
     <FieldEditDialog
       open
       fieldKey="age"
+      fieldOrigin={options?.fieldOrigin}
       fieldLabel="Edad"
       value={options?.value ?? ""}
       isSaving={false}
@@ -264,5 +266,17 @@ describe("FieldEditDialog age", () => {
 
     fireEvent.click(saveButton);
     expect(onSave).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows the derived-age hint when origin is derived", () => {
+    renderAgeDialog({ value: "7", fieldOrigin: "derived" });
+
+    expect(screen.getByText("Edad calculada desde fecha de nacimiento")).toBeInTheDocument();
+  });
+
+  it("does not show the derived-age hint when origin is human", () => {
+    renderAgeDialog({ value: "7", fieldOrigin: "human" });
+
+    expect(screen.queryByText("Edad calculada desde fecha de nacimiento")).not.toBeInTheDocument();
   });
 });

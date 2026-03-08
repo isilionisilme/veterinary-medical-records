@@ -54,6 +54,7 @@ export function WorkspaceDialogs(props: WorkspaceDialogsProps) {
         titleId="workspace-field-edit-dialog-title"
         descriptionId="workspace-field-edit-dialog-description"
         fieldKey={props.editingField?.key ?? null}
+        fieldOrigin={props.editingField?.rawField?.origin}
         fieldLabel={props.editingField?.label ?? ""}
         value={props.editingFieldDraftValue}
         candidateSuggestions={props.editingFieldCandidateSections.applicableSuggestions}

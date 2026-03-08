@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { type ConnectivityToast } from "../components/toast/toast-types";
 
@@ -15,14 +15,14 @@ export function useConnectivityToasts() {
     return () => window.clearTimeout(timer);
   }, [connectivityToast]);
 
-  const showConnectivityToast = () => {
+  const showConnectivityToast = useCallback(() => {
     const now = Date.now();
     if (now - lastConnectivityToastAtRef.current < 5000) {
       return;
     }
     lastConnectivityToastAtRef.current = now;
     setConnectivityToast({});
-  };
+  }, []);
 
   return {
     connectivityToast,

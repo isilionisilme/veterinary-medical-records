@@ -323,6 +323,45 @@ describe("ReviewSectionLayout", () => {
     expect(screen.getByText("Con motivo")).toBeInTheDocument();
   });
 
+  it("uses backend display_value for canonical visit fields when present", () => {
+    const validatedReviewFields: ReviewField[] = [
+      createReviewField({
+        field_id: "visit-field-age-1",
+        key: "age",
+        value: "0",
+        display_value: "5 meses",
+        visit_group_id: "visit-1",
+      }),
+    ];
+    const reviewVisits: ReviewVisitGroup[] = [
+      {
+        visit_id: "visit-1",
+        visit_date: "2026-03-14",
+        admission_date: null,
+        discharge_date: null,
+        reason_for_visit: "Control",
+        fields: [],
+      },
+    ];
+
+    const ctx = renderSection(
+      { id: "visits", title: "Visitas", fields: [createDisplayField()] },
+      {
+        isCanonicalContract: true,
+        validatedReviewFields,
+        reviewVisits,
+        canonicalVisitFieldOrder: ["visit_date", "reason_for_visit", "age"],
+      },
+    );
+
+    const ageField = ctx.renderRepeatableReviewField.mock.calls.find(
+      ([field]) => field.key === "age",
+    )?.[0] as ReviewDisplayField | undefined;
+
+    expect(ageField).toBeDefined();
+    expect(ageField?.items[0]?.displayValue).toBe("5 meses");
+  });
+
   it("handles stable chronological fallback and includes visit-scoped fields without visit_group_id as unassigned", () => {
     const validatedReviewFields: ReviewField[] = [
       createReviewField({
