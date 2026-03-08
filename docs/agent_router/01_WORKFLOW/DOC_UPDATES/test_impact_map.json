@@ -100,7 +100,7 @@
     },
     {
       "doc_glob": "docs/projects/veterinary-medical-records/03-ops/plan-execution-protocol.md",
-      "description": "Project PLAN_EXECUTION_PROTOCOL changes require router regeneration and doc-updates guard alignment.",
+      "description": "Project PLAN_EXECUTION_PROTOCOL changes require EXECUTION_PROTOCOL router parity propagation and doc-updates guard alignment.",
       "required_any": [
         "scripts/docs/generate-router-files.py",
         "backend/tests/unit/test_doc_updates_contract.py",
@@ -113,7 +113,7 @@
     },
     {
       "doc_glob": "docs/projects/veterinary-medical-records/03-ops/plan-management.md",
-      "description": "Project PLAN_MANAGEMENT changes require doc-updates guard alignment.",
+      "description": "Project PLAN_MANAGEMENT changes require project owner routing parity and doc-updates guard alignment.",
       "required_any": [
         "docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json",
         "docs/agent_router/01_WORKFLOW/DOC_UPDATES/router_parity_map.json",
@@ -313,6 +313,8 @@
         "docs/agent_router/04_PROJECT/DESIGN_SYSTEM/**/*.md"
       ],
       "required_any": [
+        "docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/*.md",
+        "docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/**/*.md",
         "backend/tests/unit/test_doc_router_contract.py",
         "backend/tests/unit/test_doc_updates_contract.py",
         "backend/tests/unit/test_doc_updates_e2e_contract.py",
@@ -327,6 +329,8 @@
         "docs/agent_router/04_PROJECT/FRONTEND_IMPLEMENTATION/**/*.md"
       ],
       "required_any": [
+        "docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/*.md",
+        "docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/**/*.md",
         "backend/tests/unit/test_doc_router_contract.py",
         "backend/tests/unit/test_doc_updates_contract.py",
         "backend/tests/unit/test_doc_updates_e2e_contract.py",

@@ -1,7 +1,8 @@
 # Completed: Iteration 6 — Coverage + security hardening & dependency health
 
 **Date:** 2026-02-25
-**PR:** #152
+**PR:** [#152](https://github.com/isilionisilme/veterinary-medical-records/pull/152)
+**User Stories:** [US-74](../implementation-plan.md), [US-75](../implementation-plan.md)
 **Branch:** `improvement/iteration-6` → `main`
 
 ## Context

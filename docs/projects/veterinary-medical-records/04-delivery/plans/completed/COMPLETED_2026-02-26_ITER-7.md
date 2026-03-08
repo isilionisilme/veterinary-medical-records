@@ -1,7 +1,8 @@
 # Completed: Iteration 7 — Modularization of monoliths + coverage
 
 **Date:** 2026-02-26
-**PR:** #153
+**PR:** [#153](https://github.com/isilionisilme/veterinary-medical-records/pull/153)
+**User Story:** [US-73](../implementation-plan.md)
 **Branch:** `improvement/iteration-7-pr1` → `main`
 
 ## Context

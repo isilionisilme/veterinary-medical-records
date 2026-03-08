@@ -83,3 +83,9 @@ Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for i
 - New R7 (Edit workflow hardening), R8 (Evidence navigation), R9 (Extraction quality), R10 (UX polish), R11 (Help/i18n), R14 (Research) added.
 - New stories: US-47 through US-59 (13 stories total).
 - US-27 renamed to "Add in-app help wiki and entry point" with expanded scope.
+
+### Traceability expansion (2026-03-07)
+- Source implementation plan now documents the US-61 through US-78 traceability block, including US-78 processing history planning links.
+
+### Multi-visit plan series normalization (2026-03-07)
+- Source implementation plan references the renamed multi-visit plan files: `COMPLETED_2026-03-06_MULTI-VISIT_P1_RAWTEXT-BOUNDARIES.md`, `COMPLETED_2026-03-07_MULTI-VISIT_P2_PER-VISIT-FIELD-EXTRACTION.md`, and `PLAN_2026-03-07_MULTI-VISIT_P3_VISIT-SCOPING-OBSERVABILITY.md`.

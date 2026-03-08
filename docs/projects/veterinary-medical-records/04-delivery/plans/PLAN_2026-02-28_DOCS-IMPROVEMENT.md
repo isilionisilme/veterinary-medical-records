@@ -4,6 +4,7 @@
 
 **Branch:** `docs/documentation-refactor`
 **PR:** [#154](https://github.com/isilionisilme/veterinary-medical-records/pull/154)
+**User Story:** [US-67](../implementation-plan.md)
 **Prerequisite:** Iteration 12 merged to `main`.
 **Worktree:** `D:/Git/veterinary-medical-records` (default — single worktree)
 **CI Mode:** Pipeline depth-1 gate (mode 2, default)

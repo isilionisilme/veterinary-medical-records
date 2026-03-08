@@ -3,7 +3,8 @@
 > **Operational rules:** See [plan-execution-protocol.md](../../03-ops/plan-execution-protocol.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
 
 **Branch:** `golden-2/feat/golden-loop-propietario-direccion`
-**PR:** (draft - TBD)
+**PR:** [#215](https://github.com/isilionisilme/veterinary-medical-records/pull/215) (Phase 0 baseline, merged), [#226](https://github.com/isilionisilme/veterinary-medical-records/pull/226) (post-gate closure sync)
+**User Story:** [US-63](../implementation-plan.md)
 **Prerequisite:** `main` estable con tests verdes.
 **Iteracion:** 20 (propuesta)
 **Worktree:** `D:/Git/golden-2`

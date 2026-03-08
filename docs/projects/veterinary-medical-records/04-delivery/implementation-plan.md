@@ -78,6 +78,22 @@ last-updated: 2026-03-02
     - [Goal](#goal-13)
     - [Scope](#scope-14)
     - [User Stories (in order)](#user-stories-in-order-13)
+  - [Release 15 — Extraction field expansion (golden loops)](#release-15--extraction-field-expansion-golden-loops)
+    - [Goal](#goal-14)
+    - [Scope](#scope-15a)
+    - [User Stories (in order)](#user-stories-in-order-14)
+  - [Release 16 — Multi-visit detection & per-visit extraction](#release-16--multi-visit-detection--per-visit-extraction)
+    - [Goal](#goal-15)
+    - [Scope](#scope-16a)
+    - [User Stories (in order)](#user-stories-in-order-15)
+  - [Release 17 — Engineering quality & project governance](#release-17--engineering-quality--project-governance)
+    - [Goal](#goal-16)
+    - [Scope](#scope-17)
+    - [User Stories (in order)](#user-stories-in-order-16)
+  - [Release 18 — Frontend observability for evaluators](#release-18--frontend-observability-for-evaluators)
+    - [Goal](#goal-17)
+    - [Scope](#scope-18)
+    - [User Stories (in order)](#user-stories-in-order-17)
 - [User Story Details](#user-story-details)
   - [US-01 — Upload document (API)](#us-01--upload-document-api)
   - [US-02 — View document status](#us-02--view-document-status)
@@ -161,6 +177,24 @@ last-updated: 2026-03-02
   - [US-57 — Research field standardization (ISO, international recommendations)](#us-57--research-field-standardization-iso-international-recommendations)
   - [US-58 — Define production DB reset policy for reviewed documents](#us-58--define-production-db-reset-policy-for-reviewed-documents)
   - [US-42 — Provide evaluator-friendly installation & execution (Docker-first)](#us-42--provide-evaluator-friendly-installation--execution-docker-first)
+  - [US-61 — Extract patient date of birth accurately](#us-61--extract-patient-date-of-birth-accurately)
+  - [US-62 — Extract patient microchip number accurately](#us-62--extract-patient-microchip-number-accurately)
+  - [US-63 — Extract owner address without confusing it with clinic address](#us-63--extract-owner-address-without-confusing-it-with-clinic-address)
+  - [US-64 — Detect all visits in the document even when dates are not in explicit fields](#us-64--detect-all-visits-in-the-document-even-when-dates-are-not-in-explicit-fields)
+  - [US-65 — View clinical data assigned to each specific visit](#us-65--view-clinical-data-assigned-to-each-specific-visit)
+  - [US-66 — Diagnose visit-to-data assignment problems (conditional)](#us-66--diagnose-visit-to-data-assignment-problems-conditional)
+  - [US-67 — Auditable, navigable, and consistent project documentation](#us-67--auditable-navigable-and-consistent-project-documentation)
+  - [US-68 — Identify the source worktree of each branch at a glance](#us-68--identify-the-source-worktree-of-each-branch-at-a-glance)
+  - [US-69 — Extract pet name accurately](#us-69--extract-pet-name-accurately)
+  - [US-70 — Extract clinic name accurately](#us-70--extract-clinic-name-accurately)
+  - [US-71 — Extract clinic address accurately](#us-71--extract-clinic-address-accurately)
+  - [US-72 — Complete clinic address from name (and vice versa) on demand](#us-72--complete-clinic-address-from-name-and-vice-versa-on-demand)
+  - [US-73 — Modular architecture and maintainable code](#us-73--modular-architecture-and-maintainable-code)
+  - [US-74 — Automated test and E2E coverage in CI](#us-74--automated-test-and-e2e-coverage-in-ci)
+  - [US-75 — Production security, performance, and resilience](#us-75--production-security-performance-and-resilience)
+  - [US-76 — Functional L1/L2/L3 local validation pipeline on Windows](#us-76--functional-l1l2l3-local-validation-pipeline-on-windows)
+  - [US-77 — Canonical documentation as source of truth with automatic derivation](#us-77--canonical-documentation-as-source-of-truth-with-automatic-derivation)
+  - [US-78 — Enhanced processing history UI for evaluator observability](#us-78--enhanced-processing-history-ui-for-evaluator-observability)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -513,6 +547,86 @@ Investigate field standardization opportunities and define operational policies 
 ### User Stories (in order)
 - US-57 — Research field standardization (ISO, international recommendations)
 - US-58 — Define production DB reset policy for reviewed documents
+
+---
+
+## Release 15 — Extraction field expansion (golden loops)
+
+### Goal
+Expand extraction coverage to all critical patient and clinic fields via the golden loop pattern, ensuring each field has dedicated fixtures, benchmark tests, labeled patterns, and normalization.
+
+### Scope
+- Pet name extraction hardening
+- Clinic name extraction hardening
+- Clinic address extraction hardening
+- Bidirectional clinic enrichment (name ↔ address)
+- Date of birth (DOB) extraction hardening
+- Microchip ID extraction hardening
+- Owner address extraction (active)
+
+### User Stories (in order)
+- US-69 — Extract pet name accurately (Implemented 2026-03-02)
+- US-70 — Extract clinic name accurately (Implemented 2026-03-03)
+- US-71 — Extract clinic address accurately (Implemented 2026-03-04)
+- US-72 — Complete clinic address from name (and vice versa) on demand (Implemented 2026-03-04)
+- US-61 — Extract patient date of birth accurately (Implemented 2026-03-05)
+- US-62 — Extract patient microchip number accurately (Implemented 2026-03-04)
+- US-63 — Extract owner address without confusing it with clinic address
+
+---
+
+## Release 16 — Multi-visit detection & per-visit extraction
+
+### Goal
+Detect all visits in a medical document from raw text boundaries and assign clinical data to each specific visit, with observability for debugging assignment problems.
+
+### Scope
+- Multi-visit detection from raw text boundaries
+- Per-visit field extraction from segment text
+- Visit scoping observability and documentation (conditional)
+
+### User Stories (in order)
+- US-64 — Detect all visits in the document even when dates are not in explicit fields (Implemented 2026-03-06)
+- US-65 — View clinical data assigned to each specific visit
+- US-66 — Diagnose visit-to-data assignment problems (conditional)
+
+---
+
+## Release 17 — Engineering quality & project governance
+
+### Goal
+Establish modular architecture, comprehensive test coverage, production hardening, local validation pipelines, canonical documentation, and consistent project governance conventions.
+
+### Scope
+- Architecture audit, modularization, and component decomposition
+- Automated test and E2E coverage in CI
+- Security, performance, and resilience hardening
+- L1/L2/L3 local validation pipeline
+- Canonical documentation restructuring and derivation automation
+- Worktree-prefixed branch naming convention
+- Documentation improvement (wiki audit, restructure, standardization)
+
+### User Stories (in order)
+- US-73 — Modular architecture and maintainable code (Implemented)
+- US-74 — Automated test and E2E coverage in CI (Implemented)
+- US-75 — Production security, performance, and resilience (Implemented)
+- US-76 — Functional L1/L2/L3 local validation pipeline on Windows (Implemented)
+- US-77 — Canonical documentation as source of truth with automatic derivation (Implemented)
+- US-68 — Identify the source worktree of each branch at a glance (Implemented 2026-03-06)
+- US-67 — Auditable, navigable, and consistent project documentation
+
+---
+
+## Release 18 — Frontend observability for evaluators
+
+### Goal
+Enhance the frontend to provide evaluators with clear, informative processing history including state badges, per-run durations, and per-run raw text access.
+
+### Scope
+- Processing history UI enhancements (frontend-only, no backend changes)
+
+### User Stories (in order)
+- US-78 — Enhanced processing history UI for evaluator observability
 
 ---
 
@@ -2452,3 +2566,298 @@ so that I can validate MVP behavior quickly and reliably.
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
 - Delivery/run instructions are complete enough for evaluator execution without hidden setup steps.
+
+---
+
+## US-61 — Extract patient date of birth accurately
+
+**Status:** Implemented (2026-03-05)
+
+**Plan:** [COMPLETED_2026-03-05_GOLDEN-LOOP-DOB.md](plans/completed/COMPLETED_2026-03-05_GOLDEN-LOOP-DOB.md)
+
+**User Story**
+As a veterinarian, I want the system to extract the patient's date of birth from each medical record so that I can verify the animal's age without reading the full document.
+
+_Acceptance criteria defined in the linked plan._
+
+---
+
+## US-62 — Extract patient microchip number accurately
+
+**Status:** Implemented (2026-03-04)
+
+**Plan:** [COMPLETED_2026-03-04_GOLDEN-LOOP-MICROCHIP.md](plans/completed/COMPLETED_2026-03-04_GOLDEN-LOOP-MICROCHIP.md)
+
+**User Story**
+As a veterinarian, I want the system to extract the patient's microchip number correctly so that I can confirm the animal's identity without searching through the document manually.
+
+_Acceptance criteria defined in the linked plan._
+
+---
+
+## US-63 — Extract owner address without confusing it with the clinic address
+
+**Status:** Active
+
+**Plan:** [PLAN_2026-03-06_GOLDEN-LOOP-OWNER-ADDRESS.md](plans/PLAN_2026-03-06_GOLDEN-LOOP-OWNER-ADDRESS.md)
+
+**User Story**
+As a veterinarian, I want the system to extract the pet owner's address and distinguish it from the clinic address so that correspondence and records reference the correct location.
+
+_Acceptance criteria defined in the linked plan._
+
+---
+
+## US-64 — Detect all visits in the document even when dates are not in explicit fields
+
+**Status:** Implemented (2026-03-06)
+
+**Plan:** [COMPLETED_2026-03-06_MULTI-VISIT_P1_RAWTEXT-BOUNDARIES.md](plans/completed/COMPLETED_2026-03-06_MULTI-VISIT_P1_RAWTEXT-BOUNDARIES.md)
+
+**User Story**
+As a veterinarian, I want the system to detect every clinical visit present in a medical record — even when visit dates are embedded in prose rather than in structured fields — so that no visit is silently omitted from the extracted data.
+
+_Acceptance criteria defined in the linked plan._
+
+---
+
+## US-65 — View clinical data assigned to each specific visit
+
+**Status:** Implemented (2026-03-07)
+
+**Plan:** [COMPLETED_2026-03-07_MULTI-VISIT_P2_PER-VISIT-FIELD-EXTRACTION.md](plans/completed/COMPLETED_2026-03-07_MULTI-VISIT_P2_PER-VISIT-FIELD-EXTRACTION.md)
+
+**User Story**
+As a veterinarian, I want each extracted clinical field (diagnosis, treatment, weight, etc.) to be assigned to the visit it belongs to so that I can review the history of a patient visit by visit.
+
+_Acceptance criteria defined in the linked plan._
+
+---
+
+## US-66 — Diagnose visit-to-data assignment problems (conditional)
+
+**Status:** Planned (conditional)
+
+**Plan:** [PLAN_2026-03-07_MULTI-VISIT_P3_VISIT-SCOPING-OBSERVABILITY.md](plans/PLAN_2026-03-07_MULTI-VISIT_P3_VISIT-SCOPING-OBSERVABILITY.md)
+
+**User Story**
+As a developer, I want observability endpoints or logs that show how the system assigned each data field to a visit so that I can diagnose and fix incorrect visit scoping without guesswork.
+
+_Acceptance criteria defined in the linked plan._
+
+---
+
+## US-67 — Auditable, navigable, and consistent project documentation
+
+**Status:** Active
+
+**Plan:** [PLAN_2026-02-28_DOCS-IMPROVEMENT.md](plans/PLAN_2026-02-28_DOCS-IMPROVEMENT.md)
+
+**User Story**
+As a contributor (developer or evaluator), I want the project documentation to be complete, well-structured, and free of contradictions so that I can understand, audit, and extend the project with confidence.
+
+_Acceptance criteria defined in the linked plan._
+
+---
+
+## US-68 — Identify the source worktree of each branch at a glance
+
+**Status:** Implemented (2026-03-06)
+
+**Plan:** [COMPLETED_2026-03-06_WORKTREE-PREFIXED-BRANCH-NAMING.md](plans/completed/COMPLETED_2026-03-06_WORKTREE-PREFIXED-BRANCH-NAMING.md)
+
+**User Story**
+As a developer, I want every branch name to include its originating worktree as a prefix so that I can immediately tell where a branch was created and avoid cross-worktree confusion.
+
+_Acceptance criteria defined in the linked plan._
+
+---
+
+## US-69 — Extract pet name accurately
+
+**Status:** Implemented (2026-03-02)
+
+**Plan:** [COMPLETED_2026-03-02_GOLDEN-LOOP-PET-NAME.md](plans/completed/COMPLETED_2026-03-02_GOLDEN-LOOP-PET-NAME.md)
+
+**User Story**
+As a veterinarian, I want the system to extract the patient's (pet's) name correctly from each document so that I can identify the animal at a glance.
+
+_Acceptance criteria defined in the linked plan._
+
+---
+
+## US-70 — Extract clinic name accurately
+
+**Status:** Implemented (2026-03-03)
+
+**Plan:** [COMPLETED_2026-03-03_GOLDEN-LOOP-CLINIC-NAME.md](plans/completed/COMPLETED_2026-03-03_GOLDEN-LOOP-CLINIC-NAME.md)
+
+**User Story**
+As a veterinarian, I want the system to extract the clinic's name correctly so that I know which clinic issued the medical record.
+
+_Acceptance criteria defined in the linked plan._
+
+---
+
+## US-71 — Extract clinic address accurately
+
+**Status:** Implemented (2026-03-04)
+
+**Plan:** [COMPLETED_2026-03-04_GOLDEN-LOOP-CLINIC-ADDRESS.md](plans/completed/COMPLETED_2026-03-04_GOLDEN-LOOP-CLINIC-ADDRESS.md)
+
+**User Story**
+As a veterinarian, I want the system to extract the clinic's address correctly so that I can locate the originating clinic without re-reading the document.
+
+_Acceptance criteria defined in the linked plan._
+
+---
+
+## US-72 — Complete clinic address from name (and vice versa) on demand
+
+**Status:** Implemented (2026-03-04)
+
+**Plan:** [COMPLETED_2026-03-04_CLINIC-ENRICHMENT-BIDIRECTIONAL.md](plans/completed/COMPLETED_2026-03-04_CLINIC-ENRICHMENT-BIDIRECTIONAL.md)
+
+**User Story**
+As a veterinarian, I want the system to fill in a clinic's missing address when the name is known (and vice versa) from previously seen records so that partial clinic data is completed automatically.
+
+_Acceptance criteria defined in the linked plan._
+
+---
+
+## US-73 — Modular architecture and maintainable code
+
+**Status:** Implemented
+
+**Plans:**
+- [COMPLETED_2026-02-24_ITER-1-2.md](plans/completed/COMPLETED_2026-02-24_ITER-1-2.md)
+- [COMPLETED_2026-02-25_ITER-3.md](plans/completed/COMPLETED_2026-02-25_ITER-3.md)
+- [COMPLETED_2026-02-25_ITER-4.md](plans/completed/COMPLETED_2026-02-25_ITER-4.md)
+- [COMPLETED_2026-02-26_ITER-7.md](plans/completed/COMPLETED_2026-02-26_ITER-7.md)
+- [COMPLETED_2026-02-26_ITER-8.md](plans/completed/COMPLETED_2026-02-26_ITER-8.md)
+- [COMPLETED_2026-02-28_DECOMPOSE-APP-WORKSPACE.md](plans/completed/COMPLETED_2026-02-28_DECOMPOSE-APP-WORKSPACE.md)
+- [COMPLETED_2026-02-28_DECOMPOSE-PDF-VIEWER.md](plans/completed/COMPLETED_2026-02-28_DECOMPOSE-PDF-VIEWER.md)
+
+**User Story**
+As a developer, I want the codebase to follow a modular architecture with clear separation of concerns so that I can understand, test, and extend each component independently.
+
+_Acceptance criteria covered across the linked plans._
+
+---
+
+## US-74 — Automated test and E2E coverage in CI
+
+**Status:** Implemented
+
+**Plans:**
+- [COMPLETED_2026-02-25_ITER-5.md](plans/completed/COMPLETED_2026-02-25_ITER-5.md)
+- [COMPLETED_2026-02-25_ITER-6.md](plans/completed/COMPLETED_2026-02-25_ITER-6.md)
+- [COMPLETED_2026-02-27_ITER-9-E2E.md](plans/completed/COMPLETED_2026-02-27_ITER-9-E2E.md)
+- [COMPLETED_2026-02-27_ITER-12-FINAL.md](plans/completed/COMPLETED_2026-02-27_ITER-12-FINAL.md)
+- [COMPLETED_2026-02-26_INSTALL-PLAYWRIGHT.md](plans/completed/COMPLETED_2026-02-26_INSTALL-PLAYWRIGHT.md)
+
+**User Story**
+As a developer, I want comprehensive automated tests (unit + E2E) running in CI so that regressions are caught before code is merged.
+
+_Acceptance criteria covered across the linked plans._
+
+---
+
+## US-75 — Production security, performance, and resilience
+
+**Status:** Implemented
+
+**Plans:**
+- [COMPLETED_2026-02-25_ITER-5.md](plans/completed/COMPLETED_2026-02-25_ITER-5.md)
+- [COMPLETED_2026-02-25_ITER-6.md](plans/completed/COMPLETED_2026-02-25_ITER-6.md)
+- [COMPLETED_2026-02-27_ITER-10-HARDENING.md](plans/completed/COMPLETED_2026-02-27_ITER-10-HARDENING.md)
+- [COMPLETED_2026-02-27_ITER-11-FULLSTACK-HARDENING.md](plans/completed/COMPLETED_2026-02-27_ITER-11-FULLSTACK-HARDENING.md)
+
+**User Story**
+As a user, I want the application to be secure, performant, and resilient under normal operating conditions so that my data is protected and the system remains responsive.
+
+_Acceptance criteria covered across the linked plans._
+
+---
+
+## US-76 — Functional L1/L2/L3 local validation pipeline on Windows
+
+**Status:** Implemented
+
+**Plans:**
+- [COMPLETED_2026-03-03_L1-L2-L3-RULES-ALIGNMENT.md](plans/completed/COMPLETED_2026-03-03_L1-L2-L3-RULES-ALIGNMENT.md)
+- [COMPLETED_2026-03-04_FIX-PREFLIGHT-L3-POWERSHELL.md](plans/completed/COMPLETED_2026-03-04_FIX-PREFLIGHT-L3-POWERSHELL.md)
+
+**User Story**
+As a developer on Windows, I want a local L1/L2/L3 validation pipeline that catches lint, type, test, and build errors before I push so that CI failures are minimized and feedback is immediate.
+
+_Acceptance criteria covered across the linked plans._
+
+---
+
+## US-77 — Canonical documentation as source of truth with automatic derivation
+
+**Status:** Implemented
+
+**Plans:**
+- [COMPLETED_2026-03-05_CANONICAL-DOC-RESTRUCTURE.md](plans/completed/COMPLETED_2026-03-05_CANONICAL-DOC-RESTRUCTURE.md)
+- [COMPLETED_2026-03-03_SCRIPTS-REORG-V2.md](plans/completed/COMPLETED_2026-03-03_SCRIPTS-REORG-V2.md)
+- [COMPLETED_2026-03-05_PLAN-MODE-ROUTING-FIX.md](plans/completed/COMPLETED_2026-03-05_PLAN-MODE-ROUTING-FIX.md)
+- [COMPLETED_2026-03-05_RENUMBER-ROUTER-MINIFILES.md](plans/completed/COMPLETED_2026-03-05_RENUMBER-ROUTER-MINIFILES.md)
+
+**User Story**
+As a contributor, I want a single canonical copy of each document that auto-generates derived files (router mini-files, scripts index, etc.) so that documentation stays consistent and never drifts.
+
+_Acceptance criteria covered across the linked plans._
+
+---
+
+## US-78 — Enhanced processing history UI for evaluator observability
+
+**Status:** Planned
+
+**Plan:** [PLAN_2026-03-07_PROCESSING-HISTORY-UI.md](plans/PLAN_2026-03-07_PROCESSING-HISTORY-UI.md)
+
+**User Story**
+As an evaluator, I want to see a clear, informative processing history with state badges, durations, and per-run raw text access so that I can verify the system preserves all processing runs and artifacts end-to-end.
+
+**Acceptance Criteria**
+
+- Each processing run displays a visual state badge (success / failure / timeout / running / queued).
+- The most recent run is visually distinguished with a "latest" label.
+- Each run card shows total run duration (from `started_at` to `completed_at`).
+- I can view the raw text artifact for any historical run, not just the latest.
+- Runs are displayed in reverse-chronological order (newest first).
+- Existing E2E tests pass without regression.
+
+**Scope Clarification**
+
+- This story is **frontend-only**; no backend or API changes required.
+- All data is already served by existing endpoints (`GET /documents/{id}/processing-history`, `GET /runs/{run_id}/artifacts/raw-text`).
+- This story extends the existing processing history rendering (US-11) with evaluator-oriented observability enhancements.
+- The component is extracted from the current inline rendering in `PdfViewerPanel.tsx` "Technical" tab into a dedicated `ProcessingHistorySection` component.
+- Out of scope: interpretation diff/comparison between runs; new tabs or panels; changes to the raw text main tab behavior; performance metrics/trends dashboard; changes to processing logic.
+
+**Dependencies**
+
+- US-11 — View document processing history (✅ Implemented).
+- US-42 — Evaluator-friendly installation & execution (✅ Implemented).
+
+**Authoritative References**
+
+- Tech: Processing history endpoint contract: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B3.1.
+- Tech: Run artifacts endpoint: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B3.2.
+- Execution plan: [`docs/projects/veterinary-medical-records/04-delivery/plans/PLAN_2026-03-07_PROCESSING-HISTORY-UI.md`](plans/PLAN_2026-03-07_PROCESSING-HISTORY-UI.md).
+
+**Test Expectations**
+
+- State badges render correctly for each run state.
+- Per-run raw text retrieval works for historical runs.
+- No regressions in existing E2E tests.
+
+**Definition of Done (DoD)**
+
+- Acceptance criteria satisfied.
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).

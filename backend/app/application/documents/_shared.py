@@ -149,6 +149,8 @@ _VISIT_GROUP_METADATA_KEYS: tuple[str, ...] = (
 )
 
 _VISIT_SCOPED_KEYS: tuple[str, ...] = (
+    "observations",
+    "actions",
     "symptoms",
     "diagnosis",
     "procedure",
@@ -172,8 +174,39 @@ _VISIT_CONTEXT_PATTERN = re.compile(
     r"\b(visita|consulta|control|revisi[oó]n|seguimiento|ingreso|alta)\b",
     re.IGNORECASE,
 )
+_VISIT_LABEL_CONTEXT_PATTERN = re.compile(
+    r"\b(fecha\s+de\s+(visita|consulta|cita|atenci[oó]n|exploraci[oó]n|control))\b",
+    re.IGNORECASE,
+)
+_VISIT_CLINICAL_CONTEXT_PATTERN = re.compile(
+    r"\b(revisar|reevaluar|tratamiento|medicaci[oó]n|exploraci[oó]n|seguimiento)\b",
+    re.IGNORECASE,
+)
+_VISIT_TIMELINE_LINE_PATTERN = re.compile(
+    (
+        r"^\s*[-*•]?\s*\d{1,2}[-\/.]\d{1,2}[-\/.]\d{2,4}"
+        r"\s*[-–—]\s*\d{1,2}:\d{2}(?::\d{2})?"
+        r"(?:\s*[-–—]\s*.*)?$"
+    ),
+    re.IGNORECASE,
+)
+_VISIT_DAY_LINE_PATTERN = re.compile(
+    r"\bd[ií]a\s+\d{1,2}[-\/.]\d{1,2}[-\/.]\d{2,4}\b",
+    re.IGNORECASE,
+)
+_NEXT_VISIT_BOUNDARY_PATTERN = re.compile(
+    r"(?:\s*)?visita\s+(?:consulta\s+general|administrativa)\s+del\s+d[ií]a",
+    re.IGNORECASE,
+)
 _NON_VISIT_DATE_CONTEXT_PATTERN = re.compile(
-    r"\b(nacimiento|dob|microchip|chip|factura|invoice|informe|emisi[oó]n|documento)\b",
+    (
+        r"\b("
+        r"nacimiento|dob|microchip|chip|factura|invoice|emisi[oó]n|"
+        r"documento|dni|nif|pasaporte|id\b|identificaci[oó]n|"
+        r"lote|referencia|presupuesto|an[aá]lisis|laboratorio|orina|"
+        r"coprol[oó]gico|documentos?\s+pdf"
+        r")\b"
+    ),
     re.IGNORECASE,
 )
 
@@ -239,6 +272,76 @@ def _extract_visit_date_candidates_from_text(*, text: object) -> list[str]:
         seen_dates.add(normalized_date)
         dates.append(normalized_date)
     return dates
+
+
+def _detect_visit_dates_from_raw_text(*, raw_text: object) -> list[str]:
+    return [
+        normalized_date
+        for normalized_date, _ in _locate_visit_date_occurrences_from_raw_text(raw_text=raw_text)
+    ]
+
+
+def _locate_visit_date_occurrences_from_raw_text(*, raw_text: object) -> list[tuple[str, int]]:
+    if not isinstance(raw_text, str):
+        return []
+
+    if not raw_text.strip():
+        return []
+
+    date_occurrences: list[tuple[str, int]] = []
+    line_records: list[tuple[str, int]] = []
+    cursor = 0
+    for raw_line in raw_text.splitlines(keepends=True):
+        line = raw_line.strip()
+        line_records.append((line, cursor))
+        cursor += len(raw_line)
+
+    for index, (line, line_offset) in enumerate(line_records):
+        if not line:
+            continue
+
+        previous_non_empty = ""
+        for previous, _ in reversed(line_records[:index]):
+            candidate = previous.strip()
+            if candidate:
+                previous_non_empty = candidate
+                break
+
+        has_non_visit_context = _NON_VISIT_DATE_CONTEXT_PATTERN.search(line) is not None
+        is_timeline_line = _VISIT_TIMELINE_LINE_PATTERN.search(line) is not None
+        has_visit_context = (
+            _VISIT_CONTEXT_PATTERN.search(line) is not None
+            or _VISIT_LABEL_CONTEXT_PATTERN.search(line) is not None
+            or _VISIT_CLINICAL_CONTEXT_PATTERN.search(line) is not None
+            or is_timeline_line
+            or (
+                _VISIT_DAY_LINE_PATTERN.search(line) is not None
+                and _VISIT_CONTEXT_PATTERN.search(previous_non_empty) is not None
+            )
+        )
+
+        if has_non_visit_context and not is_timeline_line:
+            continue
+        if not has_visit_context:
+            continue
+
+        for token_match in _VISIT_DATE_TOKEN_PATTERN.finditer(line):
+            normalized_date = _normalize_visit_date_candidate(token_match.group(0))
+            if normalized_date is None:
+                continue
+            date_occurrences.append((normalized_date, line_offset + token_match.start()))
+
+    return date_occurrences
+
+
+def _locate_visit_boundary_offsets_from_raw_text(*, raw_text: object) -> list[int]:
+    if not isinstance(raw_text, str):
+        return []
+
+    if not raw_text.strip():
+        return []
+
+    return [match.start() for match in _NEXT_VISIT_BOUNDARY_PATTERN.finditer(raw_text)]
 
 
 def _contains_any_date_token(*, text: object) -> bool:

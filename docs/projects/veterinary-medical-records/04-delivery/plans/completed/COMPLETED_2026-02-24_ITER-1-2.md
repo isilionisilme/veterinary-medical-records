@@ -1,7 +1,8 @@
 # Completed: Iterations 1 & 2 — Architecture audit + CTO verdict
 
 **Dates:** 2026-02-24
-**PRs:** #144, #145, #148
+**PRs:** [#144](https://github.com/isilionisilme/veterinary-medical-records/pull/144), [#145](https://github.com/isilionisilme/veterinary-medical-records/pull/145), [#148](https://github.com/isilionisilme/veterinary-medical-records/pull/148)
+**User Story:** [US-73](../implementation-plan.md)
 **Branch:** `improvement/refactor` → `main`
 
 ## Context

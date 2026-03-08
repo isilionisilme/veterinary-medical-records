@@ -4,7 +4,8 @@
 
 **Iteración:** 14
 **Rama:** `refactor/decompose-pdf-viewer`
-**PR:** #174
+**PR:** [#174](https://github.com/isilionisilme/veterinary-medical-records/pull/174)
+**User Story:** [US-73](../implementation-plan.md)
 **Prerequisito:** Iteration 13 merged to `main`.
 
 ## Context
