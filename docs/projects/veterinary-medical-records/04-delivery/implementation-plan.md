@@ -2955,7 +2955,7 @@ After canonical policy changes, derived router files and DOC_UPDATES mappings ca
 - Regenerate router files from canonical sources.
 - Update DOC_UPDATES `test_impact_map.json` and `router_parity_map.json` so owner-backed mappings reflect current canonical sources (`plan-execution-protocol.md`, `plan-creation.md`, and current implementation-plan owner modules).
 - Remove/replace stale legacy mapping references that are no longer authoritative.
-- Ensure owner modules under `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/` remain synchronized with `implementation-plan.md`.
+- Ensure project owner modules for Implementation Plan remain synchronized with `implementation-plan.md`.
 
 **Out of Scope**
 - No new execution guard implementation in `scripts/ci`.
