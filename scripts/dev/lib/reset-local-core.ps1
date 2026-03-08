@@ -7,6 +7,7 @@ $backendDir = Join-Path $repoRoot "backend"
 $defaultStorageDir = Join-Path $backendDir "storage"
 $backendDotEnvPath = Join-Path $backendDir ".env"
 $processStateFile = Join-Path $repoRoot ".start-all-processes.json"
+$composeFiles = @("docker-compose.yml", "docker-compose.dev.yml")
 
 if (-not (Test-Path $backendDir)) {
     throw "No se encontro la carpeta backend en: $backendDir"
@@ -205,7 +206,41 @@ function Remove-PathWithRetries {
     return -not (Test-Path $Path)
 }
 
+function Stop-DockerDevProjectBestEffort {
+    $dockerCmd = Get-Command docker -ErrorAction SilentlyContinue
+    if (-not $dockerCmd) {
+        Write-Host "Docker CLI no disponible. Continuando con reset local sin docker compose down."
+        return
+    }
+
+    Push-Location $repoRoot
+    try {
+        $args = @("compose")
+        foreach ($file in $composeFiles) {
+            $args += @("-f", $file)
+        }
+        $args += @("down")
+
+        $tmpDir = Join-Path $repoRoot "tmp"
+        New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
+        $stdoutFile = Join-Path $tmpDir "reset-local-compose-down.out.log"
+        $stderrFile = Join-Path $tmpDir "reset-local-compose-down.err.log"
+
+        $process = Start-Process -FilePath $dockerCmd.Source -ArgumentList $args -PassThru -Wait -NoNewWindow -RedirectStandardOutput $stdoutFile -RedirectStandardError $stderrFile
+        if ($process.ExitCode -eq 0) {
+            Write-Host "Entorno docker del proyecto detenido (compose down)."
+        } else {
+            Write-Host "No se pudo ejecutar compose down (continuando en modo local)."
+        }
+
+        Remove-Item $stdoutFile, $stderrFile -ErrorAction SilentlyContinue
+    } finally {
+        Pop-Location
+    }
+}
+
 Write-Host "Reiniciando estado local de desarrollo..."
+Stop-DockerDevProjectBestEffort
 Stop-TrackedProcesses
 Stop-DevProcessesByCommandLine
 Stop-PortProcess -Port 8000
