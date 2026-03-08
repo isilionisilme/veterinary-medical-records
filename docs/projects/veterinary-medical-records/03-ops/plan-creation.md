@@ -151,6 +151,24 @@ Split the plan into multiple PRs when any of these apply:
 
 If uncertainty remains, default to smaller PR slices and document dependencies in `## PR Roadmap`.
 
+#### PR partition gate (mandatory procedure)
+
+Before finalizing a plan, the planning agent MUST run this gate and record the result in `## PR Roadmap`:
+
+1. **Project scope per planned PR**
+   - Estimate changed files and changed lines for each planned PR slice from planned phases/steps.
+2. **Evaluate semantic risk axes**
+   - Check whether each planned PR mixes high-risk axes (backend+frontend, migration+feature behavior, contract+broad refactor).
+3. **Evaluate size guardrails**
+   - Check whether projected scope exceeds `400` changed lines or `15` changed files for any planned PR.
+4. **Decide and enforce split**
+   - If semantic or size thresholds are exceeded, split further before plan approval.
+5. **Record evidence in roadmap**
+   - Add a short note per PR with projected size/risk and any dependency created by the split.
+
+Execution-time safeguard:
+- Before opening or updating a PR, re-evaluate the same thresholds using the real branch diff. If exceeded, STOP and propose an additional split instead of continuing with the oversized PR.
+
 ---
 
 ## 6. Prompt Strategy

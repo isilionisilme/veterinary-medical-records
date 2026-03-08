@@ -232,6 +232,26 @@ When an AI coding assistant or automation tool creates or updates a Pull Request
 6. Include end-user validation steps when applicable.
 7. Before requesting merge, if the Pull Request includes code changes and no code review has been performed, ask the user whether a review should be done. Include a recommended review depth (see Section 6 — Review Depth) with a brief justification.
 
+### PR Partition Gate (hard rule)
+
+Before creating or updating a Pull Request, the agent MUST run the partition gate with real diff evidence:
+
+1. Compute diff size against PR base:
+   - `git diff --shortstat <base_ref>...HEAD`
+   - `git diff --name-only <base_ref>...HEAD`
+2. Evaluate semantic risk axes in the pending PR scope:
+   - significant backend + frontend in one PR,
+   - migration + feature behavior in one PR,
+   - public contract changes + broad refactor in one PR.
+3. Apply thresholds:
+   - Size threshold exceeded if diff is greater than `400` changed lines or `15` changed files.
+   - Semantic threshold exceeded if any high-risk axis mix is present without explicit split rationale.
+4. Enforce outcome:
+   - If any threshold is exceeded, STOP and propose split into additional PRs.
+   - Do not proceed with PR creation/update as a single oversized PR.
+5. Record evidence:
+   - Include the size and semantic gate outcome in plan `PR Roadmap` notes or PR description rationale.
+
 ### Plan-Level Pull Request Roadmap
 
 Compatibility note: this section is also referenced as **Plan-level PR Roadmap** in legacy router contracts.
