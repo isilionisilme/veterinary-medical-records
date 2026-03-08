@@ -80,4 +80,17 @@ describe("useDocumentLoader", () => {
       { timeout: 4000 },
     );
   });
+
+  it("keeps requestPdfLoad stable across rerenders", () => {
+    const onUploadFeedback = vi.fn();
+    const { result, rerender } = renderHook(() => useDocumentLoader({ onUploadFeedback }), {
+      wrapper: createWrapper(),
+    });
+
+    const firstReference = result.current.requestPdfLoad;
+    rerender();
+    const secondReference = result.current.requestPdfLoad;
+
+    expect(secondReference).toBe(firstReference);
+  });
 });

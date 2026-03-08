@@ -1,4 +1,11 @@
-import { type Dispatch, type SetStateAction, useEffect, useRef, useState } from "react";
+import {
+  type Dispatch,
+  type SetStateAction,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useMutation } from "@tanstack/react-query";
 
 import { fetchOriginalPdf } from "../api/documentApi";
@@ -85,11 +92,15 @@ export function useDocumentLoader({ onUploadFeedback }: UseDocumentLoaderParams)
       }
     },
   });
+  const mutateLoadPdf = loadPdf.mutate;
 
-  const requestPdfLoad = (docId: string) => {
-    latestLoadRequestIdRef.current = docId;
-    loadPdf.mutate(docId);
-  };
+  const requestPdfLoad = useCallback(
+    (docId: string) => {
+      latestLoadRequestIdRef.current = docId;
+      mutateLoadPdf(docId);
+    },
+    [mutateLoadPdf],
+  );
 
   useEffect(() => {
     return () => {
