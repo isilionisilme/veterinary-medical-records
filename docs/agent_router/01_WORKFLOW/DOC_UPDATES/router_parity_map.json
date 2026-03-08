@@ -243,7 +243,7 @@
           "path": "docs/agent_router/03_SHARED/EXECUTION_PROTOCOL/10_purpose.md",
           "required_terms": [
             "PLAN_<date>_<slug>.md",
-            "PLAN_*.md remains accepted during transition"
+            "`PLAN_*.md` remains accepted during transition"
           ]
         }
       ]
