@@ -29,16 +29,19 @@ AI assistants must stop and report the blocker when a protocol step cannot be co
 ## File Structure
 
 ```
+docs/projects/veterinary-medical-records/03-ops/
+└── plan-execution-protocol.md      ← YOU ARE HERE
+
 docs/projects/veterinary-medical-records/04-delivery/plans/
-├── plan-execution-protocol.md      ← YOU ARE HERE
-├── IMPLEMENTATION_HISTORY.md       ← Timeline of all iterations
-├── PLAN_<date>_<slug>.md           ← Active iteration plans
-├── completed/                      ← Finished iterations
-│   └── COMPLETED_<date>_<slug>.md
+├── <plan-name>/                    ← Active plan folder
+│   ├── PLAN_MASTER.md              ← Plan source of truth
+│   └── PR-*.md                     ← Optional PR annexes
+└── completed/
+    └── <plan-name>/                ← Completed plan folder (moved without renaming files)
 ```
 
-**Active plan file:** The agent attaches the relevant `PLAN_*.md` file when executing a continuation-intent request (for example: "continue", "go", "let's go", "proceed", "resume").
-Each plan file contains: Execution Status (checkboxes), Prompt Queue, Active Prompt, and iteration-specific context.
+**Active plan file:** The agent attaches the relevant active plan folder (`plans/<plan-name>/`) and executes from `PLAN_MASTER.md` when handling continuation-intent requests (for example: "continue", "go", "let's go", "proceed", "resume").
+Each plan file within that folder contains: Execution Status (checkboxes), Prompt Queue, Active Prompt, and plan-specific context.
 
 ---
 
@@ -527,7 +530,7 @@ Examples:
 
 ## 18. How to Add a New User Story
 
-When asked to add a new User Story, update [`IMPLEMENTATION_PLAN.md`](../04-delivery/IMPLEMENTATION_PLAN.md) in two places:
+When asked to add a new User Story, update [`implementation-plan.md`](../04-delivery/implementation-plan.md) in two places:
 
 1. Add the story in the relevant **User Stories (in order)** list for its release.
 2. Add or update the full **User Story Details** section for that story.
