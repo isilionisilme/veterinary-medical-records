@@ -47,7 +47,8 @@ export default defineConfig({
         "python -m uvicorn backend.app.main:create_app --factory --host 127.0.0.1 --port 8000",
       url: "http://127.0.0.1:8000/health",
       cwd: "..",
-      reuseExistingServer: !process.env.CI,
+      // Backend may already be running (local or CI docker stack).
+      reuseExistingServer: true,
       timeout: 120_000,
     },
     {
