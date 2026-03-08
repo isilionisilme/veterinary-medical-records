@@ -89,3 +89,6 @@ Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for i
 
 ### Multi-visit plan series normalization (2026-03-07)
 - Source implementation plan references the renamed multi-visit plan files: `COMPLETED_2026-03-06_MULTI-VISIT_P1_RAWTEXT-BOUNDARIES.md`, `COMPLETED_2026-03-07_MULTI-VISIT_P2_PER-VISIT-FIELD-EXTRACTION.md`, and `PLAN_2026-03-07_MULTI-VISIT_P3_VISIT-SCOPING-OBSERVABILITY.md`.
+
+### Operational governance improvements (2026-03-08)
+- Source implementation plan now includes non-user-facing IMP items (`IMP-01` through `IMP-05`) under Release 17 and a dedicated `Improvement Details` section for decision-complete operational hardening scope.

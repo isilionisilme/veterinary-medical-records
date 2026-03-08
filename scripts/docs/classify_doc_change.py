@@ -1,16 +1,21 @@
 #!/usr/bin/env python3
-"""Classify changed docs as Rule, Clarification, or Navigation."""
+"""Classify changed docs as Rule, Clarification, or Navigation.
+
+Writes deterministic metadata so downstream guards can reject stale
+classification artifacts produced for a different base/head context.
+"""
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
 from pathlib import Path
 
-OUTPUT_PATH = Path("doc_change_classification.json")
+DEFAULT_OUTPUT_PATH = Path("doc_change_classification.json")
 
 RULE_SIGNALS = re.compile(
     r"\b("
@@ -37,6 +42,10 @@ def _run_git(cmd: list[str], error_prefix: str) -> str:
     if result.returncode != 0:
         raise RuntimeError(f"{error_prefix}: {result.stderr.strip()}")
     return result.stdout
+
+
+def _git_single_line(cmd: list[str], error_prefix: str) -> str:
+    return _run_git(cmd, error_prefix).strip()
 
 
 def _changed_markdown_files(base_ref: str) -> list[str]:
@@ -107,8 +116,9 @@ def _overall_classification(values: list[str]) -> str:
     return "Navigation"
 
 
-def _write_output(payload: dict[str, object]) -> None:
-    OUTPUT_PATH.write_text(
+def _write_output(payload: dict[str, object], output_path: Path) -> None:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(
         json.dumps(payload, indent=2, ensure_ascii=True) + "\n",
         encoding="utf-8",
     )
@@ -117,12 +127,24 @@ def _write_output(payload: dict[str, object]) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-ref", required=True, help="Base commit/ref for PR diff.")
+    parser.add_argument(
+        "--output",
+        default=os.environ.get("DOC_CLASSIFICATION_FILE", str(DEFAULT_OUTPUT_PATH)),
+        help="Output file path for classification JSON.",
+    )
     args = parser.parse_args()
+    output_path = Path(args.output)
 
     try:
         changed_docs = _changed_markdown_files(args.base_ref)
         if not changed_docs:
             raise RuntimeError("No changed docs found.")
+
+        head_sha = _git_single_line(["git", "rev-parse", "HEAD"], "Could not resolve HEAD SHA")
+        merge_base = _git_single_line(
+            ["git", "merge-base", args.base_ref, "HEAD"],
+            "Could not resolve merge-base",
+        )
 
         override = _commit_tag_override(args.base_ref)
         if override:
@@ -132,12 +154,23 @@ def main() -> int:
             files = {path: _classify_file(args.base_ref, path) for path in changed_docs}
             overall = _overall_classification(list(files.values()))
 
-        _write_output({"files": files, "overall": overall})
-        print(f"Doc change classification written to {OUTPUT_PATH}. overall={overall}")
+        _write_output(
+            {
+                "files": files,
+                "overall": overall,
+                "meta": {
+                    "base_ref": args.base_ref,
+                    "head_sha": head_sha,
+                    "merge_base": merge_base,
+                },
+            },
+            output_path,
+        )
+        print(f"Doc change classification written to {output_path}. overall={overall}")
         return 0
     except Exception as exc:  # noqa: BLE001 - fail-closed by design
         payload = {"files": {}, "overall": "Rule"}
-        _write_output(payload)
+        _write_output(payload, output_path)
         print(
             f"Doc change classifier fail-closed to Rule due to error: {exc}",
             file=sys.stderr,

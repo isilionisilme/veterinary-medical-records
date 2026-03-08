@@ -195,6 +195,12 @@ last-updated: 2026-03-02
   - [US-76 — Functional L1/L2/L3 local validation pipeline on Windows](#us-76--functional-l1l2l3-local-validation-pipeline-on-windows)
   - [US-77 — Canonical documentation as source of truth with automatic derivation](#us-77--canonical-documentation-as-source-of-truth-with-automatic-derivation)
   - [US-78 — Enhanced processing history UI for evaluator observability](#us-78--enhanced-processing-history-ui-for-evaluator-observability)
+- [Improvement Details](#improvement-details)
+  - [IMP-01 — Canonical Operational Execution Policy Alignment](#imp-01--canonical-operational-execution-policy-alignment)
+  - [IMP-02 — Router and DOC_UPDATES Contract Synchronization](#imp-02--router-and-doc_updates-contract-synchronization)
+  - [IMP-03 — Plan Execution Guard Enforcement (Local + CI)](#imp-03--plan-execution-guard-enforcement-local--ci)
+  - [IMP-04 — Active Plan Migration and Global Index Cleanup](#imp-04--active-plan-migration-and-global-index-cleanup)
+  - [IMP-05 — Plan Root File Naming Alignment](#imp-05--plan-root-file-naming-alignment)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -614,6 +620,11 @@ Establish modular architecture, comprehensive test coverage, production hardenin
 - US-77 — Canonical documentation as source of truth with automatic derivation (Implemented)
 - US-68 — Identify the source worktree of each branch at a glance (Implemented 2026-03-06)
 - US-67 — Auditable, navigable, and consistent project documentation
+- IMP-01 — Canonical Operational Execution Policy Alignment (Planned)
+- IMP-02 — Router and DOC_UPDATES Contract Synchronization (Planned)
+- IMP-03 — Plan Execution Guard Enforcement (Local + CI) (Planned)
+- IMP-04 — Active Plan Migration and Global Index Cleanup (Planned)
+- IMP-05 — Plan Root File Naming Alignment (Planned)
 
 ---
 
@@ -2861,3 +2872,310 @@ As an evaluator, I want to see a clear, informative processing history with stat
 - Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
 - When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
 - When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
+
+---
+
+# Improvement Details
+
+## IMP-01 — Canonical Operational Execution Policy Alignment
+
+**Status:** Planned
+
+**Type:** Technical Improvement (non-user-facing)
+
+**Target release:** Release 17 — Engineering quality and project governance
+
+**PR strategy:** Single dedicated PR (policy-only; low semantic risk)
+
+**Technical Outcome**
+Establish a single, consistent, and non-ambiguous canonical operational policy for plan execution so any new chat/agent can execute the workflow deterministically without legacy rule drift.
+
+**Problem Statement**
+Current operational guidance still contains conflicting semantics in canonical docs (especially around auto-commit conditions), which enables inconsistent execution behavior across chats/agents and weakens governance predictability.
+
+**Scope**
+- Update canonical operational policy to remove `CT-*` as an auto-commit prerequisite.
+- Consolidate git behavior by automation mode:
+  - `Supervisado`: explicit confirmation required before commit.
+  - `Semiautomatico` and `Automatico`: automatic commit allowed.
+  - `push`: always manual.
+- Keep PR policy explicit: PR creation/update is user-triggered only.
+- Add an explicit pre-PR hard rule: commit history review before opening PR.
+- Add an explicit plan-start rule: mandatory automation mode selection at plan start (text fallback when no option selector is available).
+- Keep the rule that operational actions are not executable plan checklist items.
+
+**Out of Scope**
+- No new CI/scripts/guards implementation in this item.
+- No active plan migrations in this item.
+- No router regeneration/mapping propagation in this item.
+- No backend/frontend product behavior changes.
+
+**Acceptance Criteria**
+- Canonical policy no longer requires `CT-*`/`commit-task` for automatic commits.
+- Commit/push/PR behavior by mode is documented once and without contradictions.
+- Canonical docs include an explicit `Pre-PR Commit History Review` hard rule.
+- Canonical docs include an explicit plan-start automation mode selection rule.
+- The resulting policy is deterministic and self-sufficient for an implementer chat with no prior context.
+
+**Validation Checklist**
+- Static content checks confirm no canonical rule states that auto-commit depends on `CT-*`.
+- Static content checks confirm `push` is manual in all modes.
+- Static content checks confirm PR creation/update is user-triggered only.
+- Internal consistency review confirms no contradictory policy clauses remain in canonical operational docs.
+
+**Risks and Mitigations**
+- Risk: residual legacy phrasing leaves hidden ambiguity.
+  - Mitigation: perform a final "old rule -> final rule" cross-check before closing the item.
+- Risk: policy PR grows too broad.
+  - Mitigation: keep this PR canonical-policy-only; defer propagation/enforcement to subsequent IMPs.
+
+**Dependencies**
+- None to start this item.
+- This item is the dependency baseline for router/guards propagation IMPs.
+
+---
+
+## IMP-02 — Router and DOC_UPDATES Contract Synchronization
+
+**Status:** Planned
+
+**Type:** Technical Improvement (non-user-facing)
+
+**Target release:** Release 17 — Engineering quality and project governance
+
+**PR strategy:** Single dedicated PR (derived docs and contract maps only)
+
+**Technical Outcome**
+Propagate canonical policy updates into router modules and DOC_UPDATES contract maps so assistants and guardrails evaluate the same source-of-truth semantics with no legacy drift.
+
+**Problem Statement**
+After canonical policy changes, derived router files and DOC_UPDATES mappings can remain stale (for example, legacy references to `execution-rules.md`), causing inconsistent assistant behavior or false pass/fail conditions in documentation guardrails.
+
+**Scope**
+- Regenerate router files from canonical sources.
+- Update DOC_UPDATES `test_impact_map.json` and `router_parity_map.json` so owner-backed mappings reflect current canonical sources (`plan-execution-protocol.md`, `plan-creation.md`, and current implementation-plan owner modules).
+- Remove/replace stale legacy mapping references that are no longer authoritative.
+- Ensure project owner modules for Implementation Plan remain synchronized with `implementation-plan.md`.
+
+**Out of Scope**
+- No new execution guard implementation in `scripts/ci`.
+- No migration of active plan files.
+- No backend/frontend product changes.
+- No historical rewrite of completed plans.
+
+**Acceptance Criteria**
+- `python scripts/docs/generate-router-files.py --check` passes.
+- `python scripts/docs/check_doc_test_sync.py --base-ref <base>` passes with no unmapped or owner propagation gaps.
+- `python scripts/docs/check_doc_router_parity.py --base-ref <base>` passes with required terms present.
+- `python scripts/docs/check_router_directionality.py --base-ref <base>` passes.
+- No DOC_UPDATES mapping rule references deprecated canonical ownership paths.
+
+**Validation Checklist**
+- Confirm changed canonical sources have explicit and correct router parity mappings.
+- Confirm changed canonical sources have explicit and correct doc/test impact mappings.
+- Confirm IMPLEMENTATION_PLAN owner module files were propagated when `implementation-plan.md` changed.
+- Confirm no stale reference remains that could route assistants to obsolete policy semantics.
+
+**Risks and Mitigations**
+- Risk: map edits become over-broad and weaken fail-closed behavior.
+  - Mitigation: keep mappings source-specific and preserve strict required-term checks.
+- Risk: router regeneration introduces unrelated drift.
+  - Mitigation: regenerate once and review only touched owner families before merge.
+
+**Dependencies**
+- Depends on IMP-01 canonical policy alignment being merged or at least finalized in branch scope.
+
+---
+
+## IMP-03 — Plan Execution Guard Enforcement (Local + CI)
+
+**Status:** Planned
+
+**Type:** Technical Improvement (non-user-facing)
+
+**Target release:** Release 17 — Engineering quality and project governance
+
+**PR strategy:** Single dedicated PR (scripts + CI workflow changes only)
+
+**Technical Outcome**
+Enforce plan-execution protocol invariants through deterministic local and CI guardrails so progress cannot continue to push/merge when plan state is out of sync.
+
+**Problem Statement**
+Operational rules exist in docs, but enforcement is incomplete. Agents can still forget plan-state transitions (for example leaving steps unclosed), and the system currently relies on manual discipline instead of hard technical blocking.
+
+**Scope**
+- Add a new plan execution guard script under `scripts/ci` to validate active-plan integrity.
+- Integrate the guard into local preflight execution (`preflight-ci-local.ps1`) for push/full modes when an active plan exists.
+- Add a CI job in `.github/workflows/ci.yml` (for PRs) to run the same guard.
+- Define clear blocking error messages for invalid states.
+- Add a deterministic helper command (`plan-close-step.ps1`) to standardize step closure with required evidence checks.
+
+**Out of Scope**
+- No canonical policy wording changes (owned by IMP-01).
+- No router/maps synchronization (owned by IMP-02).
+- No migration of active plan content (owned by IMP-04/IMP-05).
+- No backend/frontend product behavior changes.
+
+**Guard Invariants (minimum required)**
+- If an active plan exists for the current branch, `Execution Status` must be present.
+- At most one step may be labeled `IN PROGRESS` or `STEP LOCKED` at any time.
+- A new step cannot start while a `STEP LOCKED` line exists.
+- A step is considered closed only when represented as clean `[x]` (no active-progress lock labels).
+- Required evidence for step closure must be present before accepting closure.
+- Active plan resolution must be deterministic:
+  - search active plans under current plan roots excluding `completed/`,
+  - branch match based on `**Branch:**`,
+  - 0 matches => no-plan mode (pass),
+  - >1 matches => hard fail with ambiguity message.
+
+**Acceptance Criteria**
+- Local preflight blocks invalid plan states with actionable errors.
+- CI PR guard blocks invalid plan states with actionable errors.
+- Valid happy-path plan progression passes both local and CI guard checks.
+- No-plan branches are not blocked.
+- Ambiguous active-plan detection fails explicitly.
+
+**Validation Checklist**
+- Happy path: in-progress step -> close via helper -> guard passes local + CI.
+- Locked path: `STEP LOCKED` present and next step attempted -> guard fails.
+- Ambiguity path: two active plans for same branch -> guard fails.
+- No-plan path: branch without active plan -> guard passes.
+- Error output includes next-step remediation guidance.
+
+**Risks and Mitigations**
+- Risk: false positives block unrelated branches.
+  - Mitigation: strict active-plan detection by branch metadata and no-plan pass mode.
+- Risk: guard bypass through manual markdown edits.
+  - Mitigation: helper command + invariant checks in both local and CI.
+- Risk: CI adoption friction.
+  - Mitigation: clear messages and deterministic failure criteria; no warn-only final mode.
+
+**Dependencies**
+- Depends on IMP-01 policy semantics being finalized.
+- Should land after or with IMP-02 if guard terms rely on updated mapped terminology.
+
+---
+
+## IMP-04 — Active Plan Migration and Global Index Cleanup
+
+**Status:** Planned
+
+**Type:** Technical Improvement (non-user-facing)
+
+**Target release:** Release 17 — Engineering quality and project governance
+
+**PR strategy:** Single dedicated PR (active plan docs + global/index references only)
+
+**Technical Outcome**
+Bring all active plan files into full compliance with the updated operational model while cleaning global/index references that still point to legacy semantics, without rewriting historical completed plan content.
+
+**Problem Statement**
+Even with updated canonical policy and guardrails, active plans can remain inconsistent (legacy operational step patterns, stale metadata, inconsistent documentation tasks), and global index pages can still route readers to outdated references.
+
+**Scope**
+- Migrate active plans to the agreed policy:
+  - no operational actions as executable checklist steps,
+  - commit guidance inline and non-blocking,
+  - explicit wiki documentation task with `no-doc-needed` fallback and rationale,
+  - normalized automation mode metadata and role-neutral agent wording.
+- Ensure active plan naming/structure conventions remain consistent with current operational standards.
+- Clean global/index/reference docs that still expose legacy operational pointers.
+- Keep references coherent across `implementation-plan`, release overviews, and project-level index pages.
+
+**Out of Scope**
+- No modifications to files under `plans/completed/` body content.
+- No new CI/script enforcement logic (owned by IMP-03).
+- No canonical policy redesign (owned by IMP-01).
+- No router/maps contract propagation (owned by IMP-02).
+- No product API or UI changes.
+
+**Acceptance Criteria**
+- All active plans comply with the updated operational policy model.
+- No active plan includes operational checklist steps (`commit`, `push`, `create/update PR`, `merge`) as executable tasks.
+- Every active plan includes explicit documentation handling (update wiki or justified `no-doc-needed`).
+- Active plan metadata uses normalized automation mode semantics and role-neutral agent terminology.
+- Global/index-level references no longer direct users to obsolete operational semantics.
+- No `plans/completed/` content body is modified.
+
+**Validation Checklist**
+- Manual scan across active plan files confirms policy conformance.
+- Search confirms no active plan contains legacy operational-step checklist patterns.
+- Search confirms documentation task presence in every active plan.
+- Search confirms global/index references to deprecated operational pointers are removed or updated.
+- Verify changed docs remain internally link-valid and contextually coherent.
+
+**Risks and Mitigations**
+- Risk: accidental edit of completed plan history.
+  - Mitigation: enforce strict path scope; exclude `plans/completed/` from edits.
+- Risk: over-editing low-value historical references in unrelated docs.
+  - Mitigation: limit cleanup to active navigation/index surfaces only.
+- Risk: migration drift between active plans.
+  - Mitigation: apply a single migration checklist to every active plan.
+
+**Dependencies**
+- Depends on IMP-01 policy being stable.
+- Best sequenced after IMP-02 so mappings/parity logic are already aligned before active-plan cleanup finalization.
+
+---
+
+## IMP-05 — Plan Root File Naming Alignment
+
+**Status:** Planned
+
+**Type:** Technical Improvement (non-user-facing)
+
+**Target release:** Release 17 — Engineering quality and project governance
+
+**PR strategy:** Single dedicated PR (naming policy + discovery/compat + active-plan migration)
+
+**Technical Outcome**
+Replace the generic `PLAN_MASTER.md` root-file convention with a deterministic file name equal to the plan folder name, so each plan root file is uniquely identifiable by filename without opening it.
+
+**Problem Statement**
+Using `PLAN_MASTER.md` in every plan folder creates poor discoverability and high operator friction because all root files share the same name across the repository.
+
+**Scope**
+- Update canonical plan creation/execution policy so the root plan file name must match the plan folder name.
+- Update active-plan discovery rules and helper scripts to resolve the new naming convention.
+- Preserve temporary backward-read compatibility for legacy plans that still use `PLAN_MASTER.md` during migration.
+- Migrate active plans to the new naming convention.
+- Update implementation-plan and operational references that currently assume `PLAN_MASTER.md`.
+
+**Out of Scope**
+- No rewrite of completed plan body content.
+- No backend/frontend product behavior changes.
+- No unrelated refactors to plan schema/sections.
+
+**Naming Rule**
+- For a folder `PLAN_<YYYY-MM-DD>_<SLUG>/`, the root file must be:
+  - `PLAN_<YYYY-MM-DD>_<SLUG>.md`
+- `PLAN_MASTER.md` is disallowed for newly created plans.
+- During migration, legacy read support remains allowed until all active plans are migrated.
+
+**Acceptance Criteria**
+- Canonical docs define the new root-file naming rule explicitly.
+- Active-plan resolution logic supports the new file name and can still read legacy roots during transition.
+- All active plans use folder-matching root file names.
+- No newly created plan uses `PLAN_MASTER.md`.
+- Global/index references and examples use the new naming convention.
+
+**Validation Checklist**
+- Search confirms active plan roots no longer use `PLAN_MASTER.md`.
+- Search confirms canonical examples/templates reference folder-matching root file names.
+- Plan discovery behavior is verified for:
+  - new-named active plans,
+  - legacy `PLAN_MASTER.md` plans (read compatibility),
+  - ambiguous/missing root cases.
+- Link/reference integrity remains valid after rename updates.
+
+**Risks and Mitigations**
+- Risk: tooling/scripts fail to find plans after rename.
+  - Mitigation: add dual-read compatibility during transition and test both patterns.
+- Risk: partial migration leaves mixed naming and confusion.
+  - Mitigation: migrate all active plans in one controlled pass.
+- Risk: accidental edits to completed plans.
+  - Mitigation: keep migration scope limited to active plan roots and reference/index docs.
+
+**Dependencies**
+- Depends on IMP-01 policy baseline.
+- Should be coordinated with IMP-02/IMP-04 to keep mappings and active-plan docs consistent.
