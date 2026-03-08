@@ -108,13 +108,18 @@ Before creating or updating a Pull Request, the agent MUST run the partition gat
    - migration + feature behavior in one PR,
    - public contract changes + broad refactor in one PR.
 3. Apply thresholds:
-   - Size threshold exceeded if diff is greater than `400` changed lines or `15` changed files.
-   - Semantic threshold exceeded if any high-risk axis mix is present without explicit split rationale.
-4. Enforce outcome:
-   - If any threshold is exceeded, STOP and propose split into additional PRs.
-   - Do not proceed with PR creation/update as a single oversized PR.
-5. Record evidence:
-   - Include the size and semantic gate outcome in plan `PR Roadmap` notes or PR description rationale.
+    - Size threshold exceeded if diff is greater than `400` changed lines or `15` changed files.
+    - Semantic threshold exceeded if any high-risk axis mix is present without explicit split rationale.
+4. Open user decision gate when thresholds are exceeded:
+   - Present `Option A`: keep single PR with explicit rationale.
+   - Present `Option B`: split into additional PRs with proposed boundaries/dependencies.
+   - Require explicit user selection before proceeding.
+5. Enforce selected outcome:
+   - If user selects `Option A`, proceed with one PR and include rationale.
+   - If user selects `Option B`, split and proceed with the agreed PR set.
+   - Without explicit selection, STOP.
+6. Record evidence:
+   - Include size metrics, semantic assessment, selected option, and rationale in plan `PR Roadmap` notes or PR description rationale.
 
 ### Plan-Level Pull Request Roadmap
 
@@ -130,8 +135,8 @@ When a plan spans multiple Pull Requests, it must include a **Pull Request Roadm
 - A Pull Request is merged only when all its assigned phases pass CI and user review.
 
 PR split threshold (mandatory, mixed model):
-- Semantic split required when a single PR mixes multiple high-risk axes (for example: significant backend + frontend changes, migrations + feature behavior, API contract changes + broad refactor).
-- Size split required when projected diff for one PR exceeds approximately `400` changed lines or `15` changed files.
+- Semantic and size thresholds are mandatory risk signals.
+- Exceeding a threshold triggers the user decision gate above; it does not force automatic split without user confirmation.
 - If uncertain, default to smaller PR slices and declare dependencies in the roadmap.
 
 ### Post-Merge Cleanup Procedure

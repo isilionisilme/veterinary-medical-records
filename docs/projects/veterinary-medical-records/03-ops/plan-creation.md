@@ -128,7 +128,7 @@ When documentation is required, enforce:
 
 ### PR sizing and split criteria (hard rule)
 
-A plan MUST split into multiple PRs when a single PR would exceed the project reviewability threshold.
+Thresholds are mandatory risk signals, not automatic split commands by themselves.
 
 #### "Good PR" criteria
 
@@ -136,9 +136,9 @@ A plan MUST split into multiple PRs when a single PR would exceed the project re
 - Risk remains bounded and reviewable in isolation.
 - No mixed high-risk axes without explicit justification.
 
-#### Mandatory mixed threshold for split
+#### Mandatory mixed threshold assessment
 
-Split the plan into multiple PRs when any of these apply:
+Flag the plan for PR partition decision when any of these apply:
 
 - Semantic threshold:
   - Significant backend and frontend changes in the same PR.
@@ -161,13 +161,17 @@ Before finalizing a plan, the planning agent MUST run this gate and record the r
    - Check whether each planned PR mixes high-risk axes (backend+frontend, migration+feature behavior, contract+broad refactor).
 3. **Evaluate size guardrails**
    - Check whether projected scope exceeds `400` changed lines or `15` changed files for any planned PR.
-4. **Decide and enforce split**
-   - If semantic or size thresholds are exceeded, split further before plan approval.
+4. **Open decision gate with user (hard gate)**
+   - If semantic or size thresholds are exceeded, the planning agent MUST present two options:
+     - `Option A`: keep a single PR with explicit rationale (for example, mechanical/cohesive low-risk changes).
+     - `Option B`: split into multiple PRs with proposed boundaries and dependencies.
+   - The user must explicitly choose A or B before plan approval.
 5. **Record evidence in roadmap**
-   - Add a short note per PR with projected size/risk and any dependency created by the split.
+   - Add a short note per PR with projected size/risk, selected option, and rationale.
 
 Execution-time safeguard:
-- Before opening or updating a PR, re-evaluate the same thresholds using the real branch diff. If exceeded, STOP and propose an additional split instead of continuing with the oversized PR.
+- Before opening or updating a PR, re-evaluate the same thresholds using the real branch diff.
+- If exceeded, open the same hard gate with the user (Option A single-PR exception or Option B split) and proceed only after explicit confirmation.
 
 ---
 
