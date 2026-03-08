@@ -6,9 +6,9 @@
 **PR:** Pending (PR created on explicit user request)
 **User Story:** [IMP-05](../Backlog/imp-05-plan-root-file-naming-alignment.md)
 **Prerequisite:** None (IMP-01 dependency is soft — different sections of the same canonical docs)
-**Worktree:** —
-**CI Mode:** —
-**Automation Mode:** —
+**Worktree:** `d:/Git/veterinary-medical-records`
+**CI Mode:** `1. Strict step gate`
+**Automation Mode:** `Supervisado`
 
 ## Context
 
@@ -37,12 +37,24 @@ Replace the `PLAN_MASTER.md` convention with a deterministic root file name matc
 
 ## Commit-Point Hard Gate (Plan-Level Rule)
 
+## Commit Authorization Rule (Plan-Level Hard Rule)
+
+No execution agent may stage, commit, amend, or push changes for this plan without explicit user confirmation in the current chat.
+
+Mandatory behavior:
+1. When a step reaches a suggested commit point, the agent may prepare the pending scope and report the proposed commit message.
+2. The agent MUST stop and ask for explicit confirmation before any `git add`, `git commit`, `git commit --amend`, or `git push`.
+3. This rule survives handoff: any successor agent working on this plan MUST follow it unless the user explicitly overrides it in chat.
+4. If this rule conflicts with any default automation behavior in shared protocol docs, this plan-level rule takes precedence for this plan.
+
 When a step includes a **🔀 Suggested commit** block, the execution agent MUST:
 
-1. Stage and commit with the suggested message.
-2. Run `scripts/ci/test-L2.ps1 -BaseRef main`.
-3. If L2 fails: diagnose and fix until L2 is green.
-4. **STOP and wait for explicit user instructions** before proceeding to the next step.
+1. Finish the step implementation and report the exact commit scope and suggested message.
+2. **STOP and wait for explicit user confirmation** before staging or committing.
+3. After user confirmation, stage and commit with the suggested message.
+4. Run `scripts/ci/test-L2.ps1 -BaseRef main`.
+5. If L2 fails: diagnose and fix until L2 is green.
+6. **STOP and wait for explicit user instructions** before proceeding to the next step.
 
 This rule overrides auto-chain behavior for all steps in this plan.
 
@@ -52,17 +64,19 @@ The execution agent MUST mark each step as completed (`[x]`) in this plan file *
 
 ## Execution Status
 
-- [ ] S1 — Update `plan-creation.md`: replace `PLAN_MASTER.md` convention with folder-matching root file name rule, add backward-read compatibility note for legacy plans
+- [ ] S1 — Update `plan-creation.md`: replace `PLAN_MASTER.md` convention with folder-matching root file name rule, add backward-read compatibility note for legacy plans ⏳ IN PROGRESS (GitHub Copilot, 2026-03-09)
 - [ ] S2 — Update `plan-execution-protocol.md`: replace all `PLAN_MASTER.md` references with the new convention and add legacy compatibility language
 - [ ] S3 — Migrate legacy completed plan: rename `completed/PLAN_2026-03-08_SPLIT-IMPLEMENTATION-PLAN-BACKLOG/PLAN_MASTER.md` → `PLAN_2026-03-08_SPLIT-IMPLEMENTATION-PLAN-BACKLOG.md`
 - [ ] S4 — Regenerate router files: run `python scripts/docs/generate-router-files.py` and verify derived files no longer reference `PLAN_MASTER.md`
   - 🔀 Suggested commit after S4: `chore(docs): replace PLAN_MASTER naming convention with folder-matching root file names`
   - Scope: `plan-creation.md`, `plan-execution-protocol.md`, renamed legacy plan, regenerated router files
+   - Before any staging or commit: ask the user for explicit confirmation.
   - Run L2, fix until green, STOP and wait for user.
 - [ ] S5 — Validation: grep confirms zero `PLAN_MASTER` references in canonical and router docs (excluding the IMP-05 backlog item itself and this plan); verify plan discovery patterns work for both new-named and legacy roots
 - [ ] S6 — Update backlog item status to Implemented; update `implementation-plan.md` status
   - 🔀 Suggested commit after S6: `chore(docs): mark IMP-05 as Implemented`
   - Scope: `imp-05-plan-root-file-naming-alignment.md`, `implementation-plan.md`
+   - Before any staging or commit: ask the user for explicit confirmation.
   - Run L2, fix until green, STOP and wait for user.
 
 ## Prompt Queue
@@ -175,6 +189,7 @@ Expected: zero matches.
 🔀 **Suggested commit** (S1–S4 combined):
 - Message: `chore(docs): replace PLAN_MASTER naming convention with folder-matching root file names`
 - Scope: `plan-creation.md`, `plan-execution-protocol.md`, renamed legacy plan, regenerated router files.
+- Before any staging or commit: ask the user for explicit confirmation.
 - After commit: run `scripts/ci/test-L2.ps1 -BaseRef main`, fix until green, STOP and wait for user instructions.
 
 ### S5 — Validation
@@ -207,6 +222,7 @@ Expected: 4 active plans + this plan file.
 🔀 **Suggested commit**:
 - Message: `chore(docs): mark IMP-05 as Implemented`
 - Scope: `imp-05-plan-root-file-naming-alignment.md`, `implementation-plan.md`.
+- Before any staging or commit: ask the user for explicit confirmation.
 - After commit: run `scripts/ci/test-L2.ps1 -BaseRef main`, fix until green, STOP and wait for user instructions.
 
 ## Active Prompt
