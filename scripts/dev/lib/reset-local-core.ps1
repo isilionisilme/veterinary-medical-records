@@ -162,7 +162,8 @@ function Stop-TrackedProcesses {
 function Stop-DevProcessesByCommandLine {
     $patterns = @(
         "backend.app.main:create_app",
-        "uvicorn"
+        "uvicorn",
+        "npm run dev"
     )
 
     Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
@@ -208,6 +209,7 @@ Write-Host "Reiniciando estado local de desarrollo..."
 Stop-TrackedProcesses
 Stop-DevProcessesByCommandLine
 Stop-PortProcess -Port 8000
+Stop-PortProcess -Port 5173
 
 ($dbPaths | Sort-Object -Unique) | ForEach-Object {
     $dbPath = $_
