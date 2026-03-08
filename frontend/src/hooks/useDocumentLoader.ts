@@ -12,9 +12,11 @@ export function useDocumentLoader({ onUploadFeedback }: UseDocumentLoaderParams)
   const [fileUrl, setFileUrl] = useState<string | ArrayBuffer | null>(null);
   const [filename, setFilename] = useState<string | null>(null);
   const latestLoadRequestIdRef = useRef<string | null>(null);
+  const loadRetryCountRef = useRef<Record<string, number>>({});
   const pendingAutoOpenDocumentIdRef = useRef<string | null>(null);
   const autoOpenRetryCountRef = useRef<Record<string, number>>({});
   const autoOpenRetryTimerRef = useRef<number | null>(null);
+  const loadRetryTimerRef = useRef<number | null>(null);
 
   const loadPdf = useMutation({
     mutationFn: async (docId: string) => fetchOriginalPdf(docId),
@@ -35,6 +37,11 @@ export function useDocumentLoader({ onUploadFeedback }: UseDocumentLoaderParams)
           }
           return { ...current, showOpenAction: false };
         });
+      }
+      delete loadRetryCountRef.current[docId];
+      if (loadRetryTimerRef.current) {
+        window.clearTimeout(loadRetryTimerRef.current);
+        loadRetryTimerRef.current = null;
       }
       setFileUrl(result.data);
       setFilename(result.filename);
@@ -61,6 +68,20 @@ export function useDocumentLoader({ onUploadFeedback }: UseDocumentLoaderParams)
           documentId: docId,
           showOpenAction: true,
         });
+        delete loadRetryCountRef.current[docId];
+        return;
+      }
+
+      const retries = loadRetryCountRef.current[docId] ?? 0;
+      if (retries < 2) {
+        loadRetryCountRef.current[docId] = retries + 1;
+        if (loadRetryTimerRef.current) {
+          window.clearTimeout(loadRetryTimerRef.current);
+        }
+        loadRetryTimerRef.current = window.setTimeout(() => {
+          latestLoadRequestIdRef.current = docId;
+          requestPdfLoad(docId);
+        }, 1000);
       }
     },
   });
@@ -74,6 +95,9 @@ export function useDocumentLoader({ onUploadFeedback }: UseDocumentLoaderParams)
     return () => {
       if (autoOpenRetryTimerRef.current) {
         window.clearTimeout(autoOpenRetryTimerRef.current);
+      }
+      if (loadRetryTimerRef.current) {
+        window.clearTimeout(loadRetryTimerRef.current);
       }
     };
   }, []);
