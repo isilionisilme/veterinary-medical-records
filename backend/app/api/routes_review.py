@@ -41,6 +41,12 @@ _NEXT_VISIT_BOUNDARY_PATTERN = re.compile(
     r"(?:\s*)?visita\s+(?:consulta\s+general|administrativa)\s+del\s+d[ií]a",
     re.IGNORECASE,
 )
+_NON_ANCHORED_RAW_CONTEXT_SENTINELS = {
+    "Raw text no disponible para este run.",
+    "No se pudieron inferir offsets de contexto en raw text.",
+    "Sin ancla de fecha para recortar contexto.",
+    "Sin ventana de contexto disponible.",
+}
 
 
 def _render_visit_debug_html(*, document_id: str, visit_sections: list[dict[str, str]]) -> str:
@@ -201,12 +207,11 @@ def _build_visit_scoping_metrics(*, visits: object, raw_text: str | None) -> dic
         )
         section = debug_sections[index] if index < len(debug_sections) else None
         raw_context = section["raw_context"] if isinstance(section, dict) else ""
-        anchored = raw_text_available and bool(raw_context) and not raw_context.startswith("Sin ")
-        if raw_context in {
-            "Raw text no disponible para este run.",
-            "No se pudieron inferir offsets de contexto en raw text.",
-        }:
-            anchored = False
+        anchored = (
+            raw_text_available
+            and bool(raw_context)
+            and (raw_context not in _NON_ANCHORED_RAW_CONTEXT_SENTINELS)
+        )
 
         metrics_rows.append(
             {

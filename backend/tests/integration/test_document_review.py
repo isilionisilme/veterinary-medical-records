@@ -2898,6 +2898,59 @@ def test_document_review_visit_scoping_observability_handles_missing_raw_text(te
     ]
 
 
+def test_document_review_visit_scoping_observability_keeps_anchor_when_context_starts_with_sin(
+    test_client,
+):
+    document_id = _upload_sample_document(test_client)
+    run_id = str(uuid4())
+    _insert_run(
+        document_id=document_id,
+        run_id=run_id,
+        state=app_models.ProcessingRunState.COMPLETED,
+        failure_type=None,
+    )
+    _insert_structured_interpretation(
+        run_id=run_id,
+        data={
+            "document_id": document_id,
+            "processing_run_id": run_id,
+            "created_at": "2026-02-10T10:00:05+00:00",
+            "fields": [],
+            "visits": [
+                {
+                    "visit_id": "visit-1",
+                    "visit_date": "2026-02-11",
+                    "fields": [
+                        {
+                            "field_id": "f-diagnosis-1",
+                            "key": "diagnosis",
+                            "value": "Sin dolor",
+                            "value_type": "string",
+                        }
+                    ],
+                }
+            ],
+            "other_fields": [],
+        },
+    )
+
+    raw_text_path = get_storage_root() / document_id / "runs" / run_id / "raw-text.txt"
+    raw_text_path.parent.mkdir(parents=True, exist_ok=True)
+    raw_text_path.write_text(
+        "Consulta 11/02/2026: Sin dolor a la palpacion.\n",
+        encoding="utf-8",
+    )
+
+    response = test_client.get(f"/documents/{document_id}/review/debug/visit-scoping")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["summary"]["assigned_visits"] == 1
+    assert payload["summary"]["anchored_visits"] == 1
+    assert len(payload["visits"]) == 1
+    assert payload["visits"][0]["anchored_in_raw_text"] is True
+    assert payload["visits"][0]["raw_context_chars"] > 0
+
+
 def test_document_review_visit_scoping_observability_returns_404_for_missing_document(test_client):
     response = test_client.get(f"/documents/{uuid4()}/review/debug/visit-scoping")
     assert response.status_code == 404
