@@ -319,6 +319,10 @@ if ($runBranchNameValidation) {
 }
 
 if ($runDocs) {
+    Invoke-Step "Classify doc changes" {
+        & $python "scripts/docs/classify_doc_change.py" "--base-ref" $BaseRef
+    }
+
     Invoke-Step "Docs canonical guard" {
         & $python "scripts/docs/check_no_canonical_router_refs.py"
     }

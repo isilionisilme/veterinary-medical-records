@@ -201,6 +201,46 @@ def _matches_any_from_files(changed_files: list[str], patterns: list[str]) -> bo
     return any(_matches_any(path, patterns) for path in changed_files)
 
 
+def _read_classification_overall(base_ref: str) -> tuple[str | None, str]:
+    classification_path = Path("doc_change_classification.json")
+    if not classification_path.exists():
+        return None, "missing"
+
+    try:
+        payload = json.loads(classification_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return None, "invalid-json"
+
+    if not isinstance(payload, dict):
+        return None, "invalid-root"
+
+    overall = payload.get("overall")
+    meta = payload.get("meta")
+    if not isinstance(overall, str):
+        return None, "missing-overall"
+
+    if not isinstance(meta, dict):
+        return None, "missing-meta"
+
+    expected_base = str(meta.get("base_ref", "")).strip()
+    expected_head = str(meta.get("head_sha", "")).strip()
+    if not expected_base or not expected_head:
+        return None, "missing-meta-fields"
+
+    if expected_base != base_ref:
+        return None, "stale-base-ref"
+
+    current_head = subprocess.run(
+        ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=False
+    ).stdout.strip()
+    if not current_head:
+        return None, "head-unresolved"
+    if current_head != expected_head:
+        return None, "stale-head"
+
+    return overall, "fresh"
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-ref", required=True, help="Base commit/ref for PR diff.")
@@ -225,20 +265,17 @@ def main() -> int:
         )
         return 2
 
-    classification_path = Path("doc_change_classification.json")
-    if classification_path.exists():
-        try:
-            classification = json.loads(classification_path.read_text(encoding="utf-8"))
-            overall = classification.get("overall", "Rule")
-        except (json.JSONDecodeError, KeyError):
-            overall = "Rule"
-
-        if overall == "Navigation":
-            print("Doc/test sync guard: Navigation-only changes detected. Skipping.")
-            return 0
-
-        if overall == "Clarification":
-            os.environ["DOC_SYNC_RELAXED"] = "1"
+    overall, classification_state = _read_classification_overall(args.base_ref)
+    if overall is None:
+        print(
+            "Doc/test sync guard: classification context unavailable or stale "
+            f"({classification_state}); running strict mode."
+        )
+    elif overall == "Navigation":
+        print("Doc/test sync guard: Navigation-only changes detected. Skipping.")
+        return 0
+    elif overall == "Clarification":
+        os.environ["DOC_SYNC_RELAXED"] = "1"
 
     required_doc_globs = [str(item).strip() for item in required_doc_globs_raw if str(item).strip()]
     exclude_doc_globs_raw = config.get("exclude_doc_globs", [])

@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Classify changed docs as Rule, Clarification, or Navigation."""
+"""Classify changed docs as Rule, Clarification, or Navigation.
+
+Writes deterministic metadata so downstream guards can reject stale
+classification artifacts produced for a different base/head context.
+"""
 
 from __future__ import annotations
 
@@ -37,6 +41,10 @@ def _run_git(cmd: list[str], error_prefix: str) -> str:
     if result.returncode != 0:
         raise RuntimeError(f"{error_prefix}: {result.stderr.strip()}")
     return result.stdout
+
+
+def _git_single_line(cmd: list[str], error_prefix: str) -> str:
+    return _run_git(cmd, error_prefix).strip()
 
 
 def _changed_markdown_files(base_ref: str) -> list[str]:
@@ -124,6 +132,12 @@ def main() -> int:
         if not changed_docs:
             raise RuntimeError("No changed docs found.")
 
+        head_sha = _git_single_line(["git", "rev-parse", "HEAD"], "Could not resolve HEAD SHA")
+        merge_base = _git_single_line(
+            ["git", "merge-base", args.base_ref, "HEAD"],
+            "Could not resolve merge-base",
+        )
+
         override = _commit_tag_override(args.base_ref)
         if override:
             files = {path: override for path in changed_docs}
@@ -132,7 +146,17 @@ def main() -> int:
             files = {path: _classify_file(args.base_ref, path) for path in changed_docs}
             overall = _overall_classification(list(files.values()))
 
-        _write_output({"files": files, "overall": overall})
+        _write_output(
+            {
+                "files": files,
+                "overall": overall,
+                "meta": {
+                    "base_ref": args.base_ref,
+                    "head_sha": head_sha,
+                    "merge_base": merge_base,
+                },
+            }
+        )
         print(f"Doc change classification written to {OUTPUT_PATH}. overall={overall}")
         return 0
     except Exception as exc:  # noqa: BLE001 - fail-closed by design
