@@ -1,9 +1,15 @@
 # Plan: Processing History UI — Visibility for Evaluators
 
+> **Operational rules:** See [plan-execution-protocol.md](../../03-ops/plan-execution-protocol.md) for execution protocol and hard-gates.
+
 **Branch:** `veterinary-medical-records/feat/processing-history-ui`
 **PR:** Pending (branch PR not created yet)
 **User Story:** [US-78](../implementation-plan.md#us-78)
 **Prerequisite:** `main` stable with green tests.
+**Worktree:** `D:/Git/veterinary-medical-records`
+**CI Mode:** `2) Pipeline depth-1 gate` (default)
+**Agents:** `Codex 5.3`
+**Automation Mode:** `Supervisado`
 **Iteration:** 20
 **Mode:** lightweight feature — no API changes required.
 
@@ -59,6 +65,18 @@ This feature showcases:
 
 ---
 
+## Commit recommendations (inline, non-blocking)
+
+- After `P0-B + P0-C`: recommend `refactor(plan-p0): extract ProcessingHistorySection component`.
+- After `P1-A..P1-D`: recommend `feat(plan-p1): enhanced run cards with state badges and duration`.
+- After `P2-A..P2-C`: recommend `feat(plan-p2): per-run raw text viewer`.
+- After `P3-A..P3-C`: recommend `test(plan-p3): processing history UI tests`.
+- In `Supervisado`, each commit requires explicit user confirmation.
+- Push remains manual in all modes.
+- PR creation/update is user-triggered only and requires pre-PR commit-history review.
+
+---
+
 ## Steps
 
 ### P0 — Preparation & baseline
@@ -68,8 +86,6 @@ This feature showcases:
 | P0-A | Snapshot current E2E test results (baseline green) | 🔄 auto | — |
 | P0-B | Extract `ProcessingHistorySection` from `PdfViewerPanel.tsx` inline rendering (~L385–L510) into a dedicated component `frontend/src/components/workspace/ProcessingHistorySection.tsx` — pure refactor, no behavior change | 🔄 auto | — |
 | P0-C | Verify no visual regression: existing E2E tests pass, UI renders identically | 🔄 auto | — |
-
-**Commit → CT-1:** `refactor(plan-p0): extract ProcessingHistorySection component`
 
 ---
 
@@ -82,8 +98,6 @@ This feature showcases:
 | P1-C | Calculate and display total run duration (`started_at` → `completed_at`) alongside the run header | 🔄 auto | — |
 | P1-D | Reverse run order: show latest run first (currently chronological ASC) | 🔄 auto | — |
 
-**Commit → CT-2:** `feat(plan-p1): enhanced run cards with state badges and duration`
-
 ---
 
 ### P2 — Per-run raw text access
@@ -93,8 +107,6 @@ This feature showcases:
 | P2-A | Add a "Ver texto extraído" button to each COMPLETED run card | 🔄 auto | — |
 | P2-B | On click, fetch `GET /runs/{run_id}/artifacts/raw-text` and display in an expandable section or modal within the run card | 🔄 auto | — |
 | P2-C | Handle loading/error states (run still processing, artifact missing → 410) | 🔄 auto | — |
-
-**Commit → CT-3:** `feat(plan-p2): per-run raw text viewer`
 
 ---
 
@@ -106,19 +118,9 @@ This feature showcases:
 | P3-B | E2E test: reprocess a document → verify two runs appear with correct state badges | 🔄 auto | — |
 | P3-C | Full E2E suite pass — no regressions | 🔄 auto | — |
 | P3-D | 🚧 User review: demo the feature with a reprocessed document | 🚧 hard-gate | User approval |
-
-**Commit → CT-4:** `test(plan-p3): processing history UI tests`
+| P3-E | 🚧 Documentación wiki: actualizar documentación de observabilidad UI o cerrar con `no-doc-needed` | 🚧 hard-gate | User decision |
 
 ---
-
-## Commit Task Definitions
-
-| ID   | After Steps       | Scope                                      | Commit Message                                                    | Push      |
-|------|-------------------|--------------------------------------------|-------------------------------------------------------------------|-----------|
-| CT-1 | P0-B, P0-C        | Component extraction (refactor only)       | `refactor(plan-p0): extract ProcessingHistorySection component`   | Immediate |
-| CT-2 | P1-A→P1-D         | State badges, latest label, duration, order | `feat(plan-p1): enhanced run cards with state badges and duration` | Immediate |
-| CT-3 | P2-A→P2-C         | Per-run raw text viewer                    | `feat(plan-p2): per-run raw text viewer`                          | Immediate |
-| CT-4 | P3-A→P3-C         | Tests                                      | `test(plan-p3): processing history UI tests`                      | Immediate |
 
 ---
 
@@ -145,6 +147,7 @@ This feature showcases:
 | P3-B | E2E test: multi-run visibility | [ ] |
 | P3-C | Full E2E suite green | [ ] |
 | P3-D | 🚧 User review / demo | [ ] |
+| P3-E | 🚧 Documentación wiki / no-doc-needed | [ ] |
 
 ---
 
