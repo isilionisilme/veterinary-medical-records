@@ -20,6 +20,7 @@ import sys
 from pathlib import Path
 
 DEFAULT_MAP_PATH = Path("docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json")
+DEFAULT_CLASSIFICATION_PATH = Path("doc_change_classification.json")
 
 
 def _run_changed_files(base_ref: str) -> list[str]:
@@ -201,8 +202,9 @@ def _matches_any_from_files(changed_files: list[str], patterns: list[str]) -> bo
     return any(_matches_any(path, patterns) for path in changed_files)
 
 
-def _read_classification_overall(base_ref: str) -> tuple[str | None, str]:
-    classification_path = Path("doc_change_classification.json")
+def _read_classification_overall(
+    base_ref: str, classification_path: Path
+) -> tuple[str | None, str]:
     if not classification_path.exists():
         return None, "missing"
 
@@ -249,6 +251,11 @@ def main() -> int:
         default=str(DEFAULT_MAP_PATH),
         help="Path to the doc->test impact mapping JSON.",
     )
+    parser.add_argument(
+        "--classification-file",
+        default=os.environ.get("DOC_CLASSIFICATION_FILE", str(DEFAULT_CLASSIFICATION_PATH)),
+        help="Path to doc classification JSON file.",
+    )
     args = parser.parse_args()
 
     changed_files = _run_changed_files(args.base_ref)
@@ -265,7 +272,10 @@ def main() -> int:
         )
         return 2
 
-    overall, classification_state = _read_classification_overall(args.base_ref)
+    overall, classification_state = _read_classification_overall(
+        args.base_ref,
+        Path(args.classification_file),
+    )
     if overall is None:
         print(
             "Doc/test sync guard: classification context unavailable or stale "

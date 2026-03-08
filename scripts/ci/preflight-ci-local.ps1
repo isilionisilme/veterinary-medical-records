@@ -319,8 +319,16 @@ if ($runBranchNameValidation) {
 }
 
 if ($runDocs) {
+    $branchName = (& git rev-parse --abbrev-ref HEAD).Trim()
+    if (-not $branchName) {
+        throw "Unable to resolve current branch name for doc classification path."
+    }
+    $safeBranchName = ($branchName -replace '[^A-Za-z0-9_.-]', '_')
+    $classificationDir = Join-Path $env:TEMP "vmr-doc-classification"
+    $classificationFile = Join-Path $classificationDir ("{0}.json" -f $safeBranchName)
+
     Invoke-Step "Classify doc changes" {
-        & $python "scripts/docs/classify_doc_change.py" "--base-ref" $BaseRef
+        & $python "scripts/docs/classify_doc_change.py" "--base-ref" $BaseRef "--output" $classificationFile
     }
 
     Invoke-Step "Docs canonical guard" {
@@ -328,7 +336,7 @@ if ($runDocs) {
     }
 
     Invoke-Step "Doc/test sync guard" {
-        & $python "scripts/docs/check_doc_test_sync.py" "--base-ref" $BaseRef
+        & $python "scripts/docs/check_doc_test_sync.py" "--base-ref" $BaseRef "--classification-file" $classificationFile
     }
 
     Invoke-Step "Doc/router parity guard" {
