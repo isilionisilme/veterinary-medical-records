@@ -170,8 +170,8 @@
 - [x] P3-B 🔄 - Ejecutar suite completa y preparar evidencia reproducible para PR body. — ✅ `94593a6a`
 - [x] CT-4 🔄 - Commit task: scope P3-A + P3-B -> `test(plan-p3): owner_address golden regression and validation evidence` -> push. — ✅ `94593a6a`
 - [x] P3-C 🚧 - Hard-gate: decision explicita = **NO-GO**. Motivo: `docB` contiene direccion de propietario real (`C/ CALLE DEMO 1 PORTAL 3 1F`) pero golden regression actual exige `owner_address` vacio. — ✅ `no-commit (gate decision + remediation required)`
-- [ ] P3-D 🔄 - Post-gate (deferred): ajustar `MIN_EXACT_MATCH_RATE`, actualizar guardrails en `extraction-quality.md`, marcar campo como completado. ⏸️ PAUSADO hasta cierre de `Phase 4`.
-- [ ] CT-5 🔄 - Commit task: scope P3-D -> `docs(plan-p3): owner_address threshold lock and extraction-quality update` -> push. ⏸️ PAUSADO hasta cierre de `Phase 4`.
+- [x] P3-D 🔄 - Post-gate (deferred): ajustar `MIN_EXACT_MATCH_RATE`, actualizar guardrails en `extraction-quality.md`, marcar campo como completado. — ✅ `9ed876ca`
+- [x] CT-5 🔄 - Commit task: scope P3-D -> `docs(plan-p3): owner_address threshold lock and extraction-quality update` -> push. — ✅ `9ed876ca`
 
 ### Phase 4 - docB remediation (real extraction parity)
 
