@@ -15,8 +15,8 @@ As a user, I want an in-app help wiki with a globally accessible entry point so 
 - Contextual help icons throughout the UI linking to specific wiki sections are delivered separately in US-55.
 
 **Authoritative References**
-- Product/UX language and workflow semantics: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md)
-- Brand and copy tone: [`docs/shared/01-product/brand-guidelines.md`](../../../shared/01-product/brand-guidelines.md)
+- Product/UX language and workflow semantics: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../../01-product/ux-design.md)
+- Brand and copy tone: [`docs/shared/01-product/brand-guidelines.md`](../../../../shared/01-product/brand-guidelines.md)
 
 **Test Expectations**
 - Users can open help from within the app and find the required minimum topics.
@@ -24,8 +24,8 @@ As a user, I want an in-app help wiki with a globally accessible entry point so 
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
-- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../../01-product/ux-design.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../../shared/01-product/brand-guidelines.md).
 
 ---

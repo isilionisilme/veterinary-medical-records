@@ -31,10 +31,10 @@ Introduce a minimal, consistent UI foundation to prevent ad-hoc styling and enab
 - Large refactors of unrelated screens.
 
 **Authoritative References**
-- UX: Review interaction contract and confidence behavior: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md) Sections 2–4 and section **Review UI Rendering Rules (Global Schema Template)**.
-- Shared UX boundaries: [`docs/shared/01-product/ux-guidelines.md`](../../../shared/01-product/ux-guidelines.md).
-- Brand constraints and tokenization requirement: [`docs/shared/01-product/brand-guidelines.md`](../../../shared/01-product/brand-guidelines.md).
-- Design system implementation contract: [`docs/projects/veterinary-medical-records/01-product/design-system.md`](design-system.md).
+- UX: Review interaction contract and confidence behavior: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../../01-product/ux-design.md) Sections 2–4 and section **Review UI Rendering Rules (Global Schema Template)**.
+- Shared UX boundaries: [`docs/shared/01-product/ux-guidelines.md`](../../../../shared/01-product/ux-guidelines.md).
+- Brand constraints and tokenization requirement: [`docs/shared/01-product/brand-guidelines.md`](../../../../shared/01-product/brand-guidelines.md).
+- Design system implementation contract: [`docs/projects/veterinary-medical-records/01-product/design-system.md`](../../01-product/design-system.md).
 
 **Test Expectations**
 - Design-system guard script flags forbidden patterns and passes on compliant code.

@@ -34,10 +34,10 @@ As a veterinarian, I want to quickly narrow down structured fields using search 
 - Changes should remain localized to the review panel UI and related filtering logic.
 
 **Authoritative References**
-- Product: Canonical field authority and order: [`docs/projects/veterinary-medical-records/01-product/product-design.md`](product-design.md) section **Global Schema (Canonical Field List)**.
-- UX: Review rendering baseline and deterministic missing/empty behavior: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md) section **Review UI Rendering Rules (Global Schema Template)**.
-- Brand: UI controls and visual consistency: [`docs/shared/01-product/brand-guidelines.md`](../../../shared/01-product/brand-guidelines.md).
-- Frontend context: review rendering backbone: [`docs/projects/veterinary-medical-records/02-tech/frontend-implementation.md`](frontend-implementation.md) section **Review Rendering Backbone (Global Schema)**.
+- Product: Canonical field authority and order: [`docs/projects/veterinary-medical-records/01-product/product-design.md`](../../01-product/product-design.md) section **Global Schema (Canonical Field List)**.
+- UX: Review rendering baseline and deterministic missing/empty behavior: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../../01-product/ux-design.md) section **Review UI Rendering Rules (Global Schema Template)**.
+- Brand: UI controls and visual consistency: [`docs/shared/01-product/brand-guidelines.md`](../../../../shared/01-product/brand-guidelines.md).
+- Frontend context: review rendering backbone: [`docs/projects/veterinary-medical-records/02-tech/frontend-implementation.md`](../../02-tech/frontend-implementation.md) section **Review Rendering Backbone (Global Schema)**.
 
 **Test Expectations**
 - Unit tests cover search matching behavior (label/key/rendered value).
@@ -46,8 +46,8 @@ As a veterinarian, I want to quickly narrow down structured fields using search 
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
-- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../../01-product/ux-design.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../../shared/01-product/brand-guidelines.md).
 
 ---

@@ -2,7 +2,7 @@
 
 **Status:** Planned
 
-**Plan:** [PLAN_2026-03-07_PROCESSING-HISTORY-UI.md](plans/PLAN_2026-03-07_PROCESSING-HISTORY-UI.md)
+**Plan:** [PLAN_2026-03-07_PROCESSING-HISTORY-UI.md](../plans/PLAN_2026-03-07_PROCESSING-HISTORY-UI.md)
 
 **User Story**
 As an evaluator, I want to see a clear, informative processing history with state badges, durations, and per-run raw text access so that I can verify the system preserves all processing runs and artifacts end-to-end.
@@ -31,9 +31,9 @@ As an evaluator, I want to see a clear, informative processing history with stat
 
 **Authoritative References**
 
-- Tech: Processing history endpoint contract: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B3.1.
-- Tech: Run artifacts endpoint: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../02-tech/technical-design.md) Appendix B3.2.
-- Execution plan: [`docs/projects/veterinary-medical-records/04-delivery/plans/PLAN_2026-03-07_PROCESSING-HISTORY-UI.md`](plans/PLAN_2026-03-07_PROCESSING-HISTORY-UI.md).
+- Tech: Processing history endpoint contract: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../../02-tech/technical-design.md) Appendix B3.1.
+- Tech: Run artifacts endpoint: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../../02-tech/technical-design.md) Appendix B3.2.
+- Execution plan: [`docs/projects/veterinary-medical-records/04-delivery/plans/PLAN_2026-03-07_PROCESSING-HISTORY-UI.md`](../plans/PLAN_2026-03-07_PROCESSING-HISTORY-UI.md).
 
 **Test Expectations**
 
@@ -44,9 +44,9 @@ As an evaluator, I want to see a clear, informative processing history with stat
 **Definition of Done (DoD)**
 
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../02-tech/technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../01-product/ux-design.md).
-- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../../01-product/ux-design.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../../shared/01-product/brand-guidelines.md).
 
 ---
 

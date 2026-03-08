@@ -13,8 +13,8 @@ As a user, I want notification toasts to behave predictably when multiple events
 - Already partially covered by US-21 (upload feedback states), but this story defines global queue/timing behavior for all toast notifications.
 
 **Authoritative References**
-- UX: Notification feedback and accessibility patterns: [`docs/shared/01-product/ux-guidelines.md`](../../../shared/01-product/ux-guidelines.md)
-- UX: Project-wide interaction consistency: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md)
+- UX: Notification feedback and accessibility patterns: [`docs/shared/01-product/ux-guidelines.md`](../../../../shared/01-product/ux-guidelines.md)
+- UX: Project-wide interaction consistency: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../../01-product/ux-design.md)
 
 **Test Expectations**
 - Rapid successive events preserve per-toast duration behavior and queue ordering.
@@ -22,8 +22,8 @@ As a user, I want notification toasts to behave predictably when multiple events
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
-- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../../01-product/ux-design.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../../shared/01-product/brand-guidelines.md).
 
 ---

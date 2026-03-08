@@ -13,7 +13,7 @@ As a veterinarian, I want to understand why a field confidence looks the way it 
 - Edge cases are rendered deterministically: no history shows adjustment `0`; missing extraction reliability shows `No disponible`.
 - Dot/band behavior remains unchanged and continues to use `field_mapping_confidence` as the primary visible signal.
 - Confidence computation/propagation behavior is unchanged.
-- Tooltip copy and structure align with [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md) section **4.3 Confidence Tooltip Breakdown (Veterinarian UI)**.
+- Tooltip copy and structure align with [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../../01-product/ux-design.md) section **4.3 Confidence Tooltip Breakdown (Veterinarian UI)**.
 
 **Scope Clarification**
 - Implements the confidence tooltip pattern defined in UX + Design System for veterinarian review fields.
@@ -35,11 +35,11 @@ As a veterinarian, I want to understand why a field confidence looks the way it 
 - Recalibration logic changes or any confidence algorithm change.
 
 **Authoritative References**
-- UX tooltip contract: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design.md) section **4.3 Confidence Tooltip Breakdown (Veterinarian UI)**.
-- Design system tooltip pattern: [`docs/projects/veterinary-medical-records/01-product/design-system.md`](design-system.md).
-- Technical contract and visibility invariants: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design.md).
-- Backend sourcing responsibilities: [`docs/projects/veterinary-medical-records/02-tech/backend-implementation.md`](backend-implementation.md).
-- Frontend rendering responsibilities: [`docs/projects/veterinary-medical-records/02-tech/frontend-implementation.md`](frontend-implementation.md).
+- UX tooltip contract: [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](../../01-product/ux-design.md) section **4.3 Confidence Tooltip Breakdown (Veterinarian UI)**.
+- Design system tooltip pattern: [`docs/projects/veterinary-medical-records/01-product/design-system.md`](../../01-product/design-system.md).
+- Technical contract and visibility invariants: [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](../../02-tech/technical-design.md).
+- Backend sourcing responsibilities: [`docs/projects/veterinary-medical-records/02-tech/backend-implementation.md`](../../02-tech/backend-implementation.md).
+- Frontend rendering responsibilities: [`docs/projects/veterinary-medical-records/02-tech/frontend-implementation.md`](../../02-tech/frontend-implementation.md).
 
 **Test Expectations**
 - Confidence tooltip appears on all confidence-bearing fields with consistent structure and accessibility behavior.
@@ -49,8 +49,8 @@ As a veterinarian, I want to understand why a field confidence looks the way it 
 
 **Definition of Done (DoD)**
 - Acceptance criteria satisfied.
-- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](technical-design.md) Appendix B7.
-- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](ux-design.md).
-- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../shared/01-product/brand-guidelines.md).
+- Unit + integration tests per [docs/projects/veterinary-medical-records/02-tech/technical-design.md](../../02-tech/technical-design.md) Appendix B7.
+- When the story includes user-facing UI, interaction, accessibility, or copy changes, consult only the relevant sections of [docs/shared/01-product/ux-guidelines.md](../../../../shared/01-product/ux-guidelines.md) and [docs/projects/veterinary-medical-records/01-product/ux-design.md](../../01-product/ux-design.md).
+- When the story introduces or updates user-visible copy/branding, consult only the relevant sections of [docs/shared/01-product/brand-guidelines.md](../../../../shared/01-product/brand-guidelines.md).
 
 ---
