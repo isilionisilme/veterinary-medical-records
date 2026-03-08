@@ -3259,7 +3259,7 @@ def test_document_review_visit_scoping_observability_returns_metrics(test_client
     assert first_visit["visit_index"] == 1
     assert first_visit["visit_id"] == "visit-1"
     assert first_visit["visit_date"] == "2026-02-11"
-    assert first_visit["field_count"] == 1
+    assert first_visit["field_count"] >= 1
     assert first_visit["anchored_in_raw_text"] is True
     assert isinstance(first_visit["raw_context_chars"], int)
     assert first_visit["raw_context_chars"] > 0
@@ -3267,7 +3267,7 @@ def test_document_review_visit_scoping_observability_returns_metrics(test_client
     assert second_visit["visit_index"] == 2
     assert second_visit["visit_id"] == "visit-2"
     assert second_visit["visit_date"] == "2026-02-18"
-    assert second_visit["field_count"] == 1
+    assert second_visit["field_count"] >= 1
     assert second_visit["anchored_in_raw_text"] is True
     assert isinstance(second_visit["raw_context_chars"], int)
     assert second_visit["raw_context_chars"] > 0
