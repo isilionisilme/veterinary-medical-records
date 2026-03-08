@@ -1,15 +1,15 @@
-param(
-    [switch]$NoStartBackend
-)
+param()
 
 $ErrorActionPreference = "Stop"
 
-$repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+$repoRoot = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
 $backendDir = Join-Path $repoRoot "backend"
-$defaultStorageDir = Join-Path $backendDir "storage"
+$frontendDir = Join-Path $repoRoot "frontend"
 $venvPython = Join-Path $repoRoot ".venv\Scripts\python.exe"
+$defaultStorageDir = Join-Path $backendDir "storage"
 $backendDotEnvPath = Join-Path $backendDir ".env"
 $processStateFile = Join-Path $repoRoot ".start-all-processes.json"
+$composeFiles = @("docker-compose.yml", "docker-compose.dev.yml")
 
 if (-not (Test-Path $backendDir)) {
     throw "No se encontro la carpeta backend en: $backendDir"
@@ -98,9 +98,9 @@ function Stop-PortProcess {
         if ($parts.Count -lt 5) {
             continue
         }
-        $pid = 0
-        if ([int]::TryParse($parts[-1], [ref]$pid) -and $pid -gt 0) {
-            Stop-ProcessSubtree -RootPid $pid
+        $portPid = 0
+        if ([int]::TryParse($parts[-1], [ref]$portPid) -and $portPid -gt 0) {
+            Stop-ProcessSubtree -RootPid $portPid
         }
     }
 }
@@ -150,9 +150,9 @@ function Stop-TrackedProcesses {
 
     try {
         $state = Get-Content $processStateFile -Raw | ConvertFrom-Json
-        foreach ($pid in @($state.pids)) {
-            if ($pid -is [int] -and $pid -gt 0) {
-                Stop-ProcessSubtree -RootPid $pid
+        foreach ($trackedPid in @($state.pids)) {
+            if ($trackedPid -is [int] -and $trackedPid -gt 0) {
+                Stop-ProcessSubtree -RootPid $trackedPid
             }
         }
     } catch {
@@ -165,13 +165,30 @@ function Stop-TrackedProcesses {
 function Stop-DevProcessesByCommandLine {
     $patterns = @(
         "backend.app.main:create_app",
-        "uvicorn"
+        "uvicorn",
+        "npm run dev"
     )
+
+    $repoMarkers = @(
+        $repoRoot,
+        $backendDir,
+        $frontendDir,
+        $venvPython
+    ) | ForEach-Object { ([string]$_).ToLowerInvariant().Replace("/", "\") }
 
     Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
         Where-Object {
             $cmd = $_.CommandLine
             if (-not $cmd) { return $false }
+            $cmdNormalized = ([string]$cmd).ToLowerInvariant().Replace("/", "\")
+            $isRepoScoped = $false
+            foreach ($marker in $repoMarkers) {
+                if (-not [string]::IsNullOrWhiteSpace($marker) -and $cmdNormalized.Contains($marker)) {
+                    $isRepoScoped = $true
+                    break
+                }
+            }
+            if (-not $isRepoScoped) { return $false }
             foreach ($pattern in $patterns) {
                 if ($cmd -like "*$pattern*") { return $true }
             }
@@ -207,9 +224,45 @@ function Remove-PathWithRetries {
     return -not (Test-Path $Path)
 }
 
+function Stop-DockerDevProjectBestEffort {
+    $dockerCmd = Get-Command docker -ErrorAction SilentlyContinue
+    if (-not $dockerCmd) {
+        Write-Host "Docker CLI no disponible. Continuando con reset local sin docker compose down."
+        return
+    }
+
+    Push-Location $repoRoot
+    try {
+        $args = @("compose")
+        foreach ($file in $composeFiles) {
+            $args += @("-f", $file)
+        }
+        $args += @("down")
+
+        $tmpDir = Join-Path $repoRoot "tmp"
+        New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
+        $stdoutFile = Join-Path $tmpDir "reset-local-compose-down.out.log"
+        $stderrFile = Join-Path $tmpDir "reset-local-compose-down.err.log"
+
+        $process = Start-Process -FilePath $dockerCmd.Source -ArgumentList $args -PassThru -Wait -NoNewWindow -RedirectStandardOutput $stdoutFile -RedirectStandardError $stderrFile
+        if ($process.ExitCode -eq 0) {
+            Write-Host "Entorno docker del proyecto detenido (compose down)."
+        } else {
+            Write-Host "No se pudo ejecutar compose down (continuando en modo local)."
+        }
+
+        Remove-Item $stdoutFile, $stderrFile -ErrorAction SilentlyContinue
+    } finally {
+        Pop-Location
+    }
+}
+
 Write-Host "Reiniciando estado local de desarrollo..."
+Stop-DockerDevProjectBestEffort
+Stop-TrackedProcesses
 Stop-DevProcessesByCommandLine
 Stop-PortProcess -Port 8000
+Stop-PortProcess -Port 5173
 
 ($dbPaths | Sort-Object -Unique) | ForEach-Object {
     $dbPath = $_
@@ -235,15 +288,4 @@ Stop-PortProcess -Port 8000
     Write-Host "Storage reiniciado: $storageDir"
 }
 
-if ($NoStartBackend) {
-    Write-Host "Reset completado. Backend no iniciado (NoStartBackend)."
-    exit 0
-}
-
-if (-not (Test-Path $venvPython)) {
-    throw "No se encontro Python del entorno virtual en: $venvPython"
-}
-
-Set-Location $repoRoot
-Write-Host "Iniciando backend en http://localhost:8000 ..."
-& $venvPython -m uvicorn backend.app.main:create_app --factory --reload
+Write-Host "Reset local de datos completado."
