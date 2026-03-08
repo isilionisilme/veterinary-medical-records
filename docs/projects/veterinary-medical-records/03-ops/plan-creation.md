@@ -17,16 +17,21 @@ Create a plan when work requires coordinated multi-step delivery, multiple check
 
 ### Naming and location
 
-- Naming convention: `PLAN_<YYYY-MM-DD>_<SLUG>.md`
-- Location: `docs/projects/veterinary-medical-records/04-delivery/plans/`
+- Plan folder naming convention: `PLAN_<YYYY-MM-DD>_<SLUG>`
+- Active plan location: `docs/projects/veterinary-medical-records/04-delivery/plans/<plan-folder>/`
+- Canonical root file inside the plan folder: `PLAN_MASTER.md`
+- Optional per-PR annex files: `PR-1.md`, `PR-2.md`, ...
+- Completed plans location: `docs/projects/veterinary-medical-records/04-delivery/plans/completed/<plan-folder>/`
 
 ### Required plan template
 
 Every new plan MUST include:
 
-1. Title: `# Plan: <name>`
-2. Operational rules pointer: `> **Operational rules:** See [plan-execution-protocol.md](...)`
-3. Metadata:
+1. Create plan folder: `plans/<plan-folder>/`.
+2. Create root file: `plans/<plan-folder>/PLAN_MASTER.md`.
+3. Title: `# Plan: <name>`
+4. Operational rules pointer: `> **Operational rules:** See [plan-execution-protocol.md](...)`
+5. Metadata:
    - `**Branch:**`
    - `**PR:**` — Use `Pending (PR created on explicit user request)` as placeholder.
    - `**User Story:**`
@@ -34,20 +39,25 @@ Every new plan MUST include:
    - `**Worktree:**`
    - `**CI Mode:**`
    - `**Automation Mode:**` — one of `Supervisado`, `Semiautomatico`, `Automatico`
-4. `## Context`
-5. `## Objective`
-6. `## Scope Boundary`
-7. `## Execution Status`
-8. `## Prompt Queue`
-9. `## Active Prompt`
-10. `## Acceptance criteria`
-11. `## How to test`
+6. `## Context`
+7. `## Objective`
+8. `## Scope Boundary`
+9. `## Execution Status`
+10. `## Prompt Queue`
+11. `## Active Prompt`
+12. `## Acceptance criteria`
+13. `## How to test`
 
 Optional sections:
 
 - `## Design decisions`
 - `## PR Roadmap` (mandatory when a plan spans multiple PRs)
 - `## Risks and limitations`
+
+When `## PR Roadmap` is present:
+- The section lives in `PLAN_MASTER.md`.
+- Each phase and each execution-status step must include a `**[PR-X]**` tag.
+- If a PR requires implementation detail that would bloat `PLAN_MASTER.md`, create/update `PR-X.md` annex files in the same folder and link them from the roadmap.
 
 ### Plan-start requirement
 
@@ -114,6 +124,32 @@ When documentation is required, enforce:
 - A PR is required before merge.
 - PR creation/update is user-triggered only.
 - Plans must not include automatic PR creation tasks.
+- During plan creation, the planning agent MUST estimate the required number of PRs and record that decision in `## PR Roadmap`.
+
+### PR sizing and split criteria (hard rule)
+
+A plan MUST split into multiple PRs when a single PR would exceed the project reviewability threshold.
+
+#### "Good PR" criteria
+
+- One dominant objective (user story slice or technical concern).
+- Risk remains bounded and reviewable in isolation.
+- No mixed high-risk axes without explicit justification.
+
+#### Mandatory mixed threshold for split
+
+Split the plan into multiple PRs when any of these apply:
+
+- Semantic threshold:
+  - Significant backend and frontend changes in the same PR.
+  - Schema/data migration in the same PR as feature behavior changes.
+  - Public API/contract changes mixed with broad refactor.
+  - Large structural refactor mixed with unrelated product behavior.
+- Size guardrail threshold (approximate per PR diff):
+  - More than `400` changed lines, or
+  - More than `15` changed files.
+
+If uncertainty remains, default to smaller PR slices and document dependencies in `## PR Roadmap`.
 
 ---
 

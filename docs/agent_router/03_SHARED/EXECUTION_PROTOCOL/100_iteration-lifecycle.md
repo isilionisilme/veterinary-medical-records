@@ -32,7 +32,8 @@ When user says "merge", execute close-out first:
 1. **Verify clean working tree** and `git fetch --prune`.
 2. **Plan reconciliation** — If any steps are `[ ]`, present each to user: Defer / Drop / Mark complete.
 3. **Update IMPLEMENTATION_HISTORY.md** — Add timeline row and cumulative progress.
-4. **Rename plan → completed archive** — `git mv` from active to `completed/`.
+4. **Move plan folder to completed archive (no renames)** — `git mv plans/<plan-folder> plans/completed/<plan-folder>`.
+   Keep all file names unchanged (including `PLAN_MASTER.md` and `PR-X.md`) to preserve links.
 5. **DOC_UPDATES normalization** — For qualifying `.md` files only.
 6. **Commit + push** — `docs(iter-close): iteration <N> close-out` on the feature branch.
 7. **Wait for CI green** on the close-out commit.

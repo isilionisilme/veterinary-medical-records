@@ -30,15 +30,17 @@ AI assistants must stop and report the blocker when a protocol step cannot be co
 
 ```
 docs/projects/veterinary-medical-records/04-delivery/plans/
-├── plan-execution-protocol.md      ← YOU ARE HERE
-├── IMPLEMENTATION_HISTORY.md       ← Timeline of all iterations
-├── PLAN_<date>_<slug>.md           ← Active iteration plans
-├── completed/                      ← Finished iterations
-│   └── COMPLETED_<date>_<slug>.md
+├── PLAN_<date>_<slug>/
+│   ├── PLAN_MASTER.md              ← Active plan source of truth
+│   ├── PR-1.md                     ← Optional per-PR annex
+│   └── PR-2.md                     ← Optional per-PR annex
+└── completed/
+    └── PLAN_<date>_<slug>/         ← Completed plan folders (same file names)
 ```
 
-**Active plan file:** The agent attaches the relevant `PLAN_*.md` file when executing a continuation-intent request (for example: "continue", "go", "let's go", "proceed", "resume").
-Each plan file contains: Execution Status (checkboxes), Prompt Queue, Active Prompt, and iteration-specific context.
+**Active plan file:** For new plans, the agent attaches `plans/<plan-folder>/PLAN_MASTER.md` when executing a continuation-intent request (for example: "continue", "go", "let's go", "proceed", "resume").
+For legacy plans, `PLAN_*.md` remains accepted during transition.
+The active plan source file contains: Execution Status (checkboxes), Prompt Queue, Active Prompt, and iteration-specific context.
 
 ---
 
@@ -194,7 +196,7 @@ Before executing the first step of a plan, the agent must ask the user where to 
   1. Use one of the listed existing worktrees.
   2. Create a new worktree (user chooses path and base branch, unless explicitly delegated).
 - Do not start step 1 until the user explicitly selects one option.
-- Record the selected execution worktree path in the active `PLAN_*.md`.
+- Record the selected execution worktree path in the active plan source file (`PLAN_MASTER.md` for new plans; `PLAN_*.md` for legacy plans).
 - All plan execution commands and file edits must stay within the selected worktree.
 
 ### CI Execution Mode (Mandatory Plan-Start Choice)
@@ -207,7 +209,7 @@ Before executing the first step of a plan, the agent must offer the user exactly
 
 **Mandatory behavior:**
 - Ask the user to choose one mode before step 1 starts.
-- Record the selected mode in the active `PLAN_*.md`.
+- Record the selected mode in the active plan source file (`PLAN_MASTER.md` for new plans; `PLAN_*.md` for legacy plans).
 - If the user does not choose, default to **Mode 2 (Pipeline depth-1 gate)**.
 - The selected mode applies to the full plan unless the user explicitly changes it.
 - Hard-gates (🚧), inter-agent handoffs, and merge readiness still require CI green.
@@ -459,7 +461,8 @@ When user says "merge", execute close-out first:
 1. **Verify clean working tree** and `git fetch --prune`.
 2. **Plan reconciliation** — If any steps are `[ ]`, present each to user: Defer / Drop / Mark complete.
 3. **Update IMPLEMENTATION_HISTORY.md** — Add timeline row and cumulative progress.
-4. **Rename plan → completed archive** — `git mv` from active to `completed/`.
+4. **Move plan folder to completed archive (no renames)** — `git mv plans/<plan-folder> plans/completed/<plan-folder>`.
+   Keep all file names unchanged (including `PLAN_MASTER.md` and `PR-X.md`) to preserve links.
 5. **DOC_UPDATES normalization** — For qualifying `.md` files only.
 6. **Commit + push** — `docs(iter-close): iteration <N> close-out` on the feature branch.
 7. **Wait for CI green** on the close-out commit.
@@ -489,7 +492,7 @@ During plan execution, the agent MUST project plan progress into chat todos.
 
 ### Synchronization rules
 
-- `PLAN_*.md` checkboxes are the source of truth.
+- The active plan source file checkboxes are the source of truth (`PLAN_MASTER.md` for new plans; `PLAN_*.md` for legacy plans).
 - Chat todos are an execution-time projection and MUST stay synchronized with the plan.
 - If plan and chat todos diverge, reconcile immediately from the plan before continuing.
 
