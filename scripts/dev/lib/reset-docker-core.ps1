@@ -13,6 +13,9 @@ $backendDataDir = if ([string]::IsNullOrWhiteSpace($env:BACKEND_DATA_DIR)) {
 if (-not [System.IO.Path]::IsPathRooted($backendDataDir)) {
     $backendDataDir = Join-Path $repoRoot $backendDataDir
 }
+$backendDir = Join-Path $repoRoot "backend"
+$frontendDir = Join-Path $repoRoot "frontend"
+$venvPython = Join-Path $repoRoot ".venv\Scripts\python.exe"
 $dbPath = Join-Path $backendDataDir "documents.db"
 $dbDir = Split-Path -Parent $dbPath
 $processStateFile = Join-Path $repoRoot ".start-all-processes.json"
@@ -195,10 +198,26 @@ function Stop-LocalDevProcesses {
         "npm run dev"
     )
 
+    $repoMarkers = @(
+        $repoRoot,
+        $backendDir,
+        $frontendDir,
+        $venvPython
+    ) | ForEach-Object { ([string]$_).ToLowerInvariant().Replace("/", "\") }
+
     Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
         Where-Object {
             $cmd = $_.CommandLine
             if (-not $cmd) { return $false }
+            $cmdNormalized = ([string]$cmd).ToLowerInvariant().Replace("/", "\")
+            $isRepoScoped = $false
+            foreach ($marker in $repoMarkers) {
+                if (-not [string]::IsNullOrWhiteSpace($marker) -and $cmdNormalized.Contains($marker)) {
+                    $isRepoScoped = $true
+                    break
+                }
+            }
+            if (-not $isRepoScoped) { return $false }
             foreach ($pattern in $patterns) {
                 if ($cmd -like "*$pattern*") { return $true }
             }

@@ -2,11 +2,20 @@
 setlocal
 
 set "SCRIPT_DIR=%~dp0"
+set "EXITCODE=0"
 
 if /I "%~1"=="nostart" (
-    powershell -ExecutionPolicy Bypass -File "%SCRIPT_DIR%reset-local-dev-env.ps1" -NoStart
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_DIR%reset-local-dev-env.ps1" -NoStart
 ) else (
-    powershell -ExecutionPolicy Bypass -File "%SCRIPT_DIR%reset-local-dev-env.ps1"
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_DIR%reset-local-dev-env.ps1"
 )
 
-endlocal
+set "EXITCODE=%ERRORLEVEL%"
+if not "%EXITCODE%"=="0" (
+    echo.
+    echo reset-local-dev-env failed with exit code %EXITCODE%.
+    echo Check the error above and retry.
+    pause
+)
+
+endlocal & exit /b %EXITCODE%

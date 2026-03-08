@@ -4,6 +4,8 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
 $backendDir = Join-Path $repoRoot "backend"
+$frontendDir = Join-Path $repoRoot "frontend"
+$venvPython = Join-Path $repoRoot ".venv\Scripts\python.exe"
 $defaultStorageDir = Join-Path $backendDir "storage"
 $backendDotEnvPath = Join-Path $backendDir ".env"
 $processStateFile = Join-Path $repoRoot ".start-all-processes.json"
@@ -167,10 +169,26 @@ function Stop-DevProcessesByCommandLine {
         "npm run dev"
     )
 
+    $repoMarkers = @(
+        $repoRoot,
+        $backendDir,
+        $frontendDir,
+        $venvPython
+    ) | ForEach-Object { ([string]$_).ToLowerInvariant().Replace("/", "\") }
+
     Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
         Where-Object {
             $cmd = $_.CommandLine
             if (-not $cmd) { return $false }
+            $cmdNormalized = ([string]$cmd).ToLowerInvariant().Replace("/", "\")
+            $isRepoScoped = $false
+            foreach ($marker in $repoMarkers) {
+                if (-not [string]::IsNullOrWhiteSpace($marker) -and $cmdNormalized.Contains($marker)) {
+                    $isRepoScoped = $true
+                    break
+                }
+            }
+            if (-not $isRepoScoped) { return $false }
             foreach ($pattern in $patterns) {
                 if ($cmd -like "*$pattern*") { return $true }
             }
