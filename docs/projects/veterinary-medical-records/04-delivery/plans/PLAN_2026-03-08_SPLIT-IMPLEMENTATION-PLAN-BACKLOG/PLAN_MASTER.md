@@ -136,9 +136,9 @@ Options presented to user at plan approval:
 
 ### Phase 3 - Link and routing propagation (dry-run + apply)
 
-- [ ] P3-A-DRY 🔄 **[PR-1]** Generate replacement list: scan all docs for `implementation-plan.md#us-*` / `#imp-*` anchors; output a table of (file, line, old link, new link) without modifying any file.
-- [ ] P3-A-REVIEW 🚧 **[PR-1]** Present replacement list for user review; confirm before applying.
-- [ ] P3-A-APPLY 🔄 **[PR-1]** Apply confirmed link replacements across all affected files.
+- [x] P3-A-DRY 🔄 **[PR-1]** Generate replacement list: scan all docs for `implementation-plan.md#us-*` / `#imp-*` anchors; output a table of (file, line, old link, new link) without modifying any file.
+- [x] P3-A-REVIEW 🚧 **[PR-1]** Present replacement list for user review; confirm before applying.
+- [x] P3-A-APPLY 🔄 **[PR-1]** Apply confirmed link replacements across all affected files.
 - [ ] P3-B 🔄 **[PR-1]** Propagate any required router/owner-module alignment caused by the new detail location.
 
 ### Phase 4 - Validation and closeout
