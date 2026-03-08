@@ -3,7 +3,7 @@
 > **Operational rules:** See [plan-execution-protocol.md](../../03-ops/plan-execution-protocol.md) for execution protocol, hard gates, and completion integrity.
 
 **Branch:** `codex/veterinary-medical-records/docs/split-implementation-plan-backlog`  
-**PR:** `Pending (PR created on explicit user request)`  
+**PR:** `#239`  
 **User Story:** `US-67` (documentation governance) + `IMP-04` (plan/content migration hygiene)  
 **Prerequisite:** `main` up to date and clean working tree  
 **Worktree:** `D:/Git/veterinary-medical-records`  
