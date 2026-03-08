@@ -1,7 +1,7 @@
 # Plan Execution Protocol
 
 > Canonical source of truth for plan execution behavior.
-> Router modules are derived from this file.
+> Router files under `docs/agent_router/` are derived from this file.
 
 ---
 
