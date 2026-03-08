@@ -64,16 +64,16 @@ The execution agent MUST mark each step as completed (`[x]`) in this plan file *
 
 ## Execution Status
 
-- [ ] S1 — Update `plan-creation.md`: replace `PLAN_MASTER.md` convention with folder-matching root file name rule, add backward-read compatibility note for legacy plans ⏳ IN PROGRESS (GitHub Copilot, 2026-03-09)
-- [ ] S2 — Update `plan-execution-protocol.md`: replace all `PLAN_MASTER.md` references with the new convention and add legacy compatibility language
-- [ ] S3 — Migrate legacy completed plan: rename `completed/PLAN_2026-03-08_SPLIT-IMPLEMENTATION-PLAN-BACKLOG/PLAN_MASTER.md` → `PLAN_2026-03-08_SPLIT-IMPLEMENTATION-PLAN-BACKLOG.md`
-- [ ] S4 — Regenerate router files: run `python scripts/docs/generate-router-files.py` and verify derived files no longer reference `PLAN_MASTER.md`
+- [x] S1 — Update `plan-creation.md`: replace `PLAN_MASTER.md` convention with folder-matching root file name rule, add backward-read compatibility note for legacy plans — ✅ `96549997`
+- [x] S2 — Update `plan-execution-protocol.md`: replace all `PLAN_MASTER.md` references with the new convention and add legacy compatibility language — ✅ `96549997`
+- [x] S3 — Migrate legacy completed plan: rename `completed/PLAN_2026-03-08_SPLIT-IMPLEMENTATION-PLAN-BACKLOG/PLAN_MASTER.md` → `PLAN_2026-03-08_SPLIT-IMPLEMENTATION-PLAN-BACKLOG.md` — ✅ `96549997`
+- [x] S4 — Regenerate router files: run `python scripts/docs/generate-router-files.py` and verify derived files no longer reference `PLAN_MASTER.md` — ✅ `0ae4ba8c`
   - 🔀 Suggested commit after S4: `chore(docs): replace PLAN_MASTER naming convention with folder-matching root file names`
   - Scope: `plan-creation.md`, `plan-execution-protocol.md`, renamed legacy plan, regenerated router files
    - Before any staging or commit: ask the user for explicit confirmation.
   - Run L2, fix until green, STOP and wait for user.
-- [ ] S5 — Validation: grep confirms zero `PLAN_MASTER` references in canonical and router docs (excluding the IMP-05 backlog item itself and this plan); verify plan discovery patterns work for both new-named and legacy roots
-- [ ] S6 — Update backlog item status to Implemented; update `implementation-plan.md` status
+- [x] S5 — Validation: grep confirms zero `PLAN_MASTER` references in canonical and router docs (excluding the IMP-05 backlog item itself and this plan); verify plan discovery patterns work for both new-named and legacy roots — ✅ `no-commit (validation only)`
+- [ ] S6 — Update backlog item status to Implemented; update `implementation-plan.md` status ⏳ IN PROGRESS (GitHub Copilot, 2026-03-09)
   - 🔀 Suggested commit after S6: `chore(docs): mark IMP-05 as Implemented`
   - Scope: `imp-05-plan-root-file-naming-alignment.md`, `implementation-plan.md`
    - Before any staging or commit: ask the user for explicit confirmation.
