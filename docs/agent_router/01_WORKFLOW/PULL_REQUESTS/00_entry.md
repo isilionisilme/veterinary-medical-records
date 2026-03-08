@@ -53,11 +53,17 @@ Compatibility note: this section is also referenced as **Plan-level PR Roadmap**
 
 When a plan spans multiple Pull Requests, it must include a **Pull Request Roadmap** section:
 - Table with columns: **Pull Request**, **Branch**, **Phases**, **Scope**, **Depends on**.
+- The planning agent must estimate PR count during plan creation and record it in the roadmap before execution starts.
 - Each phase belongs to exactly one Pull Request.
 - Each phase belongs to exactly one PR.
 - Each execution step carries a `**[PR-X]**` tag.
 - Each execution step in the Execution Status must carry a `**[PR-X]**` tag.
 - A Pull Request is merged only when all its assigned phases pass CI and user review.
+
+PR split threshold (mandatory, mixed model):
+- Semantic split required when a single PR mixes multiple high-risk axes (for example: significant backend + frontend changes, migrations + feature behavior, API contract changes + broad refactor).
+- Size split required when projected diff for one PR exceeds approximately `400` changed lines or `15` changed files.
+- If uncertain, default to smaller PR slices and declare dependencies in the roadmap.
 
 ### Post-Merge Cleanup Procedure
 
