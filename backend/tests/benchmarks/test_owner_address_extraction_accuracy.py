@@ -25,7 +25,8 @@ def _load_cases() -> list[dict]:
 
 
 _CASES = _load_cases()
-MIN_EXACT_MATCH_RATE: float = 0.0
+# Locked after Phase 4 remediation: observed 94.7% EM, floor set to -5pp.
+MIN_EXACT_MATCH_RATE: float = 0.897
 
 
 def _normalize_for_comparison(value: str | None) -> str | None:
