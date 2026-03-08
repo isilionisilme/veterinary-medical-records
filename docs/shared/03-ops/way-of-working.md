@@ -232,17 +232,48 @@ When an AI coding assistant or automation tool creates or updates a Pull Request
 6. Include end-user validation steps when applicable.
 7. Before requesting merge, if the Pull Request includes code changes and no code review has been performed, ask the user whether a review should be done. Include a recommended review depth (see Section 6 — Review Depth) with a brief justification.
 
+### PR Partition Gate (hard rule)
+
+Before creating or updating a Pull Request, the agent MUST run the partition gate with real diff evidence:
+
+1. Compute diff size against PR base:
+   - `git diff --shortstat <base_ref>...HEAD`
+   - `git diff --name-only <base_ref>...HEAD`
+2. Evaluate semantic risk axes in the pending PR scope:
+   - significant backend + frontend in one PR,
+   - migration + feature behavior in one PR,
+   - public contract changes + broad refactor in one PR.
+3. Apply thresholds:
+    - Size threshold exceeded if diff is greater than `400` changed lines or `15` changed files.
+    - Semantic threshold exceeded if any high-risk axis mix is present without explicit split rationale.
+4. Open user decision gate when thresholds are exceeded:
+   - Present `Option A`: keep single PR with explicit rationale.
+   - Present `Option B`: split into additional PRs with proposed boundaries/dependencies.
+   - Require explicit user selection before proceeding.
+5. Enforce selected outcome:
+   - If user selects `Option A`, proceed with one PR and include rationale.
+   - If user selects `Option B`, split and proceed with the agreed PR set.
+   - Without explicit selection, STOP.
+6. Record evidence:
+   - Include size metrics, semantic assessment, selected option, and rationale in plan `PR Roadmap` notes or PR description rationale.
+
 ### Plan-Level Pull Request Roadmap
 
 Compatibility note: this section is also referenced as **Plan-level PR Roadmap** in legacy router contracts.
 
 When a plan spans multiple Pull Requests, it must include a **Pull Request Roadmap** section:
 - Table with columns: **Pull Request**, **Branch**, **Phases**, **Scope**, **Depends on**.
+- The planning agent must estimate PR count during plan creation and record it in the roadmap before execution starts.
 - Each phase belongs to exactly one Pull Request.
 - Each phase belongs to exactly one PR.
 - Each execution step carries a `**[PR-X]**` tag.
 - Each execution step in the Execution Status must carry a `**[PR-X]**` tag.
 - A Pull Request is merged only when all its assigned phases pass CI and user review.
+
+PR split threshold (mandatory, mixed model):
+- Semantic and size thresholds are mandatory risk signals.
+- Exceeding a threshold triggers the user decision gate above; it does not force automatic split without user confirmation.
+- If uncertain, default to smaller PR slices and declare dependencies in the roadmap.
 
 ### Post-Merge Cleanup Procedure
 

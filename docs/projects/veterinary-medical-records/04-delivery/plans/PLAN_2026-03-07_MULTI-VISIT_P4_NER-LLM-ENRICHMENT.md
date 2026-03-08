@@ -8,6 +8,7 @@
 **Worktree:** `d:/Git/veterinary-medical-records-golden-loop`
 **CI Mode:** `2) Pipeline depth-1 gate` (default)
 **Agents:** pendiente de seleccion explicita del usuario antes de Step 1
+**Automation Mode:** `Supervisado` (default hasta seleccion explicita del usuario)
 **Iteration:** 26 (propuesta)
 
 ---
@@ -75,13 +76,14 @@ Ventajas:
 
 ---
 
-## Commit plan
+## Commit recommendations (inline, non-blocking)
 
-| ID | After Steps | Scope | Commit Message | Push |
-|---|---|---|---|---|
-| CT-1 | P0-A, P0-B | Evaluacion de modelo + PoC offline | `spike(plan-p0): evaluate NER/LLM model for clinical field enrichment` | Inmediato |
-| CT-2 | P1-A, P1-B | Pipeline integracion + tests | `feat(plan-p1): NER/LLM enrichment pipeline for visit fields` | Inmediato |
-| CT-3 | P2-B | Merge PR | `chore(plan-p2): merge NER/LLM enrichment` | Inmediato |
+- After `P0-A + P0-B`: recommend `spike(plan-p0): evaluate NER/LLM model for clinical field enrichment`.
+- After `P1-A + P1-B`: recommend `feat(plan-p1): NER/LLM enrichment pipeline for visit fields`.
+- After `P2-B`: recommend `docs(plan-p2): NER/LLM validation evidence and rollout decision`.
+- In `Supervisado`, each commit requires explicit user confirmation.
+- Push remains manual in all modes.
+- PR creation/update is user-triggered only and requires pre-PR commit-history review.
 
 ---
 
@@ -95,19 +97,17 @@ Ventajas:
 
 - [ ] P0-A 🚧 - Seleccion de modelo: evaluar opciones (spaCy + PlanTL-GOB-ES, GLiNER, LLM API, LLM local) considerando: precision en dominio veterinario español, peso/dependencias, coste operativo, latencia. Decision documentada.
 - [ ] P0-B 🔄 - PoC offline: ejecutar modelo seleccionado sobre `observations` y `actions` de docB. Medir precision/recall vs campos granulares esperados (ground truth manual). Documentar resultados.
-- [ ] CT-1 🔄 - Commit task P0.
 
 ### Phase 1 - Integracion
 
 - [ ] P1-A 🔄 - Implementar pipeline: `observations` → NER/LLM → `symptoms`, `diagnosis`; `actions` → NER/LLM → `medication`, `procedure`, `treatment_plan`. Campos granulares se inyectan aditivamente (no reemplazan `observations`/`actions` ni campos ya asignados por fuentes de mayor prioridad).
 - [ ] P1-B 🔄 - Tests: unit tests del pipeline, integracion con metricas delta vs baseline P3.
-- [ ] CT-2 🔄 - Commit task P1.
 
 ### Phase 2 - Validacion y merge
 
 - [ ] P2-A 🚧 - Hard-gate: mejora medible sobre heuristicas solas. Criterio GO: precision >70% y recall >60% en campos granulares sobre corpus de test.
-- [ ] P2-B 🔄 - Merge PR a `main`. Verificar CI verde.
-- [ ] CT-3 🔄 - Commit task P2.
+- [ ] P2-B 🔄 - Consolidar evidencia final (precision/recall, riesgos, recomendacion de adopcion) para decision de rollout.
+- [ ] P2-C 🚧 - Documentacion wiki: actualizar documentacion tecnica del pipeline NER/LLM o cerrar con `no-doc-needed` justificado.
 
 ---
 
@@ -118,7 +118,8 @@ Ventajas:
 3. `P1-A`: implementar pipeline de enriquecimiento NER/LLM.
 4. `P1-B`: tests de precision/recall con metricas delta.
 5. `P2-A`: hard-gate de validacion de mejora.
-6. `P2-B`: merge PR.
+6. `P2-B`: consolidar evidencia final y recomendacion de rollout.
+7. `P2-C`: documentacion wiki o `no-doc-needed`.
 
 ## Active Prompt
 
