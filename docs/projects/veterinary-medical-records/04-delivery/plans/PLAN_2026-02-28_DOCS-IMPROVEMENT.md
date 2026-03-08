@@ -9,6 +9,7 @@
 **Worktree:** `D:/Git/veterinary-medical-records` (default — single worktree)
 **CI Mode:** Pipeline depth-1 gate (mode 2, default)
 **Agents:** Planning agent + Execution agent
+**Automation Mode:** Supervisado
 
 ## Objective
 
@@ -29,62 +30,12 @@ The project's canonical documentation (`docs/projects/veterinary-medical-records
 - **Exception:** Broken Link Checker and Terminology Enforcer may run across wiki + router when explicitly required.
 - **Out of scope:** application code (`backend/`, `frontend/`).
 
-## Commit plan
+## Commit recommendations (inline, non-blocking)
 
-> This plan predates the formal commit-task schema. Phases 0–4 were executed with ad-hoc commits.
-> From Phase 5 onward, commit tasks follow the required operational override step schema.
-
-| Commit task | Trigger | Scope | Message | Push |
-|---|---|---|---|---|
-| CT-D5-1 | After D5-A | Lint/format fixes in `docs/` scope | `docs(plan-d5a): markdown lint autofix + prettier` | Immediate |
-| CT-D5-2 | After D5-D | Frontmatter + validator script | `docs(plan-d5d): apply frontmatter schema + validator` | Immediate |
-| CT-D5-3 | After D5-G | Broken link fixes | `docs(plan-d5g): fix broken links and anchors` | Immediate |
-| CT-D6-1 | After D6-B | Rewritten pages | `docs(plan-d6b): rewrite key pages for readability` | Immediate |
-| CT-D6-2 | After D6-F | Terminology updates | `docs(plan-d6f): apply terminology consistency` | Immediate |
-| CT-D7-1 | After D7-A | Onboarding guides | `docs(plan-d7a): add onboarding guides` | Immediate |
-| CT-D7-2 | After D7-C | Changelog | `docs(plan-d7c): add structured changelog` | Immediate |
-| CT-D8-1 | After D8-B | CI pipeline + scripts | `ci(plan-d8b): docs QA CI pipeline` | Immediate |
-
-## Operational override steps
-
-> Phases 0–4 were completed before this schema was required. Retroactive documentation only.
-> From Phase 5 onward, override steps follow the required schema.
-
-### CT-D5-1 — Commit lint/format fixes
-
-- **type:** `commit-task`
-- **trigger:** After D5-A completion
-- **preconditions:** D5-A changes staged, L1 green
-- **commands:** `git add docs/; git commit -m "docs(plan-d5a): markdown lint autofix + prettier"`; `git push origin <branch>`
-- **approval:** `auto`
-- **fallback:** Revert staged changes and report formatter errors
-
-### CT-D5-2 — Commit frontmatter + validator
-
-- **type:** `commit-task`
-- **trigger:** After D5-D completion
-- **preconditions:** D5-C schema approved (D5-E), D5-D applied, L1 green
-- **commands:** `git add docs/ scripts/; git commit -m "docs(plan-d5d): apply frontmatter schema + validator"`; `git push origin <branch>`
-- **approval:** `auto`
-- **fallback:** Revert staged changes and report validation errors
-
-### CT-D5-3 — Commit broken link fixes
-
-- **type:** `commit-task`
-- **trigger:** After D5-G completion
-- **preconditions:** D5-F report generated, D5-G fixes applied, L1 green
-- **commands:** `git add docs/; git commit -m "docs(plan-d5g): fix broken links and anchors"`; `git push origin <branch>`
-- **approval:** `auto`
-- **fallback:** Document unfixable links and continue
-
-### CT-D8-1 — Commit CI pipeline
-
-- **type:** `commit-task`
-- **trigger:** After D8-B completion
-- **preconditions:** D8-A design approved, D8-B implemented, L1 green
-- **commands:** `git add .github/ scripts/; git commit -m "ci(plan-d8b): docs QA CI pipeline"`; `git push origin <branch>`
-- **approval:** `auto`
-- **fallback:** Report CI configuration issues
+- After each completed execution phase (D5, D6, D7, D8), recommend a single narrative commit for the delivered delta with explicit scope + suggested message + expected validation (L1/L2/L3 as needed).
+- In Supervisado mode, request explicit user confirmation before each commit.
+- Push remains manual in all modes.
+- PR creation/update is user-triggered only and requires prior commit-history review.
 
 ## Acceptance criteria
 
@@ -188,6 +139,7 @@ The project's canonical documentation (`docs/projects/veterinary-medical-records
 ### Closure
 
 - [ ] D9-A 🚧 — Final smoke review and acceptance decision for merge readiness · skill: `microsoft-wiki-qa` (Planning agent)
+- [ ] D9-B 🚧 — Documentacion wiki: publicar actualizaciones o cerrar con `no-doc-needed` justificado (Planning agent)
 
 ---
 
@@ -520,3 +472,8 @@ _To be filled._
 ### D9-A — Final smoke review
 
 _To be filled._
+
+### D9-B — Documentacion wiki (obligatoria)
+
+_To be filled._
+
