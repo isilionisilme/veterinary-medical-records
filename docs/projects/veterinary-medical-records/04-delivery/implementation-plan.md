@@ -514,6 +514,7 @@ Establish modular architecture, comprehensive test coverage, production hardenin
 - [US-77 — Canonical documentation as source of truth with automatic derivation](Backlog/us-77-canonical-documentation-as-source-of-truth-with-au.md) (Implemented)
 - [US-68 — Identify the source worktree of each branch at a glance](Backlog/us-68-identify-the-source-worktree-of-each-branch-at-a-g.md) (Implemented 2026-03-06)
 - [US-67 — Auditable, navigable, and consistent project documentation](Backlog/us-67-auditable-navigable-and-consistent-project-documen.md)
+- [US-79 — Architecture health evaluation with quantified metrics and remediation path](Backlog/us-79-architecture-health-evaluation-with-quantified-metr.md) (In Progress)
 - [IMP-01 — Canonical Operational Execution Policy Alignment](Backlog/imp-01-canonical-operational-execution-policy-alignment.md) (Planned)
 - [IMP-02 — Router and DOC_UPDATES Contract Synchronization](Backlog/imp-02-router-and-doc-updates-contract-synchronization.md) (Planned)
 - [IMP-03 — Plan Execution Guard Enforcement (Local + CI)](Backlog/imp-03-plan-execution-guard-enforcement-local-ci.md) (Planned)

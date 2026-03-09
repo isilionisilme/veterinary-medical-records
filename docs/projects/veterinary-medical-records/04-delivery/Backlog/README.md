@@ -79,6 +79,7 @@ This directory contains the consolidated backlog for veterinary-medical-records.
 | US-76 | Functional L1/L2/L3 local validation pipeline on Windows | Release 17 | [us-76-functional-l1-l2-l3-local-validation-pipeline-on-w.md](us-76-functional-l1-l2-l3-local-validation-pipeline-on-w.md) |
 | US-77 | Canonical documentation as source of truth with automatic derivation | Release 17 | [us-77-canonical-documentation-as-source-of-truth-with-au.md](us-77-canonical-documentation-as-source-of-truth-with-au.md) |
 | US-78 | Enhanced processing history UI for evaluator observability | Release 18 | [us-78-enhanced-processing-history-ui-for-evaluator-obser.md](us-78-enhanced-processing-history-ui-for-evaluator-obser.md) |
+| US-79 | Architecture health evaluation with quantified metrics and remediation path | Release 17 | [us-79-architecture-health-evaluation-with-quantified-metr.md](us-79-architecture-health-evaluation-with-quantified-metr.md) |
 | IMP-01 | Canonical Operational Execution Policy Alignment | Release 17 | [imp-01-canonical-operational-execution-policy-alignment.md](imp-01-canonical-operational-execution-policy-alignment.md) |
 | IMP-02 | Router and DOC_UPDATES Contract Synchronization | Release 17 | [imp-02-router-and-doc-updates-contract-synchronization.md](imp-02-router-and-doc-updates-contract-synchronization.md) |
 | IMP-03 | Plan Execution Guard Enforcement (Local + CI) | Release 17 | [imp-03-plan-execution-guard-enforcement-local-ci.md](imp-03-plan-execution-guard-enforcement-local-ci.md) |
