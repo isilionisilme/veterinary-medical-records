@@ -1,10 +1,10 @@
 # Plan: IMP-04 — Active Plan Migration and Global Index Cleanup
 
-> **Operational rules:** See [plan-execution-protocol.md](../../03-ops/plan-execution-protocol.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
+> **Operational rules:** See [plan-execution-protocol.md](../../../03-ops/plan-execution-protocol.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
 
-**Backlog item:** [imp-04-active-plan-migration-and-global-index-cleanup.md](../Backlog/imp-04-active-plan-migration-and-global-index-cleanup.md)
+**Backlog item:** [imp-04-active-plan-migration-and-global-index-cleanup.md](../../Backlog/imp-04-active-plan-migration-and-global-index-cleanup.md)
 **Branch:** `codex/veterinary-medical-records/docs/imp-04-active-plan-migration`
-**PR:** Pending
+**PR:** [#244](https://github.com/isilionisilme/veterinary-medical-records/pull/244)
 **Prerequisite:** IMP-01 canonical policy alignment finalized or merged
 **Worktree:** `8420/veterinary-medical-records`
 **CI Mode:** `2) Pipeline depth-1 gate` (default)
