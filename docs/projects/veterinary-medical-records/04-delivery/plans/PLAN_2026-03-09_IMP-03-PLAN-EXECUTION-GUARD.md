@@ -116,9 +116,9 @@ Push permanece manual en todos los modos.
 
 ### Phase 2 — Tests unitarios del guard
 
-- [ ] P2-A 🔄 — Crear `backend/tests/unit/test_plan_execution_guard.py` con fixtures Markdown para los escenarios: happy-path (1 step in progress), no-plan (pass), ambiguity (2 plans → fail), no execution-status (fail).
-- [ ] P2-B 🔄 — Test: `STEP LOCKED` presente + nuevo step → fail; step cerrado clean `[x]` → pass.
-- [ ] P2-C 🔄 — Test: 0 plans activos para branch → exit 0 (no-plan pass mode).
+- [x] P2-A 🔄 — Crear `backend/tests/unit/test_plan_execution_guard.py` con fixtures Markdown para los escenarios: happy-path (1 step in progress), no-plan (pass), ambiguity (2 plans → fail), no execution-status (fail). — ✅ `no-commit (implemented; pending commit point)`
+- [x] P2-B 🔄 — Test: `STEP LOCKED` presente + nuevo step → fail; step cerrado clean `[x]` → pass. — ✅ `no-commit (implemented; pending commit point)`
+- [x] P2-C 🔄 — Test: 0 plans activos para branch → exit 0 (no-plan pass mode). — ✅ `no-commit (implemented; pending commit point)`
 
 > **Commit point →** `test(plan-guard): unit tests for plan execution guard invariants`
 > Lanzar L2. Si falla, reparar. Cuando L2 verde → esperar instrucciones del usuario.
