@@ -16,7 +16,7 @@ Branch names must follow category-specific patterns:
 
 **User stories:**
    - `feature/<ID>-<short-representative-slug>`
-      - El slug debe ser conciso y describir el propósito de la historia de usuario.
+   - The slug must be concise and describe the user story purpose.
 
 **User-facing improvements (to previous implementations):**
    - `improvement/<short-slug>`
@@ -29,16 +29,16 @@ Branch names must follow category-specific patterns:
    - `fix/<short-slug>`
 
 Slug rules:
-   - Usar solo minúsculas, números y guiones.
-   - Mantenerlo conciso y representativo del trabajo.
+   - Use lowercase letters, numbers, and hyphens.
+   - Keep it concise and representative of the work item.
 
 Exemptions:
-   - `main` está exenta de esta convención.
-   - Detached HEAD está exenta de esta convención.
+   - `main` is exempt from this convention.
+   - Detached HEAD is exempt from this convention.
 
-La convención antigua elimina el segmento `codex/<worktree>/` y solo requiere el patrón por categoría:
-   - Ejemplo: `feature/us-42-pet-owner-export`, `improvement/prescription-print-layout`, `chore/preflight-branch-name-hook`, `docs/branching-convention-refresh`
+This convention removes the `codex/<worktree>/` segment and only requires the category pattern:
+   - Example: `feature/us-42-pet-owner-export`, `improvement/prescription-print-layout`, `chore/preflight-branch-name-hook`, `docs/branching-convention-refresh`
 
-Las ramas deben ser **cortas** y enfocadas en una sola historia de usuario o un solo tema técnico.
+Branches must be **short-lived** and focused on a single user story or a single technical concern.
 
 ---

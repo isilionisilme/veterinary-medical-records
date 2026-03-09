@@ -38,9 +38,8 @@ Before making any new changes (code, docs, config, etc.), create a new branch of
    - Switch to base and update it (`git switch main` then `git pull origin main`).
 3. Create the branch before editing any files:
    - If already on a correctly named branch for the same work item, proceed.
-   - Otherwise, build `<branch-name>` using the canonical format `codex/<worktree>/<category>/<slug>` and create it from the updated base (`git switch -c <branch-name>`).
-   - Derive `worktree` from the current repository top-level folder name.
-   - category mapping defined in Section 1.
+   - Otherwise, build `<branch-name>` using the canonical format `<category>/<slug>` and create it from the updated base (`git switch -c <branch-name>`).
+   - Category mapping is defined in Section 1.
    - user story -> `feature`
    - user-facing improvement -> `improvement`
    - technical work -> `fix`, `docs`, `chore`, `refactor`, or `ci`
@@ -63,7 +62,7 @@ Branch names must follow category-specific patterns:
 
 **User stories:**
    - `feature/<ID>-<short-representative-slug>`
-      - El slug debe ser conciso y describir el propósito de la historia de usuario.
+   - The slug must be concise and describe the user story purpose.
 
 **User-facing improvements (to previous implementations):**
    - `improvement/<short-slug>`
@@ -76,17 +75,17 @@ Branch names must follow category-specific patterns:
    - `fix/<short-slug>`
 
 Slug rules:
-   - Usar solo minúsculas, números y guiones.
-   - Mantenerlo conciso y representativo del trabajo.
+   - Use lowercase letters, numbers, and hyphens.
+   - Keep it concise and representative of the work item.
 
 Exemptions:
-   - `main` está exenta de esta convención.
-   - Detached HEAD está exenta de esta convención.
+   - `main` is exempt from this convention.
+   - Detached HEAD is exempt from this convention.
 
-La convención antigua elimina el segmento `codex/<worktree>/` y solo requiere el patrón por categoría:
-   - Ejemplo: `feature/us-42-pet-owner-export`, `improvement/prescription-print-layout`, `chore/preflight-branch-name-hook`, `docs/branching-convention-refresh`
+This convention removes the `codex/<worktree>/` segment and only requires the category pattern:
+   - Example: `feature/us-42-pet-owner-export`, `improvement/prescription-print-layout`, `chore/preflight-branch-name-hook`, `docs/branching-convention-refresh`
 
-Las ramas deben ser **cortas** y enfocadas en una sola historia de usuario o un solo tema técnico.
+Branches must be **short-lived** and focused on a single user story or a single technical concern.
 
 ---
 
