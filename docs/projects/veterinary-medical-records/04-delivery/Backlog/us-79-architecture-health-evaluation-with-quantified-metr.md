@@ -3,7 +3,7 @@
 **Status:** In Progress
 
 **Plans:**
-- [PLAN_2026-03-09_ARCHITECTURE-AUDIT](../plans/PLAN_2026-03-09_ARCHITECTURE-AUDIT/PLAN_2026-03-09_ARCHITECTURE-AUDIT.md)
+- [PLAN_2026-03-09_ARCHITECTURE-AUDIT](../plans/completed/PLAN_2026-03-09_ARCHITECTURE-AUDIT/PLAN_2026-03-09_ARCHITECTURE-AUDIT.md)
 
 **User Story**
 As the project owner, I want to know the current architectural health of the codebase with quantified metrics and a prioritized remediation path, so that I can make informed decisions about what to improve before the technical assessment.
