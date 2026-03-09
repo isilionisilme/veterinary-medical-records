@@ -192,6 +192,7 @@ When a preflight level (L1/L2/L3) fails:
 - Every user story or technical change requires **at least one Pull Request**. A single story or change may be split across multiple Pull Requests when the scope justifies it.
 - Pull Requests are opened once the change (or the slice covered by that Pull Request) is **fully implemented** and **all automated tests are passing**.
 - Each Pull Request must be small enough to be reviewed comfortably in isolation and should focus on a **single user story or a single technical concern**.
+- Pull Request creation/update is always explicit user-triggered.
 
 ### Pull Request Title Conventions
 
@@ -232,7 +233,7 @@ If issues are found, amend, reorder, or squash commits before opening the PR.
 
 ### Pull Request Procedure
 
-When an AI coding assistant or automation tool creates or updates a Pull Request, it must follow this procedure automatically:
+When the user explicitly requests Pull Request creation or update, an AI coding assistant or automation tool must follow this procedure automatically:
 
 1. Confirm repository state (branch, base, working tree).
 2. Create/update the Pull Request targeting `main`.

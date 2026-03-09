@@ -101,8 +101,8 @@ These inconsistencies enable ambiguous execution behavior across different agent
 
 ### Phase 3 — Validation
 
-- [ ] P3-A 🔄 — **Static content check**: Grep all canonical docs (`docs/projects/*/03-ops/*.md`, `docs/shared/03-ops/*.md`) for residual `CT-*`, `commit-task` language that conditions auto-commit behavior. Any hit = failure; fix before proceeding.
-- [ ] P3-B 🔄 — **Internal consistency review**: Cross-check that commit/push/PR rules are stated identically across `plan-execution-protocol.md` and `way-of-working.md`. Verify: (a) no doc says auto-commit depends on CT-\*, (b) push is manual in all modes, (c) PR creation is user-triggered only, (d) automation mode selection is a mandatory plan-start choice, (e) pre-PR commit review is a hard rule.
+- [x] P3-A 🔄 — **Static content check**: Grep all canonical docs (`docs/projects/*/03-ops/*.md`, `docs/shared/03-ops/*.md`) for residual `CT-*`, `commit-task` language that conditions auto-commit behavior. Any hit = failure; fix before proceeding. — ✅ `no-commit (validated; only non-governing mention remains in plan-creation.md)`
+- [x] P3-B 🔄 — **Internal consistency review**: Cross-check that commit/push/PR rules are stated identically across `plan-execution-protocol.md` and `way-of-working.md`. Verify: (a) no doc says auto-commit depends on CT-\*, (b) push is manual in all modes, (c) PR creation is user-triggered only, (d) automation mode selection is a mandatory plan-start choice, (e) pre-PR commit review is a hard rule. — ✅ `no-commit (awaiting user approval)`
 - [ ] P3-C 🚧 — **Hard-gate**: User validates the final canonical text. Acceptance criteria from IMP-01:
   - Canonical policy no longer requires CT-\*/commit-task for automatic commits.
   - Commit/push/PR behavior by mode is documented once and without contradictions.

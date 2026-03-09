@@ -179,6 +179,7 @@ These rules are enforced at plan creation time. The execution agent validates ov
   - `Semiautomatico`: may be executed automatically.
   - `Automatico`: may be executed automatically.
 - `push`: always manual/user-triggered in all modes.
+- Pull Request creation/update: always manual/user-triggered.
 - Merge: always explicit user approval.
 
 ### Pull Request progress tracking (conditional)
