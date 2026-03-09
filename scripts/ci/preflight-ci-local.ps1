@@ -17,6 +17,38 @@ $repoRoot = Get-RepoRoot -ScriptRoot $PSScriptRoot
 Set-Location $repoRoot
 
 function Invoke-Step {
+    function Compare-ConfigWithReference {
+        $configFiles = @(
+            "requirements.txt",
+            "package.json",
+            "Dockerfile.backend",
+            "Dockerfile.frontend",
+            ".env.example"
+        )
+        $referenceDir = Join-Path $repoRoot ".ci-config-reference"
+        if (-not (Test-Path $referenceDir)) {
+            Write-Host "No reference config directory found: $referenceDir. Skipping config sync check."
+            return
+        }
+        $differences = @()
+        foreach ($file in $configFiles) {
+            $localPath = Join-Path $repoRoot $file
+            $refPath = Join-Path $referenceDir $file
+            if (Test-Path $localPath -and Test-Path $refPath) {
+                $localHash = Get-FileHash $localPath | Select-Object -ExpandProperty Hash
+                $refHash = Get-FileHash $refPath | Select-Object -ExpandProperty Hash
+                if ($localHash -ne $refHash) {
+                    $differences += $file
+                }
+            }
+        }
+        if ($differences.Count -gt 0) {
+            Write-Error "Config sync guard failed: Local config files differ from CI reference: $($differences -join ', ')"
+            throw "Config sync guard failed: Local config files differ from CI reference: $($differences -join ', ')"
+        } else {
+            Write-Host "Config sync guard passed: Local config matches CI reference."
+        }
+    }
     param(
         [Parameter(Mandatory = $true)][string]$Name,
         [Parameter(Mandatory = $true)][scriptblock]$Action
@@ -350,6 +382,9 @@ if ($runDocs) {
 }
 
 if ($Mode -eq "Push" -or $Mode -eq "Full") {
+        Invoke-Step "Config sync guard (local vs CI reference)" {
+            Compare-ConfigWithReference
+        }
     Invoke-Step "Plan execution guard" {
         & $python "scripts/ci/check_plan_execution_guard.py"
     }
