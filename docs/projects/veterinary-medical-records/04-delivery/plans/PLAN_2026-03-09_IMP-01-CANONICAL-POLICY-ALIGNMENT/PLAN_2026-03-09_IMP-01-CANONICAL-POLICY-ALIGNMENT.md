@@ -95,15 +95,15 @@ These inconsistencies enable ambiguous execution behavior across different agent
 
 ### Phase 2 — Add missing mandatory rules
 
-- [x] P2-A 🔄 — **plan-execution-protocol.md §7**: Add "Automation Mode Selection (Mandatory Plan-Start Choice)" subsection after the existing CI Execution Mode subsection. Define the three options (`Supervisado`, `Semiautomatico`, `Automatico`), default to `Supervisado`, require explicit user selection before step 1, and require recording in plan source file. Include text-fallback instruction when no option selector is available. — ✅ `no-commit (awaiting user approval)`
-- [x] P2-B 🔄 — **way-of-working.md §5**: Add "Pre-PR Commit History Review (Hard Rule)" subsection within Pull Request Workflow. Require review of commit history on the feature branch before opening or updating a PR. Criteria: commits coherent and scoped, messages follow conventions, no unrelated changes, history readable. If issues found, amend/reorder/squash before PR. — ✅ `no-commit (awaiting user approval)`
-- [x] P2-C 🔄 — **plan-execution-protocol.md §7**: Add cross-reference to Pre-PR Commit History Review rule from way-of-working.md, under the PR traceability subsection or as a new "Pre-PR requirements" subsection. — ✅ `no-commit (awaiting user approval)`
+- [x] P2-A 🔄 — **plan-execution-protocol.md §7**: Add "Automation Mode Selection (Mandatory Plan-Start Choice)" subsection after the existing CI Execution Mode subsection. Define the three options (`Supervisado`, `Semiautomatico`, `Automatico`), default to `Supervisado`, require explicit user selection before step 1, and require recording in plan source file. Include text-fallback instruction when no option selector is available. — ✅ `315425230`
+- [x] P2-B 🔄 — **way-of-working.md §5**: Add "Pre-PR Commit History Review (Hard Rule)" subsection within Pull Request Workflow. Require review of commit history on the feature branch before opening or updating a PR. Criteria: commits coherent and scoped, messages follow conventions, no unrelated changes, history readable. If issues found, amend/reorder/squash before PR. — ✅ `315425230`
+- [x] P2-C 🔄 — **plan-execution-protocol.md §7**: Add cross-reference to Pre-PR Commit History Review rule from way-of-working.md, under the PR traceability subsection or as a new "Pre-PR requirements" subsection. — ✅ `315425230`
 
 ### Phase 3 — Validation
 
 - [x] P3-A 🔄 — **Static content check**: Grep all canonical docs (`docs/projects/*/03-ops/*.md`, `docs/shared/03-ops/*.md`) for residual `CT-*`, `commit-task` language that conditions auto-commit behavior. Any hit = failure; fix before proceeding. — ✅ `no-commit (validated; only non-governing mention remains in plan-creation.md)`
-- [x] P3-B 🔄 — **Internal consistency review**: Cross-check that commit/push/PR rules are stated identically across `plan-execution-protocol.md` and `way-of-working.md`. Verify: (a) no doc says auto-commit depends on CT-\*, (b) push is manual in all modes, (c) PR creation is user-triggered only, (d) automation mode selection is a mandatory plan-start choice, (e) pre-PR commit review is a hard rule. — ✅ `no-commit (awaiting user approval)`
-- [ ] P3-C 🚧 — **Hard-gate**: User validates the final canonical text. Acceptance criteria from IMP-01:
+- [x] P3-B 🔄 — **Internal consistency review**: Cross-check that commit/push/PR rules are stated identically across `plan-execution-protocol.md` and `way-of-working.md`. Verify: (a) no doc says auto-commit depends on CT-\*, (b) push is manual in all modes, (c) PR creation is user-triggered only, (d) automation mode selection is a mandatory plan-start choice, (e) pre-PR commit review is a hard rule. — ✅ `58750eae0`
+- [x] P3-C 🚧 — **Hard-gate**: User validates the final canonical text. Acceptance criteria from IMP-01: — ✅ `no-commit (validated in chat; L2 PASS)`
   - Canonical policy no longer requires CT-\*/commit-task for automatic commits.
   - Commit/push/PR behavior by mode is documented once and without contradictions.
   - Canonical docs include explicit Pre-PR Commit History Review hard rule.
