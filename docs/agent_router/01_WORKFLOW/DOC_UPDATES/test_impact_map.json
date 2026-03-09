@@ -86,14 +86,15 @@
     },
     {
       "doc_glob": "docs/shared/03-ops/way-of-working.md",
-      "description": "Shared WAY_OF_WORKING changes (including branch and commit naming conventions) require router regeneration, propagation to WAY_OF_WORKING + 01_WORKFLOW, and branch-name guard alignment.",
+      "description": "Shared WAY_OF_WORKING changes require router regeneration and propagation to WAY_OF_WORKING + 01_WORKFLOW.",
       "owner_any": [
         "docs/agent_router/03_SHARED/WAY_OF_WORKING/*.md",
         "docs/agent_router/01_WORKFLOW/**/*.md"
       ],
       "required_any": [
+        "docs/agent_router/03_SHARED/WAY_OF_WORKING/*.md",
+        "docs/agent_router/01_WORKFLOW/**/*.md",
         "scripts/docs/generate-router-files.py",
-        "scripts/ci/validate-branch-name.ps1",
         "backend/tests/unit/test_doc_router_contract.py",
         "backend/tests/unit/test_doc_updates_contract.py",
         "backend/tests/unit/test_doc_updates_e2e_contract.py"
