@@ -141,9 +141,30 @@ Push permanece manual en todos los modos.
 
 ### Phase 5 — Validation & closure
 
-- [ ] P5-A 🔄 — Ejecutar validation checklist completa del backlog item: happy path, locked path, ambiguity path, no-plan path. Documentar evidencia en este plan.
+- [x] P5-A 🔄 — Ejecutar validation checklist completa del backlog item: happy path, locked path, ambiguity path, no-plan path. Documentar evidencia en este plan. — ✅ `no-commit (implemented; pending commit point)`
 - [ ] P5-B 🚧 — Hard-gate: usuario valida resultados y aprueba para PR.
 - [ ] P5-C 🚧 — Documentación: actualizar `scripts/ci/README.md` con descripción del guard y helper, o cerrar con `no-doc-needed` justificado.
+
+#### P5-A Validation Evidence
+
+- Happy path:
+  - Fixture: branch `branch/happy` con 1 step `IN PROGRESS`.
+  - Resultado guard local: `plan-execution-guard: PASS`, `exit=0`.
+  - Cobertura CI path: job agregado `plan_execution_guard` en `.github/workflows/ci.yml` para PR con `--branch "${{ github.head_ref }}"`.
+- Locked path:
+  - Fixture: branch `branch/locked` con `STEP LOCKED` + `IN PROGRESS`.
+  - Resultado guard local: FAIL (`exit=1`) con errores accionables:
+    - `Multiple active steps found...`
+    - `Cannot start step while STEP LOCKED is active. Resolve the locked step first.`
+- Ambiguity path:
+  - Fixtures: dos `PLAN_*.md` con branch `branch/ambiguous` fuera de `completed/`.
+  - Resultado guard local: FAIL (`exit=1`) con mensaje de remediacion:
+    - `Ambiguous active plan resolution... Keep exactly one active plan per branch outside completed/.`
+- No-plan path:
+  - Branch `branch/no-plan` sin plan activo asociado en `plan-root`.
+  - Resultado guard local: `plan-execution-guard: PASS`, `exit=0`.
+- Robustez de salida en Windows:
+  - Fix aplicado en `check_plan_execution_guard.py` para evitar `UnicodeEncodeError` en consolas cp1252 al imprimir lineas con emojis de estado; fallback seguro con escape ASCII.
 
 ---
 

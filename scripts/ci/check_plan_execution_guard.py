@@ -18,6 +18,15 @@ class PlanResolutionError(RuntimeError):
     """Raised when active plan resolution is ambiguous."""
 
 
+def safe_print(message: str) -> None:
+    """Print robustly on consoles that cannot encode some Unicode characters."""
+    try:
+        print(message)
+    except UnicodeEncodeError:
+        fallback = message.encode("ascii", errors="backslashreplace").decode("ascii")
+        print(fallback)
+
+
 def get_current_branch() -> str:
     result = subprocess.run(
         ["git", "rev-parse", "--abbrev-ref", "HEAD"],
@@ -135,12 +144,12 @@ def run_guard(branch: str, plan_root: Path) -> int:
     try:
         plan_path = resolve_active_plan(branch=branch, plan_root=plan_root)
     except PlanResolutionError as exc:
-        print(f"ERROR: {exc}")
-        print("plan-execution-guard: FAIL (1 invariant(s) violated)")
+        safe_print(f"ERROR: {exc}")
+        safe_print("plan-execution-guard: FAIL (1 invariant(s) violated)")
         return 1
 
     if plan_path is None:
-        print("plan-execution-guard: PASS")
+        safe_print("plan-execution-guard: PASS")
         return 0
 
     plan_content = plan_path.read_text(encoding="utf-8")
@@ -152,11 +161,11 @@ def run_guard(branch: str, plan_root: Path) -> int:
 
     if errors:
         for error in errors:
-            print(f"ERROR: {error}")
-        print(f"plan-execution-guard: FAIL ({len(errors)} invariant(s) violated)")
+            safe_print(f"ERROR: {error}")
+        safe_print(f"plan-execution-guard: FAIL ({len(errors)} invariant(s) violated)")
         return 1
 
-    print("plan-execution-guard: PASS")
+    safe_print("plan-execution-guard: PASS")
     return 0
 
 
