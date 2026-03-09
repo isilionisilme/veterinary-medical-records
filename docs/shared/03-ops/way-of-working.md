@@ -39,6 +39,7 @@ Before making any new changes (code, docs, config, etc.), create a new branch of
 3. Create the branch before editing any files:
    - If already on a correctly named branch for the same work item, proceed.
    - Otherwise, build `<branch-name>` using the canonical format `<category>/<slug>` and create it from the updated base (`git switch -c <branch-name>`).
+   - Derive `worktree` from the current repository top-level folder name when you need repository-qualified examples or need to translate legacy guidance.
    - Category mapping is defined in Section 1.
    - user story -> `feature`
    - user-facing improvement -> `improvement`
@@ -84,6 +85,8 @@ Exemptions:
 
 This convention removes the `codex/<worktree>/` segment and only requires the category pattern:
    - Example: `feature/us-42-pet-owner-export`, `improvement/prescription-print-layout`, `chore/preflight-branch-name-hook`, `docs/branching-convention-refresh`
+   - Derived example with worktree: `codex/veterinary-medical-records/feature/us-42-pet-owner-export`
+   - Derived example with worktree: `codex/veterinary-medical-records/improvement/prescription-print-layout`
 
 Branches must be **short-lived** and focused on a single user story or a single technical concern.
 

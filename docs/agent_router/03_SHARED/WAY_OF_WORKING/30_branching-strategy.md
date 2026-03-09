@@ -38,6 +38,8 @@ Exemptions:
 
 This convention removes the `codex/<worktree>/` segment and only requires the category pattern:
    - Example: `feature/us-42-pet-owner-export`, `improvement/prescription-print-layout`, `chore/preflight-branch-name-hook`, `docs/branching-convention-refresh`
+   - Derived example with worktree: `codex/veterinary-medical-records/feature/us-42-pet-owner-export`
+   - Derived example with worktree: `codex/veterinary-medical-records/improvement/prescription-print-layout`
 
 Branches must be **short-lived** and focused on a single user story or a single technical concern.
 

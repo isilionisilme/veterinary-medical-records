@@ -19,6 +19,7 @@ Before making any new changes (code, docs, config, etc.), create a new branch of
 3. Create the branch before editing any files:
    - If already on a correctly named branch for the same work item, proceed.
    - Otherwise, build `<branch-name>` using the canonical format `<category>/<slug>` and create it from the updated base (`git switch -c <branch-name>`).
+   - Derive `worktree` from the current repository top-level folder name when you need repository-qualified examples or need to translate legacy guidance.
    - Category mapping is defined in Section 1.
    - user story -> `feature`
    - user-facing improvement -> `improvement`

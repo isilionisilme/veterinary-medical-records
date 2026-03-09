@@ -355,6 +355,19 @@ def test_way_of_working_canonical_branch_creation_rules_are_propagated() -> None
         assert term in branching_doc
 
 
+def test_way_of_working_includes_worktree_derived_canonical_examples() -> None:
+    source_doc = _read_text(REPO_ROOT / "docs" / "shared" / "03-ops" / "way-of-working.md")
+
+    required_terms = (
+        "Derive `worktree` from the current repository top-level folder name",
+        "codex/veterinary-medical-records/feature/us-42-pet-owner-export",
+        "codex/veterinary-medical-records/improvement/prescription-print-layout",
+    )
+
+    for term in required_terms:
+        assert term in source_doc
+
+
 def test_pull_request_procedure_ai_automation_clauses_are_propagated() -> None:
     source_doc = _read_text(REPO_ROOT / "docs" / "shared" / "03-ops" / "way-of-working.md")
     owner_doc = _read_text(ROUTER_ROOT / "03_SHARED" / "WAY_OF_WORKING" / "50_pull-requests.md")
