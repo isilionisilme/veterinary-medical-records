@@ -125,8 +125,8 @@ Push permanece manual en todos los modos.
 
 ### Phase 3 — Helper `plan-close-step`
 
-- [ ] P3-A 🔄 — Crear `scripts/ci/plan-close-step.ps1`: acepta plan path + step ID, valida que step está `IN PROGRESS`, reemplaza por `[x]`, elimina label `IN PROGRESS`.
-- [ ] P3-B 🔄 — Añadir validación de evidencia requerida: el step debe tener al menos un `✅` o línea de evidencia tras el checkbox antes de aceptar cierre.
+- [x] P3-A 🔄 — Crear `scripts/ci/plan-close-step.ps1`: acepta plan path + step ID, valida que step está `IN PROGRESS`, reemplaza por `[x]`, elimina label `IN PROGRESS`. — ✅ `no-commit (implemented; pending commit point)`
+- [x] P3-B 🔄 — Añadir validación de evidencia requerida: el step debe tener al menos un `✅` o línea de evidencia tras el checkbox antes de aceptar cierre. — ✅ `no-commit (implemented; pending commit point)`
 
 > **Commit point →** `ci(plan-guard): add plan-close-step helper`
 > Lanzar L2. Si falla, reparar. Cuando L2 verde → esperar instrucciones del usuario.
