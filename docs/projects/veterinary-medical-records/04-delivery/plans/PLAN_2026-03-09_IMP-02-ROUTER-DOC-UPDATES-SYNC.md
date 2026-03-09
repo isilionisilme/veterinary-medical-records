@@ -72,9 +72,9 @@ Propagate canonical policy updates (from IMP-01) into router modules and DOC_UPD
 
 ### Phase 3 — Contract map synchronization
 
-- [ ] S3-A 🔄 — Audit `test_impact_map.json`: remove/update rules referencing deprecated paths; add rules for new canonical sources from IMP-01 (Execution agent)
-- [ ] S3-B 🔄 — Audit `router_parity_map.json`: remove/update stale source_doc entries; verify required_terms match current router module content (Execution agent)
-- [ ] S3-C 🔄 — If `execution-rules.md` stub is deprecated by IMP-01, remove its rules from both maps; if retained, verify required_terms accuracy (Execution agent)
+- [x] S3-A 🔄 — Audit `test_impact_map.json`: remove/update rules referencing deprecated paths; add rules for new canonical sources from IMP-01 (Execution agent) — ✅ no stale/deprecated path from IMP-01 delta; file unchanged
+- [x] S3-B 🔄 — Audit `router_parity_map.json`: remove/update stale source_doc entries; verify required_terms match current router module content (Execution agent) — ✅ required terms verified; file unchanged
+- [x] S3-C 🔄 — If `execution-rules.md` stub is deprecated by IMP-01, remove its rules from both maps; if retained, verify required_terms accuracy (Execution agent) — ✅ Path C (`execution-rules.md` unchanged in IMP-01); mappings retained as-is
 
 ### Phase 4 — IMPLEMENTATION_PLAN owner propagation
 
@@ -411,6 +411,17 @@ Notes:
 - `MANIFEST.yaml`: unchanged (no source path rename and no section extraction key drift requiring manifest edits).
 - `python scripts/docs/generate-router-files.py` -> `Generated 73 router files.`
 - `python scripts/docs/generate-router-files.py --check` -> `Router files are in sync with canonical sources.`
+
+### Phase 3 Snapshot (S3-A/S3-B/S3-C)
+
+- `test_impact_map.json` audited against S1-A delta: no renamed/deleted canonical paths introduced by IMP-01; no rule edits required.
+- `router_parity_map.json` audited against S1-A delta: no stale `source_doc` paths from IMP-01; no rule edits required.
+- Stub decision: `docs/projects/veterinary-medical-records/03-ops/execution-rules.md` retained/unchanged in IMP-01 merge (`2836eaca7`) -> keep compatibility rules.
+- Required-term check for stub parity rule:
+  - `docs/agent_router/03_SHARED/EXECUTION_PROTOCOL/00_entry.md` contains `EXECUTION_PROTOCOL — Modules` and `plan-execution-protocol.md`.
+- Guard spot checks:
+  - `python scripts/docs/check_doc_test_sync.py --base-ref main` -> no markdown docs changed.
+  - `python scripts/docs/check_doc_router_parity.py --base-ref main` -> no mapped source docs changed.
 
 ## Acceptance criteria
 
