@@ -25,7 +25,7 @@ Assistant entrypoint Keep reads minimal and route by intent.
 ## Global rules
 - **Mandatory rule override protocol.** To bypass a mandatory rule: (1) explain it, (2) ask for explicit confirmation. If confirmed, proceed.
 - **No direct commits to `main` (hard rule).** All changes go through a feature branch + PR. Exception: explicit per-instance user authorization. Without it, STOP and create a branch first.
-- **Branch naming convention (hard rule).** All new branches must follow `<worktree>/<category>/<slug>`. Before running `git branch`, `git switch -c`, or `git checkout -b`, load `docs/agent_router/01_WORKFLOW/START_WORK/00_entry.md`.
+- **Branch naming convention (hard rule).** All new branches must follow the current canonical Branching module convention (currently `<category>/<slug>`). Before running `git branch`, `git switch -c`, or `git checkout -b`, load `docs/agent_router/01_WORKFLOW/START_WORK/00_entry.md` and `docs/agent_router/01_WORKFLOW/BRANCHING/00_entry.md`.
 - **Blocker escalation (hard rule).** If any required standard cannot be satisfied, STOP, explain the blocker, and ask for guidance.
 - **Procedure auto-tracking.** When a canonical doc defines a **Procedure** heading with numbered steps, load them as todos and complete each after execution.
 - **Code reviews: manual trigger only.**
