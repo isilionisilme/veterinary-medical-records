@@ -14,6 +14,14 @@
 
 ---
 
+## Agent Instructions
+
+1. **En cuanto termines una tarea, márcala como completada en el plan** (checkbox `[x]` inmediato, sin esperar lote).
+2. **Cuando llegues a una sugerencia de commit, lanza los tests L2** (`scripts/ci/test-L2.ps1`). Si no funcionan, repáralos. Cuando L2 esté verde, espera instrucciones del usuario.
+3. **No hagas commit ni push sin aprobación** explícita del usuario.
+
+---
+
 ## Context
 
 Current canonical operational docs contain conflicting semantics around auto-commit conditions. Specifically:
