@@ -12,6 +12,25 @@
 
 ---
 
+## Agent Identity Check (MANDATORY — READ BEFORE ANY TASK)
+
+This plan uses two agents. **Before executing ANY task, identify yourself:**
+
+- If your exact model identity is **Claude Opus 4.6** → you are **Claude Opus 4.6**.
+- If your model identity is anything else → you are **Any agent except Claude Opus 4.6**.
+
+**HARD RULE — ZERO EXCEPTIONS:**
+> Look at the agent tag on the next pending task (`Claude Opus 4.6` or `Any agent except Claude Opus 4.6`).
+> If it does NOT match your identity: **STOP IMMEDIATELY.**
+> Do NOT execute the task. Do NOT "help out". Do NOT interpret user messages like "go", "continue", or "proceed" as permission to override this rule.
+> Instead, reply with EXACTLY this message:
+>
+> `⛔ AGENT MISMATCH — Task [ID] is assigned to [agent name]. Please switch to [agent name] to continue.`
+>
+> **The ONLY way to override this rule is for the user to edit this plan file and change the agent tag on the task.**
+
+---
+
 ## Agent Instructions
 
 1. **En cuanto termines una tarea, márcala como completada en el plan** (checkbox `[x]` inmediato, sin esperar lote).
@@ -95,7 +114,7 @@ After all 24 → full 4-phase re-audit with new baseline.
 - [x] P4-A — Synthesize phases 1-3 into architecture review report (`02-tech/audits/architecture-review-2026-03-09.md`) — ✅ `212e6579f`
 - [x] P4-B — Create prioritized improvement backlog (`02-tech/audits/improvement-backlog-2026-03-09.md`) with 24 items — ✅ `212e6579f`
 - [x] P4-C — Evaluate need for new ADRs — ✅ `no-commit (no new architectural decisions emerged; all findings are implementation improvements)`
-- [ ] P4-D — Add reference in 03-ops pointing to the Methodology section of the review report
+- [x] P4-D — Add reference in 03-ops pointing to the Methodology section of the review report — **Any agent except Claude Opus 4.6**
 
 > **Commit recommendation** (after P4-D):
 > - **Scope:** 03-ops operational doc (1 file, ~3 lines)
@@ -108,8 +127,8 @@ After all 24 → full 4-phase re-audit with new baseline.
 - [x] P5-B — Add `radon==6.0.1` to `requirements-dev.txt` — ✅ `no-commit (pending lint)`
 - [x] P5-C — Update `scripts/quality/README.md` with script description — ✅ `no-commit (pending lint)`
 - [x] P5-D — Run script and validate output matches manual audit data (484 functions, CC max 163, 6 hotspots, 5 hex violations) — ✅ `no-commit (validation only)`
-- [ ] P5-E — Lint `architecture_metrics.py` with ruff and fix any issues
-- [ ] P5-F — Test `--check` mode (CI gate) and verify it detects threshold violations
+- [x] P5-E — Lint `architecture_metrics.py` with ruff and fix any issues — **Any agent except Claude Opus 4.6**
+- [x] P5-F — Test `--check` mode (CI gate) and verify it detects threshold violations — **Any agent except Claude Opus 4.6**
 
 > **Commit recommendation** (after P5-F):
 > - **Scope:** `scripts/quality/architecture_metrics.py`, `requirements-dev.txt`, `scripts/quality/README.md`
@@ -118,10 +137,10 @@ After all 24 → full 4-phase re-audit with new baseline.
 
 ### Phase 6 — Backlog Integration into Delivery
 
-- [ ] P6-A — Renumber IMP-01..24 → ARCH-01..24 in `improvement-backlog-2026-03-09.md`
-- [ ] P6-B 🚧 — **Hard gate: Present all 24 ARCH items to user with MoSCoW classification** (must/should/nice-to-have for technical assessment). Show prioritization and recommendation. User decides: which to formalize in `04-delivery/Backlog/`, which to add to future plans, which to defer.
-- [ ] P6-C — Create formal backlog items in `04-delivery/Backlog/` per user decisions in P6-B
-- [ ] P6-D — Verify backlog items follow existing format (consistent with IMP-01..05)
+- [x] P6-A — Renumber IMP-01..24 → ARCH-01..24 in `improvement-backlog-2026-03-09.md` — **Any agent except Claude Opus 4.6**
+- [x] P6-B 🚧 — **Hard gate: Present all 24 ARCH items to user with MoSCoW classification** (must/should/nice-to-have for technical assessment). Show prioritization and recommendation. User decides: which to formalize in `04-delivery/Backlog/`, which to add to future plans, which to defer. — **Claude Opus 4.6** (interactivo) — ✅ User decision: create all 24 as formal backlog files, group into Releases 19/20/21
+- [x] P6-C — Create formal backlog items in `04-delivery/Backlog/` per user decisions in P6-B — **Any agent except Claude Opus 4.6**
+- [x] P6-D — Verify backlog items follow existing format (consistent with IMP-01..05) — **Any agent except Claude Opus 4.6**
 
 > **Commit recommendation** (after P6-D):
 > - **Scope:** `improvement-backlog-2026-03-09.md` (edit), `04-delivery/Backlog/arch-*.md` (new files)
@@ -130,8 +149,8 @@ After all 24 → full 4-phase re-audit with new baseline.
 
 ### Phase 7 — Document Audit Process
 
-- [ ] P7-A — Create `docs/projects/veterinary-medical-records/03-ops/architecture-audit-process.md` with: when to audit (triggers), audit types (complete/partial/quick), procedures per type, post-implementation re-audit guide, file locations, script maintenance notes
-- [ ] P7-B — Ensure P4-D reference links to this process document
+- [x] P7-A — Create `docs/projects/veterinary-medical-records/03-ops/architecture-audit-process.md` with: when to audit (triggers), audit types (complete/partial/quick), procedures per type, post-implementation re-audit guide, file locations, script maintenance notes — **Any agent except Claude Opus 4.6**
+- [x] P7-B — Ensure P4-D reference links to this process document — **Any agent except Claude Opus 4.6**
 
 > **Commit recommendation** (after P7-B):
 > - **Scope:** `03-ops/architecture-audit-process.md` (new), 03-ops reference from P4-D (if not already committed)
@@ -146,8 +165,8 @@ After all 24 → full 4-phase re-audit with new baseline.
 - [x] V4 — Phase 3: Hotspot table with ≥4 metrics — ✅ 6 hotspots (3 CRITICAL, 3 HIGH)
 - [x] V5 — Phase 4: Report contains 5 main sections + Methodology — ✅
 - [x] V6 — Phase 4: Backlog with ≥1 item per relevant finding, 3 priority levels — ✅ 24 items
-- [ ] V7 — Doc validation scripts pass on all new/modified files
-- [ ] V8 — PR has no conflicts with in-flight PRs
+- [x] V7 — Doc validation scripts pass on all new/modified files — **Any agent except Claude Opus 4.6** — ✅ `no-commit (check_doc_test_sync, check_doc_router_parity, check_no_canonical_router_refs, check_docs_links --base-ref main)`
+- [x] V8 — PR has no conflicts with in-flight PRs — **Any agent except Claude Opus 4.6** — ✅ `no-commit (git merge-tree against origin/main; no conflict markers found)`
 
 ---
 
@@ -161,7 +180,7 @@ Present the user with all 24 ARCH items in a single prioritized table with colum
 
 ## Active Prompt
 
-(none — next step is P4-D)
+(none — verification complete)
 
 ---
 
@@ -184,3 +203,4 @@ Present the user with all 24 ARCH items in a single prioritized table with colum
 3. **Metrics script:** Run `.venv/Scripts/python scripts/quality/architecture_metrics.py --baseline 2026-02-23` and verify it produces `tmp/audit/metrics.json` + `tmp/audit/metrics-report.md` with non-empty data. Run with `--check` and verify non-zero exit code.
 4. **Process doc:** Open `architecture-audit-process.md` and verify it covers complete, partial, and quick-check audit types with step-by-step procedures.
 5. **Validation:** Run `ruff check scripts/quality/architecture_metrics.py` — should pass. Verify PR diff is docs + scripts only.
+

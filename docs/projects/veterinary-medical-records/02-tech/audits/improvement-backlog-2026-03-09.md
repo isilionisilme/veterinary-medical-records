@@ -2,9 +2,9 @@
 
 > Prioritized action items from the [architecture review](architecture-review-2026-03-09.md). Each item includes source phase, severity, effort estimate, and acceptance criteria.
 
-**Generated:** 2026-03-09  
-**Baseline audit:** 2026-02-23  
-**Total items:** 24  
+**Generated:** 2026-03-09
+**Baseline audit:** 2026-02-23
+**Total items:** 24
 **Distribution:** 5 Immediate, 10 Short-term, 9 Strategic
 
 ---
@@ -21,7 +21,7 @@
 
 ## Immediate (5 items)
 
-### IMP-01: Decompose `review_service.py`
+### ARCH-01: Decompose `review_service.py`
 
 | Field | Value |
 |-------|-------|
@@ -46,7 +46,7 @@
 
 ---
 
-### IMP-02: Decompose `candidate_mining.py`
+### ARCH-02: Decompose `candidate_mining.py`
 
 | Field | Value |
 |-------|-------|
@@ -57,7 +57,7 @@
 
 **Problem:** 1,013 LOC, 767-LOC single function (`_mine_interpretation_candidates`), CC 163 (highest in codebase), inner closure with 25+ field-specific validation blocks.
 
-**Action:** 
+**Action:**
 1. Split into per-entity-type `FieldCandidateExtractor` strategies (labeled, heuristic, microchip, address, date)
 2. Extract `CandidateValidator` with per-field validation rules
 3. Move 40+ compiled regex patterns into `FieldPattern` registry
@@ -71,7 +71,7 @@
 
 ---
 
-### IMP-03: Add CI complexity gates
+### ARCH-03: Add CI complexity gates
 
 | Field | Value |
 |-------|-------|
@@ -96,7 +96,7 @@
 
 ---
 
-### IMP-04: Fix infra→application dependency violation
+### ARCH-04: Fix infra→application dependency violation
 
 | Field | Value |
 |-------|-------|
@@ -120,7 +120,7 @@
 
 ---
 
-### IMP-05: Add structured logging to critical paths
+### ARCH-05: Add structured logging to critical paths
 
 | Field | Value |
 |-------|-------|
@@ -146,7 +146,7 @@
 
 ## Short-term (10 items)
 
-### IMP-06: Create security architecture documentation
+### ARCH-06: Create security architecture documentation
 
 | Field | Value |
 |-------|-------|
@@ -164,7 +164,7 @@
 
 ---
 
-### IMP-07: Create production deployment documentation
+### ARCH-07: Create production deployment documentation
 
 | Field | Value |
 |-------|-------|
@@ -181,7 +181,7 @@
 
 ---
 
-### IMP-08: Expose `_shared` functions publicly
+### ARCH-08: Expose `_shared` functions publicly
 
 | Field | Value |
 |-------|-------|
@@ -198,7 +198,7 @@
 
 ---
 
-### IMP-09: Add ER diagram to technical-design.md
+### ARCH-09: Add ER diagram to technical-design.md
 
 | Field | Value |
 |-------|-------|
@@ -211,7 +211,7 @@
 
 ---
 
-### IMP-10: Write missing ADRs
+### ARCH-10: Write missing ADRs
 
 | Field | Value |
 |-------|-------|
@@ -226,7 +226,7 @@
 
 ---
 
-### IMP-11: Add monitoring/alerting strategy documentation
+### ARCH-11: Add monitoring/alerting strategy documentation
 
 | Field | Value |
 |-------|-------|
@@ -239,7 +239,7 @@
 
 ---
 
-### IMP-12: Add capacity planning documentation
+### ARCH-12: Add capacity planning documentation
 
 | Field | Value |
 |-------|-------|
@@ -252,7 +252,7 @@
 
 ---
 
-### IMP-13: Implement production authentication
+### ARCH-13: Implement production authentication
 
 | Field | Value |
 |-------|-------|
@@ -263,11 +263,11 @@
 
 **Action:** Implement proper auth (OAuth2/JWT) for production. Current optional bearer token is insufficient.
 
-**Prerequisite:** IMP-06 (security architecture doc) should define the strategy first.
+**Prerequisite:** ARCH-06 (security architecture doc) should define the strategy first.
 
 ---
 
-### IMP-14: Add content validation for PDF uploads
+### ARCH-14: Add content validation for PDF uploads
 
 | Field | Value |
 |-------|-------|
@@ -280,7 +280,7 @@
 
 ---
 
-### IMP-15: Explicitly declare pydantic in requirements.txt
+### ARCH-15: Explicitly declare pydantic in requirements.txt
 
 | Field | Value |
 |-------|-------|
@@ -295,7 +295,7 @@
 
 ## Strategic (9 items)
 
-### IMP-16: Create re-accretion prevention ADR
+### ARCH-16: Create re-accretion prevention ADR
 
 | Field | Value |
 |-------|-------|
@@ -304,11 +304,11 @@
 | Effort | S (1-2h) |
 | Category | Architecture |
 
-**Action:** Document architectural decision: maximum file LOC (500), maximum function CC (20), enforcement via CI gates (IMP-03). Record rationale based on observed regression pattern.
+**Action:** Document architectural decision: maximum file LOC (500), maximum function CC (20), enforcement via CI gates (ARCH-03). Record rationale based on observed regression pattern.
 
 ---
 
-### IMP-17: Simplify extraction_observability/ subsystem
+### ARCH-17: Simplify extraction_observability/ subsystem
 
 | Field | Value |
 |-------|-------|
@@ -321,7 +321,7 @@
 
 ---
 
-### IMP-18: Extract frontend state management layer
+### ARCH-18: Extract frontend state management layer
 
 | Field | Value |
 |-------|-------|
@@ -334,7 +334,7 @@
 
 ---
 
-### IMP-19: Create operational runbooks
+### ARCH-19: Create operational runbooks
 
 | Field | Value |
 |-------|-------|
@@ -347,7 +347,7 @@
 
 ---
 
-### IMP-20: Add metrics collection infrastructure
+### ARCH-20: Add metrics collection infrastructure
 
 | Field | Value |
 |-------|-------|
@@ -360,7 +360,7 @@
 
 ---
 
-### IMP-21: Add rate limiting to write endpoints
+### ARCH-21: Add rate limiting to write endpoints
 
 | Field | Value |
 |-------|-------|
@@ -373,7 +373,7 @@
 
 ---
 
-### IMP-22: Parameterize PRAGMA table_info call
+### ARCH-22: Parameterize PRAGMA table_info call
 
 | Field | Value |
 |-------|-------|
@@ -386,7 +386,7 @@
 
 ---
 
-### IMP-23: Add configuration reference documentation
+### ARCH-23: Add configuration reference documentation
 
 | Field | Value |
 |-------|-------|
@@ -399,7 +399,7 @@
 
 ---
 
-### IMP-24: Replace wildcard re-export with explicit imports
+### ARCH-24: Replace wildcard re-export with explicit imports
 
 | Field | Value |
 |-------|-------|
@@ -434,3 +434,4 @@
 | S (1-4h) | 9 | Half-day tasks |
 | M (4-8h) | 7 | Full-day tasks |
 | L (8-16h) | 4 | Multi-day tasks |
+
