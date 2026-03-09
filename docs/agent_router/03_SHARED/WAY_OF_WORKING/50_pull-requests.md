@@ -82,6 +82,17 @@ Classify the Pull Request by file types:
 | **Code** | Any `*.py`, `*.ts`, `*.tsx`, `*.js`, `*.jsx`, `*.css`, `*.scss`, `*.html`, `*.sql` |
 | **Non-code, non-doc** | `*.json`, `*.yaml`, `*.yml`, `*.toml`, `*.ini`, `*.env` |
 
+### Pre-PR Commit History Review (Hard Rule)
+
+Before opening or updating a Pull Request, the agent MUST review the commit history on the feature branch to ensure:
+
+- Commits are coherent and scoped to single logical changes.
+- Commit messages follow conventions (`Story <ID>: ...` or `<type>: ...`).
+- No unrelated refactors or accidental changes appear in any commit.
+- Commit history is readable and supports reasoning and review.
+
+If issues are found, amend, reorder, or squash commits before opening the PR.
+
 ### Pull Request Procedure
 
 When an AI coding assistant or automation tool creates or updates a Pull Request, it must follow this procedure automatically:

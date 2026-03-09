@@ -90,14 +90,14 @@ These inconsistencies enable ambiguous execution behavior across different agent
 
 ### Phase 1 — Remove CT-\* auto-commit prerequisite
 
-- [ ] P1-A 🔄 — **plan-execution-protocol.md §2**: Rewrite the `Atomic Iterations` paragraph to remove all CT-\* / commit-task language. Commit behavior must depend solely on automation mode: `Supervisado` = explicit confirmation required; `Semiautomatico`/`Automatico` = automatic commit permitted within active step scope. Keep push = always manual. Keep the fail-stop rule.
-- [ ] P1-B 🔄 — **way-of-working.md §3**: Rewrite the "Agent commit confirmation (hard rule)" bullet. Outside of an active plan in `Semiautomatico`/`Automatico` mode, agents must present staged files and proposed message and wait for confirmation. Remove all `CT-*` / `commit-task` references.
+- [x] P1-A 🔄 — **plan-execution-protocol.md §2**: Rewrite the `Atomic Iterations` paragraph to remove all CT-\* / commit-task language. Commit behavior must depend solely on automation mode: `Supervisado` = explicit confirmation required; `Semiautomatico`/`Automatico` = automatic commit permitted within active step scope. Keep push = always manual. Keep the fail-stop rule. — ✅ `9902a051f`
+- [x] P1-B 🔄 — **way-of-working.md §3**: Rewrite the "Agent commit confirmation (hard rule)" bullet. Outside of an active plan in `Semiautomatico`/`Automatico` mode, agents must present staged files and proposed message and wait for confirmation. Remove all `CT-*` / `commit-task` references. — ✅ `9902a051f`
 
 ### Phase 2 — Add missing mandatory rules
 
-- [ ] P2-A 🔄 — **plan-execution-protocol.md §7**: Add "Automation Mode Selection (Mandatory Plan-Start Choice)" subsection after the existing CI Execution Mode subsection. Define the three options (`Supervisado`, `Semiautomatico`, `Automatico`), default to `Supervisado`, require explicit user selection before step 1, and require recording in plan source file. Include text-fallback instruction when no option selector is available.
-- [ ] P2-B 🔄 — **way-of-working.md §5**: Add "Pre-PR Commit History Review (Hard Rule)" subsection within Pull Request Workflow. Require review of commit history on the feature branch before opening or updating a PR. Criteria: commits coherent and scoped, messages follow conventions, no unrelated changes, history readable. If issues found, amend/reorder/squash before PR.
-- [ ] P2-C 🔄 — **plan-execution-protocol.md §7**: Add cross-reference to Pre-PR Commit History Review rule from way-of-working.md, under the PR traceability subsection or as a new "Pre-PR requirements" subsection.
+- [x] P2-A 🔄 — **plan-execution-protocol.md §7**: Add "Automation Mode Selection (Mandatory Plan-Start Choice)" subsection after the existing CI Execution Mode subsection. Define the three options (`Supervisado`, `Semiautomatico`, `Automatico`), default to `Supervisado`, require explicit user selection before step 1, and require recording in plan source file. Include text-fallback instruction when no option selector is available. — ✅ `no-commit (awaiting user approval)`
+- [x] P2-B 🔄 — **way-of-working.md §5**: Add "Pre-PR Commit History Review (Hard Rule)" subsection within Pull Request Workflow. Require review of commit history on the feature branch before opening or updating a PR. Criteria: commits coherent and scoped, messages follow conventions, no unrelated changes, history readable. If issues found, amend/reorder/squash before PR. — ✅ `no-commit (awaiting user approval)`
+- [x] P2-C 🔄 — **plan-execution-protocol.md §7**: Add cross-reference to Pre-PR Commit History Review rule from way-of-working.md, under the PR traceability subsection or as a new "Pre-PR requirements" subsection. — ✅ `no-commit (awaiting user approval)`
 
 ### Phase 3 — Validation
 
