@@ -20,7 +20,7 @@ Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for i
 - `docs/agent_router/04_PROJECT/PRODUCT_DESIGN/90_6-learning-governance.md`
 - `docs/agent_router/04_PROJECT/PRODUCT_DESIGN/100_7-final-product-rule.md`
 
-## Propagated updates
+- Canonical sync 2026-03-09: navigation/TOC and frontmatter normalization propagation refresh.
 - Conceptual-model ownership includes explicit separation of `candidate_confidence` (diagnostic) and `field_mapping_confidence` (context stability).
 - Context, learnable-unit (`mapping_id`), and confidence-propagation calibration semantics are maintained in this module set.
 - Global Schema historical/canonical ownership remains in `docs/projects/veterinary-medical-records/01-product/product-design.md`; router modules are derived convenience shards only.

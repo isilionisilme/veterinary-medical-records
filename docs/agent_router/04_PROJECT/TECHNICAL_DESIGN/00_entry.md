@@ -77,3 +77,5 @@ Canonical project references routed here include:
 - Canonical TECHNICAL_DESIGN refresh synchronized on 2026-02-28 (classification: clarification/navigation in this cycle).
 - Canonical EXTRACTION_QUALITY reference is now tracked under this module family for doc-router parity and doc/test sync ownership.
 - Canonical EXTRACTION_QUALITY wording now uses neutral extraction-tracking artifact references (no direct `docs/agent_router/*` path literals).
+- Canonical TECHNICAL_DESIGN sync on 2026-03-09: E2E limitation wording aligned to `65 tests / 21 specs` and related architecture-link corrections propagated.
+- Canonical EXTRACTION_QUALITY sync on 2026-03-09: governance wording and navigation refresh propagated under TECHNICAL_DESIGN ownership.

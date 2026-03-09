@@ -17,7 +17,7 @@ Start with `AGENTS.md` (repo root) and `docs/agent_router/00_AUTHORITY.md` for i
 - `docs/agent_router/04_PROJECT/UX_DESIGN/90_8-separation-of-responsibilities-non-negotiable.md`
 - `docs/agent_router/04_PROJECT/UX_DESIGN/100_9-final-ux-rule.md`
 
-## Propagated updates
+- Canonical sync 2026-03-09: navigation/TOC and frontmatter normalization propagation refresh.
 - UX confidence semantics distinguish `candidate_confidence` (diagnostic) from `field_mapping_confidence` (veterinarian-facing signal).
 - Reviewed-toggle behavior and implicit unchanged-field weak-positive signal contracts are reflected in UX owner modules.
 - Medical Record panel rendering remains contract-driven (`medical_record_view`, `field_slots`, `visits[]`, `other_fields[]`) with no UI-side heuristics.

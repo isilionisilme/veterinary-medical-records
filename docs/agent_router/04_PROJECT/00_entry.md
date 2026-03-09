@@ -14,3 +14,6 @@ Split, token-optimized versions of `docs/projects/veterinary-medical-records/*`.
 - `docs/agent_router/04_PROJECT/BACKEND_IMPLEMENTATION/00_entry.md`
 - `docs/agent_router/04_PROJECT/FRONTEND_IMPLEMENTATION/00_entry.md`
 - `docs/agent_router/04_PROJECT/FUTURE_IMPROVEMENTS/00_entry.md`
+
+## Propagated updates
+- Canonical sync 2026-03-09: navigation/TOC and frontmatter normalization propagation refresh.

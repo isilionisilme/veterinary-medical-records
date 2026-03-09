@@ -22,6 +22,7 @@
 ### Field Done Criteria
 
 A field is considered improved when:
+
 - Rejected/missing counts decrease in summary trends.
 - Latest run (`limit=1`) confirms the improvement.
 - Accepted values are correct and evidenced in triage logs/snapshots.
@@ -30,6 +31,7 @@ A field is considered improved when:
 ### Default Maintenance Policy
 
 For every extraction-fix run:
+
 1. Add/append an entry in the iteration log.
 2. Update touched sections in field guardrails.
 3. Update observability docs if observability behavior changed.
@@ -39,17 +41,17 @@ For every extraction-fix run:
 
 ## 4. Risk Matrix (Golden Fields)
 
-| Field | Primary risk | Typical trigger pattern | Active guardrail |
-|-------|-------------|------------------------|------------------|
-| `microchip_id` | Generic long numeric IDs captured as chip | `No:` / `Nro:` invoice/reference near 9–15 digits | Accept only chip-context or explicit OCR chip-like prefixes + digits-only 9–15 |
-| `owner_name` | Patient/vet names promoted as owner | `Datos del Cliente` blocks with ambiguous `Nombre:` | Require explicit owner context or strict header fallback; reject patient/vet/clinic context |
-| `owner_address` | Clinic address promoted as owner address (or owner address dropped) | Ambiguous `Direccion:` labels and unlabeled owner blocks near clinic headers | Owner/clinic contextual disambiguation, owner-block multiline heuristic, and observability flags (`matches_clinic`, `too_short`, `no_tokens`, `too_long`) |
-| `weight` | Dosage/zero values accepted as weight | Treatment lines, `0` values, out-of-range values | Enforce range [0.5,120], reject `0`, prefer label-based weight context |
-| `vet_name` | Clinic/address promoted as veterinarian | Clinic headings and address-rich lines | Person-like normalization + reject clinic/address context |
-| `visit_date` | Birthdate mapped as visit date | Multiple dates in same document | Reject birthdate context, require visit/consult anchors |
-| `discharge_date` | Timeline dates misclassified as discharge | Unlabeled date-only lines | Strict discharge-label context only |
-| `vaccinations` | Narrative/admin text captured as vaccine list | Date-heavy or free narrative blocks | Strict label-only extraction + concise list guardrails |
-| `symptoms` | Treatment instructions promoted as symptoms | Dosage/administration paragraphs | Strict symptom-label context + reject treatment/noise language |
+| Field            | Primary risk                                                        | Typical trigger pattern                                                      | Active guardrail                                                                                                                                          |
+| ---------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `microchip_id`   | Generic long numeric IDs captured as chip                           | `No:` / `Nro:` invoice/reference near 9–15 digits                            | Accept only chip-context or explicit OCR chip-like prefixes + digits-only 9–15                                                                            |
+| `owner_name`     | Patient/vet names promoted as owner                                 | `Datos del Cliente` blocks with ambiguous `Nombre:`                          | Require explicit owner context or strict header fallback; reject patient/vet/clinic context                                                               |
+| `owner_address`  | Clinic address promoted as owner address (or owner address dropped) | Ambiguous `Direccion:` labels and unlabeled owner blocks near clinic headers | Owner/clinic contextual disambiguation, owner-block multiline heuristic, and observability flags (`matches_clinic`, `too_short`, `no_tokens`, `too_long`) |
+| `weight`         | Dosage/zero values accepted as weight                               | Treatment lines, `0` values, out-of-range values                             | Enforce range [0.5,120], reject `0`, prefer label-based weight context                                                                                    |
+| `vet_name`       | Clinic/address promoted as veterinarian                             | Clinic headings and address-rich lines                                       | Person-like normalization + reject clinic/address context                                                                                                 |
+| `visit_date`     | Birthdate mapped as visit date                                      | Multiple dates in same document                                              | Reject birthdate context, require visit/consult anchors                                                                                                   |
+| `discharge_date` | Timeline dates misclassified as discharge                           | Unlabeled date-only lines                                                    | Strict discharge-label context only                                                                                                                       |
+| `vaccinations`   | Narrative/admin text captured as vaccine list                       | Date-heavy or free narrative blocks                                          | Strict label-only extraction + concise list guardrails                                                                                                    |
+| `symptoms`       | Treatment instructions promoted as symptoms                         | Dosage/administration paragraphs                                             | Strict symptom-label context + reject treatment/noise language                                                                                            |
 
 ### Reviewer Checklist
 
@@ -69,6 +71,7 @@ For every extraction-fix run:
 ### Promotion Rules
 
 Promote goal fields from candidates to structured interpretation only when:
+
 - Canonical value is missing.
 - Candidate top1 exists.
 - Confidence meets the threshold.
@@ -78,18 +81,18 @@ Promote goal fields from candidates to structured interpretation only when:
 
 ## 6. Golden Fields — Current Status
 
-| Field | Status | Completed? |
-|-------|--------|:---:|
-| `microchip_id` | Active (digits-only 9–15, OCR hardened) | ✅ |
-| `owner_name` | Active (tabular + conservative fallback) | ✅ |
-| `weight` | Active (range [0.5,120], reject 0) | ✅ |
-| `vet_name` | Active (person normalization, clinic rejection) | ✅ |
-| `visit_date` | Active (date normalization, birthdate rejection) | ✅ |
-| `dob` | Active (date normalization + birth-date anchors + observability flags) | ✅ |
-| `discharge_date` | Active (label-only context) | ✅ |
-| `vaccinations` | Active (strict label-only) | ✅ |
-| `symptoms` | Active (label-only, treatment noise rejection) | ✅ |
-| `owner_address` | Active (owner/clinic disambiguation + multiline owner-block fallback + benchmark floor 89.7%) | ✅ |
+| Field            | Status                                                                                        | Completed? |
+| ---------------- | --------------------------------------------------------------------------------------------- | :--------: |
+| `microchip_id`   | Active (digits-only 9–15, OCR hardened)                                                       |     ✅     |
+| `owner_name`     | Active (tabular + conservative fallback)                                                      |     ✅     |
+| `weight`         | Active (range [0.5,120], reject 0)                                                            |     ✅     |
+| `vet_name`       | Active (person normalization, clinic rejection)                                               |     ✅     |
+| `visit_date`     | Active (date normalization, birthdate rejection)                                              |     ✅     |
+| `dob`            | Active (date normalization + birth-date anchors + observability flags)                        |     ✅     |
+| `discharge_date` | Active (label-only context)                                                                   |     ✅     |
+| `vaccinations`   | Active (strict label-only)                                                                    |     ✅     |
+| `symptoms`       | Active (label-only, treatment noise rejection)                                                |     ✅     |
+| `owner_address`  | Active (owner/clinic disambiguation + multiline owner-block fallback + benchmark floor 89.7%) |     ✅     |
 
 ### Pending Fields (No Guardrails Yet)
 
