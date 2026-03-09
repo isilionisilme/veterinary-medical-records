@@ -2,7 +2,10 @@ import fs from "node:fs";
 
 import { expect, type Page } from "@playwright/test";
 
-const backendBaseURL = process.env.PLAYWRIGHT_BACKEND_BASE_URL || "http://127.0.0.1:18000";
+const useExternalServers = process.env.PLAYWRIGHT_EXTERNAL_SERVERS === "1";
+const defaultBackendPort = process.env.CI || useExternalServers ? 8000 : 18000;
+const backendBaseURL =
+  process.env.PLAYWRIGHT_BACKEND_BASE_URL || `http://127.0.0.1:${defaultBackendPort}`;
 
 function extractDocumentId(payload: unknown): string | null {
   if (!payload || typeof payload !== "object") {
