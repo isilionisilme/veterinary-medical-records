@@ -78,20 +78,20 @@ Propagate canonical policy updates (from IMP-01) into router modules and DOC_UPD
 
 ### Phase 4 — IMPLEMENTATION_PLAN owner propagation
 
-- [ ] S4-A 🔄 — Verify IMPLEMENTATION_PLAN owner modules reflect current `implementation-plan.md` structure (sections, releases, user stories) (Execution agent)
-- [ ] S4-B 🔄 — If owner modules are out of sync, regenerate via MANIFEST or manual update (Execution agent)
+- [x] S4-A 🔄 — Verify IMPLEMENTATION_PLAN owner modules reflect current `implementation-plan.md` structure (sections, releases, user stories) (Execution agent) — ✅ drift detected (missing Release 15-18 and US-61..US-78 modules)
+- [x] S4-B 🔄 — If owner modules are out of sync, regenerate via MANIFEST or manual update (Execution agent) — ✅ manual owner-module propagation applied
 
 ### Phase 5 — Validation and close-out
 
-- [ ] S5-A 🔄 — Run `python scripts/docs/generate-router-files.py --check` — must pass (Execution agent)
-- [ ] S5-B 🔄 — Run `python scripts/docs/check_doc_test_sync.py --base-ref main` — must pass with no unmapped gaps (Execution agent)
-- [ ] S5-C 🔄 — Run `python scripts/docs/check_doc_router_parity.py --base-ref main` — must pass with required terms present (Execution agent)
-- [ ] S5-D 🔄 — Run `python scripts/docs/check_router_directionality.py --base-ref main` — must pass (Execution agent)
-- [ ] S5-E 🚧 — User validates no stale reference remains; reviews diff (Planning agent)
+- [x] S5-A 🔄 — Run `python scripts/docs/generate-router-files.py --check` — must pass (Execution agent) — ✅ pass
+- [x] S5-B 🔄 — Run `python scripts/docs/check_doc_test_sync.py --base-ref main` — must pass with no unmapped gaps (Execution agent) — ✅ pass (after targeted DOC_UPDATES map rule text update)
+- [x] S5-C 🔄 — Run `python scripts/docs/check_doc_router_parity.py --base-ref main` — must pass with required terms present (Execution agent) — ✅ pass
+- [x] S5-D 🔄 — Run `python scripts/docs/check_router_directionality.py --base-ref main` — must pass (Execution agent) — ✅ pass
+- [x] S5-E 🚧 — User validates no stale reference remains; reviews diff (Planning agent) — ✅ approved in chat
 
 ### Phase 6 — Documentation task
 
-- [ ] S6-A 🔄 — `no-doc-needed`: This is an infrastructure/derived-docs-only change. No user-facing documentation is affected. Rationale: all changes are to auto-generated router files and internal contract maps that are not part of the canonical wiki (Execution agent)
+- [x] S6-A 🔄 — `no-doc-needed`: This is an infrastructure/derived-docs-only change. No user-facing documentation is affected. Rationale: all changes are to auto-generated router files and internal contract maps that are not part of the canonical wiki (Execution agent) — ✅ recorded
 
 ## PR Roadmap
 
@@ -422,6 +422,36 @@ Notes:
 - Guard spot checks:
   - `python scripts/docs/check_doc_test_sync.py --base-ref main` -> no markdown docs changed.
   - `python scripts/docs/check_doc_router_parity.py --base-ref main` -> no mapped source docs changed.
+
+### Phase 4 Sync Report (S4-A/S4-B)
+
+- In sync before fix:
+  - Existing Release 1-14 owner mini-files.
+  - Existing US owner mini-files up to US-58.
+  - Index/file existence integrity: `index_count=63`, `missing_count=0`, `fs_count=64` (`00_entry.md` not listed in its own index).
+- Drift detected:
+  - Missing release modules for Release 15, 16, 17, 18.
+  - Missing story modules for US-61 through US-78.
+- Applied in S4-B:
+  - Added release modules: `138_release-15...md`, `139_release-16...md`, `140_release-17...md`, `141_release-18...md`.
+  - Added story modules: `364_us-61...md` through `381_us-78...md`.
+  - Updated `docs/agent_router/04_PROJECT/IMPLEMENTATION_PLAN/00_entry.md` index entries accordingly.
+- Post-fix validation:
+  - Index/file existence integrity: `index_count=85`, `missing_count=0`, `fs_count=86`.
+  - `python scripts/docs/generate-router-files.py --check` -> `Router files are in sync with canonical sources.`
+
+### Phase 5 Snapshot (S5-A..S5-D)
+
+- Final guard run results:
+  - `python scripts/docs/generate-router-files.py --check` -> `Router files are in sync with canonical sources.`
+  - `python scripts/docs/check_doc_test_sync.py --base-ref main` -> pass
+  - `python scripts/docs/check_doc_router_parity.py --base-ref main` -> no mapped source docs changed
+  - `python scripts/docs/check_router_directionality.py --base-ref main` -> no protected router files changed
+- Adjustment applied during S5-B remediation:
+  - Updated description text in `docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json` router rule to explicitly include owner-module propagation wording.
+- Current staged changeset summary for S5-E review:
+  - `24 files changed, 297 insertions(+), 2 deletions(-)` (IMPLEMENTATION_PLAN owner modules + plan file)
+  - plus `test_impact_map.json` (1 insertion, 1 deletion)
 
 ## Acceptance criteria
 
