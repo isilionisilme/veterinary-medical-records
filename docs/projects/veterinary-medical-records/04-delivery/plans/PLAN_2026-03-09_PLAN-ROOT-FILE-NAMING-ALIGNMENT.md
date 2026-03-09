@@ -73,7 +73,7 @@ The execution agent MUST mark each step as completed (`[x]`) in this plan file *
    - Before any staging or commit: ask the user for explicit confirmation.
   - Run L2, fix until green, STOP and wait for user.
 - [x] S5 — Validation: grep confirms zero `PLAN_MASTER` references in canonical and router docs (excluding the IMP-05 backlog item itself and this plan); verify plan discovery patterns work for both new-named and legacy roots — ✅ `no-commit (validation only)`
-- [ ] S6 — Update backlog item status to Implemented; update `implementation-plan.md` status ⏳ IN PROGRESS (GitHub Copilot, 2026-03-09)
+- [x] S6 — Update backlog item status to Implemented; update `implementation-plan.md` status — ✅ `3f7307f2`
   - 🔀 Suggested commit after S6: `chore(docs): mark IMP-05 as Implemented`
   - Scope: `imp-05-plan-root-file-naming-alignment.md`, `implementation-plan.md`
    - Before any staging or commit: ask the user for explicit confirmation.
