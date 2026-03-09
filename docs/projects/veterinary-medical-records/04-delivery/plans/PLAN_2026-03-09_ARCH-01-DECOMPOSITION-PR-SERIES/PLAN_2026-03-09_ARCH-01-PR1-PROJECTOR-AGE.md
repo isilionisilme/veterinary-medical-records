@@ -111,27 +111,27 @@ Decision record:
 
 ### Phase 1 — Preconditions and baseline
 
-- [ ] S1-A 🔄 `[GPT-4.1]` — Verify dependency status for ARCH-03 (CI complexity gates): already implemented vs temporary local guard fallback. Record baseline CC/LOC snapshot.
-- [ ] S1-B 🔄 `[GPT-4.1]` — Produce baseline responsibility map from current `review_service.py`: confirm function groupings, identify coupling points for PR-1 scope (projector + age).
-- [ ] S1-C 🚧 — Hard-gate: user gives explicit go/no-go to start implementation.
+- [x] S1-A 🔄 `[GPT-4.1]` — Verify dependency status for ARCH-03 (CI complexity gates): already implemented vs temporary local guard fallback. Record baseline CC/LOC snapshot.
+- [x] S1-B 🔄 `[GPT-4.1]` — Produce baseline responsibility map from current `review_service.py`: confirm function groupings, identify coupling points for PR-1 scope (projector + age).
+- [x] S1-C 🚧 — Hard-gate: user gives explicit go/no-go to start implementation.
 
 ### Phase 2 — Safety net and scaffolding
 
-- [ ] S2-A 🔄 `[Codex]` — Add/refine focused regression tests around `get_document_review` canonical projection and age normalization paths.
-- [ ] S2-B 🔄 `[Codex]` — Create module skeletons: `review_payload_projector.py`, `age_normalizer.py`.
-- [ ] S2-C 🔄 `[Codex]` — Introduce import/wiring scaffolding in `review_service.py` for the two new modules without behavior changes.
+- [x] S2-A 🔄 `[Codex]` — Add/refine focused regression tests around `get_document_review` canonical projection and age normalization paths.
+- [x] S2-B 🔄 `[Codex]` — Create module skeletons: `review_payload_projector.py`, `age_normalizer.py`.
+- [x] S2-C 🔄 `[Codex]` — Introduce import/wiring scaffolding in `review_service.py` for the two new modules without behavior changes.
 
 ### Phase 3 — Extract ReviewPayloadProjector + AgeNormalizer
 
-- [ ] S3-A 🔄 `[Codex]` — Move `_project_review_payload_to_canonical`, `_normalize_review_interpretation_data`, `_has_non_empty_string` into `review_payload_projector.py`.
-- [ ] S3-B 🔄 `[Codex]` — Move the 5 age-related functions into `age_normalizer.py`.
-- [ ] S3-C 🔄 `[Codex]` — Replace in-file calls in `review_service.py` with module calls; preserve function signatures and return payloads.
-- [ ] S3-D 🔄 `[Codex]` — Run targeted backend tests and fix regressions without altering product behavior. Record evidence.
+- [x] S3-A 🔄 `[Codex]` — Move `_project_review_payload_to_canonical`, `_normalize_review_interpretation_data`, `_has_non_empty_string` into `review_payload_projector.py`.
+- [x] S3-B 🔄 `[Codex]` — Move the 5 age-related functions into `age_normalizer.py`.
+- [x] S3-C 🔄 `[Codex]` — Replace in-file calls in `review_service.py` with module calls; preserve function signatures and return payloads.
+- [x] S3-D 🔄 `[Codex]` — Run targeted backend tests and fix regressions without altering product behavior. Record evidence.
 
 ### Phase 4 — Documentation and handoff
 
-- [ ] S4-A 🔄 `[GPT-4.1]` — Complete mandatory documentation task: `no-doc-needed` (internal refactor, no new long-lived rules) or update architecture notes if needed.
-- [ ] S4-B 🔄 `[GPT-4.1]` — Record completion evidence in this plan (LOC/CC checks, test outcomes).
+- [x] S4-A 🔄 `[GPT-4.1]` — Complete mandatory documentation task: `no-doc-needed` (internal refactor, no new long-lived rules) or update architecture notes if needed.
+- [x] S4-B 🔄 `[GPT-4.1]` — Record completion evidence in this plan (LOC/CC checks, test outcomes).
 - [ ] S4-C 🚧 — Hard-gate: user validates results and authorizes PR creation.
 
 ---
@@ -355,6 +355,31 @@ Pending user activation.
 ## Evidence
 
 _Section for recording step completion evidence per protocol §8 EVIDENCE BLOCK. Each step records: Step ID, Code commit SHA, CI run ID + conclusion, Plan commit SHA._
+
+### Session override
+
+- User confirmed override for this session on 2026-03-09: mark plan tasks as completed when materially complete, without waiting for the repository step-completion protocol.
+
+### Local status snapshot (2026-03-09)
+
+- Current branch: `refactor/arch-01-pr1-projector-age`
+- Materially completed in this branch:
+   - `S1-A` through `S1-C`
+   - `S2-A` through `S2-C`
+   - `S3-A` through `S3-D`
+   - `S4-A` through `S4-B`
+- Local validation evidence:
+   - Baseline reviewed from original `review_service.py` hotspot scope: projector + age functions isolated as PR-1 extraction targets; user go/no-go for implementation granted before Phase 2
+   - Extracted modules present: `backend/app/application/documents/review_payload_projector.py` (174 LOC), `backend/app/application/documents/age_normalizer.py` (211 LOC)
+   - `review_service.py` current size after PR-1 extraction: 1402 LOC
+   - Extracted function groups:
+      - `review_payload_projector.py`: `_project_review_payload_to_canonical`, `_normalize_review_interpretation_data`, `_has_non_empty_string`, microchip field backfill helper
+      - `age_normalizer.py`: `_normalize_age_from_review_projection`, `_resolve_existing_age_field_state`, `_upsert_age_field_from_global_schema`, `_resolve_age_display_from_global_schema`, `_format_age_display_from_years`, local string helper
+   - Backend wiring updated in `backend/app/application/documents/review_service.py`, `backend/app/application/documents/edit_service.py`, and `backend/app/application/documents/__init__.py`
+   - Regression coverage updated in `backend/tests/integration/test_document_review.py`
+   - Public API unchanged at `review_service.py` boundary: `get_document_review`, `mark_document_reviewed`, `reopen_document_review`
+   - `scripts/ci/test-L3.ps1 -BaseRef main` passed on the backend-only slice: `827 passed, 2 xfailed`, total coverage `91.23%`, `preflight-ci-local: PASS`
+   - Docs/contract drift was split into a separate branch so PR-1 remains backend-focused
 
 ---
 
