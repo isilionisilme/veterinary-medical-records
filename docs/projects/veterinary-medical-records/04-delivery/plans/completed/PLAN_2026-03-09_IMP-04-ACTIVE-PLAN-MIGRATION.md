@@ -130,7 +130,7 @@ Push permanece manual en todos los modos.
 ### Phase 5 — Validation and close-out
 
 - [x] M5-A 🔄 — Run full validation checklist (see below) and record evidence for each criterion (Execution agent) — ✅ `validation evidence table recorded in Active Prompt`
-- [ ] M5-B 🚧 — User validates results and approves for PR (Planning agent)
+- [x] M5-B 🚧 — User validates results and approves for PR (Planning agent) — ✅ `approved by user in chat; proceed with close-out and PR`
 - [x] M5-C 🔄 — Documentation: `no-doc-needed` — this is an internal plan-governance migration with no user-facing or canonical wiki impact. All changes are to active plan files (operational metadata) and optionally global index references. Rationale: plan files are agent execution artifacts, not canonical wiki content (Execution agent) — ✅ `no-doc-needed applied; rationale confirmed`
 
 ---
