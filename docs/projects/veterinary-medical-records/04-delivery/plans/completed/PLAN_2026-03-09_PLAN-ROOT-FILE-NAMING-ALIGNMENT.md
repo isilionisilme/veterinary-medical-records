@@ -3,7 +3,7 @@
 > **Operational rules:** See [plan-execution-protocol.md](../../03-ops/plan-execution-protocol.md)
 
 **Branch:** `codex/veterinary-medical-records/chore/plan-root-file-naming-alignment`
-**PR:** Pending (PR created on explicit user request)
+**PR:** [#240](https://github.com/isilionisilme/veterinary-medical-records/pull/240)
 **User Story:** [IMP-05](../Backlog/imp-05-plan-root-file-naming-alignment.md)
 **Prerequisite:** None (IMP-01 dependency is soft — different sections of the same canonical docs)
 **Worktree:** `d:/Git/veterinary-medical-records`
