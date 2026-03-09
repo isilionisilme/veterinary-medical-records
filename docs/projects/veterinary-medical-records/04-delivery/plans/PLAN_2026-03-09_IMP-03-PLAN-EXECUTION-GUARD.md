@@ -142,8 +142,8 @@ Push permanece manual en todos los modos.
 ### Phase 5 — Validation & closure
 
 - [x] P5-A 🔄 — Ejecutar validation checklist completa del backlog item: happy path, locked path, ambiguity path, no-plan path. Documentar evidencia en este plan. — ✅ `no-commit (implemented; pending commit point)`
-- [ ] P5-B 🚧 — Hard-gate: usuario valida resultados y aprueba para PR.
-- [ ] P5-C 🚧 — Documentación: actualizar `scripts/ci/README.md` con descripción del guard y helper, o cerrar con `no-doc-needed` justificado.
+- [x] P5-B 🚧 — Hard-gate: usuario valida resultados y aprueba para PR. — ✅ `no-commit (user approval in chat to continue with commit + L3 + push + PR)`
+- [x] P5-C 🚧 — Documentación: actualizar `scripts/ci/README.md` con descripción del guard y helper, o cerrar con `no-doc-needed` justificado. — ✅ `no-commit (README updated)`
 
 #### P5-A Validation Evidence
 
