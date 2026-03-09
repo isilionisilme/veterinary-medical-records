@@ -3,7 +3,7 @@
 > **Operational rules:** See [plan-execution-protocol.md](../../../03-ops/plan-execution-protocol.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
 
 **Branch:** `codex/veterinary-medical-records/docs/imp-01-canonical-policy-alignment`
-**PR:** Pending (PR created on explicit user request)
+**PR:** [#241](https://github.com/isilionisilme/veterinary-medical-records/pull/241)
 **Backlog item:** [imp-01-canonical-operational-execution-policy-alignment.md](../../Backlog/imp-01-canonical-operational-execution-policy-alignment.md)
 **Prerequisite:** None
 **Worktree:** `D:/Git/veterinary-medical-records`
