@@ -133,8 +133,8 @@ Push permanece manual en todos los modos.
 
 ### Phase 4 — Integración preflight + CI
 
-- [ ] P4-A 🔄 — Integrar `check_plan_execution_guard.py` en `preflight-ci-local.ps1` como `Invoke-Step "Plan execution guard"` en bloque Push/Full, tras el bloque de doc guards existente. Condición: ejecutar siempre (la detección no-plan ya es pass-through).
-- [ ] P4-B 🔄 — Añadir job `plan_execution_guard` en `.github/workflows/ci.yml`: condición `github.event_name == 'pull_request'`, checkout con `fetch-depth: 0`, Python 3.11, ejecutar `python scripts/ci/check_plan_execution_guard.py --branch "${{ github.head_ref }}"`.
+- [x] P4-A 🔄 — Integrar `check_plan_execution_guard.py` en `preflight-ci-local.ps1` como `Invoke-Step "Plan execution guard"` en bloque Push/Full, tras el bloque de doc guards existente. Condición: ejecutar siempre (la detección no-plan ya es pass-through). — ✅ `no-commit (implemented; pending commit point)`
+- [x] P4-B 🔄 — Añadir job `plan_execution_guard` en `.github/workflows/ci.yml`: condición `github.event_name == 'pull_request'`, checkout con `fetch-depth: 0`, Python 3.11, ejecutar `python scripts/ci/check_plan_execution_guard.py --branch "${{ github.head_ref }}"`. — ✅ `no-commit (implemented; pending commit point)`
 
 > **Commit point →** `ci(plan-guard): integrate guard into preflight and CI workflow`
 > Lanzar L2. Si falla, reparar. Cuando L2 verde → esperar instrucciones del usuario.
