@@ -10,13 +10,15 @@ During plan execution, the agent MUST project plan progress into chat todos.
 1. On continuation-intent requests, read `Execution Status` and create one chat todo per pending plan step (`- [ ]`).
 2. Mark exactly one todo as `in_progress`: the current active step.
 3. Mark a todo as `completed` only when the corresponding plan step is `[x]`.
-4. If a plan step is `🚫 BLOCKED`, keep its todo as `in_progress` and include blocker context in the chat progress update.
+4. If a plan step is `🚫 BLOCKED`, keep its todo as `in_progress` and include blocker context in the chat progress
+   update.
 5. Keep a rolling window of at least the next 3 pending steps visible in chat todos.
 6. Todo titles MUST preserve plan step identifiers (for example: `F2-C — Update wiki section indexes`).
 
 ### Synchronization rules
 
-- The active plan source file checkboxes are the source of truth (`PLAN_<YYYY-MM-DD>_<SLUG>.md`).
+- The active plan source file checkboxes are the source of truth (`PLAN_<date>_<slug>.md` for new plans; legacy
+  root-file names remain accepted during transition).
 - Chat todos are an execution-time projection and MUST stay synchronized with the plan.
 - If plan and chat todos diverge, reconcile immediately from the plan before continuing.
 
@@ -25,12 +27,15 @@ During plan execution, the agent MUST project plan progress into chat todos.
 ## 16. Token-Efficiency Policy
 
 To avoid context explosion:
-1. **iterative-retrieval** before each step: load only current state, step objective, target files, guardrails, validation outputs.
+
+1. **iterative-retrieval** before each step: load only current state, step objective, target files, guardrails,
+   validation outputs.
 2. **strategic-compact** at step close: summarize only the delta, validation, risks, and next move.
 3. Do not carry full chat history if not necessary.
 4. For chat-switch decisions, apply the **Single-Chat Execution Rule**.
 
 > **Mandatory compact template:**
+>
 > - Step: F?-?
 > - Delta: <concrete changes>
 > - Validation: <tests/guards + result>
@@ -41,10 +46,13 @@ To avoid context explosion:
 ## 17. Commit Conventions
 
 All commits in this flow follow the format:
-```
+
+```text
 <type>(plan-<id>): <short description>
 ```
+
 Examples:
+
 - `audit(plan-f1a): 12-factor compliance report + backlog`
 - `refactor(plan-f2c): split App.tsx into page and API modules`
 - `test(plan-f4c): add frontend coverage gaps for upload flow`
@@ -61,6 +69,7 @@ When asked to add a new User Story, update the delivery docs in three places:
 3. Add or update the story row in the **Backlog Index**.
 
 If the requested story is not yet scheduled in any release, schedule it in the Release Plan:
+
 - Add it to an existing release, or
 - Create a new release section when needed.
 

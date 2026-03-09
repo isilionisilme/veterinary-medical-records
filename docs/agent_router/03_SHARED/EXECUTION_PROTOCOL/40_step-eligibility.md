@@ -5,6 +5,7 @@
 
 **If the user expresses continuation intent (for example: "continue", "go", "let's go", "proceed", "resume"):**
 Interpret continuation intent semantically, not as a literal command token.
+
 1. Read the Execution Status and find the first `[ ]` (includes lines with `⏳ IN PROGRESS` or `🚫 BLOCKED` labels).
 2. Apply the **decision table in §10** to determine the action (auto-chain, stop, or report).
 3. If ambiguous: STOP and ask the user for clarification.
@@ -13,9 +14,12 @@ Interpret continuation intent semantically, not as a literal command token.
 
 ## 5. Continuation-Intent-Only Rule
 
-**When the user expresses continuation intent, the agent executes ONLY what the plan dictates.** If the user's message includes additional instructions alongside the continuation request, the agent must:
+**When the user expresses continuation intent, the agent executes ONLY what the plan dictates.** If the user's message
+includes additional instructions alongside the continuation request, the agent must:
+
 1. **Pause and request scope confirmation** (do not silently ignore extra instructions).
-2. Respond with two options: continue with the exact next plan step, or switch scope and ask the planning agent to update the plan and prompt.
+2. Respond with two options: continue with the exact next plan step, or switch scope and ask the planning agent to
+   update the plan and prompt.
 3. Execute only after the user explicitly confirms one option.
 
 ### Task Chaining Policy
@@ -45,8 +49,10 @@ Defines how AI assistants must behave when executing chained plan steps.
 
 #### Auto-fix allowance
 
-- In **interactive single-task mode** (no plan), the assistant may attempt focused auto-fixes (max 2 attempts, scoped to the current change).
-- In **chained-plan mode**, auto-fix is **not default**. The assistant documents the failure and lets the plan dictate the next action (continue, escalation, or explicit fix step).
+- In **interactive single-task mode** (no plan), the assistant may attempt focused auto-fixes (max 2 attempts, scoped to
+  the current change).
+- In **chained-plan mode**, auto-fix is **not default**. The assistant documents the failure and lets the plan dictate
+  the next action (continue, escalation, or explicit fix step).
 - Auto-fixes must never go beyond the current change scope or introduce unrelated refactors.
 - **Never bypass quality gates** (`--no-verify`, disabling tests/checks, weakening assertions) to force a pass.
 
