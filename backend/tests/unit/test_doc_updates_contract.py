@@ -599,6 +599,23 @@ def test_backlog_markdown_relative_links_resolve() -> None:
     assert not broken_links, "Broken relative markdown links:\n" + "\n".join(broken_links)
 
 
+def test_backlog_tracks_operational_runbook_architecture() -> None:
+    readme_text = _read_text(BACKLOG_DIR / "README.md")
+    imp13_path = BACKLOG_DIR / "imp-13-operational-runbook-architecture.md"
+    assert imp13_path.exists(), "IMP-13 file must exist in Backlog."
+    imp13_text = _read_text(imp13_path)
+
+    assert "| IMP-13 | Operational Runbook Architecture | Release 22 |" in readme_text
+    assert "(imp-13-operational-runbook-architecture.md)" in readme_text
+
+    assert "Supersedes and replaces IMP-10" in imp13_text
+    assert "IMP-11" in imp13_text
+    assert "IMP-12" in imp13_text
+    assert ".prompt.md" in imp13_text
+    assert ".instructions.md" in imp13_text
+    assert "plan-start-check.py" in imp13_text
+
+
 def test_ci_does_not_ignore_markdown_only_changes() -> None:
     text = _read_text(CI_WORKFLOW)
     assert "paths-ignore" not in text
