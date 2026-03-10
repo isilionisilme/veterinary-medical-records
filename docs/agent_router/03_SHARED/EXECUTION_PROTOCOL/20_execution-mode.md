@@ -3,7 +3,7 @@
 
 ## 1. Execution Mode Defaults
 
-Unless the active plan records a different selection in `**Execution Mode:**`, the default execution mode is **Semi-supervised**. After completing the current task according to the active mode and closure rules, the agent applies the **decision table in §10** to determine whether to chain or stop.
+There is no implicit default execution mode for a new or unresolved plan. If the active plan already records a resolved value in `**Execution Mode:**`, follow it. Otherwise, the agent must stop at plan-start, require an explicit user selection, and only then apply the chosen mode's closure rules and the **decision table in §10**.
 
 ### Single-Chat Execution Rule (Hard Rule)
 

@@ -6,11 +6,26 @@ import subprocess
 import sys
 from pathlib import Path
 
-BRANCH_RE = re.compile(r"\*\*Branch:\*\*\s*`([^`]+)`")
+METADATA_VALUE_RE = re.compile(r"`([^`]+)`")
 CHECKBOX_LINE_RE = re.compile(r"^\s*- \[(?P<state>[ xX])]\s*(?P<text>.*)$")
 INLINE_CODE_RE = re.compile(r"`[^`]*`")
 
 IN_PROGRESS_LABEL_RE = re.compile(r"(?:^|\s)(?:⏳\s*)?IN PROGRESS(?:\s*\(|\s*$)")
+
+PLAN_START_FIELDS = (
+    "Branch",
+    "Worktree",
+    "Execution Mode",
+    "Model Assignment",
+)
+PLACEHOLDER_VALUES = (
+    "pending plan-start resolution",
+    "pending user selection",
+    "pending",
+    "pendiente",
+)
+VALID_EXECUTION_MODES = {"Supervised", "Semi-supervised", "Autonomous"}
+VALID_MODEL_ASSIGNMENTS = {"Default", "Uniform", "Custom"}
 
 
 class PlanResolutionError(RuntimeError):
@@ -36,11 +51,73 @@ def get_current_branch() -> str:
     return result.stdout.strip()
 
 
-def extract_branch(plan_content: str) -> str | None:
-    match = BRANCH_RE.search(plan_content)
+def extract_metadata_value(plan_content: str, field_name: str) -> str | None:
+    pattern = re.compile(rf"^\*\*{re.escape(field_name)}:\*\*\s*(?P<value>.+?)\s*$", re.MULTILINE)
+    match = pattern.search(plan_content)
     if not match:
         return None
-    return match.group(1).strip()
+    raw_value = match.group("value").strip()
+    value_match = METADATA_VALUE_RE.search(raw_value)
+    if value_match:
+        return value_match.group(1).strip()
+    return raw_value.strip()
+
+
+def extract_branch(plan_content: str) -> str | None:
+    return extract_metadata_value(plan_content, "Branch")
+
+
+def is_unresolved_metadata(value: str | None) -> bool:
+    if value is None:
+        return True
+
+    normalized = value.strip().casefold()
+    if not normalized:
+        return True
+
+    return any(
+        normalized == placeholder or placeholder in normalized for placeholder in PLACEHOLDER_VALUES
+    )
+
+
+def validate_plan_start_metadata(plan_content: str, plan_path: Path) -> list[str]:
+    errors: list[str] = []
+    values = {
+        field_name: extract_metadata_value(plan_content, field_name)
+        for field_name in PLAN_START_FIELDS
+    }
+
+    for field_name, value in values.items():
+        if value is None:
+            errors.append(
+                f"Plan {plan_path.as_posix()} is missing '**{field_name}:**' metadata field."
+            )
+            continue
+
+        if is_unresolved_metadata(value):
+            errors.append(
+                f"Plan {plan_path.as_posix()} has unresolved '**{field_name}:**' value: {value!r}."
+            )
+
+    execution_mode = values.get("Execution Mode")
+    if execution_mode is not None and not is_unresolved_metadata(execution_mode):
+        if execution_mode not in VALID_EXECUTION_MODES:
+            valid_modes = ", ".join(sorted(VALID_EXECUTION_MODES))
+            errors.append(
+                f"Plan {plan_path.as_posix()} has invalid '**Execution Mode:**' value: "
+                f"{execution_mode!r}. Expected one of: {valid_modes}."
+            )
+
+    model_assignment = values.get("Model Assignment")
+    if model_assignment is not None and not is_unresolved_metadata(model_assignment):
+        if model_assignment not in VALID_MODEL_ASSIGNMENTS:
+            valid_assignments = ", ".join(sorted(VALID_MODEL_ASSIGNMENTS))
+            errors.append(
+                f"Plan {plan_path.as_posix()} has invalid '**Model Assignment:**' value: "
+                f"{model_assignment!r}. Expected one of: {valid_assignments}."
+            )
+
+    return errors
 
 
 def iter_plan_files(plan_root: Path) -> list[Path]:
@@ -73,9 +150,13 @@ def resolve_active_plan(branch: str, plan_root: Path) -> Path | None:
 
 
 def validate_execution_status(plan_content: str, plan_path: Path) -> list[str]:
+    errors: list[str] = []
+
     if "## Execution Status" not in plan_content:
-        return [f"Plan {plan_path.as_posix()} is missing '## Execution Status' section."]
-    return []
+        errors.append(f"Plan {plan_path.as_posix()} is missing '## Execution Status' section.")
+
+    errors.extend(validate_plan_start_metadata(plan_content, plan_path))
+    return errors
 
 
 def collect_active_labels(plan_content: str) -> tuple[list[str], list[str], list[str]]:

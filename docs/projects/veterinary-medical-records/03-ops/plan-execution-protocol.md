@@ -47,7 +47,7 @@ The active plan source file contains: Execution Status (checkboxes), Prompt Queu
 
 ## 1. Execution Mode Defaults
 
-Unless the active plan records a different selection in `**Execution Mode:**`, the default execution mode is **Semi-supervised**. After completing the current task according to the active mode and closure rules, the agent applies the **decision table in §10** to determine whether to chain or stop.
+There is no implicit default execution mode for a new or unresolved plan. If the active plan already records a resolved value in `**Execution Mode:**`, follow it. Otherwise, the agent must stop at plan-start, require an explicit user selection, and only then apply the chosen mode's closure rules and the **decision table in §10**.
 
 ### Single-Chat Execution Rule (Hard Rule)
 
@@ -231,7 +231,7 @@ Before executing the first step of a plan, the agent must ask the user to select
 - Present options using the Agent-user interaction rule (§7).
 - Record the selected mode in the active plan source file.
 - Record format: `**Execution Mode:** <selected-mode>`
-- If the user does not choose, default to **Semi-supervised**.
+- If the user does not choose, do not start step 1. Re-present the question and require an explicit selection.
 - The selected mode applies to the full plan unless the user explicitly changes it.
 
 #### Mode definitions
@@ -317,9 +317,10 @@ The agent MUST NOT treat a resume message by itself as prior approval.
 
 After all mandatory plan-start choices are resolved and recorded in the plan file, the agent MUST:
 
-1. Run `scripts/ci/test-L1.ps1 -BaseRef HEAD`.
-2. Commit the plan file with message: `docs(plan): record plan-start choices for <plan-slug>`.
-3. This commit establishes the execution baseline. No implementation step may begin before this commit exists.
+1. Verify `**Branch:**`, `**Worktree:**`, `**Execution Mode:**`, and `**Model Assignment:**` all contain resolved non-placeholder values.
+2. Run `scripts/ci/test-L1.ps1 -BaseRef HEAD`.
+3. Commit the plan file with message: `docs(plan): record plan-start choices for <plan-slug>`.
+4. This commit establishes the execution baseline. No implementation step may begin before this commit exists.
 
 ### Model Assignment (Mandatory Plan-Start Choice)
 
@@ -335,8 +336,26 @@ Before executing the first step of a plan, the agent must ask the user to select
 - Present options using the Agent-user interaction rule (§7).
 - Record the selected mode in the active plan source file.
 - Record format: `**Model Assignment:** <selected-mode>`
-- If the user does not choose, default to **Default**.
+- If the user does not choose, do not start step 1. Re-present the question and require an explicit selection.
 - The selected mode applies to the full plan unless the user explicitly changes it.
+
+#### Plan-start preflight gate (hard rule)
+
+On the first `go` / `continue` / `resume` turn for an active plan, the agent MUST inspect `**Branch:**`, `**Worktree:**`, `**Execution Mode:**`, and `**Model Assignment:**` before attempting normal execution.
+
+If any of those fields is blank or still contains placeholder text such as `PENDING PLAN-START RESOLUTION`, `PENDING USER SELECTION`, `Pending`, or equivalent unresolved wording, the agent MUST suspend normal execution and complete plan-start first.
+
+Until plan-start is fully resolved and the snapshot commit exists, the agent may only:
+
+1. Read the plan/protocol and inspect repository safety state.
+2. List worktrees or auto-resolve the current workspace worktree.
+3. Create, select, or switch to the execution branch documented for the plan.
+4. Ask the user the mandatory plan-start questions.
+5. Update the plan file with the resolved values.
+6. Run `scripts/ci/test-L1.ps1 -BaseRef HEAD` for the snapshot preflight.
+7. Commit `docs(plan): record plan-start choices for <plan-slug>`.
+
+Until that snapshot commit exists, the agent MUST NOT mark any non-plan-start step `⏳ IN PROGRESS`, edit implementation files, or run implementation-targeted tests.
 
 #### Task-type criteria for model tags
 
@@ -509,7 +528,7 @@ Execute the **applicable** steps in the order below. For commit-only requests, e
 
 ### STEP 0 — Branch Verification (Hard-Stop)
 1. Read `**Branch:**` from the plan file.
-  - If `**Branch:**` is missing or blank: create the branch following the branching convention in AGENTS.md, record it in the plan's `**Branch:**` field, and commit the plan update before proceeding.
+  - If `**Branch:**` is missing, blank, or still contains placeholder text such as `PENDING PLAN-START RESOLUTION`: create the branch following the branching convention in AGENTS.md, record it in the plan's `**Branch:**` field, and commit the plan update before proceeding.
 2. Check current branch: `git branch --show-current`.
 3. If current branch matches `**Branch:**`: proceed.
 4. If mismatch: **STOP immediately.** Alert the user: "Current branch `<actual>` does not match plan branch `<expected>`. Switch to the correct branch before continuing." Do NOT commit, push, or checkout.
@@ -565,7 +584,7 @@ Branch creation → Plan steps → PR readiness → User approval → Close-out 
 2. `git fetch origin`
 3. Create from latest main: `git checkout -b <branch> origin/main`.
 4. If branch exists remotely: checkout and pull.
-5. If `**Branch:**` was missing in the plan file, the agent must have already created and recorded it in STEP 0. Verify the field is populated before proceeding.
+5. If `**Branch:**` was missing, blank, or still unresolved in the plan file, the agent must have already created and recorded it in STEP 0. Verify the field is populated with a non-placeholder value before proceeding.
 
 ### PR Creation (User-Triggered)
 PR creation remains mandatory for delivery through review, but it is **not automatic**. The agent creates or updates a PR only when the user explicitly requests it. When created, record the PR number in the plan. If a PR already exists for the branch, update it instead of creating a new one.
