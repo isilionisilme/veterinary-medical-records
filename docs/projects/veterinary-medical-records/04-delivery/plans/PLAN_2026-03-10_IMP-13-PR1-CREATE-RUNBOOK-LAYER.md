@@ -4,7 +4,7 @@
 
 **Backlog item:** [imp-13-operational-runbook-architecture.md](../Backlog/imp-13-operational-runbook-architecture.md)
 **Branch:** `docs/imp-13-operational-runbook-architecture`
-**PR:** Pending (PR created on explicit user request)
+**PR:** [#267](https://github.com/isilionisilme/veterinary-medical-records/pull/267)
 **User Story:** IMP-13 Fase A
 **Prerequisite:** `main` up to date and tests green; branch `docs/imp-13-operational-runbook-architecture` already exists.
 **Worktree:** `D:/Git/worktrees/cuarto`
