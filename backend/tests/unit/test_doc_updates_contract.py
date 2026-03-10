@@ -399,6 +399,12 @@ def test_commit_automation_and_pre_pr_history_policy_propagates_to_owner_modules
         "do not start step 1. Re-present the question and require an explicit selection"
         in execution_source
     )
+    assert (
+        execution_source.count(
+            "do not start step 1. Re-present the question and require an explicit selection"
+        )
+        >= 2
+    )
     assert "#### Plan-start preflight gate (hard rule)" in execution_source
     assert (
         "the agent MUST suspend normal execution and complete plan-start first" in execution_source
@@ -435,6 +441,11 @@ def test_plan_creation_requires_phase_zero_plan_start_placeholders() -> None:
     assert "PENDING USER SELECTION" in plan_creation_source
     assert "#### Mandatory Phase 0 — Plan-start preflight" in plan_creation_source
     assert "Resolve or record the execution branch." in plan_creation_source
+    assert (
+        "`**Branch:**`, `**Worktree:**`, `**Execution Mode:**`, and "
+        "`**Model Assignment:**` all contain resolved non-placeholder values."
+        in plan_creation_source
+    )
     assert (
         "The first execution turn MUST be used to resolve plan-start choices"
         in plan_creation_source

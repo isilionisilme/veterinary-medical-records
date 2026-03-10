@@ -24,6 +24,9 @@ def _write_plan(tmp_path: Path, relative_path: str, content: str) -> Path:
 
 HAPPY_PLAN = """# Plan
 **Branch:** `feature/test`
+**Worktree:** `D:/Git/worktrees/feature-test`
+**Execution Mode:** `Semi-supervised`
+**Model Assignment:** `Default`
 
 ## Execution Status
 - [ ] P1-A task ⏳ IN PROGRESS (Execution agent, 2026-03-09)
@@ -31,6 +34,9 @@ HAPPY_PLAN = """# Plan
 
 NO_EXEC_STATUS_PLAN = """# Plan
 **Branch:** `feature/test`
+**Worktree:** `D:/Git/worktrees/feature-test`
+**Execution Mode:** `Semi-supervised`
+**Model Assignment:** `Default`
 
 ## Context
 - details
@@ -38,11 +44,29 @@ NO_EXEC_STATUS_PLAN = """# Plan
 
 CLEAN_PLAN = """# Plan
 **Branch:** `feature/test`
+**Worktree:** `D:/Git/worktrees/feature-test`
+**Execution Mode:** `Semi-supervised`
+**Model Assignment:** `Default`
 
 ## Execution Status
 - [x] P1-A task — ✅ `abc12345`
 - [x] P1-B task — ✅ `def67890`
 """
+
+UNRESOLVED_EXECUTION_MODE_PLAN = HAPPY_PLAN.replace(
+    "**Execution Mode:** `Semi-supervised`",
+    "**Execution Mode:** PENDING USER SELECTION",
+)
+
+UNRESOLVED_BRANCH_PLAN = HAPPY_PLAN.replace(
+    "**Branch:** `feature/test`",
+    "**Branch:** PENDING PLAN-START RESOLUTION",
+)
+
+INVALID_MODEL_ASSIGNMENT_PLAN = HAPPY_PLAN.replace(
+    "**Model Assignment:** `Default`",
+    "**Model Assignment:** `Fastest`",
+)
 
 
 def test_resolve_no_plan(tmp_path: Path) -> None:
@@ -80,6 +104,42 @@ def test_validate_execution_status_missing() -> None:
     errors = module.validate_execution_status(NO_EXEC_STATUS_PLAN, Path("PLAN_missing.md"))
     assert len(errors) == 1
     assert "missing '## Execution Status' section" in errors[0]
+
+
+def test_validate_execution_status_rejects_unresolved_branch() -> None:
+    module = _load_guard_module()
+    errors = module.validate_execution_status(
+        UNRESOLVED_BRANCH_PLAN,
+        Path("PLAN_unresolved_branch.md"),
+    )
+    assert errors == [
+        "Plan PLAN_unresolved_branch.md has unresolved '**Branch:**' value: "
+        "'PENDING PLAN-START RESOLUTION'."
+    ]
+
+
+def test_validate_execution_status_rejects_unresolved_execution_mode() -> None:
+    module = _load_guard_module()
+    errors = module.validate_execution_status(
+        UNRESOLVED_EXECUTION_MODE_PLAN,
+        Path("PLAN_unresolved_execution_mode.md"),
+    )
+    assert errors == [
+        "Plan PLAN_unresolved_execution_mode.md has unresolved '**Execution Mode:**' value: "
+        "'PENDING USER SELECTION'."
+    ]
+
+
+def test_validate_execution_status_rejects_invalid_model_assignment() -> None:
+    module = _load_guard_module()
+    errors = module.validate_execution_status(
+        INVALID_MODEL_ASSIGNMENT_PLAN,
+        Path("PLAN_invalid_model_assignment.md"),
+    )
+    assert errors == [
+        "Plan PLAN_invalid_model_assignment.md has invalid '**Model Assignment:**' value: "
+        "'Fastest'. Expected one of: Custom, Default, Uniform."
+    ]
 
 
 def test_multiple_in_progress_steps_fail() -> None:

@@ -65,6 +65,8 @@ Minimum required outcomes inside `## Execution Status`:
 5. Update the plan metadata with the resolved values.
 6. Record the plan-start snapshot commit required by `plan-execution-protocol.md`.
 
+Phase 0 is complete only when `**Branch:**`, `**Worktree:**`, `**Execution Mode:**`, and `**Model Assignment:**` all contain resolved non-placeholder values.
+
 Until these outcomes are complete, the plan is not eligible to start implementation.
 
 When `## PR Roadmap` is present:
