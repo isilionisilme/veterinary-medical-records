@@ -133,8 +133,8 @@ Cada extractor recibe `collector: CandidateCollector` (para llamar `add_candidat
 
 ### Phase 5 — Tests unitarios de los nuevos módulos
 
-- [ ] P5-A 🔄 `[GPT 5.4]` — Crear `backend/tests/unit/test_candidate_collector.py`: tests de `CandidateCollector.add_candidate` (dedup, validation per-field, confidence clamping).
-- [ ] P5-B 🔄 `[GPT 5.4]` — Crear `backend/tests/unit/test_field_extractors.py`: tests de cada función extractora con fixtures Markdown mínimos que ejerciten el camino happy y un guard case.
+- [x] P5-A 🔄 `[GPT 5.4]` — Crear `backend/tests/unit/test_candidate_collector.py`: tests de `CandidateCollector.add_candidate` (dedup, validation per-field, confidence clamping).
+- [x] P5-B 🔄 `[GPT 5.4]` — Crear `backend/tests/unit/test_field_extractors.py`: tests de cada función extractora con fixtures Markdown mínimos que ejerciten el camino happy y un guard case.
 > 📌 Commit checkpoint — Phase 5 complete. Suggested message: `test(mining): add unit tests for decomposed extractors`. Run L2 tests; if red, fix and re-run until green. Then wait for user.
 
 ### Phase 6 — Validation & Closure
@@ -780,6 +780,28 @@ Marca P4-B [x]. Lanza L1.
 Lanza L2. Si falla, repara.
 Cuando L2 verde → STOP (commit point 4).
 ```
+
+**Evidence P5-A / P5-B:**
+- Added `backend/tests/unit/test_candidate_collector.py` covering:
+   - basic candidate insertion payload shape
+   - case-insensitive dedup per key
+   - project confidence bucket normalization (`label` vs `fallback`)
+   - microchip validation guard
+   - owner-name veterinarian-context guard
+   - clinic-name address guard
+- Added `backend/tests/unit/test_field_extractors.py` with focused happy/guard coverage for the main domain extractors:
+   - labeled fields
+   - sex
+   - species/breed
+   - clinic
+   - owner address
+   - labeled address routing
+   - pet name
+   - weight
+   - language
+- Local focused run: 24 passed (`pytest ... --no-cov`)
+- L2: PASS (`scripts/ci/test-L2.ps1 -BaseRef main`)
+- Full backend suite in L2: 853 collected, 851 passed, 2 xfailed; coverage remained above threshold.
 
 **Evidence P4-B:**
 - Subdivided the remaining hotspots into focused helpers:
