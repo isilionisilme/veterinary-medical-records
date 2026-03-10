@@ -35,8 +35,8 @@ Every new plan MUST include:
    - `**User Story:**`
    - `**Prerequisite:**`
    - `**Worktree:**`
-   - `**CI Mode:**`
-   - `**Automation Mode:**` — one of `Supervisado`, `Semiautomatico`, `Automatico`
+   - `**Execution Mode:**` — one of `Supervised`, `Semi-supervised`, `Autonomous`
+   - `**Model Assignment:**` — one of `Default`, `Uniform`, `Custom`
 5. `## Context`
 6. `## Objective`
 7. `## Scope Boundary`

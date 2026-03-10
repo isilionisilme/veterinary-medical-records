@@ -1,12 +1,12 @@
 # Plan: Plan Creation Protocol Enhancements (IMP-05)
 
-> **Operational rules:** See [plan-execution-protocol.md](../../../03-ops/plan-execution-protocol.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
+> **Operational rules:** See [plan-execution-protocol.md](../../../../03-ops/plan-execution-protocol.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
 >
 > **Policy mode: Draft (IMP-05 target).** This plan dogfoods the rules it introduces. Model tags, commit checkpoints, integration strategy table, and test gate obligations are applied here as working-draft policy even though they are not yet merged into canonical docs.
 
 **Branch:** `docs/imp-05-plan-creation-protocol-enhancements`
 **PR:** See [PR Roadmap](#pr-roadmap)
-**Backlog item:** [imp-05-plan-creation-protocol-enhancements.md](../../Backlog/imp-05-plan-creation-protocol-enhancements.md)
+**Backlog item:** [imp-05-plan-creation-protocol-enhancements.md](../../../Backlog/completed/imp-05-plan-creation-protocol-enhancements.md)
 **Prerequisite:** IMP-01 merged (canonical policy stable)
 **Worktree:** `d:\Git\worktrees\tercero`
 **Execution Mode:** `Semi-supervised`
@@ -34,6 +34,7 @@ Every time a plan is created, the user supplies a long ad-hoc prompt with rules 
 
 | File | Sections to modify |
 |---|---|
+| `AGENTS.md` | Global rules (agent-user interaction rule) |
 | `docs/projects/veterinary-medical-records/03-ops/plan-creation.md` | §1 (flat plan structure), §2 (commit checkpoint format), §5 (PR Roadmap: integration table, merge strategy, PR-first order) |
 | `docs/projects/veterinary-medical-records/03-ops/plan-execution-protocol.md` | §3 (remove STEP LOCKED), §7 (unified Execution Mode + Model Assignment), §8 (remove pipeline rules), §9 (test gates framework), §14 (PR Closeout integration) |
 
@@ -142,12 +143,13 @@ STEP 0 already verifies the branch, but silently falls back to checkout/create. 
 
 ### Phase 4 — Final validation
 
-- [ ] P4-A 🔄 `[GPT 5.4]` — **Cross-check consistency.** Read both canonical files end-to-end and verify: (a) commit checkpoint format is defined in §2, (b) PR-first order rule exists in §5, (c) integration table and merge strategy are in §5, (d) Model Assignment is in §7, (e) test gates are in §9, (f) closeout protocol is in §14. Report PASS/FAIL per item.
-- [ ] P4-B 🚧 — **Hard-gate: user validates final canonical text.** Present acceptance criteria checklist. Wait for explicit approval.
+- [x] P4-T 🔄 `[Claude Opus 4.6]` — **Model routing guard test.** Dummy task: print "Model routing guard works — this task is for Claude." This step exists solely to test the pre-execution model verification rule. If the executing agent is not Claude, it must refuse and prompt the user to switch. ✅ (Claude Opus 4.6, 2026-03-10)
+- [x] P4-A 🔄 `[GPT 5.4]` — **Cross-check consistency.** Read both canonical files end-to-end and verify: (a) commit checkpoint format is defined in §2, (b) PR-first order rule exists in §5, (c) integration table and merge strategy are in §5, (d) Model Assignment is in §7, (e) test gates are in §9, (f) closeout protocol is in §14. Report PASS/FAIL per item. ✅ (GitHub Copilot, 2026-03-10)
+- [x] P4-B 🚧 — **Hard-gate: user validates final canonical text.** Present acceptance criteria checklist. Wait for explicit approval. ✅ (User approved, 2026-03-10)
 
 ### Phase 5 — Closeout
 
-- [ ] P5-A 🔄 `[GPT 5.4]` — **Closeout commit.** Move plan file to `plans/completed/`. Move `imp-05-plan-creation-protocol-enhancements.md` to `Backlog/completed/`. Update relative links. Verify with `git diff --name-status main...HEAD`.
+- [x] P5-A 🔄 `[GPT 5.4]` — **Closeout commit.** Move plan file to `plans/completed/`. Move `imp-05-plan-creation-protocol-enhancements.md` to `Backlog/completed/`. Update relative links. Verify with `git diff --name-status main...HEAD`. ✅ `no-commit (checkpoint commit pending)`
 
 > 📌 **Commit checkpoint — Phase 5 complete.** Suggested message: `docs(closeout): archive IMP-05 plan and backlog artifacts`. Run L2 tests; if red, fix and re-run until green. Then wait for user.
 
@@ -741,7 +743,7 @@ Pending plan approval.
 
 ## Acceptance Criteria
 
-From [IMP-05 backlog item](../../Backlog/imp-05-plan-creation-protocol-enhancements.md):
+From [IMP-05 backlog item](../../../Backlog/completed/imp-05-plan-creation-protocol-enhancements.md):
 
 1. `plan-creation.md` includes commit checkpoint format, integration strategy table, merge strategy definitions, URL traceability rule, PR-first planning order, flat plan structure (no folders, no annex files), and mid-execution PR split retrofitting protocol.
 2. `plan-execution-protocol.md` includes unified Execution Mode (Supervised / Semi-supervised / Autonomous), Model Assignment plan-start choice with routing rule, mode-specific test gates with retry limits, expanded close-out procedure with backlog lifecycle and uniform closeout commit rule, and strengthened Branch Guard (hard-stop, auto-creation, branch-transition protocol).

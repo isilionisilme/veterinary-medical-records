@@ -64,7 +64,7 @@ In both cases, the agent MUST explain the reason briefly and wait for explicit u
 
 ## 2. Atomic Iterations
 
-Never mix scope between steps. Each step in Execution Status is an atomic unit: execute its objective and mark progress. Commit behavior is governed by the plan's execution mode (see §7 — Execution Mode). Push is always manual. If a step fails, report — do not continue to the next one.
+Never mix scope between steps. Each step in Execution Status is an atomic unit: execute its objective and mark progress. Commit and push behavior are governed by the plan's execution mode (see §7 — Execution Mode). If a step fails, report — do not continue to the next one.
 
 **Plan-mode governance (hard rule):** While a plan is active, all git operations (commit, push, branch) are governed by this protocol. Ad-hoc user requests that imply git operations are interpreted through the lens of the active plan step and routed to SCOPE BOUNDARY (§13). There is no "just commit and push" shortcut.
 
@@ -179,9 +179,9 @@ When a PR is created for the plan branch, the execution agent MUST update the `*
 
 Before opening or updating a PR, the pre-PR commit history review hard rule defined in [way-of-working.md §5](../../shared/03-ops/way-of-working.md#5-pull-request-workflow) must be satisfied.
 
-### Plan-start interaction rule
+### Agent-user interaction rule
 
-When presenting mandatory plan-start choices, agents MUST prefer interactive UI option selectors (e.g., clickable option lists) when the environment supports them. Fall back to numbered text options only when the interaction environment does not support UI selectors.
+See **AGENTS.md → Global rules → Agent-user interaction rule**. That rule is the authoritative, cross-cutting definition. All references to "Agent-user interaction rule (§7)" in this document defer to it.
 
 #### Auto-resolution of unambiguous choices
 
@@ -211,7 +211,7 @@ Before executing the first step of a plan, the agent must ask the user where to 
 - Record the selected execution worktree path in the active plan source file.
 - All plan execution commands and file edits must stay within the selected worktree.
 
-**Auto-resolution:** If the agent is already executing inside a worktree (e.g., the active VS Code workspace), that worktree is auto-resolved per the Plan-start interaction rule (§7). The agent records it in the plan and informs the user without asking. The interactive selection (list worktrees + offer create) only applies when the worktree cannot be determined from context.
+**Auto-resolution:** If the agent is already executing inside a worktree (e.g., the active VS Code workspace), that worktree is auto-resolved per the Agent-user interaction rule (§7). The agent records it in the plan and informs the user without asking. The interactive selection (list worktrees + offer create) only applies when the worktree cannot be determined from context.
 
 ### Execution Mode (Mandatory Plan-Start Choice)
 
@@ -227,7 +227,7 @@ Before executing the first step of a plan, the agent must ask the user to select
 
 **Mandatory behavior:**
 - Ask the user to choose one mode before step 1 starts.
-- If the interaction environment does not support option selectors, present the options as numbered text and accept the user's text reply.
+- Present options using the Agent-user interaction rule (§7).
 - Record the selected mode in the active plan source file.
 - Record format: `**Execution Mode:** <selected-mode>`
 - If the user does not choose, default to **Semi-supervised**.
@@ -284,7 +284,7 @@ When the agent pauses at a `📌` checkpoint (per the checkpoint pause rule), th
 1. A proposed commit message (following the project's `conventional-commits` convention).
 2. The list of changed files (`git status --short`).
 
-**Prefer interactive UI option selectors** (e.g., clickable option lists) when the environment supports them. Present the commit message in the question header and the options below. If the environment does not support option selectors, present the proposal as text and accept the user's text reply.
+Present using the Agent-user interaction rule (§7). Place the commit message in the question header and the options below.
 
 **Supervised / Semi-supervised response handling:**
 
@@ -318,8 +318,7 @@ Before executing the first step of a plan, the agent must ask the user to select
 
 **Mandatory behavior:**
 - Ask the user to choose one mode before step 1 starts.
-- **Prefer interactive UI option selectors** (e.g., clickable option lists) when the environment supports them.
-- If the interaction environment does not support option selectors, present the options as numbered text and accept the user's text reply.
+- Present options using the Agent-user interaction rule (§7).
 - Record the selected mode in the active plan source file.
 - Record format: `**Model Assignment:** <selected-mode>`
 - If the user does not choose, default to **Default**.
@@ -474,7 +473,9 @@ Follow the **Step Eligibility Rule (§4)** to determine and execute the next ste
 
 ## 12. Hard-Gates: Structured Decision Protocol
 
-In 🚧 steps, the planning agent presents options as a numbered list:
+> **Presentation rule:** All options in hard-gates MUST be presented following the Agent-user interaction rule (AGENTS.md → Global rules).
+
+In 🚧 steps, the planning agent presents options:
 ```
 Backlog items:
 1. ✅ Centralize config — Impact: High, Effort: S

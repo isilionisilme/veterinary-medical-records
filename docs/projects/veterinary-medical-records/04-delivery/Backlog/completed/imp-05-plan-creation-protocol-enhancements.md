@@ -1,6 +1,6 @@
 # IMP-05 — Plan Creation Protocol Enhancements
 
-**Status:** Planned
+**Status:** Done
 
 **Type:** Technical Improvement (non-user-facing)
 

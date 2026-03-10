@@ -3,7 +3,7 @@
 
 ## 2. Atomic Iterations
 
-Never mix scope between steps. Each step in Execution Status is an atomic unit: execute its objective and mark progress. Commit behavior is governed by the plan's execution mode (see §7 — Execution Mode). Push is always manual. If a step fails, report — do not continue to the next one.
+Never mix scope between steps. Each step in Execution Status is an atomic unit: execute its objective and mark progress. Commit and push behavior are governed by the plan's execution mode (see §7 — Execution Mode). If a step fails, report — do not continue to the next one.
 
 **Plan-mode governance (hard rule):** While a plan is active, all git operations (commit, push, branch) are governed by this protocol. Ad-hoc user requests that imply git operations are interpreted through the lens of the active plan step and routed to SCOPE BOUNDARY (§13). There is no "just commit and push" shortcut.
 
