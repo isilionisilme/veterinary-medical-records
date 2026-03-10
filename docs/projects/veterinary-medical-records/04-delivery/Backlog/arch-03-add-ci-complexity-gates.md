@@ -26,5 +26,9 @@ Re-accretion pattern — decomposed files grow back into hotspots without automa
 - CI fails on new files > 500 LOC
 - Gate runs in < 30s
 
+**Authoritative References**
+- Tech: Architecture review findings and hotspot rationale: [Architecture Review 2026-03-09](../../02-tech/audits/architecture-review-2026-03-09.md)
+- Tech: Enforcement thresholds and changed-file CI scope: [ADR-ARCH-0005](../../02-tech/adr/ADR-ARCH-0005-complexity-gate-thresholds.md)
+
 **Dependencies**
 - None. This should be implemented first to protect subsequent decomposition work.
