@@ -38,8 +38,9 @@ docs/projects/veterinary-medical-records/04-delivery/plans/
     └── PLAN_<YYYY-MM-DD>_<SLUG>.md ← Completed plan
 ```
 
-**Active plan file:** The agent attaches `plans/PLAN_<YYYY-MM-DD>_<SLUG>.md` when executing a continuation-intent request (for example: "continue", "go", "let's go", "proceed", "resume").
-Plans are single flat files — no plan folders, no annex files. See [`plan-creation.md` §1](plan-creation.md#1-how-to-create-a-plan) for naming and location conventions.
+**Active plan file:** For new plans, the agent attaches `plans/PLAN_<YYYY-MM-DD>_<SLUG>.md` when executing a continuation-intent request (for example: "continue", "go", "let's go", "proceed", "resume").
+New plans are single flat files — no plan folders, no annex files. Legacy folder-based active plans remain accepted during migration while any active branch still resolves to `plans/<plan-folder>/PLAN_<YYYY-MM-DD>_<SLUG>.md`. Active-plan resolution searches for a matching `PLAN_*.md` outside `completed/`, regardless of nesting.
+See [`plan-creation.md` §1](plan-creation.md#1-how-to-create-a-plan) for naming and location conventions.
 The active plan source file contains: Execution Status (checkboxes), Prompt Queue, Active Prompt, and iteration-specific context.
 
 ---
@@ -587,7 +588,7 @@ When user says "merge", execute close-out first:
 4. **Move plan file to completed archive** — `git mv plans/<plan-file> plans/completed/<plan-file>`.
   Keep the file name unchanged to preserve links.
 5. **DOC_UPDATES normalization** — For qualifying `.md` files only.
-6. **Commit + push** — `docs(iter-close): iteration <N> close-out` on the feature branch.
+6. **Commit + push** — `docs(closeout): archive <plan-slug> and backlog artifacts` on the feature branch.
 7. **Wait for CI green** on the close-out commit.
 8. **Mirror to docs repository** — If applicable.
 

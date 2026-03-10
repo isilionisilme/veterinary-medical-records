@@ -36,7 +36,7 @@ When user says "merge", execute close-out first:
 4. **Move plan file to completed archive** — `git mv plans/<plan-file> plans/completed/<plan-file>`.
   Keep the file name unchanged to preserve links.
 5. **DOC_UPDATES normalization** — For qualifying `.md` files only.
-6. **Commit + push** — `docs(iter-close): iteration <N> close-out` on the feature branch.
+6. **Commit + push** — `docs(closeout): archive <plan-slug> and backlog artifacts` on the feature branch.
 7. **Wait for CI green** on the close-out commit.
 8. **Mirror to docs repository** — If applicable.
 

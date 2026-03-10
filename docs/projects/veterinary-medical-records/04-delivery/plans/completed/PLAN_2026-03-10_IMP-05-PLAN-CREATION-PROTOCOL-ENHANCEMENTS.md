@@ -1,12 +1,12 @@
 # Plan: Plan Creation Protocol Enhancements (IMP-05)
 
-> **Operational rules:** See [plan-execution-protocol.md](../../../../03-ops/plan-execution-protocol.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
+> **Operational rules:** See [plan-execution-protocol.md](../../../03-ops/plan-execution-protocol.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
 >
 > **Policy mode: Draft (IMP-05 target).** This plan dogfoods the rules it introduces. Model tags, commit checkpoints, integration strategy table, and test gate obligations are applied here as working-draft policy even though they are not yet merged into canonical docs.
 
 **Branch:** `docs/imp-05-plan-creation-protocol-enhancements`
 **PR:** [#262](https://github.com/isilionisilme/veterinary-medical-records/pull/262)
-**Backlog item:** [imp-05-plan-creation-protocol-enhancements.md](../../../Backlog/completed/imp-05-plan-creation-protocol-enhancements.md)
+**Backlog item:** [imp-05-plan-creation-protocol-enhancements.md](../../Backlog/completed/imp-05-plan-creation-protocol-enhancements.md)
 **Prerequisite:** IMP-01 merged (canonical policy stable)
 **Worktree:** `d:\Git\worktrees\tercero`
 **Execution Mode:** `Semi-supervised`
@@ -178,7 +178,7 @@ STEP 0 already verifies the branch, but silently falls back to checkout/create. 
    Rules:
    - Checkpoint blockquotes are guidance, not executable checklist items (consistent with the Plan Scope Principle).
    - Place checkpoints after the last step of a logical group or phase.
-   - The suggested commit message must follow [way-of-working.md §3](../../shared/03-ops/way-of-working.md) conventions.
+   - The suggested commit message must follow [way-of-working.md §3](../../../../../shared/03-ops/way-of-working.md) conventions.
    - The L2 reference is `scripts/ci/test-L2.ps1 -BaseRef main`.
    ```
 
@@ -743,7 +743,7 @@ Pending plan approval.
 
 ## Acceptance Criteria
 
-From [IMP-05 backlog item](../../../Backlog/completed/imp-05-plan-creation-protocol-enhancements.md):
+From [IMP-05 backlog item](../../Backlog/completed/imp-05-plan-creation-protocol-enhancements.md):
 
 1. `plan-creation.md` includes commit checkpoint format, integration strategy table, merge strategy definitions, URL traceability rule, PR-first planning order, flat plan structure (no folders, no annex files), and mid-execution PR split retrofitting protocol.
 2. `plan-execution-protocol.md` includes unified Execution Mode (Supervised / Semi-supervised / Autonomous), Model Assignment plan-start choice with routing rule, mode-specific test gates with retry limits, expanded close-out procedure with backlog lifecycle and uniform closeout commit rule, and strengthened Branch Guard (hard-stop, auto-creation, branch-transition protocol).
