@@ -11,8 +11,8 @@ Modes:
 
 from __future__ import annotations
 
+import argparse
 import re
-import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -61,6 +61,21 @@ def _collect_files() -> list[Path]:
             continue
         result.append(f)
     return result
+
+
+def _collect_target_files(target_paths: list[str]) -> list[Path]:
+    """Resolve and filter user-provided relative paths under canonical scope."""
+    allowed = {str(path.relative_to(REPO_ROOT)).replace("\\", "/") for path in _collect_files()}
+    targets: list[Path] = []
+
+    for rel in sorted(set(path.replace("\\", "/") for path in target_paths)):
+        if rel not in allowed:
+            continue
+        full_path = REPO_ROOT / rel
+        if full_path.exists():
+            targets.append(full_path)
+
+    return targets
 
 
 def _parse_frontmatter(text: str) -> tuple[dict[str, str] | None, int, int]:
@@ -127,8 +142,18 @@ def _validate_file(path: Path) -> list[str]:
 
 
 def main() -> int:
-    fix_mode = "--fix" in sys.argv
-    files = _collect_files()
+    parser = argparse.ArgumentParser(description="Validate frontmatter metadata in canonical docs")
+    parser.add_argument("--fix", action="store_true", help="Reserved for future autofix support")
+    parser.add_argument(
+        "--paths",
+        nargs="*",
+        default=None,
+        help="Optional repo-relative markdown paths to validate (canonical scope only)",
+    )
+    args = parser.parse_args()
+
+    fix_mode = args.fix
+    files = _collect_target_files(args.paths) if args.paths else _collect_files()
     all_violations: list[str] = []
 
     for f in files:
