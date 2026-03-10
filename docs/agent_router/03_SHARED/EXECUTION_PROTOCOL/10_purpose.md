@@ -23,15 +23,13 @@ docs/projects/veterinary-medical-records/03-ops/
 └── plan-execution-protocol.md      ← YOU ARE HERE
 
 docs/projects/veterinary-medical-records/04-delivery/plans/
-├── PLAN_<date>_<slug>/             ← Active plan folder
-│   ├── PLAN_<date>_<slug>.md       ← Active plan source of truth (matches folder name)
-│   └── PR-*.md                     ← Optional per-PR annex
+├── PLAN_<YYYY-MM-DD>_<SLUG>.md     ← Active plan (single flat file)
 └── completed/
-    └── PLAN_<date>_<slug>/         ← Completed plan folder (same file names)
+    └── PLAN_<YYYY-MM-DD>_<SLUG>.md ← Completed plan
 ```
 
-**Active plan file:** For new plans, the agent attaches `plans/<plan-folder>/PLAN_<date>_<slug>.md` (matching the folder name) when executing a continuation-intent request (for example: "continue", "go", "let's go", "proceed", "resume").
-For legacy plans, `PLAN_*.md` remains accepted during transition.
+**Active plan file:** The agent attaches `plans/PLAN_<YYYY-MM-DD>_<SLUG>.md` when executing a continuation-intent request (for example: "continue", "go", "let's go", "proceed", "resume").
+Plans are single flat files — no plan folders, no annex files. See [`plan-creation.md` §1](plan-creation.md#1-how-to-create-a-plan) for naming and location conventions.
 The active plan source file contains: Execution Status (checkboxes), Prompt Queue, Active Prompt, and iteration-specific context.
 
 ---

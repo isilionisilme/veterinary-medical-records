@@ -271,6 +271,26 @@ Mark the task `[x]` immediately upon completing the work — do not wait for CI 
 
 After any commit checkpoint (`📌`) whose instruction includes waiting for the user (e.g., "Then wait for user"), no further plan step may be read, explored, or executed until the user explicitly authorizes continuation after the checkpoint validation result. The checkpoint acts as a blocking gate equivalent to a hard-gate (`🚧`). This applies to all execution modes, including Autonomous.
 
+#### Checkpoint commit gate (hard rule)
+
+When the agent pauses at a `📌` checkpoint (per the checkpoint pause rule), the pause MUST include a **commit proposal** before the agent waits for user instructions. The proposal contains:
+
+1. A proposed commit message (following the project's `conventional-commits` convention).
+2. The list of changed files (`git status --short`).
+
+**Supervised / Semi-supervised response handling:**
+
+| User response | Agent action |
+|---|---|
+| Explicit confirmation ("ok", "commit", "sí") | Stage, commit with the proposed message, then continue. |
+| "skip" or "no commit" | Continue to next phase without committing. |
+| "amend: `<new message>`" | Stage, commit with the user-provided message, then continue. |
+| Bare continuation ("continue", "sigue", "next") without addressing the proposal | Treat as confirmation — stage, commit, then continue. |
+
+**Autonomous mode:** The agent auto-commits after tests pass (per Git policy). No proposal is presented.
+
+> **Default:** Unaddressed commit proposals are treated as approved. The user must explicitly skip to defer a commit.
+
 #### Plan-start snapshot (hard rule)
 
 After all mandatory plan-start choices are resolved and recorded in the plan file, the agent MUST:
