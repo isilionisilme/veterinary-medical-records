@@ -67,8 +67,8 @@ Create all new operational artifacts (additive only):
 
 ### Phase 3 — Pattern-triggered instructions
 
-- [ ] P3-A 🔄 [E] — Create `plan-files.instructions.md` in `.github/instructions/` with `applyTo: **/plans/PLAN_*.md`. Content: atomic iterations, mark `[x]` with SHA, no scope mixing, checkpoint pause, evidence block.
-- [ ] P3-B 🔄 [E] — Create `backlog-files.instructions.md` in `.github/instructions/` with `applyTo: **/Backlog/*.md`. Content: status lifecycle, naming convention, link format.
+- [x] P3-A 🔄 [E] — Create `plan-files.instructions.md` in `.github/instructions/` with `applyTo: **/plans/PLAN_*.md`. Content: atomic iterations, mark `[x]` with SHA, no scope mixing, checkpoint pause, evidence block. — ✅ `6d75946c`
+- [x] P3-B 🔄 [E] — Create `backlog-files.instructions.md` in `.github/instructions/` with `applyTo: **/Backlog/*.md`. Content: status lifecycle, naming convention, link format. — ✅ `6d75946c`
 
 > 📌 **Commit checkpoint — P3 complete.** Suggested message: `feat(ops): add pattern-triggered .instructions.md context files`. Run L2 tests; if red, fix and re-run until green. Then wait for user.
 
@@ -201,7 +201,7 @@ After all 6 runbooks created: run L1 (`scripts/ci/test-L1.ps1 -BaseRef HEAD`). F
 
 ### Prompt 4 — P3: Two .instructions.md context files
 
-**Pre-written** · Target: P3-A, P3-B
+**Pre-written** · Target: P3-A, P3-B · **Status: CONSUMED** (P3 complete ✅ `6d75946c`)
 
 Create directory `.github/instructions/` if it doesn't exist. Each file uses `.instructions.md` extension with YAML front matter containing `applyTo` glob pattern. These files are passive context — VS Code auto-injects them when the matching file is open. Keep them short and declarative (rules, not procedures).
 
@@ -257,7 +257,7 @@ After both P3-A and P3-B: run L1 (`scripts/ci/test-L1.ps1 -BaseRef HEAD`). Fix u
 
 ## Active Prompt
 
-None — P0, P1, and P2 complete. Next: P3-A (consume Prompt 4).
+None — P0, P1, P2, and P3 complete. Next: P4-A (requires just-in-time Prompt 5).
 
 ---
 
