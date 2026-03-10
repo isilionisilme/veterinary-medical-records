@@ -395,13 +395,50 @@ def test_commit_automation_and_pre_pr_history_policy_propagates_to_owner_modules
     assert "### Execution Mode (Mandatory Plan-Start Choice)" in execution_source
     assert "### Pre-PR Requirements" in execution_source
     assert "select the execution mode" in execution_source
+    assert (
+        "do not start step 1. Re-present the question and require an explicit selection"
+        in execution_source
+    )
+    assert "#### Plan-start preflight gate (hard rule)" in execution_source
+    assert (
+        "the agent MUST suspend normal execution and complete plan-start first" in execution_source
+    )
+    assert (
+        "`**Branch:**`, `**Worktree:**`, `**Execution Mode:**`, and "
+        "`**Model Assignment:**`" in execution_source
+    )
+    assert "No implementation step may begin before this commit exists." in execution_source
 
     assert "Execution Mode (Mandatory Plan-Start Choice)" in execution_owner
     assert "Pre-PR Requirements" in execution_owner
+    assert "Plan-start preflight gate (hard rule)" in execution_owner
+    assert (
+        "the agent MUST suspend normal execution and complete plan-start first" in execution_owner
+    )
 
     assert "### Pre-PR Commit History Review (Hard Rule)" in wow_source
     assert "review the commit history on the feature branch" in wow_source
     assert "Pre-PR Commit History Review (Hard Rule)" in wow_owner
+
+
+def test_plan_creation_requires_phase_zero_plan_start_placeholders() -> None:
+    plan_creation_source = _read_text(
+        REPO_ROOT
+        / "docs"
+        / "projects"
+        / "veterinary-medical-records"
+        / "03-ops"
+        / "plan-creation.md"
+    )
+
+    assert "PENDING PLAN-START RESOLUTION" in plan_creation_source
+    assert "PENDING USER SELECTION" in plan_creation_source
+    assert "#### Mandatory Phase 0 — Plan-start preflight" in plan_creation_source
+    assert "Resolve or record the execution branch." in plan_creation_source
+    assert (
+        "The first execution turn MUST be used to resolve plan-start choices"
+        in plan_creation_source
+    )
 
 
 def test_post_merge_cleanup_requires_remote_branch_deletion() -> None:

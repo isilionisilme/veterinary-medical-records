@@ -30,13 +30,13 @@ Every new plan MUST include:
 2. Title: `# Plan: <name>`
 3. Operational rules pointer: `> **Operational rules:** See [plan-execution-protocol.md](...)`
 4. Metadata:
-   - `**Branch:**`
+   - `**Branch:**` — initialize as `PENDING PLAN-START RESOLUTION` until the execution branch is created or explicitly selected at plan-start.
    - `**PR:**` — Use `Pending (PR created on explicit user request)` as placeholder.
    - `**User Story:**`
    - `**Prerequisite:**`
-   - `**Worktree:**`
-   - `**Execution Mode:**` — one of `Supervised`, `Semi-supervised`, `Autonomous`
-   - `**Model Assignment:**` — one of `Default`, `Uniform`, `Custom`
+   - `**Worktree:**` — initialize as `PENDING PLAN-START RESOLUTION` until auto-resolved or explicitly selected at plan-start.
+   - `**Execution Mode:**` — initialize as `PENDING USER SELECTION`; resolved value must be one of `Supervised`, `Semi-supervised`, `Autonomous`.
+   - `**Model Assignment:**` — initialize as `PENDING USER SELECTION`; resolved value must be one of `Default`, `Uniform`, `Custom`.
 5. `## Context`
 6. `## Objective`
 7. `## Scope Boundary`
@@ -51,6 +51,21 @@ Optional sections:
 - `## Design decisions`
 - `## PR Roadmap` (mandatory when a plan spans multiple PRs)
 - `## Risks and limitations`
+
+#### Mandatory Phase 0 — Plan-start preflight
+
+Every new plan MUST reserve the first execution phase for plan-start preflight before any implementation phase.
+
+Minimum required outcomes inside `## Execution Status`:
+
+1. Resolve or record the execution branch.
+2. Resolve or record the execution worktree.
+3. Ask the user to choose `Execution Mode`.
+4. Ask the user to choose `Model Assignment`.
+5. Update the plan metadata with the resolved values.
+6. Record the plan-start snapshot commit required by `plan-execution-protocol.md`.
+
+Until these outcomes are complete, the plan is not eligible to start implementation.
 
 When `## PR Roadmap` is present:
 - The section lives in the plan root file.
@@ -134,6 +149,8 @@ The agent MUST guide the user step-by-step, explicitly stating which protocol st
 
 - The plan must receive explicit go/no-go from the user before execution.
 - On first execution, mandatory plan-start choices defined in `plan-execution-protocol.md` apply.
+- The first execution turn MUST be used to resolve plan-start choices if the plan still contains placeholder values such as `PENDING PLAN-START RESOLUTION` or `PENDING USER SELECTION`.
+- No implementation phase may start until the plan-start snapshot commit exists and the plan metadata contains resolved, non-placeholder values for `**Branch:**`, `**Worktree:**`, `**Execution Mode:**`, and `**Model Assignment:**`.
 
 ---
 

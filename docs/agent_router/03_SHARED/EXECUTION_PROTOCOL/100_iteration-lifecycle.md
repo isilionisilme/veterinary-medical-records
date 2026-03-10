@@ -13,7 +13,7 @@ Branch creation → Plan steps → PR readiness → User approval → Close-out 
 2. `git fetch origin`
 3. Create from latest main: `git checkout -b <branch> origin/main`.
 4. If branch exists remotely: checkout and pull.
-5. If `**Branch:**` was missing in the plan file, the agent must have already created and recorded it in STEP 0. Verify the field is populated before proceeding.
+5. If `**Branch:**` was missing, blank, or still unresolved in the plan file, the agent must have already created and recorded it in STEP 0. Verify the field is populated with a non-placeholder value before proceeding.
 
 ### PR Creation (User-Triggered)
 PR creation remains mandatory for delivery through review, but it is **not automatic**. The agent creates or updates a PR only when the user explicitly requests it. When created, record the PR number in the plan. If a PR already exists for the branch, update it instead of creating a new one.

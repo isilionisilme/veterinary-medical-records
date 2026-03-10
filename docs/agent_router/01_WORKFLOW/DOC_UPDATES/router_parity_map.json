@@ -230,7 +230,7 @@
     },
     {
       "source_doc": "docs/projects/veterinary-medical-records/03-ops/plan-execution-protocol.md",
-      "description": "Project PLAN_EXECUTION_PROTOCOL (including user-triggered PR opening policy and flat plan-file naming) must map to execution protocol owner module.",
+      "description": "Project PLAN_EXECUTION_PROTOCOL (including user-triggered PR opening policy, flat plan-file naming, plan-start preflight gating, explicit branch/worktree resolution, and no-implicit-default rules) must map to execution protocol owner module.",
       "router_modules": [
         {
           "path": "docs/agent_router/03_SHARED/EXECUTION_PROTOCOL/00_entry.md",
@@ -263,7 +263,7 @@
     },
     {
       "source_doc": "docs/projects/veterinary-medical-records/03-ops/plan-creation.md",
-      "description": "Project PLAN_MANAGEMENT must remain discoverable through project docs owner routing, including the folder-matching plan-root naming rule.",
+      "description": "Project PLAN_MANAGEMENT must remain discoverable through project docs owner routing, including the folder-matching plan-root naming rule, mandatory Phase 0 plan-start preflight guidance, and placeholder metadata policy for branch/worktree plus explicit user selections.",
       "router_modules": [
         {
           "path": "docs/agent_router/04_PROJECT/00_entry.md",
