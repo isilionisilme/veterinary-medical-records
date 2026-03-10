@@ -217,7 +217,7 @@
     },
     {
       "doc_glob": "docs/projects/veterinary-medical-records/02-tech/adr/**/*.md",
-      "description": "Project ADR nested changes require doc-updates guard alignment.",
+      "description": "Project ADR nested changes, including ADR index propagation, require doc-updates guard alignment.",
       "required_any": [
         "docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json",
         "scripts/docs/check_doc_test_sync.py",
@@ -226,7 +226,7 @@
     },
     {
       "doc_glob": "docs/projects/veterinary-medical-records/02-tech/adr/*.md",
-      "description": "Project ADR root-level changes require doc-updates guard alignment.",
+      "description": "Project ADR root-level changes, including ADR index updates, require doc-updates guard alignment.",
       "required_any": [
         "docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json",
         "scripts/docs/check_doc_test_sync.py",
