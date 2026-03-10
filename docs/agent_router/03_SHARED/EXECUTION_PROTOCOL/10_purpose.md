@@ -3,7 +3,7 @@
 
 ## Purpose
 
-This protocol governs how AI agents execute plan steps in a structured, auditable, and semi-unattended manner. It defines execution rules, completion integrity, CI verification, handoff conventions, and the full iteration lifecycle.
+This protocol governs how AI agents execute plan steps in a structured, auditable manner using the plan's configured execution mode. It defines execution rules, completion integrity, CI verification, handoff conventions, and the full iteration lifecycle.
 
 ### Role taxonomy (availability-safe)
 

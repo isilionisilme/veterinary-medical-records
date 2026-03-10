@@ -13,7 +13,7 @@
 
 ## Purpose
 
-This protocol governs how AI agents execute plan steps in a structured, auditable, and semi-unattended manner. It defines execution rules, completion integrity, CI verification, handoff conventions, and the full iteration lifecycle.
+This protocol governs how AI agents execute plan steps in a structured, auditable manner using the plan's configured execution mode. It defines execution rules, completion integrity, CI verification, handoff conventions, and the full iteration lifecycle.
 
 ### Role taxonomy (availability-safe)
 
@@ -44,9 +44,9 @@ The active plan source file contains: Execution Status (checkboxes), Prompt Queu
 
 ---
 
-## 1. Semi-Unattended Execution (Default Mode)
+## 1. Execution Mode Defaults
 
-The default execution mode is **semi-unattended**. After completing the current task according to the active mode and closure rules, the agent applies the **decision table in §10** to determine whether to chain or stop.
+Unless the active plan records a different selection in `**Execution Mode:**`, the default execution mode is **Semi-supervised**. After completing the current task according to the active mode and closure rules, the agent applies the **decision table in §10** to determine whether to chain or stop.
 
 ### Single-Chat Execution Rule (Hard Rule)
 
@@ -285,6 +285,7 @@ When the agent pauses at a `📌` checkpoint (per the checkpoint pause rule), th
 2. The list of changed files (`git status --short`).
 
 Present using the Agent-user interaction rule (§7). Place the commit message in the question header and the options below.
+If the environment supports interactive UI option selectors, the agent MUST use them for this proposal. Text fallback is allowed only when UI selection is unavailable.
 
 **Supervised / Semi-supervised response handling:**
 
@@ -293,11 +294,23 @@ Present using the Agent-user interaction rule (§7). Place the commit message in
 | **Commit** (recommended default) | Stage, commit with the proposed message, then continue. |
 | **Skip** | Continue to next phase without committing. |
 | **Amend message** (freeform input) | Stage, commit with the user-provided message, then continue. |
-| Bare continuation ("continue", "sigue", "next") without addressing the proposal | Treat as confirmation — stage, commit, then continue. |
+| Bare continuation ("continue", "sigue", "next", "go") without addressing the proposal | Re-present the commit proposal and require an explicit selection before proceeding. |
 
 **Autonomous mode:** The agent auto-commits after tests pass (per Git policy). No proposal is presented.
 
-> **Default:** Unaddressed commit proposals are treated as approved. The user must explicitly skip to defer a commit.
+> **Default:** Commit proposals remain pending until the user explicitly chooses `Commit`, `Skip`, or `Amend message`. No implicit approval is allowed.
+
+#### Interrupted checkpoint proposals (hard rule)
+
+If execution stops before the user explicitly answers a checkpoint commit proposal, the proposal expires for that turn.
+
+On the next resume/continuation message (for example: `go`, `continue`, `sigue`), the agent MUST:
+
+1. Recompute or restate the current commit proposal.
+2. Present it again using the Agent-user interaction rule (§7).
+3. Wait for an explicit user selection.
+
+The agent MUST NOT treat a resume message by itself as prior approval.
 
 #### Plan-start snapshot (hard rule)
 
