@@ -44,12 +44,12 @@ Create all new operational artifacts (additive only):
 - [x] P0-B 🔄 — Resolve execution worktree and update `**Worktree:**` metadata.
 - [x] P0-C 🚧 — Ask user to choose `Execution Mode` and update metadata.
 - [x] P0-D 🚧 — Ask user to choose `Model Assignment` and update metadata.
-- [x] P0-E 🔄 — Record plan-start snapshot commit. — ✅ `e665594d`
+- [x] P0-E 🔄 — Record plan-start snapshot commit. — ✅ `76e0556d6`
 
 ### Phase 1 — Plan-start enforcement script
 
-- [x] P1-A 🔄 — Create `scripts/dev/plan-start-check.py`: glob active `PLAN_*.md`, parse four mandatory fields (`Branch`, `Worktree`, `Execution Mode`, `Model Assignment`), report resolved/unresolved, output structured next-action text. — ✅ `44896fbf`
-- [x] P1-B 🔄 — Add unit tests for `plan-start-check.py` covering: all resolved, partial resolution, no active plan, multiple active plans. — ✅ `44896fbf`
+- [x] P1-A 🔄 — Create `scripts/dev/plan-start-check.py`: glob active `PLAN_*.md`, parse four mandatory fields (`Branch`, `Worktree`, `Execution Mode`, `Model Assignment`), report resolved/unresolved, output structured next-action text. — ✅ `9cf211622`
+- [x] P1-B 🔄 — Add unit tests for `plan-start-check.py` covering: all resolved, partial resolution, no active plan, multiple active plans. — ✅ `9cf211622`
 
 > 📌 **Commit checkpoint — P1 complete.** Suggested message: `feat(ops): add plan-start-check enforcement script with tests`. Run L2 tests; if red, fix and re-run until green. Then wait for user.
 
