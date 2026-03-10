@@ -139,7 +139,7 @@ Cada extractor recibe `collector: CandidateCollector` (para llamar `add_candidat
 
 ### Phase 6 — Validation & Closure
 
-- [ ] P6-A 🔄 `[GPT 5.4]` — Ejecutar `radon cc -s -n C` y `radon raw` post-refactor. Documentar métricas finales en P6-A Evidence. Verificar acceptance criteria: ninguna función > 100 LOC, ninguna CC > 20, tests verdes, API pública sin cambios.
+- [x] P6-A 🔄 `[GPT 5.4]` — Ejecutar `radon cc -s -n C` y `radon raw` post-refactor. Documentar métricas finales en P6-A Evidence. Verificar acceptance criteria: ninguna función > 100 LOC, ninguna CC > 20, tests verdes, API pública sin cambios.
 > 📌 Commit checkpoint — Phase 6 complete. Suggested message: `refactor(mining): record post-refactor metrics`. Run L2 tests; if red, fix and re-run until green. Then wait for user.
 - [ ] P6-B 🚧 — Hard-gate: usuario valida resultados y aprueba para PR.
 
@@ -351,7 +351,56 @@ Expected outcome:
 
 ### P6-A Evidence — Métricas post-refactor
 
-_(pendiente de ejecución)_
+- `radon raw backend/app/application/processing/candidate_mining.py backend/app/application/processing/field_patterns.py`
+   - `candidate_mining.py`: LOC 1296, LLOC 674, SLOC 1124, Blank 152
+   - `field_patterns.py`: LOC 125, LLOC 43, SLOC 110, Blank 14
+- AST length check on `candidate_mining.py` confirms no function exceeds 100 LOC.
+   - Longest functions after refactor:
+      - `_extract_header_value_field_candidates`: 63 LOC
+      - `_extract_pet_name_candidates`: 56 LOC
+      - `_extract_clinic_context_candidates`: 56 LOC
+      - `CandidateCollector.add_candidate`: 42 LOC
+      - `_route_labeled_address_candidate`: 42 LOC
+- `radon cc -s backend/app/application/processing/candidate_mining.py backend/app/application/processing/field_patterns.py`
+   - Highest CC in `candidate_mining.py`:
+      - `_extract_pet_name_candidates`: 18 (`C`)
+      - `_extract_header_value_field_candidates`: 17 (`C`)
+      - `_extract_clinic_context_candidates`: 14 (`C`)
+      - `_extract_clinic_header_candidate`: 12 (`C`)
+      - `_extract_clinic_address_block_candidates`: 12 (`C`)
+      - `_extract_sex_candidates`: 11 (`C`)
+      - `_owner_address_candidate_sort_key`: 11 (`C`)
+   - Orchestrator and former hotspots now in-range:
+      - `_mine_interpretation_candidates`: 1 (`A`)
+      - `_extract_labeled_field_candidates`: 3 (`A`)
+      - `_extract_owner_address_candidates`: 1 (`A`)
+      - `_extract_labeled_address_candidates`: 8 (`B`)
+      - `CandidateCollector._validate_and_clean`: 3 (`A`)
+      - `_candidate_sort_key`: 8 (`B`)
+   - `field_patterns.py` registries all remain `A (1)`.
+
+| Métrica | Antes | Después |
+|---|---:|---:|
+| Archivo `candidate_mining.py` LOC total | 1097 | 1296 |
+| `_mine_interpretation_candidates` LOC | ~769 | 7 |
+| `_mine_interpretation_candidates` CC | 163 (`F`) | 1 (`A`) |
+| `_candidate_sort_key` CC | 46 (`F`) | 8 (`B`) |
+| Mayor CC del archivo | 163 | 18 |
+| Mayor longitud de función | ~769 | 63 |
+| Nuevo archivo `field_patterns.py` LOC | n/a | 125 |
+
+Acceptance criteria verification:
+- No function > 100 LOC: PASS
+- No function CC > 20: PASS
+- Full test suite green: PASS
+   - L3 preflight before Phase 5 commit: PASS
+   - Backend tests in L3: 853 collected, 851 passed, 2 xfailed, 91.50% coverage
+- Public API unchanged: PASS
+   - Current signatures remain:
+      - `_mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, object]]]`
+      - `_map_candidates_to_global_schema(...)`
+   - `git show main:backend/app/application/processing/candidate_mining.py` shows the same public entry-point signatures.
+   - External repo call sites still resolve through the same consumers (`review_service.py`, `interpretation.py`, and existing tests); no caller edits were required.
 
 ---
 
