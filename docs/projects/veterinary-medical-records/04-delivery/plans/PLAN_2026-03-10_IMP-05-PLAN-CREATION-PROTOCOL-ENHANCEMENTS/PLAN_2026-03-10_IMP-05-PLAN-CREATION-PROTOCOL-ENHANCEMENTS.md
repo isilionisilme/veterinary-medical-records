@@ -9,33 +9,33 @@
 **Backlog item:** [imp-05-plan-creation-protocol-enhancements.md](../../Backlog/imp-05-plan-creation-protocol-enhancements.md)
 **Prerequisite:** IMP-01 merged (canonical policy stable)
 **Worktree:** _(to be selected at plan start)_
-**CI Mode:** _(to be selected at plan start)_
-**Automation Mode:** Supervisado
+**Execution Mode:** _(to be selected at plan start)_
 **Model Assignment:** _(to be selected at plan start)_
 
 ---
 
 ## Agent Instructions
 
-> **Draft-policy rules (IMP-05 dogfooding).** Rules 1–3 below apply as draft policy because this plan introduces them (S2, S3). After IMP-05 merges, they will live in canonical docs and should not be repeated in future plans.
+> **Draft-policy rules (IMP-05 dogfooding).** Rules 1–3 and 5 below apply as draft policy because this plan introduces them (S2, S3, S7, S8). After IMP-05 merges, they will live in canonical docs and should not be repeated in future plans.
 
 1. **After every task**, run `scripts/ci/test-L1.ps1 -BaseRef HEAD`. Fix until green (max 2 attempts; on 3rd failure STOP and report).
 2. **At every commit checkpoint (📌)**, run `scripts/ci/test-L2.ps1 -BaseRef main`. Fix until green (max 2 attempts; on 3rd failure STOP and report). Then wait for user instructions.
 3. **Model routing (hard rule).** Each step has a `[Model]` tag. On step completion, check the `[Model]` tag of the next pending step. If it differs from the current model, STOP immediately and tell the user: "Next step recommends [Model X]. Switch to that model and say 'continue'." Do NOT auto-chain across model boundaries.
 4. **Documentation task:** This plan modifies canonical documentation directly — no separate wiki task needed. Rationale: the deliverables _are_ the docs.
+5. **Branch guard (hard rule).** Before every commit, verify `git branch --show-current` matches the plan’s `**Branch:**` field (`docs/imp-05-plan-creation-protocol-enhancements`). On mismatch: STOP and alert the user. To change branches, follow the branch-transition protocol: (1) target branch must be in PR Roadmap, (2) WIP-commit uncommitted changes on current branch, (3) update `**Branch:**`, (4) switch, (5) inform the user of the new active branch.
 
 ---
 
 ## Context
 
-Every time a plan is created, the user supplies a long ad-hoc prompt with rules for commit checkpoints, model assignment, test gates, PR closeout, merge strategy, and PR URL tracking. These rules are stable and should live in canonical docs. This plan implements six scope items (S1–S6) that make the canonical docs self-sufficient so the plan-creation prompt reduces to a one-liner.
+Every time a plan is created, the user supplies a long ad-hoc prompt with rules for commit checkpoints, model assignment, test gates, PR closeout, merge strategy, and PR URL tracking. These rules are stable and should live in canonical docs. This plan implements nine scope items (S1–S9) that make the canonical docs self-sufficient so the plan-creation prompt reduces to a one-liner.
 
 ### Canonical files in scope
 
 | File | Sections to modify |
 |---|---|
-| `docs/projects/veterinary-medical-records/03-ops/plan-creation.md` | §2 (commit checkpoint format), §5 (PR Roadmap: integration table, merge strategy, PR-first order) |
-| `docs/projects/veterinary-medical-records/03-ops/plan-execution-protocol.md` | §7 (Model Assignment plan-start choice), §9 (test gates per task/checkpoint), §14 (PR Closeout integration) |
+| `docs/projects/veterinary-medical-records/03-ops/plan-creation.md` | §1 (flat plan structure), §2 (commit checkpoint format), §5 (PR Roadmap: integration table, merge strategy, PR-first order) |
+| `docs/projects/veterinary-medical-records/03-ops/plan-execution-protocol.md` | §3 (remove STEP LOCKED), §7 (unified Execution Mode + Model Assignment), §8 (remove pipeline rules), §9 (test gates framework), §14 (PR Closeout integration) |
 
 ### Files explicitly out of scope
 
@@ -49,16 +49,19 @@ Every time a plan is created, the user supplies a long ad-hoc prompt with rules 
 
 1. Add commit checkpoint blockquote format to `plan-creation.md` §2. **(S1)**
 2. Add Model Assignment as mandatory plan-start choice to `plan-execution-protocol.md` §7. **(S2)**
-3. Formalize per-task L1 and per-checkpoint L2 test gates with retry limits in `plan-execution-protocol.md` §9. **(S3)**
+3. Formalize mode-specific test gates per task and per checkpoint in `plan-execution-protocol.md` §9. **(S3)**
 4. Add integration strategy table, merge strategy definitions, and URL traceability to `plan-creation.md` §5. **(S4)**
 5. Merge PR Closeout Protocol into `plan-execution-protocol.md` §14 Iteration Close-Out. **(S5)**
 6. Add PR-first planning order rule to `plan-creation.md` §5. **(S6)**
+7. Replace CI Execution Mode + Automation Mode with unified Execution Mode (Supervised / Semi-supervised / Autonomous) in `plan-execution-protocol.md` §7, §8, §3. **(S7)**
+8. Strengthen Branch Guard in `plan-execution-protocol.md` §11 (STEP 0) and §14: mandatory `**Branch:**` field, continuous branch verification, and branch-transition protocol. **(S8)**
+9. Flatten plan structure in `plan-creation.md` §1: remove folder convention and annex files, single file per plan. **(S9)**
 
 ---
 
 ## Scope Boundary
 
-- **In scope:** Editing canonical operational policy text in `plan-creation.md` and `plan-execution-protocol.md`. Static content validation. Router regeneration.
+- **In scope:** Editing canonical operational policy text in `plan-creation.md` and `plan-execution-protocol.md`. Removing obsolete CI Execution Mode, Automation Mode, and pipeline rules. Strengthening branch guard rules. Static content validation. Router regeneration.
 - **Out of scope:** CI scripts/guards, plan migrations (IMP-04), backend/frontend product behavior, existing plan files.
 
 ---
@@ -71,7 +74,7 @@ Single PR delivering all six scope items. Both target files are canonical operat
 
 | PR | Branch | Scope | Depends on | Status | URL |
 |---|---|---|---|---|---|
-| PR-1 | `docs/imp-05-plan-creation-protocol-enhancements` | All S1–S6 canonical doc changes + router regen | None | In progress | — |
+| PR-1 | `docs/imp-05-plan-creation-protocol-enhancements` | All S1–S9 canonical doc changes + router regen | None | In progress | — |
 
 **PR partition gate evidence:**
 - Estimated changed files: 4 (2 canonical docs + 2 regenerated router files).
@@ -96,6 +99,14 @@ This plan applies IMP-05 target rules (model tags, commit checkpoints, integrati
 
 Router files are auto-generated from canonical sources. Rather than regenerating after each individual change, we regenerate once after all canonical edits are done and validate with L2/L3.
 
+### DD-4: Unified Execution Mode replaces two separate choices
+
+CI Execution Mode × Automation Mode gave 9 theoretical combinations, most impractical. The three new modes (Supervised / Semi-supervised / Autonomous) unify test levels, commit/push policy, and hard-gate behavior into a single coherent choice, reducing plan-start questions from 4 to 3.
+
+### DD-5: Branch Guard as hard-stop with controlled transitions
+
+STEP 0 already verifies the branch, but silently falls back to checkout/create. S8 upgrades this to a hard-stop on mismatch: the agent must alert the user and never commit to the wrong branch. Branch switching is allowed only via a branch-transition protocol (target in PR Roadmap, update `**Branch:**`, notify user). This prevents accidental cross-branch work while supporting legitimate multi-PR splits.
+
 ---
 
 ## Execution Status
@@ -104,21 +115,24 @@ Router files are auto-generated from canonical sources. Rather than regenerating
 - 🔄 auto-chain — executable by agent
 - 🚧 hard-gate — user review/decision required
 
-### Phase 1 — plan-creation.md changes (S1, S4, S6)
+### Phase 1 — plan-creation.md changes (S1, S4, S6, S9)
 
 - [ ] P1-A 🔄 `[GPT 5.4]` — **S1: Commit checkpoint format.** In `plan-creation.md` §2, after the existing "Required inline commit recommendation format" subsection, add a new "Commit checkpoint blockquote format" subsection prescribing the `📌` blockquote format for commit checkpoints in plans.
 - [ ] P1-B 🔄 `[GPT 5.4]` — **S6: PR-first planning order.** In `plan-creation.md` §5, before the "PR sizing and split criteria" subsection, add a rule that when a plan may span multiple PRs, PR boundaries must be determined before writing Execution Status and commit checkpoints.
 - [ ] P1-C 🔄 `[GPT 5.4]` — **S4: Integration strategy table and merge strategy.** In `plan-creation.md` §5, under the existing "When `## PR Roadmap` is present" block, add: (a) integration strategy table requirement with mandatory columns, (b) merge strategy definitions table, (c) URL traceability hard rule.
+- [ ] P1-D 🔄 `[GPT 5.4]` — **S9: Flat plan structure.** In `plan-creation.md` §1: (a) replace folder-based naming/location with flat file convention (`plans/PLAN_<YYYY-MM-DD>_<SLUG>.md`); (b) remove annex file convention (`PR-X.md`); (c) update completed plans path to `plans/completed/PLAN_<YYYY-MM-DD>_<SLUG>.md`; (d) update template steps to single "Create plan file" step.
 
-> 📌 **Commit checkpoint — Phase 1 complete.** Suggested message: `docs(ops): add commit checkpoint format, PR-first order, and integration strategy to plan-creation`. Run L2 tests; if red, fix and re-run until green. Then wait for user.
+> 📌 **Commit checkpoint — Phase 1 complete.** Suggested message: `docs(ops): add commit checkpoint format, PR-first order, integration strategy, and flat plan structure to plan-creation`. Run L2 tests; if red, fix and re-run until green. Then wait for user.
 
-### Phase 2 — plan-execution-protocol.md changes (S2, S3, S5)
+### Phase 2 — plan-execution-protocol.md changes (S7, S2, S8, S3, S5)
 
-- [ ] P2-A 🔄 `[GPT 5.4]` — **S2: Model Assignment plan-start choice.** In `plan-execution-protocol.md` §7, after the "Automation Mode Selection" subsection, add a new "Model Assignment (Mandatory Plan-Start Choice)" subsection with options (Default, Uniform, Custom), task-type criteria table, recording format, and model routing hard rule.
-- [ ] P2-B 🔄 `[GPT 5.4]` — **S3: Test gates per task and per checkpoint.** In `plan-execution-protocol.md` §9, after the "Local Preflight Integration" table, add a new "Per-Task and Per-Checkpoint Test Gates" subsection formalizing L1 after every task, L2 at every commit checkpoint, and max 2 retry attempts before STOP.
-- [ ] P2-C 🔄 `[GPT 5.4]` — **S5: PR Closeout Protocol.** In `plan-execution-protocol.md` §14, extend the "Iteration Close-Out Procedure" to add: (a) finalization commit for last PR in multi-PR plans, (b) backlog artifact archival, (c) link update requirement, (d) closeout checklist for PR body, (e) stacked PRs rule (only last PR does closeout).
+- [ ] P2-A 🔄 `[GPT 5.4]` — **S7: Unified Execution Mode.** In `plan-execution-protocol.md`: (a) replace CI Execution Mode + Automation Mode in §7 with a single "Execution Mode" subsection defining Supervised, Semi-supervised, and Autonomous modes; (b) remove CI Mode 2 pipeline block, STEP LOCKED, PLAN-UPDATE-IMMEDIATE, and AUTO-HANDOFF GUARD from §8; (c) remove STEP LOCKED row from §3; (d) update plan-start choices to Worktree + Execution Mode + Model Assignment.
+- [ ] P2-B 🔄 `[GPT 5.4]` — **S2: Model Assignment plan-start choice.** In `plan-execution-protocol.md` §7, after the new "Execution Mode" subsection, add "Model Assignment (Mandatory Plan-Start Choice)" with options (Default, Uniform, Custom), task-type criteria table, recording format, and model routing hard rule.
+- [ ] P2-E 🔄 `[GPT 5.4]` — **S8: Branch Guard.** In `plan-execution-protocol.md`: (a) strengthen STEP 0 in §11 to hard-stop on branch mismatch (no silent fallback); (b) add branch-transition protocol (target in PR Roadmap, update `**Branch:**`, notify user); (c) in §14 Branch Creation, add: if `**Branch:**` is missing, create it and annotate the plan before proceeding.
+- [ ] P2-C 🔄 `[GPT 5.4]` — **S3: Test gates framework.** In `plan-execution-protocol.md` §9, after the "Local Preflight Integration" table, add a "Per-Task and Per-Checkpoint Test Gates" subsection defining the gate concept, retry limits (max 2 in Supervised/Semi-supervised, max 10 in Autonomous), and linking to the Execution Mode definitions for specific test levels.
+- [ ] P2-D 🔄 `[GPT 5.4]` — **S5: PR Closeout Protocol.** In `plan-execution-protocol.md` §14, extend the "Iteration Close-Out Procedure" to add: (a) backlog item lifecycle (Planned → In Progress → Done), (b) uniform closeout commit rule for single-PR and multi-PR plans (move plan + backlog to `completed/`), (c) link update requirement, (d) closeout checklist for PR body, (e) stacked PRs rule (only last PR does closeout).
 
-> 📌 **Commit checkpoint — Phase 2 complete.** Suggested message: `docs(ops): add model assignment, test gates, and PR closeout to plan-execution-protocol`. Run L2 tests; if red, fix and re-run until green. Then wait for user.
+> 📌 **Commit checkpoint — Phase 2 complete.** Suggested message: `docs(ops): add execution modes, model assignment, test gates, and PR closeout to plan-execution-protocol`. Run L2 tests; if red, fix and re-run until green. Then wait for user.
 
 ### Phase 3 — Router regeneration and validation
 
@@ -133,7 +147,7 @@ Router files are auto-generated from canonical sources. Rather than regenerating
 
 ### Phase 5 — Closeout
 
-- [ ] P5-A 🔄 `[GPT 5.4]` — **Closeout commit.** Move plan folder to `plans/completed/`. Move `imp-05-plan-creation-protocol-enhancements.md` to `Backlog/completed/`. Update relative links. Verify with `git diff --name-status main...HEAD`.
+- [ ] P5-A 🔄 `[GPT 5.4]` — **Closeout commit.** Move plan file to `plans/completed/`. Move `imp-05-plan-creation-protocol-enhancements.md` to `Backlog/completed/`. Update relative links. Verify with `git diff --name-status main...HEAD`.
 
 > 📌 **Commit checkpoint — Phase 5 complete.** Suggested message: `docs(closeout): archive IMP-05 plan and backlog artifacts`. Run L2 tests; if red, fix and re-run until green. Then wait for user.
 
@@ -246,22 +260,193 @@ Router files are auto-generated from canonical sources. Rather than regenerating
    #### URL traceability (hard rule)
 
    When a PR is created, update the integration table: set Status to `Open` and URL to the actual PR link (e.g., `[#221](https://github.com/…/pull/221)`). A plan with an open or merged PR whose URL column still shows `—` is a compliance failure.
+
+   #### Retrofitting a PR split during execution
+
+   A plan that started as single-PR may need splitting mid-execution. When the agent or user identifies this, the agent MUST follow this guided protocol:
+
+   1. **Halt** — Complete the current step. Do NOT start a new one. Tell the user: *"Step [current] is done. Before continuing, I need to address a scope issue."*
+   2. **Diagnose and propose** — Explain why a split is needed and present a proposed split table:
+      > "This plan has grown beyond a single PR. I recommend splitting it into N PRs. Here is my proposal:"
+      >
+      > | PR | Steps | Scope | Rationale |
+      > |---|---|---|---|
+      > | PR-1 | P1-A through P2-C | … | … |
+      > | PR-2 | P3-A through P5-A | … | … |
+      >
+      > "Do you approve this split, or would you adjust the boundaries?"
+   3. **Await approval (🚧 hard-gate)** — The user approves or adjusts.
+   4. **Restructure in-place** — All changes in the existing plan file (no new documents):
+      - Add `## PR Roadmap` with integration strategy table.
+      - Declare merge strategy.
+      - Re-tag every step in `## Execution Status` with `[PR-X]` (completed steps get `[PR-1]` retroactively).
+      - Insert `📌` commit checkpoints at PR boundaries if missing.
+      - Update `**PR:**` metadata → `See ## PR Roadmap`.
+      - Register the current branch as PR-1's branch.
+      - Tell the user: *"I've restructured the plan. Here is the updated Execution Status and PR Roadmap. Please review."*
+   5. **Confirm** — Wait for user confirmation of the restructured plan.
+   6. **Commit** — `docs(plan): retrofit PR split for <plan-slug>`
+   7. **Resume** — Continue execution. Use branch-transition protocol (S8) when crossing PR boundaries.
+
+   The agent MUST guide the user step-by-step, explicitly stating which protocol step is current, what will be done next, and what remains.
    ```
 
-3. Verify: the three new subsubsections (`Integration strategy table`, `Merge strategy definitions`, `URL traceability`) appear under the `When \`## PR Roadmap\` is present` block, before `### Plan-start requirement`.
+3. Verify: the three new subsubsections (`Integration strategy table`, `Merge strategy definitions`, `URL traceability`) and the `Retrofitting a PR split during execution` subsection appear under the `When \`## PR Roadmap\` is present` block, before `### Plan-start requirement`.
 
 ---
 
-### Prompt 4 — P2-A: Model Assignment plan-start choice (S2)
+### Prompt 4 — P1-D: Flat plan structure (S9)
+
+**Step:** P1-D
+**File:** `docs/projects/veterinary-medical-records/03-ops/plan-creation.md`
+
+**Instructions:**
+
+1. Open `plan-creation.md`. Locate §1 "How to Create a Plan", subsection "Naming and location".
+
+2. Replace the current content of "Naming and location" (lines about plan folder naming, active plan location, canonical root file, legacy compatibility, annex files, and completed plans location) with:
+
+   ```markdown
+   ### Naming and location
+
+   - Plan file naming convention: `PLAN_<YYYY-MM-DD>_<SLUG>.md`
+   - Active plan location: `docs/projects/veterinary-medical-records/04-delivery/plans/PLAN_<YYYY-MM-DD>_<SLUG>.md`
+   - Completed plans location: `docs/projects/veterinary-medical-records/04-delivery/plans/completed/PLAN_<YYYY-MM-DD>_<SLUG>.md`
+   - Plans are **single files** — no plan folders, no annex files (`PR-X.md`). All plan content lives in the root `.md` file.
+   ```
+
+3. In the "Required plan template" subsection, replace steps 1–2:
+   ```
+   1. Create plan folder: `plans/<plan-folder>/`.
+   2. Create root file: `plans/<plan-folder>/PLAN_<YYYY-MM-DD>_<SLUG>.md` (matching the folder name).
+   ```
+   with:
+   ```
+   1. Create plan file: `plans/PLAN_<YYYY-MM-DD>_<SLUG>.md`.
+   ```
+   Renumber subsequent steps (old step 3 becomes step 2, etc.).
+
+4. In the "When `## PR Roadmap` is present" block, find and **delete** the bullet:
+   ```
+   - If a PR requires implementation detail that would bloat the plan root file, create/update `PR-X.md` annex files in the same folder and link them from the roadmap.
+   ```
+
+5. Verify: §1 no longer mentions plan folders, annex files, or `PR-X.md`. The template has a single "Create plan file" step.
+
+---
+
+### Prompt 5 — P2-A: Unified Execution Mode (S7)
 
 **Step:** P2-A
 **File:** `docs/projects/veterinary-medical-records/03-ops/plan-execution-protocol.md`
 
 **Instructions:**
 
-1. Open `plan-execution-protocol.md`. Locate §7 "Plan Governance". Find the end of the "Automation Mode Selection (Mandatory Plan-Start Choice)" subsection (ends just before the `---` separator to §8).
+1. In §7 "Plan Governance", **delete** the following two subsections entirely:
+   - `### CI Execution Mode (Mandatory Plan-Start Choice)` (and all its content including the three options, mandatory behavior list, and the Mode 2 reference)
+   - `### Automation Mode Selection (Mandatory Plan-Start Choice)` (and all its content including the three options and mandatory behavior list)
 
-2. Insert the following new subsection **after** Automation Mode Selection and **before** the `---` separator:
+2. In their place, insert:
+
+   ```markdown
+   ### Execution Mode (Mandatory Plan-Start Choice)
+
+   Before executing the first step of a plan, the agent must ask the user to select the execution mode.
+
+   **Options:**
+
+   | Mode | Per-task gate | Per-checkpoint gate | Commit | Push | Hard-gates (🚧) | Max retries |
+   |---|---|---|---|---|---|---|
+   | **Supervised** | L2 | L3 | Manual (user approval) | Manual | User decides | 2 |
+   | **Semi-supervised** | L1 | L2 | Manual (user approval) | Manual | User decides | 2 |
+   | **Autonomous** | L2 | L3 | Automatic | Automatic | Agent decides (documented) | 10 |
+
+   **Mandatory behavior:**
+   - Ask the user to choose one mode before step 1 starts.
+   - If the interaction environment does not support option selectors, present the options as numbered text and accept the user's text reply.
+   - Record the selected mode in the active plan source file.
+   - Record format: `**Execution Mode:** <selected-mode>`
+   - If the user does not choose, default to **Semi-supervised**.
+   - The selected mode applies to the full plan unless the user explicitly changes it.
+
+   #### Mode definitions
+
+   **Supervised:**
+   - After completing each task, run L2 (`scripts/ci/test-L2.ps1 -BaseRef main`). Fix until green (max 2 attempts; on 3rd failure STOP and report). Then wait for user instructions.
+   - At `📌` commit checkpoints, escalate to L3 (`scripts/ci/test-L3.ps1 -BaseRef main`). Fix until green (max 2 attempts; on 3rd failure STOP and report). Then wait for user instructions.
+   - Commit and push require explicit user approval.
+   - Hard-gates require user decision.
+
+   **Semi-supervised:**
+   - After completing each task, run L1 (`scripts/ci/test-L1.ps1 -BaseRef HEAD`). Fix until green (max 2 attempts; on 3rd failure STOP and report).
+   - At `📌` commit checkpoints, run L2 (`scripts/ci/test-L2.ps1 -BaseRef main`). Fix until green (max 2 attempts; on 3rd failure STOP and report). Then wait for user instructions.
+   - Commit and push require explicit user approval.
+   - Hard-gates require user decision.
+
+   **Autonomous:**
+   - After completing each task, run L2 (`scripts/ci/test-L2.ps1 -BaseRef main`). Fix until green (max 10 attempts; on 11th failure STOP and report).
+   - At `📌` commit checkpoints, run L3 (`scripts/ci/test-L3.ps1 -BaseRef main`). Fix until green (max 10 attempts; on 11th failure STOP and report).
+   - Commit and push are automatic after tests pass.
+   - Hard-gates: the agent uses its best judgment, documents the decision and rationale, and continues. Exception: hard-gates marked `🚧🔒 NEVER-SKIP` still require user decision.
+   - **Autonomous decision log:** After plan completion, include an "Autonomous decisions" section in the PR body listing every hard-gate decision with rationale.
+
+   #### Task completion (all modes)
+
+   Mark the task `[x]` immediately upon completing the work — do not wait for CI or test results. Test verification is a subsequent obligation, not a prerequisite for marking completion.
+
+   #### Mid-Execution PR Split (Guided Protocol)
+
+   When a plan was created with a single PR but during execution the scope grows beyond what a single PR can reasonably deliver, the agent MUST follow this guided protocol:
+
+   1. **Halt** — Complete the current step. Do NOT start a new one. Tell the user: *"Step [current] is done. Before continuing, I need to address a scope issue."*
+   2. **Diagnose and propose** — Explain why a split is needed and present a proposed split table showing which steps go into which PR. Ask: *"Do you approve this split, or would you adjust the boundaries?"*
+   3. **Await approval (🚧 hard-gate)** — The user approves or adjusts.
+   4. **Restructure in-place** — Apply all changes in the existing plan file following the `plan-creation.md` §5 "Retrofitting a PR split during execution" procedure. Then tell the user: *"I've restructured the plan. Here is the updated Execution Status and PR Roadmap. Please review."*
+   5. **Confirm** — Wait for user confirmation.
+   6. **Commit** — `docs(plan): retrofit PR split for <plan-slug>`
+   7. **Resume** — Continue execution. Use branch-transition protocol (§11 STEP 0) when crossing PR boundaries.
+
+   The agent MUST guide the user step-by-step through this process, explicitly stating which protocol step is current, what will be done next, and what remains.
+   ```
+
+3. In §8 "Step Completion Integrity (Hard Rules)", **delete** the following subsections:
+   - `### CI Mode 2 — Pipeline Execution (Depth-1)` (including Flow diagram, Rules, Cancelled CI Runs, CI-FIRST Still Required For)
+   - `### PLAN-UPDATE-IMMEDIATE`
+   - `### STEP-LOCK`
+   - `### AUTO-HANDOFF GUARD`
+
+   Keep `### NO-BATCH` and `### EVIDENCE BLOCK`.
+
+4. In §3 "Extended Execution State", **delete** the `Step locked` row from the table:
+   ```
+   | Step locked | `- [ ] F?-? ... 🔒 STEP LOCKED (code committed, awaiting CI + plan update)` |
+   ```
+   Also delete rule 7: `7. After code commit but before CI green + plan update, mark 🔒 STEP LOCKED.`
+
+5. In §1, find `Commit behavior is governed by the plan's automation mode (see §7 — Automation Mode Selection)` and update to: `Commit behavior is governed by the plan's execution mode (see §7 — Execution Mode)`.
+
+6. Add a general rule at the top of §7 (before the first plan-start subsection) applicable to all plan-start choices:
+
+   ```markdown
+   ### Plan-start interaction rule
+
+   When presenting mandatory plan-start choices, agents MUST prefer interactive UI option selectors (e.g., clickable option lists) when the environment supports them. Fall back to numbered text options only when the interaction environment does not support UI selectors.
+   ```
+
+7. Verify: §7 now has three plan-start choices (Worktree, Execution Mode, Model Assignment), the Mid-Execution PR Split protocol, and the old CI Mode, Automation Mode, and pipeline rules are gone.
+
+---
+
+### Prompt 6 — P2-B: Model Assignment plan-start choice (S2)
+
+**Step:** P2-B
+**File:** `docs/projects/veterinary-medical-records/03-ops/plan-execution-protocol.md`
+
+**Instructions:**
+
+1. Open `plan-execution-protocol.md`. Locate §7 "Plan Governance". Find the end of the "Execution Mode (Mandatory Plan-Start Choice)" subsection.
+
+2. Insert the following new subsection **after** Execution Mode and **before** the `---` separator to §8:
 
    ```markdown
    ### Model Assignment (Mandatory Plan-Start Choice)
@@ -275,6 +460,7 @@ Router files are auto-generated from canonical sources. Rather than regenerating
 
    **Mandatory behavior:**
    - Ask the user to choose one mode before step 1 starts.
+   - **Prefer interactive UI option selectors** (e.g., clickable option lists) when the environment supports them.
    - If the interaction environment does not support option selectors, present the options as numbered text and accept the user's text reply.
    - Record the selected mode in the active plan source file.
    - Record format: `**Model Assignment:** <selected-mode>`
@@ -301,13 +487,49 @@ Router files are auto-generated from canonical sources. Rather than regenerating
    Do NOT auto-chain across model boundaries.
    ```
 
-3. Verify: the four mandatory plan-start choices are now Worktree, CI Mode, Automation Mode, and Model Assignment.
+3. Verify: the three mandatory plan-start choices are now Worktree, Execution Mode, and Model Assignment.
 
 ---
 
-### Prompt 5 — P2-B: Test gates per task and per checkpoint (S3)
+### Prompt 7 — P2-E: Branch Guard and Test Gates (S8, S3)
 
-**Step:** P2-B
+**Step:** P2-E
+**File:** `docs/projects/veterinary-medical-records/03-ops/plan-execution-protocol.md`
+
+**Instructions:**
+
+1. Open `plan-execution-protocol.md`. Locate §11 "Commit and Push Operatives", subsection "STEP 0 — Branch Verification".
+
+2. Replace the current STEP 0 content with the following strengthened version:
+
+   ```markdown
+   ### STEP 0 — Branch Verification (Hard-Stop)
+   1. Read `**Branch:**` from the plan file.
+      - If `**Branch:**` is missing or blank: create the branch following the branching convention in AGENTS.md, record it in the plan’s `**Branch:**` field, and commit the plan update before proceeding.
+   2. Check current branch: `git branch --show-current`.
+   3. If current branch matches `**Branch:**`: proceed.
+   4. If mismatch: **STOP immediately.** Alert the user: "Current branch `<actual>` does not match plan branch `<expected>`. Switch to the correct branch before continuing." Do NOT commit, push, or checkout.
+
+   **Branch-transition protocol.** To change branches during plan execution, the agent MUST:
+   1. Verify the target branch is documented in the plan’s PR Roadmap table. If not, add it first.
+   2. If there are uncommitted changes in the working tree, commit them with a `WIP: <description>` message on the current branch. WIP commits bypass pre-commit checks (they will be amended or squashed before push/PR).
+   3. Update the plan’s `**Branch:**` field to the target branch.
+   4. Switch to the target branch.
+   5. Inform the user which branch is now active.
+   Switching without following this protocol is a compliance failure.
+   ```
+
+3. Locate §14 "Iteration Lifecycle Protocol", subsection "Branch Creation (Before Any Plan Step)".
+
+4. Add the following note after step 4 ("If branch exists remotely: checkout and pull."):
+
+   ```markdown
+   5. If `**Branch:**` was missing in the plan file, the agent must have already created and recorded it in STEP 0. Verify the field is populated before proceeding.
+   ```
+
+5. Verify: STEP 0 now uses "Hard-Stop" in its heading, includes the missing-branch auto-creation rule, and includes the branch-transition protocol.
+
+**Step:** P2-C
 **File:** `docs/projects/veterinary-medical-records/03-ops/plan-execution-protocol.md`
 
 **Instructions:**
@@ -319,23 +541,25 @@ Router files are auto-generated from canonical sources. Rather than regenerating
    ```markdown
    ### Per-Task and Per-Checkpoint Test Gates (Hard Rule)
 
-   In addition to the SCOPE BOUNDARY preflight levels above, agents MUST run tests at these granularities during plan execution:
+   During plan execution, agents MUST run tests at two granularities: per-task and per-checkpoint. The specific test level at each granularity is determined by the active Execution Mode (see §7).
 
-   | Trigger | Level | Command | On failure |
-   |---|---|---|---|
-   | After completing any plan task | L1 | `scripts/ci/test-L1.ps1 -BaseRef HEAD` | Fix and re-run (max 2 attempts). On 3rd failure: STOP and report to user. |
-   | At every commit checkpoint (📌) | L2 | `scripts/ci/test-L2.ps1 -BaseRef main` | Fix and re-run (max 2 attempts). On 3rd failure: STOP and report to user. |
+   | Trigger | Command by level |
+   |---|---|
+   | After completing any plan task | L1: `scripts/ci/test-L1.ps1 -BaseRef HEAD` · L2: `scripts/ci/test-L2.ps1 -BaseRef main` |
+   | At every commit checkpoint (📌) | L2: `scripts/ci/test-L2.ps1 -BaseRef main` · L3: `scripts/ci/test-L3.ps1 -BaseRef main` |
 
-   These gates complement the SCOPE BOUNDARY preflight levels. The per-task L1 gate ensures each individual task leaves the codebase in a passing state before proceeding to the next task. The per-checkpoint L2 gate validates the cumulative branch state before the user is asked to commit.
+   **Retry limits** are defined per Execution Mode (see §7). On exceeding the retry limit: STOP and report to the user.
+
+   These gates complement the SCOPE BOUNDARY preflight levels. The per-task gate ensures each individual task leaves the codebase in a passing state. The per-checkpoint gate validates the cumulative branch state at natural commit boundaries.
    ```
 
 3. Verify: the new subsection sits between "Local Preflight Integration" and "User Validation Environment".
 
 ---
 
-### Prompt 6 — P2-C: PR Closeout Protocol (S5)
+### Prompt 8 — P2-D: PR Closeout Protocol (S5)
 
-**Step:** P2-C
+**Step:** P2-D
 **File:** `docs/projects/veterinary-medical-records/03-ops/plan-execution-protocol.md`
 
 **Instructions:**
@@ -346,14 +570,24 @@ Router files are auto-generated from canonical sources. Rather than regenerating
 
    ```markdown
 
-   #### Finalization commit for multi-PR plans
+   #### Backlog item lifecycle
 
-   When a plan spans multiple PRs, the **last PR in the series** must include a finalization commit as its final commit before merge. This commit:
+   Backlog items (`US-*.md`, `IMP-*.md`, `ARCH-*.md`) follow this status lifecycle:
+   - `Planned` — initial state.
+   - `In Progress` — set when plan execution starts (first step marked in-progress).
+   - `Done` — set automatically during closeout, before moving to `completed/`.
 
-   1. **Moves the plan folder** to `plans/completed/`.
-   2. **Moves the backlog artifact** (`US-*.md`, `IMP-*.md`, `ARCH-*.md`, or equivalent) to `Backlog/completed/` — if the artifact exists and the work is fully done.
-   3. **Updates every relative link** in surrounding docs that pointed to the old paths so they resolve to the new `completed/` locations.
-   4. If any of the above does not apply, states `N/A` explicitly in the commit message body.
+   The agent updates `**Status:**` at each transition automatically.
+
+   #### Closeout commit (uniform rule — single-PR and multi-PR)
+
+   Every plan's **last PR** (or only PR) includes a closeout commit as its final commit before merge. This commit:
+
+   1. Sets the backlog item's `**Status:**` to `Done`.
+   2. **Moves the plan file** to `plans/completed/`.
+   3. **Moves the backlog artifact** (`US-*.md`, `IMP-*.md`, `ARCH-*.md`, or equivalent) to `Backlog/completed/` — if the artifact exists.
+   4. **Updates every relative link** in surrounding docs that pointed to the old paths so they resolve to the new `completed/` locations.
+   5. If any of the above does not apply, states `N/A` explicitly in the commit message body.
 
    **Commit message:** `docs(closeout): archive <plan-slug> and backlog artifacts`
 
@@ -366,6 +600,7 @@ Router files are auto-generated from canonical sources. Rather than regenerating
    **PR closeout checklist (add to last PR body):**
    ```markdown
    ### Closeout
+   - [ ] Backlog status set to `Done`
    - [ ] Plan moved to `completed/` (or N/A)
    - [ ] Backlog artifact moved to `completed/` (or N/A)
    - [ ] Relative links updated after move
@@ -377,7 +612,7 @@ Router files are auto-generated from canonical sources. Rather than regenerating
 
 ---
 
-### Prompt 7 — P3-A: Router regeneration
+### Prompt 9 — P3-A: Router regeneration
 
 **Step:** P3-A
 **Files:** Generated router files under `docs/agent_router/`
@@ -391,7 +626,7 @@ Router files are auto-generated from canonical sources. Rather than regenerating
 
 ---
 
-### Prompt 8 — P4-A: Cross-check consistency
+### Prompt 10 — P4-A: Cross-check consistency
 
 **Step:** P4-A
 **Files:** Both canonical docs (read-only validation)
@@ -401,18 +636,28 @@ Router files are auto-generated from canonical sources. Rather than regenerating
 1. Read `plan-creation.md` and verify:
    - (a) §2 contains "Commit checkpoint blockquote format" subsection.
    - (b) §5 contains PR-first planning order rule.
-   - (c) §5 contains integration strategy table, merge strategy definitions, and URL traceability subsections.
+   - (c) §5 contains integration strategy table, merge strategy definitions, URL traceability subsections, and retrofitting a PR split during execution.
+   - (d) §1 uses flat file convention (`plans/PLAN_<YYYY-MM-DD>_<SLUG>.md`), no plan folders, no annex files.
+   - (e) §1 template has a single "Create plan file" step (no folder creation).
+   - (f) §5 does NOT mention `PR-X.md` annex files.
 
 2. Read `plan-execution-protocol.md` and verify:
-   - (d) §7 contains "Model Assignment (Mandatory Plan-Start Choice)" subsection with options (Default, Uniform, Custom), criteria table, and routing rule.
-   - (e) §9 contains "Per-Task and Per-Checkpoint Test Gates" subsection with L1/L2 gates and retry limits.
-   - (f) §14 contains "Finalization commit for multi-PR plans" subsection with closeout procedure and stacked PRs rule.
+   - (g) §7 contains "Execution Mode (Mandatory Plan-Start Choice)" with Supervised, Semi-supervised, Autonomous modes and their test/commit/push/hard-gate definitions.
+   - (h) §7 contains "Mid-Execution PR Split (Guided Protocol)" subsection with halt-diagnose-approve-restructure-confirm-commit-resume steps.
+   - (h) §7 contains "Model Assignment (Mandatory Plan-Start Choice)" subsection with options (Default, Uniform, Custom), criteria table, and routing rule.
+   - (i) §9 contains "Per-Task and Per-Checkpoint Test Gates" subsection with mode-specific levels and retry limits.
+   - (j) §14 contains "Closeout commit (uniform rule)" subsection with backlog lifecycle, single/multi-PR closeout, stacked PRs rule, and PR body checklist.
+   - (k) §11 STEP 0 uses "Hard-Stop" heading, includes missing-branch auto-creation, and includes branch-transition protocol (S8).
+   - (l) §14 Branch Creation references STEP 0 for missing branch handling (S8).
+   - (m) §7 does NOT contain "CI Execution Mode" or "Automation Mode Selection" subsections.
+   - (n) §8 does NOT contain "CI Mode 2", "PLAN-UPDATE-IMMEDIATE", "STEP-LOCK", or "AUTO-HANDOFF GUARD".
+   - (o) §3 does NOT contain "Step locked" row.
 
-3. Report PASS/FAIL per item (a–f). If any FAIL, fix before proceeding.
+3. Report PASS/FAIL per item (a–o). If any FAIL, fix before proceeding.
 
 ---
 
-### Prompt 9 — P4-B: User validation hard-gate 🚧
+### Prompt 11 — P4-B: User validation hard-gate 🚧
 
 **Step:** P4-B
 **Files:** None (user review)
@@ -423,10 +668,14 @@ Present the user with the acceptance criteria checklist:
 
 - [ ] `plan-creation.md` includes commit checkpoint blockquote format (S1).
 - [ ] `plan-creation.md` includes PR-first planning order rule (S6).
-- [ ] `plan-creation.md` includes integration strategy table, merge strategy definitions, and URL traceability (S4).
+- [ ] `plan-creation.md` includes integration strategy table, merge strategy definitions, URL traceability, and mid-execution PR split retrofitting protocol (S4).
+- [ ] `plan-creation.md` uses flat file convention — no plan folders, no annex files (S9).
+- [ ] `plan-execution-protocol.md` includes unified Execution Mode with three modes: Supervised, Semi-supervised, Autonomous (S7).
+- [ ] `plan-execution-protocol.md` — old CI Execution Mode, Automation Mode, pipeline rules, STEP LOCKED removed (S7).
+- [ ] `plan-execution-protocol.md` STEP 0 uses "Hard-Stop", includes missing-branch creation, and branch-transition protocol (S8).
 - [ ] `plan-execution-protocol.md` includes Model Assignment plan-start choice with routing rule (S2).
-- [ ] `plan-execution-protocol.md` includes per-task L1 and per-checkpoint L2 test gates with retry limits (S3).
-- [ ] `plan-execution-protocol.md` includes PR Closeout Protocol in Iteration Close-Out (S5).
+- [ ] `plan-execution-protocol.md` includes mode-specific test gates per task/checkpoint with retry limits (S3).
+- [ ] `plan-execution-protocol.md` includes PR Closeout Protocol with backlog lifecycle and uniform closeout commit rule (S5).
 - [ ] Router files regenerated and passing.
 - [ ] A new plan created with "Create the plan for the attached document" would not need ad-hoc overrides.
 
@@ -434,16 +683,16 @@ Wait for explicit user approval.
 
 ---
 
-### Prompt 10 — P5-A: Closeout commit
+### Prompt 12 — P5-A: Closeout commit
 
 **Step:** P5-A
-**Files:** Plan folder, backlog artifact, surrounding links
+**Files:** Plan file, backlog artifact, surrounding links
 
 **Instructions:**
 
-1. Move plan folder:
+1. Move plan file:
    ```powershell
-   git mv "docs/projects/veterinary-medical-records/04-delivery/plans/PLAN_2026-03-10_IMP-05-PLAN-CREATION-PROTOCOL-ENHANCEMENTS" "docs/projects/veterinary-medical-records/04-delivery/plans/completed/PLAN_2026-03-10_IMP-05-PLAN-CREATION-PROTOCOL-ENHANCEMENTS"
+   git mv "docs/projects/veterinary-medical-records/04-delivery/plans/PLAN_2026-03-10_IMP-05-PLAN-CREATION-PROTOCOL-ENHANCEMENTS.md" "docs/projects/veterinary-medical-records/04-delivery/plans/completed/PLAN_2026-03-10_IMP-05-PLAN-CREATION-PROTOCOL-ENHANCEMENTS.md"
    ```
 
 2. Move backlog artifact:
@@ -473,10 +722,11 @@ Pending plan approval.
 
 From [IMP-05 backlog item](../../Backlog/imp-05-plan-creation-protocol-enhancements.md):
 
-1. `plan-creation.md` includes commit checkpoint format, integration strategy table, merge strategy definitions, URL traceability rule, and PR-first planning order.
-2. `plan-execution-protocol.md` includes Model Assignment plan-start choice with routing rule, formalized L1/L2 test gates per task/checkpoint with retry limits, and expanded close-out procedure with PR Closeout Protocol.
-3. A new plan created after these changes requires no ad-hoc prompt overrides beyond "Create the plan for the attached document."
-4. Router files regenerated from updated canonical sources pass doc-contract tests.
+1. `plan-creation.md` includes commit checkpoint format, integration strategy table, merge strategy definitions, URL traceability rule, PR-first planning order, flat plan structure (no folders, no annex files), and mid-execution PR split retrofitting protocol.
+2. `plan-execution-protocol.md` includes unified Execution Mode (Supervised / Semi-supervised / Autonomous), Model Assignment plan-start choice with routing rule, mode-specific test gates with retry limits, expanded close-out procedure with backlog lifecycle and uniform closeout commit rule, and strengthened Branch Guard (hard-stop, auto-creation, branch-transition protocol).
+3. Old CI Execution Mode, Automation Mode, pipeline rules (CI Mode 2, STEP LOCKED, PLAN-UPDATE-IMMEDIATE, AUTO-HANDOFF GUARD) are removed from `plan-execution-protocol.md`.
+4. A new plan created after these changes requires no ad-hoc prompt overrides beyond "Create the plan for the attached document."
+5. Router files regenerated from updated canonical sources pass doc-contract tests.
 
 ---
 
@@ -488,6 +738,10 @@ From [IMP-05 backlog item](../../Backlog/imp-05-plan-creation-protocol-enhanceme
    - Model tags on every execution step.
    - Integration strategy table in `## PR Roadmap` (if multi-PR).
    - Merge strategy declared.
-   - Test gate references (L1 per task, L2 per checkpoint).
+   - Execution Mode selection offered (Supervised / Semi-supervised / Autonomous).
+   - Test gate levels matching the selected Execution Mode.
    - Closeout step in the last phase.
+   - Plan created as a single flat file (no folder, no annex files).
+3. Simulate a mid-execution scope increase scenario and verify the agent follows the guided PR split protocol (halt → diagnose → propose → await approval → restructure in-place → confirm → commit → resume).
 3. Confirm no ad-hoc override rules were needed.
+4. Verify `plan-execution-protocol.md` no longer contains CI Execution Mode, Automation Mode, pipeline depth-1, STEP LOCKED, or AUTO-HANDOFF GUARD.

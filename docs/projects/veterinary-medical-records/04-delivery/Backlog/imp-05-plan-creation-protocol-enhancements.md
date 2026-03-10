@@ -70,22 +70,106 @@ URL traceability rule: when a PR is created, update Status to `Open` and URL to 
 
 For plans with a single PR, the existing `**PR:**` metadata field remains sufficient.
 
+#### Mid-execution PR split (retrofitting)
+
+When a plan was created with a single PR but during execution the scope grows beyond what a single PR can reasonably deliver, the agent MUST follow this guided protocol:
+
+1. **Halt.** Complete the current step. Do NOT start a new one.
+2. **Inform.** Tell the user: "This plan has grown beyond a single PR. I recommend splitting it. Here is my proposed split:" followed by a table showing which steps go into which PR and why.
+3. **Await approval (🚧 hard-gate).** The user approves or adjusts the boundaries.
+4. **Restructure in-place.** All changes happen in the existing plan file (no new documents):
+   - Add `## PR Roadmap` with integration strategy table (columns: PR, Branch, Scope, Depends on, Status, URL).
+   - Declare merge strategy.
+   - Re-tag every step in `## Execution Status` with `[PR-X]` (completed steps get `[PR-1]` retroactively).
+   - Insert `📌` commit checkpoints at PR boundaries if not already present.
+   - Update `**PR:**` metadata to `See ## PR Roadmap`.
+   - Register the current branch as PR-1's branch in the table.
+5. **Confirm.** Present the restructured plan to the user for confirmation.
+6. **Commit.** Message: `docs(plan): retrofit PR split for <plan-slug>`.
+7. **Resume.** Continue execution. Use branch-transition protocol (S8) when crossing PR boundaries.
+
+The agent MUST guide the user step-by-step through this process, explicitly stating which step is current, what will be done, and what remains.
+
 ### S5 — PR Closeout Protocol integration (`plan-execution-protocol.md` §14)
 
 Merge the PR Closeout Protocol into the existing Iteration Close-Out Procedure:
 
-- In the **last PR** of a multi-PR plan, add a finalization commit that:
-  1. Moves the plan folder to `plans/completed/`.
-  2. Moves the backlog artifact to `Backlog/completed/` (if applicable).
-  3. Updates relative links to resolve to the new `completed/` locations.
-  4. States `N/A` explicitly for any non-applicable item.
+#### Backlog item lifecycle
+
+Backlog items (`US-*.md`, `IMP-*.md`, `ARCH-*.md`) follow this status lifecycle:
+- `Planned` — initial state when the item is in the backlog.
+- `In Progress` — set when plan execution starts (first step marked in-progress).
+- `Done` — set automatically during closeout, immediately before moving to `completed/`.
+
+The agent updates the `**Status:**` field in the backlog artifact at each transition. No hard-gate is needed — the agent does this automatically.
+
+#### Closeout commit (uniform rule — single-PR and multi-PR)
+
+Every plan's **last PR** (or only PR) includes a closeout commit as its final commit before merge. This commit:
+
+1. Sets the backlog item's `**Status:**` to `Done`.
+2. **Moves the plan file** to `plans/completed/`.
+3. **Moves the backlog artifact** to `Backlog/completed/` — if the artifact exists.
+4. **Updates every relative link** in surrounding docs that pointed to the old paths.
+5. If any of the above does not apply, states `N/A` explicitly in the commit message body.
+
 - Commit message: `docs(closeout): archive <plan-slug> and backlog artifacts`.
 - Intermediate PRs in a stack must NOT move artifacts to `completed/`.
+- The closeout is automatic (no hard-gate) — easily reversible via `git mv`.
 - Add a closeout checklist to the PR body template.
 
 ### S6 — PR-first planning order (`plan-creation.md` §5)
 
 Add rule: when a plan may span multiple PRs, determine PR boundaries **before** writing the Execution Status and commit checkpoints — not after. The current "evaluate post-hoc" flow risks misaligned checkpoints.
+
+### S9 — Flat plan structure (`plan-creation.md` §1)
+
+Simplify plan storage from folder-based to flat files:
+
+1. **No plan folders.** Plans are single files: `plans/PLAN_<YYYY-MM-DD>_<SLUG>.md`. Remove the folder convention and the folder-matching name rule.
+2. **No annex files.** Remove `PR-X.md` annex file convention. All PR detail goes inline (sections within the plan file). If a plan is too large for one file, it should be split into separate plans (one per backlog item).
+3. **Completed plans.** Move to `plans/completed/PLAN_<YYYY-MM-DD>_<SLUG>.md` (file, not folder).
+4. **Update template steps.** Replace "Create plan folder" + "Create root file" with a single "Create plan file" step.
+
+### S7 — Unified Execution Mode (`plan-execution-protocol.md` §7, §8, §3)
+
+Replace CI Execution Mode (Strict step gate / Pipeline depth-1 / End-of-plan gate) and Automation Mode (Supervisado / Semiautomático / Automático) with a single **Execution Mode** plan-start choice:
+
+| Mode | Per-task gate | Per-checkpoint gate | Commit | Push | Hard-gates | Max retries |
+|---|---|---|---|---|---|---|
+| **Supervised** | L2 | L3 | Manual | Manual | User decides | 2 |
+| **Semi-supervised** | L1 | L2 | Manual | Manual | User decides | 2 |
+| **Autonomous** | L2 | L3 | Automatic | Automatic | Agent decides (documented) | 10 |
+
+Additional rules:
+- **Task completion (all modes):** Mark `[x]` immediately upon completing the work — do not wait for CI.
+- **Supervised checkpoints:** The agent already pauses after each task; at `📌` checkpoints the test level escalates to L3.
+- **Autonomous hard-gate safeguards:** (a) document each decision with rationale, (b) include "Autonomous decisions" summary in the PR body, (c) plan authors may mark `🚧🔒 NEVER-SKIP` on gates that require user decision even in Autonomous.
+- **Autonomous push:** automatic after commit.
+
+Removals from `plan-execution-protocol.md`:
+- §7: CI Execution Mode and Automation Mode Selection subsections.
+- §8: CI Mode 2 pipeline block, PLAN-UPDATE-IMMEDIATE, STEP-LOCK, AUTO-HANDOFF GUARD.
+- §3: STEP LOCKED row in Extended Execution State table.
+- §1: Update automation mode reference to execution mode.
+
+Plan-start choices after S7: Worktree, Execution Mode, Model Assignment (3 instead of 4).
+
+**Plan-start UX rule:** When asking plan-start choices, agents must prefer interactive UI option selectors (e.g., clickable option lists) over plain text. Fall back to numbered text options only when the interaction environment does not support UI selectors.
+
+### S8 — Branch Guard (`plan-execution-protocol.md` §11, §14)
+
+Strengthen STEP 0 (Branch Verification) and §14 (Branch Creation) so that:
+
+1. **Branch field is mandatory.** Every plan MUST have a `**Branch:**` metadata field. If missing when execution starts, the agent creates the branch (following branching conventions), annotates it in the plan, and commits the plan update before proceeding.
+2. **Continuous branch guard.** The agent MUST verify `git branch --show-current` matches `**Branch:**` before every commit operation (STEP 0 already runs, but is now a hard-stop — no implicit fallback). If a mismatch is detected: STOP, alert the user, and do NOT commit.
+3. **Branch-transition protocol.** The agent MUST NOT change branches without following this protocol:
+   1. The target branch must already be documented in the plan’s PR Roadmap table. If not, add it first.
+   2. If there are uncommitted changes in the working tree, commit them with a `WIP: <description>` message on the current branch. WIP commits bypass pre-commit checks (they will be amended or squashed before push/PR).
+   3. Update the plan’s `**Branch:**` field to the target branch.
+   4. Switch to the target branch.
+   5. Inform the user which branch is now active.
+   - Switching without following this protocol is a compliance failure.
 
 **Out of Scope**
 - No changes to scripts or CI (owned by IMP-03).
@@ -94,8 +178,10 @@ Add rule: when a plan may span multiple PRs, determine PR boundaries **before** 
 - No router file edits (regenerated from canonical sources).
 
 **Acceptance Criteria**
-- `plan-creation.md` includes commit checkpoint format, integration strategy table, merge strategy definitions, URL traceability rule, and PR-first planning order.
-- `plan-execution-protocol.md` includes Model Assignment plan-start choice with routing rule, formalized L1/L2 test gates per task/checkpoint with retry limits, and expanded close-out procedure with PR Closeout Protocol.
+- `plan-creation.md` includes commit checkpoint format, integration strategy table, merge strategy definitions, URL traceability rule, PR-first planning order, mid-execution PR split retrofitting protocol, and flat plan structure.
+- `plan-execution-protocol.md` includes unified Execution Mode (Supervised / Semi-supervised / Autonomous) replacing CI Execution Mode and Automation Mode, Model Assignment plan-start choice with routing rule, mode-specific test gates per task/checkpoint with retry limits, expanded close-out procedure with backlog lifecycle and uniform closeout commit rule, and strengthened Branch Guard (hard-stop + branch-transition protocol).
+- `plan-execution-protocol.md` STEP 0 and §14 include branch guard: mandatory `**Branch:**` field, continuous verification before commits, and branch-transition protocol (S8).
+- Old CI Execution Mode, Automation Mode, pipeline rules (CI Mode 2, STEP LOCKED, PLAN-UPDATE-IMMEDIATE, AUTO-HANDOFF GUARD) are removed from `plan-execution-protocol.md`.
 - A new plan created after these changes requires no ad-hoc prompt overrides beyond "Create the plan for the attached document."
 - Router files regenerated from updated canonical sources pass doc-contract tests.
 
@@ -105,6 +191,8 @@ Add rule: when a plan may span multiple PRs, determine PR boundaries **before** 
 - Verify model tags appear on every execution step.
 - Verify commit checkpoints use the prescribed blockquote format.
 - Verify close-out procedure covers artifact archival for the last PR only.
+- Verify execution mode table defines three modes with distinct test levels, commit/push policy, and hard-gate handling.
+- Verify old CI Execution Mode, Automation Mode, pipeline rules, STEP LOCKED, PLAN-UPDATE-IMMEDIATE, and AUTO-HANDOFF GUARD are removed.
 - Doc-contract and link tests pass after changes.
 
 **Risks and Mitigations**
