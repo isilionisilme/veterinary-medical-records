@@ -338,7 +338,13 @@ Use the most-capable model only when the step involves decomposing functions wit
 
 #### Model routing rule (hard rule)
 
-Each step in Execution Status carries a `[Model]` tag (e.g., `[GPT 5.4]`, `[Claude Opus 4.6]`). On step completion, check the `[Model]` tag of the next pending step. If it differs from the current model, STOP immediately and tell the user:
+Each step in Execution Status carries a `[Model]` tag (e.g., `[GPT 5.4]`, `[Claude Opus 4.6]`).
+
+**Pre-execution check:** Before starting any step, the agent MUST verify that its own model matches the step's `[Model]` tag. If the tag names a different model, the agent MUST NOT execute the step. Instead, STOP and tell the user:
+
+> "This step is assigned to [Model X]. I am [Model Y]. Please switch to the correct model and say 'continue'."
+
+**Post-completion check:** On step completion, check the `[Model]` tag of the next pending step. If it differs from the current model, STOP immediately and tell the user:
 
 > "Next step recommends [Model X]. Switch to that model and say 'continue'."
 

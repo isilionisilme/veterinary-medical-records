@@ -136,7 +136,7 @@ STEP 0 already verifies the branch, but silently falls back to checkout/create. 
 
 ### Phase 3 — Router regeneration and validation
 
-- [ ] P3-A 🔄 `[GPT 5.4]` — **Regenerate router files.** Run `python scripts/docs/generate-router-files.py`. Stage and verify the regenerated files reflect the new canonical content.
+- [x] P3-A 🔄 `[GPT 5.4]` — **Regenerate router files.** Run `python scripts/docs/generate-router-files.py`. Stage and verify the regenerated files reflect the new canonical content. ✅ (GitHub Copilot, 2026-03-10)
 
 > 📌 **Commit checkpoint — Phase 3 complete.** Suggested message: `docs(router): regenerate router files from updated canonical sources`. Run L2 tests; if red, fix and re-run until green. Then wait for user.
 
