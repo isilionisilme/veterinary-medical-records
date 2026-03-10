@@ -127,8 +127,8 @@ Cada extractor recibe `collector: CandidateCollector` (para llamar `add_candidat
 
 ### Phase 4 — Adelgazar orquestador
 
-- [ ] P4-A 🔄 `[Claude Opus 4.6]` — Refactorizar `_mine_interpretation_candidates` para que sea un orquestador delgado: instanciar `CandidateCollector`, llamar batch extractors (date_parsing), llamar cada extractor por dominio, retornar `dict(collector.candidates)`. Verificar que la función resultante sea < 100 LOC y CC < 20.
-- [ ] P4-B 🔄 `[Claude Opus 4.6]` — Si algún extractor excede 100 LOC o CC 20, subdividir hasta cumplir acceptance criteria. Ejecutar test suite completa.
+- [x] P4-A 🔄 `[Claude Opus 4.6]` — Refactorizar `_mine_interpretation_candidates` para que sea un orquestador delgado: instanciar `CandidateCollector`, llamar batch extractors (date_parsing), llamar cada extractor por dominio, retornar `dict(collector.candidates)`. Verificar que la función resultante sea < 100 LOC y CC < 20.
+- [x] P4-B 🔄 `[Claude Opus 4.6]` — Si algún extractor excede 100 LOC o CC 20, subdividir hasta cumplir acceptance criteria. Ejecutar test suite completa.
 > 📌 Commit checkpoint — Phase 4 complete. Suggested message: `refactor(mining): slim orchestrator under 100 LOC`. Run L2 tests; if red, fix and re-run until green. Then wait for user.
 
 ### Phase 5 — Tests unitarios de los nuevos módulos
@@ -759,6 +759,17 @@ Si alguna de las funciones extractoras excede 100 LOC o CC 20, subdivide.
 Ejecuta tests. Marca P4-A [x]. Lanza L1.
 ```
 
+**Evidence P4-A:**
+- Slimmed `_mine_interpretation_candidates()` into a pure coordinator by extracting:
+   - `_seed_base_candidates(collector, raw_text)`
+   - `_extract_classified_date_candidates(collector, raw_text)`
+   - `_extract_timeline_date_candidates(collector, lines)`
+   - `_run_domain_extractors(collector)`
+- Promoted breed keywords to module-level `_BREED_KEYWORDS` so the orchestrator no longer rebuilds local keyword tuples.
+- Post-refactor radon: `_mine_interpretation_candidates` → A (1).
+- L2: PASS (`scripts/ci/test-L2.ps1 -BaseRef main`)
+- Pytest in L2: 827 passed, 2 xfailed.
+
 ### P4-B — Verificación de umbrales `[Claude Opus 4.6]`
 
 ```
@@ -769,6 +780,24 @@ Marca P4-B [x]. Lanza L1.
 Lanza L2. Si falla, repara.
 Cuando L2 verde → STOP (commit point 4).
 ```
+
+**Evidence P4-B:**
+- Subdivided the remaining hotspots into focused helpers:
+   - `CandidateCollector` validators split into per-field methods and `_validate_and_clean()` reduced to a dispatcher.
+   - Labeled-field extraction split into `_split_header_value_line`, `_extract_inline_owner_address_candidate`, `_extract_header_value_field_candidates`, `_extract_unlabeled_field_candidates`.
+   - Owner-address extraction split into `_extract_adjacent_owner_address_candidates`, `_extract_labeled_owner_address_candidates`, and helper collectors/guards.
+   - Labeled-address routing split into `_collect_multiline_labeled_address_parts` and `_route_labeled_address_candidate`.
+   - Candidate ranking split into per-key helper sort functions, leaving `_candidate_sort_key()` as a dispatcher.
+- Post-refactor radon on `candidate_mining.py` hotspots:
+   - `_mine_interpretation_candidates` → A (1)
+   - `_extract_labeled_field_candidates` → A (3)
+   - `_extract_owner_address_candidates` → A (1)
+   - `_extract_labeled_address_candidates` → B (8)
+   - `CandidateCollector._validate_and_clean` → A (3)
+   - `_candidate_sort_key` → B (8)
+- `field_patterns.py` registries all measure A (1) under radon.
+- L2: PASS (`scripts/ci/test-L2.ps1 -BaseRef main`)
+- Pytest in L2: 827 passed, 2 xfailed; docker/image checks green.
 
 ### P5-A — Tests CandidateCollector `[GPT 5.4]`
 

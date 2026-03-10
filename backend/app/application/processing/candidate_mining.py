@@ -110,6 +110,16 @@ _PET_NAME_STOPWORDS_LOWER = {
         "vacunacion",
     )
 }
+_BREED_KEYWORDS = (
+    "labrador",
+    "retriever",
+    "bulldog",
+    "pastor",
+    "yorkshire",
+    "mestiz",
+    "beagle",
+    "caniche",
+)
 
 
 class CandidateCollector:
@@ -146,84 +156,100 @@ class CandidateCollector:
             return "clinic"
         return "ambiguous"
 
+    def _validate_microchip_id(self, cleaned_value: str, snippet: str) -> str | None:
+        digit_match = _MICROCHIP_DIGITS_PATTERN.search(cleaned_value)
+        if digit_match is None:
+            return None
+
+        normalized_value = digit_match.group(1)
+        safe_collapsed = re.sub(r"[\s\-.]", "", snippet)
+        if normalized_value not in safe_collapsed:
+            return None
+        return normalized_value
+
+    def _validate_owner_name(self, cleaned_value: str, snippet: str) -> str | None:
+        owner_value = _split_owner_before_address_tokens(cleaned_value)
+        normalized_person = _normalize_person_fragment(owner_value)
+        if normalized_person is None:
+            return None
+        if _VET_OR_CLINIC_CONTEXT_PATTERN.search(snippet) is not None:
+            return None
+        return normalized_person
+
+    def _validate_vet_name(self, cleaned_value: str, _: str) -> str | None:
+        normalized_person = _normalize_person_fragment(cleaned_value)
+        if normalized_person is None:
+            return None
+        if _ADDRESS_LIKE_PATTERN.search(normalized_person):
+            return None
+        return normalized_person
+
+    def _validate_clinic_name(self, cleaned_value: str, snippet: str) -> str | None:
+        snippet_folded = snippet.casefold()
+        if "dirección" in snippet_folded or "direccion" in snippet_folded:
+            return None
+        if "domicilio" in snippet_folded:
+            return None
+
+        compact_clinic = cleaned_value.casefold()
+        if _ADDRESS_LIKE_PATTERN.search(compact_clinic) and re.search(r"\d", compact_clinic):
+            return None
+        return cleaned_value
+
+    def _validate_clinic_address(self, cleaned_value: str, snippet: str) -> str | None:
+        snippet_folded = snippet.casefold()
+        has_owner_context = _OWNER_CONTEXT_RE.search(snippet_folded) is not None
+        has_clinic_context = _CLINIC_ADDRESS_CONTEXT_RE.search(snippet_folded) is not None
+        if has_owner_context and not has_clinic_context:
+            return None
+
+        has_generic_address_label = bool(
+            re.search(r"\b(?:direcci[oó]n|domicilio|dir\.?)\s*[:\-]", snippet_folded)
+        )
+        has_explicit_clinic_label = bool(
+            re.search(r"\b(?:direcci[oó]n|domicilio)\s+de\s+la\s+cl[ií]nica\b", snippet_folded)
+        )
+        if has_generic_address_label and not has_explicit_clinic_label:
+            line_index = self._line_index_for_snippet(snippet)
+            if line_index is not None:
+                prev_context = " ".join(self.lines[max(0, line_index - 2) : line_index]).casefold()
+                if _OWNER_CONTEXT_RE.search(prev_context):
+                    return None
+        return cleaned_value
+
+    def _validate_owner_address(self, cleaned_value: str, snippet: str) -> str | None:
+        snippet_folded = snippet.casefold()
+        has_owner_context = _OWNER_ADDRESS_CONTEXT_RE.search(snippet_folded) is not None
+        has_clinic_context = _CLINIC_ADDRESS_CONTEXT_RE.search(snippet_folded) is not None
+        if has_clinic_context and not has_owner_context:
+            return None
+        return cleaned_value
+
+    def _validate_weight(self, cleaned_value: str, snippet: str) -> str | None:
+        explicit_weight_context = _WEIGHT_EXPLICIT_CONTEXT_RE.search(snippet) is not None
+        has_dosage_units = _WEIGHT_DOSAGE_GUARD_RE.search(snippet) is not None
+        has_lab_units = _WEIGHT_LAB_GUARD_RE.search(snippet) is not None
+        has_price_tokens = _WEIGHT_PRICE_GUARD_RE.search(snippet) is not None
+        if (has_dosage_units or has_lab_units or has_price_tokens) and not explicit_weight_context:
+            return None
+        return cleaned_value
+
     def _validate_and_clean(self, key: str, value: str, snippet: str) -> str | None:
         """Return cleaned value if it passes per-field validation, or None to discard."""
         cleaned_value = value.strip(" .,:;\t\r\n")
         if not cleaned_value:
             return None
-        if key == "microchip_id":
-            digit_match = _MICROCHIP_DIGITS_PATTERN.search(cleaned_value)
-            if digit_match is None:
-                return None
-            cleaned_value = digit_match.group(1)
-            # Reject digit sequences assembled from separate numbers
-            # (e.g. date "08/12/19" + time "16:12" → "0812191612").
-            # Spaces, hyphens and dots are legitimate chip-number
-            # separators; slashes, colons, etc. are not.
-            safe_collapsed = re.sub(r"[\s\-.]", "", snippet)
-            if cleaned_value not in safe_collapsed:
-                return None
-        if key == "owner_name":
-            cleaned_value = _split_owner_before_address_tokens(cleaned_value)
-            normalized_person = _normalize_person_fragment(cleaned_value)
-            if normalized_person is None:
-                return None
-            cleaned_value = normalized_person
-            if _VET_OR_CLINIC_CONTEXT_PATTERN.search(snippet) is not None:
-                return None
-        if key == "vet_name":
-            normalized_person = _normalize_person_fragment(cleaned_value)
-            if normalized_person is None:
-                return None
-            if _ADDRESS_LIKE_PATTERN.search(normalized_person):
-                return None
-            cleaned_value = normalized_person
-        if key == "clinic_name":
-            snippet_folded = snippet.casefold()
-            if "dirección" in snippet_folded or "direccion" in snippet_folded:
-                return None
-            if "domicilio" in snippet_folded:
-                return None
-            compact_clinic = cleaned_value.casefold()
-            if _ADDRESS_LIKE_PATTERN.search(compact_clinic) and re.search(r"\d", compact_clinic):
-                return None
-        if key == "clinic_address":
-            snippet_folded = snippet.casefold()
-            has_owner_context = _OWNER_CONTEXT_RE.search(snippet_folded) is not None
-            has_clinic_context = _CLINIC_ADDRESS_CONTEXT_RE.search(snippet_folded) is not None
-            if has_owner_context and not has_clinic_context:
-                return None
-            has_generic_address_label = bool(
-                re.search(r"\b(?:direcci[oó]n|domicilio|dir\.?)\s*[:\-]", snippet_folded)
-            )
-            has_explicit_clinic_label = bool(
-                re.search(r"\b(?:direcci[oó]n|domicilio)\s+de\s+la\s+cl[ií]nica\b", snippet_folded)
-            )
-            if has_generic_address_label and not has_explicit_clinic_label:
-                line_index = self._line_index_for_snippet(snippet)
-                if line_index is not None:
-                    prev_context = " ".join(
-                        self.lines[max(0, line_index - 2) : line_index]
-                    ).casefold()
-                    if _OWNER_CONTEXT_RE.search(prev_context):
-                        return None
-        if key == "owner_address":
-            snippet_folded = snippet.casefold()
-            has_owner_context = _OWNER_ADDRESS_CONTEXT_RE.search(snippet_folded) is not None
-            has_clinic_context = _CLINIC_ADDRESS_CONTEXT_RE.search(snippet_folded) is not None
-            if has_clinic_context and not has_owner_context:
-                return None
-        if key == "weight":
-            explicit_weight_context = _WEIGHT_EXPLICIT_CONTEXT_RE.search(snippet) is not None
-            has_dosage_units = _WEIGHT_DOSAGE_GUARD_RE.search(snippet) is not None
-            has_lab_units = _WEIGHT_LAB_GUARD_RE.search(snippet) is not None
-            has_price_tokens = _WEIGHT_PRICE_GUARD_RE.search(snippet) is not None
-
-            if (
-                has_dosage_units or has_lab_units or has_price_tokens
-            ) and not explicit_weight_context:
-                return None
-        return cleaned_value
+        validators: dict[str, callable[[str, str], str | None]] = {
+            "microchip_id": self._validate_microchip_id,
+            "owner_name": self._validate_owner_name,
+            "vet_name": self._validate_vet_name,
+            "clinic_name": self._validate_clinic_name,
+            "clinic_address": self._validate_clinic_address,
+            "owner_address": self._validate_owner_address,
+            "weight": self._validate_weight,
+        }
+        validator = validators.get(key)
+        return validator(cleaned_value, snippet) if validator is not None else cleaned_value
 
     def add_candidate(
         self,
@@ -286,119 +312,14 @@ def _extract_labeled_field_candidates(
     add_candidate = collector.add_candidate
 
     for line in lines:
-        if ":" in line:
-            header, value = line.split(":", 1)
-        elif "-" in line:
-            header, value = line.split("-", 1)
-        else:
-            header, value = "", ""
-
+        header, value = _split_header_value_line(line)
         lower_header = header.casefold()
         if value:
-            if _OWNER_HEADER_RE.search(lower_header):
-                owner_value = value.strip(" .,:;\t\r\n")
-                address_start = _CLINIC_ADDRESS_START_RE.search(owner_value)
-                if address_start is not None:
-                    address_fragment = owner_value[address_start.start() :].strip(" .,:;\t\r\n")
-                    if address_fragment:
-                        add_candidate(
-                            key="owner_address",
-                            value=address_fragment,
-                            confidence=COVERAGE_CONFIDENCE_LABEL,
-                            snippet=line,
-                        )
-
-            if any(token in lower_header for token in ("diagn", "impresi")):
-                add_candidate(
-                    key="diagnosis",
-                    value=value,
-                    confidence=COVERAGE_CONFIDENCE_LABEL,
-                    snippet=line,
-                )
-            if any(token in lower_header for token in ("trat", "medic", "prescrip", "receta")):
-                add_candidate(
-                    key="medication",
-                    value=value,
-                    confidence=COVERAGE_CONFIDENCE_LABEL,
-                    snippet=line,
-                )
-                add_candidate(key="treatment_plan", value=value, confidence=0.7, snippet=line)
-            if any(token in lower_header for token in ("proced", "interv", "cirug", "quir")):
-                add_candidate(
-                    key="procedure",
-                    value=value,
-                    confidence=COVERAGE_CONFIDENCE_LABEL,
-                    snippet=line,
-                )
-            if any(token in lower_header for token in ("sintom", "symptom")):
-                add_candidate(
-                    key="symptoms",
-                    value=value,
-                    confidence=COVERAGE_CONFIDENCE_LABEL,
-                    snippet=line,
-                )
-            if any(token in lower_header for token in ("vacun", "vaccin")):
-                add_candidate(
-                    key="vaccinations",
-                    value=value,
-                    confidence=COVERAGE_CONFIDENCE_LABEL,
-                    snippet=line,
-                )
-            if any(token in lower_header for token in ("laboratorio", "analit", "lab")):
-                add_candidate(
-                    key="lab_result",
-                    value=value,
-                    confidence=COVERAGE_CONFIDENCE_LABEL,
-                    snippet=line,
-                )
-            if any(
-                token in lower_header for token in ("radiograf", "ecograf", "imagen", "tac", "rm")
-            ):
-                add_candidate(
-                    key="imaging",
-                    value=value,
-                    confidence=COVERAGE_CONFIDENCE_LABEL,
-                    snippet=line,
-                )
-            if any(token in lower_header for token in ("linea", "concepto", "item")):
-                add_candidate(
-                    key="line_item",
-                    value=value,
-                    confidence=COVERAGE_CONFIDENCE_LABEL,
-                    snippet=line,
-                )
+            _extract_inline_owner_address_candidate(add_candidate, lower_header, value, line)
+            _extract_header_value_field_candidates(add_candidate, lower_header, value, line)
 
         lower_line = line.casefold()
-        if any(token in lower_line for token in ("diagn", "impresi")) and ":" not in line:
-            add_candidate(key="diagnosis", value=line, confidence=0.64, snippet=line)
-        if any(
-            token in lower_line
-            for token in (
-                "amoxic",
-                "clavul",
-                "predni",
-                "omepra",
-                "antibiot",
-                "mg",
-                "cada",
-            )
-        ):
-            add_candidate(
-                key="medication",
-                value=line,
-                confidence=COVERAGE_CONFIDENCE_FALLBACK,
-                snippet=line,
-            )
-        if any(
-            token in lower_line
-            for token in ("cirug", "proced", "sut", "cura", "ecograf", "radiograf")
-        ):
-            add_candidate(
-                key="procedure",
-                value=line,
-                confidence=COVERAGE_CONFIDENCE_FALLBACK,
-                snippet=line,
-            )
+        _extract_unlabeled_field_candidates(add_candidate, lower_line, line)
 
 
 def _extract_sex_candidates(
@@ -624,103 +545,8 @@ def _extract_owner_address_candidates(
     lines: list[str],
 ) -> None:
     """Extract owner_address from name+adjacent address and labeled address patterns."""
-    add_candidate = collector.add_candidate
-
-    # ── Owner name + adjacent address detection ──
-    for index in range(len(lines) - 1):
-        owner_line = lines[index]
-        address_line = lines[index + 1]
-        if _SIMPLE_FIELD_LABEL_RE.match(owner_line) is not None:
-            continue
-        if _SIMPLE_FIELD_LABEL_RE.match(address_line) is not None:
-            continue
-        if _OWNER_NAME_LIKE_LINE_RE.match(owner_line) is None:
-            continue
-        if (
-            _ADDRESS_LIKE_PATTERN.search(address_line) is None
-            or re.search(r"\d", address_line) is None
-        ):
-            continue
-
-        context_window = lines[max(0, index - 3) : min(len(lines), index + 4)]
-        context_text = " ".join(context_window).casefold()
-        has_owner_context = _OWNER_ADDRESS_CONTEXT_RE.search(context_text) is not None
-        has_identification_context = (
-            _OWNER_BLOCK_IDENTIFICATION_CONTEXT_RE.search(context_text) is not None
-        )
-        has_clinic_context = _CLINIC_ADDRESS_CONTEXT_RE.search(context_text) is not None
-
-        if has_clinic_context and not has_owner_context:
-            continue
-        if not has_owner_context and not has_identification_context:
-            continue
-
-        address_parts = [address_line.strip(" .,:;\t\r\n")]
-        tail_index = index + 2
-        tail_limit = min(len(lines), index + 5)
-        while tail_index < tail_limit:
-            tail_line = lines[tail_index]
-            if _SIMPLE_FIELD_LABEL_RE.match(tail_line) is not None:
-                break
-            tail_clean = tail_line.strip(" .,:;\t\r\n")
-            if not tail_clean:
-                break
-            if re.match(r"^\s*-\s*\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}", tail_line):
-                break
-            if _OWNER_NAME_LIKE_LINE_RE.match(tail_clean) is not None:
-                break
-
-            is_postal_like = _POSTAL_HINT_RE.search(tail_clean) is not None
-            is_locality_like = _OWNER_LOCALITY_LINE_RE.fullmatch(tail_clean) is not None
-            locality_tail = tail_clean.casefold().strip(" .,:;\t\r\n")
-            if locality_tail in _OWNER_LOCALITY_SECTION_BLACKLIST:
-                break
-            if not (is_postal_like or is_locality_like):
-                break
-
-            address_parts.append(tail_clean)
-            tail_index += 1
-
-        candidate_value = " ".join(part for part in address_parts if part)
-        if not candidate_value:
-            continue
-        add_candidate(
-            key="owner_address",
-            value=candidate_value,
-            confidence=COVERAGE_CONFIDENCE_FALLBACK,
-            snippet="\n".join(lines[index : min(len(lines), index + 3)]),
-        )
-
-    # ── Owner address label line ──
-    for index, line in enumerate(lines):
-        owner_address_label_match = _OWNER_ADDRESS_LABEL_LINE_RE.match(line)
-        if owner_address_label_match is not None:
-            raw_inline_value = owner_address_label_match.group(1) or ""
-            inline_value = raw_inline_value.strip(" .,:;\t\r\n")
-            address_parts: list[str] = []
-
-            if inline_value:
-                address_parts.append(inline_value)
-            elif index + 1 < len(lines):
-                next_line = lines[index + 1]
-                if _SIMPLE_FIELD_LABEL_RE.match(next_line) is None:
-                    address_parts.append(next_line.strip(" .,:;\t\r\n"))
-
-            if address_parts and index + 2 < len(lines):
-                maybe_second_line = lines[index + 2]
-                if (
-                    _SIMPLE_FIELD_LABEL_RE.match(maybe_second_line) is None
-                    and _POSTAL_HINT_RE.search(maybe_second_line) is not None
-                ):
-                    address_parts.append(maybe_second_line.strip(" .,:;\t\r\n"))
-
-            if address_parts:
-                add_candidate(
-                    key="owner_address",
-                    value=" ".join(part for part in address_parts if part),
-                    confidence=COVERAGE_CONFIDENCE_LABEL,
-                    snippet="\n".join(lines[index : min(len(lines), index + 3)]),
-                )
+    _extract_adjacent_owner_address_candidates(collector, lines)
+    _extract_labeled_owner_address_candidates(collector, lines)
 
 
 def _extract_labeled_address_candidates(
@@ -728,71 +554,28 @@ def _extract_labeled_address_candidates(
     lines: list[str],
 ) -> None:
     """Extract clinic_address / owner_address from labeled address lines."""
-    add_candidate = collector.add_candidate
-    _classify_address_context = collector._classify_address_context
-
     for index, line in enumerate(lines):
         address_label_match = _CLINIC_ADDRESS_LABEL_LINE_RE.match(line)
-        if address_label_match is not None:
-            raw_label = address_label_match.group(1).strip().casefold()
-            raw_inline_value = address_label_match.group(2) or ""
-            inline_value = raw_inline_value.strip(" .,:;\t\r\n")
-            explicit_clinic_label = "cl\u00ednica" in raw_label or "clinica" in raw_label
+        if address_label_match is None:
+            continue
 
-            address_parts: list[str] = []
-            if inline_value:
-                address_parts.append(inline_value)
-            else:
-                if index + 1 < len(lines):
-                    next_line = lines[index + 1]
-                    if not _SIMPLE_FIELD_LABEL_RE.match(next_line):
-                        address_parts.append(next_line.strip(" .,:;\t\r\n"))
+        raw_label = address_label_match.group(1).strip().casefold()
+        inline_value = (address_label_match.group(2) or "").strip(" .,:;\t\r\n")
+        explicit_clinic_label = "cl\u00ednica" in raw_label or "clinica" in raw_label
+        address_parts = _collect_multiline_labeled_address_parts(lines, index, inline_value)
+        if not address_parts:
+            continue
 
-            if address_parts and index + 2 < len(lines):
-                maybe_second_line = lines[index + 2]
-                if (
-                    not _SIMPLE_FIELD_LABEL_RE.match(maybe_second_line)
-                    and _POSTAL_HINT_RE.search(maybe_second_line) is not None
-                ):
-                    address_parts.append(maybe_second_line.strip(" .,:;\t\r\n"))
-
-            if address_parts:
-                candidate_value = " ".join(part for part in address_parts if part)
-                snippet_block = "\n".join(lines[index : min(len(lines), index + 3)])
-                context_decision = _classify_address_context(index)
-                is_ambiguous_generic_label = (
-                    not explicit_clinic_label
-                    and _AMBIGUOUS_ADDRESS_LABEL_LINE_RE.match(line) is not None
-                )
-
-                if explicit_clinic_label:
-                    add_candidate(
-                        key="clinic_address",
-                        value=candidate_value,
-                        confidence=COVERAGE_CONFIDENCE_LABEL,
-                        snippet=snippet_block,
-                    )
-                elif context_decision == "owner" and is_ambiguous_generic_label:
-                    add_candidate(
-                        key="owner_address",
-                        value=candidate_value,
-                        confidence=COVERAGE_CONFIDENCE_LABEL,
-                        snippet=snippet_block,
-                    )
-                elif context_decision == "clinic" and is_ambiguous_generic_label:
-                    add_candidate(
-                        key="clinic_address",
-                        value=candidate_value,
-                        confidence=COVERAGE_CONFIDENCE_LABEL,
-                        snippet=snippet_block,
-                    )
-                else:
-                    add_candidate(
-                        key="clinic_address",
-                        value=candidate_value,
-                        confidence=COVERAGE_CONFIDENCE_FALLBACK,
-                        snippet=snippet_block,
-                    )
+        candidate_value = " ".join(part for part in address_parts if part)
+        snippet_block = "\n".join(lines[index : min(len(lines), index + 3)])
+        _route_labeled_address_candidate(
+            collector,
+            line,
+            index,
+            candidate_value,
+            snippet_block,
+            explicit_clinic_label,
+        )
 
 
 def _extract_pet_name_candidates(
@@ -911,13 +694,8 @@ def _extract_language_candidates(
         )
 
 
-def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, object]]]:
-    collector = CandidateCollector(raw_text)
-    # Local aliases — delegates to collector during incremental refactor.
-    lines = collector.lines
-    compact_text = collector.compact_text
-    candidates = collector.candidates
-    add_candidate = collector.add_candidate
+def _seed_base_candidates(collector: CandidateCollector, raw_text: str) -> None:
+    """Seed collector payloads from the raw-text helper extractors."""
     add_basic_payloads = collector.add_basic_payloads
 
     for payloads in (
@@ -939,6 +717,14 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
     ):
         add_basic_payloads(payloads)
 
+
+def _extract_classified_date_candidates(
+    collector: CandidateCollector,
+    raw_text: str,
+) -> None:
+    """Add date candidates returned by the classified date extractor."""
+    add_candidate = collector.add_candidate
+
     for date_candidate in extract_date_candidates_with_classification(raw_text):
         add_candidate(
             key=str(date_candidate["target_key"]),
@@ -951,21 +737,13 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
             target_reason=str(date_candidate["target_reason"]),
         )
 
-    species_keywords = SPECIES_TOKEN_TO_CANONICAL
-    breed_keywords = (
-        "labrador",
-        "retriever",
-        "bulldog",
-        "pastor",
-        "yorkshire",
-        "mestiz",
-        "beagle",
-        "caniche",
-    )
-    _extract_clinic_candidates(collector, lines, _PET_NAME_STOPWORDS_LOWER)
-    _extract_labeled_field_candidates(collector, lines)
-    _extract_sex_candidates(collector, lines)
-    _extract_species_breed_candidates(collector, lines, species_keywords, breed_keywords)
+
+def _extract_timeline_date_candidates(
+    collector: CandidateCollector,
+    lines: list[str],
+) -> None:
+    """Add timeline-derived document date candidates."""
+    add_candidate = collector.add_candidate
 
     for payload in extract_timeline_document_date_candidates(
         lines,
@@ -979,14 +757,328 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
             target_reason=str(payload["target_reason"]),
         )
 
+
+def _run_domain_extractors(collector: CandidateCollector) -> None:
+    """Run domain extractors in the same semantic order as the original miner."""
+    lines = collector.lines
+
+    _extract_clinic_candidates(collector, lines, _PET_NAME_STOPWORDS_LOWER)
+    _extract_labeled_field_candidates(collector, lines)
+    _extract_sex_candidates(collector, lines)
+    _extract_species_breed_candidates(collector, lines, SPECIES_TOKEN_TO_CANONICAL, _BREED_KEYWORDS)
+    _extract_timeline_date_candidates(collector, lines)
     _extract_owner_address_candidates(collector, lines)
     _extract_labeled_address_candidates(collector, lines)
-
     _extract_pet_name_candidates(collector, lines)
     _extract_weight_candidates(collector, lines)
-    _extract_language_candidates(collector, compact_text)
+    _extract_language_candidates(collector, collector.compact_text)
 
-    return dict(candidates)
+
+def _split_header_value_line(line: str) -> tuple[str, str]:
+    if ":" in line:
+        return line.split(":", 1)
+    if "-" in line:
+        return line.split("-", 1)
+    return "", ""
+
+
+def _extract_inline_owner_address_candidate(
+    add_candidate: callable[..., None],
+    lower_header: str,
+    value: str,
+    line: str,
+) -> None:
+    if _OWNER_HEADER_RE.search(lower_header) is None:
+        return
+
+    owner_value = value.strip(" .,:;\t\r\n")
+    address_start = _CLINIC_ADDRESS_START_RE.search(owner_value)
+    if address_start is None:
+        return
+
+    address_fragment = owner_value[address_start.start() :].strip(" .,:;\t\r\n")
+    if address_fragment:
+        add_candidate(
+            key="owner_address",
+            value=address_fragment,
+            confidence=COVERAGE_CONFIDENCE_LABEL,
+            snippet=line,
+        )
+
+
+def _extract_header_value_field_candidates(
+    add_candidate: callable[..., None],
+    lower_header: str,
+    value: str,
+    line: str,
+) -> None:
+    if any(token in lower_header for token in ("diagn", "impresi")):
+        add_candidate(
+            key="diagnosis",
+            value=value,
+            confidence=COVERAGE_CONFIDENCE_LABEL,
+            snippet=line,
+        )
+    if any(token in lower_header for token in ("trat", "medic", "prescrip", "receta")):
+        add_candidate(
+            key="medication",
+            value=value,
+            confidence=COVERAGE_CONFIDENCE_LABEL,
+            snippet=line,
+        )
+        add_candidate(key="treatment_plan", value=value, confidence=0.7, snippet=line)
+    if any(token in lower_header for token in ("proced", "interv", "cirug", "quir")):
+        add_candidate(
+            key="procedure",
+            value=value,
+            confidence=COVERAGE_CONFIDENCE_LABEL,
+            snippet=line,
+        )
+    if any(token in lower_header for token in ("sintom", "symptom")):
+        add_candidate(
+            key="symptoms",
+            value=value,
+            confidence=COVERAGE_CONFIDENCE_LABEL,
+            snippet=line,
+        )
+    if any(token in lower_header for token in ("vacun", "vaccin")):
+        add_candidate(
+            key="vaccinations",
+            value=value,
+            confidence=COVERAGE_CONFIDENCE_LABEL,
+            snippet=line,
+        )
+    if any(token in lower_header for token in ("laboratorio", "analit", "lab")):
+        add_candidate(
+            key="lab_result",
+            value=value,
+            confidence=COVERAGE_CONFIDENCE_LABEL,
+            snippet=line,
+        )
+    if any(token in lower_header for token in ("radiograf", "ecograf", "imagen", "tac", "rm")):
+        add_candidate(
+            key="imaging",
+            value=value,
+            confidence=COVERAGE_CONFIDENCE_LABEL,
+            snippet=line,
+        )
+    if any(token in lower_header for token in ("linea", "concepto", "item")):
+        add_candidate(
+            key="line_item",
+            value=value,
+            confidence=COVERAGE_CONFIDENCE_LABEL,
+            snippet=line,
+        )
+
+
+def _extract_unlabeled_field_candidates(
+    add_candidate: callable[..., None],
+    lower_line: str,
+    line: str,
+) -> None:
+    if any(token in lower_line for token in ("diagn", "impresi")) and ":" not in line:
+        add_candidate(key="diagnosis", value=line, confidence=0.64, snippet=line)
+    if any(
+        token in lower_line
+        for token in ("amoxic", "clavul", "predni", "omepra", "antibiot", "mg", "cada")
+    ):
+        add_candidate(
+            key="medication",
+            value=line,
+            confidence=COVERAGE_CONFIDENCE_FALLBACK,
+            snippet=line,
+        )
+    if any(
+        token in lower_line for token in ("cirug", "proced", "sut", "cura", "ecograf", "radiograf")
+    ):
+        add_candidate(
+            key="procedure",
+            value=line,
+            confidence=COVERAGE_CONFIDENCE_FALLBACK,
+            snippet=line,
+        )
+
+
+def _collect_multiline_labeled_address_parts(
+    lines: list[str],
+    index: int,
+    inline_value: str,
+) -> list[str]:
+    address_parts: list[str] = []
+    if inline_value:
+        address_parts.append(inline_value)
+    elif index + 1 < len(lines):
+        next_line = lines[index + 1]
+        if _SIMPLE_FIELD_LABEL_RE.match(next_line) is None:
+            address_parts.append(next_line.strip(" .,:;\t\r\n"))
+
+    if address_parts and index + 2 < len(lines):
+        maybe_second_line = lines[index + 2]
+        if (
+            _SIMPLE_FIELD_LABEL_RE.match(maybe_second_line) is None
+            and _POSTAL_HINT_RE.search(maybe_second_line) is not None
+        ):
+            address_parts.append(maybe_second_line.strip(" .,:;\t\r\n"))
+
+    return address_parts
+
+
+def _owner_address_pair_matches(lines: list[str], index: int) -> bool:
+    owner_line = lines[index]
+    address_line = lines[index + 1]
+    if _SIMPLE_FIELD_LABEL_RE.match(owner_line) is not None:
+        return False
+    if _SIMPLE_FIELD_LABEL_RE.match(address_line) is not None:
+        return False
+    if _OWNER_NAME_LIKE_LINE_RE.match(owner_line) is None:
+        return False
+    if _ADDRESS_LIKE_PATTERN.search(address_line) is None:
+        return False
+    return re.search(r"\d", address_line) is not None
+
+
+def _owner_address_context_is_valid(lines: list[str], index: int) -> bool:
+    context_window = lines[max(0, index - 3) : min(len(lines), index + 4)]
+    context_text = " ".join(context_window).casefold()
+    has_owner_context = _OWNER_ADDRESS_CONTEXT_RE.search(context_text) is not None
+    has_identification_context = (
+        _OWNER_BLOCK_IDENTIFICATION_CONTEXT_RE.search(context_text) is not None
+    )
+    has_clinic_context = _CLINIC_ADDRESS_CONTEXT_RE.search(context_text) is not None
+
+    if has_clinic_context and not has_owner_context:
+        return False
+    return has_owner_context or has_identification_context
+
+
+def _collect_owner_address_tail_parts(lines: list[str], index: int) -> list[str]:
+    address_parts = [lines[index + 1].strip(" .,:;\t\r\n")]
+    tail_index = index + 2
+    tail_limit = min(len(lines), index + 5)
+
+    while tail_index < tail_limit:
+        tail_line = lines[tail_index]
+        if _SIMPLE_FIELD_LABEL_RE.match(tail_line) is not None:
+            break
+
+        tail_clean = tail_line.strip(" .,:;\t\r\n")
+        if not tail_clean:
+            break
+        if re.match(r"^\s*-\s*\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}", tail_line):
+            break
+        if _OWNER_NAME_LIKE_LINE_RE.match(tail_clean) is not None:
+            break
+
+        is_postal_like = _POSTAL_HINT_RE.search(tail_clean) is not None
+        is_locality_like = _OWNER_LOCALITY_LINE_RE.fullmatch(tail_clean) is not None
+        locality_tail = tail_clean.casefold().strip(" .,:;\t\r\n")
+        if locality_tail in _OWNER_LOCALITY_SECTION_BLACKLIST:
+            break
+        if not (is_postal_like or is_locality_like):
+            break
+
+        address_parts.append(tail_clean)
+        tail_index += 1
+
+    return address_parts
+
+
+def _extract_adjacent_owner_address_candidates(
+    collector: CandidateCollector,
+    lines: list[str],
+) -> None:
+    add_candidate = collector.add_candidate
+
+    for index in range(len(lines) - 1):
+        if not _owner_address_pair_matches(lines, index):
+            continue
+        if not _owner_address_context_is_valid(lines, index):
+            continue
+
+        candidate_value = " ".join(
+            part for part in _collect_owner_address_tail_parts(lines, index) if part
+        )
+        if candidate_value:
+            add_candidate(
+                key="owner_address",
+                value=candidate_value,
+                confidence=COVERAGE_CONFIDENCE_FALLBACK,
+                snippet="\n".join(lines[index : min(len(lines), index + 3)]),
+            )
+
+
+def _extract_labeled_owner_address_candidates(
+    collector: CandidateCollector,
+    lines: list[str],
+) -> None:
+    add_candidate = collector.add_candidate
+
+    for index, line in enumerate(lines):
+        owner_address_label_match = _OWNER_ADDRESS_LABEL_LINE_RE.match(line)
+        if owner_address_label_match is None:
+            continue
+
+        inline_value = (owner_address_label_match.group(1) or "").strip(" .,:;\t\r\n")
+        address_parts = _collect_multiline_labeled_address_parts(lines, index, inline_value)
+        if address_parts:
+            add_candidate(
+                key="owner_address",
+                value=" ".join(part for part in address_parts if part),
+                confidence=COVERAGE_CONFIDENCE_LABEL,
+                snippet="\n".join(lines[index : min(len(lines), index + 3)]),
+            )
+
+
+def _route_labeled_address_candidate(
+    collector: CandidateCollector,
+    line: str,
+    index: int,
+    candidate_value: str,
+    snippet_block: str,
+    explicit_clinic_label: bool,
+) -> None:
+    add_candidate = collector.add_candidate
+    context_decision = collector._classify_address_context(index)
+    is_ambiguous_generic_label = (
+        not explicit_clinic_label and _AMBIGUOUS_ADDRESS_LABEL_LINE_RE.match(line) is not None
+    )
+
+    if explicit_clinic_label:
+        add_candidate(
+            key="clinic_address",
+            value=candidate_value,
+            confidence=COVERAGE_CONFIDENCE_LABEL,
+            snippet=snippet_block,
+        )
+    elif context_decision == "owner" and is_ambiguous_generic_label:
+        add_candidate(
+            key="owner_address",
+            value=candidate_value,
+            confidence=COVERAGE_CONFIDENCE_LABEL,
+            snippet=snippet_block,
+        )
+    elif context_decision == "clinic" and is_ambiguous_generic_label:
+        add_candidate(
+            key="clinic_address",
+            value=candidate_value,
+            confidence=COVERAGE_CONFIDENCE_LABEL,
+            snippet=snippet_block,
+        )
+    else:
+        add_candidate(
+            key="clinic_address",
+            value=candidate_value,
+            confidence=COVERAGE_CONFIDENCE_FALLBACK,
+            snippet=snippet_block,
+        )
+
+
+def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, object]]]:
+    collector = CandidateCollector(raw_text)
+    _seed_base_candidates(collector, raw_text)
+    _extract_classified_date_candidates(collector, raw_text)
+    _run_domain_extractors(collector)
+    return dict(collector.candidates)
 
 
 def _map_candidates_to_global_schema(
@@ -1023,155 +1115,182 @@ def _map_candidates_to_global_schema(
     return mapped, evidence_map
 
 
+def _microchip_candidate_sort_key(
+    item: dict[str, object], confidence: float
+) -> tuple[float, float, float]:
+    raw_value = str(item.get("value", "")).strip()
+    evidence = item.get("evidence")
+    snippet = ""
+    if isinstance(evidence, dict):
+        snippet_value = evidence.get("snippet")
+        if isinstance(snippet_value, str):
+            snippet = snippet_value
+    lowered_snippet = snippet.casefold()
+
+    context_quality = 0.0
+    if re.search(
+        r"\b(?:microchip|micr0chip|chip|transponder|identificaci[oó]n\s+electr[oó]nica)\b",
+        lowered_snippet,
+    ):
+        context_quality += 0.5
+    if re.search(r"\b(?:tel(?:[eé]fono)?|movil|m[oó]vil|nif|dni)\b", lowered_snippet):
+        context_quality -= 0.5
+
+    if _MICROCHIP_DIGITS_PATTERN.fullmatch(raw_value):
+        return 2.0 + context_quality, confidence, -1.0
+    if _MICROCHIP_DIGITS_PATTERN.search(raw_value):
+        return 1.0 + context_quality, confidence, -1.0
+    return context_quality, confidence, -1.0
+
+
+def _pet_name_candidate_sort_key(
+    item: dict[str, object], confidence: float
+) -> tuple[float, float, float]:
+    raw_value = str(item.get("value", "")).strip()
+    is_clean = bool(
+        raw_value
+        and not re.search(r"\d", raw_value)
+        and not re.search(r"(?i)^(?:especie|raza|sexo|chip|fecha)", raw_value)
+        and 2 <= len(raw_value) <= 40
+    )
+    return (1.0 if is_clean else 0.0), confidence, -1.0
+
+
+def _clinic_name_candidate_sort_key(
+    item: dict[str, object],
+    confidence: float,
+) -> tuple[float, float, float]:
+    raw_value = str(item.get("value", "")).strip()
+    lower_value = raw_value.casefold()
+    has_hv_abbrev = bool(re.search(r"\bh\.?\s*v\.?\b", lower_value))
+    has_clinic_token = bool(
+        re.search(
+            r"\b(?:cl[ií]nic|veterinari|hospital|centro|vet|h\.?\s*v\.?)\b",
+            lower_value,
+        )
+    )
+    looks_address_like = bool(_ADDRESS_LIKE_PATTERN.search(lower_value)) and bool(
+        re.search(r"\d", lower_value)
+    )
+    if has_hv_abbrev and not looks_address_like:
+        return 3.0, confidence, -1.0
+    if has_clinic_token and not looks_address_like:
+        return 2.0, confidence, -1.0
+    if has_clinic_token:
+        return 1.0, confidence, -1.0
+    return 0.0, confidence, -1.0
+
+
+def _clinic_address_candidate_sort_key(
+    item: dict[str, object],
+    confidence: float,
+) -> tuple[float, float, float]:
+    raw_value = str(item.get("value", "")).strip()
+    evidence = item.get("evidence")
+    snippet = ""
+    if isinstance(evidence, dict):
+        snippet_value = evidence.get("snippet")
+        if isinstance(snippet_value, str):
+            snippet = snippet_value
+
+    folded_value = raw_value.casefold()
+    folded_snippet = snippet.casefold()
+    has_owner_context = bool(_OWNER_CONTEXT_RE.search(folded_snippet))
+    has_address_token = bool(_CLINIC_ADDRESS_START_RE.search(raw_value))
+    has_postal = bool(re.search(r"\b\d{5}\b", raw_value)) or "cp" in folded_value
+    is_multiline = "\n" in snippet
+
+    quality = 0.0
+    if has_owner_context:
+        quality -= 2.0
+    if has_address_token:
+        quality += 1.0
+    if has_postal:
+        quality += 1.0
+    if is_multiline:
+        quality += 0.5
+    return quality, confidence, -1.0
+
+
+def _owner_address_candidate_sort_key(
+    item: dict[str, object],
+    confidence: float,
+) -> tuple[float, float, float]:
+    raw_value = str(item.get("value", "")).strip()
+    evidence = item.get("evidence")
+    snippet = ""
+    if isinstance(evidence, dict):
+        snippet_value = evidence.get("snippet")
+        if isinstance(snippet_value, str):
+            snippet = snippet_value
+
+    folded_value = raw_value.casefold()
+    folded_snippet = snippet.casefold()
+    has_owner_context = bool(_OWNER_ADDRESS_CONTEXT_RE.search(folded_snippet))
+    has_clinic_context = bool(_CLINIC_ADDRESS_CONTEXT_RE.search(folded_snippet))
+    has_explicit_address_token = bool(_ADDRESS_SPLIT_PATTERN.search(folded_value))
+    has_postal = bool(re.search(r"\b\d{5}\b", raw_value)) or "cp" in folded_value
+    has_digits = bool(re.search(r"\d", raw_value))
+    looks_like_date_only = bool(
+        re.fullmatch(r"\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}", raw_value.strip())
+    )
+
+    quality = 0.0
+    if has_owner_context:
+        quality += 2.0
+    if has_clinic_context and not has_owner_context:
+        quality -= 2.0
+    if has_explicit_address_token:
+        quality += 1.5
+    else:
+        quality -= 1.0
+    if has_postal:
+        quality += 0.5
+    if has_digits:
+        quality += 0.5
+    if looks_like_date_only:
+        quality -= 2.0
+    return quality, confidence, -1.0
+
+
+def _weight_candidate_sort_key(
+    item: dict[str, object], confidence: float
+) -> tuple[float, float, float]:
+    evidence = item.get("evidence")
+    snippet = ""
+    offset = -1.0
+    if isinstance(evidence, dict):
+        snippet_value = evidence.get("snippet")
+        if isinstance(snippet_value, str):
+            snippet = snippet_value
+        offset_value = evidence.get("offset")
+        if isinstance(offset_value, int | float):
+            offset = float(offset_value)
+
+    weight_quality = 0.0
+    if _DATE_CANDIDATE_PATTERN.search(snippet) is not None:
+        weight_quality += 1.0
+    if _WEIGHT_MED_OR_LAB_CONTEXT_RE.search(snippet) is not None:
+        weight_quality -= 0.5
+    return weight_quality, confidence, offset
+
+
 def _candidate_sort_key(item: dict[str, object], key: str) -> tuple[float, float, float]:
     confidence = float(item.get("confidence", 0.0))
     if key in DATE_TARGET_KEYS:
         return float(item.get("anchor_priority", 0)), confidence, -1.0
 
     if key == "microchip_id":
-        raw_value = str(item.get("value", "")).strip()
-        evidence = item.get("evidence")
-        snippet = ""
-        if isinstance(evidence, dict):
-            snippet_value = evidence.get("snippet")
-            if isinstance(snippet_value, str):
-                snippet = snippet_value
-        lowered_snippet = snippet.casefold()
-
-        context_quality = 0.0
-        if re.search(
-            r"\b(?:microchip|micr0chip|chip|transponder|identificaci[oó]n\s+electr[oó]nica)\b",
-            lowered_snippet,
-        ):
-            context_quality += 0.5
-        if re.search(r"\b(?:tel(?:[eé]fono)?|movil|m[oó]vil|nif|dni)\b", lowered_snippet):
-            context_quality -= 0.5
-
-        if _MICROCHIP_DIGITS_PATTERN.fullmatch(raw_value):
-            return 2.0 + context_quality, confidence, -1.0
-        if _MICROCHIP_DIGITS_PATTERN.search(raw_value):
-            return 1.0 + context_quality, confidence, -1.0
-        return context_quality, confidence, -1.0
-
+        return _microchip_candidate_sort_key(item, confidence)
     if key == "pet_name":
-        raw_value = str(item.get("value", "")).strip()
-        # Prefer candidates that look like real names: alphabetic, 2-40 chars,
-        # no digits, no field-label patterns.  This gives labeled matches with
-        # clean values an edge over noisy heuristic guesses without changing
-        # the global confidence clamp.
-        is_clean = bool(
-            raw_value
-            and not re.search(r"\d", raw_value)
-            and not re.search(r"(?i)^(?:especie|raza|sexo|chip|fecha)", raw_value)
-            and 2 <= len(raw_value) <= 40
-        )
-        return (1.0 if is_clean else 0.0), confidence, -1.0
-
+        return _pet_name_candidate_sort_key(item, confidence)
     if key == "clinic_name":
-        raw_value = str(item.get("value", "")).strip()
-        lower_value = raw_value.casefold()
-        has_hv_abbrev = bool(re.search(r"\bh\.?\s*v\.?\b", lower_value))
-        has_clinic_token = bool(
-            re.search(
-                r"\b(?:cl[ií]nic|veterinari|hospital|centro|vet|h\.?\s*v\.?)\b",
-                lower_value,
-            )
-        )
-        looks_address_like = bool(_ADDRESS_LIKE_PATTERN.search(lower_value)) and bool(
-            re.search(r"\d", lower_value)
-        )
-        if has_hv_abbrev and not looks_address_like:
-            return 3.0, confidence, -1.0
-        if has_clinic_token and not looks_address_like:
-            return 2.0, confidence, -1.0
-        if has_clinic_token:
-            return 1.0, confidence, -1.0
-        return 0.0, confidence, -1.0
-
+        return _clinic_name_candidate_sort_key(item, confidence)
     if key == "clinic_address":
-        raw_value = str(item.get("value", "")).strip()
-        evidence = item.get("evidence")
-        snippet = ""
-        if isinstance(evidence, dict):
-            snippet_value = evidence.get("snippet")
-            if isinstance(snippet_value, str):
-                snippet = snippet_value
-
-        folded_value = raw_value.casefold()
-        folded_snippet = snippet.casefold()
-        has_owner_context = bool(_OWNER_CONTEXT_RE.search(folded_snippet))
-        has_address_token = bool(_CLINIC_ADDRESS_START_RE.search(raw_value))
-        has_postal = bool(re.search(r"\b\d{5}\b", raw_value)) or "cp" in folded_value
-        is_multiline = "\n" in snippet
-
-        quality = 0.0
-        if has_owner_context:
-            quality -= 2.0
-        if has_address_token:
-            quality += 1.0
-        if has_postal:
-            quality += 1.0
-        if is_multiline:
-            quality += 0.5
-
-        return quality, confidence, -1.0
-
+        return _clinic_address_candidate_sort_key(item, confidence)
     if key == "owner_address":
-        raw_value = str(item.get("value", "")).strip()
-        evidence = item.get("evidence")
-        snippet = ""
-        if isinstance(evidence, dict):
-            snippet_value = evidence.get("snippet")
-            if isinstance(snippet_value, str):
-                snippet = snippet_value
-
-        folded_value = raw_value.casefold()
-        folded_snippet = snippet.casefold()
-        has_owner_context = bool(_OWNER_ADDRESS_CONTEXT_RE.search(folded_snippet))
-        has_clinic_context = bool(_CLINIC_ADDRESS_CONTEXT_RE.search(folded_snippet))
-        has_explicit_address_token = bool(_ADDRESS_SPLIT_PATTERN.search(folded_value))
-        has_postal = bool(re.search(r"\b\d{5}\b", raw_value)) or "cp" in folded_value
-        has_digits = bool(re.search(r"\d", raw_value))
-        looks_like_date_only = bool(
-            re.fullmatch(r"\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}", raw_value.strip())
-        )
-
-        quality = 0.0
-        if has_owner_context:
-            quality += 2.0
-        if has_clinic_context and not has_owner_context:
-            quality -= 2.0
-        if has_explicit_address_token:
-            quality += 1.5
-        else:
-            quality -= 1.0
-        if has_postal:
-            quality += 0.5
-        if has_digits:
-            quality += 0.5
-        if looks_like_date_only:
-            quality -= 2.0
-
-        return quality, confidence, -1.0
-
+        return _owner_address_candidate_sort_key(item, confidence)
     if key == "weight":
-        evidence = item.get("evidence")
-        snippet = ""
-        offset = -1.0
-        if isinstance(evidence, dict):
-            snippet_value = evidence.get("snippet")
-            if isinstance(snippet_value, str):
-                snippet = snippet_value
-            offset_value = evidence.get("offset")
-            if isinstance(offset_value, int | float):
-                offset = float(offset_value)
-
-        weight_quality = 0.0
-        if _DATE_CANDIDATE_PATTERN.search(snippet) is not None:
-            weight_quality += 1.0
-        if _WEIGHT_MED_OR_LAB_CONTEXT_RE.search(snippet) is not None:
-            weight_quality -= 0.5
-
-        return weight_quality, confidence, offset
+        return _weight_candidate_sort_key(item, confidence)
 
     return 0.0, confidence, -1.0
