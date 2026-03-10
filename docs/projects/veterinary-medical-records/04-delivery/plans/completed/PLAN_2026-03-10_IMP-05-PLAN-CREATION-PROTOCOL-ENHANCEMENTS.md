@@ -5,7 +5,7 @@
 > **Policy mode: Draft (IMP-05 target).** This plan dogfoods the rules it introduces. Model tags, commit checkpoints, integration strategy table, and test gate obligations are applied here as working-draft policy even though they are not yet merged into canonical docs.
 
 **Branch:** `docs/imp-05-plan-creation-protocol-enhancements`
-**PR:** See [PR Roadmap](#pr-roadmap)
+**PR:** [#262](https://github.com/isilionisilme/veterinary-medical-records/pull/262)
 **Backlog item:** [imp-05-plan-creation-protocol-enhancements.md](../../../Backlog/completed/imp-05-plan-creation-protocol-enhancements.md)
 **Prerequisite:** IMP-01 merged (canonical policy stable)
 **Worktree:** `d:\Git\worktrees\tercero`
@@ -75,7 +75,7 @@ Single PR delivering all six scope items. Both target files are canonical operat
 
 | PR | Branch | Scope | Depends on | Status | URL |
 |---|---|---|---|---|---|
-| PR-1 | `docs/imp-05-plan-creation-protocol-enhancements` | All S1–S9 canonical doc changes + router regen | None | In progress | — |
+| PR-1 | `docs/imp-05-plan-creation-protocol-enhancements` | All S1–S9 canonical doc changes + router regen | None | Open | [#262](https://github.com/isilionisilme/veterinary-medical-records/pull/262) |
 
 **PR partition gate evidence:**
 - Estimated changed files: 4 (2 canonical docs + 2 regenerated router files).
@@ -149,7 +149,7 @@ STEP 0 already verifies the branch, but silently falls back to checkout/create. 
 
 ### Phase 5 — Closeout
 
-- [x] P5-A 🔄 `[GPT 5.4]` — **Closeout commit.** Move plan file to `plans/completed/`. Move `imp-05-plan-creation-protocol-enhancements.md` to `Backlog/completed/`. Update relative links. Verify with `git diff --name-status main...HEAD`. ✅ `no-commit (checkpoint commit pending)`
+- [x] P5-A 🔄 `[GPT 5.4]` — **Closeout commit.** Move plan file to `plans/completed/`. Move `imp-05-plan-creation-protocol-enhancements.md` to `Backlog/completed/`. Update relative links. Verify with `git diff --name-status main...HEAD`. ✅ `3b96497d`
 
 > 📌 **Commit checkpoint — Phase 5 complete.** Suggested message: `docs(closeout): archive IMP-05 plan and backlog artifacts`. Run L2 tests; if red, fix and re-run until green. Then wait for user.
 
