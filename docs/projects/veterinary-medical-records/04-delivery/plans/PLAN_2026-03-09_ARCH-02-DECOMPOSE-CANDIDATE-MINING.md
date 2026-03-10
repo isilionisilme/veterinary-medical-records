@@ -122,7 +122,7 @@ Cada extractor recibe `collector: CandidateCollector` (para llamar `add_candidat
 
 ### Phase 3 — Consolidar regex en `FieldPatterns` registry
 
-- [ ] P3-A 🔄 `[GPT 5.4]` — Crear `backend/app/application/processing/field_patterns.py`. Agrupar los 40+ patterns del módulo `candidate_mining.py` en namespaces lógicos (dataclass o módulo con secciones): `PetNamePatterns`, `ClinicPatterns`, `OwnerPatterns`, `AddressPatterns`, `WeightPatterns`, `FieldLabelPatterns`. Actualizar imports en `candidate_mining.py`.
+- [x] P3-A 🔄 `[GPT 5.4]` — Crear `backend/app/application/processing/field_patterns.py`. Agrupar los 40+ patterns del módulo `candidate_mining.py` en namespaces lógicos (dataclass o módulo con secciones): `PetNamePatterns`, `ClinicPatterns`, `OwnerPatterns`, `AddressPatterns`, `WeightPatterns`, `FieldLabelPatterns`. Actualizar imports en `candidate_mining.py`.
 > 📌 Commit checkpoint — Phase 3 complete. Suggested message: `refactor(mining): consolidate regex patterns into FieldPatterns registry`. Run L2 tests; if red, fix and re-run until green. Then wait for user.
 
 ### Phase 4 — Adelgazar orquestador
@@ -725,6 +725,14 @@ Ejecuta tests. Marca P3-A [x]. Lanza L1.
 Lanza L2. Si falla, repara.
 Cuando L2 verde → STOP (commit point 3).
 ```
+
+**Evidence P3-A:**
+- Created `backend/app/application/processing/field_patterns.py` with grouped registries: `PetNamePatterns`, `ClinicPatterns`, `OwnerPatterns`, `AddressPatterns`, `WeightPatterns`, and `FieldLabelPatterns`.
+- Moved the compiled regex definitions plus the adjacent registry constants used by mining (`HEADER_BLOCK_SCAN_WINDOW`, `AMBIGUOUS_CONTEXT_WINDOW_LINES`, blacklists) out of `candidate_mining.py`.
+- Updated `candidate_mining.py` to import the registry classes and bind transition aliases, preserving extractor behavior while removing the in-file pattern declarations.
+- L2 first run failed only on Ruff formatting for `field_patterns.py`; fixed with `ruff format backend/app/application/processing/field_patterns.py`.
+- L2 final: PASS (`scripts/ci/test-L2.ps1 -BaseRef main`)
+- Pytest in L2: 827 passed, 2 xfailed; coverage 91.33%
 
 ### P4-A — Orquestador delgado `[Claude Opus 4.6]`
 
