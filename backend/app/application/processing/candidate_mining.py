@@ -138,6 +138,40 @@ _WEIGHT_STANDALONE_LINE_RE = re.compile(
 _VISIT_TIMELINE_CONTEXT_RE = re.compile(
     r"(?i)\b(?:visita|consulta|control|seguimiento|ingreso|alta)\b"
 )
+_PET_NAME_STOPWORDS_UPPER = {
+    "DATOS",
+    "CLIENTE",
+    "NOMBRE",
+    "ESPECIE",
+    "RAZA",
+    "SEXO",
+    "CHIP",
+    "HISTORIAL",
+    "VISITA",
+}
+_PET_NAME_STOPWORDS_LOWER = {
+    s.casefold()
+    for s in (
+        *_PET_NAME_STOPWORDS_UPPER,
+        "nº chip",
+        "n° chip",
+        "no chip",
+        "nº historial",
+        "fecha",
+        "paciente",
+        "propietario",
+        "propietaria",
+        "veterinario",
+        "veterinaria",
+        "diagnóstico",
+        "diagnostico",
+        "tratamiento",
+        "medicación",
+        "medicacion",
+        "vacunación",
+        "vacunacion",
+    )
+}
 
 
 class CandidateCollector:
@@ -306,121 +340,12 @@ class CandidateCollector:
             )
 
 
-def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, object]]]:
-    collector = CandidateCollector(raw_text)
-    # Local aliases — delegates to collector during incremental refactor.
-    lines = collector.lines
-    compact_text = collector.compact_text
-    candidates = collector.candidates
+def _extract_labeled_field_candidates(
+    collector: CandidateCollector,
+    lines: list[str],
+) -> None:
+    """Extract candidates from header:value lines and keyword heuristics."""
     add_candidate = collector.add_candidate
-    add_basic_payloads = collector.add_basic_payloads
-    _classify_address_context = collector._classify_address_context
-
-    for payloads in (
-        extract_labeled_person_candidates(raw_text, confidence=COVERAGE_CONFIDENCE_LABEL),
-        extract_owner_nombre_candidates(raw_text, confidence=COVERAGE_CONFIDENCE_LABEL),
-        extract_regex_labeled_candidates(raw_text),
-        extract_microchip_keyword_candidates(raw_text, confidence=COVERAGE_CONFIDENCE_LABEL),
-        extract_microchip_adjacent_line_candidates(raw_text, confidence=COVERAGE_CONFIDENCE_LABEL),
-        extract_clinical_record_candidates(raw_text, confidence=COVERAGE_CONFIDENCE_LABEL),
-        extract_ocr_microchip_candidates(raw_text, confidence=COVERAGE_CONFIDENCE_FALLBACK),
-        extract_unlabeled_header_dob_candidates(
-            raw_text,
-            confidence=COVERAGE_CONFIDENCE_FALLBACK,
-        ),
-        extract_unanchored_document_date_candidates(
-            raw_text,
-            confidence=COVERAGE_CONFIDENCE_FALLBACK,
-        ),
-    ):
-        add_basic_payloads(payloads)
-
-    for date_candidate in extract_date_candidates_with_classification(raw_text):
-        add_candidate(
-            key=str(date_candidate["target_key"]),
-            value=str(date_candidate["value"]),
-            confidence=float(date_candidate["confidence"]),
-            snippet=str(date_candidate["snippet"]),
-            page=1,
-            anchor=(str(date_candidate["anchor"]) if date_candidate.get("anchor") else None),
-            anchor_priority=int(date_candidate["anchor_priority"]),
-            target_reason=str(date_candidate["target_reason"]),
-        )
-
-    species_keywords = SPECIES_TOKEN_TO_CANONICAL
-    breed_keywords = (
-        "labrador",
-        "retriever",
-        "bulldog",
-        "pastor",
-        "yorkshire",
-        "mestiz",
-        "beagle",
-        "caniche",
-    )
-    stopwords_upper = {
-        "DATOS",
-        "CLIENTE",
-        "NOMBRE",
-        "ESPECIE",
-        "RAZA",
-        "SEXO",
-        "CHIP",
-        "HISTORIAL",
-        "VISITA",
-    }
-    # Case-insensitive set for the relaxed (title-case) pet_name heuristic.
-    _pet_name_stop_lower = stopwords_upper | {
-        "nº chip",
-        "n° chip",
-        "no chip",
-        "nº historial",
-        "fecha",
-        "paciente",
-        "propietario",
-        "propietaria",
-        "veterinario",
-        "veterinaria",
-        "diagnóstico",
-        "diagnostico",
-        "tratamiento",
-        "medicación",
-        "medicacion",
-        "vacunación",
-        "vacunacion",
-    }
-    _pet_name_stop_lower = {s.casefold() for s in _pet_name_stop_lower}
-
-    if lines:
-        clinic_header = lines[0]
-        clinic_header_folded = clinic_header.casefold()
-        has_numeric = re.search(r"\d", clinic_header) is not None
-        header_looks_institutional = (
-            clinic_header.isupper()
-            and 3 <= len(clinic_header) <= 60
-            and ":" not in clinic_header
-            and not has_numeric
-            and "-" not in clinic_header
-            and clinic_header not in _CLINIC_HEADER_GENERIC_BLACKLIST
-            and clinic_header_folded not in _pet_name_stop_lower
-        )
-        if header_looks_institutional:
-            context_lines = lines[1:8]
-            context_compact = " ".join(context_lines)
-            has_address_context = (
-                _CLINIC_HEADER_ADDRESS_CONTEXT_RE.search(context_compact) is not None
-                or re.search(r"\b\d{5}\b", context_compact) is not None
-            )
-            has_section_context = (
-                _CLINIC_HEADER_SECTION_CONTEXT_RE.search(context_compact) is not None
-            )
-            if has_address_context and has_section_context:
-                add_candidate(
-                    key="clinic_name",
-                    value=clinic_header,
-                    confidence=COVERAGE_CONFIDENCE_FALLBACK,
-                    snippet="\n".join(lines[:4]),
-                )
 
     for line in lines:
         if ":" in line:
@@ -506,22 +431,6 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
                 )
 
         lower_line = line.casefold()
-        if any(token in lower_line for token in ("macho", "hembra", "male", "female")):
-            if "macho" in lower_line or "male" in lower_line:
-                add_candidate(
-                    key="sex",
-                    value="macho",
-                    confidence=COVERAGE_CONFIDENCE_FALLBACK,
-                    snippet=line,
-                )
-            if "hembra" in lower_line or "female" in lower_line:
-                add_candidate(
-                    key="sex",
-                    value="hembra",
-                    confidence=COVERAGE_CONFIDENCE_FALLBACK,
-                    snippet=line,
-                )
-
         if any(token in lower_line for token in ("diagn", "impresi")) and ":" not in line:
             add_candidate(key="diagnosis", value=line, confidence=0.64, snippet=line)
         if any(
@@ -553,18 +462,120 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
                 snippet=line,
             )
 
-    for payload in extract_timeline_document_date_candidates(
-        lines,
-        confidence=COVERAGE_CONFIDENCE_FALLBACK,
-    ):
-        add_candidate(
-            key=str(payload["key"]),
-            value=str(payload["value"]),
-            confidence=float(payload["confidence"]),
-            snippet=str(payload["snippet"]),
-            target_reason=str(payload["target_reason"]),
+
+def _extract_sex_candidates(
+    collector: CandidateCollector,
+    lines: list[str],
+) -> None:
+    """Extract sex candidates from direct mentions and sexo-context tokens."""
+    add_candidate = collector.add_candidate
+
+    for index, line in enumerate(lines):
+        lower_line = line.casefold()
+        normalized_single = _WHITESPACE_PATTERN.sub(" ", lower_line).strip()
+
+        if any(token in lower_line for token in ("macho", "hembra", "male", "female")):
+            if "macho" in lower_line or "male" in lower_line:
+                add_candidate(
+                    key="sex",
+                    value="macho",
+                    confidence=COVERAGE_CONFIDENCE_FALLBACK,
+                    snippet=line,
+                )
+            if "hembra" in lower_line or "female" in lower_line:
+                add_candidate(
+                    key="sex",
+                    value="hembra",
+                    confidence=COVERAGE_CONFIDENCE_FALLBACK,
+                    snippet=line,
+                )
+
+        if normalized_single in {"m", "macho", "male", "h", "hembra", "female"}:
+            window = " ".join(lines[max(0, index - 1) : min(len(lines), index + 2)]).casefold()
+            if "sexo" in window:
+                sex_value = "macho" if normalized_single in {"m", "macho", "male"} else "hembra"
+                add_candidate(
+                    key="sex",
+                    value=sex_value,
+                    confidence=COVERAGE_CONFIDENCE_FALLBACK,
+                    snippet=" ".join(lines[max(0, index - 1) : min(len(lines), index + 2)]),
+                )
+
+
+def _extract_species_breed_candidates(
+    collector: CandidateCollector,
+    lines: list[str],
+    species_keywords: dict[str, str],
+    breed_keywords: tuple[str, ...],
+) -> None:
+    """Extract species and breed candidates from normalized single-line matches."""
+    add_candidate = collector.add_candidate
+
+    for line in lines:
+        lower_line = line.casefold()
+        normalized_single = _WHITESPACE_PATTERN.sub(" ", lower_line).strip()
+
+        if normalized_single in species_keywords:
+            add_candidate(
+                key="species",
+                value=species_keywords[normalized_single],
+                confidence=COVERAGE_CONFIDENCE_FALLBACK,
+                snippet=line,
+            )
+
+        if any(keyword in lower_line for keyword in breed_keywords) and len(line) <= 80:
+            add_candidate(
+                key="breed",
+                value=line,
+                confidence=COVERAGE_CONFIDENCE_FALLBACK,
+                snippet=line,
+            )
+
+
+def _extract_clinic_header_candidate(
+    collector: CandidateCollector,
+    lines: list[str],
+    pet_name_stop_lower: set[str],
+) -> None:
+    """Extract clinic_name from an institutional uppercase first line."""
+    if not lines:
+        return
+    clinic_header = lines[0]
+    clinic_header_folded = clinic_header.casefold()
+    has_numeric = re.search(r"\d", clinic_header) is not None
+    header_looks_institutional = (
+        clinic_header.isupper()
+        and 3 <= len(clinic_header) <= 60
+        and ":" not in clinic_header
+        and not has_numeric
+        and "-" not in clinic_header
+        and clinic_header not in _CLINIC_HEADER_GENERIC_BLACKLIST
+        and clinic_header_folded not in pet_name_stop_lower
+    )
+    if not header_looks_institutional:
+        return
+    context_lines = lines[1:8]
+    context_compact = " ".join(context_lines)
+    has_address_context = (
+        _CLINIC_HEADER_ADDRESS_CONTEXT_RE.search(context_compact) is not None
+        or re.search(r"\b\d{5}\b", context_compact) is not None
+    )
+    has_section_context = _CLINIC_HEADER_SECTION_CONTEXT_RE.search(context_compact) is not None
+    if has_address_context and has_section_context:
+        collector.add_candidate(
+            key="clinic_name",
+            value=clinic_header,
+            confidence=COVERAGE_CONFIDENCE_FALLBACK,
+            snippet="\n".join(lines[:4]),
         )
 
+
+def _extract_clinic_address_block_candidates(
+    collector: CandidateCollector,
+    lines: list[str],
+) -> None:
+    """Extract clinic_address from 3-line header blocks with address + postal hints."""
+    add_candidate = collector.add_candidate
     max_header_scan = min(len(lines) - 2, _HEADER_BLOCK_SCAN_WINDOW)
     for index in range(max_header_scan):
         first_line = lines[index]
@@ -600,6 +611,84 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
             snippet="\n".join(lines[index : min(len(lines), index + 4)]),
         )
 
+
+def _extract_clinic_context_candidates(
+    collector: CandidateCollector,
+    lines: list[str],
+) -> None:
+    """Extract clinic_name and clinic_address from context and standalone patterns."""
+    add_candidate = collector.add_candidate
+    for index, line in enumerate(lines):
+        # Clinic address following clinic context
+        if _CLINIC_ADDRESS_START_RE.search(line) is not None and re.search(r"\d", line):
+            previous_line = lines[index - 1] if index > 0 else ""
+            previous_folded = previous_line.casefold()
+            owner_nearby = _OWNER_CONTEXT_RE.search(previous_folded) is not None
+            clinic_context_nearby = (
+                _CLINIC_OR_HOSPITAL_CONTEXT_RE.search(previous_folded) is not None
+            )
+            if clinic_context_nearby and not owner_nearby and ":" not in line:
+                candidate_value = line.strip(" .,:;\t\r\n")
+                if candidate_value:
+                    add_candidate(
+                        key="clinic_address",
+                        value=candidate_value,
+                        confidence=COVERAGE_CONFIDENCE_FALLBACK,
+                        snippet="\n".join(lines[max(0, index - 1) : min(len(lines), index + 2)]),
+                    )
+
+        clinic_context_match = _CLINIC_CONTEXT_LINE_RE.search(line)
+        if clinic_context_match is not None:
+            institution_token = clinic_context_match.group(1)
+            institution_name = clinic_context_match.group(2).strip(" .,:;\t\r\n")
+            canonical_institution = (
+                "Centro" if institution_token.casefold() == "centr0" else institution_token
+            )
+            clinic_candidate = f"{canonical_institution} {institution_name}".strip()
+            add_candidate(
+                key="clinic_name",
+                value=clinic_candidate,
+                confidence=COVERAGE_CONFIDENCE_FALLBACK,
+                snippet=line,
+            )
+
+        clinic_standalone_match = _CLINIC_STANDALONE_LINE_RE.match(line)
+        if clinic_standalone_match is not None:
+            institution_token = clinic_standalone_match.group(1).strip()
+            institution_name = clinic_standalone_match.group(2).strip(" .,:;\t\r\n")
+            lowered_name = institution_name.casefold()
+            if not lowered_name.startswith("de "):
+                canonical_institution = institution_token
+                if re.fullmatch(r"(?i)h\.?\s*v\.?", institution_token):
+                    canonical_institution = "HV"
+                clinic_candidate = f"{canonical_institution} {institution_name}".strip()
+                add_candidate(
+                    key="clinic_name",
+                    value=clinic_candidate,
+                    confidence=COVERAGE_CONFIDENCE_FALLBACK,
+                    snippet=line,
+                )
+
+
+def _extract_clinic_candidates(
+    collector: CandidateCollector,
+    lines: list[str],
+    pet_name_stop_lower: set[str],
+) -> None:
+    """Extract all clinic_name and clinic_address candidates."""
+    _extract_clinic_header_candidate(collector, lines, pet_name_stop_lower)
+    _extract_clinic_address_block_candidates(collector, lines)
+    _extract_clinic_context_candidates(collector, lines)
+
+
+def _extract_owner_address_candidates(
+    collector: CandidateCollector,
+    lines: list[str],
+) -> None:
+    """Extract owner_address from name+adjacent address and labeled address patterns."""
+    add_candidate = collector.add_candidate
+
+    # ── Owner name + adjacent address detection ──
     for index in range(len(lines) - 1):
         owner_line = lines[index]
         address_line = lines[index + 1]
@@ -664,10 +753,8 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
             snippet="\n".join(lines[index : min(len(lines), index + 3)]),
         )
 
+    # ── Owner address label line ──
     for index, line in enumerate(lines):
-        lower_line = line.casefold()
-        normalized_single = _WHITESPACE_PATTERN.sub(" ", lower_line).strip()
-
         owner_address_label_match = _OWNER_ADDRESS_LABEL_LINE_RE.match(line)
         if owner_address_label_match is not None:
             raw_inline_value = owner_address_label_match.group(1) or ""
@@ -697,12 +784,22 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
                     snippet="\n".join(lines[index : min(len(lines), index + 3)]),
                 )
 
+
+def _extract_labeled_address_candidates(
+    collector: CandidateCollector,
+    lines: list[str],
+) -> None:
+    """Extract clinic_address / owner_address from labeled address lines."""
+    add_candidate = collector.add_candidate
+    _classify_address_context = collector._classify_address_context
+
+    for index, line in enumerate(lines):
         address_label_match = _CLINIC_ADDRESS_LABEL_LINE_RE.match(line)
         if address_label_match is not None:
             raw_label = address_label_match.group(1).strip().casefold()
             raw_inline_value = address_label_match.group(2) or ""
             inline_value = raw_inline_value.strip(" .,:;\t\r\n")
-            explicit_clinic_label = "clínica" in raw_label or "clinica" in raw_label
+            explicit_clinic_label = "cl\u00ednica" in raw_label or "clinica" in raw_label
 
             address_parts: list[str] = []
             if inline_value:
@@ -759,62 +856,22 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
                         snippet=snippet_block,
                     )
 
-        if _CLINIC_ADDRESS_START_RE.search(line) is not None and re.search(r"\d", line):
-            previous_line = lines[index - 1] if index > 0 else ""
-            previous_folded = previous_line.casefold()
-            owner_nearby = _OWNER_CONTEXT_RE.search(previous_folded) is not None
-            clinic_context_nearby = (
-                _CLINIC_OR_HOSPITAL_CONTEXT_RE.search(previous_folded) is not None
-            )
-            if clinic_context_nearby and not owner_nearby and ":" not in line:
-                candidate_value = line.strip(" .,:;\t\r\n")
-                if candidate_value:
-                    add_candidate(
-                        key="clinic_address",
-                        value=candidate_value,
-                        confidence=COVERAGE_CONFIDENCE_FALLBACK,
-                        snippet="\n".join(lines[max(0, index - 1) : min(len(lines), index + 2)]),
-                    )
 
-        clinic_context_match = _CLINIC_CONTEXT_LINE_RE.search(line)
-        if clinic_context_match is not None:
-            institution_token = clinic_context_match.group(1)
-            institution_name = clinic_context_match.group(2).strip(" .,:;\t\r\n")
-            canonical_institution = (
-                "Centro" if institution_token.casefold() == "centr0" else institution_token
-            )
-            clinic_candidate = f"{canonical_institution} {institution_name}".strip()
-            add_candidate(
-                key="clinic_name",
-                value=clinic_candidate,
-                confidence=COVERAGE_CONFIDENCE_FALLBACK,
-                snippet=line,
-            )
+def _extract_pet_name_candidates(
+    collector: CandidateCollector,
+    lines: list[str],
+) -> None:
+    """Extract pet_name candidates from birthline and unlabeled name heuristics."""
+    add_candidate = collector.add_candidate
 
-        clinic_standalone_match = _CLINIC_STANDALONE_LINE_RE.match(line)
-        if clinic_standalone_match is not None:
-            institution_token = clinic_standalone_match.group(1).strip()
-            institution_name = clinic_standalone_match.group(2).strip(" .,:;\t\r\n")
-            lowered_name = institution_name.casefold()
-            if not lowered_name.startswith("de "):
-                canonical_institution = institution_token
-                if re.fullmatch(r"(?i)h\.?\s*v\.?", institution_token):
-                    canonical_institution = "HV"
-                clinic_candidate = f"{canonical_institution} {institution_name}".strip()
-                add_candidate(
-                    key="clinic_name",
-                    value=clinic_candidate,
-                    confidence=COVERAGE_CONFIDENCE_FALLBACK,
-                    snippet=line,
-                )
-
+    for index, line in enumerate(lines):
         birthline_match = _PET_NAME_BIRTHLINE_RE.match(line)
         if birthline_match:
             candidate_name = _WHITESPACE_PATTERN.sub(" ", birthline_match.group(1)).strip()
             token_count = len(candidate_name.split())
             if (
                 1 <= token_count <= 3
-                and candidate_name.casefold() not in _pet_name_stop_lower
+                and candidate_name.casefold() not in _PET_NAME_STOPWORDS_LOWER
                 and not _PET_NAME_GUARD_RE.search(candidate_name)
             ):
                 nearby = " ".join(lines[index : min(len(lines), index + 4)]).casefold()
@@ -837,71 +894,12 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
                         snippet=line,
                     )
 
-        if normalized_single in species_keywords:
-            add_candidate(
-                key="species",
-                value=species_keywords[normalized_single],
-                confidence=COVERAGE_CONFIDENCE_FALLBACK,
-                snippet=line,
-            )
-
-        if any(keyword in lower_line for keyword in breed_keywords) and len(line) <= 80:
-            add_candidate(
-                key="breed",
-                value=line,
-                confidence=COVERAGE_CONFIDENCE_FALLBACK,
-                snippet=line,
-            )
-
-        if normalized_single in {"m", "macho", "male", "h", "hembra", "female"}:
-            window = " ".join(lines[max(0, index - 1) : min(len(lines), index + 2)]).casefold()
-            if "sexo" in window:
-                sex_value = "macho" if normalized_single in {"m", "macho", "male"} else "hembra"
-                add_candidate(
-                    key="sex",
-                    value=sex_value,
-                    confidence=COVERAGE_CONFIDENCE_FALLBACK,
-                    snippet=" ".join(lines[max(0, index - 1) : min(len(lines), index + 2)]),
-                )
-
-        standalone_weight_match = _WEIGHT_STANDALONE_LINE_RE.match(line)
-        if standalone_weight_match is not None:
-            value_raw = standalone_weight_match.group(1)
-            unit_raw = standalone_weight_match.group(2).lower()
-            unit = "kg" if unit_raw in {"kg", "kgs"} else unit_raw
-            candidate_value = f"{value_raw} {unit}".strip()
-
-            context_start = max(0, index - 3)
-            context_end = min(len(lines), index + 2)
-            context_lines = lines[context_start:context_end]
-            context_text = " ".join(context_lines)
-
-            has_date_context = _DATE_CANDIDATE_PATTERN.search(context_text) is not None
-            has_visit_context = _VISIT_TIMELINE_CONTEXT_RE.search(context_text) is not None
-            is_compact_fragment = len(lines) <= 5
-
-            # Keep this heuristic conservative: only when the standalone weight line
-            # is near an explicit date/visit timeline marker, or when mining
-            # already runs on a short per-visit segment fragment.
-            if has_date_context or has_visit_context or is_compact_fragment:
-                add_candidate(
-                    key="weight",
-                    value=candidate_value,
-                    confidence=COVERAGE_CONFIDENCE_FALLBACK,
-                    snippet="\n".join(context_lines),
-                )
-
-        # ── pet_name unlabeled heuristic ──────────────────────────────
-        # Accept lines that look like a standalone pet name (title-case or
-        # uppercase, 1-3 tokens, near species/chip/breed context).  Guard
-        # against addresses, phones, license numbers, section headers,
-        # and labeled fields (lines with ':' or '-' separators).
         word_count = len(line.split())
         is_name_like = (
             2 < len(line) <= 40
             and 1 <= word_count <= 3
-            and line not in stopwords_upper
-            and line.casefold() not in _pet_name_stop_lower
+            and line not in _PET_NAME_STOPWORDS_UPPER
+            and line.casefold() not in _PET_NAME_STOPWORDS_LOWER
             and (line.isupper() or line.istitle())
             and ":" not in line
             and not _PET_NAME_GUARD_RE.search(line)
@@ -916,9 +914,52 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
                     snippet=line,
                 )
 
+
+def _extract_weight_candidates(
+    collector: CandidateCollector,
+    lines: list[str],
+) -> None:
+    """Extract weight candidates from standalone weight lines with temporal context."""
+    add_candidate = collector.add_candidate
+
+    for index, line in enumerate(lines):
+        standalone_weight_match = _WEIGHT_STANDALONE_LINE_RE.match(line)
+        if standalone_weight_match is None:
+            continue
+
+        value_raw = standalone_weight_match.group(1)
+        unit_raw = standalone_weight_match.group(2).lower()
+        unit = "kg" if unit_raw in {"kg", "kgs"} else unit_raw
+        candidate_value = f"{value_raw} {unit}".strip()
+
+        context_start = max(0, index - 3)
+        context_end = min(len(lines), index + 2)
+        context_lines = lines[context_start:context_end]
+        context_text = " ".join(context_lines)
+
+        has_date_context = _DATE_CANDIDATE_PATTERN.search(context_text) is not None
+        has_visit_context = _VISIT_TIMELINE_CONTEXT_RE.search(context_text) is not None
+        is_compact_fragment = len(lines) <= 5
+
+        if has_date_context or has_visit_context or is_compact_fragment:
+            add_candidate(
+                key="weight",
+                value=candidate_value,
+                confidence=COVERAGE_CONFIDENCE_FALLBACK,
+                snippet="\n".join(context_lines),
+            )
+
+
+def _extract_language_candidates(
+    collector: CandidateCollector,
+    compact_text: str,
+) -> None:
+    """Infer language from compact clinical text when no explicit language exists."""
+    add_candidate = collector.add_candidate
+
     if (
         compact_text
-        and "language" not in candidates
+        and "language" not in collector.candidates
         and any(
             token in compact_text.casefold() for token in ("paciente", "diagnost", "tratamiento")
         )
@@ -930,6 +971,82 @@ def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, o
             snippet="Heuristic language inference based on Spanish clinical tokens",
             page=None,
         )
+
+
+def _mine_interpretation_candidates(raw_text: str) -> dict[str, list[dict[str, object]]]:
+    collector = CandidateCollector(raw_text)
+    # Local aliases — delegates to collector during incremental refactor.
+    lines = collector.lines
+    compact_text = collector.compact_text
+    candidates = collector.candidates
+    add_candidate = collector.add_candidate
+    add_basic_payloads = collector.add_basic_payloads
+
+    for payloads in (
+        extract_labeled_person_candidates(raw_text, confidence=COVERAGE_CONFIDENCE_LABEL),
+        extract_owner_nombre_candidates(raw_text, confidence=COVERAGE_CONFIDENCE_LABEL),
+        extract_regex_labeled_candidates(raw_text),
+        extract_microchip_keyword_candidates(raw_text, confidence=COVERAGE_CONFIDENCE_LABEL),
+        extract_microchip_adjacent_line_candidates(raw_text, confidence=COVERAGE_CONFIDENCE_LABEL),
+        extract_clinical_record_candidates(raw_text, confidence=COVERAGE_CONFIDENCE_LABEL),
+        extract_ocr_microchip_candidates(raw_text, confidence=COVERAGE_CONFIDENCE_FALLBACK),
+        extract_unlabeled_header_dob_candidates(
+            raw_text,
+            confidence=COVERAGE_CONFIDENCE_FALLBACK,
+        ),
+        extract_unanchored_document_date_candidates(
+            raw_text,
+            confidence=COVERAGE_CONFIDENCE_FALLBACK,
+        ),
+    ):
+        add_basic_payloads(payloads)
+
+    for date_candidate in extract_date_candidates_with_classification(raw_text):
+        add_candidate(
+            key=str(date_candidate["target_key"]),
+            value=str(date_candidate["value"]),
+            confidence=float(date_candidate["confidence"]),
+            snippet=str(date_candidate["snippet"]),
+            page=1,
+            anchor=(str(date_candidate["anchor"]) if date_candidate.get("anchor") else None),
+            anchor_priority=int(date_candidate["anchor_priority"]),
+            target_reason=str(date_candidate["target_reason"]),
+        )
+
+    species_keywords = SPECIES_TOKEN_TO_CANONICAL
+    breed_keywords = (
+        "labrador",
+        "retriever",
+        "bulldog",
+        "pastor",
+        "yorkshire",
+        "mestiz",
+        "beagle",
+        "caniche",
+    )
+    _extract_clinic_candidates(collector, lines, _PET_NAME_STOPWORDS_LOWER)
+    _extract_labeled_field_candidates(collector, lines)
+    _extract_sex_candidates(collector, lines)
+    _extract_species_breed_candidates(collector, lines, species_keywords, breed_keywords)
+
+    for payload in extract_timeline_document_date_candidates(
+        lines,
+        confidence=COVERAGE_CONFIDENCE_FALLBACK,
+    ):
+        add_candidate(
+            key=str(payload["key"]),
+            value=str(payload["value"]),
+            confidence=float(payload["confidence"]),
+            snippet=str(payload["snippet"]),
+            target_reason=str(payload["target_reason"]),
+        )
+
+    _extract_owner_address_candidates(collector, lines)
+    _extract_labeled_address_candidates(collector, lines)
+
+    _extract_pet_name_candidates(collector, lines)
+    _extract_weight_candidates(collector, lines)
+    _extract_language_candidates(collector, compact_text)
 
     return dict(candidates)
 

@@ -111,13 +111,13 @@ Push permanece manual en todos los modos.
 
 Cada extractor recibe `collector: CandidateCollector` (para llamar `add_candidate`) y `lines: list[str]`. Se crean como funciones de módulo en `candidate_mining.py` de momento (mover a archivos separados se evalúa en P4).
 
-- [ ] P2-A 🔄 `[Claude Opus 4.6]` — Extraer `_extract_labeled_field_candidates(collector, lines)`: bloques de diagnosis, medication, procedure, symptoms, vaccinations, lab_result, imaging, line_item (el loop `for line in lines: if ":" in line ...`).
-- [ ] P2-B 🔄 `[GPT 5.4]` — Extraer `_extract_sex_candidates(collector, lines)`: detección de macho/hembra por contenido de línea y por token normalizado con contexto de ventana.
-- [ ] P2-C 🔄 `[GPT 5.4]` — Extraer `_extract_species_breed_candidates(collector, lines)`: matching de species_keywords y breed_keywords.
-- [ ] P2-D 🔄 `[Claude Opus 4.6]` — Extraer `_extract_clinic_candidates(collector, lines)`: clinic_header institucional, clinic_context_line, clinic_standalone_line, clinic_address_block (header scan multi-línea), clinic_address following context.
-- [ ] P2-E 🔄 `[Claude Opus 4.6]` — Extraer `_extract_owner_address_candidates(collector, lines)`: owner_address_block detection (nombre+dirección adjacentes), owner_address_label_line parsing.
-- [ ] P2-F 🔄 `[Claude Opus 4.6]` — Extraer `_extract_labeled_address_candidates(collector, lines)`: parsing de CLINIC_ADDRESS_LABEL_LINE_RE, AMBIGUOUS_ADDRESS_LABEL_LINE_RE con context disambiguation.
-- [ ] P2-G 🔄 `[GPT 5.4]` — Extraer `_extract_pet_name_candidates(collector, lines)`: birthline heuristic + unlabeled title-case heuristic. Extraer `_extract_weight_candidates(collector, lines)`: standalone weight line con contexto temporal. Extraer `_extract_language_candidates(collector, compact_text)`: inferencia heurística de idioma. Verificar suite completa.
+- [x] P2-A 🔄 `[Claude Opus 4.6]` — Extraer `_extract_labeled_field_candidates(collector, lines)`: bloques de diagnosis, medication, procedure, symptoms, vaccinations, lab_result, imaging, line_item (el loop `for line in lines: if ":" in line ...`).
+- [x] P2-B 🔄 `[GPT 5.4]` — Extraer `_extract_sex_candidates(collector, lines)`: detección de macho/hembra por contenido de línea y por token normalizado con contexto de ventana.
+- [x] P2-C 🔄 `[GPT 5.4]` — Extraer `_extract_species_breed_candidates(collector, lines)`: matching de species_keywords y breed_keywords.
+- [x] P2-D 🔄 `[Claude Opus 4.6]` — Extraer `_extract_clinic_candidates(collector, lines)`: clinic_header institucional, clinic_context_line, clinic_standalone_line, clinic_address_block (header scan multi-línea), clinic_address following context.
+- [x] P2-E 🔄 `[Claude Opus 4.6]` — Extraer `_extract_owner_address_candidates(collector, lines)`: owner_address_block detection (nombre+dirección adjacentes), owner_address_label_line parsing.
+- [x] P2-F 🔄 `[Claude Opus 4.6]` — Extraer `_extract_labeled_address_candidates(collector, lines)`: parsing de CLINIC_ADDRESS_LABEL_LINE_RE, AMBIGUOUS_ADDRESS_LABEL_LINE_RE con context disambiguation.
+- [x] P2-G 🔄 `[GPT 5.4]` — Extraer `_extract_pet_name_candidates(collector, lines)`: birthline heuristic + unlabeled title-case heuristic. Extraer `_extract_weight_candidates(collector, lines)`: standalone weight line con contexto temporal. Extraer `_extract_language_candidates(collector, compact_text)`: inferencia heurística de idioma. Verificar suite completa.
 > 📌 Commit checkpoint — Phase 2 complete. Suggested message: `refactor(mining): extract per-domain candidate extractor functions`. Run L2 tests; if red, fix and re-run until green. Then wait for user.
 
 ### Phase 3 — Consolidar regex en `FieldPatterns` registry
@@ -457,39 +457,23 @@ Lanza L1 (scripts/ci/test-L1.ps1). Si falla, repara hasta que pase.
 [Prompt conservado para referencia]
 
 
-### P2-A — Extraer extractores labeled fields `[Claude Opus 4.6]`
+### P2-A — Extraer extractores labeled fields `[Claude Opus 4.6]` ✅
+
+**Evidencia:**
+- Función `_extract_labeled_field_candidates(collector, lines)` creada como módulo-level antes de `_mine_interpretation_candidates`.
+- Mueve el loop completo `for line in lines:` con header:value split (diagnosis, medication, procedure, symptoms, vaccinations, lab_result, imaging, line_item, owner_address inline) + sex keyword detection + unlabeled heuristics (diagnosis, medication, procedure).
+- `_mine_interpretation_candidates` ahora delega con `_extract_labeled_field_candidates(collector, lines)`.
+- L1: PASS. Tests: 827 passed, 2 xfailed.
 
 ```
-Lee el plan completo y candidate_mining.py actual.
-
-Crea función a nivel de módulo (dentro de candidate_mining.py):
-
-  def _extract_labeled_field_candidates(
-      collector: CandidateCollector,
-      lines: list[str],
-  ) -> None:
-
-Mueve todo el loop `for line in lines:` que detecta:
-  - diagnosis (por header label "diagn"/"impresi" con ":" y sin ":")
-  - medication (por header "trat"/"medic"/"prescrip"/"receta" y por keyword "amoxic" etc.)
-  - procedure (por header "proced"/"interv"/"cirug"/"quir" y por keyword)
-  - symptoms (por header "sintom"/"symptom")
-  - vaccinations (por header "vacun"/"vaccin")
-  - lab_result (por header "laboratorio"/"analit"/"lab")
-  - imaging (por header "radiograf"/"ecograf"/"imagen"/"tac"/"rm")
-  - line_item (por header "linea"/"concepto"/"item")
-  - owner_address inline (extract from owner header when address tokens found)
-
-Incluye el split header:value por ":" y por "-" que está al inicio del loop.
-La función llama collector.add_candidate() para cada hallazgo.
-
-Actualiza _mine_interpretation_candidates: reemplaza ese bloque por una
-llamada a _extract_labeled_field_candidates(collector, collector.lines).
-
-Ejecuta tests. Marca P2-A como completada [x]. Lanza L1.
-```
+[Prompt conservado para referencia]
 
 ### P2-B — Extraer extractor de sex `[GPT 5.4]`
+
+**Evidencia:**
+- Función `_extract_sex_candidates(collector, lines)` creada como módulo-level antes de `_mine_interpretation_candidates`.
+- Se movieron los dos bloques de detección de sexo: keyword directa por línea (`macho`/`hembra`/`male`/`female`) y token normalizado con ventana de contexto `sexo`.
+- `_extract_labeled_field_candidates()` ya no agrega candidatos `sex`; `_mine_interpretation_candidates()` ahora delega con `_extract_sex_candidates(collector, lines)`.
 
 ```
 Lee el plan y candidate_mining.py.
@@ -507,6 +491,11 @@ Ejecuta tests. Marca P2-B [x]. Lanza L1.
 ```
 
 ### P2-C — Extraer extractor species/breed `[GPT 5.4]`
+
+**Evidencia:**
+- Función `_extract_species_breed_candidates(collector, lines, species_keywords, breed_keywords)` creada como módulo-level antes de `_mine_interpretation_candidates`.
+- Se movieron los dos bloques de species/breed: `normalized_single in species_keywords` y el heurístico `any(keyword in lower_line for keyword in breed_keywords)` con la misma guarda `len(line) <= 80`.
+- `_mine_interpretation_candidates()` ahora delega con `_extract_species_breed_candidates(collector, lines, species_keywords, breed_keywords)`.
 
 ```
 Lee el plan y candidate_mining.py.
@@ -530,6 +519,16 @@ Actualiza orquestador. Ejecuta tests. Marca P2-C [x]. Lanza L1.
 ```
 
 ### P2-D — Extraer extractor de clinic `[Claude Opus 4.6]`
+
+**Evidencia:**
+- Split into 3 sub-functions + 1 coordinator since combined logic exceeds 100 LOC:
+  - `_extract_clinic_header_candidate(collector, lines, pet_name_stop_lower)` — institutional uppercase header → `clinic_name`.
+  - `_extract_clinic_address_block_candidates(collector, lines)` — 3-line header block scan → `clinic_address`.
+  - `_extract_clinic_context_candidates(collector, lines)` — per-line: address following context, context sentence, standalone line → `clinic_name`/`clinic_address`.
+  - `_extract_clinic_candidates(collector, lines, pet_name_stop_lower)` — coordinator calling all three.
+- All 5 clinic blocks removed from `_mine_interpretation_candidates`.
+- Orchestrator now delegates with `_extract_clinic_candidates(collector, lines, _pet_name_stop_lower)`.
+- L1: PASS. Tests: 827 passed, 2 xfailed.
 
 ```
 Lee el plan y candidate_mining.py.
@@ -574,6 +573,15 @@ section blacklist).
 Actualiza orquestador. Ejecuta tests. Marca P2-E [x]. Lanza L1.
 ```
 
+**Evidence P2-E:**
+- Created `_extract_owner_address_candidates(collector, lines)` with 2 sub-blocks:
+  1. Owner name + adjacent address detection (`_OWNER_NAME_LIKE_LINE_RE` + `_ADDRESS_LIKE_PATTERN` + context window + tail_index loop)
+  2. Owner address label line (`_OWNER_ADDRESS_LABEL_LINE_RE` + inline/next-line parsing + postal hint assembly)
+- Removed both blocks from orchestrator; added `_extract_owner_address_candidates(collector, lines)` call
+- `ruff format`: unchanged; `ruff check`: all passed
+- L1: PASS
+- `pytest backend/tests -x --tb=short -q`: 827 passed, 2 xfailed (23.69s)
+
 ### P2-F — Extraer extractor labeled address `[Claude Opus 4.6]`
 
 ```
@@ -595,6 +603,17 @@ la semántica de explicit_clinic_label, context_decision, is_ambiguous_generic_l
 
 Actualiza orquestador. Ejecuta tests. Marca P2-F [x]. Lanza L1.
 ```
+
+**Evidence P2-F:**
+- Created `_extract_labeled_address_candidates(collector, lines)` with full labeled address parsing:
+  1. `_CLINIC_ADDRESS_LABEL_LINE_RE` with inline/next-line/postal assembly
+  2. Context disambiguation via `_classify_address_context()` → clinic_address vs owner_address routing
+  3. `_AMBIGUOUS_ADDRESS_LABEL_LINE_RE` interaction for ambiguous generic labels
+- Removed block from orchestrator main loop; added `_extract_labeled_address_candidates(collector, lines)` call
+- Removed orphaned `_classify_address_context` alias from orchestrator
+- `ruff format`: unchanged; `ruff check`: all passed (fixed E501 in docstring)
+- L1: PASS
+- `pytest backend/tests -x --tb=short -q`: 827 passed, 2 xfailed (24.83s)
 
 ### P2-G — Extraer pet_name, weight, language `[GPT 5.4]`
 
@@ -632,6 +651,17 @@ Actualiza orquestador. Ejecuta tests. Marca P2-G [x]. Lanza L1.
 Tras P2-G, lanza L2. Si falla, repara.
 Cuando L2 verde → STOP y espera instrucciones del usuario (commit point 2).
 ```
+
+**Evidence P2-G:**
+- Created `_extract_pet_name_candidates(collector, lines)` for both pet-name heuristics:
+   1. `_PET_NAME_BIRTHLINE_RE` birthline extraction with nearby species/chip context
+   2. Unlabeled title-case heuristic with species/breed context guards
+- Created `_extract_weight_candidates(collector, lines)` for `_WEIGHT_STANDALONE_LINE_RE` + date/visit-context gating.
+- Created `_extract_language_candidates(collector, compact_text)` for heuristic Spanish clinical-token inference.
+- Promoted pet-name stopword sets to module-level constants (`_PET_NAME_STOPWORDS_UPPER`, `_PET_NAME_STOPWORDS_LOWER`) so both clinic and pet-name extractors can share the same semantics without re-building local sets in the orchestrator.
+- `_mine_interpretation_candidates()` now delegates to the three new functions and no longer contains pet-name, weight, or language extraction logic inline.
+- L2: PASS (`scripts/ci/test-L2.ps1 -BaseRef main`)
+- Pytest in L2: 827 passed, 2 xfailed; coverage 91.33%
 
 ### P3-A — Consolidar regex patterns `[GPT 5.4]`
 
