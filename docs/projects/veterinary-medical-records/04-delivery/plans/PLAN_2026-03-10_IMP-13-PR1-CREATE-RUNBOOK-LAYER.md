@@ -105,7 +105,7 @@ Create all new operational artifacts (additive only):
 
 ### Documentation task
 
-- [ ] DOC-1 🔄 [E] — `no-doc-needed` — This plan creates operational governance artifacts. The `.prompt.md` and `.instructions.md` files themselves serve as documentation.
+- [x] DOC-1 🔄 [E] — `no-doc-needed` — ✅ `no-commit (no-doc-needed)` — This plan creates operational governance artifacts. The `.prompt.md` and `.instructions.md` files themselves serve as documentation.
 
 ---
 
@@ -325,9 +325,21 @@ This is a 🚧 hard-gate. After P4-A, P4-B, and P4-C are complete:
 
 ---
 
+### Prompt 6 — DOC-1: Documentation task
+
+**Pre-written** · Target: DOC-1
+
+This step is pre-closed as `no-doc-needed`. The `.prompt.md` and `.instructions.md` files created in P2 and P3 are themselves the documentation deliverables — no separate wiki page or doc update is required.
+
+Action:
+1. Mark DOC-1 as `[x]` with `✅ \`no-commit (no-doc-needed)\``.
+2. No files to create, modify, or commit.
+
+---
+
 ## Active Prompt
 
-None — P0 through P4 complete. Remaining open item: DOC-1 (no prompt queued).
+None — all prompts consumed. DOC-1 closable via Prompt 6.
 
 ---
 
