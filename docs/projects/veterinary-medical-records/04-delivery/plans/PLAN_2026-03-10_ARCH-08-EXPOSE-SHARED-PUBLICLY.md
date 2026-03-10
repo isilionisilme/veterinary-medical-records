@@ -4,7 +4,7 @@
 
 **Backlog item:** [arch-08-expose-shared-functions-publicly.md](../Backlog/arch-08-expose-shared-functions-publicly.md)
 **Branch:** `refactor/arch-08-expose-shared-publicly`
-**PR:** pendiente
+**PR:** `#264`
 **Prerequisite:** `main` actualizado y tests verdes
 **Worktree:** `D:\Git\worktrees\segundo`
 **CI Mode:** `1) Local-only`
