@@ -1,8 +1,8 @@
 # Plan: ARCH-08 — Expose `_shared` Functions Publicly
 
-> **Operational rules:** See [plan-execution-protocol.md](../../03-ops/plan-execution-protocol.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
+> **Operational rules:** See [plan-execution-protocol.md](../../../03-ops/plan-execution-protocol.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
 
-**Backlog item:** [arch-08-expose-shared-functions-publicly.md](../Backlog/arch-08-expose-shared-functions-publicly.md)
+**Backlog item:** [arch-08-expose-shared-functions-publicly.md](../../Backlog/completed/arch-08-expose-shared-functions-publicly.md)
 **Branch:** `refactor/arch-08-expose-shared-publicly`
 **PR:** `#264`
 **Prerequisite:** `main` actualizado y tests verdes
