@@ -37,68 +37,227 @@ Create all new operational artifacts (additive only):
 **Legend**
 - 🔄 auto-chain — executable by agent without user intervention
 - 🚧 hard-gate — requires user review/decision
+- `[P]` Planning agent · `[E]` Execution agent
 
 ### Phase 0 — Plan-start preflight
 
-- [x] P0-A 🔄 — Resolve execution branch and update `**Branch:**` metadata.
-- [x] P0-B 🔄 — Resolve execution worktree and update `**Worktree:**` metadata.
-- [x] P0-C 🚧 — Ask user to choose `Execution Mode` and update metadata.
-- [x] P0-D 🚧 — Ask user to choose `Model Assignment` and update metadata.
-- [x] P0-E 🔄 — Record plan-start snapshot commit. — ✅ `76e0556d6`
+- [x] P0-A 🔄 [P] — Resolve execution branch and update `**Branch:**` metadata.
+- [x] P0-B 🔄 [P] — Resolve execution worktree and update `**Worktree:**` metadata.
+- [x] P0-C 🚧 [P] — Ask user to choose `Execution Mode` and update metadata.
+- [x] P0-D 🚧 [P] — Ask user to choose `Model Assignment` and update metadata.
+- [x] P0-E 🔄 [P] — Record plan-start snapshot commit. — ✅ `76e0556d6`
 
 ### Phase 1 — Plan-start enforcement script
 
-- [x] P1-A 🔄 — Create `scripts/dev/plan-start-check.py`: glob active `PLAN_*.md`, parse four mandatory fields (`Branch`, `Worktree`, `Execution Mode`, `Model Assignment`), report resolved/unresolved, output structured next-action text. — ✅ `9cf211622`
-- [x] P1-B 🔄 — Add unit tests for `plan-start-check.py` covering: all resolved, partial resolution, no active plan, multiple active plans. — ✅ `9cf211622`
+- [x] P1-A 🔄 [E] — Create `scripts/dev/plan-start-check.py`: glob active `PLAN_*.md`, parse four mandatory fields (`Branch`, `Worktree`, `Execution Mode`, `Model Assignment`), report resolved/unresolved, output structured next-action text. — ✅ `9cf211622`
+- [x] P1-B 🔄 [E] — Add unit tests for `plan-start-check.py` covering: all resolved, partial resolution, no active plan, multiple active plans. — ✅ `9cf211622`
 
 > 📌 **Commit checkpoint — P1 complete.** Suggested message: `feat(ops): add plan-start-check enforcement script with tests`. Run L2 tests; if red, fix and re-run until green. Then wait for user.
 
 ### Phase 2 — Operational prompts
 
-- [ ] P2-A 🔄 — Create `plan-create.prompt.md` in `.github/prompts/`: self-contained plan creation checklist sourced from `plan-creation.md` essentials. Under 50 lines.
-- [ ] P2-B 🔄 — Create `plan-start.prompt.md`: plan-start choices + preflight gate sourced from protocol §4, §7. Under 50 lines.
-- [ ] P2-C 🔄 — Create `plan-resume.prompt.md`: plan resume flow sourced from protocol §4, §5, §10 decision table. Under 50 lines.
-- [ ] P2-D 🔄 — Create `plan-closeout.prompt.md`: closeout lifecycle sourced from protocol §14, §13. Under 50 lines.
-- [ ] P2-E 🔄 — Create `code-review.prompt.md`: code review operational rules. Under 50 lines.
-- [ ] P2-F 🔄 — Create `scope-boundary.prompt.md`: commit/push during active plan sourced from protocol §13 SCOPE BOUNDARY. Under 50 lines.
+- [x] P2-A 🔄 [E] — Create `plan-create.prompt.md` in `.github/prompts/`: self-contained plan creation checklist sourced from `plan-creation.md` essentials. Under 50 lines. — ✅ `8de02374`
+- [x] P2-B 🔄 [E] — Create `plan-start.prompt.md`: plan-start choices + preflight gate sourced from protocol §4, §7. Under 50 lines. — ✅ `8de02374`
+- [x] P2-C 🔄 [E] — Create `plan-resume.prompt.md`: plan resume flow sourced from protocol §4, §5, §10 decision table. Under 50 lines. — ✅ `8de02374`
+- [x] P2-D 🔄 [E] — Create `plan-closeout.prompt.md`: closeout lifecycle sourced from protocol §14, §13. Under 50 lines. — ✅ `8de02374`
+- [x] P2-E 🔄 [E] — Create `code-review.prompt.md`: code review operational rules. Under 50 lines. — ✅ `8de02374`
+- [x] P2-F 🔄 [E] — Create `scope-boundary.prompt.md`: commit/push during active plan sourced from protocol §13 SCOPE BOUNDARY. Under 50 lines. — ✅ `8de02374`
 
 > 📌 **Commit checkpoint — P2 complete.** Suggested message: `feat(ops): add operational .prompt.md runbooks`. Run L2 tests; if red, fix and re-run until green. Then wait for user.
 
 ### Phase 3 — Pattern-triggered instructions
 
-- [ ] P3-A 🔄 — Create `plan-files.instructions.md` in `.github/instructions/` with `applyTo: **/plans/PLAN_*.md`. Content: atomic iterations, mark `[x]` with SHA, no scope mixing, checkpoint pause, evidence block.
-- [ ] P3-B 🔄 — Create `backlog-files.instructions.md` in `.github/instructions/` with `applyTo: **/Backlog/*.md`. Content: status lifecycle, naming convention, link format.
+- [ ] P3-A 🔄 [E] — Create `plan-files.instructions.md` in `.github/instructions/` with `applyTo: **/plans/PLAN_*.md`. Content: atomic iterations, mark `[x]` with SHA, no scope mixing, checkpoint pause, evidence block.
+- [ ] P3-B 🔄 [E] — Create `backlog-files.instructions.md` in `.github/instructions/` with `applyTo: **/Backlog/*.md`. Content: status lifecycle, naming convention, link format.
 
 > 📌 **Commit checkpoint — P3 complete.** Suggested message: `feat(ops): add pattern-triggered .instructions.md context files`. Run L2 tests; if red, fix and re-run until green. Then wait for user.
 
 ### Phase 4 — Dry-run validation
 
-- [ ] P4-A 🔄 — Dry-run: simulate plan creation from cold chat using `plan-create.prompt.md`. Document result.
-- [ ] P4-B 🔄 — Dry-run: simulate plan-start with unresolved metadata using `plan-start.prompt.md` + `plan-start-check.py`. Document result.
-- [ ] P4-C 🔄 — Dry-run: simulate plan resume using `plan-resume.prompt.md`. Document result.
-- [ ] P4-D 🚧 — Hard-gate: user reviews dry-run results and confirms Fase A is complete.
+- [ ] P4-A 🔄 [E] — Dry-run: simulate plan creation from cold chat using `plan-create.prompt.md`. Document result.
+- [ ] P4-B 🔄 [E] — Dry-run: simulate plan-start with unresolved metadata using `plan-start.prompt.md` + `plan-start-check.py`. Document result.
+- [ ] P4-C 🔄 [E] — Dry-run: simulate plan resume using `plan-resume.prompt.md`. Document result.
+- [ ] P4-D 🚧 [P] — Hard-gate: user reviews dry-run results and confirms Fase A is complete.
 
 > 📌 **Commit checkpoint — PR-1 complete (Fase A).** Suggested message: `feat(ops): complete Fase A — operational runbook layer (IMP-13)`. Run L2 tests; if red, fix and re-run until green. Then wait for user.
 
 ### Documentation task
 
-- [ ] DOC-1 🔄 — `no-doc-needed` — This plan creates operational governance artifacts. The `.prompt.md` and `.instructions.md` files themselves serve as documentation.
+- [ ] DOC-1 🔄 [E] — `no-doc-needed` — This plan creates operational governance artifacts. The `.prompt.md` and `.instructions.md` files themselves serve as documentation.
 
 ---
 
 ## Prompt Queue
 
-| # | Prompt | Target phase |
-|---|---|---|
-| 1 | Execute Phase 0 plan-start preflight | P0 |
-| 2 | Implement plan-start-check.py and tests | P1 |
-| 3 | Create all .prompt.md runbooks | P2 |
-| 4 | Create .instructions.md context files | P3 |
-| 5 | Run dry-run validation suite | P4 |
+### Prompt 1 — P0-E: Plan-start snapshot commit
+
+**Pre-written** · Target: P0-E · **Status: CONSUMED** (P0-E complete ✅ `76e0556d6`)
+
+---
+
+### Prompt 2 — P1: plan-start-check.py + unit tests
+
+**Pre-written** · Target: P1-A, P1-B · **Status: CONSUMED** (P1 complete ✅ `9cf211622`)
+
+---
+
+### Prompt 3 — P2: Six .prompt.md runbooks
+
+**Pre-written** · Target: P2-A through P2-F · **Status: CONSUMED** (P2 complete ✅ `8de02374`)
+
+Create directory `.github/prompts/` if it doesn't exist. Each file uses `.prompt.md` extension with YAML front matter containing `mode: agent` and a `description` field. Each file must be **under 50 lines**, self-contained, and written as a deterministic checklist the agent follows step-by-step. No prose — only numbered action steps with clear exit conditions.
+
+**P2-A — `plan-create.prompt.md`**
+
+Description: "Create a new plan following project conventions."
+
+Source: `plan-creation.md` §1-§5. Distill into checklist:
+1. Verify the backlog item exists and is `Planned` or `In Progress`.
+2. Create `PLAN_<YYYY-MM-DD>_<SLUG>.md` in the plans directory.
+3. Populate required template sections: Title, Operational rules pointer, Metadata (with PENDING placeholders), Context, Objective, Scope Boundary, Execution Status (Phase 0 mandatory), Prompt Queue, Active Prompt, Acceptance criteria, How to test.
+4. Add Documentation task (DOC-1) per §3.
+5. Run PR partition gate (§5): estimate size, evaluate semantic risk, classify buckets, open decision gate if thresholds exceeded.
+6. Write pre-written prompts for non-dependent steps (§6).
+7. If multi-PR: add `## PR Roadmap` with integration strategy table before writing Execution Status.
+8. Commit: `docs(plan): create <plan-slug>`.
+
+**P2-B — `plan-start.prompt.md`**
+
+Description: "Resolve plan-start choices and record snapshot."
+
+Source: protocol §7 (plan-start preflight gate, execution mode, model assignment, worktree selection, plan-start snapshot). Checklist:
+1. Read plan file. Inspect `**Branch:**`, `**Worktree:**`, `**Execution Mode:**`, `**Model Assignment:**`.
+2. For each unresolved field:
+   - Branch: check current branch, auto-resolve if matches plan context.
+   - Worktree: auto-resolve to current VS Code workspace (`$PWD`).
+   - Execution Mode: present 3 options (Supervised / Semi-supervised / Autonomous) with table summary. Wait for user.
+   - Model Assignment: present 3 options (Default / Uniform / Custom). Wait for user.
+3. Record resolved values in plan file.
+4. Run `scripts/ci/test-L1.ps1 -BaseRef HEAD`.
+5. Commit: `docs(plan): record plan-start choices for <plan-slug>`.
+6. Inform user: plan-start complete, ready for execution.
+
+**P2-C — `plan-resume.prompt.md`**
+
+Description: "Resume execution of an active plan."
+
+Source: protocol §4 (step eligibility), §5 (continuation-intent-only), §10 (decision table). Checklist:
+1. Read Execution Status. Find first `[ ]` step (includes `⏳ IN PROGRESS` or `🚫 BLOCKED`).
+2. If `⏳ IN PROGRESS`: resume that step from where it left off.
+3. If `🚫 BLOCKED`: report blocker, ask user for resolution.
+4. Check Prompt Queue for matching prompt. If exists: consume it. If not: STOP and ask planning agent.
+5. Apply decision table: prompt exists + no hard-gate → auto-chain. Hard-gate → STOP and report. No prompt → STOP.
+6. Mark step `⏳ IN PROGRESS (<agent>, <date>)`.
+7. Execute step scope. On completion: mark `[x]` with SHA, run per-task test gate, output evidence block.
+8. Apply decision table for next step.
+
+**P2-D — `plan-closeout.prompt.md`**
+
+Description: "Close out a plan before merge."
+
+Source: protocol §14 (iteration close-out procedure, backlog lifecycle, closeout commit). Checklist:
+1. Verify all steps are `[x]`. If any `[ ]`: present each to user — Defer / Drop / Mark complete.
+2. Verify clean working tree: `git status --porcelain`.
+3. `git fetch --prune`.
+4. Update backlog item `**Status:**` to `Done`.
+5. Move plan file: `git mv plans/<plan-file> plans/completed/<plan-file>`.
+6. Move backlog artifact to `Backlog/completed/` if it exists.
+7. Update relative links pointing to old paths.
+8. Run doc-contract tests locally.
+9. Commit: `docs(closeout): archive <plan-slug> and backlog artifacts`.
+10. Push. Wait for CI green.
+11. If PR exists: update PR body with closeout checklist.
+
+**P2-E — `code-review.prompt.md`**
+
+Description: "Run a structured code review on a pull request."
+
+Source: `way-of-working.md` §6 (code review workflow, via router 00_entry.md). Checklist:
+1. **Pre-review checks:** Confirm CI status. CI red → STOP, offer to diagnose. CI in progress → wait.
+2. Confirm scope: list changed files and PR description.
+3. Recommend review depth (Light / Standard / Deep / Deep critical) based on risk profile. Wait for user confirmation.
+4. If Deep/Deep critical: propose lenses, launch parallel sub-agent reviews, consolidate.
+5. Review focus areas (7): layering, maintainability, testability, simplicity, CI/tooling, DB safety, UX/brand.
+6. Classify findings: Must-fix (blocks merge) / Should-fix / Nice-to-have.
+7. Output using `AI Code Review` template exactly.
+8. Publish review as PR comment. Return URL.
+
+**P2-F — `scope-boundary.prompt.md`**
+
+Description: "Execute commit/push during active plan execution."
+
+Source: protocol §13 (SCOPE BOUNDARY procedure). Checklist:
+1. **STEP 0 — Branch verification:** Read `**Branch:**` from plan. Verify current branch matches. Mismatch → STOP.
+2. **STEP A — Commit code:** Stage implementation files only (never unrelated). Commit with test proof.
+3. **STEP B — Commit plan update:** Apply §3 completion rules. Stage and commit plan file.
+4. **STEP C — Push (conditional):** Only if user explicitly requested push. `git push origin <branch>`.
+5. **STEP D — Update PR (conditional):** Only if STEP C ran and user requested PR update.
+6. **STEP E — CI gate (conditional):** Only if STEP C ran. Check CI, wait if in progress, report failures.
+7. **STEP F — Chain or stop:** Apply §10 decision table for next step.
+
+After all 6 runbooks created: run L1 (`scripts/ci/test-L1.ps1 -BaseRef HEAD`). Fix until green (max 2 attempts). Then proceed to checkpoint pause.
+
+---
+
+### Prompt 4 — P3: Two .instructions.md context files
+
+**Pre-written** · Target: P3-A, P3-B
+
+Create directory `.github/instructions/` if it doesn't exist. Each file uses `.instructions.md` extension with YAML front matter containing `applyTo` glob pattern. These files are passive context — VS Code auto-injects them when the matching file is open. Keep them short and declarative (rules, not procedures).
+
+**P3-A — `plan-files.instructions.md`**
+
+```yaml
+---
+applyTo: "**/plans/PLAN_*.md"
+---
+```
+
+Content (declarative rules for agents editing plan files):
+- Each step is an atomic unit. Never mix scope between steps.
+- Mark `[x]` with commit SHA on completion: `- [x] F?-? — Description — ✅ \`<sha>\``.
+- If no code change: `✅ \`no-commit (<reason>)\``.
+- Mark `⏳ IN PROGRESS (<agent>, <date>)` before starting a step.
+- At `📌` checkpoints: pause, propose commit, wait for user.
+- Every step close requires evidence block: Step, Code commit SHA, Plan commit SHA.
+- Plan-file updates go in the same commit as the implementation they track.
+- Never amend the plan-start snapshot commit.
+
+**P3-B — `backlog-files.instructions.md`**
+
+```yaml
+---
+applyTo: "**/Backlog/*.md"
+---
+```
+
+Content (declarative rules for agents editing backlog items):
+- Status lifecycle: `Planned` → `In Progress` → `Done`.
+- Set `In Progress` when plan execution starts (first step marked in-progress).
+- Set `Done` only during closeout, before moving to `completed/`.
+- Naming: `<TYPE>-<NUMBER>-<slug>.md` where TYPE is `US`, `IMP`, `ARCH`, or project-specific.
+- Link format for plans: `[PLAN_<date>_<slug>.md](../plans/PLAN_<date>_<slug>.md)`.
+- When moving to `completed/`: update all relative links in surrounding docs.
+
+After both P3-A and P3-B: run L1 (`scripts/ci/test-L1.ps1 -BaseRef HEAD`). Fix until green (max 2 attempts). Then proceed to checkpoint pause.
+
+---
+
+### Prompt 5 — P4: Dry-run validation
+
+**Just-in-time** · Target: P4-A through P4-D
+
+> This prompt depends on the artifacts created in P1-P3. The planning agent will write a detailed prompt at just-in-time when P3 is complete and the artifacts exist. The dry-run will validate:
+> - P4-A: Invoke `plan-create.prompt.md` in a cold chat and verify it produces a conformant plan skeleton.
+> - P4-B: Invoke `plan-start.prompt.md` with a plan that has unresolved fields + run `plan-start-check.py` to verify it detects them.
+> - P4-C: Invoke `plan-resume.prompt.md` and verify it correctly identifies the next pending step and follows the decision table.
+> - P4-D: Hard-gate — user reviews dry-run results and confirms Fase A complete.
+
+---
 
 ## Active Prompt
 
-None — plan not yet started.
+None — P0, P1, and P2 complete. Next: P3-A (consume Prompt 4).
 
 ---
 
