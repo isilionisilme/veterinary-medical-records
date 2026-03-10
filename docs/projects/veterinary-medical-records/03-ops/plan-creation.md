@@ -230,8 +230,9 @@ Flag the plan for PR partition decision when any of these apply:
   - Public API/contract changes mixed with broad refactor.
   - Large structural refactor mixed with unrelated product behavior.
 - Size guardrail threshold (approximate per PR diff):
-  - More than `400` changed lines, or
-  - More than `15` changed files.
+   - **Code risk signal (partition trigger):** more than `400` code lines, or more than `15` code files.
+   - **Review load signal (informational):** more than `800` total reviewable lines (code + docs + config). This does not trigger partitioning by itself.
+   - Docs-only and config-only changes do not count toward the code risk signal.
 
 If uncertainty remains, default to smaller PR slices and document dependencies in `## PR Roadmap`.
 
@@ -243,14 +244,17 @@ Before finalizing a plan, the planning agent MUST run this gate and record the r
    - Estimate changed files and changed lines for each planned PR slice from planned phases/steps.
 2. **Evaluate semantic risk axes**
    - Check whether each planned PR mixes high-risk axes (backend+frontend, migration+feature behavior, contract+broad refactor).
-3. **Evaluate size guardrails**
-   - Check whether projected scope exceeds `400` changed lines or `15` changed files for any planned PR.
-4. **Open decision gate with user (hard gate)**
+3. **Classify projected changes by bucket**
+   - Estimate **code lines/files**, **doc lines**, and **config lines** for each planned PR slice.
+4. **Evaluate size guardrails**
+   - Check whether projected scope exceeds the **code risk signal** (`400` code lines or `15` code files).
+   - If projected total reviewable lines exceed `800`, note high review load in the roadmap rationale without forcing partition by size alone.
+5. **Open decision gate with user (hard gate)**
    - If semantic or size thresholds are exceeded, the planning agent MUST present two options:
      - `Option A`: keep a single PR with explicit rationale (for example, mechanical/cohesive low-risk changes).
      - `Option B`: split into multiple PRs with proposed boundaries and dependencies.
    - The user must explicitly choose A or B before plan approval.
-5. **Record evidence in roadmap**
+6. **Record evidence in roadmap**
    - Add a short note per PR with projected size/risk, selected option, and rationale.
 
 Execution-time safeguard:
