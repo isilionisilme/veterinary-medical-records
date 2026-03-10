@@ -149,9 +149,10 @@ Issues that clearly predate the Pull Request:
 
 Compatibility note: this section is also referenced as **Large diff policy** in legacy router contracts.
 
-If the Pull Request diff exceeds ~400 lines of non-generated code:
-- Report a Should-fix noting reduced review confidence.
-- Suggest a split strategy when visible.
+Apply the **Pull Request Classification** to evaluate diff size:
+- **Docs-only PRs:** no size-based Should-fix. If total doc lines exceed `800`, note the review load but do not reduce confidence.
+- **Code or mixed PRs:** if *code lines* exceed ~`400`, report a Should-fix noting reduced review confidence. Doc lines do not count toward this threshold.
+- When a Should-fix is reported, suggest a split strategy when visible.
 - Continue the review with stated confidence limitations.
 
 ---
