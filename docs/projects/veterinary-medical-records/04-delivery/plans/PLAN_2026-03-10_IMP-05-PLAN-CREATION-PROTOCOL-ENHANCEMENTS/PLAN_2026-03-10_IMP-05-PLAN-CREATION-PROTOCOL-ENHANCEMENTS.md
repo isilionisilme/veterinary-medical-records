@@ -431,9 +431,30 @@ STEP 0 already verifies the branch, but silently falls back to checkout/create. 
    ### Plan-start interaction rule
 
    When presenting mandatory plan-start choices, agents MUST prefer interactive UI option selectors (e.g., clickable option lists) when the environment supports them. Fall back to numbered text options only when the interaction environment does not support UI selectors.
+
+   #### Auto-resolution of unambiguous choices
+
+   When a mandatory plan-start choice has a **single unambiguous answer derivable from the current execution context**, the agent MUST:
+
+   1. Resolve it automatically (do not ask the user).
+   2. State the resolved value and the evidence used.
+      Example: *"Worktree: `d:\Git\worktrees\tercero` (current active workspace)."*
+   3. Record it in the plan file as usual.
+
+   A choice is unambiguous when:
+   - **Worktree:** The agent is already operating inside a specific worktree (e.g., the VS Code workspace root). Asking the user to "select" the worktree they already opened is redundant.
+   - **Execution Mode / Model Assignment:** These always require user input (multiple valid options exist) unless the plan file already records a prior selection.
+
+   If the agent is uncertain whether a choice is unambiguous, it MUST ask.
    ```
 
-7. Verify: §7 now has three plan-start choices (Worktree, Execution Mode, Model Assignment), the Mid-Execution PR Split protocol, and the old CI Mode, Automation Mode, and pipeline rules are gone.
+7. In the **existing** `### Execution Worktree Selection (Mandatory Plan-Start Choice)` subsection (which is kept, not deleted), append the following paragraph after the last bullet of "Mandatory behavior":
+
+   ```markdown
+   **Auto-resolution:** If the agent is already executing inside a worktree (e.g., the active VS Code workspace), that worktree is auto-resolved per the Plan-start interaction rule (§7). The agent records it in the plan and informs the user without asking. The interactive selection (list worktrees + offer create) only applies when the worktree cannot be determined from context.
+   ```
+
+8. Verify: §7 now has three plan-start choices (Worktree, Execution Mode, Model Assignment), the Plan-start interaction rule with auto-resolution, the Mid-Execution PR Split protocol, and the old CI Mode, Automation Mode, and pipeline rules are gone.
 
 ---
 
