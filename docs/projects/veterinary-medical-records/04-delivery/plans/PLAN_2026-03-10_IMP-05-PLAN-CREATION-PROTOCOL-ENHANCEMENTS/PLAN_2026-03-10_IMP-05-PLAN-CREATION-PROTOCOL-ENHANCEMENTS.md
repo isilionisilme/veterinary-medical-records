@@ -8,9 +8,9 @@
 **PR:** See [PR Roadmap](#pr-roadmap)
 **Backlog item:** [imp-05-plan-creation-protocol-enhancements.md](../../Backlog/imp-05-plan-creation-protocol-enhancements.md)
 **Prerequisite:** IMP-01 merged (canonical policy stable)
-**Worktree:** _(to be selected at plan start)_
-**Execution Mode:** _(to be selected at plan start)_
-**Model Assignment:** _(to be selected at plan start)_
+**Worktree:** `d:\Git\worktrees\tercero`
+**Execution Mode:** `Semi-supervised`
+**Model Assignment:** `Default`
 
 ---
 
@@ -117,10 +117,10 @@ STEP 0 already verifies the branch, but silently falls back to checkout/create. 
 
 ### Phase 1 — plan-creation.md changes (S1, S4, S6, S9)
 
-- [ ] P1-A 🔄 `[GPT 5.4]` — **S1: Commit checkpoint format.** In `plan-creation.md` §2, after the existing "Required inline commit recommendation format" subsection, add a new "Commit checkpoint blockquote format" subsection prescribing the `📌` blockquote format for commit checkpoints in plans.
-- [ ] P1-B 🔄 `[GPT 5.4]` — **S6: PR-first planning order.** In `plan-creation.md` §5, before the "PR sizing and split criteria" subsection, add a rule that when a plan may span multiple PRs, PR boundaries must be determined before writing Execution Status and commit checkpoints.
-- [ ] P1-C 🔄 `[GPT 5.4]` — **S4: Integration strategy table and merge strategy.** In `plan-creation.md` §5, under the existing "When `## PR Roadmap` is present" block, add: (a) integration strategy table requirement with mandatory columns, (b) merge strategy definitions table, (c) URL traceability hard rule.
-- [ ] P1-D 🔄 `[GPT 5.4]` — **S9: Flat plan structure.** In `plan-creation.md` §1: (a) replace folder-based naming/location with flat file convention (`plans/PLAN_<YYYY-MM-DD>_<SLUG>.md`); (b) remove annex file convention (`PR-X.md`); (c) update completed plans path to `plans/completed/PLAN_<YYYY-MM-DD>_<SLUG>.md`; (d) update template steps to single "Create plan file" step.
+- [x] P1-A 🔄 `[GPT 5.4]` — **S1: Commit checkpoint format.** In `plan-creation.md` §2, after the existing "Required inline commit recommendation format" subsection, add a new "Commit checkpoint blockquote format" subsection prescribing the `📌` blockquote format for commit checkpoints in plans. — ✅ `no-commit (checkpoint commit deferred)`
+- [x] P1-B 🔄 `[GPT 5.4]` — **S6: PR-first planning order.** In `plan-creation.md` §5, before the "PR sizing and split criteria" subsection, add a rule that when a plan may span multiple PRs, PR boundaries must be determined before writing Execution Status and commit checkpoints. — ✅ `no-commit (checkpoint commit deferred)`
+- [x] P1-C 🔄 `[GPT 5.4]` — **S4: Integration strategy table and merge strategy.** In `plan-creation.md` §5, under the existing "When `## PR Roadmap` is present" block, add: (a) integration strategy table requirement with mandatory columns, (b) merge strategy definitions table, (c) URL traceability hard rule. — ✅ `no-commit (checkpoint commit deferred)`
+- [x] P1-D 🔄 `[GPT 5.4]` — **S9: Flat plan structure.** In `plan-creation.md` §1: (a) replace folder-based naming/location with flat file convention (`plans/PLAN_<YYYY-MM-DD>_<SLUG>.md`); (b) remove annex file convention (`PR-X.md`); (c) update completed plans path to `plans/completed/PLAN_<YYYY-MM-DD>_<SLUG>.md`; (d) update template steps to single "Create plan file" step. — ✅ `no-commit (checkpoint commit deferred)`
 
 > 📌 **Commit checkpoint — Phase 1 complete.** Suggested message: `docs(ops): add commit checkpoint format, PR-first order, integration strategy, and flat plan structure to plan-creation`. Run L2 tests; if red, fix and re-run until green. Then wait for user.
 
