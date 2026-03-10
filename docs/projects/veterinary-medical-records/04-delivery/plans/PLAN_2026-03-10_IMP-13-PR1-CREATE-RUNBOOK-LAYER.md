@@ -74,10 +74,32 @@ Create all new operational artifacts (additive only):
 
 ### Phase 4 — Dry-run validation
 
-- [ ] P4-A 🔄 [E] — Dry-run: simulate plan creation from cold chat using `plan-create.prompt.md`. Document result.
-- [ ] P4-B 🔄 [E] — Dry-run: simulate plan-start with unresolved metadata using `plan-start.prompt.md` + `plan-start-check.py`. Document result.
-- [ ] P4-C 🔄 [E] — Dry-run: simulate plan resume using `plan-resume.prompt.md`. Document result.
-- [ ] P4-D 🚧 [P] — Hard-gate: user reviews dry-run results and confirms Fase A is complete.
+- [x] P4-A 🔄 [E] — Dry-run: simulate plan creation from cold chat using `plan-create.prompt.md`. Document result. — ✅ `no-commit (dry-run validation only)`
+- [x] P4-B 🔄 [E] — Dry-run: simulate plan-start with unresolved metadata using `plan-start.prompt.md` + `plan-start-check.py`. Document result. — ✅ `no-commit (dry-run validation only)`
+- [x] P4-C 🔄 [E] — Dry-run: simulate plan resume using `plan-resume.prompt.md`. Document result. — ✅ `no-commit (dry-run validation only)`
+- [x] P4-D 🚧 [P] — Hard-gate: user reviews dry-run results and confirms Fase A is complete. — ✅ `no-commit (user confirmation)`
+
+#### Validation Log
+
+##### P4-A — PASS
+
+- Synthetic plan skeleton created from the `plan-create.prompt.md` checklist contained all required sections from `plan-creation.md` §1, including metadata placeholders, Phase 0 preflight, Prompt Queue, Active Prompt, Acceptance criteria, How to test, and DOC-1.
+- Temporary file was deleted after validation.
+
+##### P4-B — PASS
+
+- `plan-start-check.py --plan-dir docs/projects/veterinary-medical-records/04-delivery/plans/_dry_run_tmp` returned exit code `1` with all four metadata fields unresolved, then returned exit code `0` after simulated resolution to current branch/worktree plus selected execution mode/model assignment.
+- `plan-start.prompt.md` statically validated the required behavior: detect all four fields, auto-resolve Branch and Worktree, present Execution Mode and Model Assignment choices, stop if placeholders remain, and run `L1`.
+- Temporary file was deleted after validation.
+
+##### P4-C — PASS
+
+- Current plan state resolves the first open step as `P4-A`, which matches the expected next executable step for resume logic.
+- `plan-resume.prompt.md` statically validated the required control flow: read Execution Status, resolve Prompt Queue, mark `⏳ IN PROGRESS`, apply the decision table, and stop on blocked steps.
+
+##### Dry-run limitation
+
+- The available tools do not provide a supported way to invoke the VS Code prompt picker directly, so prompt execution was validated by controlled simulation and static contract inspection rather than by picker invocation.
 
 > 📌 **Commit checkpoint — PR-1 complete (Fase A).** Suggested message: `feat(ops): complete Fase A — operational runbook layer (IMP-13)`. Run L2 tests; if red, fix and re-run until green. Then wait for user.
 
@@ -245,19 +267,67 @@ After both P3-A and P3-B: run L1 (`scripts/ci/test-L1.ps1 -BaseRef HEAD`). Fix u
 
 ### Prompt 5 — P4: Dry-run validation
 
-**Just-in-time** · Target: P4-A through P4-D
+**Pre-written (just-in-time, now resolved)** · Target: P4-A through P4-D
 
-> This prompt depends on the artifacts created in P1-P3. The planning agent will write a detailed prompt at just-in-time when P3 is complete and the artifacts exist. The dry-run will validate:
-> - P4-A: Invoke `plan-create.prompt.md` in a cold chat and verify it produces a conformant plan skeleton.
-> - P4-B: Invoke `plan-start.prompt.md` with a plan that has unresolved fields + run `plan-start-check.py` to verify it detects them.
-> - P4-C: Invoke `plan-resume.prompt.md` and verify it correctly identifies the next pending step and follows the decision table.
-> - P4-D: Hard-gate — user reviews dry-run results and confirms Fase A complete.
+Each dry-run simulates a real agent interaction using the artifacts created in P1-P3. The goal is to verify the runbooks produce deterministic, correct behavior from a cold start. Document each result as a markdown section in a single validation log entry below the step.
+
+**P4-A — Dry-run: plan creation**
+
+1. Open a new chat (or simulate cold context — no prior conversation state).
+2. Invoke `.github/prompts/plan-create.prompt.md` via the VS Code prompt picker (type `#plan-create` or use `/` command).
+3. Provide a synthetic backlog item as input: "IMP-99 — Test validation item" (do not create a real backlog file).
+4. Verify the agent produces a plan skeleton containing ALL required sections from `plan-creation.md` §1:
+   - Title, Operational rules pointer, Metadata (with PENDING placeholders), Context, Objective, Scope Boundary, Execution Status (with Phase 0), Prompt Queue, Active Prompt, Acceptance criteria, How to test, Documentation task (DOC-1).
+5. Verify Phase 0 contains the 5 mandatory preflight steps (branch, worktree, execution mode, model assignment, snapshot).
+6. Record result: `PASS` if all sections present and correctly structured, `FAIL` with specific missing/malformed sections.
+7. Do NOT commit the synthetic plan — delete it after validation.
+
+**P4-B — Dry-run: plan-start with unresolved metadata**
+
+1. Create a temporary test plan file in `plans/` with all 4 metadata fields set to `PENDING PLAN-START RESOLUTION` / `PENDING USER SELECTION`.
+2. Run `python scripts/dev/plan-start-check.py` → verify exit code 1 and all 4 fields flagged as `❌ unresolved`.
+3. Invoke `.github/prompts/plan-start.prompt.md` via the VS Code prompt picker, with the test plan file attached.
+4. Verify the agent:
+   - Detects all 4 unresolved fields.
+   - Auto-resolves Branch (current branch) and Worktree (current workspace).
+   - Presents Execution Mode and Model Assignment as interactive choices (or numbered options).
+   - Does NOT skip any field or proceed to implementation.
+5. Run `python scripts/dev/plan-start-check.py` again after simulated resolution → verify exit code 0 and all `✅ resolved`.
+6. Record result: `PASS` / `FAIL` with details.
+7. Delete the temporary test plan file.
+
+**P4-C — Dry-run: plan resume**
+
+1. Use this plan file (IMP-13 PR-1) as the test subject — it has completed steps and pending P4 steps.
+2. Invoke `.github/prompts/plan-resume.prompt.md` via the VS Code prompt picker, with this plan file attached.
+3. Verify the agent:
+   - Reads Execution Status and correctly identifies the first `[ ]` step (should be P4-A or whichever is current).
+   - Checks Prompt Queue for a matching prompt.
+   - Applies the decision table correctly (prompt exists + no hard-gate → auto-chain; hard-gate → STOP).
+   - Marks the step `⏳ IN PROGRESS` before starting.
+4. Record result: `PASS` if the agent follows the checklist deterministically, `FAIL` with the deviation.
+5. Revert any changes the agent made to this plan file during the dry-run (the dry-run is observational, not a real execution).
+
+**P4-D — Hard-gate: user review**
+
+This is a 🚧 hard-gate. After P4-A, P4-B, and P4-C are complete:
+1. Present the three dry-run results to the user in a summary table:
+
+   | Dry-run | Target runbook | Result | Notes |
+   |---|---|---|---|
+   | P4-A | plan-create.prompt.md | PASS/FAIL | details |
+   | P4-B | plan-start.prompt.md + plan-start-check.py | PASS/FAIL | details |
+   | P4-C | plan-resume.prompt.md | PASS/FAIL | details |
+
+2. Ask the user: "Fase A dry-runs complete. Do you confirm Fase A is done?"
+3. If all PASS and user confirms: Fase A is complete → proceed to checkpoint commit.
+4. If any FAIL: report failures, ask user whether to fix and retry or accept with noted limitations.
 
 ---
 
 ## Active Prompt
 
-None — P0, P1, P2, and P3 complete. Next: P4-A (requires just-in-time Prompt 5).
+None — P0 through P4 complete. Remaining open item: DOC-1 (no prompt queued).
 
 ---
 
