@@ -134,13 +134,15 @@ When the agent pauses at a `📌` checkpoint (per the checkpoint pause rule), th
 1. A proposed commit message (following the project's `conventional-commits` convention).
 2. The list of changed files (`git status --short`).
 
+**Prefer interactive UI option selectors** (e.g., clickable option lists) when the environment supports them. Present the commit message in the question header and the options below. If the environment does not support option selectors, present the proposal as text and accept the user's text reply.
+
 **Supervised / Semi-supervised response handling:**
 
 | User response | Agent action |
 |---|---|
-| Explicit confirmation ("ok", "commit", "sí") | Stage, commit with the proposed message, then continue. |
-| "skip" or "no commit" | Continue to next phase without committing. |
-| "amend: `<new message>`" | Stage, commit with the user-provided message, then continue. |
+| **Commit** (recommended default) | Stage, commit with the proposed message, then continue. |
+| **Skip** | Continue to next phase without committing. |
+| **Amend message** (freeform input) | Stage, commit with the user-provided message, then continue. |
 | Bare continuation ("continue", "sigue", "next") without addressing the proposal | Treat as confirmation — stage, commit, then continue. |
 
 **Autonomous mode:** The agent auto-commits after tests pass (per Git policy). No proposal is presented.
