@@ -263,6 +263,12 @@ Before executing the first step of a plan, the agent must ask the user to select
 - Pull Request creation/update: always manual/user-triggered.
 - Merge: always explicit user approval.
 
+#### Plan-file commit hygiene (hard rule)
+
+- **Progress marks (`[x]`):** Include the plan-file update in the same commit as the implementation it tracks. Do not create a separate commit solely to mark a step complete.
+- **Scope changes** (adding, removing, or rewriting steps mid-execution): Use a dedicated commit with message `docs(plan): <description of scope change>`. A scope change is a deliberate decision, not noise.
+- **Never amend the plan-start snapshot.** That commit is the execution baseline and may already be pushed. Amending it would require a force-push and destroy the temporal reference.
+
 #### Task completion (all modes)
 
 Mark the task `[x]` immediately upon completing the work — do not wait for CI or test results. Test verification is a subsequent obligation, not a prerequisite for marking completion.
