@@ -6,9 +6,11 @@
 ### What We Capture
 
 Per-run extraction snapshot with per-field status:
+
 - `missing` / `rejected` / `accepted`
 
 Per-field candidate evidence:
+
 - `topCandidates` (max 3)
 - confidence
 - reason (for rejected)
@@ -21,10 +23,10 @@ Per-field candidate evidence:
 
 ### Backend Endpoints
 
-| Endpoint | Purpose |
-|----------|---------|
-| `POST /debug/extraction-runs` | Persist one run snapshot |
-| `GET /debug/extraction-runs/{documentId}` | Return persisted runs for one document |
+| Endpoint                                                    | Purpose                                    |
+| ----------------------------------------------------------- | ------------------------------------------ |
+| `POST /debug/extraction-runs`                               | Persist one run snapshot                   |
+| `GET /debug/extraction-runs/{documentId}`                   | Return persisted runs for one document     |
 | `GET /debug/extraction-runs/{documentId}/summary?limit=...` | Aggregate recent runs (default window: 20) |
 
 Optional `run_id` parameter for run-pinned summary filtering.
@@ -44,6 +46,7 @@ Optional `run_id` parameter for run-pinned summary filtering.
 
 ### Snapshot Ownership
 
-Snapshots are **backend-canonical**. The backend auto-persists snapshots at completed-run boundary. Frontend does NOT write snapshots.
+Snapshots are **backend-canonical**. The backend auto-persists snapshots at completed-run boundary. Frontend does NOT
+write snapshots.
 
 ---
