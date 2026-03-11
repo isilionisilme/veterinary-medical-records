@@ -1188,6 +1188,9 @@ erDiagram
     }
 ```
 
+Core-model scope note:
+This ERD is intentionally limited to the 5 operational core entities required by ARCH-09. Additional governance/schema entities are specified normatively in B2.7-B2.9.
+
 ---
 
 ### B2.1 Document
