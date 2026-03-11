@@ -24,6 +24,7 @@ import subprocess
 import sys
 import tempfile
 from collections import defaultdict
+from collections.abc import Mapping
 from datetime import date
 from pathlib import Path
 
@@ -129,7 +130,7 @@ def _base_ref_loc(base_ref: str, rel_path: str) -> int:
 
 
 def _base_ref_cc_by_function(base_ref: str, rel_path: str) -> dict[str, int]:
-    """Return base-ref cyclomatic complexity by function name for a file.
+    """Return base-ref cyclomatic complexity by symbol key for a file.
 
     If the file does not exist at base_ref or analysis fails, return an empty mapping.
     """
@@ -155,7 +156,7 @@ def _base_ref_cc_by_function(base_ref: str, rel_path: str) -> dict[str, int]:
         blocks = payload.get(temp_path, [])
         function_cc: dict[str, int] = {}
         for block in blocks:
-            name = str(block.get("name", "")).strip()
+            name = _cc_symbol_key(block)
             complexity = int(block.get("complexity", 0))
             if not name:
                 continue
@@ -171,6 +172,28 @@ def _base_ref_cc_by_function(base_ref: str, rel_path: str) -> dict[str, int]:
                 os.unlink(temp_path)
             except OSError:
                 pass
+
+
+def _cc_symbol_key(block: Mapping[str, object]) -> str:
+    """Return a stable key for a Radon CC block within a file."""
+    name = str(block.get("name", "")).strip()
+    if not name:
+        return ""
+    class_name = str(block.get("classname", "")).strip()
+    if class_name:
+        return f"{class_name}.{name}"
+    block_type = str(block.get("type", "")).strip().lower()
+    if block_type:
+        return f"{block_type}:{name}"
+    return name
+
+
+def _cc_symbol_key_from_entry(entry: Mapping[str, object]) -> str:
+    """Return the symbol key used by threshold checks."""
+    symbol = str(entry.get("symbol", "")).strip()
+    if symbol:
+        return symbol
+    return str(entry.get("name", "")).strip()
 
 
 def _layer_of(path: Path) -> str | None:
@@ -228,6 +251,7 @@ def collect_radon_cc(py_files: list[Path]) -> dict:
                 {
                     "file": _rel(Path(filepath)),
                     "name": b.get("name", "?"),
+                    "symbol": _cc_symbol_key(b),
                     "lineno": b.get("lineno", 0),
                     "complexity": cc,
                     "grade": grade,
@@ -680,7 +704,8 @@ def check_thresholds(
                 if base_cc_for_file is None:
                     base_cc_for_file = _base_ref_cc_by_function(base_ref, fp)
                     base_cc_cache[fp] = base_cc_for_file
-                base_complexity = base_cc_for_file.get(f["name"])
+                base_symbol = _cc_symbol_key_from_entry(f)
+                base_complexity = base_cc_for_file.get(base_symbol)
                 if base_complexity is not None and base_complexity > max_cc:
                     delta = complexity - base_complexity
                     if delta <= 0:
