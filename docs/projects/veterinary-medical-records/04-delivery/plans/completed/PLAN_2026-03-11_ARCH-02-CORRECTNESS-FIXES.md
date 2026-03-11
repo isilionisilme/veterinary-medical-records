@@ -1,6 +1,6 @@
 # Plan: ARCH-02 Correctness Fixes
 
-> **Operational rules:** See [plan-execution-protocol.md](../../../03-ops/plan-execution-protocol.md) for agent execution protocol, scope boundary template, commit conventions, and handoff behavior.
+> **Operational rules:** See [plan-execution-protocol.md](../../../../03-ops/plan-execution-protocol.md) for agent execution protocol, scope boundary template, commit conventions, and handoff behavior.
 
 **Branch:** `refactor/arch-02-post-pr1-correctness-fixes`
 **PR:** Not planned as separate PR (absorbed into parent branch)

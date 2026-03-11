@@ -1,10 +1,10 @@
 # Plan: ARCH-02 Decompose candidate_mining
 
-> **Operational rules:** See [plan-execution-protocol.md](../../../03-ops/plan-execution-protocol.md) for agent execution protocol, scope boundary template, commit conventions, and handoff behavior.
+> **Operational rules:** See [plan-execution-protocol.md](../../../../03-ops/plan-execution-protocol.md) for agent execution protocol, scope boundary template, commit conventions, and handoff behavior.
 
 **Branch:** `refactor/arch-02-implement-candidate-mining`
 **PR:** See `## PR Roadmap`
-**Backlog item:** [arch-02-decompose-candidate-mining.md](../../Backlog/arch-02-decompose-candidate-mining.md)
+**Backlog item:** [arch-02-decompose-candidate-mining.md](../../../Backlog/completed/arch-02-decompose-candidate-mining.md)
 **Review artifact:** [PLAN_2026-03-11_ARCH-02-CORRECTNESS-FIXES.md](./PLAN_2026-03-11_ARCH-02-CORRECTNESS-FIXES.md)
 **Prerequisite:** ARCH-03 completed (CI complexity gates)
 **Worktree:** `D:\Git\worktrees\arch02-impl`
@@ -163,7 +163,7 @@ Execution complete through E6. Branch is pushed and ready for PR creation on exp
 
 ## Acceptance Criteria
 
-From [ARCH-02 backlog item](../../Backlog/arch-02-decompose-candidate-mining.md):
+From [ARCH-02 backlog item](../../../Backlog/completed/arch-02-decompose-candidate-mining.md):
 
 1. No function exceeds 100 LOC.
 2. No function exceeds CC 20.
