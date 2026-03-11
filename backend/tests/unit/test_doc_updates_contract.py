@@ -3,6 +3,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import yaml
+
 REPO_ROOT = Path(__file__).resolve().parents[3]
 ROOT_AGENTS = REPO_ROOT / "AGENTS.md"
 CI_WORKFLOW = REPO_ROOT / ".github" / "workflows" / "ci.yml"
@@ -66,6 +68,9 @@ IMPLEMENTATION_PLAN_ROUTER_RELEASE_6 = (
     / "120_release-6-explicit-overrides-workflow-closure.md"
 )
 MARKDOWN_LINK_PATTERN = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
+FRONTMATTER_PATTERN = re.compile(r"\A---\n(?P<frontmatter>.*?)\n---\n", re.DOTALL)
+GITHUB_PROMPTS_DIR = REPO_ROOT / ".github" / "prompts"
+GITHUB_INSTRUCTIONS_DIR = REPO_ROOT / ".github" / "instructions"
 
 
 def _read_text(path: Path) -> str:
@@ -87,6 +92,15 @@ def _iter_relative_markdown_targets(text: str) -> list[str]:
     return targets
 
 
+def _load_frontmatter(path: Path) -> dict[str, object]:
+    text = _read_text(path)
+    match = FRONTMATTER_PATTERN.match(text)
+    assert match, f"Missing YAML frontmatter: {path.relative_to(REPO_ROOT)}"
+    data = yaml.safe_load(match.group("frontmatter"))
+    assert isinstance(data, dict), f"Frontmatter must be a mapping: {path.relative_to(REPO_ROOT)}"
+    return data
+
+
 def test_doc_updates_core_files_exist() -> None:
     assert ROOT_AGENTS.exists(), "Missing AGENTS.md router entrypoint."
     assert DOC_UPDATES_ENTRY.exists(), "Missing DOC_UPDATES entry module."
@@ -99,6 +113,51 @@ def test_doc_updates_core_files_exist() -> None:
     assert PRECOMMIT_HOOK.exists(), "Missing pre-commit hook entrypoint."
     assert PRECOMMIT_INSTALLER.exists(), "Missing pre-commit hook installer."
     assert RULES_INDEX.exists(), "Missing rules index."
+
+
+def test_github_operational_prompts_exist() -> None:
+    expected_files = {
+        "code-review.prompt.md",
+        "plan-closeout.prompt.md",
+        "plan-create.prompt.md",
+        "plan-resume.prompt.md",
+        "plan-start.prompt.md",
+        "scope-boundary.prompt.md",
+    }
+
+    actual_files = {path.name for path in GITHUB_PROMPTS_DIR.glob("*.prompt.md")}
+
+    assert actual_files == expected_files
+
+
+def test_github_instructions_exist() -> None:
+    expected_files = {
+        "backlog-files.instructions.md",
+        "plan-files.instructions.md",
+    }
+
+    actual_files = {path.name for path in GITHUB_INSTRUCTIONS_DIR.glob("*.instructions.md")}
+
+    assert actual_files == expected_files
+
+
+def test_instructions_files_have_valid_applyto_patterns() -> None:
+    for instructions_file in sorted(GITHUB_INSTRUCTIONS_DIR.glob("*.instructions.md")):
+        frontmatter = _load_frontmatter(instructions_file)
+        apply_to = frontmatter.get("applyTo")
+        assert isinstance(apply_to, str) and apply_to.strip(), (
+            f"Missing applyTo in {instructions_file.relative_to(REPO_ROOT)}"
+        )
+
+        matches = {
+            path.relative_to(REPO_ROOT).as_posix()
+            for path in REPO_ROOT.glob(apply_to)
+            if path.is_file()
+        }
+        assert matches, (
+            f"applyTo pattern {apply_to!r} in {instructions_file.relative_to(REPO_ROOT)} "
+            "does not match any file"
+        )
 
 
 def test_docs_top_level_folders_are_limited_to_human_and_router_groups() -> None:
@@ -597,6 +656,23 @@ def test_backlog_markdown_relative_links_resolve() -> None:
                 broken_links.append(f"{markdown_file.relative_to(REPO_ROOT)} -> {target}")
 
     assert not broken_links, "Broken relative markdown links:\n" + "\n".join(broken_links)
+
+
+def test_backlog_tracks_operational_runbook_architecture() -> None:
+    readme_text = _read_text(BACKLOG_DIR / "README.md")
+    imp13_path = BACKLOG_DIR / "imp-13-operational-runbook-architecture.md"
+    assert imp13_path.exists(), "IMP-13 file must exist in Backlog."
+    imp13_text = _read_text(imp13_path)
+
+    assert "| IMP-13 | Operational Runbook Architecture | Release 22 |" in readme_text
+    assert "(imp-13-operational-runbook-architecture.md)" in readme_text
+
+    assert "Supersedes and replaces IMP-10" in imp13_text
+    assert "IMP-11" in imp13_text
+    assert "IMP-12" in imp13_text
+    assert ".prompt.md" in imp13_text
+    assert ".instructions.md" in imp13_text
+    assert "plan-start-check.py" in imp13_text
 
 
 def test_ci_does_not_ignore_markdown_only_changes() -> None:

@@ -120,3 +120,22 @@ def test_iter_markdown_files_skips_delivery_plans(
 
     assert active_file not in scanned
     assert completed_file not in scanned
+
+
+def test_categorize_backlog_as_planning_meta_doc() -> None:
+    module = _load_guard_module()
+
+    backlog_path = (
+        REPO_ROOT
+        / "docs"
+        / "projects"
+        / "veterinary-medical-records"
+        / "04-delivery"
+        / "Backlog"
+        / "imp-13-operational-runbook-architecture.md"
+    )
+    line = "- `docs/agent_router/01_WORKFLOW/START_WORK/`"
+
+    category = module.categorize_violation(backlog_path, line)
+
+    assert category == "planning/meta-doc"
