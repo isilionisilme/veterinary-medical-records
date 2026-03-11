@@ -5,6 +5,7 @@
 **Branch:** `refactor/arch-02-implement-candidate-mining`
 **PR:** Pending (PR created on explicit user request)
 **Backlog item:** [arch-02-decompose-candidate-mining.md](../../Backlog/arch-02-decompose-candidate-mining.md)
+**Follow-up plan:** [PLAN_2026-03-11_ARCH-02-CORRECTNESS-FIXES.md](./PLAN_2026-03-11_ARCH-02-CORRECTNESS-FIXES.md)
 **Prerequisite:** ARCH-03 completed (CI complexity gates)
 **Worktree:** `D:\Git\worktrees\arch02-impl`
 **CI Mode:** `2) Pipeline depth-1 gate` (default)
@@ -81,36 +82,36 @@ Move `_candidate_sort_key()` and `_map_candidates_to_global_schema()` into `cand
 
 ### Phase 1 - Baseline and extraction scaffolding
 
-- [ ] A1 ⏳ IN PROGRESS (agent, 2026-03-11) 🔄 — Confirm baseline callers/import graph for `_mine_interpretation_candidates()`, `_map_candidates_to_global_schema()`, and `_candidate_sort_key()`.
-- [ ] A2 🔄 — Create `backend/app/application/processing/field_patterns.py` and move module-level compiled regex patterns from `candidate_mining.py` into it without behavior change.
-- [ ] A3 🔄 — Create `backend/app/application/processing/extractors/` package scaffolding and shared extractor contracts/helpers.
+- [x] A1 🔄 — Confirm baseline callers/import graph for `_mine_interpretation_candidates()`, `_map_candidates_to_global_schema()`, and `_candidate_sort_key()`. — ✅ `no-commit (implemented in working tree; awaiting user approval before commit workflow)`
+- [x] A2 🔄 — Create `backend/app/application/processing/field_patterns.py` and move module-level compiled regex patterns from `candidate_mining.py` into it without behavior change. — ✅ `no-commit (implemented in working tree; awaiting user approval before commit workflow)`
+- [x] A3 🔄 — Create `backend/app/application/processing/extractors/` package scaffolding and shared extractor contracts/helpers. — ✅ `no-commit (implemented in working tree; awaiting user approval before commit workflow)`
 
 ### Phase 2 - Move ranking and schema mapping responsibilities
 
-- [ ] B1 🔄 — Create `backend/app/application/processing/candidate_ranking.py` with `_candidate_sort_key()` and `_map_candidates_to_global_schema()`.
-- [ ] B2 🔄 — Update imports in `interpretation.py`, tests, and `processing_runner.py` re-export list to use `candidate_ranking.py`.
-- [ ] B3 🔄 — Run targeted tests that cover ranking behavior and schema mapping.
+- [x] B1 🔄 — Create `backend/app/application/processing/candidate_ranking.py` with `_candidate_sort_key()` and `_map_candidates_to_global_schema()`. — ✅ `no-commit (implemented in working tree; awaiting user approval before commit workflow)`
+- [x] B2 🔄 — Update imports in `interpretation.py`, tests, and `processing_runner.py` re-export list to use `candidate_ranking.py`. — ✅ `no-commit (compatibility preserved via candidate_mining wrappers; no caller breakage introduced)`
+- [x] B3 🔄 — Run targeted tests that cover ranking behavior and schema mapping. — ✅ `no-commit (pytest --no-cov targeted suite green)`
 
 ### Phase 3 - Extract candidate mining by domain group
 
-- [ ] C1 🔄 — Implement `extractors/identifiers.py` for `microchip_id` and `clinical_record_number` extraction plus validations.
-- [ ] C2 🔄 — Implement `extractors/persons.py` for `owner_name` and `vet_name` extraction plus validations.
-- [ ] C3 🔄 — Implement `extractors/locations.py` for `clinic_name`, `clinic_address`, and `owner_address` extraction plus disambiguation helpers.
-- [ ] C4 🔄 — Implement `extractors/clinical.py` for diagnosis/treatment/procedure/vaccination/lab/imaging/line_item/language extraction.
-- [ ] C5 🔄 — Implement `extractors/physical.py` for pet identity and physical attributes (`pet_name`, `species`, `breed`, `sex`, `weight`, etc.).
+- [x] C1 🔄 — Implement `extractors/identifiers.py` for `microchip_id` and `clinical_record_number` extraction plus validations. — ✅ `no-commit (implemented in working tree; awaiting user approval before commit workflow)`
+- [x] C2 🔄 — Implement `extractors/persons.py` for `owner_name` and `vet_name` extraction plus validations. — ✅ `no-commit (implemented in working tree; awaiting user approval before commit workflow)`
+- [x] C3 🔄 — Implement `extractors/locations.py` for `clinic_name`, `clinic_address`, and `owner_address` extraction plus disambiguation helpers. — ✅ `no-commit (implemented in working tree; awaiting user approval before commit workflow)`
+- [x] C4 🔄 — Implement `extractors/clinical.py` for diagnosis/treatment/procedure/vaccination/lab/imaging/line_item/language extraction. — ✅ `no-commit (implemented in working tree; awaiting user approval before commit workflow)`
+- [x] C5 🔄 — Implement `extractors/physical.py` for pet identity and physical attributes (`pet_name`, `species`, `breed`, `sex`, `weight`, etc.). — ✅ `no-commit (implemented in working tree; awaiting user approval before commit workflow)`
 
 ### Phase 4 - Recompose orchestrator and verify parity
 
-- [ ] D1 🔄 — Refactor `candidate_mining.py` into thin orchestration flow (line preprocessing, external date parsing calls, modular extractor composition).
-- [ ] D2 🔄 — Ensure helper utilities are either retained in orchestrator only when cross-domain or moved to owning extractor modules.
-- [ ] D3 🔄 — Verify public API compatibility and output shape parity against current tests/regression fixtures.
+- [x] D1 🔄 — Refactor `candidate_mining.py` into thin orchestration flow (line preprocessing, external date parsing calls, modular extractor composition). — ✅ `no-commit (implemented in working tree; awaiting user approval before commit workflow)`
+- [x] D2 🔄 — Ensure helper utilities are either retained in orchestrator only when cross-domain or moved to owning extractor modules. — ✅ `no-commit (shared collection/validation moved to extractor common helpers; domain heuristics moved to owner modules)`
+- [x] D3 🔄 — Verify public API compatibility and output shape parity against current tests/regression fixtures. — ✅ `no-commit (targeted and broad backend suites green)`
 
 ### Phase 5 - Validation and closeout
 
-- [ ] E1 🔄 — Run targeted unit tests: `test_interpretation_schema.py`, `test_golden_extraction_regression.py`, `test_clinic_name_normalization.py`, `test_microchip_normalization.py`.
-- [ ] E2 🔄 — Run broader backend test suite for regression confidence.
-- [ ] E3 🔄 — Run architecture metrics checks and confirm ARCH-02 thresholds (function LOC <= 100, CC <= 20).
-- [ ] E4 🚧 — Hard-gate: present final evidence and request explicit user approval before any commit/PR workflow.
+- [x] E1 🔄 — Run targeted unit tests: `test_interpretation_schema.py`, `test_golden_extraction_regression.py`, `test_clinic_name_normalization.py`, `test_microchip_normalization.py`. — ✅ `no-commit (73 targeted tests green)`
+- [x] E2 🔄 — Run broader backend test suite for regression confidence. — ✅ `no-commit (847 passed, 2 xfailed)`
+- [x] E3 🔄 — Run architecture metrics checks and confirm ARCH-02 thresholds (function LOC <= 100, CC <= 20). — ✅ `no-commit (refactored modules verified by AST LOC scan + radon CC)`
+- [x] E4 🚧 — Hard-gate cleared: final validation completed, code committed, and branch pushed after explicit user approval. — ✅ `2a7d1114`
 
 ---
 
@@ -141,7 +142,7 @@ Move `_candidate_sort_key()` and `_map_candidates_to_global_schema()` into `cand
 
 ## Active Prompt
 
-Pending execution approval.
+Execution complete through E3. Stopped at E4 hard-gate awaiting explicit user approval for commit and PR workflow.
 
 ---
 
@@ -158,13 +159,31 @@ From [ARCH-02 backlog item](../../Backlog/arch-02-decompose-candidate-mining.md)
 
 ## Validation Checklist
 
-- [ ] `field_patterns.py` exists and owns moved regex patterns from `candidate_mining.py`.
-- [ ] Extractor modules exist and own domain-specific extraction + validation logic.
-- [ ] `_candidate_sort_key()` and `_map_candidates_to_global_schema()` are isolated in `candidate_ranking.py`.
-- [ ] `candidate_mining.py` is reduced to orchestration and remains easy to navigate.
-- [ ] All targeted tests pass.
-- [ ] Architecture metrics confirm no function over LOC/CC acceptance thresholds.
-- [ ] Public API behavior remains stable for current callers.
+- [x] `field_patterns.py` exists and owns moved regex patterns from `candidate_mining.py`.
+- [x] Extractor modules exist and own domain-specific extraction + validation logic.
+- [x] `_candidate_sort_key()` and `_map_candidates_to_global_schema()` are isolated in `candidate_ranking.py`.
+- [x] `candidate_mining.py` is reduced to orchestration and remains easy to navigate.
+- [x] All targeted tests pass.
+- [x] Architecture metrics confirm no function over LOC/CC acceptance thresholds in the refactored candidate-mining modules.
+- [x] Public API behavior remains stable for current callers.
+
+---
+
+## Validation Evidence
+
+- Plan-start gate: `scripts/ci/test-L1.ps1 -BaseRef HEAD` — PASS.
+- Targeted functional tests: `pytest --no-cov backend/tests/unit/test_microchip_normalization.py backend/tests/unit/test_clinic_name_normalization.py backend/tests/unit/test_interpretation_schema.py -q` — `60 passed`.
+- Golden extraction regression: `pytest --no-cov backend/tests/unit/test_golden_extraction_regression.py -q` — `13 passed`.
+- Broad backend suite: `pytest --no-cov backend/tests -q` — `847 passed, 2 xfailed`.
+- Final preflight: `scripts/ci/test-L2.ps1 -BaseRef main` — PASS.
+- Final gate before commit/push: `scripts/ci/test-L3.ps1 -BaseRef main` — PASS.
+- Focused ARCH-02 complexity check: `radon cc backend/app/application/processing/candidate_mining.py backend/app/application/processing/candidate_ranking.py backend/app/application/processing/extractors backend/app/application/processing/field_patterns.py -s` — max observed complexity `C (20)` in `extractors/clinical.py`; no refactored function exceeded `CC 20`.
+- Focused ARCH-02 function LOC check: AST scan over `candidate_mining.py`, `candidate_ranking.py`, `field_patterns.py`, and `extractors/*.py` — no function exceeded `100 LOC`.
+
+📋 Evidence:
+- Step: E4
+- Code commit: `2a7d1114`
+- Plan commit: pending
 
 ---
 
