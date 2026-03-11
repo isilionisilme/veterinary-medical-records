@@ -1,6 +1,6 @@
 # US-68 — Identify the source worktree of each branch at a glance
 
-**Status:** Archived (2026-03-11)
+**Status:** Done
 
 **Plan:** [COMPLETED_2026-03-06_WORKTREE-PREFIXED-BRANCH-NAMING.md](../../plans/completed/COMPLETED_2026-03-06_WORKTREE-PREFIXED-BRANCH-NAMING.md)
 

@@ -4,7 +4,7 @@
 
 ## Active iteration
 
-**None** — Iteration 19 closed. Next iteration plan pending.
+**None** — Iteration 21 closed. Next iteration plan pending.
 
 ## Timeline
 
@@ -30,6 +30,7 @@
 | 18 | 2026-03-04 | #198 | Clinic address enrichment with production online resolver chain | User-consented lookup UX, online resolver chain (`nominatim` + `web_search` proxy fallback), no local stored clinic addresses by default, CI green at merge | [COMPLETED_2026-03-04_CLINIC-ENRICHMENT-BIDIRECTIONAL.md](plans/completed/COMPLETED_2026-03-04_CLINIC-ENRICHMENT-BIDIRECTIONAL.md) |
 | 19 | 2026-03-05 | #207 | Plan-mode routing hardening for ad-hoc git commands | Expanded `AGENTS.md` trigger for active plan git requests, added explicit plan-mode governance/activation clauses in `plan-execution-protocol.md`, aligned DOC_UPDATES guard mapping, CI green at merge | [COMPLETED_2026-03-05_PLAN-MODE-ROUTING-FIX.md](plans/completed/COMPLETED_2026-03-05_PLAN-MODE-ROUTING-FIX.md) |
 | 20 | 2026-03-10 | #264 | Public API encapsulation fix for documents review helper | Re-exported `_locate_visit_date_occurrences_from_raw_text` via public documents API, removed private `_shared` import from API route layer, extracted review debug helper for maintainability gates, L3 green at merge | [PLAN_2026-03-10_ARCH-08-EXPOSE-SHARED-PUBLICLY.md](plans/completed/PLAN_2026-03-10_ARCH-08-EXPOSE-SHARED-PUBLICLY.md) |
+| 21 | 2026-03-11 | #277 | US-68 documentation closeout and backlog archival alignment | Closed out backlog lifecycle to `Done`, kept completed backlog artifact as canonical record, aligned references after archive move, and validated doc governance checks on branch | [us-68-identify-the-source-worktree-of-each-branch-at-a-g.md](Backlog/completed/us-68-identify-the-source-worktree-of-each-branch-at-a-g.md) |
 
 ## Cumulative progress
 
@@ -39,4 +40,5 @@
 - Iteration 18 cumulative clinic-enrichment outcome: on-demand resolver is production-ready with explicit source semantics (`clinic_catalog|nominatim|web_search|none`), proxy fallback observability events, and merged completed plan archive.
 - Iteration 19 cumulative plan-governance outcome: plan-mode now captures ad-hoc git intents through protocol routing (`AGENTS.md` trigger + protocol §2/§13), reducing risk of bypassing SCOPE BOUNDARY during active plan execution.
 - Iteration 20 cumulative architecture-hardening outcome: API encapsulation now avoids private-module imports for ARCH-08 scope, with helper logic extracted and covered by targeted unit tests plus green L3 validation.
+- Iteration 21 cumulative closeout-governance outcome: US-68 backlog lifecycle and archive references are now aligned with the closeout protocol (`Done` status + completed artifact path), with local L3 validation passing on the branch.
 - See [delivery-summary.md](delivery-summary.md) for the broader cumulative metrics table across all iterations.
