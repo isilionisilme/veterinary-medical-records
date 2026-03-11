@@ -68,6 +68,12 @@ this procedure automatically:
    user whether a review should be done. Include a recommended review depth (see Section 6 — Review Depth) with a brief
    justification.
 
+Entrypoint-size warning (non-blocking):
+
+- If the PR changes `AGENTS.md` and the root entrypoint has grown materially
+  (for example, beyond roughly `4000` characters), report a `Should-fix` or
+  `Nice-to-have` review note about token efficiency and routing discipline.
+
 ### PR Partition Gate (hard rule)
 
 Before creating or updating a Pull Request, the agent MUST run the partition gate with real diff evidence:
