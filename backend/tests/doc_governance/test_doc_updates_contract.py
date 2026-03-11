@@ -49,7 +49,7 @@ DOCS_ROOT = REPO_ROOT / "docs"
 ADR_ROOT = REPO_ROOT / "docs" / "projects" / "veterinary-medical-records" / "02-tech" / "adr"
 ADR_INDEX = ADR_ROOT / "index.md"
 ADR_ARCH_0006 = ADR_ROOT / "ADR-ARCH-0006-frontend-stack-react-tanstack-query-vite.md"
-ADR_ARCH_0007 = ADR_ROOT / "ADR-ARCH-0007-confidence-scoring-algorithm.md"
+ADR_ARCH_0008 = ADR_ROOT / "ADR-ARCH-0008-confidence-scoring-algorithm.md"
 BACKLOG_DIR = (
     REPO_ROOT / "docs" / "projects" / "veterinary-medical-records" / "04-delivery" / "Backlog"
 )
@@ -177,13 +177,13 @@ def test_docs_top_level_folders_are_limited_to_human_and_router_groups() -> None
     assert actual_dirs == {"shared", "projects", "agent_router"}
 
 
-def test_adr_index_tracks_arch_0006_and_arch_0007() -> None:
+def test_adr_index_tracks_arch_0006_and_arch_0008() -> None:
     assert ADR_ARCH_0006.exists()
-    assert ADR_ARCH_0007.exists()
+    assert ADR_ARCH_0008.exists()
 
     index_text = _read_text(ADR_INDEX)
     assert "ADR-ARCH-0006" in index_text
-    assert "ADR-ARCH-0007" in index_text
+    assert "ADR-ARCH-0008" in index_text
 
 
 def test_agents_routes_docs_updated_intent_to_doc_updates() -> None:

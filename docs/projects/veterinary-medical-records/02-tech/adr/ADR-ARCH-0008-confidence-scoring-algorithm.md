@@ -1,5 +1,5 @@
 ---
-title: "ADR-ARCH-0007: Confidence Scoring Algorithm Design"
+title: "ADR-ARCH-0008: Confidence Scoring Algorithm Design"
 type: adr
 status: active
 audience: contributor
@@ -11,7 +11,7 @@ last-updated: 2026-03-11
 
 **Table of Contents** _generated with [DocToc](https://github.com/thlorenz/doctoc)_
 
-- [ADR-ARCH-0007: Confidence Scoring Algorithm Design](#adr-arch-0007-confidence-scoring-algorithm-design)
+- [ADR-ARCH-0008: Confidence Scoring Algorithm Design](#adr-arch-0008-confidence-scoring-algorithm-design)
   - [Status](#status)
   - [Context](#context)
   - [Decision Drivers](#decision-drivers)
@@ -30,7 +30,7 @@ last-updated: 2026-03-11
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-# ADR-ARCH-0007: Confidence Scoring Algorithm Design
+# ADR-ARCH-0008: Confidence Scoring Algorithm Design
 
 ## Status
 
