@@ -358,7 +358,8 @@
     },
     {
       "doc_glob": "docs/projects/veterinary-medical-records/04-delivery/implementation-plan.md",
-      "description": "Project IMPLEMENTATION_PLAN changes (including archive-link maintenance when backlog artifacts move to completed/) require propagation to its owner module.",
+      "description": "Project IMPLEMENTATION_PLAN rule-level changes require propagation to its owner module. Navigation/closeout link maintenance (including archive moves to completed/) is allowed without extra guard churn.",
+      "rule_change_only": true,
       "required_any": [
         "docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json",
         "docs/agent_router/01_WORKFLOW/DOC_UPDATES/router_parity_map.json",
@@ -406,7 +407,8 @@
     },
     {
       "doc_glob": "docs/projects/veterinary-medical-records/04-delivery/Backlog/*.md",
-      "description": "Backlog root docs (including IMP-13 PR sequencing updates) require DOC_UPDATES mapping coverage even when they do not propagate to a router owner module (including closeout moves to completed/).",
+      "description": "Backlog root rule-level changes (including IMP-13 sequencing updates) require DOC_UPDATES mapping coverage. Clarification/navigation closeout moves to completed/ are exempt.",
+      "rule_change_only": true,
       "required_any": [
         "docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json",
         "backend/tests/unit/test_doc_updates_contract.py",
@@ -416,7 +418,8 @@
     },
     {
       "doc_glob": "docs/projects/veterinary-medical-records/04-delivery/Backlog/**/*.md",
-      "description": "Backlog item extraction/split docs, including Backlog/completed archival moves, require DOC_UPDATES mapping coverage even when they do not propagate to a router owner module.",
+      "description": "Backlog nested docs require DOC_UPDATES mapping coverage only for rule-level changes. Clarification/navigation archival moves under Backlog/completed are exempt.",
+      "rule_change_only": true,
       "required_any": [
         "docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json",
         "backend/tests/unit/test_doc_updates_contract.py",
