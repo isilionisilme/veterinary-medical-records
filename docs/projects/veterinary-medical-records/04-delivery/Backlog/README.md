@@ -87,6 +87,7 @@ This directory contains the consolidated backlog for veterinary-medical-records.
 | IMP-05 | Plan Root File Naming Alignment | Release 17 | [imp-05-plan-root-file-naming-alignment.md](imp-05-plan-root-file-naming-alignment.md) |
 | IMP-08 | Documentation Contract Enforcement for Docs-Only PRs | Release 17 | [imp-08-documentation-contract-enforcement-for-docs-only-prs.md](imp-08-documentation-contract-enforcement-for-docs-only-prs.md) |
 | IMP-09 | Rationalize Documentation Governance Tests | Release 22 | [imp-09-rationalize-documentation-governance-tests.md](imp-09-rationalize-documentation-governance-tests.md) |
+| IMP-13 | Operational Runbook Architecture | Release 22 | [imp-13-operational-runbook-architecture.md](imp-13-operational-runbook-architecture.md) |
 | ARCH-01 | Decompose `review_service.py` | Release 19 | [arch-01-decompose-review-service.md](completed/arch-01-decompose-review-service.md) |
 | ARCH-02 | Decompose `candidate_mining.py` | Release 19 | [arch-02-decompose-candidate-mining.md](arch-02-decompose-candidate-mining.md) |
 | ARCH-03 | Add CI Complexity Gates | Release 19 | [completed/arch-03-add-ci-complexity-gates.md](completed/arch-03-add-ci-complexity-gates.md) |
@@ -94,7 +95,7 @@ This directory contains the consolidated backlog for veterinary-medical-records.
 | ARCH-05 | Add Structured Logging to Critical Paths | Release 20 | [arch-05-add-structured-logging-critical-paths.md](arch-05-add-structured-logging-critical-paths.md) |
 | ARCH-06 | Create Security Architecture Documentation | Release 19 | [arch-06-create-security-architecture-documentation.md](arch-06-create-security-architecture-documentation.md) |
 | ARCH-07 | Create Production Deployment Documentation | Release 19 | [arch-07-create-production-deployment-documentation.md](arch-07-create-production-deployment-documentation.md) |
-| ARCH-08 | Expose `_shared` Functions Publicly | Release 20 | [arch-08-expose-shared-functions-publicly.md](arch-08-expose-shared-functions-publicly.md) |
+| ARCH-08 | Expose `_shared` Functions Publicly | Release 20 | [arch-08-expose-shared-functions-publicly.md](completed/arch-08-expose-shared-functions-publicly.md) |
 | ARCH-09 | Add ER Diagram to technical-design.md | Release 20 | [arch-09-add-er-diagram-to-technical-design.md](arch-09-add-er-diagram-to-technical-design.md) |
 | ARCH-10 | Write Missing ADRs | Release 20 | [arch-10-write-missing-adrs.md](arch-10-write-missing-adrs.md) |
 | ARCH-11 | Add Monitoring/Alerting Strategy Documentation | Release 20 | [arch-11-add-monitoring-alerting-strategy-docs.md](arch-11-add-monitoring-alerting-strategy-docs.md) |

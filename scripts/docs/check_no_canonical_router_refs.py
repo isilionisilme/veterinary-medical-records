@@ -23,7 +23,7 @@ ALLOWED_CANONICAL_NOTE_PATTERN = re.compile(
     re.IGNORECASE,
 )
 ALLOWED_HEADER_CONTENT_LINES = 30
-PLANNING_META_PATH_HINTS = ("/04-delivery/plans/", "/metrics/", "/tmp/")
+PLANNING_META_PATH_HINTS = ("/04-delivery/plans/", "/04-delivery/backlog/", "/metrics/", "/tmp/")
 ViolationCategory = Literal["operational", "planning/meta-doc"]
 
 
