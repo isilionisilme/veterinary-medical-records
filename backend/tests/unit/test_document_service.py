@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from backend.app.application import document_service, documents
 from backend.app.application.document_service import (
     _normalize_visit_date_candidate,
     _project_review_payload_to_canonical,
@@ -20,6 +21,12 @@ from backend.app.domain.models import (
     ReviewStatus,
 )
 from backend.app.ports.file_storage import StoredFile
+
+
+def test_document_service_re_exports_stay_in_sync_with_documents_package() -> None:
+    assert document_service.__all__ == documents.__all__
+    for symbol in documents.__all__:
+        assert getattr(document_service, symbol) is getattr(documents, symbol)
 
 
 class FakeDocumentRepository:
