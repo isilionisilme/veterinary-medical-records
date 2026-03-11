@@ -509,6 +509,9 @@ if ($runBranchNameValidation) {
 }
 
 if ($runDocs) {
+    # Note: Doc governance checks (canonical router, test sync, parity, directionality, drift) have been
+    # moved to .github/workflows/doc-governance.yml. They run automatically on all PRs and can be triggered
+    # manually via workflow_dispatch. For local validation, run that workflow manually or review the PR checks.
     Invoke-Step "Docs QA (lint/format/links/frontmatter)" {
         & $python "scripts/docs/run_docs_qa.py" "--base-ref" $BaseRef
     }

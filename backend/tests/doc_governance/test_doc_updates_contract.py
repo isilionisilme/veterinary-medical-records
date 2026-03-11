@@ -682,7 +682,8 @@ def test_backlog_tracks_operational_runbook_architecture() -> None:
     assert "plan-start-check.py" in imp13_text
 
 
-def test_ci_does_not_ignore_markdown_only_changes() -> None:
+def test_governance_checks_moved_to_separate_workflow() -> None:
+    """Verify that doc governance checks have been moved from ci.yml to doc-governance.yml."""
     ci_text = _read_text(CI_WORKFLOW)
     governance_text = _read_text(DOC_GOVERNANCE_WORKFLOW)
 
