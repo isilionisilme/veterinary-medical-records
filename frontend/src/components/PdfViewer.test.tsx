@@ -369,15 +369,18 @@ describe("PdfViewer", () => {
     getDocumentMock.mockImplementation(() => ({
       promise: Promise.reject(new Error("data load failed")),
     }));
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     render(<PdfViewer fileUrl="blob://sample" filename="record.pdf" />);
 
     expect(await screen.findByText("No pudimos cargar el PDF.")).toBeInTheDocument();
+    expect(consoleErrorSpy).toHaveBeenCalled();
   });
 
   it("shows error state when blob fetch fails", async () => {
     const getDocumentMock = vi.mocked(pdfjsLib.getDocument);
     getDocumentMock.mockReset();
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     vi.spyOn(globalThis, "fetch").mockResolvedValue({
       ok: false,
       arrayBuffer: async () => new ArrayBuffer(0),
@@ -387,6 +390,7 @@ describe("PdfViewer", () => {
 
     expect(await screen.findByText("No pudimos cargar el PDF.")).toBeInTheDocument();
     expect(getDocumentMock).not.toHaveBeenCalled();
+    expect(consoleErrorSpy).toHaveBeenCalled();
   });
 
   it("renders drag overlay when upload drag state is active", async () => {
