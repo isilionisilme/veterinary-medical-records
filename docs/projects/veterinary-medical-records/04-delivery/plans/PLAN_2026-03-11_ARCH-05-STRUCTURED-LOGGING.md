@@ -2,7 +2,7 @@
 
 > **Operational rules:** See [plan-execution-protocol.md](../../../03-ops/plan-execution-protocol.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
 
-**Branch:** feat/arch-05-structured-logging
+**Branch:** improvement/arch-05-structured-logging
 **Worktree:** D:/Git/worktrees/codex-permanent-1
 **Execution Mode:** Autonomous
 **Model Assignment:** Uniform
@@ -98,26 +98,26 @@ With structured key=value pairs in messages (e.g., `"PDF extraction finished run
 
 ### Phase 1 — Add logging to review_service.py
 
-- [ ] P1-A 🔄 — Add `import logging` and `logger = logging.getLogger(__name__)` at module level.
-- [ ] P1-B 🔄 — Add entry-level `logger.info()` to `get_document_review()` with `document_id` context.
-- [ ] P1-C 🔄 — Add entry-level `logger.info()` to `mark_document_reviewed()` with `document_id` context.
-- [ ] P1-D 🔄 — Add entry-level `logger.info()` to `reopen_document_review()` with `document_id` context.
-- [ ] P1-E 🔄 — Add `logger.warning()` to the silent `except OSError` handler (line ~306) with file path context.
-- [ ] P1-F 🚧 — 📌 Checkpoint: present diff for `review_service.py` for user review.
+- [x] P1-A 🔄 — Add `import logging` and `logger = logging.getLogger(__name__)` at module level.
+- [x] P1-B 🔄 — Add entry-level `logger.info()` to `get_document_review()` with `document_id` context.
+- [x] P1-C 🔄 — Add entry-level `logger.info()` to `mark_document_reviewed()` with `document_id` context.
+- [x] P1-D 🔄 — Add entry-level `logger.info()` to `reopen_document_review()` with `document_id` context.
+- [x] P1-E 🔄 — Add `logger.warning()` to the silent `except OSError` handler (line ~306) with file path context.
+- [x] P1-F 🚧 — 📌 Checkpoint: present diff for `review_service.py` for user review.
 
 ### Phase 2 — Add logging to candidate_mining.py
 
-- [ ] P2-A 🔄 — Add `import logging` and `logger = logging.getLogger(__name__)` at module level.
-- [ ] P2-B 🔄 — Add `logger.debug()` entry log to `_mine_interpretation_candidates()` with text-length context.
-- [ ] P2-C 🔄 — Add `logger.debug()` entry log to `_map_candidates_to_global_schema()`.
-- [ ] P2-D 🔄 — Add `logger.debug()` entry log to `_collect_external_candidates()` with field-count context.
-- [ ] P2-E 🚧 — 📌 Checkpoint: present diff for `candidate_mining.py` for user review.
+- [x] P2-A 🔄 — Add `import logging` and `logger = logging.getLogger(__name__)` at module level.
+- [x] P2-B 🔄 — Add `logger.debug()` entry log to `_mine_interpretation_candidates()` with text-length context.
+- [x] P2-C 🔄 — Add `logger.debug()` entry log to `_map_candidates_to_global_schema()`.
+- [x] P2-D 🔄 — Add `logger.debug()` entry log to `_collect_external_candidates()` with field-count context.
+- [x] P2-E 🚧 — 📌 Checkpoint: present diff for `candidate_mining.py` for user review.
 
 ### Phase 3 — Validation
 
-- [ ] P3-A 🔄 — Run existing test suite to verify no regressions.
-- [ ] P3-B 🔄 — Verify acceptance criteria: every public function in hotspots has at least entry-level logging; error handlers include contextual info; log format matches codebase convention.
-- [ ] P3-C 🚧 — Hard-gate: present final summary and commit proposal to user.
+- [x] P3-A 🔄 — Run existing test suite to verify no regressions.
+- [x] P3-B 🔄 — Verify acceptance criteria: every public function in hotspots has at least entry-level logging; error handlers include contextual info; log format matches codebase convention.
+- [x] P3-C 🚧 — Hard-gate: present final summary and commit proposal to user.
 
 ---
 
@@ -175,11 +175,11 @@ _(empty — execution has not started)_
 
 ## Acceptance Criteria
 
-- [ ] Every public function in `review_service.py` and `candidate_mining.py` has at least entry-level logging.
-- [ ] The silent `except OSError` in `review_service.py` now logs a warning with file path context.
-- [ ] Log format uses `key=value` structured messages consistent with `orchestrator.py`.
-- [ ] `logging.getLogger(__name__)` pattern used in both files.
-- [ ] All existing tests pass without modification.
+- [x] Every public function in `review_service.py` and `candidate_mining.py` has at least entry-level logging.
+- [x] The silent `except OSError` in `review_service.py` now logs a warning with file path context.
+- [x] Log format uses `key=value` structured messages consistent with `orchestrator.py`.
+- [x] `logging.getLogger(__name__)` pattern used in both files.
+- [x] All existing tests pass without modification.
 
 ---
 
