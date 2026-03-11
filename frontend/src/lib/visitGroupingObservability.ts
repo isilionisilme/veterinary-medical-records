@@ -56,5 +56,5 @@ export function buildVisitGroupingDiagnostics(visits: VisitGroupLike[]): VisitGr
 }
 
 export function shouldEmitVisitGroupingDiagnostics(env: { DEV?: boolean; MODE?: string }): boolean {
-  return Boolean(env.DEV || env.MODE === "test");
+  return Boolean(env.DEV && env.MODE !== "test");
 }
