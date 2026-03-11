@@ -456,7 +456,8 @@ switch ($Mode) {
         $runBackendFull = $backendChanged
         # Mirror remote: frontend_test_build fires when backend OR frontend changed.
         $runFrontendFull = $frontendImpacted -or $backendChanged -or $forceFrontendChecks
-        $runFrontendGuards = $frontendImpacted -or $backendChanged -or $forceFrontendChecks
+        # Mirror remote frontend guards: frontend-only unless explicitly forced.
+        $runFrontendGuards = $frontendImpacted -or $forceFrontendChecks
         $runDocker = -not $SkipDocker.IsPresent -and $dockerChanged
         $runE2E = $false
     }
@@ -465,7 +466,8 @@ switch ($Mode) {
         $runBackendFull = $backendChanged -or $forceAllChecks
         # Mirror remote: frontend_test_build and e2e fire when backend OR frontend changed.
         $runFrontendFull = $frontendImpacted -or $backendChanged -or $forceFrontendChecks
-        $runFrontendGuards = $frontendImpacted -or $backendChanged -or $forceFrontendChecks
+        # Mirror remote frontend guards: frontend-only unless explicitly forced.
+        $runFrontendGuards = $frontendImpacted -or $forceFrontendChecks
         $runDocker = -not $SkipDocker.IsPresent -and ($dockerChanged -or $forceAllChecks)
         $runE2E = -not $SkipE2E.IsPresent -and ($frontendImpacted -or $backendChanged -or $forceFrontendChecks)
     }
