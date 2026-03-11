@@ -1,3 +1,11 @@
+---
+title: "ADR-ARCH-0007: Re-accretion Prevention Governance"
+type: adr
+status: active
+audience: all
+last-updated: 2026-03-11
+---
+
 # ADR-ARCH-0007: Re-accretion Prevention Governance
 
 ## Status
