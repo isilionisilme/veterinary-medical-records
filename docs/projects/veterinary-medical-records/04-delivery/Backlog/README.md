@@ -68,7 +68,7 @@ This directory contains the consolidated backlog for veterinary-medical-records.
 | US-65 | View clinical data assigned to each specific visit | Release 16 | [us-65-view-clinical-data-assigned-to-each-specific-visit.md](us-65-view-clinical-data-assigned-to-each-specific-visit.md) |
 | US-66 | Diagnose visit-to-data assignment problems (conditional) | Release 16 | [us-66-diagnose-visit-to-data-assignment-problems-conditi.md](us-66-diagnose-visit-to-data-assignment-problems-conditi.md) |
 | US-67 | Auditable, navigable, and consistent project documentation | Release 17 | [us-67-auditable-navigable-and-consistent-project-documen.md](us-67-auditable-navigable-and-consistent-project-documen.md) |
-| US-68 | Identify the source worktree of each branch at a glance | Release 17 | [us-68-identify-the-source-worktree-of-each-branch-at-a-g.md](us-68-identify-the-source-worktree-of-each-branch-at-a-g.md) |
+| US-68 | Identify the source worktree of each branch at a glance | Release 17 | [us-68-identify-the-source-worktree-of-each-branch-at-a-g.md](completed/us-68-identify-the-source-worktree-of-each-branch-at-a-g.md) |
 | US-69 | Extract pet name accurately | Release 15 | [us-69-extract-pet-name-accurately.md](us-69-extract-pet-name-accurately.md) |
 | US-70 | Extract clinic name accurately | Release 15 | [us-70-extract-clinic-name-accurately.md](us-70-extract-clinic-name-accurately.md) |
 | US-71 | Extract clinic address accurately | Release 15 | [us-71-extract-clinic-address-accurately.md](us-71-extract-clinic-address-accurately.md) |
