@@ -127,18 +127,18 @@ for fp, count in loc_data.get("files", {}).items():
 
 ### Phase 2 — Add unit tests
 
-- [ ] P2-A 🔄 — Create `scripts/quality/tests/test_architecture_metrics.py` with tests for:
+- [x] P2-A ✅ no-commit (awaiting P2-B hard-gate review) 🔄 — Create `scripts/quality/tests/test_architecture_metrics.py` with tests for:
   - Scenario 1: pre-existing violation + small delta → WARNING, no FAIL.
   - Scenario 2: file crosses threshold in this PR → FAIL.
   - Scenario 3: pre-existing violation + large delta (> growth cap) → FAIL.
   - Scenario 4: file at/below threshold, stays at/below → no WARNING, no FAIL.
   - Scenario 5: no `base_ref` provided (fallback to absolute check) → existing behavior.
-- [ ] P2-B 🚧 — 📌 Checkpoint: present test file for user review.
+- [x] P2-B ✅ no-commit (user-approved checkpoint on 2026-03-11) 🚧 — 📌 Checkpoint: present test file for user review.
 
 ### Phase 3 — Validation
 
-- [ ] P3-A 🔄 — Run `python -m pytest scripts/quality/tests/ -x -q` — all new tests pass.
-- [ ] P3-B 🔄 — Run `python scripts/quality/architecture_metrics.py --check --base-ref main --max-loc 500` on current branch to verify review_service.py produces WARNING instead of FAIL.
+- [x] P3-A ✅ no-commit (default command hit global coverage gate; tests validated with `--no-cov`) 🔄 — Run `python -m pytest scripts/quality/tests/ -x -q` — all new tests pass.
+- [x] P3-B ✅ no-commit (command passes with zero scoped backend files; supplemental check_thresholds probe confirms review_service WARNING/no FAIL) 🔄 — Run `python scripts/quality/architecture_metrics.py --check --base-ref main --max-loc 500` on current branch to verify review_service.py produces WARNING instead of FAIL.
 - [ ] P3-C 🚧 — Hard-gate: present final summary and commit proposal to user.
 
 ---
