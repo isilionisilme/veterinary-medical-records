@@ -613,6 +613,12 @@ def check_thresholds(
     cc_data = data.get("radon_cc", {})
     loc_data = data.get("loc", {})
 
+    cc_error = cc_data.get("error")
+    if isinstance(cc_error, str) and cc_error.strip():
+        if changed_backend_paths is None or changed_backend_paths:
+            failures.append(f"FAIL: unable to evaluate CC thresholds: {cc_error.strip()}")
+            return warnings, failures
+
     for f in cc_data.get("functions", []):
         if not _is_backend_app_path(f["file"]):
             continue

@@ -19,10 +19,13 @@ def _load_module():
     return module
 
 
-def _data_with_loc(loc: int) -> dict:
+def _data_with_loc(loc: int, *, cc_error: str | None = None) -> dict:
+    radon_cc: dict[str, object] = {"functions": []}
+    if cc_error is not None:
+        radon_cc["error"] = cc_error
     return {
         "loc": {"files": {TARGET_FILE: loc}},
-        "radon_cc": {"functions": []},
+        "radon_cc": radon_cc,
     }
 
 
@@ -121,3 +124,23 @@ def test_no_base_ref_preserves_absolute_fail_behavior() -> None:
     assert warnings == []
     assert len(failures) == 1
     assert "FAIL: LOC 600 > 500" in failures[0]
+
+
+def test_radon_error_fails_closed_when_backend_scope_exists() -> None:
+    module = _load_module()
+    data = _data_with_loc(200, cc_error="radon failed: No module named radon")
+
+    warnings, failures = module.check_thresholds(
+        data,
+        max_cc=30,
+        max_loc=500,
+        warn_cc=11,
+        changed_backend_paths={TARGET_FILE},
+        base_ref="main",
+        max_loc_growth=50,
+    )
+
+    assert warnings == []
+    assert len(failures) == 1
+    assert "unable to evaluate CC thresholds" in failures[0]
+    assert "radon failed" in failures[0]
