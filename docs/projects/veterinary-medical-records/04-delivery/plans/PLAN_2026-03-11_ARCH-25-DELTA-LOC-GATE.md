@@ -139,7 +139,7 @@ for fp, count in loc_data.get("files", {}).items():
 
 - [x] P3-A ✅ no-commit (default command hit global coverage gate; tests validated with `--no-cov`) 🔄 — Run `python -m pytest scripts/quality/tests/ -x -q` — all new tests pass.
 - [x] P3-B ✅ no-commit (command passes with zero scoped backend files; supplemental check_thresholds probe confirms review_service WARNING/no FAIL) 🔄 — Run `python scripts/quality/architecture_metrics.py --check --base-ref main --max-loc 500` on current branch to verify review_service.py produces WARNING instead of FAIL.
-- [ ] P3-C 🚧 — Hard-gate: present final summary and commit proposal to user.
+- [x] P3-C ✅ no-commit (final summary presented; user requested completion on 2026-03-11) 🚧 — Hard-gate: present final summary and commit proposal to user.
 
 ---
 
@@ -263,13 +263,13 @@ _(empty — execution has not started)_
 
 ## Acceptance Criteria
 
-- [ ] Files already above `--max-loc` at base-ref do not FAIL for small additive changes (delta <= growth cap).
-- [ ] Files that cross the threshold in the current PR still FAIL.
-- [ ] Large growth (delta > growth cap) in already-over files still FAIL.
-- [ ] Pre-existing violations emit WARNING (never silenced).
-- [ ] Existing CC gate logic unchanged.
-- [ ] Unit tests cover all five scenarios and pass.
-- [ ] `--max-loc-growth` flag documented in script docstring.
+- [x] Files already above `--max-loc` at base-ref do not FAIL for small additive changes (delta <= growth cap).
+- [x] Files that cross the threshold in the current PR still FAIL.
+- [x] Large growth (delta > growth cap) in already-over files still FAIL.
+- [x] Pre-existing violations emit WARNING (never silenced).
+- [x] Existing CC gate logic unchanged.
+- [x] Unit tests cover all five scenarios and pass.
+- [x] `--max-loc-growth` flag documented in script docstring.
 
 ---
 
