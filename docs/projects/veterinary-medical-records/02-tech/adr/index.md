@@ -3,7 +3,7 @@ title: "Architecture Decision Records (ADR) Index"
 type: reference
 status: active
 audience: all
-last-updated: 2026-03-09
+last-updated: 2026-03-11
 ---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -30,6 +30,7 @@ This directory stores architecture decisions that shape the current system desig
 | [ADR-ARCH-0003](ADR-ARCH-0003-raw-sql-repository-pattern.md)  | Raw SQL with Repository Pattern (No ORM)             | Accepted | 2026-02-24 |
 | [ADR-ARCH-0004](ADR-ARCH-0004-in-process-async-processing.md) | In-Process Async Processing (No External Task Queue) | Accepted | 2026-02-24 |
 | [ADR-ARCH-0005](ADR-ARCH-0005-complexity-gate-thresholds.md)  | Complexity Gate Thresholds for CI Enforcement        | Accepted | 2026-03-10 |
+| [ADR-ARCH-0007](ADR-ARCH-0007-re-accretion-prevention-governance.md) | Re-accretion Prevention Governance             | Accepted | 2026-03-11 |
 
 ## Usage
 

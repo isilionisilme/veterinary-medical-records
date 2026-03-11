@@ -588,7 +588,7 @@ Fix remaining hexagonal violations, improve code hygiene, add missing ADRs, clos
 - [ARCH-05 — Add Structured Logging to Critical Paths](Backlog/arch-05-add-structured-logging-critical-paths.md) (Planned)
 - [ARCH-09 — Add ER Diagram to technical-design.md](Backlog/arch-09-add-er-diagram-to-technical-design.md) (Planned)
 - [ARCH-10 — Write Missing ADRs](Backlog/arch-10-write-missing-adrs.md) (Planned)
-- [ARCH-16 — Create Re-accretion Prevention ADR](Backlog/arch-16-create-re-accretion-prevention-adr.md) (Planned)
+- [ARCH-16 — Create Re-accretion Prevention ADR](Backlog/completed/arch-16-create-re-accretion-prevention-adr.md) (Implemented 2026-03-11)
 - [ARCH-11 — Add Monitoring/Alerting Strategy Documentation](Backlog/arch-11-add-monitoring-alerting-strategy-docs.md) (Planned)
 - [ARCH-13 — Implement Production Authentication](Backlog/arch-13-implement-production-authentication.md) (Planned)
 
