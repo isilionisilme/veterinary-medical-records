@@ -111,9 +111,9 @@ def _project_review_payload_to_canonical(
 
     # Temporary bridge for PR-1: visit scoping stays in review_service until PR-2
     # extracts that responsibility into its own engine.
-    from backend.app.application.documents import review_service as _review_service
+    from backend.app.application.documents.visit_scoping import normalize_canonical_review_scoping
 
-    return _review_service._normalize_canonical_review_scoping(projected, raw_text=raw_text)
+    return normalize_canonical_review_scoping(projected, raw_text=raw_text)
 
 
 def _upsert_microchip_field_from_global_schema(

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 # ruff: noqa: E501
-from backend.app.application.documents.review_service import (
-    _split_segment_into_observations_actions,
+from backend.app.application.documents.segment_parser import (
+    split_segment_into_observations_actions as _split_segment_into_observations_actions,
 )
 
 
