@@ -6,6 +6,30 @@ audience: contributor
 last-updated: 2026-03-11
 ---
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+**Table of Contents** _generated with [DocToc](https://github.com/thlorenz/doctoc)_
+
+- [ADR-ARCH-0006: Frontend Stack (React + TanStack Query + Vite)](#adr-arch-0006-frontend-stack-react--tanstack-query--vite)
+  - [Status](#status)
+  - [Context](#context)
+  - [Decision Drivers](#decision-drivers)
+  - [Considered Options](#considered-options)
+    - [Option A — React + TanStack Query + Vite](#option-a--react--tanstack-query--vite)
+    - [Option B — Next.js App Router (full framework)](#option-b--nextjs-app-router-full-framework)
+    - [Option C — React with ad-hoc `fetch` + local component state](#option-c--react-with-ad-hoc-fetch--local-component-state)
+  - [Decision](#decision)
+  - [Rationale](#rationale)
+  - [Consequences](#consequences)
+    - [Positive](#positive)
+    - [Negative](#negative)
+    - [Risks](#risks)
+  - [Code Evidence](#code-evidence)
+  - [Related Decisions](#related-decisions)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # ADR-ARCH-0006: Frontend Stack (React + TanStack Query + Vite)
 
 ## Status

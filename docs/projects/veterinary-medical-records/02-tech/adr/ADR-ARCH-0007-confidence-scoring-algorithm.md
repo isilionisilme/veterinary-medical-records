@@ -6,6 +6,30 @@ audience: contributor
 last-updated: 2026-03-11
 ---
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+**Table of Contents** _generated with [DocToc](https://github.com/thlorenz/doctoc)_
+
+- [ADR-ARCH-0007: Confidence Scoring Algorithm Design](#adr-arch-0007-confidence-scoring-algorithm-design)
+  - [Status](#status)
+  - [Context](#context)
+  - [Decision Drivers](#decision-drivers)
+  - [Considered Options](#considered-options)
+    - [Option A — Deterministic composed confidence (candidate + bounded history adjustment)](#option-a--deterministic-composed-confidence-candidate--bounded-history-adjustment)
+    - [Option B — Pure candidate confidence only (no calibration)](#option-b--pure-candidate-confidence-only-no-calibration)
+    - [Option C — Learned model confidence (online/offline ML model)](#option-c--learned-model-confidence-onlineoffline-ml-model)
+  - [Decision](#decision)
+  - [Rationale](#rationale)
+  - [Consequences](#consequences)
+    - [Positive](#positive)
+    - [Negative](#negative)
+    - [Risks](#risks)
+  - [Code Evidence](#code-evidence)
+  - [Related Decisions](#related-decisions)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # ADR-ARCH-0007: Confidence Scoring Algorithm Design
 
 ## Status
