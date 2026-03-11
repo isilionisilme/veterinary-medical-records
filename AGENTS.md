@@ -12,8 +12,10 @@ Start with the matching operational runbook for the current intent. Keep reads m
 ## Global Rules
 - No direct commits to `main`; use a feature branch + PR unless the user explicitly authorizes otherwise.
 - New branches must use `<category>/<slug>` and follow `docs/agent_router/01_WORKFLOW/BRANCHING/00_entry.md`.
-- If docs changed or the user mentions documentation updates in any language or paraphrase, load `docs/agent_router/01_WORKFLOW/DOC_UPDATES/00_entry.md` and run the DOC_UPDATES normalization pass once before finishing.
+- If docs changed, documentation was updated, or the user mentions documentation updates in any language or paraphrase, load `docs/agent_router/01_WORKFLOW/DOC_UPDATES/00_entry.md` and run the DOC_UPDATES normalization pass once before finishing.
 - If a required standard cannot be satisfied, stop and escalate the blocker.
+- During plan execution, continue only with the first `[ ]` step that belongs to the active agent for this chat.
+- Use token-efficiency policy during plan execution: `iterative-retrieval` before execution and `strategic-compact` at step close.
 - Include final `How to test` for user-validatable changes.
 
 ## Router References
