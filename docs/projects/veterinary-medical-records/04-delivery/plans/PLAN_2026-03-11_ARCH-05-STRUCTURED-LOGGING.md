@@ -2,10 +2,10 @@
 
 > **Operational rules:** See [plan-execution-protocol.md](../../../03-ops/plan-execution-protocol.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
 
-**Branch:** PENDING PLAN-START RESOLUTION
-**Worktree:** PENDING PLAN-START RESOLUTION
-**Execution Mode:** PENDING USER SELECTION
-**Model Assignment:** PENDING USER SELECTION
+**Branch:** feat/arch-05-structured-logging
+**Worktree:** D:/Git/worktrees/codex-permanent-1
+**Execution Mode:** Autonomous
+**Model Assignment:** Uniform
 **PR:** Pending (PR created on explicit user request)
 **Backlog item:** [arch-05-add-structured-logging-critical-paths.md](../Backlog/arch-05-add-structured-logging-critical-paths.md)
 **Prerequisite:** None (ARCH-01/ARCH-02 decomposition recommended but not blocking)
@@ -94,7 +94,7 @@ With structured key=value pairs in messages (e.g., `"PDF extraction finished run
 
 ### Phase 0 — Plan-start preflight
 
-- [ ] P0-A 🔄 — Resolve branch and worktree metadata. Verify clean working tree on the dedicated branch.
+- [x] P0-A 🔄 — Resolve branch and worktree metadata. Verify clean working tree on the dedicated branch.
 
 ### Phase 1 — Add logging to review_service.py
 
