@@ -2,7 +2,7 @@
 
 > **Operational rules:** See [plan-execution-protocol.md](../../../03-ops/plan-execution-protocol.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
 
-**Branch:** codex/arch-25-delta-loc-gate
+**Branch:** ci/arch-25-delta-loc-gate
 **Worktree:** D:/Git/worktrees/codex-permanent-1
 **Execution Mode:** Autonomous
 **Model Assignment:** Uniform
@@ -118,7 +118,7 @@ for fp, count in loc_data.get("files", {}).items():
 
 ### Phase 1 — Implement delta-aware LOC gate
 
-- [ ] P1-A 🔄 — Add `_base_ref_loc(base_ref: str, rel_path: str) -> int` helper that runs `git show {base_ref}:{rel_path}` and counts lines. Returns 0 on failure (new file).
+- [x] P1-A ✅ no-commit (paired with P1-B/P1-C/P1-D/P1-E implementation commit) 🔄 — Add `_base_ref_loc(base_ref: str, rel_path: str) -> int` helper that runs `git show {base_ref}:{rel_path}` and counts lines. Returns 0 on failure (new file).
 - [ ] P1-B 🔄 — Add `--max-loc-growth` CLI argument (default: 50) to argparse.
 - [ ] P1-C 🔄 — Modify `check_thresholds` signature to accept `base_ref: str | None` and `max_loc_growth: int`.
 - [ ] P1-D 🔄 — Replace absolute LOC check with delta-aware logic implementing the three-outcome table from DD-1.
