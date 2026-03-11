@@ -29,6 +29,22 @@ def _data_with_loc(loc: int, *, cc_error: str | None = None) -> dict:
     }
 
 
+def _data_with_cc_function(name: str, complexity: int) -> dict:
+    return {
+        "loc": {"files": {}},
+        "radon_cc": {
+            "functions": [
+                {
+                    "file": TARGET_FILE,
+                    "name": name,
+                    "lineno": 100,
+                    "complexity": complexity,
+                }
+            ]
+        },
+    }
+
+
 def test_preexisting_small_delta_warns_but_does_not_fail() -> None:
     module = _load_module()
     data = _data_with_loc(605)
@@ -144,3 +160,44 @@ def test_radon_error_fails_closed_when_backend_scope_exists() -> None:
     assert len(failures) == 1
     assert "unable to evaluate CC thresholds" in failures[0]
     assert "radon failed" in failures[0]
+
+
+def test_preexisting_cc_above_threshold_warns_when_not_regressed() -> None:
+    module = _load_module()
+    data = _data_with_cc_function("_legacy_hotspot", 53)
+
+    with patch.object(module, "_base_ref_cc_by_function", return_value={"_legacy_hotspot": 53}):
+        warnings, failures = module.check_thresholds(
+            data,
+            max_cc=30,
+            max_loc=500,
+            warn_cc=11,
+            changed_backend_paths={TARGET_FILE},
+            base_ref="main",
+            max_loc_growth=50,
+        )
+
+    assert failures == []
+    assert len(warnings) == 1
+    assert "pre-existing" in warnings[0]
+    assert "delta +0" in warnings[0]
+
+
+def test_preexisting_cc_above_threshold_fails_when_regressed() -> None:
+    module = _load_module()
+    data = _data_with_cc_function("_legacy_hotspot", 55)
+
+    with patch.object(module, "_base_ref_cc_by_function", return_value={"_legacy_hotspot": 53}):
+        warnings, failures = module.check_thresholds(
+            data,
+            max_cc=30,
+            max_loc=500,
+            warn_cc=11,
+            changed_backend_paths={TARGET_FILE},
+            base_ref="main",
+            max_loc_growth=50,
+        )
+
+    assert warnings == []
+    assert len(failures) == 1
+    assert "pre-existing, delta +2" in failures[0]

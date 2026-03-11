@@ -18,9 +18,11 @@ from __future__ import annotations
 import argparse
 import ast
 import json
+import os
 import re
 import subprocess
 import sys
+import tempfile
 from collections import defaultdict
 from datetime import date
 from pathlib import Path
@@ -124,6 +126,51 @@ def _base_ref_loc(base_ref: str, rel_path: str) -> int:
     if result.returncode != 0:
         return 0
     return sum(1 for _ in result.stdout.splitlines())
+
+
+def _base_ref_cc_by_function(base_ref: str, rel_path: str) -> dict[str, int]:
+    """Return base-ref cyclomatic complexity by function name for a file.
+
+    If the file does not exist at base_ref or analysis fails, return an empty mapping.
+    """
+    result = _run(["git", "show", f"{base_ref}:{rel_path}"])
+    if result.returncode != 0 or not result.stdout:
+        return {}
+
+    temp_path = ""
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            suffix=".py",
+            delete=False,
+        ) as handle:
+            handle.write(result.stdout)
+            temp_path = handle.name
+
+        radon_result = _run([sys.executable, "-m", "radon", "cc", "-s", "-j", "--", temp_path])
+        if radon_result.returncode != 0:
+            return {}
+        payload = json.loads(radon_result.stdout)
+        blocks = payload.get(temp_path, [])
+        function_cc: dict[str, int] = {}
+        for block in blocks:
+            name = str(block.get("name", "")).strip()
+            complexity = int(block.get("complexity", 0))
+            if not name:
+                continue
+            previous = function_cc.get(name, 0)
+            if complexity > previous:
+                function_cc[name] = complexity
+        return function_cc
+    except (OSError, json.JSONDecodeError, ValueError, TypeError):
+        return {}
+    finally:
+        if temp_path:
+            try:
+                os.unlink(temp_path)
+            except OSError:
+                pass
 
 
 def _layer_of(path: Path) -> str | None:
@@ -612,6 +659,7 @@ def check_thresholds(
 
     cc_data = data.get("radon_cc", {})
     loc_data = data.get("loc", {})
+    base_cc_cache: dict[str, dict[str, int]] = {}
 
     cc_error = cc_data.get("error")
     if isinstance(cc_error, str) and cc_error.strip():
@@ -626,6 +674,28 @@ def check_thresholds(
             continue
         complexity = f["complexity"]
         if complexity > max_cc:
+            if base_ref:
+                fp = f["file"]
+                base_cc_for_file = base_cc_cache.get(fp)
+                if base_cc_for_file is None:
+                    base_cc_for_file = _base_ref_cc_by_function(base_ref, fp)
+                    base_cc_cache[fp] = base_cc_for_file
+                base_complexity = base_cc_for_file.get(f["name"])
+                if base_complexity is not None and base_complexity > max_cc:
+                    delta = complexity - base_complexity
+                    if delta <= 0:
+                        warnings.append(
+                            "WARNING: CC "
+                            f"{complexity} > {max_cc} (pre-existing, delta {delta:+d}): "
+                            f"{f['name']} in {f['file']}:{f['lineno']}"
+                        )
+                    else:
+                        failures.append(
+                            "FAIL: CC "
+                            f"{complexity} > {max_cc} (pre-existing, delta +{delta}): "
+                            f"{f['name']} in {f['file']}:{f['lineno']}"
+                        )
+                    continue
             failures.append(
                 f"FAIL: CC {complexity} > {max_cc}: {f['name']} in {f['file']}:{f['lineno']}"
             )
