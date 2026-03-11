@@ -3,13 +3,13 @@
 > **Operational rules:** See [plan-execution-protocol.md](../../03-ops/plan-execution-protocol.md) for agent execution protocol, SCOPE BOUNDARY template, commit conventions, and handoff messages.
 
 **Backlog item:** [imp-13-operational-runbook-architecture.md](../Backlog/imp-13-operational-runbook-architecture.md)
-**Branch:** PENDING PLAN-START RESOLUTION
-**PR:** Pending (PR created on explicit user request)
+**Branch:** `refactor/imp-13-activate-runbook-routing`
+**PR:** [#274](https://github.com/isilionisilme/veterinary-medical-records/pull/274)
 **User Story:** IMP-13
 **Prerequisite:** PR-2 (Fase B) merged to `main`; AGENTS.md rewired to `.prompt.md` routing.
-**Worktree:** PENDING PLAN-START RESOLUTION
-**Execution Mode:** PENDING USER SELECTION
-**Model Assignment:** PENDING USER SELECTION
+**Worktree:** `D:\Git\worktrees\imp13-resume`
+**Execution Mode:** Autonomous
+**Model Assignment:** Default
 
 ---
 
@@ -75,50 +75,57 @@ Each runbook draws from specific router modules. This table is the authoritative
 
 ### Phase 0 — Plan-start preflight (mandatory)
 
-- [ ] P0-A 🔄 — Resolve execution branch and update `**Branch:**` metadata.
-- [ ] P0-B 🔄 — Resolve execution worktree and update `**Worktree:**` metadata.
-- [ ] P0-C 🚧 — Ask user to choose `Execution Mode` and update metadata.
-- [ ] P0-D 🚧 — Ask user to choose `Model Assignment` and update metadata.
-- [ ] P0-E 🔄 — Record plan-start snapshot commit.
+- [x] P0-A 🔄 — Resolve execution branch and update `**Branch:**` metadata. — ✅ `pending-snapshot`
+- [x] P0-B 🔄 — Resolve execution worktree and update `**Worktree:**` metadata. — ✅ `pending-snapshot`
+- [x] P0-C 🚧 — Ask user to choose `Execution Mode` and update metadata. — ✅ Autonomous
+- [x] P0-D 🚧 — Ask user to choose `Model Assignment` and update metadata. — ✅ Default — GPT-5.4
+- [x] P0-E 🔄 — Record plan-start snapshot commit. — ✅ `6f662c89`
 
 ### Phase 1 — Enrich existing runbooks
 
-- [ ] P1-A 🔄 — Enrich `plan-create.prompt.md` with agent taxonomy, branch-first, naming, partition gate, PR Roadmap format.
-- [ ] P1-B 🔄 — Enrich `plan-start.prompt.md` with full Execution Mode definitions, Model Assignment options, single-chat rule.
-- [ ] P1-C 🔄 — Enrich `plan-resume.prompt.md` with step eligibility, task chaining, evidence block, next-step table, token-efficiency.
-- [ ] P1-D 🔄 — Enrich `plan-closeout.prompt.md` with iteration lifecycle, post-merge cleanup, artifact archival.
-- [ ] P1-E 🔄 — Enrich `code-review.prompt.md` with full depth selection, lens procedure, 7 focus areas, severity rules, template, publication, follow-up.
-- [ ] P1-F 🔄 — Enrich `scope-boundary.prompt.md` with format-before-commit, L1/L2/L3 table, auto-fix policy, hard-gate protocol.
+- [x] P1-A 🔄 — Enrich `plan-create.prompt.md` with agent taxonomy, branch-first, naming, partition gate, PR Roadmap format. — ✅ `4ca4435a`
+- [x] P1-B 🔄 — Enrich `plan-start.prompt.md` with full Execution Mode definitions, Model Assignment options, single-chat rule. — ✅ `4ca4435a`
+- [x] P1-C 🔄 — Enrich `plan-resume.prompt.md` with step eligibility, task chaining, evidence block, next-step table, token-efficiency. — ✅ `4ca4435a`
+- [x] P1-D 🔄 — Enrich `plan-closeout.prompt.md` with iteration lifecycle, post-merge cleanup, artifact archival. — ✅ `4ca4435a`
+- [x] P1-E 🔄 — Enrich `code-review.prompt.md` with full depth selection, lens procedure, 7 focus areas, severity rules, template, publication, follow-up. — ✅ `4ca4435a`
+- [x] P1-F 🔄 — Enrich `scope-boundary.prompt.md` with format-before-commit, L1/L2/L3 table, auto-fix policy, hard-gate protocol. — ✅ `4ca4435a`
 
 > 📌 **Commit checkpoint — P1 complete.** Suggested message: `docs(ops): enrich existing runbooks with router operational rules (IMP-13)`. Run L1; if red, fix and re-run. Then wait for user.
 
 ### Phase 2 — Create new runbooks
 
-- [ ] P2-A 🔄 — Create `start-work.prompt.md` with branch-first procedure, naming, category mapping.
-- [ ] P2-B 🔄 — Create `doc-updates.prompt.md` with full DOC_UPDATES procedure, normalization, enforcement maps, output format.
-- [ ] P2-C 🔄 — Create `pr-workflow.prompt.md` with PR lifecycle: classification, title, body, commit review, partition gate, post-merge cleanup.
+- [x] P2-A 🔄 — Create `start-work.prompt.md` with branch-first procedure, naming, category mapping. — ✅ `44f0ad8b2`
+- [x] P2-B 🔄 — Create `doc-updates.prompt.md` with full DOC_UPDATES procedure, normalization, enforcement maps, output format. — ✅ `44f0ad8b2`
+- [x] P2-C 🔄 — Create `pr-workflow.prompt.md` with PR lifecycle: classification, title, body, commit review, partition gate, post-merge cleanup. — ✅ `44f0ad8b2`
 
 > 📌 **Commit checkpoint — P2 complete.** Suggested message: `docs(ops): create start-work, doc-updates, and pr-workflow runbooks (IMP-13)`. Run L1; if red, fix and re-run. Then wait for user.
 
 ### Phase 3 — Update AGENTS.md routing and validate
 
-- [ ] P3-A 🔄 — Update AGENTS.md routing table to add entries for `start-work`, `doc-updates`, `pr-workflow`.
-- [ ] P3-B 🔄 — Run L2 validation (`scripts/ci/test-L2.ps1 -BaseRef main`). Fix any contract test failures.
+- [x] P3-A 🔄 — Update AGENTS.md routing table to add entries for `start-work`, `doc-updates`, `pr-workflow`. — ✅ `no-commit (checkpoint commit deferred; changes ready)`
+- [x] P3-B 🔄 — Run L2 validation (`scripts/ci/test-L2.ps1 -BaseRef main`). Fix any contract test failures. — ✅ `no-commit (L2 passed; checkpoint commit deferred)`
+
+> Note (2026-03-11): Remote base sync blocker was resolved by merge commit `034476a8` before the successful L2 re-run.
 
 > 📌 **Commit checkpoint — P3 complete.** Suggested message: `refactor(ops): update AGENTS.md routing for new runbooks (IMP-13)`. Run L2; if red, fix and re-run. Then wait for user.
 
 ### Phase 4 — User validation
 
-- [ ] P4-A 🚧 — Hard-gate: user validates runbooks in cold-chat tests:
+- [x] P4-A 🚧 — Hard-gate: user validates runbooks in cold-chat tests. — ✅ `no-commit (user confirmed cold-chat validation in chat, 2026-03-11)`
   1. "Create a plan" → loads `plan-create.prompt.md` with full rules.
   2. "Continue the plan" → runs `plan-start-check.py`, loads `plan-start.prompt.md` with full rules.
   3. "Start work on X" → loads `start-work.prompt.md`.
   4. "I updated docs" → loads `doc-updates.prompt.md`.
   5. "Create a PR" → loads `pr-workflow.prompt.md`.
 
+> Evidence
+> - Step: P4-A
+> - Code commit SHA: `no-commit (validation gate)`
+> - Plan commit SHA: `pending`
+
 ### Documentation task
 
-- [ ] DOC-1 🔄 — `no-doc-needed` — The runbooks ARE the delivered documentation. No separate docs required.
+- [x] DOC-1 🔄 — `no-doc-needed` — The runbooks ARE the delivered documentation. No separate docs required. — ✅ `no-commit (plan artifact only)`
 
 ---
 
@@ -134,7 +141,7 @@ Each runbook draws from specific router modules. This table is the authoritative
 
 ## Active Prompt
 
-None — plan not yet started.
+Prompt 5 — User validation gate (P4).
 
 ---
 
