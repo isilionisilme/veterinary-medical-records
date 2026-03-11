@@ -67,11 +67,6 @@ docs/
   - `04-delivery/future-improvements.md`
   - `04-delivery/implementation-history.md`
   - `04-delivery/implementation-plan.md`
-  - `onboarding/index.md`
-  - `onboarding/contributor-guide.md`
-  - `onboarding/staff-engineer-guide.md`
-  - `onboarding/executive-guide.md`
-  - `onboarding/product-manager-guide.md`
 
 ## Documentation governance (normative)
 
@@ -113,8 +108,8 @@ See [projects/README.md](projects/README.md) for the full initiative listing.
 6. [backend-implementation.md](projects/veterinary-medical-records/02-tech/backend-implementation.md) and
    [frontend-implementation.md](projects/veterinary-medical-records/02-tech/frontend-implementation.md) — implementation
    details.
-7. [onboarding/index.md](projects/veterinary-medical-records/onboarding/index.md) — role-specific onboarding guides for
-   new contributors, staff engineers, executives, and PMs.
+7. [delivery-summary.md](projects/veterinary-medical-records/04-delivery/delivery-summary.md) — current delivery scope,
+   release framing, and follow-up references.
 
 ## Tooling (optional)
 

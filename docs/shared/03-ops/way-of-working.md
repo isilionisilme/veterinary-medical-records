@@ -186,10 +186,11 @@ Branches must be **short-lived** and focused on a single user story or a single 
 - A commit must **never** span multiple user stories.
 - A change may be implemented through **multiple commits**.
 - Commit history must remain **readable** to support reasoning and review.
-- **Agent commit confirmation (hard rule):** AI agents must present the staged files and proposed commit message to the
-  user and wait for explicit confirmation before running `git commit`.
-  Auto-commit without user confirmation is only permitted during active plan execution
-  when the plan's automation mode is `Semiautomatico` or `Automatico` (see plan-execution-protocol.md §7).
+- **Agent commit confirmation (hard rule):** AI agents must present the staged
+  files and proposed commit message to the user and wait for explicit confirmation before running `git commit`.
+  Auto-commit without user confirmation is only permitted during active plan
+  execution when the plan's execution mode is `Autonomous`
+  (see plan-execution-protocol.md §7).
 
 ### Commit Message Conventions
 
@@ -322,6 +323,12 @@ this procedure automatically:
 7. Before requesting merge, if the Pull Request includes code changes and no code review has been performed, ask the
    user whether a review should be done. Include a recommended review depth (see Section 6 — Review Depth) with a brief
    justification.
+
+Entrypoint-size warning (non-blocking):
+
+- If the PR changes `AGENTS.md` and the root entrypoint has grown materially
+  (for example, beyond roughly `4000` characters), report a `Should-fix` or
+  `Nice-to-have` review note about token efficiency and routing discipline.
 
 ### PR Partition Gate (hard rule)
 
