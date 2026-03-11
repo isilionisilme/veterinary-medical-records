@@ -1,6 +1,6 @@
 # IMP-09 — Rationalize Documentation Governance Tests
 
-**Status:** Planned
+**Status:** Done
 
 **Type:** Technical Improvement (non-user-facing)
 
