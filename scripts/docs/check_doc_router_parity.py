@@ -10,6 +10,8 @@ Updated in IMP-05 follow-up to keep implementation-plan status
 propagation aligned with owner-router parity checks.
 Updated in DOCS-IMPROVEMENT D1 follow-up to keep 2026-03-09 source/router parity checks aligned.
 Updated in DOCS-IMPROVEMENT D4 follow-up to keep parity checks aligned after broad TOC regeneration.
+Updated in DOCS-IMPROVEMENT PR3 follow-up to keep architecture source-of-truth
+owner-routing updates aligned with parity guard expectations.
 """
 
 from __future__ import annotations

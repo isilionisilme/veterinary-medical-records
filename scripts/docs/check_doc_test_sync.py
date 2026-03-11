@@ -9,6 +9,8 @@ Updated in PR-231 merge-conflict follow-up to satisfy doc-sync guard
 requirements after stacked-base updates.
 Updated in DOCS-IMPROVEMENT D1 follow-up to track 2026-03-09 owner-propagation edits.
 Updated in DOCS-IMPROVEMENT D4 follow-up to track owner propagation after broad TOC regeneration.
+Updated in DOCS-IMPROVEMENT PR3 follow-up to keep architecture source-of-truth
+router propagation changes covered by sync guard metadata updates.
 """
 
 from __future__ import annotations
