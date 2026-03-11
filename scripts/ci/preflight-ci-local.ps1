@@ -7,7 +7,10 @@ param(
     [switch]$ForceFrontend,
     [switch]$ForceFull,
     [switch]$SkipDocker,
-    [switch]$SkipE2E
+    [switch]$SkipE2E,
+    # Restrict changed-file detection to the commit range only (mirrors what
+    # GitHub Actions sees on push/PR). Excludes staged/unstaged local edits.
+    [switch]$ParityMode
 )
 
 $ErrorActionPreference = "Stop"
@@ -16,10 +19,30 @@ $ErrorActionPreference = "Stop"
 $repoRoot = Get-RepoRoot -ScriptRoot $PSScriptRoot
 Set-Location $repoRoot
 
+function Resolve-RemoteBranchName {
+    param(
+        [Parameter(Mandatory = $true)][string]$BaseRefValue
+    )
+
+    $normalized = $BaseRefValue.Trim()
+
+    if ($normalized.StartsWith("refs/heads/", [System.StringComparison]::OrdinalIgnoreCase)) {
+        return $normalized.Substring("refs/heads/".Length)
+    }
+
+    if ($normalized.StartsWith("origin/", [System.StringComparison]::OrdinalIgnoreCase)) {
+        return $normalized.Substring("origin/".Length)
+    }
+
+    return $normalized
+}
+
 function Assert-RemoteBaseUpToDate {
     param(
         [Parameter(Mandatory = $true)][string]$BaseRefValue
     )
+
+    $remoteBranchName = Resolve-RemoteBranchName -BaseRefValue $BaseRefValue
 
     $currentBranch = (& git rev-parse --abbrev-ref HEAD).Trim()
     if ($LASTEXITCODE -ne 0 -or -not $currentBranch) {
@@ -32,25 +55,25 @@ function Assert-RemoteBaseUpToDate {
         return
     }
 
-    & git fetch --quiet origin $BaseRefValue
+    & git fetch --quiet origin $remoteBranchName
     if ($LASTEXITCODE -ne 0) {
-        throw "Remote base sync guard failed: could not fetch origin/$BaseRefValue."
+        throw "Remote base sync guard failed: could not fetch origin/$remoteBranchName."
     }
 
-    & git show-ref --verify --quiet ("refs/remotes/origin/{0}" -f $BaseRefValue)
+    & git show-ref --verify --quiet ("refs/remotes/origin/{0}" -f $remoteBranchName)
     if ($LASTEXITCODE -ne 0) {
-        throw "Remote base sync guard failed: origin/$BaseRefValue does not exist locally after fetch."
+        throw "Remote base sync guard failed: origin/$remoteBranchName does not exist locally after fetch."
     }
 
-    & git merge-base --is-ancestor ("origin/{0}" -f $BaseRefValue) HEAD
+    & git merge-base --is-ancestor ("origin/{0}" -f $remoteBranchName) HEAD
     if ($LASTEXITCODE -ne 0) {
         throw (
-            "Remote base sync guard failed: branch '$currentBranch' is behind origin/$BaseRefValue. " +
-            "Rebase or merge origin/$BaseRefValue before pushing."
+            "Remote base sync guard failed: branch '$currentBranch' is behind origin/$remoteBranchName. " +
+            "Rebase or merge origin/$remoteBranchName before pushing."
         )
     }
 
-    Write-Host "Remote base sync guard passed: HEAD contains origin/$BaseRefValue."
+    Write-Host "Remote base sync guard passed: HEAD contains origin/$remoteBranchName."
 }
 function Invoke-Step {
     param(
@@ -138,15 +161,25 @@ function Get-GitOutput {
 }
 
 function Get-ChangedFiles {
-    param([string]$BaseRefValue)
+    param(
+        [string]$BaseRefValue,
+        [bool]$CommitDiffOnly = $false
+    )
 
     $set = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
 
-    $sources = @(
-        @("diff", "--name-only", "$BaseRefValue...HEAD"),
-        @("diff", "--name-only"),
-        @("diff", "--name-only", "--cached")
-    )
+    if ($CommitDiffOnly) {
+        # Parity mode: only the commit-range diff; mirrors what GitHub Actions sees.
+        $sources = @(
+            @("diff", "--name-only", "$BaseRefValue...HEAD")
+        )
+    } else {
+        $sources = @(
+            @("diff", "--name-only", "$BaseRefValue...HEAD"),
+            @("diff", "--name-only"),
+            @("diff", "--name-only", "--cached")
+        )
+    }
 
     foreach ($args in $sources) {
         foreach ($line in (Get-GitOutput -Arguments $args)) {
@@ -324,9 +357,9 @@ if ($All.IsPresent) {
     $Mode = "Full"
 }
 
-$changedFiles = @(Get-ChangedFiles -BaseRefValue $BaseRef)
+$changedFiles = @(Get-ChangedFiles -BaseRefValue $BaseRef -CommitDiffOnly:$ParityMode.IsPresent)
 
-Write-Host "preflight-ci-local: mode=$Mode base-ref=$BaseRef"
+Write-Host "preflight-ci-local: mode=$Mode base-ref=$BaseRef parity-mode=$($ParityMode.IsPresent)"
 if ($changedFiles.Count -eq 0) {
     Write-Host "No changed files detected (branch diff + staged + unstaged)."
 }
@@ -421,18 +454,20 @@ switch ($Mode) {
         $runBranchNameValidation = $true
         $runDocs = $docsChanged
         $runBackendFull = $backendChanged
-        $runFrontendFull = $frontendImpacted -or $forceFrontendChecks
-        $runFrontendGuards = $frontendImpacted -or $forceFrontendChecks
+        # Mirror remote: frontend_test_build fires when backend OR frontend changed.
+        $runFrontendFull = $frontendImpacted -or $backendChanged -or $forceFrontendChecks
+        $runFrontendGuards = $frontendImpacted -or $backendChanged -or $forceFrontendChecks
         $runDocker = -not $SkipDocker.IsPresent -and $dockerChanged
         $runE2E = $false
     }
     "Full" {
         $runDocs = $true
         $runBackendFull = $backendChanged -or $forceAllChecks
-        $runFrontendFull = $frontendImpacted -or $forceFrontendChecks
-        $runFrontendGuards = $frontendImpacted -or $forceFrontendChecks
+        # Mirror remote: frontend_test_build and e2e fire when backend OR frontend changed.
+        $runFrontendFull = $frontendImpacted -or $backendChanged -or $forceFrontendChecks
+        $runFrontendGuards = $frontendImpacted -or $backendChanged -or $forceFrontendChecks
         $runDocker = -not $SkipDocker.IsPresent -and ($dockerChanged -or $forceAllChecks)
-        $runE2E = -not $SkipE2E.IsPresent -and ($frontendImpacted -or $forceFrontendChecks)
+        $runE2E = -not $SkipE2E.IsPresent -and ($frontendImpacted -or $backendChanged -or $forceFrontendChecks)
     }
 }
 
@@ -458,7 +493,11 @@ else {
 }
 
 if (($Mode -eq "Push" -or $Mode -eq "Full") -and -not $runFrontendFull) {
-    Write-Host " - Frontend checks skipped: no frontend-impact paths (use -ForceFrontend to override)"
+    Write-Host " - Frontend checks skipped: no frontend/backend-impact paths (use -ForceFrontend to override)"
+}
+
+if ($ParityMode.IsPresent) {
+    Write-Host " - Parity mode: file detection restricted to commit range only (staged/unstaged excluded)"
 }
 
 if ($runBranchNameValidation) {
