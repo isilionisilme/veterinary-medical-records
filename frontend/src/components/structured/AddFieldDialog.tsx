@@ -21,8 +21,6 @@ type AddFieldDialogProps = {
   onFieldValueChange: (value: string) => void;
   onOpenChange: (open: boolean) => void;
   onSave: () => void;
-  titleId?: string;
-  descriptionId?: string;
 };
 
 export function AddFieldDialog({
@@ -34,8 +32,6 @@ export function AddFieldDialog({
   onFieldValueChange,
   onOpenChange,
   onSave,
-  titleId = "add-field-dialog-title",
-  descriptionId = "add-field-dialog-description",
 }: AddFieldDialogProps) {
   const fieldKeyRef = useRef<HTMLInputElement | null>(null);
 
@@ -60,8 +56,6 @@ export function AddFieldDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
-        aria-labelledby={titleId}
-        aria-describedby={descriptionId}
         onEscapeKeyDown={(event) => {
           if (!isSaving) {
             return;
@@ -76,8 +70,8 @@ export function AddFieldDialog({
         }}
       >
         <DialogHeader>
-          <DialogTitle id={titleId}>Añadir campo</DialogTitle>
-          <DialogDescription id={descriptionId} className="text-xs">
+          <DialogTitle>Añadir campo</DialogTitle>
+          <DialogDescription className="text-xs">
             Define una clave nueva y su valor inicial para este documento.
           </DialogDescription>
         </DialogHeader>

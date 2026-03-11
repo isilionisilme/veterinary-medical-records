@@ -38,8 +38,6 @@ export function WorkspaceDialogs(props: WorkspaceDialogsProps) {
       <AddFieldDialog
         open={props.isAddFieldDialogOpen}
         isSaving={props.isInterpretationEditPending}
-        titleId="workspace-add-field-dialog-title"
-        descriptionId="workspace-add-field-dialog-description"
         fieldKey={props.addFieldKeyDraft}
         fieldValue={props.addFieldValueDraft}
         onFieldKeyChange={props.onFieldKeyChange}
@@ -51,8 +49,6 @@ export function WorkspaceDialogs(props: WorkspaceDialogsProps) {
       />
       <FieldEditDialog
         open={props.editingField !== null}
-        titleId="workspace-field-edit-dialog-title"
-        descriptionId="workspace-field-edit-dialog-description"
         fieldKey={props.editingField?.key ?? null}
         fieldOrigin={props.editingField?.rawField?.origin}
         fieldLabel={props.editingField?.label ?? ""}

@@ -42,8 +42,6 @@ type FieldEditDialogProps = {
   onValueChange: (value: string) => void;
   onOpenChange: (open: boolean) => void;
   onSave: () => void;
-  titleId?: string;
-  descriptionId?: string;
 };
 
 export function FieldEditDialog({
@@ -65,8 +63,6 @@ export function FieldEditDialog({
   onValueChange,
   onOpenChange,
   onSave,
-  titleId = "field-edit-dialog-title",
-  descriptionId = "field-edit-dialog-description",
 }: FieldEditDialogProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -216,8 +212,6 @@ export function FieldEditDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         data-testid="field-edit-dialog"
-        aria-labelledby={titleId}
-        aria-describedby={descriptionId}
         onEscapeKeyDown={(event) => {
           if (!isSaving) {
             return;
@@ -232,8 +226,8 @@ export function FieldEditDialog({
         }}
       >
         <DialogHeader>
-          <DialogTitle id={titleId}>{titleText}</DialogTitle>
-          <DialogDescription id={descriptionId} className="text-xs">
+          <DialogTitle>{titleText}</DialogTitle>
+          <DialogDescription className="text-xs">
             Revisa el valor sugerido, corrígelo si hace falta y guarda los cambios.
           </DialogDescription>
         </DialogHeader>

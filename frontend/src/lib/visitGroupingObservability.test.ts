@@ -49,10 +49,11 @@ describe("visitGroupingObservability", () => {
 
   it("returns false in production-like mode for diagnostics emission", () => {
     expect(shouldEmitVisitGroupingDiagnostics({ DEV: false, MODE: "production" })).toBe(false);
+    expect(shouldEmitVisitGroupingDiagnostics({ DEV: false, MODE: "test" })).toBe(false);
   });
 
-  it("returns true in dev or test mode for diagnostics emission", () => {
+  it("returns true only in non-test dev mode for diagnostics emission", () => {
     expect(shouldEmitVisitGroupingDiagnostics({ DEV: true, MODE: "development" })).toBe(true);
-    expect(shouldEmitVisitGroupingDiagnostics({ DEV: false, MODE: "test" })).toBe(true);
+    expect(shouldEmitVisitGroupingDiagnostics({ DEV: true, MODE: "test" })).toBe(false);
   });
 });

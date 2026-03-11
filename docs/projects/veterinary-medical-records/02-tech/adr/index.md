@@ -31,7 +31,8 @@ This directory stores architecture decisions that shape the current system desig
 | [ADR-ARCH-0004](ADR-ARCH-0004-in-process-async-processing.md)              | In-Process Async Processing (No External Task Queue) | Accepted | 2026-02-24 |
 | [ADR-ARCH-0005](ADR-ARCH-0005-complexity-gate-thresholds.md)               | Complexity Gate Thresholds for CI Enforcement        | Accepted | 2026-03-10 |
 | [ADR-ARCH-0006](ADR-ARCH-0006-frontend-stack-react-tanstack-query-vite.md) | Frontend Stack (React + TanStack Query + Vite)       | Accepted | 2026-03-11 |
-| [ADR-ARCH-0007](ADR-ARCH-0007-confidence-scoring-algorithm.md)             | Confidence Scoring Algorithm Design                  | Accepted | 2026-03-11 |
+| [ADR-ARCH-0007](ADR-ARCH-0007-re-accretion-prevention-governance.md)       | Re-accretion Prevention Governance                   | Accepted | 2026-03-11 |
+| [ADR-ARCH-0008](ADR-ARCH-0008-confidence-scoring-algorithm.md)             | Confidence Scoring Algorithm Design                  | Accepted | 2026-03-11 |
 
 ## Usage
 
