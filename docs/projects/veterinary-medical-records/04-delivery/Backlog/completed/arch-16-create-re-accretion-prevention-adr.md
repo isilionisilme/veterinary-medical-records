@@ -1,12 +1,12 @@
 # ARCH-16 — Create Re-accretion Prevention ADR
 
-**Status:** Planned
+**Status:** Completed
 
 **Type:** Architecture Improvement (architecture governance)
 
 **Target release:** Release 20 — Architecture hardening
 
-**Origin:** [Architecture Review 2026-03-09](../../02-tech/audits/architecture-review-2026-03-09.md) — Phase 3 (§5.3)
+**Origin:** [Architecture Review 2026-03-09](../../../02-tech/audits/architecture-review-2026-03-09.md) — Phase 3 (§5.3)
 
 **Severity:** HIGH  
 **Effort:** S (1-2h)
