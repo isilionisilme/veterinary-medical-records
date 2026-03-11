@@ -116,6 +116,14 @@ def _changed_backend_python_paths(base_ref: str | None) -> set[str]:
     return changed
 
 
+def _base_ref_loc(base_ref: str, rel_path: str) -> int:
+    """Count LOC of a file at the given git ref. Returns 0 if not found (new file)."""
+    result = _run(["git", "show", f"{base_ref}:{rel_path}"])
+    if result.returncode != 0:
+        return 0
+    return sum(1 for _ in result.stdout.splitlines())
+
+
 def _layer_of(path: Path) -> str | None:
     """Return the hexagonal layer name for a backend/app file."""
     rel = path.relative_to(BACKEND_APP)
