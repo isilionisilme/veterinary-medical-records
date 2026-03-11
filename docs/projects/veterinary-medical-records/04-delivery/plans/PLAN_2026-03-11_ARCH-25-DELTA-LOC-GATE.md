@@ -119,11 +119,11 @@ for fp, count in loc_data.get("files", {}).items():
 ### Phase 1 — Implement delta-aware LOC gate
 
 - [x] P1-A ✅ no-commit (paired with P1-B/P1-C/P1-D/P1-E implementation commit) 🔄 — Add `_base_ref_loc(base_ref: str, rel_path: str) -> int` helper that runs `git show {base_ref}:{rel_path}` and counts lines. Returns 0 on failure (new file).
-- [ ] P1-B 🔄 — Add `--max-loc-growth` CLI argument (default: 50) to argparse.
-- [ ] P1-C 🔄 — Modify `check_thresholds` signature to accept `base_ref: str | None` and `max_loc_growth: int`.
-- [ ] P1-D 🔄 — Replace absolute LOC check with delta-aware logic implementing the three-outcome table from DD-1.
-- [ ] P1-E 🔄 — Update the script docstring to document the new `--max-loc-growth` flag.
-- [ ] P1-F 🚧 — 📌 Checkpoint: present diff of `architecture_metrics.py` for user review.
+- [x] P1-B ✅ no-commit (paired with P1-C/P1-D/P1-E implementation commit) 🔄 — Add `--max-loc-growth` CLI argument (default: 50) to argparse.
+- [x] P1-C ✅ no-commit (paired with P1-D/P1-E implementation commit) 🔄 — Modify `check_thresholds` signature to accept `base_ref: str | None` and `max_loc_growth: int`.
+- [x] P1-D ✅ no-commit (paired with P1-E implementation commit) 🔄 — Replace absolute LOC check with delta-aware logic implementing the three-outcome table from DD-1.
+- [x] P1-E ✅ no-commit (paired with Phase 1 implementation commit) 🔄 — Update the script docstring to document the new `--max-loc-growth` flag.
+- [x] P1-F ✅ no-commit (user-approved checkpoint; L3 PASS on 2026-03-11) 🚧 — 📌 Checkpoint: present diff of `architecture_metrics.py` for user review.
 
 ### Phase 2 — Add unit tests
 
