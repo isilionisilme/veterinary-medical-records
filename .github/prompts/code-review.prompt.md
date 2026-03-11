@@ -10,4 +10,4 @@ description: Run a structured code review on a pull request.
 5. Review these focus areas: layering, maintainability, testability, simplicity, CI/tooling, database safety, UX/brand.
 6. Classify findings as `Must-fix`, `Should-fix`, or `Nice-to-have` using the canonical severity criteria.
 7. Output the result using the `AI Code Review` template exactly.
-8. Publish the review to the pull request only when the current step or user request requires publication.
+8. Publish the review as a pull request comment, or update the existing `AI Code Review` comment, and return the comment URL.

@@ -81,6 +81,20 @@ def test_run_partial_resolution_returns_exit_1_and_lists_missing_fields(tmp_path
     assert "UNRESOLVED: Worktree, Model Assignment" in rendered
 
 
+def test_spanish_placeholder_is_reported_as_unresolved(tmp_path: Path) -> None:
+    module = _load_module()
+    _write_plan(
+        tmp_path,
+        "PLAN_pending_es.md",
+        _plan_template(branch="pendiente"),
+    )
+
+    reports = module.collect_reports(tmp_path, repo_root=tmp_path)
+
+    assert len(reports) == 1
+    assert reports[0].unresolved_fields == ("Branch",)
+
+
 def test_run_no_active_plan_ignores_completed_directory(tmp_path: Path) -> None:
     module = _load_module()
     _write_plan(tmp_path, "completed/PLAN_done.md", _plan_template())

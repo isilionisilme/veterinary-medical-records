@@ -16,6 +16,12 @@ PLAN_START_FIELDS = (
 )
 VALID_EXECUTION_MODES = {"Supervised", "Semi-supervised", "Autonomous"}
 VALID_MODEL_ASSIGNMENTS = {"Default", "Uniform", "Custom"}
+UNRESOLVED_PLACEHOLDERS = (
+    "pending plan-start resolution",
+    "pending user selection",
+    "pending",
+    "pendiente",
+)
 INLINE_CODE_RE = re.compile(r"`([^`]+)`")
 
 
@@ -62,7 +68,11 @@ def is_field_resolved(field_name: str, value: str | None) -> bool:
     if not normalized:
         return False
 
-    if "PENDING" in normalized.upper():
+    normalized_casefold = normalized.casefold()
+    if any(
+        normalized_casefold == placeholder or placeholder in normalized_casefold
+        for placeholder in UNRESOLVED_PLACEHOLDERS
+    ):
         return False
 
     if field_name == "Execution Mode":
