@@ -811,6 +811,23 @@ Each `ProcessingRun` has exactly one state at any time:
 - `FAILED`
 - `TIMED_OUT`
 
+```mermaid
+stateDiagram-v2
+    [*] --> QUEUED : run created
+    QUEUED --> RUNNING : scheduler picks (only if no other RUNNING run)
+    RUNNING --> COMPLETED : all steps succeed
+    RUNNING --> FAILED : step fails / crash recovery (PROCESS_TERMINATED)
+    RUNNING --> TIMED_OUT : exceeds 120s wall-clock
+    COMPLETED --> [*]
+    FAILED --> [*]
+    TIMED_OUT --> [*]
+
+    note right of QUEUED : Multiple QUEUED runs may coexist.\nReprocess during RUNNING creates new QUEUED run.
+    note right of FAILED : failure_type recorded:\nEXTRACTION_FAILED\nEXTRACTION_LOW_QUALITY\nINTERPRETATION_FAILED\nPROCESS_TERMINATED
+```
+
+<!-- Sources: backend/app/domain/models.py (ProcessingRunState enum), backend/app/application/processing/orchestrator.py (transitions), backend/app/domain/status.py (failure types) -->
+
 #### Rules
 
 - States are **append-only transitions** (no rollback).
