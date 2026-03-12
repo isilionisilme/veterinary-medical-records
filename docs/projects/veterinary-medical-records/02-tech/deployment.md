@@ -190,7 +190,27 @@ shutdown timeout (`--timeout-graceful-shutdown 30`).
 - Test stage copies test files but switches back to `appuser` before running.
 - Frontend nginx config is owned by `appuser:appgroup`.
 
-## 7. Related Documents
+## 7. Capacity & Constraints
+
+This is a **technical assessment project** with a single-evaluator workload.
+The following constraints are by design, not oversight.
+
+| Constraint                         | Current Limit                  | Why                                                                                        |
+| ---------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------ |
+| Single-process model               | 1 API + 1 scheduler thread     | [ADR-ARCH-0004](adr/ADR-ARCH-0004-in-process-async-processing.md) — no external task queue |
+| SQLite single-writer               | ~50 concurrent writes/s        | [ADR-ARCH-0002](adr/ADR-ARCH-0002-sqlite-database.md) — WAL + busy_timeout mitigate        |
+| No horizontal scaling              | 1 container per service        | Monolith by design; worker profile path documented in ADR-0004                             |
+| Processing timeout                 | 120s per document              | Hardcoded in orchestrator; sufficient for PDF sizes in scope                               |
+| Max upload size                    | 20 MB per file                 | Validated at API layer; configurable                                                       |
+| Rate limits                        | Upload 10/min, download 30/min | Via `slowapi`; configurable via env vars                                                   |
+| Observability ring buffer          | 20 runs per document           | FIFO eviction; sufficient for trend analysis                                               |
+| Intended concurrent users          | 1 (evaluator)                  | Demo/assessment workload                                                                   |
+
+**Production evolution:** PostgreSQL adapter, Celery/RQ workers, connection
+pooling, streaming uploads with early size rejection. See
+[ADR-ARCH-0001](adr/ADR-ARCH-0001-modular-monolith.md) for the migration path.
+
+## 8. Related Documents
 
 | Document                                                     | Relationship                               |
 | ------------------------------------------------------------ | ------------------------------------------ |

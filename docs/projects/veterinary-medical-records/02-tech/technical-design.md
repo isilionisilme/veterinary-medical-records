@@ -632,6 +632,25 @@ min_volume: 5
 
 ---
 
+## Cross-Cutting Concerns Summary
+
+This section consolidates references to cross-cutting concerns documented
+throughout this specification. Each concern is described in full at its
+canonical location; this summary provides a single V9 viewpoint index.
+
+| Concern                | Canonical Section                                  | Key Policy                                                        |
+| ---------------------- | -------------------------------------------------- | ----------------------------------------------------------------- |
+| Error handling         | [§8](#8-error-handling--states)                    | Failures explicit and classified; user-facing messages mapped     |
+| Observability & logging| [§9](#9-observability)                             | Structured logs only; never block processing                      |
+| Configuration          | [deployment.md §3](deployment.md#3-environment-variables) | All config via env vars; no hardcoded secrets                |
+| Rate limiting          | [§13](#13-security-boundary)                       | Upload 10/min, download 30/min via `slowapi`                      |
+| Security boundary      | [§13](#13-security-boundary)                       | Optional bearer token; UUID validation on all IDs                 |
+| Data versioning        | [§6](#6-data-persistence-rules)                    | Append-only; never overwrite artifacts                            |
+| Confidence policy      | [§7](#7-confidence-technical-contract)             | Per-field 0–1 score; band cutoffs configurable                    |
+| Scope ownership        | [§11](#11-scope-ownership)                         | Backend owns domain logic; frontend owns UX                       |
+
+---
+
 ## 8. Error Handling & States
 
 - Failures must be explicit and classified:
