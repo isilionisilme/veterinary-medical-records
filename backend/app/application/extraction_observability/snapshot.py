@@ -57,23 +57,7 @@ def _source_hint_from_evidence(raw_field: dict[str, Any]) -> str | None:
     return " | ".join(parts) if parts else None
 
 
-def build_extraction_snapshot_from_interpretation(
-    *,
-    document_id: str,
-    run_id: str,
-    created_at: str,
-    interpretation_payload: dict[str, Any],
-) -> dict[str, Any] | None:
-    if not document_id.strip() or not run_id.strip() or not created_at.strip():
-        return None
-    data = interpretation_payload.get("data") if isinstance(interpretation_payload, dict) else None
-    if not isinstance(data, dict):
-        return None
-
-    global_schema_raw = data.get("global_schema")
-    global_schema = global_schema_raw if isinstance(global_schema_raw, dict) else {}
-    raw_fields = data.get("fields") if isinstance(data.get("fields"), list) else []
-
+def _collect_top_candidates(raw_fields: list[Any]) -> dict[str, list[dict[str, Any]]]:
     top_candidates_by_field: dict[str, list[dict[str, Any]]] = defaultdict(list)
     dedup_values_by_field: dict[str, set[str]] = defaultdict(set)
     for raw_field in raw_fields:
@@ -101,6 +85,13 @@ def build_extraction_snapshot_from_interpretation(
         candidates.sort(key=lambda item: float(item.get("confidence") or 0.0), reverse=True)
         top_candidates_by_field[field_key] = candidates[:3]
 
+    return dict(top_candidates_by_field)
+
+
+def _build_snapshot_fields(
+    global_schema: dict[str, Any],
+    top_candidates_by_field: dict[str, list[dict[str, Any]]],
+) -> dict[str, dict[str, Any]]:
     fields: dict[str, dict[str, Any]] = {}
     for field_key in GLOBAL_SCHEMA_KEYS:
         top_candidates = top_candidates_by_field.get(field_key, [])
@@ -130,12 +121,36 @@ def build_extraction_snapshot_from_interpretation(
                 "sourceHint": _as_text(top1.get("sourceHint")) if isinstance(top1, dict) else None,
                 "topCandidates": top_candidates,
             }
-        else:
-            fields[field_key] = {
-                "status": "missing",
-                "confidence": None,
-                "topCandidates": top_candidates,
-            }
+            continue
+
+        fields[field_key] = {
+            "status": "missing",
+            "confidence": None,
+            "topCandidates": top_candidates,
+        }
+
+    return fields
+
+
+def build_extraction_snapshot_from_interpretation(
+    *,
+    document_id: str,
+    run_id: str,
+    created_at: str,
+    interpretation_payload: dict[str, Any],
+) -> dict[str, Any] | None:
+    if not document_id.strip() or not run_id.strip() or not created_at.strip():
+        return None
+    data = interpretation_payload.get("data") if isinstance(interpretation_payload, dict) else None
+    if not isinstance(data, dict):
+        return None
+
+    global_schema_raw = data.get("global_schema")
+    global_schema = global_schema_raw if isinstance(global_schema_raw, dict) else {}
+    raw_fields = data.get("fields") if isinstance(data.get("fields"), list) else []
+
+    top_candidates_by_field = _collect_top_candidates(raw_fields)
+    fields = _build_snapshot_fields(global_schema, top_candidates_by_field)
 
     field_values = list(fields.values())
     return {

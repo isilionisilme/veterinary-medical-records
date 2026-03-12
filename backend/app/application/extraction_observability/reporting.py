@@ -21,23 +21,53 @@ def _emit_info(message: str) -> None:
     logger.info(message)
 
 
-def summarize_extraction_runs(
-    document_id: str,
-    *,
-    limit: int = 20,
-    run_id: str | None = None,
-) -> dict[str, Any] | None:
-    runs = get_extraction_runs(document_id)
-    if not runs:
-        return None
-    selected_runs = (
-        [run for run in runs if str(run.get("runId", "")).strip() == run_id]
-        if run_id
-        else runs[-max(1, limit) :]
-    )
-    if not selected_runs:
-        return None
+def _update_field_statistics(
+    field_stats: dict[str, Any],
+    field_key: str,
+    raw_payload: dict[str, Any],
+) -> None:
+    status = str(raw_payload.get("status", "")).strip().lower()
+    counter_key = {
+        "missing": "missing_count",
+        "rejected": "rejected_count",
+        "accepted": "accepted_count",
+    }.get(status)
+    if counter_key:
+        field_stats[counter_key] += 1
 
+    top_candidates = _extract_top_candidates(raw_payload)
+    top1 = top_candidates[0] if top_candidates else None
+    top1_value = _as_text(top1.get("value")) if isinstance(top1, dict) else None
+    if status in {"missing", "rejected"} and top1_value:
+        field_stats["top1_counter"][top1_value] += 1
+        top1_conf = _coerce_confidence(top1.get("confidence")) if isinstance(top1, dict) else None
+        if top1_conf is not None:
+            field_stats["top1_confidences"].append(top1_conf)
+
+    if status == "missing":
+        if top1_value:
+            field_stats["missing_with_candidates_count"] += 1
+            field_stats["missing_top1_counter"][top1_value] += 1
+            missing_top1_conf = (
+                _coerce_confidence(top1.get("confidence")) if isinstance(top1, dict) else None
+            )
+            if missing_top1_conf is not None:
+                field_stats["missing_top1_confidences"].append(missing_top1_conf)
+        else:
+            field_stats["missing_without_candidates_count"] += 1
+
+    if status == "accepted":
+        value_for_flags = (
+            _as_text(raw_payload.get("valueNormalized"))
+            or _as_text(raw_payload.get("valueRaw"))
+            or _as_text(raw_payload.get("rawCandidate"))
+            or top1_value
+        )
+        if _suspicious_accepted_flags(field_key, value_for_flags):
+            field_stats["suspicious_count"] += 1
+
+
+def _accumulate_field_statistics(selected_runs: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     stats: dict[str, dict[str, Any]] = defaultdict(
         lambda: {
             "missing_count": 0,
@@ -58,50 +88,12 @@ def summarize_extraction_runs(
         for field_key, raw_payload in fields.items():
             if not isinstance(raw_payload, dict):
                 continue
-            status = str(raw_payload.get("status", "")).strip().lower()
-            field_stats = stats[str(field_key)]
-            if status == "missing":
-                field_stats["missing_count"] += 1
-            elif status == "rejected":
-                field_stats["rejected_count"] += 1
-            elif status == "accepted":
-                field_stats["accepted_count"] += 1
+            _update_field_statistics(stats[str(field_key)], str(field_key), raw_payload)
 
-            top_candidates = _extract_top_candidates(raw_payload)
-            top1 = top_candidates[0] if top_candidates else None
-            top1_value = _as_text(top1.get("value")) if isinstance(top1, dict) else None
-            if status in {"missing", "rejected"} and top1_value:
-                field_stats["top1_counter"][top1_value] += 1
-                top1_conf = (
-                    _coerce_confidence(top1.get("confidence")) if isinstance(top1, dict) else None
-                )
-                if top1_conf is not None:
-                    field_stats["top1_confidences"].append(top1_conf)
+    return stats
 
-            if status == "missing":
-                if top1_value:
-                    field_stats["missing_with_candidates_count"] += 1
-                    field_stats["missing_top1_counter"][top1_value] += 1
-                    missing_top1_conf = (
-                        _coerce_confidence(top1.get("confidence"))
-                        if isinstance(top1, dict)
-                        else None
-                    )
-                    if missing_top1_conf is not None:
-                        field_stats["missing_top1_confidences"].append(missing_top1_conf)
-                else:
-                    field_stats["missing_without_candidates_count"] += 1
 
-            if status == "accepted":
-                value_for_flags = (
-                    _as_text(raw_payload.get("valueNormalized"))
-                    or _as_text(raw_payload.get("valueRaw"))
-                    or _as_text(raw_payload.get("rawCandidate"))
-                    or top1_value
-                )
-                if _suspicious_accepted_flags(str(field_key), value_for_flags):
-                    field_stats["suspicious_count"] += 1
-
+def _compute_field_rows(stats: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
     field_rows: list[dict[str, Any]] = []
     for field, field_stats in stats.items():
         top1_sample = (
@@ -151,6 +143,15 @@ def summarize_extraction_runs(
         ),
         reverse=True,
     )
+    return field_rows
+
+
+def _build_extraction_summary(
+    document_id: str,
+    total_runs: int,
+    considered_runs: int,
+    field_rows: list[dict[str, Any]],
+) -> dict[str, Any]:
     most_missing = sorted(
         [item for item in field_rows if int(item.get("missing_count", 0) or 0) > 0],
         key=lambda item: (
@@ -169,11 +170,10 @@ def summarize_extraction_runs(
         ),
         reverse=True,
     )
-
-    summary = {
+    return {
         "document_id": document_id,
-        "total_runs": len(runs),
-        "considered_runs": len(selected_runs),
+        "total_runs": total_runs,
+        "considered_runs": considered_runs,
         "missing_fields_with_candidates": sum(
             1 for item in most_missing if bool(item.get("has_candidates"))
         ),
@@ -184,6 +184,33 @@ def summarize_extraction_runs(
         "most_missing_fields": most_missing[:10],
         "most_rejected_fields": most_rejected[:10],
     }
+
+
+def summarize_extraction_runs(
+    document_id: str,
+    *,
+    limit: int = 20,
+    run_id: str | None = None,
+) -> dict[str, Any] | None:
+    runs = get_extraction_runs(document_id)
+    if not runs:
+        return None
+    selected_runs = (
+        [run for run in runs if str(run.get("runId", "")).strip() == run_id]
+        if run_id
+        else runs[-max(1, limit) :]
+    )
+    if not selected_runs:
+        return None
+
+    stats = _accumulate_field_statistics(selected_runs)
+    field_rows = _compute_field_rows(stats)
+    summary = _build_extraction_summary(
+        document_id=document_id,
+        total_runs=len(runs),
+        considered_runs=len(selected_runs),
+        field_rows=field_rows,
+    )
     _log_extraction_runs_summary(summary)
     return summary
 
