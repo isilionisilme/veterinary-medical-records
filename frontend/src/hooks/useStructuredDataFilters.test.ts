@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { useStructuredDataFilters } from "./useStructuredDataFilters";
 
@@ -22,7 +22,7 @@ describe("useStructuredDataFilters", () => {
     expect(result.current.hasActiveStructuredFilters).toBe(false);
   });
 
-  it("syncs the derived search term after updating the input", async () => {
+  it("defers search input before updating searchTerm", async () => {
     const { result } = renderHook(() =>
       useStructuredDataFilters({
         activeConfidencePolicy: { version: "v1" },
@@ -33,8 +33,10 @@ describe("useStructuredDataFilters", () => {
       result.current.setStructuredSearchInput("luna");
     });
 
-    await waitFor(() => expect(result.current.structuredDataFilters.searchTerm).toBe("luna"));
-    expect(result.current.hasActiveStructuredFilters).toBe(true);
+    await waitFor(() => {
+      expect(result.current.structuredDataFilters.searchTerm).toBe("luna");
+      expect(result.current.hasActiveStructuredFilters).toBe(true);
+    });
   });
 
   it("resets filters and focuses the search input", () => {

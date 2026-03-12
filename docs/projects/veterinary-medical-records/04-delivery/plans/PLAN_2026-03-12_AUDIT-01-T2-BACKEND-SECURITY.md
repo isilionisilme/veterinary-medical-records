@@ -183,25 +183,25 @@ Add a test that verifies:
 
 ### Phase 0 — Preflight
 
-- [ ] P0-A 🔄 — Create branch `improvement/audit-01-t2-backend-security` from latest `main`. Verify clean worktree. **AGENTE: GPT-5.4**
+- [x] P0-A 🔄 — Create branch `improvement/audit-01-t2-backend-security` from latest `main`. Verify clean worktree. **AGENTE: GPT-5.4**
 
 ### Phase 1 — A4: Content-Disposition
 
-- [ ] P1-A 🔄 — Add `_safe_content_disposition` helper function. **AGENTE: GPT-5.4**
-- [ ] P1-B 🔄 — Replace header construction in `routes_documents.py`. **AGENTE: GPT-5.4**
-- [ ] P1-C 🔄 — Add unit tests for filename sanitization. **AGENTE: GPT-5.4**
-- [ ] P1-D 🚧 — Checkpoint: present diff for user review. **AGENTE: GPT-5.4**
+- [x] P1-A 🔄 — Add `_safe_content_disposition` helper function. **AGENTE: GPT-5.4**
+- [x] P1-B 🔄 — Replace header construction in `routes_documents.py`. **AGENTE: GPT-5.4**
+- [x] P1-C 🔄 — Add unit tests for filename sanitization. **AGENTE: GPT-5.4**
+- [x] P1-D 🚧 — Checkpoint: present diff for user review. **AGENTE: GPT-5.4**
 
 ### Phase 2 — A5: HTTPException Handler
 
-- [ ] P2-A 🔄 — Add custom exception handler in `main.py`. **AGENTE: GPT-5.4**
-- [ ] P2-B 🔄 — Add test for JSON-only error responses. **AGENTE: GPT-5.4**
-- [ ] P2-C 🚧 — Checkpoint: present diff for user review. **AGENTE: GPT-5.4**
+- [x] P2-A 🔄 — Add custom exception handler in `main.py`. **AGENTE: GPT-5.4**
+- [x] P2-B 🔄 — Add test for JSON-only error responses. **AGENTE: GPT-5.4**
+- [x] P2-C 🚧 — Checkpoint: present diff for user review. **AGENTE: GPT-5.4**
 
 ### Phase 3 — Final
 
-- [ ] P3-A 🔄 — Full validation (tests + lint). **AGENTE: GPT-5.4**
-- [ ] P3-B 🚧 — Present commit proposal to user. **AGENTE: GPT-5.4**
+- [x] P3-A 🔄 — Full validation (tests + lint). **AGENTE: GPT-5.4**
+- [x] P3-B 🚧 — Present commit proposal to user. **AGENTE: GPT-5.4**
 
 ---
 
@@ -218,8 +218,8 @@ Add a test that verifies:
 
 ## Acceptance Criteria
 
-- [ ] Content-Disposition header uses RFC 5987 encoding for all filenames
-- [ ] Filenames with `"`, `\n`, `\r`, non-ASCII characters are all safely encoded
-- [ ] All HTTP error responses return `Content-Type: application/json`
-- [ ] 709+ tests pass, ≥91% coverage
-- [ ] `ruff check` + `ruff format` clean
+- [x] Content-Disposition header uses RFC 5987 encoding for all filenames
+- [x] Filenames with `"`, `\n`, `\r`, non-ASCII characters are all safely encoded
+- [x] All HTTP error responses return `Content-Type: application/json`
+- [x] 709+ tests pass, ≥91% coverage
+- [x] `ruff check` + `ruff format` clean

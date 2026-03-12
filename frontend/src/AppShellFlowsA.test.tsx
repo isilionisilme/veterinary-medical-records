@@ -23,7 +23,7 @@ describe("App upload and list flow", () => {
 
     const activeViewerTool = await screen.findByTestId("viewer-tab-document");
     expect(activeViewerTool).toHaveAttribute("aria-pressed", "true");
-    expect(activeViewerTool).toHaveClass("bg-surfaceMuted");
+    expect(activeViewerTool).toHaveAttribute("aria-current", "page");
 
     expect(screen.getByRole("heading", { name: /Datos extraídos/i })).toBeInTheDocument();
     expect(

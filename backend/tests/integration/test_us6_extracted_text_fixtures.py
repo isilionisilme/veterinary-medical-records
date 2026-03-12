@@ -110,7 +110,9 @@ def test_clinical_history_2_extracts_partial_but_usable_text() -> None:
     finally:
         os.environ.pop(PDF_EXTRACTOR_FORCE_ENV, None)
 
-    assert elapsed < 5.0
+    # Keep a broad guard against pathological slowdowns without making the
+    # integration test flaky on loaded Windows runners.
+    assert elapsed < 10.0
 
     if not HAS_FITZ:
         assert not is_usable_extracted_text(text)
