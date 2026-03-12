@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { expect, vi } from "vitest";
 
 import { App } from "../App";
+import { registerConsoleSuppression } from "./consoleSuppressions";
 
 export function renderApp() {
   const queryClient = new QueryClient({
@@ -839,7 +840,29 @@ export function installDefaultAppFetchMock() {
 }
 
 export function resetAppTestEnvironment() {
-  vi.restoreAllMocks();
   window.localStorage.clear();
   window.history.replaceState({}, "", "/");
+}
+
+function createConsoleSuppressor(method: "error" | "warn", pattern?: string | RegExp): () => void {
+  return registerConsoleSuppression(method, pattern);
+}
+
+export function suppressConsoleError(pattern?: string | RegExp) {
+  return createConsoleSuppressor("error", pattern);
+}
+
+export function suppressConsoleWarn(pattern?: string | RegExp) {
+  return createConsoleSuppressor("warn", pattern);
+}
+
+export function suppressExpectedWindowError(message: string) {
+  const handler = (event: ErrorEvent) => {
+    if (event.error instanceof Error && event.error.message === message) {
+      event.preventDefault();
+    }
+  };
+
+  window.addEventListener("error", handler);
+  return () => window.removeEventListener("error", handler);
 }

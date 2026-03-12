@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GLOBAL_SCHEMA } from "../lib/globalSchema";
 import {
   CanonicalUs44FetchMockOptions,
@@ -10,6 +10,7 @@ import {
   openReadyDocumentAndGetPanel,
   renderApp,
   resetAppTestEnvironment,
+  suppressConsoleWarn,
   waitForStructuredDataReady,
 } from "../test/helpers";
 
@@ -19,6 +20,10 @@ describe("App upload and list flow", () => {
   beforeEach(() => {
     resetAppTestEnvironment();
     installDefaultAppFetchMock();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("uses canonical detected summary as X/30 and increments X with visit concepts", async () => {
@@ -278,7 +283,7 @@ describe("App upload and list flow", () => {
 
   it("shows degraded confidence mode and emits a diagnostic event when policy config is missing", async () => {
     const baseFetch = globalThis.fetch as typeof fetch;
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const restoreWarn = suppressConsoleWarn();
 
     globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = input.toString();
@@ -300,13 +305,14 @@ describe("App upload and list flow", () => {
     const indicator = screen.getByTestId("confidence-indicator-core:pet_name");
     expect(indicator).not.toHaveAttribute("aria-label", "Campo vacío");
     expect(indicator.className).toContain("bg-missing");
-    expect(warnSpy).toHaveBeenCalledWith(
+    expect(console.warn).toHaveBeenCalledWith(
       "[confidence-policy]",
       expect.objectContaining({
         event_type: "CONFIDENCE_POLICY_CONFIG_MISSING",
         reason: "missing_policy_version",
       }),
     );
+    restoreWarn();
   });
 
   it("does not show degraded confidence mode when policy config is valid", async () => {
