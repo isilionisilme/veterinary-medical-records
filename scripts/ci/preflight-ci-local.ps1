@@ -8,6 +8,8 @@ param(
     [switch]$ForceFull,
     [switch]$SkipDocker,
     [switch]$SkipE2E,
+    [switch]$SkipDocGovernance,
+    [switch]$ForceDocGovernance,
     # Restrict changed-file detection to the commit range only (mirrors what
     # GitHub Actions sees on push/PR). Excludes staged/unstaged local edits.
     [switch]$ParityMode
@@ -432,6 +434,7 @@ $forceFrontendChecks = $ForceFrontend.IsPresent -or $ForceFull.IsPresent
 $forceAllChecks = $All.IsPresent -or $ForceFull.IsPresent
 
 $runDocs = $false
+$runDocGovernance = $false
 $runBackendQuick = $false
 $runBackendFull = $false
 $runFrontendQuick = $false
@@ -444,6 +447,7 @@ $runBranchNameValidation = $false
 switch ($Mode) {
     "Quick" {
         $runDocs = $docsChanged
+        $runDocGovernance = ($docsChanged -or $ForceDocGovernance.IsPresent) -and -not $SkipDocGovernance.IsPresent
         $runBackendQuick = $backendChanged
         $runFrontendQuick = $frontendChanged
         $runFrontendGuards = $false
@@ -453,6 +457,7 @@ switch ($Mode) {
     "Push" {
         $runBranchNameValidation = $true
         $runDocs = $docsChanged
+        $runDocGovernance = ($docsChanged -or $ForceDocGovernance.IsPresent) -and -not $SkipDocGovernance.IsPresent
         $runBackendFull = $backendChanged
         # Mirror remote: frontend_test_build fires when backend OR frontend changed.
         $runFrontendFull = $frontendImpacted -or $backendChanged -or $forceFrontendChecks
@@ -463,6 +468,7 @@ switch ($Mode) {
     }
     "Full" {
         $runDocs = $true
+        $runDocGovernance = ($docsChanged -or $ForceDocGovernance.IsPresent) -and -not $SkipDocGovernance.IsPresent
         $runBackendFull = $backendChanged -or $forceAllChecks
         # Mirror remote: frontend_test_build and e2e fire when backend OR frontend changed.
         $runFrontendFull = $frontendImpacted -or $backendChanged -or $forceFrontendChecks
@@ -475,6 +481,7 @@ switch ($Mode) {
 
 Write-Host "`nExecution plan:"
 Write-Host " - Docs guards:      $runDocs"
+Write-Host " - Doc governance:   $runDocGovernance"
 Write-Host " - Backend quick:    $runBackendQuick"
 Write-Host " - Backend full:     $runBackendFull"
 Write-Host " - Frontend quick:   $runFrontendQuick"
@@ -509,11 +516,42 @@ if ($runBranchNameValidation) {
 }
 
 if ($runDocs) {
-    # Note: Doc governance checks (canonical router, test sync, parity, directionality, drift) have been
-    # moved to .github/workflows/doc-governance.yml. They run automatically on all PRs and can be triggered
-    # manually via workflow_dispatch. For local validation, run that workflow manually or review the PR checks.
     Invoke-Step "Docs QA (lint/format/links/frontmatter)" {
         & $python "scripts/docs/run_docs_qa.py" "--base-ref" $BaseRef
+    }
+}
+
+if ($runDocGovernance) {
+    $docClassificationDir = Join-Path $env:TEMP "vmr-doc-classification"
+    $docClassificationFile = Join-Path $docClassificationDir "doc_change_classification.json"
+
+    Invoke-Step "Doc governance: canonical router guard" {
+        & $python "scripts/docs/check_no_canonical_router_refs.py"
+    }
+
+    Invoke-Step "Doc governance: classify doc changes" {
+        New-Item -ItemType Directory -Force -Path $docClassificationDir | Out-Null
+        & $python "scripts/docs/classify_doc_change.py" "--base-ref" $BaseRef "--output" $docClassificationFile
+    }
+
+    Invoke-Step "Doc governance: doc/test sync guard" {
+        & $python "scripts/docs/check_doc_test_sync.py" "--base-ref" $BaseRef "--classification-file" $docClassificationFile
+    }
+
+    Invoke-Step "Doc governance: router parity guard" {
+        & $python "scripts/docs/check_doc_router_parity.py" "--base-ref" $BaseRef
+    }
+
+    Invoke-Step "Doc governance: router directionality guard" {
+        & $python "scripts/docs/check_router_directionality.py" "--base-ref" $BaseRef
+    }
+
+    Invoke-Step "Doc governance: router drift guard" {
+        & $python "scripts/docs/generate-router-files.py" "--check"
+    }
+
+    Invoke-Step "Doc governance: contract tests" {
+        & $python -m pytest "backend/tests/doc_governance/" "-x" "--tb=short" "--no-header" "-o" "addopts="
     }
 }
 
@@ -765,7 +803,7 @@ if ($runDocker) {
     }
 }
 
-if (-not ($runDocs -or $runBackendQuick -or $runBackendFull -or $runFrontendQuick -or $runFrontendFull -or $runFrontendGuards -or $runDocker -or $runE2E)) {
+if (-not ($runDocs -or $runDocGovernance -or $runBackendQuick -or $runBackendFull -or $runFrontendQuick -or $runFrontendFull -or $runFrontendGuards -or $runDocker -or $runE2E)) {
     Write-Host "No checks selected for mode $Mode with current changed paths."
 }
 
