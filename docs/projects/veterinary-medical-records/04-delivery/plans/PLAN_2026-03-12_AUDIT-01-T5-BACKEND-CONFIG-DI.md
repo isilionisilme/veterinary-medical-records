@@ -9,6 +9,7 @@
 **Execution Mode:** Autonomous
 **Model Assignment:** GPT-5.4
 **PR:** Pending (PR created on explicit user request)
+**PR Title:** [AUDIT-01-T5] Backend config DRY and parameter object refactor
 **Related item ID:** `AUDIT-01-T5`
 **Prerequisite:** None (independent track)
 
@@ -88,6 +89,11 @@ This violates the "max 5 parameters" heuristic. A parameter object makes the fun
 ## DOC-1
 
 `no-doc-needed` — Internal refactoring. No API or user-facing changes.
+
+## PR Notes
+
+- Title format: `[AUDIT-01-T5] Backend config DRY and parameter object refactor`
+- PR description must link both the master plan and this track plan.
 
 ---
 
@@ -235,15 +241,17 @@ Find all call sites of `_build_structured_field` and wrap their arguments in `Fi
 
 ### Phase 2 — B3: Parameter Object
 
-- [ ] P2-A 🔄 — Create `FieldBuildContext` dataclass. **AGENTE: GPT-5.4** ⏳ IN PROGRESS (GPT-5.4, 2026-03-12)
-- [ ] P2-B 🔄 — Update `_build_structured_field` signature. **AGENTE: GPT-5.4** ⏳ IN PROGRESS (GPT-5.4, 2026-03-12)
-- [ ] P2-C 🔄 — Update all callers. **AGENTE: GPT-5.4** ⏳ IN PROGRESS (GPT-5.4, 2026-03-12)
-- [ ] P2-D 🔄 — Run tests, verify all pass. **AGENTE: GPT-5.4**
-- [ ] P2-E 🚧 — Checkpoint: present diff for user review. **AGENTE: GPT-5.4**
+Gate status (2026-03-12): Branch merged with `origin/main` at `494f2e77`. `scripts/ci/test-L1.ps1 -BaseRef HEAD` passed. Focused tests (`test_interpretation_schema.py`, `test_confidence_config_and_fallback.py`) passed (45 passed). `scripts/ci/test-L3.ps1 -BaseRef main` passed. Branch is 2 commits behind `origin/main` (T1 `#304`, T3); push still requires one more sync + L2 per protocol.
+
+- [x] P2-A 🔄 — Create `FieldBuildContext` dataclass. **AGENTE: GPT-5.4** — ✅ `pending-commit (code implemented, L1 passed)`
+- [x] P2-B 🔄 — Update `_build_structured_field` signature. **AGENTE: GPT-5.4** — ✅ `pending-commit`
+- [x] P2-C 🔄 — Update all callers. **AGENTE: GPT-5.4** — ✅ `pending-commit`
+- [x] P2-D 🔄 — Run tests, verify all pass. **AGENTE: GPT-5.4** — ✅ `45 passed (focused); L1 PASS`
+- [x] P2-E 🚧 — Checkpoint: present diff for user review. **AGENTE: GPT-5.4** — ✅ `no-commit (user-approved to continue and create PR)`
 
 ### Phase 3 — Final
 
-- [ ] P3-A 🔄 — Full validation (tests + lint). **AGENTE: GPT-5.4**
+- [x] P3-A 🔄 — Full validation (tests + lint). **AGENTE: GPT-5.4** — ✅ `no-commit (L1 PASS; L3 PASS)`
 - [ ] P3-B 🚧 — Present commit proposal to user. **AGENTE: GPT-5.4**
 
 ---
