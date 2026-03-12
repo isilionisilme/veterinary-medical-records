@@ -37,7 +37,7 @@ def _append_visit_segment_summary_field(
     )
 
 
-def _populate_visit_observations_actions_from_segments(
+def populate_visit_observations_actions_from_segments(
     *,
     assigned_visits: list[dict[str, object]],
     visit_segments_by_id: dict[str, str],
@@ -82,7 +82,7 @@ def _populate_visit_observations_actions_from_segments(
             )
 
 
-def _populate_missing_reason_for_visit_from_segments(
+def populate_missing_reason_for_visit_from_segments(
     *,
     assigned_visits: list[dict[str, object]],
     visit_segments_by_id: dict[str, str],
@@ -107,7 +107,7 @@ def _populate_missing_reason_for_visit_from_segments(
             visit["reason_for_visit"] = extracted_reason
 
 
-def _populate_visit_scoped_fields_from_segment_candidates(
+def populate_visit_scoped_fields_from_segment_candidates(
     *,
     assigned_visits: list[dict[str, object]],
     visit_segments_by_id: dict[str, str],

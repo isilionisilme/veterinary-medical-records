@@ -19,15 +19,15 @@ from backend.app.application.documents._shared import (
     _normalize_visit_date_candidate,
 )
 from backend.app.application.documents.visit_helpers import (
-    _build_visit_segment_text_by_visit_id,
-    _postprocess_weights,
-    _resolve_snippet_anchor_offset,
-    _resolve_visit_from_anchor,
+    build_visit_segment_text_by_visit_id,
+    postprocess_weights,
+    resolve_snippet_anchor_offset,
+    resolve_visit_from_anchor,
 )
 from backend.app.application.documents.visit_population import (
-    _populate_missing_reason_for_visit_from_segments,
-    _populate_visit_observations_actions_from_segments,
-    _populate_visit_scoped_fields_from_segment_candidates,
+    populate_missing_reason_for_visit_from_segments,
+    populate_visit_observations_actions_from_segments,
+    populate_visit_scoped_fields_from_segment_candidates,
 )
 
 
@@ -227,14 +227,14 @@ def _assign_fields_to_visits(
         evidence_snippet = _extract_evidence_snippet(visit_field)
         evidence_visit_dates = _extract_visit_date_candidates_from_text(text=evidence_snippet)
         has_ambiguous_date_token = _contains_any_date_token(text=evidence_snippet)
-        evidence_anchor_offset = _resolve_snippet_anchor_offset(
+        evidence_anchor_offset = resolve_snippet_anchor_offset(
             raw_text=raw_text,
             snippet=evidence_snippet,
         )
 
         target_visit: dict[str, object] | None = None
         if evidence_visit_dates:
-            target_visit = _resolve_visit_from_anchor(
+            target_visit = resolve_visit_from_anchor(
                 candidate_dates=evidence_visit_dates,
                 anchor_offset=evidence_anchor_offset,
                 visit_by_date=visit_by_date,
@@ -249,7 +249,7 @@ def _assign_fields_to_visits(
             and evidence_anchor_offset is not None
             and len(visit_by_date) > 1
         ):
-            target_visit = _resolve_visit_from_anchor(
+            target_visit = resolve_visit_from_anchor(
                 candidate_dates=[],
                 anchor_offset=evidence_anchor_offset,
                 visit_by_date=visit_by_date,
@@ -402,22 +402,22 @@ def normalize_canonical_review_scoping(
         unassigned_visit=unassigned_visit,
     )
 
-    visit_segments_by_id = _build_visit_segment_text_by_visit_id(
+    visit_segments_by_id = build_visit_segment_text_by_visit_id(
         raw_text=raw_text,
         visit_occurrences_by_date=visit_occurrences_by_date,
         raw_text_date_occurrences=raw_text_date_occurrences,
         visit_boundary_offsets=visit_boundary_offsets,
     )
-    _populate_missing_reason_for_visit_from_segments(
+    populate_missing_reason_for_visit_from_segments(
         assigned_visits=assigned_visits,
         visit_segments_by_id=visit_segments_by_id,
     )
-    _populate_visit_scoped_fields_from_segment_candidates(
+    populate_visit_scoped_fields_from_segment_candidates(
         assigned_visits=assigned_visits,
         visit_segments_by_id=visit_segments_by_id,
         candidate_keys=("diagnosis", "symptoms", "medication", "procedure", "weight"),
     )
-    _populate_visit_observations_actions_from_segments(
+    populate_visit_observations_actions_from_segments(
         assigned_visits=assigned_visits,
         visit_segments_by_id=visit_segments_by_id,
     )
@@ -428,7 +428,7 @@ def normalize_canonical_review_scoping(
         unassigned_visit=unassigned_visit,
     )
 
-    fields_to_keep = _postprocess_weights(
+    fields_to_keep = postprocess_weights(
         fields_to_keep=fields_to_keep,
         assigned_visits=assigned_visits,
         unassigned_visit=unassigned_visit,

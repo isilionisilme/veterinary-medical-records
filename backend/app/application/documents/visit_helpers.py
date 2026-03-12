@@ -92,7 +92,7 @@ def _extract_latest_visit_weight_from_raw_text(raw_text: str | None) -> dict[str
 # ---------------------------------------------------------------------------
 
 
-def _resolve_snippet_anchor_offset(*, raw_text: str | None, snippet: str | None) -> int | None:
+def resolve_snippet_anchor_offset(*, raw_text: str | None, snippet: str | None) -> int | None:
     if not isinstance(raw_text, str) or not isinstance(snippet, str):
         return None
 
@@ -117,7 +117,7 @@ def _resolve_snippet_anchor_offset(*, raw_text: str | None, snippet: str | None)
     return None
 
 
-def _resolve_visit_from_anchor(
+def resolve_visit_from_anchor(
     *,
     candidate_dates: list[str],
     anchor_offset: int | None,
@@ -243,7 +243,7 @@ def _resolve_visit_segment_bounds(
 # ---------------------------------------------------------------------------
 
 
-def _build_visit_segment_text_by_visit_id(
+def build_visit_segment_text_by_visit_id(
     *,
     raw_text: str | None,
     visit_occurrences_by_date: dict[str, list[dict[str, object]]],
@@ -292,7 +292,7 @@ def _build_visit_segment_text_by_visit_id(
 # ---------------------------------------------------------------------------
 
 
-def _postprocess_weights(
+def postprocess_weights(
     *,
     fields_to_keep: list[object],
     assigned_visits: list[dict[str, object]],
