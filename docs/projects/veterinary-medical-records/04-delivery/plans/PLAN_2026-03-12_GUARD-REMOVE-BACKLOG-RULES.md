@@ -1,10 +1,14 @@
 # Plan: Remove Backlog/ from doc_test_sync_guard
 
 **Backlog item:** [arch-28-remove-backlog-guard-rules.md](../Backlog/arch-28-remove-backlog-guard-rules.md)  
-**Branch:** `docs/update-plans` (same as PR #292)  
-**Worktree:** PENDING PLAN-START RESOLUTION  
-**Execution Mode:** PENDING USER SELECTION  
-**Model Assignment:** PENDING USER SELECTION
+**Branch:** `docs/update-plans`  
+**Worktree:** `codex-permanent-1`  
+**Execution Mode:** `Semi-supervised`  
+**Model Assignment:** `Default`
+
+## Execution Status
+
+- Plan drafted; execution pending.
 
 ## TL;DR
 
