@@ -1,9 +1,17 @@
-# Plan A: Hygiene Pass — Architecture Signal Cleanup
+# Plan A (ARCH-26): Hygiene Pass — Architecture Signal Cleanup
 
+> **Operational rules:** See [plan-execution-protocol.md](../../../03-ops/plan-execution-protocol.md) for agent execution protocol, scope boundary, and validation gates.
+
+**Branch:** docs/arch-26-plan-linkage
+**Worktree:** D:/Git/veterinary-medical-records
+**Execution Mode:** Autonomous
+**Model Assignment:** Uniform
+**PR:** Pending (PR created on explicit user request)
 **Backlog item:** [arch-26-architecture-hygiene-pass.md](../Backlog/arch-26-architecture-hygiene-pass.md)
+**Related item ID:** `ARCH-26`
 
 ## TL;DR
-Eliminar anti-patrones que un evaluador AI de arquitectura flagearía inmediatamente: dynamic re-export (ARCH-24), function-local imports, y `__init__.py` exportando nombres con `_` como API pública.
+Plan de ejecucion de `ARCH-26` para eliminar anti-patrones que un evaluador AI de arquitectura flagearia inmediatamente: dynamic re-export (ARCH-24), function-local imports, y `__init__.py` exportando nombres con `_` como API publica.
 
 ## Prerequisitos
 - Branch: crear `improvement/arch-hygiene-pass` desde `main` actualizado
@@ -66,6 +74,7 @@ Eliminar anti-patrones que un evaluador AI de arquitectura flagearía inmediatam
 - Step 5 (public API rename) has risk if external callers use `_` names. Recommend alias approach for safety.
 - Scope deliberately excludes `_shared.py` internal functions — those are package-private module convention, not an anti-pattern.
 - Scope deliberately excludes orchestrator state object (ARCH-02 territory).
+- This plan is the implementation path for `ARCH-26`.
 
 ## Parallel notes
 - No conflict with Plan B (regression tests) — Plan B tests through public entry points only.

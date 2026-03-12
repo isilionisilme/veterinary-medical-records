@@ -8,6 +8,8 @@ from backend.app.application.documents._shared import (
     _REVIEW_SCHEMA_CONTRACT_CANONICAL,
 )
 from backend.app.application.documents.age_normalizer import _normalize_age_from_review_projection
+from backend.app.application.documents.edit_service import _sanitize_confidence_breakdown
+from backend.app.application.documents.visit_scoping import normalize_canonical_review_scoping
 from backend.app.application.field_normalizers import normalize_microchip_digits_only
 
 
@@ -24,10 +26,6 @@ def _normalize_review_interpretation_data(
             if not isinstance(item, dict):
                 normalized_fields.append(item)
                 continue
-            from backend.app.application.documents.edit_service import (
-                _sanitize_confidence_breakdown,
-            )
-
             normalized_field = _sanitize_confidence_breakdown(item)
             normalized_fields.append(normalized_field)
             if normalized_field != item:
@@ -108,8 +106,6 @@ def _project_review_payload_to_canonical(
         projected["visits"] = []
     if not isinstance(projected.get("other_fields"), list):
         projected["other_fields"] = []
-
-    from backend.app.application.documents.visit_scoping import normalize_canonical_review_scoping
 
     return normalize_canonical_review_scoping(projected, raw_text=raw_text)
 
