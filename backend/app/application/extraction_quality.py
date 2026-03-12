@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-from backend.app.application.extraction_observability.extraction_constants import (
+from backend.app.application.extraction_constants import (
     QUALITY_SCORE_THRESHOLD,
 )
 

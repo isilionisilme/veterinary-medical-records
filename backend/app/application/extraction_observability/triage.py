@@ -9,9 +9,7 @@ from collections.abc import Callable
 from datetime import date, datetime
 from typing import Any
 
-from backend.app.application.field_normalizers import CANONICAL_SPECIES
-
-from .extraction_constants import (
+from backend.app.application.extraction_constants import (
     CLINIC_ADDRESS_MIN_LENGTH,
     CLINIC_NAME_MIN_LENGTH,
     DAYS_PER_YEAR,
@@ -25,6 +23,8 @@ from .extraction_constants import (
     WEIGHT_MAX_KG,
     WEIGHT_MIN_KG,
 )
+from backend.app.application.field_normalizers import CANONICAL_SPECIES
+
 from .snapshot import (
     _as_text,
     _extract_top_candidates,

@@ -6,7 +6,7 @@ import re
 from collections.abc import Mapping, Sequence
 from datetime import datetime
 
-from backend.app.application.extraction_observability.extraction_constants import (
+from backend.app.application.extraction_constants import (
     MICROCHIP_MAX_DIGITS,
     MICROCHIP_MIN_DIGITS,
     WEIGHT_MAX_KG,
