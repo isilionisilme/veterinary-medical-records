@@ -107,6 +107,8 @@ starlette>=0.46.3
 
 #### Step 2: Install and verify
 
+**AGENTE: GPT-5.4**
+
 ```bash
 pip install -r backend/requirements.txt
 pip-audit -r backend/requirements.txt
@@ -115,6 +117,8 @@ pip-audit -r backend/requirements.txt
 Verify 0 vulnerabilities.
 
 #### Step 3: Run backend tests
+
+**AGENTE: GPT-5.4**
 
 ```bash
 python -m pytest backend/tests/ -x --tb=short -q
@@ -142,6 +146,8 @@ To:
 
 #### Step 5: Verify npm audit passes locally
 
+**AGENTE: GPT-5.4**
+
 ```bash
 cd frontend && npm audit --audit-level=high
 ```
@@ -160,6 +166,8 @@ grep -r "framer-motion\|from.*motion\|AnimatePresence\|useAnimation\|useMotionVa
 
 #### Step 7: Remove if unused
 
+**AGENTE: GPT-5.4**
+
 If zero results from Step 6:
 ```bash
 cd frontend && npm uninstall framer-motion
@@ -168,6 +176,8 @@ cd frontend && npm uninstall framer-motion
 If framer-motion IS used, document the usage and mark D3 as `no-action-needed`.
 
 #### Step 8: Run frontend tests
+
+**AGENTE: GPT-5.4**
 
 ```bash
 cd frontend && npm run test -- --run && npm run lint

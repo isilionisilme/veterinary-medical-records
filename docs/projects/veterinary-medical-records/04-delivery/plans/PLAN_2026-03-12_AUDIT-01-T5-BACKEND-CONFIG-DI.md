@@ -143,9 +143,13 @@ def _parse_band_cutoffs(
 
 #### Step 3: Refactor existing functions to use helpers
 
+**AGENTE: GPT-5.4**
+
 Replace duplicated parsing logic in `confidence_band_cutoffs()`, `confidence_band_cutoffs_from_values()`, `confidence_band_cutoffs_or_none()`, and `human_edit_confidence()` with calls to the new helpers.
 
 #### Step 4: Validate Phase 1
+
+**AGENTE: GPT-5.4**
 
 - `ruff check backend/app/config.py`
 - `python -m pytest backend/tests/ -x --tb=short -q -k config` — config-related tests pass
@@ -181,6 +185,8 @@ class FieldBuildContext:
 
 #### Step 6: Update `_build_structured_field` signature
 
+**AGENTE: GPT-5.4**
+
 Change from 13 keyword-only parameters to:
 ```python
 def _build_structured_field(ctx: FieldBuildContext) -> dict[str, Any]:
@@ -190,9 +196,13 @@ Update the function body to reference `ctx.key`, `ctx.value`, etc.
 
 #### Step 7: Update all callers
 
+**AGENTE: GPT-5.4**
+
 Find all call sites of `_build_structured_field` and wrap their arguments in `FieldBuildContext(...)`. Since the function is module-private (`_` prefix), all callers are in the same file.
 
 #### Step 8: Validate Phase 2
+
+**AGENTE: GPT-5.4**
 
 - `ruff check backend/app/application/processing/confidence_scoring.py`
 - `python -m pytest backend/tests/ -x --tb=short -q` — all 709+ pass

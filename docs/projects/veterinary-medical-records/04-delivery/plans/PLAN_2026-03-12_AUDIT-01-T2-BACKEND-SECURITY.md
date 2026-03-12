@@ -88,6 +88,8 @@ Starlette's built-in `HTTPException` handler returns `detail` as `text/plain` fo
 
 #### Step 1: Add filename sanitization utility
 
+**AGENTE: GPT-5.4**
+
 In `routes_documents.py`, add a helper (or import from a new `backend/app/api/response_helpers.py` if preferred):
 
 ```python
@@ -105,6 +107,8 @@ def _safe_content_disposition(disposition_type: str, filename: str) -> str:
 ```
 
 #### Step 2: Replace current header construction
+
+**AGENTE: GPT-5.4**
 
 At `routes_documents.py:298`, replace:
 ```python
@@ -125,6 +129,8 @@ headers = {
 
 #### Step 3: Add unit test
 
+**AGENTE: GPT-5.4**
+
 Add a test to `backend/tests/unit/` that verifies:
 - Normal filename produces valid header
 - Filename with `"` characters is escaped
@@ -134,6 +140,8 @@ Add a test to `backend/tests/unit/` that verifies:
 ### Phase 2 — A5: HTTPException Handler Override
 
 #### Step 4: Add custom exception handler in `main.py`
+
+**AGENTE: GPT-5.4**
 
 In `create_app()` function, after app creation and before middleware registration:
 
@@ -152,6 +160,8 @@ async def _http_exception_handler(request: Request, exc: StarletteHTTPException)
 
 #### Step 5: Add test for exception handler
 
+**AGENTE: GPT-5.4**
+
 Add a test that verifies:
 - A 404 response returns `Content-Type: application/json`
 - Error detail is returned as JSON, not HTML
@@ -160,6 +170,8 @@ Add a test that verifies:
 ### Phase 3 — Validation
 
 #### Step 6: Full test suite
+
+**AGENTE: GPT-5.4**
 
 - `python -m pytest backend/tests/ -x --tb=short -q` — all 709+ pass
 - `ruff check backend/` — 0 errors

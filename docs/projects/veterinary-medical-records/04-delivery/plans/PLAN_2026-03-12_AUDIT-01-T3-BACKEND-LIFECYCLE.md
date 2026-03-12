@@ -135,6 +135,8 @@ Add `import asyncio` and `import logging` / `logger = logging.getLogger(__name__
 
 #### Step 2: Add unit test for shutdown timeout
 
+**AGENTE: GPT-5.4**
+
 Create a test that:
 - Starts the scheduler with a mock task that never completes
 - Calls `stop()` and verifies it returns within ~16 seconds
@@ -157,6 +159,8 @@ def liveness() -> dict[str, str]:
 
 #### Step 4: Add `/health/ready` endpoint
 
+**AGENTE: GPT-5.4**
+
 Refactor existing health check logic into a readiness probe:
 
 ```python
@@ -176,6 +180,8 @@ The existing `/health` endpoint continues to work as-is for backward compatibili
 
 #### Step 5: Add tests for new endpoints
 
+**AGENTE: GPT-5.4**
+
 - Test `/health/live` returns 200 with `{"status": "alive"}`
 - Test `/health/ready` returns 200 when deps are healthy
 - Test `/health/ready` returns 503 when DB is unavailable
@@ -193,12 +199,16 @@ CMD ["python", "-m", "uvicorn", "backend.app.main:create_app", "--factory", "--h
 
 #### Step 7: Add `stop_grace_period` to docker-compose
 
+**AGENTE: GPT-5.4**
+
 In `docker-compose.yml`, add to backend service:
 ```yaml
 stop_grace_period: 45s
 ```
 
 #### Step 8: Update healthcheck to use `/health/ready`
+
+**AGENTE: GPT-5.4**
 
 In `docker-compose.yml`, update backend healthcheck:
 ```yaml

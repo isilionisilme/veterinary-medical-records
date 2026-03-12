@@ -224,6 +224,8 @@ Apply this pattern to all 14 functions, preserving:
 - Response types (`blob` for PDF, `text` for raw text)
 - All existing error messages (character-for-character)
 
+**AGENTE: Claude Opus 4.6**
+
 #### Step 3: Handle special cases
 
 - `fetchOriginalPdf`: uses `responseType: "blob"`
@@ -279,7 +281,7 @@ Zero errors.
 
 ### Phase 2 — Refactoring
 
-- [ ] P2-A 🔄 — Refactor functions 1–07 (fetch* and triggerReprocess). **AGENTE: Claude Opus 4.6**
+- [ ] P2-A 🔄 — Refactor functions 1–7 (fetch* and triggerReprocess). **AGENTE: Claude Opus 4.6**
 - [ ] P2-B 🔄 — Refactor functions 8–11 (mark/reopen/edit/fetchRawText). **AGENTE: Claude Opus 4.6**
 - [ ] P2-C 🔄 — Refactor functions 12–14 (upload/clipboard/lookup). **AGENTE: Claude Opus 4.6**
 - [ ] P2-D 🔄 — Verify zero behavioral change: exact same error messages, status codes, response types. **AGENTE: Claude Opus 4.6**

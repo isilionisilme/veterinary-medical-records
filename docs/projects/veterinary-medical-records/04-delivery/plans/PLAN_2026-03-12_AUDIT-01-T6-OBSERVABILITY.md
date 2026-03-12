@@ -126,6 +126,8 @@ def generate_request_id() -> str:
 
 #### Step 2: Create correlation ID logging filter
 
+**AGENTE: Claude Opus 4.6**
+
 In the same module (or a separate `logging_filter.py`):
 
 ```python
@@ -140,6 +142,8 @@ class CorrelationIdFilter(logging.Filter):
 ```
 
 #### Step 3: Create ASGI middleware
+
+**AGENTE: Claude Opus 4.6**
 
 Create `backend/app/infra/middleware.py`:
 
@@ -175,6 +179,8 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
 
 #### Step 4: Register middleware in `main.py`
 
+**AGENTE: Claude Opus 4.6**
+
 In `create_app()`, add the correlation ID middleware **before** the auth middleware:
 
 ```python
@@ -184,6 +190,8 @@ app.add_middleware(CorrelationIdMiddleware)
 ```
 
 #### Step 5: Add tests for correlation ID
+
+**AGENTE: Claude Opus 4.6**
 
 Create `backend/tests/unit/test_correlation_id.py`:
 - Test that responses include `X-Request-ID` header
@@ -203,6 +211,8 @@ python-json-logger>=3.0.0
 ```
 
 #### Step 7: Create logging configuration module
+
+**AGENTE: GPT-5.4**
 
 Create `backend/app/logging_config.py`:
 
@@ -250,6 +260,8 @@ def configure_logging(log_level: str = "INFO") -> None:
 
 #### Step 8: Call `configure_logging` in app startup
 
+**AGENTE: GPT-5.4**
+
 In `main.py`, call `configure_logging()` at the top of the `lifespan` function (before any logging):
 
 ```python
@@ -274,12 +286,14 @@ log_level: str = _getenv("LOG_LEVEL") or "INFO"
 
 #### Step 10: Add test for LOG_LEVEL
 
+**AGENTE: GPT-5.4**
+
 - Test that default log level is `INFO`
 - Test that setting `LOG_LEVEL=DEBUG` environment variable changes the configured level
 
 ### Phase 4 — Validation
 
-**AGENTE: Claude Opus 4.6** (for final validation across all phases)
+**AGENTE: GPT-5.4** (validates all phases after C2+C3 complete)
 
 #### Step 11: Full test suite
 
