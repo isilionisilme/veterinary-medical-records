@@ -53,6 +53,9 @@ erDiagram
 Core-model scope note:
 This ERD is intentionally limited to the 5 operational core entities required by ARCH-09. Additional governance/schema entities are specified normatively in B2.7-B2.9.
 
+Synchronization note (2026-03-12):
+`docs/projects/veterinary-medical-records/02-tech/technical-design.md` now includes an expanded physical-schema ERD for implementation orientation (including `document_status_history` and `calibration_aggregates`). This owner module remains authoritative for the minimum core contract and governance entities.
+
 ---
 
 ## B2.1 Document
