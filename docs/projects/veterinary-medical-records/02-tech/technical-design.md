@@ -229,6 +229,73 @@ Core concepts (conceptual overview):
 - **FieldEvidence**: lightweight links between structured fields and their source (page/snippet).
 - **RecordRevisions / FieldChangeLog**: append-only records of human edits.
 
+### Entity-Relationship Diagram
+
+The physical schema maps the conceptual model above into 5 SQLite tables. Artifacts
+(extracted text, structured interpretations) are stored as JSON payloads inside the
+`artifacts` table, scoped to a specific `processing_run`. Calibration aggregates
+track accept/edit statistics independently for confidence tuning.
+
+```mermaid
+erDiagram
+    documents {
+        TEXT document_id PK
+        TEXT original_filename
+        TEXT content_type
+        INTEGER file_size
+        TEXT storage_path
+        TEXT review_status
+        TEXT created_at
+        TEXT updated_at
+        TEXT reviewed_at
+        TEXT reviewed_by
+        TEXT reviewed_run_id
+    }
+
+    document_status_history {
+        TEXT id PK
+        TEXT document_id FK
+        TEXT status
+        TEXT run_id
+        TEXT created_at
+    }
+
+    processing_runs {
+        TEXT run_id PK
+        TEXT document_id FK
+        TEXT state
+        TEXT created_at
+        TEXT started_at
+        TEXT completed_at
+        TEXT failure_type
+    }
+
+    artifacts {
+        TEXT artifact_id PK
+        TEXT run_id FK
+        TEXT artifact_type
+        TEXT payload
+        TEXT created_at
+    }
+
+    calibration_aggregates {
+        TEXT context_key PK
+        TEXT field_key PK
+        TEXT mapping_id
+        TEXT mapping_id_scope_key PK
+        TEXT policy_version PK
+        INTEGER accept_count
+        INTEGER edit_count
+        TEXT updated_at
+    }
+
+    documents ||--o{ document_status_history : "status changes"
+    documents ||--o{ processing_runs : "processed by"
+    processing_runs ||--o{ artifacts : "produces"
+```
+
+<!-- Sources: backend/app/infra/database.py (schema init), backend/app/domain/models.py (domain dataclasses) -->
+
 This section provides conceptual orientation only.  
 Authoritative contracts and invariants are defined in
 **[Appendix A](#appendix-a--contracts-states--invariants-normative)** and
