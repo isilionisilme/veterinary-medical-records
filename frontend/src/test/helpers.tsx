@@ -1,8 +1,9 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { expect, type MockInstance, vi } from "vitest";
+import { expect, vi } from "vitest";
 
 import { App } from "../App";
+import { registerConsoleSuppression } from "./consoleSuppressions";
 
 export function renderApp() {
   const queryClient = new QueryClient({
@@ -839,54 +840,12 @@ export function installDefaultAppFetchMock() {
 }
 
 export function resetAppTestEnvironment() {
-  vi.restoreAllMocks();
   window.localStorage.clear();
   window.history.replaceState({}, "", "/");
 }
 
-function consoleArgsMatchPattern(args: unknown[], pattern?: string | RegExp): boolean {
-  if (!pattern) {
-    return true;
-  }
-
-  const text = args
-    .map((arg) => {
-      if (typeof arg === "string") {
-        return arg;
-      }
-      try {
-        return JSON.stringify(arg);
-      } catch {
-        return String(arg);
-      }
-    })
-    .join(" ");
-
-  if (typeof pattern === "string") {
-    return text.includes(pattern);
-  }
-
-  return pattern.test(text);
-}
-
-function createConsoleSuppressor(
-  method: "error" | "warn",
-  pattern?: string | RegExp,
-): () => MockInstance<typeof console.error> | MockInstance<typeof console.warn> {
-  const spy = vi
-    .spyOn(console, method)
-    .mockImplementation((...args: Parameters<typeof console.error>) => {
-      if (!consoleArgsMatchPattern(args, pattern)) {
-        throw new Error(
-          `Unexpected console.${method} call while suppressing expected output: ${JSON.stringify(args)}`,
-        );
-      }
-    });
-
-  return () => {
-    spy.mockRestore();
-    return spy;
-  };
+function createConsoleSuppressor(method: "error" | "warn", pattern?: string | RegExp): () => void {
+  return registerConsoleSuppression(method, pattern);
 }
 
 export function suppressConsoleError(pattern?: string | RegExp) {
