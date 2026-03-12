@@ -241,7 +241,6 @@ All 345 tests must pass, zero lint errors.
 | `.github/workflows/ci.yml` | MODIFY (D2 — remove continue-on-error) |
 | `frontend/package.json` | MODIFY if framer-motion unused (D3) |
 | `frontend/package-lock.json` | MODIFY to remove framer-motion and apply npm audit fixes |
-| `frontend/src/hooks/useStructuredDataFilters.ts` | MODIFY to avoid redundant debounced updates that broke frontend test validation |
 
 ---
 

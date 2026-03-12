@@ -183,8 +183,6 @@ jobs:
       - name: Security audit (pip-audit)
         run: >
           pip-audit --requirement backend/requirements.txt --strict
-          --ignore-vuln GHSA-2c2j-9gv5-cj73
-          --ignore-vuln GHSA-7f5h-v6xp-fcq8
 
   complexity_gate:
     needs: changes
