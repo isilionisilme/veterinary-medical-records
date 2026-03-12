@@ -6,6 +6,7 @@ import re
 import time
 import zlib
 from collections.abc import Callable
+from contextvars import ContextVar
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -20,7 +21,9 @@ MAX_SINGLE_STREAM_BYTES = 1 * 1024 * 1024
 MAX_EXTRACTION_SECONDS = 20.0
 MAX_CMAP_STREAM_BYTES = 256 * 1024
 
-_ACTIVE_EXTRACTION_DEADLINE: float | None = None
+_ACTIVE_EXTRACTION_DEADLINE: ContextVar[float | None] = ContextVar(
+    "_ACTIVE_EXTRACTION_DEADLINE", default=None
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -30,9 +33,10 @@ class PdfCMap:
 
 
 def _deadline_exceeded() -> bool:
-    if _ACTIVE_EXTRACTION_DEADLINE is None:
+    deadline = _ACTIVE_EXTRACTION_DEADLINE.get()
+    if deadline is None:
         return False
-    return time.monotonic() > _ACTIVE_EXTRACTION_DEADLINE
+    return time.monotonic() > deadline
 
 
 def _inflate_pdf_stream(stream: bytes) -> bytes | None:
@@ -65,8 +69,7 @@ def _extract_pdf_text_without_external_dependencies(
     from .pdf_text_quality import _sanitize_text_chunks, _stitch_text_chunks
 
     started_at = time.monotonic()
-    global _ACTIVE_EXTRACTION_DEADLINE
-    _ACTIVE_EXTRACTION_DEADLINE = started_at + MAX_EXTRACTION_SECONDS
+    _deadline_token = _ACTIVE_EXTRACTION_DEADLINE.set(started_at + MAX_EXTRACTION_SECONDS)
 
     parse_pdf_objects_fn = parse_pdf_objects or _parse_pdf_objects
     extract_cmaps_by_object_fn = extract_cmaps_by_object or _extract_cmaps_by_object
@@ -124,7 +127,7 @@ def _extract_pdf_text_without_external_dependencies(
 
         return _stitch_text_chunks(_sanitize_text_chunks(text_chunks))
     finally:
-        _ACTIVE_EXTRACTION_DEADLINE = None
+        _ACTIVE_EXTRACTION_DEADLINE.reset(_deadline_token)
 
 
 from .pdf_content_tokenizer import _tokenize_pdf_content as _tokenize_pdf_content  # noqa: E402

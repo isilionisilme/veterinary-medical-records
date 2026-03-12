@@ -10,6 +10,25 @@ _HEX_STRING_PATTERN = re.compile(rb"<([0-9A-Fa-f\s]+)>")
 _WHITESPACE_BYTES_PATTERN = re.compile(rb"\s+")
 
 
+def _decode_hex_string(content: bytes, start: int) -> tuple[bytes | None, int]:
+    """Parse a PDF hex string starting after the opening '<'.
+
+    Returns ``(decoded_bytes, next_index)`` or ``(None, next_index)``.
+    """
+    hex_end = content.find(b">", start)
+    if hex_end == -1:
+        return None, len(content)
+    compact = _WHITESPACE_BYTES_PATTERN.sub(b"", content[start:hex_end])
+    if not compact:
+        return None, hex_end + 1
+    if len(compact) % 2 == 1:
+        compact = b"0" + compact
+    try:
+        return bytes.fromhex(compact.decode("ascii")), hex_end + 1
+    except ValueError:
+        return None, hex_end + 1
+
+
 def _tokenize_pdf_content(content: bytes) -> list[object]:
     tokens: list[object] = []
     index = 0
@@ -33,18 +52,11 @@ def _tokenize_pdf_content(content: bytes) -> list[object]:
             parsed_array, index = _parse_pdf_array(content, index + 1)
             tokens.append(parsed_array)
         elif byte == 60 and index + 1 < length and content[index + 1] != 60:
-            hex_end = content.find(b">", index + 1)
-            if hex_end == -1:
+            decoded, index = _decode_hex_string(content, index + 1)
+            if decoded is None and index >= length:
                 break
-            compact = _WHITESPACE_BYTES_PATTERN.sub(b"", content[index + 1 : hex_end])
-            if compact:
-                if len(compact) % 2 == 1:
-                    compact = b"0" + compact
-                try:
-                    tokens.append(bytes.fromhex(compact.decode("ascii")))
-                except ValueError:
-                    pass
-            index = hex_end + 1
+            if decoded is not None:
+                tokens.append(decoded)
         else:
             token, index = _parse_word_or_name(content, index)
             if token is None:
@@ -78,18 +90,11 @@ def _parse_pdf_array(content: bytes, index: int) -> tuple[list[object], int]:
             values.append(nested)
             continue
         if byte == 60 and index + 1 < length and content[index + 1] != 60:
-            hex_end = content.find(b">", index + 1)
-            if hex_end == -1:
+            decoded, index = _decode_hex_string(content, index + 1)
+            if decoded is None and index >= length:
                 return values, length
-            compact = _WHITESPACE_BYTES_PATTERN.sub(b"", content[index + 1 : hex_end])
-            if compact:
-                if len(compact) % 2 == 1:
-                    compact = b"0" + compact
-                try:
-                    values.append(bytes.fromhex(compact.decode("ascii")))
-                except ValueError:
-                    pass
-            index = hex_end + 1
+            if decoded is not None:
+                values.append(decoded)
             continue
 
         token, index = _parse_word_or_name(content, index)

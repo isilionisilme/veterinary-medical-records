@@ -48,6 +48,11 @@ def _normalize_species_and_breed_pair(
     values: dict[str, object],
     evidence_map: Mapping[str, list[dict[str, object]]] | None,
 ) -> dict[str, object]:
+    """Normalize species/breed in *values* using tokens and evidence.
+
+    Mutates *values* in-place (sets ``species`` and ``breed`` keys) **and**
+    returns it for convenience chaining.
+    """
     species = values.get("species") if isinstance(values.get("species"), str) else None
     breed = values.get("breed") if isinstance(values.get("breed"), str) else None
 
