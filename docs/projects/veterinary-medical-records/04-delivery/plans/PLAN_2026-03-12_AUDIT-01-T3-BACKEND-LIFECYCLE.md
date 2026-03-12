@@ -109,6 +109,8 @@ Missing: `--timeout-graceful-shutdown 30`
 
 ### Phase 1 — A3: Scheduler Shutdown Timeout
 
+**AGENTE: GPT-5.4**
+
 #### Step 1: Add timeout to `stop()` method
 
 In `backend/app/infra/scheduler_lifecycle.py`, replace:
@@ -133,12 +135,16 @@ Add `import asyncio` and `import logging` / `logger = logging.getLogger(__name__
 
 #### Step 2: Add unit test for shutdown timeout
 
+**AGENTE: GPT-5.4**
+
 Create a test that:
 - Starts the scheduler with a mock task that never completes
 - Calls `stop()` and verifies it returns within ~16 seconds
 - Verifies the task was cancelled
 
 ### Phase 2 — B4: Liveness/Readiness Probes
+
+**AGENTE: GPT-5.4**
 
 #### Step 3: Add `/health/live` endpoint
 
@@ -152,6 +158,8 @@ def liveness() -> dict[str, str]:
 ```
 
 #### Step 4: Add `/health/ready` endpoint
+
+**AGENTE: GPT-5.4**
 
 Refactor existing health check logic into a readiness probe:
 
@@ -172,11 +180,15 @@ The existing `/health` endpoint continues to work as-is for backward compatibili
 
 #### Step 5: Add tests for new endpoints
 
+**AGENTE: GPT-5.4**
+
 - Test `/health/live` returns 200 with `{"status": "alive"}`
 - Test `/health/ready` returns 200 when deps are healthy
 - Test `/health/ready` returns 503 when DB is unavailable
 
 ### Phase 3 — Docker Configuration
+
+**AGENTE: GPT-5.4**
 
 #### Step 6: Add `--timeout-graceful-shutdown` to Dockerfile
 
@@ -187,12 +199,16 @@ CMD ["python", "-m", "uvicorn", "backend.app.main:create_app", "--factory", "--h
 
 #### Step 7: Add `stop_grace_period` to docker-compose
 
+**AGENTE: GPT-5.4**
+
 In `docker-compose.yml`, add to backend service:
 ```yaml
 stop_grace_period: 45s
 ```
 
 #### Step 8: Update healthcheck to use `/health/ready`
+
+**AGENTE: GPT-5.4**
 
 In `docker-compose.yml`, update backend healthcheck:
 ```yaml
@@ -201,6 +217,8 @@ healthcheck:
 ```
 
 ### Phase 4 — Validation
+
+**AGENTE: GPT-5.4**
 
 #### Step 9: Full test suite
 
@@ -214,32 +232,32 @@ healthcheck:
 
 ### Phase 0 — Preflight
 
-- [ ] P0-A 🔄 — Create branch `improvement/audit-01-t3-backend-lifecycle` from latest `main`. Verify clean worktree.
+- [ ] P0-A 🔄 — Create branch `improvement/audit-01-t3-backend-lifecycle` from latest `main`. Verify clean worktree. **AGENTE: GPT-5.4**
 
 ### Phase 1 — A3: Shutdown Timeout
 
-- [ ] P1-A 🔄 — Add `asyncio.wait_for` timeout to `stop()`.
-- [ ] P1-B 🔄 — Add unit test for shutdown timeout behavior.
-- [ ] P1-C 🚧 — Checkpoint: present diff for user review.
+- [ ] P1-A 🔄 — Add `asyncio.wait_for` timeout to `stop()`. **AGENTE: GPT-5.4**
+- [ ] P1-B 🔄 — Add unit test for shutdown timeout behavior. **AGENTE: GPT-5.4**
+- [ ] P1-C 🚧 — Checkpoint: present diff for user review. **AGENTE: GPT-5.4**
 
 ### Phase 2 — B4: Probes
 
-- [ ] P2-A 🔄 — Add `/health/live` endpoint.
-- [ ] P2-B 🔄 — Add `/health/ready` endpoint.
-- [ ] P2-C 🔄 — Add tests for new endpoints.
-- [ ] P2-D 🚧 — Checkpoint: present diff for user review.
+- [ ] P2-A 🔄 — Add `/health/live` endpoint. **AGENTE: GPT-5.4**
+- [ ] P2-B 🔄 — Add `/health/ready` endpoint. **AGENTE: GPT-5.4**
+- [ ] P2-C 🔄 — Add tests for new endpoints. **AGENTE: GPT-5.4**
+- [ ] P2-D 🚧 — Checkpoint: present diff for user review. **AGENTE: GPT-5.4**
 
 ### Phase 3 — Docker Config
 
-- [ ] P3-A 🔄 — Update Dockerfile CMD with `--timeout-graceful-shutdown 30`.
-- [ ] P3-B 🔄 — Add `stop_grace_period: 45s` to docker-compose.yml.
-- [ ] P3-C 🔄 — Update healthcheck to use `/health/ready`.
-- [ ] P3-D 🚧 — Checkpoint: present diff for user review.
+- [ ] P3-A 🔄 — Update Dockerfile CMD with `--timeout-graceful-shutdown 30`. **AGENTE: GPT-5.4**
+- [ ] P3-B 🔄 — Add `stop_grace_period: 45s` to docker-compose.yml. **AGENTE: GPT-5.4**
+- [ ] P3-C 🔄 — Update healthcheck to use `/health/ready`. **AGENTE: GPT-5.4**
+- [ ] P3-D 🚧 — Checkpoint: present diff for user review. **AGENTE: GPT-5.4**
 
 ### Phase 4 — Final
 
-- [ ] P4-A 🔄 — Full validation (tests + lint).
-- [ ] P4-B 🚧 — Present commit proposal to user.
+- [ ] P4-A 🔄 — Full validation (tests + lint). **AGENTE: GPT-5.4**
+- [ ] P4-B 🚧 — Present commit proposal to user. **AGENTE: GPT-5.4**
 
 ---
 

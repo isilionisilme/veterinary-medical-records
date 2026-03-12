@@ -95,6 +95,8 @@ This track addresses correlation IDs (0→8), structured logging (2→7), and lo
 
 ### Phase 1 — C1: Correlation ID Middleware (Claude)
 
+**AGENTE: Claude Opus 4.6**
+
 #### Step 1: Create correlation ID module
 
 Create `backend/app/infra/correlation.py`:
@@ -124,6 +126,8 @@ def generate_request_id() -> str:
 
 #### Step 2: Create correlation ID logging filter
 
+**AGENTE: Claude Opus 4.6**
+
 In the same module (or a separate `logging_filter.py`):
 
 ```python
@@ -138,6 +142,8 @@ class CorrelationIdFilter(logging.Filter):
 ```
 
 #### Step 3: Create ASGI middleware
+
+**AGENTE: Claude Opus 4.6**
 
 Create `backend/app/infra/middleware.py`:
 
@@ -173,6 +179,8 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
 
 #### Step 4: Register middleware in `main.py`
 
+**AGENTE: Claude Opus 4.6**
+
 In `create_app()`, add the correlation ID middleware **before** the auth middleware:
 
 ```python
@@ -183,6 +191,8 @@ app.add_middleware(CorrelationIdMiddleware)
 
 #### Step 5: Add tests for correlation ID
 
+**AGENTE: Claude Opus 4.6**
+
 Create `backend/tests/unit/test_correlation_id.py`:
 - Test that responses include `X-Request-ID` header
 - Test that incoming `X-Request-ID` is preserved
@@ -190,6 +200,8 @@ Create `backend/tests/unit/test_correlation_id.py`:
 - Test that `get_request_id()` returns the correct value during request handling
 
 ### Phase 2 — C2: JSON Structured Logging (GPT-5.4)
+
+**AGENTE: GPT-5.4**
 
 #### Step 6: Add `python-json-logger` dependency
 
@@ -199,6 +211,8 @@ python-json-logger>=3.0.0
 ```
 
 #### Step 7: Create logging configuration module
+
+**AGENTE: GPT-5.4**
 
 Create `backend/app/logging_config.py`:
 
@@ -246,6 +260,8 @@ def configure_logging(log_level: str = "INFO") -> None:
 
 #### Step 8: Call `configure_logging` in app startup
 
+**AGENTE: GPT-5.4**
+
 In `main.py`, call `configure_logging()` at the top of the `lifespan` function (before any logging):
 
 ```python
@@ -258,6 +274,8 @@ configure_logging(get_settings().log_level)
 
 ### Phase 3 — C3: LOG_LEVEL Environment Variable (GPT-5.4)
 
+**AGENTE: GPT-5.4**
+
 #### Step 9: Add `log_level` to Settings
 
 In `backend/app/settings.py`, add to the `Settings` dataclass:
@@ -268,10 +286,14 @@ log_level: str = _getenv("LOG_LEVEL") or "INFO"
 
 #### Step 10: Add test for LOG_LEVEL
 
+**AGENTE: GPT-5.4**
+
 - Test that default log level is `INFO`
 - Test that setting `LOG_LEVEL=DEBUG` environment variable changes the configured level
 
 ### Phase 4 — Validation
+
+**AGENTE: GPT-5.4** (validates all phases after C2+C3 complete)
 
 #### Step 11: Full test suite
 
@@ -286,34 +308,34 @@ log_level: str = _getenv("LOG_LEVEL") or "INFO"
 
 ### Phase 0 — Preflight
 
-- [ ] P0-A 🔄 — Create branch `improvement/audit-01-t6-observability` from latest `main`. Verify clean worktree.
+- [ ] P0-A 🔄 — Create branch `improvement/audit-01-t6-observability` from latest `main`. Verify clean worktree. **AGENTE: Claude Opus 4.6**
 
 ### Phase 1 — C1: Correlation ID (Claude)
 
-- [ ] P1-A 🔄 — Create `correlation.py` with contextvars.
-- [ ] P1-B 🔄 — Create `CorrelationIdFilter` logging filter.
-- [ ] P1-C 🔄 — Create `CorrelationIdMiddleware` in `middleware.py`.
-- [ ] P1-D 🔄 — Register middleware in `main.py`.
-- [ ] P1-E 🔄 — Add correlation ID tests.
-- [ ] P1-F 🚧 — Checkpoint: present diff for user review.
+- [ ] P1-A 🔄 — Create `correlation.py` with contextvars. **AGENTE: Claude Opus 4.6**
+- [ ] P1-B 🔄 — Create `CorrelationIdFilter` logging filter. **AGENTE: Claude Opus 4.6**
+- [ ] P1-C 🔄 — Create `CorrelationIdMiddleware` in `middleware.py`. **AGENTE: Claude Opus 4.6**
+- [ ] P1-D 🔄 — Register middleware in `main.py`. **AGENTE: Claude Opus 4.6**
+- [ ] P1-E 🔄 — Add correlation ID tests. **AGENTE: Claude Opus 4.6**
+- [ ] P1-F 🚧 — Checkpoint: present diff for user review. **AGENTE: Claude Opus 4.6**
 
 ### Phase 2 — C2: JSON Logging (GPT-5.4)
 
-- [ ] P2-A 🔄 — Add `python-json-logger` to requirements.
-- [ ] P2-B 🔄 — Create `logging_config.py`.
-- [ ] P2-C 🔄 — Call `configure_logging()` in lifespan.
-- [ ] P2-D 🚧 — Checkpoint: present diff for user review.
+- [ ] P2-A 🔄 — Add `python-json-logger` to requirements. **AGENTE: GPT-5.4**
+- [ ] P2-B 🔄 — Create `logging_config.py`. **AGENTE: GPT-5.4**
+- [ ] P2-C 🔄 — Call `configure_logging()` in lifespan. **AGENTE: GPT-5.4**
+- [ ] P2-D 🚧 — Checkpoint: present diff for user review. **AGENTE: GPT-5.4**
 
 ### Phase 3 — C3: LOG_LEVEL (GPT-5.4)
 
-- [ ] P3-A 🔄 — Add `log_level` to Settings.
-- [ ] P3-B 🔄 — Add test for LOG_LEVEL env var.
-- [ ] P3-C 🚧 — Checkpoint: present diff for user review.
+- [ ] P3-A 🔄 — Add `log_level` to Settings. **AGENTE: GPT-5.4**
+- [ ] P3-B 🔄 — Add test for LOG_LEVEL env var. **AGENTE: GPT-5.4**
+- [ ] P3-C 🚧 — Checkpoint: present diff for user review. **AGENTE: GPT-5.4**
 
 ### Phase 4 — Final
 
-- [ ] P4-A 🔄 — Full validation (tests + lint).
-- [ ] P4-B 🚧 — Present commit proposal to user.
+- [ ] P4-A 🔄 — Full validation (tests + lint). **AGENTE: Claude Opus 4.6**
+- [ ] P4-B 🚧 — Present commit proposal to user. **AGENTE: Claude Opus 4.6**
 
 ---
 
