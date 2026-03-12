@@ -5,7 +5,7 @@
 > **Master plan:** [AUDIT-01 Master](PLAN_2026-03-12_AUDIT-01-CODEBASE-QUALITY-MASTER.md)
 
 **Branch:** improvement/audit-01-t7-deps-ci
-**Worktree:** D:/Git/worktrees/codex-permanent-1
+**Worktree:** D:/Git/worktrees/7
 **Execution Mode:** Autonomous
 **Model Assignment:** GPT-5.4
 **PR:** Pending (PR created on explicit user request)
@@ -18,7 +18,7 @@
 
 ## TL;DR
 
-Three quick fixes: (1) upgrade starlette to fix 2 CVEs (GHSA-2c2j-9gv5-cj73, GHSA-7f5h-v6xp-fcq8); (2) enforce `npm audit` in CI by removing `continue-on-error: true`; (3) verify and remove `framer-motion` if unused.
+Three quick fixes: (1) upgrade FastAPI and pin Starlette to fixed versions that close 2 CVEs (GHSA-2c2j-9gv5-cj73, GHSA-7f5h-v6xp-fcq8); (2) enforce `npm audit` in CI by removing `continue-on-error: true`; (3) verify and remove `framer-motion` if unused.
 
 ---
 
@@ -30,7 +30,7 @@ Three quick fixes: (1) upgrade starlette to fix 2 CVEs (GHSA-2c2j-9gv5-cj73, GHS
 - **GHSA-2c2j-9gv5-cj73** — DoS via multipart boundary parsing
 - **GHSA-7f5h-v6xp-fcq8** — Path traversal in `StaticFiles`
 
-Both are fixed in starlette ≥ 0.46.3. Since starlette is a transitive dependency of FastAPI, the fix is to either pin starlette directly or upgrade FastAPI to a version that pulls a fixed starlette.
+Both are fixed in patched Starlette releases, but the repo enforces exact pins and FastAPI 0.115.14 constrains Starlette below the fully fixed range. The implemented fix upgrades FastAPI to a compatible version and pins Starlette exactly to a safe release.
 
 ### Problem 2: npm Audit Soft-Fail (D2)
 
@@ -59,9 +59,9 @@ The audit flagged `framer-motion` in `frontend/package.json` as potentially unus
 
 ## Design Decisions
 
-### DD-1: Pin starlette in requirements.txt
-**Approach:** Add `starlette>=0.46.3` to `backend/requirements.txt` to ensure the vulnerable version is never installed, even if FastAPI's own pin allows it.
-**Rationale:** Defense in depth. FastAPI may lag behind starlette releases.
+### DD-1: Upgrade FastAPI and pin Starlette exactly
+**Approach:** Upgrade `fastapi` to `0.121.0` and pin `starlette==0.49.3` in `backend/requirements.txt`.
+**Rationale:** `pip-audit` required a Starlette version newer than what `fastapi 0.115.14` allowed, and backend requirements are guarded to use exact `==` pins only.
 
 ### DD-2: Remove `continue-on-error` from npm audit
 **Approach:** Simply remove the `continue-on-error: true` line.
@@ -98,11 +98,12 @@ The audit flagged `framer-motion` in `frontend/package.json` as potentially unus
 
 **AGENTE: GPT-5.4**
 
-#### Step 1: Add starlette pin to requirements.txt
+#### Step 1: Upgrade FastAPI and pin Starlette in requirements.txt
 
 In `backend/requirements.txt`, add:
 ```
-starlette>=0.46.3
+fastapi==0.121.0
+starlette==0.49.3
 ```
 
 #### Step 2: Install and verify
@@ -203,32 +204,32 @@ All 345 tests must pass, zero lint errors.
 
 ### Phase 0 — Preflight
 
-- [ ] P0-A 🔄 — Create branch `improvement/audit-01-t7-deps-ci` from latest `main`. Verify clean worktree. **AGENTE: GPT-5.4**
+- [x] P0-A 🔄 — Create branch `improvement/audit-01-t7-deps-ci` from latest `main`. Verify clean worktree. **AGENTE: GPT-5.4** — ✅ `no-commit (branch created)`
 
 ### Phase 1 — D1: Starlette
 
-- [ ] P1-A 🔄 — Add `starlette>=0.46.3` to requirements.txt. **AGENTE: GPT-5.4**
-- [ ] P1-B 🔄 — Verify pip-audit shows 0 vulnerabilities. **AGENTE: GPT-5.4**
-- [ ] P1-C 🔄 — Run backend tests. **AGENTE: GPT-5.4**
-- [ ] P1-D 🚧 — Checkpoint: present diff for user review. **AGENTE: GPT-5.4**
+- [x] P1-A 🔄 — Upgrade `fastapi` and pin `starlette==0.49.3` in requirements.txt. **AGENTE: GPT-5.4** — ✅ `0ad1f578`
+- [x] P1-B 🔄 — Verify pip-audit shows 0 vulnerabilities. **AGENTE: GPT-5.4** — ✅ `0ad1f578`
+- [x] P1-C 🔄 — Run backend tests. **AGENTE: GPT-5.4** — ✅ `0ad1f578`
+- [x] P1-D 🚧 — Checkpoint: present diff for user review. **AGENTE: GPT-5.4** — ✅ `no-commit (autonomous mode checkpoint accepted)`
 
 ### Phase 2 — D2: npm Audit
 
-- [ ] P2-A 🔄 — Remove `continue-on-error: true` from ci.yml. **AGENTE: GPT-5.4**
-- [ ] P2-B 🔄 — Verify `npm audit` passes locally. **AGENTE: GPT-5.4**
-- [ ] P2-C 🚧 — Checkpoint: present diff for user review. **AGENTE: GPT-5.4**
+- [x] P2-A 🔄 — Remove `continue-on-error: true` from ci.yml. **AGENTE: GPT-5.4** — ✅ `0ad1f578`
+- [x] P2-B 🔄 — Verify `npm audit` passes locally. **AGENTE: GPT-5.4** — ✅ `0ad1f578`
+- [x] P2-C 🚧 — Checkpoint: present diff for user review. **AGENTE: GPT-5.4** — ✅ `no-commit (autonomous mode checkpoint accepted)`
 
 ### Phase 3 — D3: framer-motion
 
-- [ ] P3-A 🔄 — Search for framer-motion usage. **AGENTE: GPT-5.4**
-- [ ] P3-B 🔄 — Remove if unused; document if used. **AGENTE: GPT-5.4**
-- [ ] P3-C 🔄 — Run frontend tests. **AGENTE: GPT-5.4**
-- [ ] P3-D 🚧 — Checkpoint: present diff for user review. **AGENTE: GPT-5.4**
+- [x] P3-A 🔄 — Search for framer-motion usage. **AGENTE: GPT-5.4** — ✅ `0ad1f578`
+- [x] P3-B 🔄 — Remove if unused; document if used. **AGENTE: GPT-5.4** — ✅ `0ad1f578`
+- [x] P3-C 🔄 — Run frontend tests. **AGENTE: GPT-5.4** — ✅ `0ad1f578`
+- [x] P3-D 🚧 — Checkpoint: present diff for user review. **AGENTE: GPT-5.4** — ✅ `no-commit (autonomous mode checkpoint accepted)`
 
 ### Phase 4 — Final
 
-- [ ] P4-A 🔄 — Full validation. **AGENTE: GPT-5.4**
-- [ ] P4-B 🚧 — Present commit proposal to user. **AGENTE: GPT-5.4**
+- [x] P4-A 🔄 — Full validation. **AGENTE: GPT-5.4** — ✅ `0ad1f578`
+- [x] P4-B 🚧 — Present commit proposal to user. **AGENTE: GPT-5.4** — ✅ `no-commit (autonomous mode auto-commit)`
 
 ---
 
@@ -239,6 +240,8 @@ All 345 tests must pass, zero lint errors.
 | `backend/requirements.txt` | MODIFY (D1 — add starlette pin) |
 | `.github/workflows/ci.yml` | MODIFY (D2 — remove continue-on-error) |
 | `frontend/package.json` | MODIFY if framer-motion unused (D3) |
+| `frontend/package-lock.json` | MODIFY to remove framer-motion and apply npm audit fixes |
+| `frontend/src/hooks/useStructuredDataFilters.ts` | MODIFY to avoid redundant debounced updates that broke frontend test validation |
 
 ---
 
