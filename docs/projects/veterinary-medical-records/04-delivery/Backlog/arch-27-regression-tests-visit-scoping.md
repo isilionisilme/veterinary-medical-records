@@ -3,6 +3,7 @@
 **Status:** Planned
 
 **Type:** Architecture Improvement (test coverage)
+**Linked plan ID:** ARCHB27
 
 **Target release:** Release 20 — Architecture hardening
 
@@ -33,4 +34,4 @@ Add fixture-style regression tests through `normalize_canonical_review_scoping()
 - ARCH-01 (Done) — decomposition must be merged first.
 
 **Plan**
-[PLAN_2026-03-12_ARCH-01-REGRESSION-TESTS.md](../plans/PLAN_2026-03-12_ARCH-01-REGRESSION-TESTS.md)
+[PLAN_2026-03-12_ARCHB27-REGRESSION-TESTS.md](../plans/PLAN_2026-03-12_ARCHB27-REGRESSION-TESTS.md)
