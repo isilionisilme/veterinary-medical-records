@@ -2,6 +2,7 @@
 
 from pathlib import Path
 from typing import Annotated, Any, cast
+from urllib.parse import quote
 
 from fastapi import APIRouter, File, Query, Request, UploadFile, status
 from fastapi import Path as ParamPath
@@ -46,6 +47,16 @@ ALLOWED_EXTENSIONS = {".pdf"}
 DEFAULT_LIST_LIMIT = 50
 UUID_PATH_PATTERN = r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
 DocumentIdPath = Annotated[str, ParamPath(..., pattern=UUID_PATH_PATTERN)]
+
+
+def _safe_content_disposition(disposition_type: str, filename: str) -> str:
+    """Build a safe Content-Disposition value with RFC 5987 encoding."""
+
+    normalized = filename.replace("\r", "").replace("\n", "")
+    ascii_filename = normalized.encode("ascii", "replace").decode("ascii")
+    ascii_filename = ascii_filename.replace('"', "'")
+    encoded_filename = quote(normalized, safe="")
+    return f"{disposition_type}; filename=\"{ascii_filename}\"; filename*=UTF-8''{encoded_filename}"
 
 
 def _upload_rate_limit() -> str:
@@ -296,8 +307,8 @@ def get_document_original(
     )
 
     headers = {
-        "Content-Disposition": (
-            f'{disposition_type}; filename="{location.document.original_filename}"'
+        "Content-Disposition": _safe_content_disposition(
+            disposition_type, location.document.original_filename
         )
     }
     try:

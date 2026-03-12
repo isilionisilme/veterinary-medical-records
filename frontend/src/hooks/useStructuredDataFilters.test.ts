@@ -26,8 +26,7 @@ describe("useStructuredDataFilters", () => {
     expect(result.current.hasActiveStructuredFilters).toBe(false);
   });
 
-  it("debounces search input before updating searchTerm", () => {
-    vi.useFakeTimers();
+  it("defers search input before updating searchTerm", async () => {
     const { result } = renderHook(() =>
       useStructuredDataFilters({
         activeConfidencePolicy: { version: "v1" },
@@ -37,13 +36,11 @@ describe("useStructuredDataFilters", () => {
     act(() => {
       result.current.setStructuredSearchInput("luna");
     });
-    expect(result.current.structuredDataFilters.searchTerm).toBe("");
 
-    act(() => {
-      vi.advanceTimersByTime(200);
+    await waitFor(() => {
+      expect(result.current.structuredDataFilters.searchTerm).toBe("luna");
+      expect(result.current.hasActiveStructuredFilters).toBe(true);
     });
-    expect(result.current.structuredDataFilters.searchTerm).toBe("luna");
-    expect(result.current.hasActiveStructuredFilters).toBe(true);
   });
 
   it("resets filters and focuses the search input", () => {

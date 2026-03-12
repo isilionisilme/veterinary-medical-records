@@ -21,13 +21,9 @@ describe("App upload and list flow", () => {
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
     await waitForStructuredDataReady();
 
-    const activeViewerTool = await screen.findByRole(
-      "button",
-      { name: /^Documento$/i },
-      { timeout: 10000 },
-    );
+    const activeViewerTool = await screen.findByTestId("viewer-tab-document");
     expect(activeViewerTool).toHaveAttribute("aria-pressed", "true");
-    expect(activeViewerTool).toHaveClass("bg-surfaceMuted");
+    expect(activeViewerTool).toHaveAttribute("aria-current", "page");
 
     expect(screen.getByRole("heading", { name: /Datos extraídos/i })).toBeInTheDocument();
     expect(

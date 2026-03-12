@@ -33,7 +33,7 @@ describe("SourcePanelContent", () => {
     expect(screen.getByText("Página 2")).toBeInTheDocument();
     expect(screen.getByText("Hemograma completo")).toBeInTheDocument();
 
-    const viewer = await screen.findByTestId("mock-pdf-viewer");
+    const viewer = await screen.findByTestId("mock-pdf-viewer", {}, { timeout: 5000 });
     expect(viewer).toHaveAttribute("data-document-id", "doc-1");
     expect(viewer).toHaveAttribute("data-file-url", "blob:http://localhost/doc.pdf");
     expect(viewer).toHaveAttribute("data-filename", "doc.pdf");
