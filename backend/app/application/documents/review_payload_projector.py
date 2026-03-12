@@ -109,8 +109,6 @@ def _project_review_payload_to_canonical(
     if not isinstance(projected.get("other_fields"), list):
         projected["other_fields"] = []
 
-    # Temporary bridge for PR-1: visit scoping stays in review_service until PR-2
-    # extracts that responsibility into its own engine.
     from backend.app.application.documents.visit_scoping import normalize_canonical_review_scoping
 
     return normalize_canonical_review_scoping(projected, raw_text=raw_text)

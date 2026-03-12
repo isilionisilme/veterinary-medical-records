@@ -15,15 +15,7 @@ from backend.app.application.documents.calibration import (
     _apply_reviewed_document_calibration,
     _revert_reviewed_document_calibration,
 )
-
-# Backward-compatible re-exports so existing callers keep working.
-from backend.app.application.documents.segment_parser import (  # noqa: F401
-    split_segment_into_observations_actions as _split_segment_into_observations_actions,
-)
 from backend.app.application.documents.upload_service import _default_now_iso
-from backend.app.application.documents.visit_scoping import (  # noqa: F401
-    normalize_canonical_review_scoping as _normalize_canonical_review_scoping,
-)
 from backend.app.domain.models import ReviewStatus
 from backend.app.ports.document_repository import DocumentRepository
 from backend.app.ports.file_storage import FileStorage
