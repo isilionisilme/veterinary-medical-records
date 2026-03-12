@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import math
 from collections.abc import Mapping
+from dataclasses import dataclass
 from uuid import uuid4
 
 from backend.app.application.confidence_calibration import (
@@ -77,18 +78,22 @@ def _build_structured_fields_from_global_schema(
                 mapping_id = _derive_mapping_id(key=key, candidate=candidate)
                 fields.append(
                     _build_structured_field(
-                        key=key,
-                        value=item,
-                        confidence=confidence,
-                        snippet=(evidence.get("snippet") if isinstance(evidence, dict) else item),
-                        value_type=VALUE_TYPE_BY_KEY.get(key, "string"),
-                        page=(evidence.get("page") if isinstance(evidence, dict) else None),
-                        mapping_id=mapping_id,
-                        context_key=context_key,
-                        context_key_aliases=context_key_aliases,
-                        policy_version=policy_version,
-                        repository=repository,
-                        candidate_suggestions=candidate_suggestions,
+                        FieldBuildContext(
+                            key=key,
+                            value=item,
+                            confidence=confidence,
+                            snippet=(
+                                evidence.get("snippet") if isinstance(evidence, dict) else item
+                            ),
+                            value_type=VALUE_TYPE_BY_KEY.get(key, "string"),
+                            page=(evidence.get("page") if isinstance(evidence, dict) else None),
+                            mapping_id=mapping_id,
+                            context_key=context_key,
+                            context_key_aliases=context_key_aliases,
+                            policy_version=policy_version,
+                            repository=repository,
+                            candidate_suggestions=candidate_suggestions,
+                        )
                     )
                 )
             continue
@@ -103,18 +108,20 @@ def _build_structured_fields_from_global_schema(
         mapping_id = _derive_mapping_id(key=key, candidate=candidate)
         fields.append(
             _build_structured_field(
-                key=key,
-                value=value,
-                confidence=confidence,
-                snippet=(evidence.get("snippet") if isinstance(evidence, dict) else value),
-                value_type=VALUE_TYPE_BY_KEY.get(key, "string"),
-                page=(evidence.get("page") if isinstance(evidence, dict) else None),
-                mapping_id=mapping_id,
-                context_key=context_key,
-                context_key_aliases=context_key_aliases,
-                policy_version=policy_version,
-                repository=repository,
-                candidate_suggestions=candidate_suggestions,
+                FieldBuildContext(
+                    key=key,
+                    value=value,
+                    confidence=confidence,
+                    snippet=(evidence.get("snippet") if isinstance(evidence, dict) else value),
+                    value_type=VALUE_TYPE_BY_KEY.get(key, "string"),
+                    page=(evidence.get("page") if isinstance(evidence, dict) else None),
+                    mapping_id=mapping_id,
+                    context_key=context_key,
+                    context_key_aliases=context_key_aliases,
+                    policy_version=policy_version,
+                    repository=repository,
+                    candidate_suggestions=candidate_suggestions,
+                )
             )
         )
 
@@ -186,33 +193,35 @@ def _candidate_suggestion_sort_key(item: dict[str, object]) -> tuple[float, str,
     )
 
 
-def _build_structured_field(
-    *,
-    key: str,
-    value: str,
-    confidence: float,
-    snippet: str,
-    value_type: str,
-    page: int | None,
-    mapping_id: str | None,
-    context_key: str,
-    context_key_aliases: tuple[str, ...],
-    policy_version: str,
-    repository: DocumentRepository | None,
-    candidate_suggestions: list[dict[str, object]] | None,
-) -> dict[str, object]:
-    normalized_snippet = snippet.strip()
+@dataclass(frozen=True, slots=True)
+class FieldBuildContext:
+    key: str
+    value: str
+    confidence: float
+    snippet: str
+    value_type: str
+    page: int | None
+    mapping_id: str | None
+    context_key: str
+    context_key_aliases: tuple[str, ...]
+    policy_version: str
+    repository: DocumentRepository | None
+    candidate_suggestions: list[dict[str, object]] | None
+
+
+def _build_structured_field(ctx: FieldBuildContext) -> dict[str, object]:
+    normalized_snippet = ctx.snippet.strip()
     if len(normalized_snippet) > 180:
         normalized_snippet = normalized_snippet[:177].rstrip() + "..."
-    field_candidate_confidence = _sanitize_field_candidate_confidence(confidence)
+    field_candidate_confidence = _sanitize_field_candidate_confidence(ctx.confidence)
     text_extraction_reliability = _sanitize_text_extraction_reliability(None)
     field_review_history_adjustment = _resolve_review_history_adjustment(
-        repository=repository,
-        context_key=context_key,
-        context_key_aliases=context_key_aliases,
-        field_key=key,
-        mapping_id=mapping_id,
-        policy_version=policy_version,
+        repository=ctx.repository,
+        context_key=ctx.context_key,
+        context_key_aliases=ctx.context_key_aliases,
+        field_key=ctx.key,
+        mapping_id=ctx.mapping_id,
+        policy_version=ctx.policy_version,
     )
     field_mapping_confidence = _compose_field_mapping_confidence(
         candidate_confidence=field_candidate_confidence,
@@ -220,25 +229,25 @@ def _build_structured_field(
     )
     payload: dict[str, object] = {
         "field_id": str(uuid4()),
-        "key": key,
-        "value": value,
-        "value_type": value_type,
+        "key": ctx.key,
+        "value": ctx.value,
+        "value_type": ctx.value_type,
         "field_candidate_confidence": field_candidate_confidence,
         "field_mapping_confidence": field_mapping_confidence,
         "text_extraction_reliability": text_extraction_reliability,
         "field_review_history_adjustment": field_review_history_adjustment,
-        "context_key": context_key,
-        "mapping_id": mapping_id,
-        "policy_version": policy_version,
-        "is_critical": key in CRITICAL_KEYS,
+        "context_key": ctx.context_key,
+        "mapping_id": ctx.mapping_id,
+        "policy_version": ctx.policy_version,
+        "is_critical": ctx.key in CRITICAL_KEYS,
         "origin": "machine",
         "evidence": {
-            "page": page,
+            "page": ctx.page,
             "snippet": normalized_snippet,
         },
     }
-    if candidate_suggestions:
-        payload["candidate_suggestions"] = candidate_suggestions
+    if ctx.candidate_suggestions:
+        payload["candidate_suggestions"] = ctx.candidate_suggestions
     return payload
 
 
