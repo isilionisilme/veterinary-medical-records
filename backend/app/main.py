@@ -33,6 +33,7 @@ from backend.app.config import (
 )
 from backend.app.infra import database
 from backend.app.infra.file_storage import LocalFileStorage
+from backend.app.infra.middleware import CorrelationIdMiddleware
 from backend.app.infra.rate_limiter import limiter
 from backend.app.infra.scheduler_lifecycle import SchedulerLifecycle
 from backend.app.infra.sqlite_document_repository import SqliteDocumentRepository
@@ -181,6 +182,8 @@ def create_app() -> FastAPI:
             )
 
         return await call_next(request)
+
+    app.add_middleware(CorrelationIdMiddleware)
 
     global MAX_UPLOAD_SIZE
     MAX_UPLOAD_SIZE = ROUTE_MAX_UPLOAD_SIZE  # re-export for compatibility
