@@ -26,6 +26,86 @@ def _current_settings():
     return get_settings()
 
 
+def _strip_or_none(raw: str | None) -> str | None:
+    if raw is None:
+        return None
+    value = raw.strip()
+    return value or None
+
+
+def _parse_bounded_float(
+    raw: str | None,
+    *,
+    default: float | None,
+    min_value: float = 0.0,
+    max_value: float = 1.0,
+) -> float | None:
+    normalized = _strip_or_none(raw)
+    if normalized is None:
+        return default
+    try:
+        value = float(normalized)
+    except ValueError:
+        return default
+    if not (min_value <= value <= max_value):
+        return default
+    return value
+
+
+def _parse_bounded_float_strict(
+    raw: str | None,
+    *,
+    min_value: float = 0.0,
+    max_value: float = 1.0,
+) -> float | None:
+    return _parse_bounded_float(
+        raw,
+        default=None,
+        min_value=min_value,
+        max_value=max_value,
+    )
+
+
+def _parse_band_cutoffs(
+    *,
+    low_raw: str | None,
+    mid_raw: str | None,
+    default_low: float | None,
+    default_mid: float | None,
+) -> tuple[float, float] | None:
+    normalized_low = _strip_or_none(low_raw)
+    normalized_mid = _strip_or_none(mid_raw)
+
+    if normalized_low is None:
+        low_max = default_low
+    else:
+        low_max = _parse_bounded_float_strict(normalized_low)
+
+    if normalized_mid is None:
+        mid_max = default_mid
+    else:
+        mid_max = _parse_bounded_float_strict(normalized_mid)
+
+    if low_max is None or mid_max is None:
+        if default_low is None or default_mid is None:
+            return None
+        return default_low, default_mid
+    if low_max >= mid_max:
+        if default_low is None or default_mid is None:
+            return None
+        return default_low, default_mid
+    return low_max, mid_max
+
+
+def _resolve_rate_limit(raw: str | None, *, default: str) -> str:
+    configured = _strip_or_none(raw)
+    if configured is not None:
+        return configured
+    if _is_pytest_runtime():
+        return "10000/minute"
+    return default
+
+
 def processing_enabled() -> bool:
     """Return whether background processing is enabled."""
 
@@ -61,23 +141,19 @@ def _is_pytest_runtime() -> bool:
 def rate_limit_upload() -> str:
     """Return upload endpoint rate limit string."""
 
-    raw = (_current_settings().vet_records_rate_limit_upload or "").strip()
-    if raw:
-        return raw
-    if _is_pytest_runtime():
-        return "10000/minute"
-    return DEFAULT_RATE_LIMIT_UPLOAD
+    return _resolve_rate_limit(
+        _current_settings().vet_records_rate_limit_upload,
+        default=DEFAULT_RATE_LIMIT_UPLOAD,
+    )
 
 
 def rate_limit_download() -> str:
     """Return download endpoint rate limit string."""
 
-    raw = (_current_settings().vet_records_rate_limit_download or "").strip()
-    if raw:
-        return raw
-    if _is_pytest_runtime():
-        return "10000/minute"
-    return DEFAULT_RATE_LIMIT_DOWNLOAD
+    return _resolve_rate_limit(
+        _current_settings().vet_records_rate_limit_download,
+        default=DEFAULT_RATE_LIMIT_DOWNLOAD,
+    )
 
 
 def confidence_policy_version() -> str:
@@ -88,8 +164,7 @@ def confidence_policy_version() -> str:
 
 
 def confidence_policy_version_or_default(version_raw: str | None) -> str:
-    raw = (version_raw or "").strip()
-    return raw or DEFAULT_CONFIDENCE_POLICY_VERSION
+    return _strip_or_none(version_raw) or DEFAULT_CONFIDENCE_POLICY_VERSION
 
 
 def confidence_band_cutoffs() -> tuple[float, float]:
@@ -107,37 +182,29 @@ def confidence_band_cutoffs_from_values(
 ) -> tuple[float, float]:
     """Return cutoffs from raw environment-like values."""
 
-    try:
-        low_max = float(low_raw) if low_raw is not None else DEFAULT_CONFIDENCE_LOW_MAX
-        mid_max = float(mid_raw) if mid_raw is not None else DEFAULT_CONFIDENCE_MID_MAX
-    except ValueError:
-        return DEFAULT_CONFIDENCE_LOW_MAX, DEFAULT_CONFIDENCE_MID_MAX
-
-    if low_max < 0 or mid_max > 1 or low_max >= mid_max:
-        return DEFAULT_CONFIDENCE_LOW_MAX, DEFAULT_CONFIDENCE_MID_MAX
-    return low_max, mid_max
+    parsed = _parse_band_cutoffs(
+        low_raw=low_raw,
+        mid_raw=mid_raw,
+        default_low=DEFAULT_CONFIDENCE_LOW_MAX,
+        default_mid=DEFAULT_CONFIDENCE_MID_MAX,
+    )
+    assert parsed is not None
+    return parsed
 
 
 def confidence_policy_version_or_none() -> str | None:
     """Return policy version when explicitly configured, else None."""
 
-    raw = (_current_settings().vet_records_confidence_policy_version or "").strip()
-    return raw or None
+    return _strip_or_none(_current_settings().vet_records_confidence_policy_version)
 
 
 def human_edit_neutral_candidate_confidence() -> float:
     """Return neutral candidate confidence baseline for human edits (0..1)."""
 
-    raw = _current_settings().vet_records_human_edit_neutral_candidate_confidence
-    if raw is None:
-        return DEFAULT_HUMAN_EDIT_NEUTRAL_CANDIDATE_CONFIDENCE
-    try:
-        value = float(raw)
-    except ValueError:
-        return DEFAULT_HUMAN_EDIT_NEUTRAL_CANDIDATE_CONFIDENCE
-    if 0 <= value <= 1:
-        return value
-    return DEFAULT_HUMAN_EDIT_NEUTRAL_CANDIDATE_CONFIDENCE
+    return _parse_bounded_float(
+        _current_settings().vet_records_human_edit_neutral_candidate_confidence,
+        default=DEFAULT_HUMAN_EDIT_NEUTRAL_CANDIDATE_CONFIDENCE,
+    )
 
 
 def confidence_band_cutoffs_or_none() -> tuple[float, float] | None:
@@ -155,17 +222,14 @@ def confidence_band_cutoffs_or_none_from_values(
 ) -> tuple[float, float] | None:
     """Return cutoffs only when both values are provided and valid."""
 
-    if low_raw is None or mid_raw is None:
+    if _strip_or_none(low_raw) is None or _strip_or_none(mid_raw) is None:
         return None
-    try:
-        low_max = float(low_raw)
-        mid_max = float(mid_raw)
-    except ValueError:
-        return None
-
-    if low_max < 0 or mid_max > 1 or low_max >= mid_max:
-        return None
-    return low_max, mid_max
+    return _parse_band_cutoffs(
+        low_raw=low_raw,
+        mid_raw=mid_raw,
+        default_low=None,
+        default_mid=None,
+    )
 
 
 def confidence_policy_explicit_config_diagnostics() -> tuple[bool, str, list[str], list[str]]:
