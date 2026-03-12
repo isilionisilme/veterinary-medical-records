@@ -15,7 +15,7 @@
 The plan execution guard, plan-start checker, plan-close-step helper, plan agent prompts, plan/backlog agent instructions, and associated ceremony tests create significant friction without protecting product functionality. Every plan document change risks CI failure for format violations. Plans and backlog items will migrate to Linear, making in-repo governance infrastructure obsolete.
 
 **Action**
-1. Remove the `plan_execution_guard` CI job from `.github/workflows/ci.yml`.
+1. Remove the `plan_execution_guard` CI job from `.github/workflows/doc-governance.yml`.
 2. Delete CI/dev scripts: `check_plan_execution_guard.py`, `plan-close-step.ps1`, `plan-start-check.py`.
 3. Remove plan guard invocation from `preflight-ci-local.ps1`.
 4. Delete agent prompts: `plan-create`, `plan-start`, `plan-resume`, `plan-closeout`.
