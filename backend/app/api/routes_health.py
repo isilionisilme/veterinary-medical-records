@@ -60,11 +60,15 @@ def liveness() -> dict[str, str]:
 @router.get(
     "/health",
     response_model=HealthResponse,
-    summary="Health check",
-    description="Return a minimal status payload for uptime monitoring.",
+    summary="Compatibility readiness check",
+    description=(
+        "Compatibility endpoint that retains historical /health behavior while "
+        "exposing readiness semantics. Use /health/live for liveness probes and "
+        "/health/ready for readiness probes."
+    ),
 )
 def health(response: Response) -> HealthResponse:
-    """Health check endpoint with dependency readiness checks."""
+    """Compatibility health endpoint that behaves like readiness."""
 
     payload = _build_dependency_health()
     response.status_code = 200 if payload.status == "healthy" else 503

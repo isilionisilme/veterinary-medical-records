@@ -11,6 +11,7 @@ from backend.app.ports.scheduler_port import SchedulerPort
 
 logger = logging.getLogger(__name__)
 SCHEDULER_STOP_TIMEOUT_SECONDS = 15.0
+SCHEDULER_CANCEL_TIMEOUT_SECONDS = 5.0
 
 
 class SchedulerLifecycle:
@@ -53,9 +54,17 @@ class SchedulerLifecycle:
             )
             self._task.cancel()
             try:
-                await self._task
+                await asyncio.wait_for(
+                    self._task,
+                    timeout=SCHEDULER_CANCEL_TIMEOUT_SECONDS,
+                )
             except asyncio.CancelledError:
                 pass
+            except TimeoutError:
+                logger.error(
+                    "Scheduler task did not cancel within %.1fs; continuing shutdown",
+                    SCHEDULER_CANCEL_TIMEOUT_SECONDS,
+                )
         finally:
             self._task = None
             self._stop_event = None
