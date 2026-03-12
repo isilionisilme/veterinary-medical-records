@@ -437,3 +437,179 @@ def test_project_review_payload_projects_to_canonical_schema_contract() -> None:
 
     assert projected["schema_contract"] == "visit-grouped-canonical"
     assert "schema_version" not in projected
+
+
+def test_project_review_payload_merges_prepopulated_and_inferred_visits_deterministically() -> None:
+    payload = {
+        "fields": [
+            {
+                "field_id": "f-symptoms-canonical",
+                "key": "symptoms",
+                "value": "Otalgia",
+                "value_type": "string",
+                "scope": "document",
+                "section": "visits",
+                "classification": "medical_record",
+                "origin": "machine",
+                "evidence": {"page": 1, "snippet": "Consulta 11/02/2026: dolor de oido"},
+            },
+            {
+                "field_id": "f-medication-v2",
+                "key": "medication",
+                "value": "Gotas oticas",
+                "value_type": "string",
+                "scope": "document",
+                "section": "visits",
+                "classification": "medical_record",
+                "origin": "machine",
+                "evidence": {"page": 1, "snippet": "Consulta 18/02/2026: indicar gotas"},
+            },
+        ],
+        "visits": [
+            {
+                "visit_id": "visit-existing",
+                "visit_date": "2026-02-18",
+                "admission_date": None,
+                "discharge_date": None,
+                "reason_for_visit": "Control",
+                "fields": [
+                    {
+                        "field_id": "vf-existing-lab",
+                        "key": "lab_result",
+                        "value": "Cultivo negativo",
+                        "value_type": "string",
+                        "scope": "visit",
+                        "section": "visits",
+                        "classification": "medical_record",
+                        "origin": "machine",
+                    }
+                ],
+            }
+        ],
+        "other_fields": [],
+    }
+
+    first = _project_review_payload_to_canonical(payload)
+    second = _project_review_payload_to_canonical(payload)
+
+    first_visits = [
+        visit
+        for visit in first["visits"]
+        if isinstance(visit, dict) and visit.get("visit_id") != "unassigned"
+    ]
+    second_visits = [
+        visit
+        for visit in second["visits"]
+        if isinstance(visit, dict) and visit.get("visit_id") != "unassigned"
+    ]
+
+    assert [visit.get("visit_date") for visit in first_visits] == ["2026-02-11", "2026-02-18"]
+    assert first_visits == second_visits
+
+    first_visit_keys = {
+        field.get("key") for field in first_visits[0].get("fields", []) if isinstance(field, dict)
+    }
+    second_visit_keys = {
+        field.get("key") for field in first_visits[1].get("fields", []) if isinstance(field, dict)
+    }
+    assert "symptoms" in first_visit_keys
+    assert "medication" not in first_visit_keys
+    assert "medication" in second_visit_keys
+    assert "lab_result" in second_visit_keys
+
+
+def test_project_review_payload_keeps_ambiguous_raw_text_field_unassigned() -> None:
+    projected = _project_review_payload_to_canonical(
+        {
+            "fields": [
+                {
+                    "field_id": "f-symptoms-canonical",
+                    "key": "symptoms",
+                    "value": "Dolor",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {"page": 1, "snippet": "Consulta 11/02/2026: dolor de oido"},
+                },
+                {
+                    "field_id": "f-medication-ambiguous-raw-text",
+                    "key": "medication",
+                    "value": "Gotas",
+                    "value_type": "string",
+                    "scope": "document",
+                    "section": "visits",
+                    "classification": "medical_record",
+                    "origin": "machine",
+                    "evidence": {
+                        "page": 1,
+                        "snippet": "Informe emitido 18/02/2026: medicacion indicada",
+                    },
+                },
+            ],
+            "visits": [],
+            "other_fields": [],
+        },
+        raw_text=(
+            "Consulta 11/02/2026: dolor de oido.\n"
+            "Control 18/02/2026: ajustar medicacion.\n"
+            "Informe emitido 18/02/2026: medicacion indicada.\n"
+        ),
+    )
+
+    assigned = [
+        visit
+        for visit in projected["visits"]
+        if isinstance(visit, dict) and visit.get("visit_id") != "unassigned"
+    ]
+    assert len(assigned) >= 2
+    for visit in assigned:
+        fields = visit.get("fields")
+        if not isinstance(fields, list):
+            continue
+        assert all(
+            not (
+                isinstance(field, dict)
+                and field.get("field_id") == "f-medication-ambiguous-raw-text"
+            )
+            for field in fields
+        )
+
+    unassigned = next(
+        (
+            visit
+            for visit in projected["visits"]
+            if isinstance(visit, dict) and visit.get("visit_id") == "unassigned"
+        ),
+        None,
+    )
+    assert isinstance(unassigned, dict)
+    assert any(
+        isinstance(field, dict) and field.get("field_id") == "f-medication-ambiguous-raw-text"
+        for field in unassigned.get("fields", [])
+    )
+
+
+def test_project_review_payload_derives_latest_weight_from_raw_text() -> None:
+    projected = _project_review_payload_to_canonical(
+        {
+            "fields": [],
+            "visits": [],
+            "other_fields": [],
+        },
+        raw_text=(
+            "Consulta 11/02/2026 - 10:00\nPeso 7.0 kg\nConsulta 25/02/2026 - 12:00\nPeso 7.8 kg\n"
+        ),
+    )
+
+    top_level_weight_fields = [
+        field
+        for field in projected["fields"]
+        if isinstance(field, dict) and field.get("key") == "weight"
+    ]
+    assert len(top_level_weight_fields) == 1
+    derived = top_level_weight_fields[0]
+    assert derived["field_id"] == "derived-weight-current"
+    assert derived["value"] == "7.8 kg"
+    assert derived["origin"] == "derived"
