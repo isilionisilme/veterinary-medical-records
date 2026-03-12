@@ -8,7 +8,7 @@
 **Worktree:** D:/Git/worktrees/4
 **Execution Mode:** Autonomous
 **Model Assignment:** Claude Opus 4.6
-**PR:** Pending (PR created on explicit user request)
+**PR:** [#307](https://github.com/isilionisilme/veterinary-medical-records/pull/307)
 **Related item ID:** `AUDIT-01-T4`
 **Prerequisite:** None (independent track)
 
