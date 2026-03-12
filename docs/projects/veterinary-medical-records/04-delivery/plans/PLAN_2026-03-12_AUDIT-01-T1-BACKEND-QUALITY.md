@@ -88,6 +88,8 @@ The audit found ~20 hardcoded numeric literals duplicated between `triage.py` an
 
 ### Phase 1 — A1: Extract Constants
 
+**AGENTE: GPT-5.4**
+
 #### Step 1: Create `extraction_constants.py`
 
 Create `backend/app/application/extraction_observability/extraction_constants.py` with all magic numbers:
@@ -120,19 +122,27 @@ PHONE_DIGIT_COUNT: int = 9
 
 #### Step 2: Update `triage.py` imports
 
+**AGENTE: GPT-5.4**
+
 Replace all magic number literals in `_suspicious_accepted_flags` (lines 62–195) with imports from `extraction_constants`.
 
 #### Step 3: Update `field_normalizers.py` imports
 
+**AGENTE: GPT-5.4**
+
 Replace `_WEIGHT_MIN_KG = 0.5`, `_WEIGHT_MAX_KG = 120.0` (lines 19–20), and microchip bounds (line 181) with imports from `extraction_constants`.
 
 #### Step 4: Validate Phase 1
+
+**AGENTE: GPT-5.4**
 
 - `ruff check backend/app/application/extraction_observability/`
 - `ruff check backend/app/application/field_normalizers.py`
 - `python -m pytest backend/tests/ -x --tb=short -q` — all 709+ tests pass
 
 ### Phase 2 — A2: Refactor `_suspicious_accepted_flags`
+
+**AGENTE: Claude Opus 4.6**
 
 #### Step 5: Create field validators
 
@@ -160,6 +170,8 @@ Each function:
 
 #### Step 6: Create dispatch table
 
+**AGENTE: Claude Opus 4.6**
+
 ```python
 _FIELD_VALIDATORS: dict[str, Callable[[str, dict[str, Any] | None], list[str]]] = {
     "microchip_number": _validate_microchip,
@@ -174,6 +186,8 @@ _FIELD_VALIDATORS: dict[str, Callable[[str, dict[str, Any] | None], list[str]]] 
 ```
 
 #### Step 7: Simplify `_suspicious_accepted_flags`
+
+**AGENTE: Claude Opus 4.6**
 
 Replace the body with:
 
@@ -199,12 +213,16 @@ Target: CC ≤ 5 for the dispatcher, CC ≤ 5 per validator.
 
 #### Step 8: Validate Phase 2
 
+**AGENTE: Claude Opus 4.6**
+
 - `radon cc -s backend/app/application/extraction_observability/triage.py` — no function > CC 10
 - `ruff check backend/app/application/extraction_observability/triage.py`
 - `python -m pytest backend/tests/ -x --tb=short -q` — all 709+ tests pass
 - `python -m pytest backend/tests/ -x --tb=short -q -k triage` — triage-specific tests pass
 
 ### Phase 3 — Final Validation
+
+**AGENTE: Claude Opus 4.6**
 
 #### Step 9: Full test suite
 
@@ -219,29 +237,29 @@ Target: CC ≤ 5 for the dispatcher, CC ≤ 5 per validator.
 
 ### Phase 0 — Preflight
 
-- [x] P0-A 🔄 — Create branch `improvement/audit-01-t1-backend-quality` from latest `main`. Verify clean worktree. — ✅ `no-commit (branch preflight)`
+- [x] P0-A 🔄 — Create branch `improvement/audit-01-t1-backend-quality` from latest `main`. Verify clean worktree. — ✅ `no-commit (branch preflight)` **AGENTE: GPT-5.4**
 
 ### Phase 1 — A1: Extract Constants
 
-- [x] P1-A 🔄 — Create `extraction_constants.py` with all constants. — ✅ `73dad6f3`
-- [x] P1-B 🔄 — Update `triage.py` to import from constants module. — ✅ `73dad6f3`
-- [x] P1-C 🔄 — Update `field_normalizers.py` to import from constants module. — ✅ `73dad6f3`
-- [x] P1-D 🔄 — Run tests, verify all 709+ pass. — ✅ `no-commit (L2 pass)`
-- [x] P1-E 🚧 — Checkpoint: present diff for user review. — ✅ `no-commit (reviewed in chat)`
+- [x] P1-A 🔄 — Create `extraction_constants.py` with all constants. — ✅ `73dad6f3` **AGENTE: GPT-5.4**
+- [x] P1-B 🔄 — Update `triage.py` to import from constants module. — ✅ `73dad6f3` **AGENTE: GPT-5.4**
+- [x] P1-C 🔄 — Update `field_normalizers.py` to import from constants module. — ✅ `73dad6f3` **AGENTE: GPT-5.4**
+- [x] P1-D 🔄 — Run tests, verify all 709+ pass. — ✅ `no-commit (L2 pass)` **AGENTE: GPT-5.4**
+- [x] P1-E 🚧 — Checkpoint: present diff for user review. — ✅ `no-commit (reviewed in chat)` **AGENTE: GPT-5.4**
 
 ### Phase 2 — A2: Refactor Triage
 
-- [ ] P2-A 🔄 — Create individual validator functions.
-- [ ] P2-B 🔄 — Create dispatch table.
-- [ ] P2-C 🔄 — Simplify `_suspicious_accepted_flags` to use dispatch table.
-- [ ] P2-D 🔄 — Verify CC ≤ 10 with radon.
-- [ ] P2-E 🔄 — Run full test suite.
-- [ ] P2-F 🚧 — Checkpoint: present diff for user review.
+- [ ] P2-A 🔄 — Create individual validator functions. **AGENTE: Claude Opus 4.6**
+- [ ] P2-B 🔄 — Create dispatch table. **AGENTE: Claude Opus 4.6**
+- [ ] P2-C 🔄 — Simplify `_suspicious_accepted_flags` to use dispatch table. **AGENTE: Claude Opus 4.6**
+- [ ] P2-D 🔄 — Verify CC ≤ 10 with radon. **AGENTE: Claude Opus 4.6**
+- [ ] P2-E 🔄 — Run full test suite. **AGENTE: Claude Opus 4.6**
+- [ ] P2-F 🚧 — Checkpoint: present diff for user review. **AGENTE: Claude Opus 4.6**
 
 ### Phase 3 — Final
 
-- [ ] P3-A 🔄 — Full validation (tests + lint + radon).
-- [ ] P3-B 🚧 — Present commit proposal to user.
+- [ ] P3-A 🔄 — Full validation (tests + lint + radon). **AGENTE: Claude Opus 4.6**
+- [ ] P3-B 🚧 — Present commit proposal to user. **AGENTE: Claude Opus 4.6**
 
 ---
 

@@ -88,6 +88,8 @@ Starlette's built-in `HTTPException` handler returns `detail` as `text/plain` fo
 
 #### Step 1: Add filename sanitization utility
 
+**AGENTE: GPT-5.4**
+
 In `routes_documents.py`, add a helper (or import from a new `backend/app/api/response_helpers.py` if preferred):
 
 ```python
@@ -105,6 +107,8 @@ def _safe_content_disposition(disposition_type: str, filename: str) -> str:
 ```
 
 #### Step 2: Replace current header construction
+
+**AGENTE: GPT-5.4**
 
 At `routes_documents.py:298`, replace:
 ```python
@@ -125,6 +129,8 @@ headers = {
 
 #### Step 3: Add unit test
 
+**AGENTE: GPT-5.4**
+
 Add a test to `backend/tests/unit/` that verifies:
 - Normal filename produces valid header
 - Filename with `"` characters is escaped
@@ -134,6 +140,8 @@ Add a test to `backend/tests/unit/` that verifies:
 ### Phase 2 — A5: HTTPException Handler Override
 
 #### Step 4: Add custom exception handler in `main.py`
+
+**AGENTE: GPT-5.4**
 
 In `create_app()` function, after app creation and before middleware registration:
 
@@ -152,6 +160,8 @@ async def _http_exception_handler(request: Request, exc: StarletteHTTPException)
 
 #### Step 5: Add test for exception handler
 
+**AGENTE: GPT-5.4**
+
 Add a test that verifies:
 - A 404 response returns `Content-Type: application/json`
 - Error detail is returned as JSON, not HTML
@@ -160,6 +170,8 @@ Add a test that verifies:
 ### Phase 3 — Validation
 
 #### Step 6: Full test suite
+
+**AGENTE: GPT-5.4**
 
 - `python -m pytest backend/tests/ -x --tb=short -q` — all 709+ pass
 - `ruff check backend/` — 0 errors
@@ -171,25 +183,25 @@ Add a test that verifies:
 
 ### Phase 0 — Preflight
 
-- [ ] P0-A 🔄 — Create branch `improvement/audit-01-t2-backend-security` from latest `main`. Verify clean worktree.
+- [ ] P0-A 🔄 — Create branch `improvement/audit-01-t2-backend-security` from latest `main`. Verify clean worktree. **AGENTE: GPT-5.4**
 
 ### Phase 1 — A4: Content-Disposition
 
-- [ ] P1-A 🔄 — Add `_safe_content_disposition` helper function.
-- [ ] P1-B 🔄 — Replace header construction in `routes_documents.py`.
-- [ ] P1-C 🔄 — Add unit tests for filename sanitization.
-- [ ] P1-D 🚧 — Checkpoint: present diff for user review.
+- [ ] P1-A 🔄 — Add `_safe_content_disposition` helper function. **AGENTE: GPT-5.4**
+- [ ] P1-B 🔄 — Replace header construction in `routes_documents.py`. **AGENTE: GPT-5.4**
+- [ ] P1-C 🔄 — Add unit tests for filename sanitization. **AGENTE: GPT-5.4**
+- [ ] P1-D 🚧 — Checkpoint: present diff for user review. **AGENTE: GPT-5.4**
 
 ### Phase 2 — A5: HTTPException Handler
 
-- [ ] P2-A 🔄 — Add custom exception handler in `main.py`.
-- [ ] P2-B 🔄 — Add test for JSON-only error responses.
-- [ ] P2-C 🚧 — Checkpoint: present diff for user review.
+- [ ] P2-A 🔄 — Add custom exception handler in `main.py`. **AGENTE: GPT-5.4**
+- [ ] P2-B 🔄 — Add test for JSON-only error responses. **AGENTE: GPT-5.4**
+- [ ] P2-C 🚧 — Checkpoint: present diff for user review. **AGENTE: GPT-5.4**
 
 ### Phase 3 — Final
 
-- [ ] P3-A 🔄 — Full validation (tests + lint).
-- [ ] P3-B 🚧 — Present commit proposal to user.
+- [ ] P3-A 🔄 — Full validation (tests + lint). **AGENTE: GPT-5.4**
+- [ ] P3-B 🚧 — Present commit proposal to user. **AGENTE: GPT-5.4**
 
 ---
 

@@ -96,6 +96,8 @@ The audit flagged `framer-motion` in `frontend/package.json` as potentially unus
 
 ### Phase 1 — D1: Starlette Upgrade
 
+**AGENTE: GPT-5.4**
+
 #### Step 1: Add starlette pin to requirements.txt
 
 In `backend/requirements.txt`, add:
@@ -104,6 +106,8 @@ starlette>=0.46.3
 ```
 
 #### Step 2: Install and verify
+
+**AGENTE: GPT-5.4**
 
 ```bash
 pip install -r backend/requirements.txt
@@ -114,6 +118,8 @@ Verify 0 vulnerabilities.
 
 #### Step 3: Run backend tests
 
+**AGENTE: GPT-5.4**
+
 ```bash
 python -m pytest backend/tests/ -x --tb=short -q
 ```
@@ -121,6 +127,8 @@ python -m pytest backend/tests/ -x --tb=short -q
 All 709+ tests must pass.
 
 ### Phase 2 — D2: Enforce npm Audit
+
+**AGENTE: GPT-5.4**
 
 #### Step 4: Remove `continue-on-error` from CI
 
@@ -138,6 +146,8 @@ To:
 
 #### Step 5: Verify npm audit passes locally
 
+**AGENTE: GPT-5.4**
+
 ```bash
 cd frontend && npm audit --audit-level=high
 ```
@@ -146,6 +156,8 @@ If there are existing high/critical vulnerabilities, they must be resolved befor
 
 ### Phase 3 — D3: framer-motion Verification
 
+**AGENTE: GPT-5.4**
+
 #### Step 6: Search for framer-motion usage
 
 ```bash
@@ -153,6 +165,8 @@ grep -r "framer-motion\|from.*motion\|AnimatePresence\|useAnimation\|useMotionVa
 ```
 
 #### Step 7: Remove if unused
+
+**AGENTE: GPT-5.4**
 
 If zero results from Step 6:
 ```bash
@@ -163,6 +177,8 @@ If framer-motion IS used, document the usage and mark D3 as `no-action-needed`.
 
 #### Step 8: Run frontend tests
 
+**AGENTE: GPT-5.4**
+
 ```bash
 cd frontend && npm run test -- --run && npm run lint
 ```
@@ -170,6 +186,8 @@ cd frontend && npm run test -- --run && npm run lint
 All 345 tests must pass, zero lint errors.
 
 ### Phase 4 — Validation
+
+**AGENTE: GPT-5.4**
 
 #### Step 9: Full validation
 
@@ -185,32 +203,32 @@ All 345 tests must pass, zero lint errors.
 
 ### Phase 0 — Preflight
 
-- [ ] P0-A 🔄 — Create branch `improvement/audit-01-t7-deps-ci` from latest `main`. Verify clean worktree.
+- [ ] P0-A 🔄 — Create branch `improvement/audit-01-t7-deps-ci` from latest `main`. Verify clean worktree. **AGENTE: GPT-5.4**
 
 ### Phase 1 — D1: Starlette
 
-- [ ] P1-A 🔄 — Add `starlette>=0.46.3` to requirements.txt.
-- [ ] P1-B 🔄 — Verify pip-audit shows 0 vulnerabilities.
-- [ ] P1-C 🔄 — Run backend tests.
-- [ ] P1-D 🚧 — Checkpoint: present diff for user review.
+- [ ] P1-A 🔄 — Add `starlette>=0.46.3` to requirements.txt. **AGENTE: GPT-5.4**
+- [ ] P1-B 🔄 — Verify pip-audit shows 0 vulnerabilities. **AGENTE: GPT-5.4**
+- [ ] P1-C 🔄 — Run backend tests. **AGENTE: GPT-5.4**
+- [ ] P1-D 🚧 — Checkpoint: present diff for user review. **AGENTE: GPT-5.4**
 
 ### Phase 2 — D2: npm Audit
 
-- [ ] P2-A 🔄 — Remove `continue-on-error: true` from ci.yml.
-- [ ] P2-B 🔄 — Verify `npm audit` passes locally.
-- [ ] P2-C 🚧 — Checkpoint: present diff for user review.
+- [ ] P2-A 🔄 — Remove `continue-on-error: true` from ci.yml. **AGENTE: GPT-5.4**
+- [ ] P2-B 🔄 — Verify `npm audit` passes locally. **AGENTE: GPT-5.4**
+- [ ] P2-C 🚧 — Checkpoint: present diff for user review. **AGENTE: GPT-5.4**
 
 ### Phase 3 — D3: framer-motion
 
-- [ ] P3-A 🔄 — Search for framer-motion usage.
-- [ ] P3-B 🔄 — Remove if unused; document if used.
-- [ ] P3-C 🔄 — Run frontend tests.
-- [ ] P3-D 🚧 — Checkpoint: present diff for user review.
+- [ ] P3-A 🔄 — Search for framer-motion usage. **AGENTE: GPT-5.4**
+- [ ] P3-B 🔄 — Remove if unused; document if used. **AGENTE: GPT-5.4**
+- [ ] P3-C 🔄 — Run frontend tests. **AGENTE: GPT-5.4**
+- [ ] P3-D 🚧 — Checkpoint: present diff for user review. **AGENTE: GPT-5.4**
 
 ### Phase 4 — Final
 
-- [ ] P4-A 🔄 — Full validation.
-- [ ] P4-B 🚧 — Present commit proposal to user.
+- [ ] P4-A 🔄 — Full validation. **AGENTE: GPT-5.4**
+- [ ] P4-B 🚧 — Present commit proposal to user. **AGENTE: GPT-5.4**
 
 ---
 
