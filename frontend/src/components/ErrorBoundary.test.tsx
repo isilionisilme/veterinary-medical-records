@@ -1,21 +1,11 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { suppressConsoleError, suppressExpectedWindowError } from "../test/helpers";
 import { ErrorBoundary } from "./ErrorBoundary";
 
 function ThrowingChild() {
   throw new Error("boom");
-}
-
-function suppressExpectedWindowError(message: string) {
-  const handler = (event: ErrorEvent) => {
-    if (event.error instanceof Error && event.error.message === message) {
-      event.preventDefault();
-    }
-  };
-
-  window.addEventListener("error", handler);
-  return () => window.removeEventListener("error", handler);
 }
 
 describe("ErrorBoundary", () => {
@@ -34,7 +24,7 @@ describe("ErrorBoundary", () => {
   });
 
   it("renders fallback UI when a child throws", () => {
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const restoreConsole = suppressConsoleError();
     const restoreWindowError = suppressExpectedWindowError("boom");
 
     render(
@@ -48,13 +38,13 @@ describe("ErrorBoundary", () => {
     expect(screen.getByText(/boom/i)).toBeInTheDocument();
 
     restoreWindowError();
-    consoleErrorSpy.mockRestore();
+    restoreConsole();
   });
 
   it("reload button calls window.location.reload", () => {
     const reloadSpy = vi.fn();
     vi.stubGlobal("location", { ...window.location, reload: reloadSpy });
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const restoreConsole = suppressConsoleError();
     const restoreWindowError = suppressExpectedWindowError("boom");
 
     render(
@@ -67,7 +57,7 @@ describe("ErrorBoundary", () => {
     expect(reloadSpy).toHaveBeenCalledTimes(1);
 
     restoreWindowError();
-    consoleErrorSpy.mockRestore();
+    restoreConsole();
     vi.unstubAllGlobals();
   });
 });
