@@ -8,7 +8,7 @@
 
 ## Execution Status
 
-- Plan drafted; execution pending.
+- Plan executed; all steps completed on 2026-03-12.
 
 ## TL;DR
 
@@ -32,14 +32,14 @@ Backlog items will migrate to Linear, making in-repo Backlog docs legacy. Cleani
 
 ### Step 1 — Remove Backlog rules from test_impact_map.json
 
-- [ ] S1-1 — In `docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json`, delete the two rule objects whose `doc_glob` values are:
+- [x] S1-1 ✅ no-commit (grouped commit at S4) — In `docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json`, delete the two rule objects whose `doc_glob` values are:
   - `"docs/projects/veterinary-medical-records/04-delivery/Backlog/*.md"` (lines 410–420)
   - `"docs/projects/veterinary-medical-records/04-delivery/Backlog/**/*.md"` (lines 421–431)
 - **Keep** the `exclude_doc_globs` entries for Backlog (lines 12–15) — they correctly suppress matching.
 
 ### Step 2 — Remove Backlog assertions from e2e contract test
 
-- [ ] S2-1 — In `backend/tests/doc_governance/test_doc_updates_e2e_contract.py`, function `test_doc_updates_test_impact_map_covers_router_and_brand_docs()`:
+- [x] S2-1 ✅ no-commit (already satisfied on base branch) — In `backend/tests/doc_governance/test_doc_updates_e2e_contract.py`, function `test_doc_updates_test_impact_map_covers_router_and_brand_docs()`:
   - Delete the two assertions (around lines 145–146):
     ```python
     assert "docs/projects/veterinary-medical-records/04-delivery/Backlog/*.md" in text
@@ -49,13 +49,13 @@ Backlog items will migrate to Linear, making in-repo Backlog docs legacy. Cleani
 
 ### Step 3 — Verify no other tests break
 
-- [ ] S3-1 — Run the doc governance test suite:
+- [x] S3-1 ✅ no-commit (validated with `--no-cov`; repo addopts enforce unrelated global coverage gate) — Run the doc governance test suite:
   ```powershell
   python -m pytest backend/tests/doc_governance/ -x --tb=short -q
   ```
   All tests must pass. If any fail, investigate — every other Backlog reference in contract tests (e.g., `BACKLOG_DIR` constant, implementation-plan link assertions) is unrelated to the removed rules and should be unaffected.
 
-- [ ] S3-2 — Run the guard script directly to confirm no false positives:
+- [x] S3-2 ✅ no-commit (validated via `--base-ref` and temporary Backlog file edit) — Run the guard script directly to confirm no false positives:
   ```powershell
   python scripts/docs/check_doc_test_sync.py --changed-files "docs/projects/veterinary-medical-records/04-delivery/Backlog/arch-26-architecture-hygiene-pass.md"
   ```
@@ -63,13 +63,13 @@ Backlog items will migrate to Linear, making in-repo Backlog docs legacy. Cleani
 
 ### 📌 Checkpoint — Commit & push
 
-- [ ] S4-1 — Stage, commit, push:
+- [x] S4-1 ✅ b7c1a5a5 — Stage, commit, push:
   ```powershell
   git add docs/agent_router/01_WORKFLOW/DOC_UPDATES/test_impact_map.json backend/tests/doc_governance/test_doc_updates_e2e_contract.py
   git commit -m "fix(guard): remove contradictory Backlog rules from doc_test_sync_guard"
   git push
   ```
-- [ ] S4-2 — Verify PR #292 CI goes green.
+- [x] S4-2 ✅ no-commit (PR #292 merged; checks green at 2026-03-12T01:13:54Z) — Verify PR #292 CI goes green.
 
 ## Relevant files
 
