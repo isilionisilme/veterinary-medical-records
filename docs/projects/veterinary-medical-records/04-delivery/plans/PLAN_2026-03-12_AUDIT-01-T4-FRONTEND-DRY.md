@@ -116,6 +116,8 @@ This is ~30 lines duplicated 14 times. Any change to error handling (e.g., addin
 
 ### Phase 1 — Create the Fetch Wrapper
 
+**AGENTE: Claude Opus 4.6**
+
 #### Step 1: Define types and wrapper function
 
 At the top of `documentApi.ts` (below existing imports and constants), add:
@@ -183,6 +185,8 @@ async function apiFetch<T>(
 
 ### Phase 2 — Refactor Each Function
 
+**AGENTE: Claude Opus 4.6**
+
 #### Step 2: Refactor all 14 functions to use the wrapper
 
 Each function should be reduced to its unique logic (building the endpoint URL, preparing the request body) + a call to `apiFetch`. Example transformation:
@@ -231,6 +235,8 @@ Apply this pattern to all 14 functions, preserving:
 
 ### Phase 3 — Validation
 
+**AGENTE: Claude Opus 4.6**
+
 #### Step 4: Run full vitest suite
 
 ```bash
@@ -263,27 +269,27 @@ Zero errors.
 
 ### Phase 0 — Preflight
 
-- [ ] P0-A 🔄 — Create branch `improvement/audit-01-t4-frontend-dry` from latest `main`. Verify clean worktree.
-- [ ] P0-B 🔄 — Read `documentApi.ts` fully. Catalog each function's unique parameters, error messages, response types.
+- [ ] P0-A 🔄 — Create branch `improvement/audit-01-t4-frontend-dry` from latest `main`. Verify clean worktree. **AGENTE: Claude Opus 4.6**
+- [ ] P0-B 🔄 — Read `documentApi.ts` fully. Catalog each function's unique parameters, error messages, response types. **AGENTE: Claude Opus 4.6**
 
 ### Phase 1 — Wrapper
 
-- [ ] P1-A 🔄 — Define `apiFetch<T>` wrapper with types.
-- [ ] P1-B 🚧 — Checkpoint: present wrapper code for user review.
+- [ ] P1-A 🔄 — Define `apiFetch<T>` wrapper with types. **AGENTE: Claude Opus 4.6**
+- [ ] P1-B 🚧 — Checkpoint: present wrapper code for user review. **AGENTE: Claude Opus 4.6**
 
 ### Phase 2 — Refactoring
 
-- [ ] P2-A 🔄 — Refactor functions 1–7 (fetch* and triggerReprocess).
-- [ ] P2-B 🔄 — Refactor functions 8–11 (mark/reopen/edit/fetchRawText).
-- [ ] P2-C 🔄 — Refactor functions 12–14 (upload/clipboard/lookup).
-- [ ] P2-D 🔄 — Verify zero behavioral change: exact same error messages, status codes, response types.
-- [ ] P2-E 🚧 — Checkpoint: present full diff for user review.
+- [ ] P2-A 🔄 — Refactor functions 1–07 (fetch* and triggerReprocess). **AGENTE: Claude Opus 4.6**
+- [ ] P2-B 🔄 — Refactor functions 8–11 (mark/reopen/edit/fetchRawText). **AGENTE: Claude Opus 4.6**
+- [ ] P2-C 🔄 — Refactor functions 12–14 (upload/clipboard/lookup). **AGENTE: Claude Opus 4.6**
+- [ ] P2-D 🔄 — Verify zero behavioral change: exact same error messages, status codes, response types. **AGENTE: Claude Opus 4.6**
+- [ ] P2-E 🚧 — Checkpoint: present full diff for user review. **AGENTE: Claude Opus 4.6**
 
 ### Phase 3 — Final
 
-- [ ] P3-A 🔄 — Run vitest (345 tests).
-- [ ] P3-B 🔄 — Run eslint + tsc.
-- [ ] P3-C 🚧 — Present commit proposal to user.
+- [ ] P3-A 🔄 — Run vitest (345 tests). **AGENTE: Claude Opus 4.6**
+- [ ] P3-B 🔄 — Run eslint + tsc. **AGENTE: Claude Opus 4.6**
+- [ ] P3-C 🚧 — Present commit proposal to user. **AGENTE: Claude Opus 4.6**
 
 ---
 

@@ -95,6 +95,8 @@ This violates the "max 5 parameters" heuristic. A parameter object makes the fun
 
 ### Phase 1 — B2: Config Parsing DRY
 
+**AGENTE: GPT-5.4**
+
 #### Step 1: Extract `_parse_float_env` helper
 
 In `backend/app/config.py`, add:
@@ -151,6 +153,8 @@ Replace duplicated parsing logic in `confidence_band_cutoffs()`, `confidence_ban
 
 ### Phase 2 — B3: Parameter Object
 
+**AGENTE: GPT-5.4**
+
 #### Step 5: Create `FieldBuildContext` dataclass
 
 In `backend/app/application/processing/confidence_scoring.py`, add above `_build_structured_field`:
@@ -195,6 +199,8 @@ Find all call sites of `_build_structured_field` and wrap their arguments in `Fi
 
 ### Phase 3 — Final Validation
 
+**AGENTE: GPT-5.4**
+
 #### Step 9: Full suite
 
 - `python -m pytest backend/tests/ --tb=short -q` — 709+ passed
@@ -207,28 +213,28 @@ Find all call sites of `_build_structured_field` and wrap their arguments in `Fi
 
 ### Phase 0 — Preflight
 
-- [ ] P0-A 🔄 — Create branch `improvement/audit-01-t5-backend-config-di` from latest `main`. Verify clean worktree.
+- [ ] P0-A 🔄 — Create branch `improvement/audit-01-t5-backend-config-di` from latest `main`. Verify clean worktree. **AGENTE: GPT-5.4**
 
 ### Phase 1 — B2: Config DRY
 
-- [ ] P1-A 🔄 — Extract `_parse_float_env` helper.
-- [ ] P1-B 🔄 — Extract `_parse_band_cutoffs` helper.
-- [ ] P1-C 🔄 — Refactor existing functions to use helpers.
-- [ ] P1-D 🔄 — Run tests, verify all pass.
-- [ ] P1-E 🚧 — Checkpoint: present diff for user review.
+- [ ] P1-A 🔄 — Extract `_parse_float_env` helper. **AGENTE: GPT-5.4**
+- [ ] P1-B 🔄 — Extract `_parse_band_cutoffs` helper. **AGENTE: GPT-5.4**
+- [ ] P1-C 🔄 — Refactor existing functions to use helpers. **AGENTE: GPT-5.4**
+- [ ] P1-D 🔄 — Run tests, verify all pass. **AGENTE: GPT-5.4**
+- [ ] P1-E 🚧 — Checkpoint: present diff for user review. **AGENTE: GPT-5.4**
 
 ### Phase 2 — B3: Parameter Object
 
-- [ ] P2-A 🔄 — Create `FieldBuildContext` dataclass.
-- [ ] P2-B 🔄 — Update `_build_structured_field` signature.
-- [ ] P2-C 🔄 — Update all callers.
-- [ ] P2-D 🔄 — Run tests, verify all pass.
-- [ ] P2-E 🚧 — Checkpoint: present diff for user review.
+- [ ] P2-A 🔄 — Create `FieldBuildContext` dataclass. **AGENTE: GPT-5.4**
+- [ ] P2-B 🔄 — Update `_build_structured_field` signature. **AGENTE: GPT-5.4**
+- [ ] P2-C 🔄 — Update all callers. **AGENTE: GPT-5.4**
+- [ ] P2-D 🔄 — Run tests, verify all pass. **AGENTE: GPT-5.4**
+- [ ] P2-E 🚧 — Checkpoint: present diff for user review. **AGENTE: GPT-5.4**
 
 ### Phase 3 — Final
 
-- [ ] P3-A 🔄 — Full validation (tests + lint).
-- [ ] P3-B 🚧 — Present commit proposal to user.
+- [ ] P3-A 🔄 — Full validation (tests + lint). **AGENTE: GPT-5.4**
+- [ ] P3-B 🚧 — Present commit proposal to user. **AGENTE: GPT-5.4**
 
 ---
 
