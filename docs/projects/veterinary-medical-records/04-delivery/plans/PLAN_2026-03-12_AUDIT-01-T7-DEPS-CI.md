@@ -12,6 +12,8 @@
 **Related item ID:** `AUDIT-01-T7`
 **Prerequisite:** None (independent track)
 
+**Implementation Report:** [IMPLEMENTATION_REPORT_2026-03-12_AUDIT-01-T7-DEPS-CI](IMPLEMENTATION_REPORT_2026-03-12_AUDIT-01-T7-DEPS-CI.md)
+
 ---
 
 ## TL;DR
