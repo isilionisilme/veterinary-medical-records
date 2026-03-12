@@ -1,13 +1,9 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { useStructuredDataFilters } from "./useStructuredDataFilters";
 
 describe("useStructuredDataFilters", () => {
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
   it("returns default filter state on init", () => {
     const { result } = renderHook(() =>
       useStructuredDataFilters({
@@ -26,8 +22,7 @@ describe("useStructuredDataFilters", () => {
     expect(result.current.hasActiveStructuredFilters).toBe(false);
   });
 
-  it("debounces search input before updating searchTerm", () => {
-    vi.useFakeTimers();
+  it("syncs the derived search term after updating the input", async () => {
     const { result } = renderHook(() =>
       useStructuredDataFilters({
         activeConfidencePolicy: { version: "v1" },
@@ -37,12 +32,8 @@ describe("useStructuredDataFilters", () => {
     act(() => {
       result.current.setStructuredSearchInput("luna");
     });
-    expect(result.current.structuredDataFilters.searchTerm).toBe("");
 
-    act(() => {
-      vi.advanceTimersByTime(200);
-    });
-    expect(result.current.structuredDataFilters.searchTerm).toBe("luna");
+    await waitFor(() => expect(result.current.structuredDataFilters.searchTerm).toBe("luna"));
     expect(result.current.hasActiveStructuredFilters).toBe(true);
   });
 

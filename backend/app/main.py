@@ -37,6 +37,7 @@ from backend.app.infra.middleware import CorrelationIdMiddleware
 from backend.app.infra.rate_limiter import limiter
 from backend.app.infra.scheduler_lifecycle import SchedulerLifecycle
 from backend.app.infra.sqlite_document_repository import SqliteDocumentRepository
+from backend.app.logging_config import configure_logging
 from backend.app.ports.document_repository import DocumentRepository
 from backend.app.ports.file_storage import FileStorage
 from backend.app.settings import clear_settings_cache, get_settings
@@ -107,6 +108,7 @@ def create_app() -> FastAPI:
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         """FastAPI lifespan handler used to perform startup initialization."""
 
+        configure_logging(settings.log_level)
         database.ensure_schema()
         repository = cast(DocumentRepository, app.state.document_repository)
         storage = cast(FileStorage, app.state.file_storage)

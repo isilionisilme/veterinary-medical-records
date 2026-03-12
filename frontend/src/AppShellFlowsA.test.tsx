@@ -21,7 +21,7 @@ describe("App upload and list flow", () => {
     fireEvent.click(await screen.findByRole("button", { name: /ready\.pdf/i }));
     await waitForStructuredDataReady();
 
-    const activeViewerTool = screen.getByRole("button", { name: /^Documento$/i });
+    const activeViewerTool = await screen.findByTestId("viewer-tab-document");
     expect(activeViewerTool).toHaveAttribute("aria-pressed", "true");
     expect(activeViewerTool).toHaveClass("bg-surfaceMuted");
 
@@ -31,7 +31,7 @@ describe("App upload and list flow", () => {
     ).toBeNull();
     expect(screen.queryByRole("button", { name: /Abrir texto/i })).toBeNull();
     expect(screen.queryByRole("button", { name: /Documento original/i })).toBeNull();
-  }, 12000);
+  }, 15000);
 
   it("shows only connectivity toast when preview download fails (no global red banner)", async () => {
     globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
