@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
-from starlette.responses import Response
+from starlette.responses import JSONResponse, Response
 
 from backend.app.infra.correlation import (
     generate_request_id,
@@ -20,7 +20,17 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
         req_id = incoming_id if incoming_id else generate_request_id()
         token = request_id_var.set(req_id)
         try:
-            response = await call_next(request)
+            try:
+                response = await call_next(request)
+            except Exception:
+                response = JSONResponse(
+                    status_code=500,
+                    content={
+                        "error_code": "INTERNAL_SERVER_ERROR",
+                        "message": "Internal Server Error",
+                    },
+                )
+
             response.headers["X-Request-ID"] = req_id
             return response
         finally:

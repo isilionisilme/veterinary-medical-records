@@ -34,6 +34,7 @@ from backend.app.config import (
     processing_enabled,
 )
 from backend.app.infra import database
+from backend.app.infra.correlation import get_request_id
 from backend.app.infra.file_storage import LocalFileStorage
 from backend.app.infra.middleware import CorrelationIdMiddleware
 from backend.app.infra.rate_limiter import limiter
@@ -164,7 +165,11 @@ def create_app() -> FastAPI:
         message = str(exc.detail) if isinstance(exc.detail, str) else default_message
         return JSONResponse(
             status_code=exc.status_code,
-            content={"error_code": error_code, "message": message},
+            content={
+                "error_code": error_code,
+                "message": message,
+                "request_id": get_request_id(),
+            },
         )
 
     app.state.limiter = limiter
@@ -201,6 +206,7 @@ def create_app() -> FastAPI:
                 content={
                     "error_code": "UNAUTHORIZED",
                     "message": "Missing or invalid bearer token.",
+                    "request_id": get_request_id(),
                 },
             )
 

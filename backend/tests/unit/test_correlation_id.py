@@ -79,5 +79,23 @@ class TestCorrelationIdMiddleware:
 
     def test_x_request_id_present_on_api_routes(self, test_client_factory) -> None:
         with test_client_factory(auth_token=None) as client:
-            response = client.get("/version")
+            response = client.get("/api/health")
+        assert "x-request-id" in response.headers
+
+    def test_x_request_id_present_on_auth_401(self, test_client_factory) -> None:
+        with test_client_factory(auth_token="secret-token") as client:
+            response = client.get("/api/health")
+        assert response.status_code == 401
+        assert "x-request-id" in response.headers
+
+    def test_x_request_id_present_on_unhandled_500(self, test_client_factory) -> None:
+        with test_client_factory(auth_token=None) as client:
+
+            @client.app.get("/__test/boom")
+            def _boom() -> dict[str, str]:
+                raise RuntimeError("boom")
+
+            response = client.get("/__test/boom")
+
+        assert response.status_code == 500
         assert "x-request-id" in response.headers

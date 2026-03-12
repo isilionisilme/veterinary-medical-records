@@ -22,21 +22,37 @@ describe("useStructuredDataFilters", () => {
     expect(result.current.hasActiveStructuredFilters).toBe(false);
   });
 
-  it("defers search input before updating searchTerm", async () => {
+  it("debounces search input for 200ms before updating searchTerm", () => {
+    vi.useFakeTimers();
     const { result } = renderHook(() =>
       useStructuredDataFilters({
         activeConfidencePolicy: { version: "v1" },
       }),
     );
 
-    act(() => {
-      result.current.setStructuredSearchInput("luna");
-    });
+    try {
+      act(() => {
+        result.current.setStructuredSearchInput("luna");
+      });
 
-    await waitFor(() => {
+      expect(result.current.structuredDataFilters.searchTerm).toBe("");
+      expect(result.current.hasActiveStructuredFilters).toBe(false);
+
+      act(() => {
+        vi.advanceTimersByTime(199);
+      });
+
+      expect(result.current.structuredDataFilters.searchTerm).toBe("");
+
+      act(() => {
+        vi.advanceTimersByTime(1);
+      });
+
       expect(result.current.structuredDataFilters.searchTerm).toBe("luna");
       expect(result.current.hasActiveStructuredFilters).toBe(true);
-    });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("resets filters and focuses the search input", () => {
