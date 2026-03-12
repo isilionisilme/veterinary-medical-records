@@ -8,7 +8,7 @@
 **Worktree:** D:/Git/worktrees/7
 **Execution Mode:** Autonomous
 **Model Assignment:** GPT-5.4
-**PR:** Pending (PR created on explicit user request)
+**PR:** [#308](https://github.com/isilionisilme/veterinary-medical-records/pull/308)
 **Related item ID:** `AUDIT-01-T7`
 **Prerequisite:** None (independent track)
 
@@ -208,27 +208,27 @@ All 345 tests must pass, zero lint errors.
 
 ### Phase 1 — D1: Starlette
 
-- [x] P1-A 🔄 — Upgrade `fastapi` and pin `starlette==0.49.3` in requirements.txt. **AGENTE: GPT-5.4** — ✅ `0ad1f578`
-- [x] P1-B 🔄 — Verify pip-audit shows 0 vulnerabilities. **AGENTE: GPT-5.4** — ✅ `0ad1f578`
-- [x] P1-C 🔄 — Run backend tests. **AGENTE: GPT-5.4** — ✅ `0ad1f578`
+- [x] P1-A 🔄 — Upgrade `fastapi` and pin `starlette==0.49.3` in requirements.txt. **AGENTE: GPT-5.4** — ✅ `e3facd0e`
+- [x] P1-B 🔄 — Verify pip-audit shows 0 vulnerabilities. **AGENTE: GPT-5.4** — ✅ `e3facd0e`
+- [x] P1-C 🔄 — Run backend tests. **AGENTE: GPT-5.4** — ✅ `e3facd0e`
 - [x] P1-D 🚧 — Checkpoint: present diff for user review. **AGENTE: GPT-5.4** — ✅ `no-commit (autonomous mode checkpoint accepted)`
 
 ### Phase 2 — D2: npm Audit
 
-- [x] P2-A 🔄 — Remove `continue-on-error: true` from ci.yml. **AGENTE: GPT-5.4** — ✅ `0ad1f578`
-- [x] P2-B 🔄 — Verify `npm audit` passes locally. **AGENTE: GPT-5.4** — ✅ `0ad1f578`
+- [x] P2-A 🔄 — Remove `continue-on-error: true` from ci.yml. **AGENTE: GPT-5.4** — ✅ `e3facd0e`
+- [x] P2-B 🔄 — Verify `npm audit` passes locally. **AGENTE: GPT-5.4** — ✅ `e3facd0e`
 - [x] P2-C 🚧 — Checkpoint: present diff for user review. **AGENTE: GPT-5.4** — ✅ `no-commit (autonomous mode checkpoint accepted)`
 
 ### Phase 3 — D3: framer-motion
 
-- [x] P3-A 🔄 — Search for framer-motion usage. **AGENTE: GPT-5.4** — ✅ `0ad1f578`
-- [x] P3-B 🔄 — Remove if unused; document if used. **AGENTE: GPT-5.4** — ✅ `0ad1f578`
-- [x] P3-C 🔄 — Run frontend tests. **AGENTE: GPT-5.4** — ✅ `0ad1f578`
+- [x] P3-A 🔄 — Search for framer-motion usage. **AGENTE: GPT-5.4** — ✅ `e3facd0e`
+- [x] P3-B 🔄 — Remove if unused; document if used. **AGENTE: GPT-5.4** — ✅ `e3facd0e`
+- [x] P3-C 🔄 — Run frontend tests. **AGENTE: GPT-5.4** — ✅ `e3facd0e`
 - [x] P3-D 🚧 — Checkpoint: present diff for user review. **AGENTE: GPT-5.4** — ✅ `no-commit (autonomous mode checkpoint accepted)`
 
 ### Phase 4 — Final
 
-- [x] P4-A 🔄 — Full validation. **AGENTE: GPT-5.4** — ✅ `0ad1f578`
+- [x] P4-A 🔄 — Full validation. **AGENTE: GPT-5.4** — ✅ `e3facd0e`
 - [x] P4-B 🚧 — Present commit proposal to user. **AGENTE: GPT-5.4** — ✅ `no-commit (autonomous mode auto-commit)`
 
 ---
@@ -247,10 +247,10 @@ All 345 tests must pass, zero lint errors.
 
 ## Acceptance Criteria
 
-- [ ] `pip-audit` reports 0 vulnerabilities
-- [ ] `npm audit --audit-level=high` exits with code 0
-- [ ] CI `npm audit` step enforces failures (no `continue-on-error`)
-- [ ] framer-motion removed if unused (or documented if used)
-- [ ] 709+ backend tests pass
-- [ ] 345 frontend tests pass
-- [ ] All lint checks clean
+- [x] `pip-audit` reports 0 vulnerabilities
+- [x] `npm audit --audit-level=high` exits with code 0
+- [x] CI `npm audit` step enforces failures (no `continue-on-error`)
+- [x] framer-motion removed if unused (or documented if used)
+- [x] 709+ backend tests pass
+- [x] 345 frontend tests pass
+- [x] All lint checks clean
