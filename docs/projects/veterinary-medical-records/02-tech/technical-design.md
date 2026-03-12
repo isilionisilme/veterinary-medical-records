@@ -1247,52 +1247,75 @@ authoritative structural contract.
 ```mermaid
 erDiagram
     Document ||--o{ ProcessingRun : "document_id (FK)"
-    ProcessingRun ||--o{ Artifacts : "run_id (FK)"
+    Document ||--o{ DocumentStatusHistory : "document_id (FK)"
+    ProcessingRun ||--o{ Artifact : "run_id (FK)"
     ProcessingRun ||--o{ InterpretationVersion : "run_id (FK)"
     InterpretationVersion ||--o{ FieldChangeLog : "interpretation_id (FK)"
 
     Document {
-        uuid document_id PK
-        string original_filename
-        string content_type
+        text document_id PK
+        text original_filename
+        text content_type
         int file_size
-        string storage_path
-        enum review_status "IN_REVIEW | REVIEWED"
-        string language_override "nullable"
+        text storage_path
+        text created_at
+        text updated_at
+        text review_status "IN_REVIEW | REVIEWED"
+        text reviewed_at "nullable"
+        text reviewed_by "nullable"
+        text reviewed_run_id "nullable"
+    }
+    DocumentStatusHistory {
+        text id PK
+        text document_id FK
+        text status
+        text run_id "nullable"
+        text created_at
     }
     ProcessingRun {
-        uuid run_id PK
-        uuid document_id FK
-        enum state "QUEUED | RUNNING | COMPLETED | FAILED | TIMED_OUT"
-        string failure_type "nullable"
-        string language_used
-        int schema_contract_used
+        text run_id PK
+        text document_id FK
+        text state "QUEUED | RUNNING | COMPLETED | FAILED | TIMED_OUT"
+        text created_at
+        text started_at "nullable"
+        text completed_at "nullable"
+        text failure_type "nullable"
     }
-    Artifacts {
-        uuid artifact_id PK
-        uuid run_id FK
-        enum artifact_type "RAW_TEXT | STEP_STATUS"
-        json payload
+    Artifact {
+        text artifact_id PK
+        text run_id FK
+        text artifact_type "RAW_TEXT | STEP_STATUS | STRUCTURED_INTERPRETATION"
+        text payload "JSON"
+        text created_at
     }
     InterpretationVersion {
-        uuid interpretation_id PK
-        uuid run_id FK
+        text interpretation_id PK
+        text run_id FK
         int version_number
-        json data
+        text data "JSON"
         bool is_active
     }
     FieldChangeLog {
-        uuid change_id PK
-        uuid interpretation_id FK
-        string field_path
-        string old_value
-        string new_value
-        string change_type
+        text change_id PK
+        text interpretation_id FK
+        text field_path
+        text old_value
+        text new_value
+        text change_type
+    }
+    CalibrationAggregate {
+        text context_key "PK (composite)"
+        text field_key "PK (composite)"
+        text mapping_id "nullable"
+        text mapping_id_scope_key "PK (composite)"
+        text policy_version "PK (composite)"
+        int accept_count
+        int edit_count
+        text updated_at
     }
 ```
 
-Core-model scope note:
-This ERD is intentionally limited to the 5 operational core entities required by ARCH-09. Additional governance/schema entities are specified normatively in B2.7-B2.9.
+This ERD shows the 7 persistent entities: 5 operational core entities (Document, ProcessingRun, Artifact, InterpretationVersion, FieldChangeLog) plus DocumentStatusHistory (audit trail) and CalibrationAggregate (confidence calibration). Column types reflect the SQLite implementation (`text` for UUIDs and timestamps, `int` for counters). See `backend/app/infra/database.py` for the authoritative SQL schema.
 
 ---
 
