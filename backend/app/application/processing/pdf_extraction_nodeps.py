@@ -49,21 +49,6 @@ def _parse_pdf_objects(pdf_bytes: bytes) -> dict[int, bytes]:
     return objects
 
 
-from .pdf_cmap_parsing import (  # noqa: E402
-    _extract_cmaps_by_object,
-)
-from .pdf_page_structure import (  # noqa: E402
-    _collect_page_content_streams,
-)
-from .pdf_text_decoder import (  # noqa: E402
-    _extract_text_chunks_from_content_stream,
-)
-from .pdf_text_quality import (  # noqa: E402
-    _sanitize_text_chunks,
-    _stitch_text_chunks,
-)
-
-
 def _extract_pdf_text_without_external_dependencies(
     file_path: Path,
     *,
@@ -74,6 +59,11 @@ def _extract_pdf_text_without_external_dependencies(
     inflate_pdf_stream: Callable[[bytes], bytes | None] | None = None,
     extract_text_chunks_from_content_stream: Callable[..., list[str]] | None = None,
 ) -> str:
+    from .pdf_cmap_parsing import _extract_cmaps_by_object
+    from .pdf_page_structure import _collect_page_content_streams
+    from .pdf_text_decoder import _extract_text_chunks_from_content_stream
+    from .pdf_text_quality import _sanitize_text_chunks, _stitch_text_chunks
+
     started_at = time.monotonic()
     global _ACTIVE_EXTRACTION_DEADLINE
     _ACTIVE_EXTRACTION_DEADLINE = started_at + MAX_EXTRACTION_SECONDS
@@ -135,3 +125,7 @@ def _extract_pdf_text_without_external_dependencies(
         return _stitch_text_chunks(_sanitize_text_chunks(text_chunks))
     finally:
         _ACTIVE_EXTRACTION_DEADLINE = None
+
+
+from .pdf_content_tokenizer import _tokenize_pdf_content as _tokenize_pdf_content  # noqa: E402
+from .pdf_page_structure import _extract_object_stream as _extract_object_stream  # noqa: E402

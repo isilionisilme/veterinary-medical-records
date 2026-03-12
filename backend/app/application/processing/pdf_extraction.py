@@ -7,31 +7,36 @@ from pathlib import Path
 
 from backend.app.settings import get_pdf_extractor_force
 
+from . import pdf_cmap_parsing as _cmap
+from . import pdf_content_tokenizer as _tokenizer
 from . import pdf_extraction_nodeps as nodeps
+from . import pdf_page_structure as _page
+from . import pdf_text_decoder as _decoder
+from . import pdf_text_quality as _quality
 from .constants import PDF_EXTRACTOR_FORCE_ENV
 
 logger = logging.getLogger(__name__)
 
 # Compatibility re-exports kept for tests and processing_runner shim consumers.
 PdfCMap = nodeps.PdfCMap
-_parse_tounicode_cmap = nodeps._parse_tounicode_cmap
-_extract_pdf_text_tokens = nodeps._extract_pdf_text_tokens
-_tokenize_pdf_content = nodeps._tokenize_pdf_content
-_parse_pdf_array = nodeps._parse_pdf_array
-_decode_bytes_with_cmap = nodeps._decode_bytes_with_cmap
-_decode_tj_array_for_font = nodeps._decode_tj_array_for_font
-_decode_token_for_font = nodeps._decode_token_for_font
-_sanitize_text_chunks = nodeps._sanitize_text_chunks
-_stitch_text_chunks = nodeps._stitch_text_chunks
-_should_join_without_space = nodeps._should_join_without_space
-_parse_pdf_literal_string = nodeps._parse_pdf_literal_string
-_parse_pdf_literal_string_bytes = nodeps._parse_pdf_literal_string_bytes
-_looks_textual_bytes = nodeps._looks_textual_bytes
+_parse_tounicode_cmap = _cmap._parse_tounicode_cmap
+_extract_pdf_text_tokens = _tokenizer._extract_pdf_text_tokens
+_tokenize_pdf_content = _tokenizer._tokenize_pdf_content
+_parse_pdf_array = _tokenizer._parse_pdf_array
+_parse_pdf_literal_string = _tokenizer._parse_pdf_literal_string
+_parse_pdf_literal_string_bytes = _tokenizer._parse_pdf_literal_string_bytes
+_decode_bytes_with_cmap = _decoder._decode_bytes_with_cmap
+_decode_tj_array_for_font = _decoder._decode_tj_array_for_font
+_decode_token_for_font = _decoder._decode_token_for_font
+_extract_text_chunks_from_content_stream = _decoder._extract_text_chunks_from_content_stream
+_sanitize_text_chunks = _quality._sanitize_text_chunks
+_stitch_text_chunks = _quality._stitch_text_chunks
+_should_join_without_space = _quality._should_join_without_space
+_looks_textual_bytes = _page._looks_textual_bytes
+_collect_page_content_streams = _page._collect_page_content_streams
 _parse_pdf_objects = nodeps._parse_pdf_objects
-_extract_cmaps_by_object = nodeps._extract_cmaps_by_object
-_collect_page_content_streams = nodeps._collect_page_content_streams
+_extract_cmaps_by_object = _cmap._extract_cmaps_by_object
 _inflate_pdf_stream = nodeps._inflate_pdf_stream
-_extract_text_chunks_from_content_stream = nodeps._extract_text_chunks_from_content_stream
 
 
 def _extract_pdf_text(file_path: Path) -> str:
