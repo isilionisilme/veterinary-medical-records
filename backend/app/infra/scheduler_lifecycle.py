@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 
 from backend.app.ports.document_repository import DocumentRepository
 from backend.app.ports.file_storage import FileStorage
 from backend.app.ports.scheduler_port import SchedulerPort
+
+logger = logging.getLogger(__name__)
+SCHEDULER_STOP_TIMEOUT_SECONDS = 15.0
 
 
 class SchedulerLifecycle:
@@ -41,7 +45,17 @@ class SchedulerLifecycle:
 
         self._stop_event.set()
         try:
-            await self._task
+            await asyncio.wait_for(self._task, timeout=SCHEDULER_STOP_TIMEOUT_SECONDS)
+        except TimeoutError:
+            logger.warning(
+                "Scheduler task did not stop within %.1fs, cancelling",
+                SCHEDULER_STOP_TIMEOUT_SECONDS,
+            )
+            self._task.cancel()
+            try:
+                await self._task
+            except asyncio.CancelledError:
+                pass
         finally:
             self._task = None
             self._stop_event = None
