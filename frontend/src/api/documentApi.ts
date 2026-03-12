@@ -25,284 +25,188 @@ function resolveFriendlyPayloadMessage(payloadMessage: unknown, fallback: string
   return fallback;
 }
 
-export async function fetchOriginalPdf(documentId: string): Promise<LoadResult> {
+// --- Internal fetch wrapper ---
+
+type ResponseType = "json" | "blob" | "text" | "raw";
+
+const NETWORK_ERROR_DEFAULT = "No se pudo conectar con el servidor.";
+
+interface ApiFetchConfig<T> {
+  fetchOptions?: RequestInit;
+  responseType?: ResponseType;
+  friendlyMessage: string;
+  networkMessage?: string;
+  onResponseError?: (response: Response) => Promise<T>;
+}
+
+async function apiFetch<T>(endpoint: string, config: ApiFetchConfig<T>): Promise<T> {
+  const {
+    fetchOptions,
+    responseType = "json",
+    friendlyMessage,
+    networkMessage = NETWORK_ERROR_DEFAULT,
+    onResponseError,
+  } = config;
+
   let response: Response;
   try {
-    response = await fetch(`${API_BASE_URL}/documents/${documentId}/download`);
+    response = await fetch(`${API_BASE_URL}${endpoint}`, fetchOptions);
   } catch (error) {
     if (isNetworkFetchError(error)) {
-      throw new UiError(
-        "No se pudo conectar con el servidor.",
-        `Network error calling ${API_BASE_URL}/documents/${documentId}/download`,
-      );
+      throw new UiError(networkMessage, `Network error calling ${API_BASE_URL}${endpoint}`);
     }
     throw error;
   }
+
   if (!response.ok) {
-    let errorMessage = "No pudimos cargar el documento.";
+    if (onResponseError) {
+      return onResponseError(response);
+    }
+    let errorMessage = friendlyMessage;
     try {
       const payload = await response.json();
       errorMessage = resolveFriendlyPayloadMessage(payload?.message, errorMessage);
     } catch {
       // Ignore JSON parse errors for non-JSON responses.
     }
-    throw new UiError(
-      errorMessage,
-      `HTTP ${response.status} calling ${API_BASE_URL}/documents/${documentId}/download`,
-    );
+    throw new UiError(errorMessage, `HTTP ${response.status} calling ${API_BASE_URL}${endpoint}`);
   }
+
+  switch (responseType) {
+    case "blob":
+      return (await response.blob()) as T;
+    case "text":
+      return (await response.text()) as T;
+    case "raw":
+      return response as unknown as T;
+    default:
+      return (await response.json()) as T;
+  }
+}
+
+async function throwApiResponseError(
+  response: Response,
+  endpoint: string,
+  friendlyMessage: string,
+): Promise<never> {
+  let errorMessage = friendlyMessage;
+  let errorCode: string | undefined;
+  let reason: string | undefined;
+  try {
+    const payload = await response.json();
+    errorMessage = resolveFriendlyPayloadMessage(payload?.message, errorMessage);
+    if (typeof payload?.error_code === "string") {
+      errorCode = payload.error_code;
+    }
+    if (typeof payload?.details?.reason === "string") {
+      reason = payload.details.reason;
+    }
+  } catch {
+    // Ignore JSON parse errors for non-JSON responses.
+  }
+  throw new ApiResponseError(
+    errorMessage,
+    `HTTP ${response.status} calling ${API_BASE_URL}${endpoint}`,
+    errorCode,
+    reason,
+  );
+}
+
+export async function fetchOriginalPdf(documentId: string): Promise<LoadResult> {
+  const endpoint = `/documents/${documentId}/download`;
+  const response = await apiFetch<Response>(endpoint, {
+    responseType: "raw",
+    friendlyMessage: "No pudimos cargar el documento.",
+  });
   const data = await response.arrayBuffer();
   const filename = parseFilename(response.headers.get("content-disposition"));
   return { data, filename };
 }
 
 export async function fetchDocuments(): Promise<DocumentListResponse> {
-  let response: Response;
-  try {
-    response = await fetch(`${API_BASE_URL}/documents?limit=50&offset=0`);
-  } catch (error) {
-    if (isNetworkFetchError(error)) {
-      throw new UiError(
-        "No se pudieron cargar los documentos.",
-        `Network error calling ${API_BASE_URL}/documents`,
-      );
-    }
-    throw error;
-  }
-  if (!response.ok) {
-    if (response.status === 404) {
-      return {
-        items: [],
-        limit: 50,
-        offset: 0,
-        total: 0,
-      };
-    }
-    let errorMessage = "No se pudieron cargar los documentos.";
-    try {
-      const payload = await response.json();
-      errorMessage = resolveFriendlyPayloadMessage(payload?.message, errorMessage);
-    } catch {
-      // Ignore JSON parse errors for non-JSON responses.
-    }
-    throw new UiError(errorMessage, `HTTP ${response.status} calling ${API_BASE_URL}/documents`);
-  }
-  return response.json();
+  return apiFetch<DocumentListResponse>("/documents?limit=50&offset=0", {
+    friendlyMessage: "No se pudieron cargar los documentos.",
+    networkMessage: "No se pudieron cargar los documentos.",
+    onResponseError: async (response) => {
+      if (response.status === 404) {
+        return { items: [], limit: 50, offset: 0, total: 0 };
+      }
+      let errorMessage = "No se pudieron cargar los documentos.";
+      try {
+        const payload = await response.json();
+        errorMessage = resolveFriendlyPayloadMessage(payload?.message, errorMessage);
+      } catch {
+        // Ignore JSON parse errors for non-JSON responses.
+      }
+      throw new UiError(errorMessage, `HTTP ${response.status} calling ${API_BASE_URL}/documents`);
+    },
+  });
 }
 
 export async function fetchDocumentDetails(documentId: string): Promise<DocumentDetailResponse> {
-  let response: Response;
-  try {
-    response = await fetch(`${API_BASE_URL}/documents/${documentId}`);
-  } catch (error) {
-    if (isNetworkFetchError(error)) {
-      throw new UiError(
-        "No se pudo conectar con el servidor.",
-        `Network error calling ${API_BASE_URL}/documents/${documentId}`,
-      );
-    }
-    throw error;
-  }
-  if (!response.ok) {
-    let errorMessage = "No pudimos cargar el estado del documento.";
-    try {
-      const payload = await response.json();
-      errorMessage = resolveFriendlyPayloadMessage(payload?.message, errorMessage);
-    } catch {
-      // Ignore JSON parse errors for non-JSON responses.
-    }
-    throw new UiError(
-      errorMessage,
-      `HTTP ${response.status} calling ${API_BASE_URL}/documents/${documentId}`,
-    );
-  }
-  return response.json();
+  return apiFetch<DocumentDetailResponse>(`/documents/${documentId}`, {
+    friendlyMessage: "No pudimos cargar el estado del documento.",
+  });
 }
 
 export async function fetchDocumentReview(documentId: string): Promise<DocumentReviewResponse> {
-  let response: Response;
-  try {
-    response = await fetch(`${API_BASE_URL}/documents/${documentId}/review`);
-  } catch (error) {
-    if (isNetworkFetchError(error)) {
-      throw new UiError(
-        "No se pudo conectar con el servidor.",
-        `Network error calling ${API_BASE_URL}/documents/${documentId}/review`,
-      );
-    }
-    throw error;
-  }
-
-  if (!response.ok) {
-    let errorMessage = "No se pudo cargar la revisión del documento.";
-    let errorCode: string | undefined;
-    let reason: string | undefined;
-    try {
-      const payload = await response.json();
-      errorMessage = resolveFriendlyPayloadMessage(payload?.message, errorMessage);
-      if (typeof payload?.error_code === "string") {
-        errorCode = payload.error_code;
-      }
-      if (typeof payload?.details?.reason === "string") {
-        reason = payload.details.reason;
-      }
-    } catch {
-      // Ignore JSON parse errors for non-JSON responses.
-    }
-    throw new ApiResponseError(
-      errorMessage,
-      `HTTP ${response.status} calling ${API_BASE_URL}/documents/${documentId}/review`,
-      errorCode,
-      reason,
-    );
-  }
-
-  return response.json();
+  const endpoint = `/documents/${documentId}/review`;
+  return apiFetch<DocumentReviewResponse>(endpoint, {
+    friendlyMessage: "No se pudo cargar la revisión del documento.",
+    onResponseError: (response) =>
+      throwApiResponseError(response, endpoint, "No se pudo cargar la revisión del documento."),
+  });
 }
 
 export async function fetchProcessingHistory(
   documentId: string,
 ): Promise<ProcessingHistoryResponse> {
-  let response: Response;
-  try {
-    response = await fetch(`${API_BASE_URL}/documents/${documentId}/processing-history`);
-  } catch (error) {
-    if (isNetworkFetchError(error)) {
-      throw new UiError(
-        "No se pudo conectar con el servidor.",
-        `Network error calling ${API_BASE_URL}/documents/${documentId}/processing-history`,
-      );
-    }
-    throw error;
-  }
-  if (!response.ok) {
-    let errorMessage = "No pudimos cargar el historial de procesamiento.";
-    try {
-      const payload = await response.json();
-      errorMessage = resolveFriendlyPayloadMessage(payload?.message, errorMessage);
-    } catch {
-      // Ignore JSON parse errors for non-JSON responses.
-    }
-    throw new UiError(
-      errorMessage,
-      `HTTP ${response.status} calling ${API_BASE_URL}/documents/${documentId}/processing-history`,
-    );
-  }
-  return response.json();
+  return apiFetch<ProcessingHistoryResponse>(`/documents/${documentId}/processing-history`, {
+    friendlyMessage: "No pudimos cargar el historial de procesamiento.",
+  });
 }
 
 export async function fetchVisitScopingMetrics(
   documentId: string,
 ): Promise<VisitScopingMetricsResponse> {
-  let response: Response;
-  try {
-    response = await fetch(`${API_BASE_URL}/documents/${documentId}/review/debug/visit-scoping`);
-  } catch (error) {
-    if (isNetworkFetchError(error)) {
-      throw new UiError(
-        "No se pudo conectar con el servidor.",
-        `Network error calling ${API_BASE_URL}/documents/${documentId}/review/debug/visit-scoping`,
-      );
-    }
-    throw error;
-  }
-  if (!response.ok) {
-    let errorMessage = "No pudimos cargar la observabilidad de visitas.";
-    try {
-      const payload = await response.json();
-      errorMessage = resolveFriendlyPayloadMessage(payload?.message, errorMessage);
-    } catch {
-      // Ignore JSON parse errors for non-JSON responses.
-    }
-    throw new UiError(
-      errorMessage,
-      `HTTP ${response.status} calling ${API_BASE_URL}/documents/${documentId}/review/debug/visit-scoping`,
-    );
-  }
-  return response.json();
+  return apiFetch<VisitScopingMetricsResponse>(
+    `/documents/${documentId}/review/debug/visit-scoping`,
+    {
+      friendlyMessage: "No pudimos cargar la observabilidad de visitas.",
+    },
+  );
 }
 
 export async function triggerReprocess(documentId: string): Promise<LatestRun> {
-  const response = await fetch(`${API_BASE_URL}/documents/${documentId}/reprocess`, {
-    method: "POST",
+  const endpoint = `/documents/${documentId}/reprocess`;
+  return apiFetch<LatestRun>(endpoint, {
+    fetchOptions: { method: "POST" },
+    friendlyMessage: "No pudimos reprocesar el documento.",
+    onResponseError: async (response) => {
+      let errorMessage = "No pudimos reprocesar el documento.";
+      try {
+        const payload = await response.json();
+        errorMessage = resolveFriendlyPayloadMessage(payload?.message, errorMessage);
+      } catch {
+        // Ignore JSON parse errors for non-JSON responses.
+      }
+      throw new Error(errorMessage);
+    },
   });
-  if (!response.ok) {
-    let errorMessage = "No pudimos reprocesar el documento.";
-    try {
-      const payload = await response.json();
-      errorMessage = resolveFriendlyPayloadMessage(payload?.message, errorMessage);
-    } catch {
-      // Ignore JSON parse errors for non-JSON responses.
-    }
-    throw new Error(errorMessage);
-  }
-  return response.json();
 }
 
 export async function markDocumentReviewed(documentId: string): Promise<ReviewToggleResponse> {
-  let response: Response;
-  try {
-    response = await fetch(`${API_BASE_URL}/documents/${documentId}/reviewed`, {
-      method: "POST",
-    });
-  } catch (error) {
-    if (isNetworkFetchError(error)) {
-      throw new UiError(
-        "No se pudo conectar con el servidor.",
-        `Network error calling ${API_BASE_URL}/documents/${documentId}/reviewed`,
-      );
-    }
-    throw error;
-  }
-
-  if (!response.ok) {
-    let errorMessage = "No se pudo marcar como revisado.";
-    try {
-      const payload = await response.json();
-      errorMessage = resolveFriendlyPayloadMessage(payload?.message, errorMessage);
-    } catch {
-      // Ignore JSON parse errors for non-JSON responses.
-    }
-    throw new UiError(
-      errorMessage,
-      `HTTP ${response.status} calling ${API_BASE_URL}/documents/${documentId}/reviewed`,
-    );
-  }
-
-  return response.json();
+  return apiFetch<ReviewToggleResponse>(`/documents/${documentId}/reviewed`, {
+    fetchOptions: { method: "POST" },
+    friendlyMessage: "No se pudo marcar como revisado.",
+  });
 }
 
 export async function reopenDocumentReview(documentId: string): Promise<ReviewToggleResponse> {
-  let response: Response;
-  try {
-    response = await fetch(`${API_BASE_URL}/documents/${documentId}/reviewed`, {
-      method: "DELETE",
-    });
-  } catch (error) {
-    if (isNetworkFetchError(error)) {
-      throw new UiError(
-        "No se pudo conectar con el servidor.",
-        `Network error calling ${API_BASE_URL}/documents/${documentId}/reviewed`,
-      );
-    }
-    throw error;
-  }
-
-  if (!response.ok) {
-    let errorMessage = "No se pudo reabrir el documento.";
-    try {
-      const payload = await response.json();
-      errorMessage = resolveFriendlyPayloadMessage(payload?.message, errorMessage);
-    } catch {
-      // Ignore JSON parse errors for non-JSON responses.
-    }
-    throw new UiError(
-      errorMessage,
-      `HTTP ${response.status} calling ${API_BASE_URL}/documents/${documentId}/reviewed`,
-    );
-  }
-
-  return response.json();
+  return apiFetch<ReviewToggleResponse>(`/documents/${documentId}/reviewed`, {
+    fetchOptions: { method: "DELETE" },
+    friendlyMessage: "No se pudo reabrir el documento.",
+  });
 }
 
 export async function editRunInterpretation(
@@ -312,134 +216,55 @@ export async function editRunInterpretation(
     changes: InterpretationChangePayload[];
   },
 ): Promise<InterpretationEditResponse> {
-  let response: Response;
-  try {
-    response = await fetch(`${API_BASE_URL}/runs/${runId}/interpretations`, {
+  const endpoint = `/runs/${runId}/interpretations`;
+  return apiFetch<InterpretationEditResponse>(endpoint, {
+    fetchOptions: {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
-    });
-  } catch (error) {
-    if (isNetworkFetchError(error)) {
-      throw new UiError(
-        "No se pudo conectar con el servidor.",
-        `Network error calling ${API_BASE_URL}/runs/${runId}/interpretations`,
-      );
-    }
-    throw error;
-  }
-
-  if (!response.ok) {
-    let errorMessage = "No se pudo guardar la edición.";
-    let errorCode: string | undefined;
-    let reason: string | undefined;
-    try {
-      const body = await response.json();
-      errorMessage = resolveFriendlyPayloadMessage(body?.message, errorMessage);
-      if (typeof body?.error_code === "string") {
-        errorCode = body.error_code;
-      }
-      if (typeof body?.details?.reason === "string") {
-        reason = body.details.reason;
-      }
-    } catch {
-      // Ignore JSON parse errors for non-JSON responses.
-    }
-    throw new ApiResponseError(
-      errorMessage,
-      `HTTP ${response.status} calling ${API_BASE_URL}/runs/${runId}/interpretations`,
-      errorCode,
-      reason,
-    );
-  }
-
-  return response.json();
+    },
+    friendlyMessage: "No se pudo guardar la edición.",
+    onResponseError: (response) =>
+      throwApiResponseError(response, endpoint, "No se pudo guardar la edición."),
+  });
 }
 
 export async function fetchRawText(runId: string): Promise<RawTextArtifactResponse> {
-  let response: Response;
-  try {
-    response = await fetch(`${API_BASE_URL}/runs/${runId}/artifacts/raw-text`);
-  } catch (error) {
-    if (isNetworkFetchError(error)) {
-      throw new UiError(
-        "No se pudo conectar con el servidor.",
-        `Network error calling ${API_BASE_URL}/runs/${runId}/artifacts/raw-text`,
-      );
-    }
-    throw error;
-  }
-
-  if (!response.ok) {
-    let errorMessage = "No se pudo cargar el texto extraído.";
-    let errorCode: string | undefined;
-    let reason: string | undefined;
-    try {
-      const payload = await response.json();
-      errorMessage = resolveFriendlyPayloadMessage(payload?.message, errorMessage);
-      if (typeof payload?.error_code === "string") {
-        errorCode = payload.error_code;
-      }
-      if (typeof payload?.details?.reason === "string") {
-        reason = payload.details.reason;
-      }
-    } catch {
-      // Ignore JSON parse errors for non-JSON responses.
-    }
-    throw new ApiResponseError(
-      errorMessage,
-      `HTTP ${response.status} calling ${API_BASE_URL}/runs/${runId}/artifacts/raw-text`,
-      errorCode,
-      reason,
-    );
-  }
-
-  return response.json();
+  const endpoint = `/runs/${runId}/artifacts/raw-text`;
+  return apiFetch<RawTextArtifactResponse>(endpoint, {
+    friendlyMessage: "No se pudo cargar el texto extraído.",
+    onResponseError: (response) =>
+      throwApiResponseError(response, endpoint, "No se pudo cargar el texto extraído."),
+  });
 }
 
 export async function uploadDocument(file: File): Promise<DocumentUploadResponse> {
   const formData = new FormData();
   formData.append("file", file);
-
-  let response: Response;
-  try {
-    response = await fetch(`${API_BASE_URL}/documents/upload`, {
-      method: "POST",
-      body: formData,
-    });
-  } catch (error) {
-    if (isNetworkFetchError(error)) {
-      throw new UiError(
-        "No se pudo subir el documento.",
-        `Network error calling ${API_BASE_URL}/documents/upload`,
-      );
-    }
-    throw error;
-  }
-  if (!response.ok) {
-    let errorMessage = "No pudimos subir el documento.";
-    try {
-      const payload = await response.json();
-      if (payload?.error_code === "UNSUPPORTED_MEDIA_TYPE") {
-        errorMessage = "Solo se admiten archivos PDF.";
-      } else if (payload?.error_code === "FILE_TOO_LARGE") {
-        errorMessage = "El PDF supera el tamaño máximo permitido de 20 MB.";
-      } else if (payload?.error_code === "INVALID_REQUEST") {
-        errorMessage = "El archivo no es válido. Selecciona un PDF e inténtalo otra vez.";
-      } else {
-        errorMessage = resolveFriendlyPayloadMessage(payload?.message, errorMessage);
+  const endpoint = "/documents/upload";
+  return apiFetch<DocumentUploadResponse>(endpoint, {
+    fetchOptions: { method: "POST", body: formData },
+    friendlyMessage: "No pudimos subir el documento.",
+    networkMessage: "No se pudo subir el documento.",
+    onResponseError: async (response) => {
+      let errorMessage = "No pudimos subir el documento.";
+      try {
+        const payload = await response.json();
+        if (payload?.error_code === "UNSUPPORTED_MEDIA_TYPE") {
+          errorMessage = "Solo se admiten archivos PDF.";
+        } else if (payload?.error_code === "FILE_TOO_LARGE") {
+          errorMessage = "El PDF supera el tamaño máximo permitido de 20 MB.";
+        } else if (payload?.error_code === "INVALID_REQUEST") {
+          errorMessage = "El archivo no es válido. Selecciona un PDF e inténtalo otra vez.";
+        } else {
+          errorMessage = resolveFriendlyPayloadMessage(payload?.message, errorMessage);
+        }
+      } catch {
+        // Ignore JSON parse errors for non-JSON responses.
       }
-    } catch {
-      // Ignore JSON parse errors for non-JSON responses.
-    }
-    throw new UiError(
-      errorMessage,
-      `HTTP ${response.status} calling ${API_BASE_URL}/documents/upload`,
-    );
-  }
-  return response.json();
+      throw new UiError(errorMessage, `HTTP ${response.status} calling ${API_BASE_URL}${endpoint}`);
+    },
+  });
 }
 
 export async function copyTextToClipboard(text: string): Promise<void> {
@@ -491,34 +316,13 @@ export type ClinicAddressLookupResponse = {
 export async function lookupClinicAddress(
   clinicName: string,
 ): Promise<ClinicAddressLookupResponse> {
-  let response: Response;
-  try {
-    response = await fetch(`${API_BASE_URL}/clinics/lookup-address`, {
+  return apiFetch<ClinicAddressLookupResponse>("/clinics/lookup-address", {
+    fetchOptions: {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ clinic_name: clinicName }),
-    });
-  } catch (error) {
-    if (isNetworkFetchError(error)) {
-      throw new UiError(
-        "No se pudo conectar con el servidor para buscar la dirección.",
-        `Network error calling ${API_BASE_URL}/clinics/lookup-address`,
-      );
-    }
-    throw error;
-  }
-  if (!response.ok) {
-    let errorMessage = "No se pudo buscar la dirección de la clínica.";
-    try {
-      const payload = await response.json();
-      errorMessage = resolveFriendlyPayloadMessage(payload?.message, errorMessage);
-    } catch {
-      // Ignore JSON parse errors for non-JSON responses.
-    }
-    throw new UiError(
-      errorMessage,
-      `HTTP ${response.status} calling ${API_BASE_URL}/clinics/lookup-address`,
-    );
-  }
-  return response.json();
+    },
+    friendlyMessage: "No se pudo buscar la dirección de la clínica.",
+    networkMessage: "No se pudo conectar con el servidor para buscar la dirección.",
+  });
 }

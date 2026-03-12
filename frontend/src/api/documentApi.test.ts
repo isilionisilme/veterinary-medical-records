@@ -247,6 +247,19 @@ describe("documentApi", () => {
     await expect(triggerReprocess("doc-3")).resolves.toMatchObject({ run_id: "run-1" });
   });
 
+  it("triggerReprocess maps network failures to UiError", async () => {
+    vi.mocked(globalThis.fetch).mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    await expect(triggerReprocess("doc-3")).rejects.toMatchObject<Partial<UiError>>({
+      name: "UiError",
+      userMessage: "No se pudo conectar con el servidor.",
+    });
+  });
+
+  it("triggerReprocess rethrows non-network errors", async () => {
+    vi.mocked(globalThis.fetch).mockRejectedValueOnce(new Error("reprocess-crash"));
+    await expect(triggerReprocess("doc-3")).rejects.toThrow("reprocess-crash");
+  });
+
   it("markDocumentReviewed and reopenDocumentReview call reviewed endpoint with POST/DELETE", async () => {
     vi.mocked(globalThis.fetch)
       .mockResolvedValueOnce(jsonResponse({ review_status: "REVIEWED" }))
