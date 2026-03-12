@@ -10,6 +10,20 @@ from typing import Any
 
 from backend.app.application.field_normalizers import CANONICAL_SPECIES
 
+from .extraction_constants import (
+    CLINIC_ADDRESS_MIN_LENGTH,
+    CLINIC_NAME_MIN_LENGTH,
+    DAYS_PER_YEAR,
+    MAX_PET_AGE_YEARS,
+    MAX_VALUE_LENGTH,
+    MICROCHIP_MAX_DIGITS,
+    MICROCHIP_MIN_DIGITS,
+    OWNER_ADDRESS_MAX_LENGTH,
+    PET_NAME_MIN_LENGTH,
+    PHONE_DIGIT_COUNT,
+    WEIGHT_MAX_KG,
+    WEIGHT_MIN_KG,
+)
 from .snapshot import (
     _as_text,
     _extract_top_candidates,
@@ -67,7 +81,7 @@ def _suspicious_accepted_flags(
     flags: list[str] = []
     normalized_value = value.strip()
     normalized_key = field_key.strip().lower()
-    if len(normalized_value) > 80:
+    if len(normalized_value) > MAX_VALUE_LENGTH:
         flags.append("value_too_long")
     if normalized_key == "microchip_id":
         compact_digits = re.sub(r"\D", "", normalized_value)
@@ -75,7 +89,10 @@ def _suspicious_accepted_flags(
             flags.append("microchip_contains_letters")
         if len(normalized_value.split()) > 1:
             flags.append("microchip_multiple_words")
-        if len(normalized_value) < 9 or len(normalized_value) > 15:
+        if (
+            len(normalized_value) < MICROCHIP_MIN_DIGITS
+            or len(normalized_value) > MICROCHIP_MAX_DIGITS
+        ):
             flags.append("microchip_length_out_of_range")
         if not normalized_value.isdigit():
             flags.append("microchip_non_digit_characters")
@@ -83,7 +100,9 @@ def _suspicious_accepted_flags(
             flags.append("microchip_phone_context")
         if re.search(r"(?i)\b(?:nif|dni|nie|pasaporte|documento)\b", normalized_value):
             flags.append("microchip_document_id_context")
-        if len(compact_digits) == 9 and compact_digits.startswith(("6", "7", "8", "9")):
+        if len(compact_digits) == PHONE_DIGIT_COUNT and compact_digits.startswith(
+            ("6", "7", "8", "9")
+        ):
             flags.append("microchip_phone_like_digits")
     if normalized_key == "weight":
         letter_tokens = re.findall(r"[A-Za-z]+", normalized_value)
@@ -92,7 +111,7 @@ def _suspicious_accepted_flags(
         numeric_value = _extract_first_number(normalized_value)
         if numeric_value is None:
             flags.append("weight_missing_numeric_value")
-        elif numeric_value < 0.2 or numeric_value > 120:
+        elif numeric_value < WEIGHT_MIN_KG or numeric_value > WEIGHT_MAX_KG:
             flags.append("weight_out_of_range")
     if normalized_key == "species" and _normalize_text(normalized_value) not in CANONICAL_SPECIES:
         flags.append("species_outside_allowed_set")
@@ -101,7 +120,7 @@ def _suspicious_accepted_flags(
     if normalized_key == "pet_name":
         if normalized_value.isdigit():
             flags.append("pet_name_numeric_only")
-        if len(normalized_value) <= 1:
+        if len(normalized_value) <= PET_NAME_MIN_LENGTH:
             flags.append("pet_name_too_short")
         if re.search(r"\b(?:especie|raza|sexo|chip|fecha|peso)\b", normalized_value, re.IGNORECASE):
             flags.append("pet_name_contains_field_label")
@@ -115,7 +134,7 @@ def _suspicious_accepted_flags(
         compact = _normalize_text(normalized_value)
         if normalized_value.isdigit():
             flags.append("clinic_name_numeric_only")
-        if len(normalized_value.strip()) <= 2:
+        if len(normalized_value.strip()) <= CLINIC_NAME_MIN_LENGTH:
             flags.append("clinic_name_too_short")
         if re.search(
             r"(?i)\b(?:c/|calle|av\.?|avenida|cp\b|portal|piso|puerta|direcci[oó]n|domicilio)\b",
@@ -128,13 +147,13 @@ def _suspicious_accepted_flags(
         compact = _normalize_text(normalized_value)
         if normalized_value.isdigit():
             flags.append("clinic_address_numeric_only")
-        if len(normalized_value.strip()) < 10:
+        if len(normalized_value.strip()) < CLINIC_ADDRESS_MIN_LENGTH:
             flags.append("clinic_address_too_short")
         if re.search(r"(?i)\b[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}\b", normalized_value):
             flags.append("clinic_address_contains_email")
         if re.search(r"(?i)\b(?:tel(?:[eé]fono)?|movil|m[oó]vil)\b", normalized_value):
             flags.append("clinic_address_contains_phone_token")
-        if re.search(r"\b\d{9,}\b", normalized_value):
+        if re.search(rf"\b\d{{{PHONE_DIGIT_COUNT},}}\b", normalized_value):
             flags.append("clinic_address_contains_phone_number")
         has_po_box = bool(
             re.search(r"(?i)\b(?:po\s*box|apartado\s+postal|apdo\.?\s*postal)\b", compact)
@@ -149,9 +168,9 @@ def _suspicious_accepted_flags(
             flags.append("clinic_address_po_box_without_street")
     if normalized_key == "owner_address":
         compact = _normalize_text(normalized_value)
-        if len(normalized_value.strip()) < 10:
+        if len(normalized_value.strip()) < CLINIC_ADDRESS_MIN_LENGTH:
             flags.append("owner_address_too_short")
-        if len(normalized_value.strip()) > 120:
+        if len(normalized_value.strip()) > OWNER_ADDRESS_MAX_LENGTH:
             flags.append("owner_address_too_long")
         has_address_token = bool(_ADDRESS_TOKEN_RE.search(compact))
         has_digits = bool(re.search(r"\d", normalized_value))
@@ -175,8 +194,8 @@ def _suspicious_accepted_flags(
             if dob_date > today:
                 flags.append("dob_future_date")
             # Flag 2: dob_implausibly_old — animal older than 40 years
-            age_years = (today - dob_date).days / 365.25
-            if age_years > 40:
+            age_years = (today - dob_date).days / DAYS_PER_YEAR
+            if age_years > MAX_PET_AGE_YEARS:
                 flags.append("dob_implausibly_old")
             # Flag 3: dob_matches_visit_date — dob == visit_date (possible field confusion)
             if all_fields:
