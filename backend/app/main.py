@@ -12,6 +12,7 @@ import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
+from http import HTTPStatus
 from pathlib import Path
 from typing import cast
 
@@ -149,9 +150,18 @@ def create_app() -> FastAPI:
     async def _http_exception_handler(
         _request: Request, exc: StarletteHTTPException
     ) -> JSONResponse:
+        try:
+            http_status = HTTPStatus(exc.status_code)
+            error_code = http_status.name
+            default_message = http_status.phrase
+        except ValueError:
+            error_code = "HTTP_ERROR"
+            default_message = "HTTP error"
+
+        message = str(exc.detail) if isinstance(exc.detail, str) else default_message
         return JSONResponse(
             status_code=exc.status_code,
-            content={"detail": str(exc.detail)},
+            content={"error_code": error_code, "message": message},
         )
 
     app.state.limiter = limiter

@@ -10,6 +10,6 @@ def test_starlette_http_exception_returns_json_only(test_client_factory) -> None
 
     assert response.status_code == 404
     assert response.headers["content-type"].startswith("application/json")
-    assert response.json() == {"detail": "Not Found"}
+    assert response.json() == {"error_code": "NOT_FOUND", "message": "Not Found"}
     assert "<html" not in response.text.lower()
     assert "<script" not in response.text.lower()
