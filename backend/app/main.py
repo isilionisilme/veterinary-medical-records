@@ -12,6 +12,7 @@ import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
+from http import HTTPStatus
 from pathlib import Path
 from typing import cast
 
@@ -22,6 +23,7 @@ from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from backend.app.api.routes import MAX_UPLOAD_SIZE as ROUTE_MAX_UPLOAD_SIZE
 from backend.app.api.routes import router as api_router
@@ -143,6 +145,25 @@ def create_app() -> FastAPI:
         version=settings.app_version,
         lifespan=lifespan,
     )
+
+    @app.exception_handler(StarletteHTTPException)
+    async def _http_exception_handler(
+        _request: Request, exc: StarletteHTTPException
+    ) -> JSONResponse:
+        try:
+            http_status = HTTPStatus(exc.status_code)
+            error_code = http_status.name
+            default_message = http_status.phrase
+        except ValueError:
+            error_code = "HTTP_ERROR"
+            default_message = "HTTP error"
+
+        message = str(exc.detail) if isinstance(exc.detail, str) else default_message
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"error_code": error_code, "message": message},
+        )
+
     app.state.limiter = limiter
     app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
     app.add_middleware(SlowAPIMiddleware)
