@@ -5,12 +5,14 @@
 > **Master plan:** [AUDIT-01 Master](PLAN_2026-03-12_AUDIT-01-CODEBASE-QUALITY-MASTER.md)
 
 **Branch:** improvement/audit-01-t1-backend-quality
-**Worktree:** D:/Git/worktrees/codex-permanent-1
+**Worktree:** D:/Git/worktrees/1
 **Execution Mode:** Autonomous
 **Model Assignment:** GPT-5.4 (A1), Claude Opus 4.6 (A2)
 **PR:** Pending (PR created on explicit user request)
 **Related item ID:** `AUDIT-01-T1`
 **Prerequisite:** None (independent track)
+
+**Implementation Report:** [IMPLEMENTATION_REPORT_2026-03-12_AUDIT-01-T1-BACKEND-QUALITY](IMPLEMENTATION_REPORT_2026-03-12_AUDIT-01-T1-BACKEND-QUALITY.md)
 
 ---
 
@@ -217,15 +219,15 @@ Target: CC ≤ 5 for the dispatcher, CC ≤ 5 per validator.
 
 ### Phase 0 — Preflight
 
-- [ ] P0-A 🔄 — Create branch `improvement/audit-01-t1-backend-quality` from latest `main`. Verify clean worktree.
+- [x] P0-A 🔄 — Create branch `improvement/audit-01-t1-backend-quality` from latest `main`. Verify clean worktree. — ✅ `no-commit (branch preflight)`
 
 ### Phase 1 — A1: Extract Constants
 
-- [ ] P1-A 🔄 — Create `extraction_constants.py` with all constants.
-- [ ] P1-B 🔄 — Update `triage.py` to import from constants module.
-- [ ] P1-C 🔄 — Update `field_normalizers.py` to import from constants module.
-- [ ] P1-D 🔄 — Run tests, verify all 709+ pass.
-- [ ] P1-E 🚧 — Checkpoint: present diff for user review.
+- [x] P1-A 🔄 — Create `extraction_constants.py` with all constants. — ✅ `73dad6f3`
+- [x] P1-B 🔄 — Update `triage.py` to import from constants module. — ✅ `73dad6f3`
+- [x] P1-C 🔄 — Update `field_normalizers.py` to import from constants module. — ✅ `73dad6f3`
+- [x] P1-D 🔄 — Run tests, verify all 709+ pass. — ✅ `no-commit (L2 pass)`
+- [x] P1-E 🚧 — Checkpoint: present diff for user review. — ✅ `no-commit (reviewed in chat)`
 
 ### Phase 2 — A2: Refactor Triage
 

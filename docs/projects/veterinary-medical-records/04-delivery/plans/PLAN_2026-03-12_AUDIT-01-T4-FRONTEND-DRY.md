@@ -12,6 +12,8 @@
 **Related item ID:** `AUDIT-01-T4`
 **Prerequisite:** None (independent track)
 
+**Implementation Report:** [IMPLEMENTATION_REPORT_2026-03-12_AUDIT-01-T4-FRONTEND-DRY](IMPLEMENTATION_REPORT_2026-03-12_AUDIT-01-T4-FRONTEND-DRY.md)
+
 ---
 
 ## TL;DR
