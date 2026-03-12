@@ -42,6 +42,11 @@ from backend.app.application.documents.upload_service import (
     register_document_upload,
 )
 
+# Public aliases for legacy underscore-prefixed exports.
+locate_visit_date_occurrences_from_raw_text = _locate_visit_date_occurrences_from_raw_text
+normalize_visit_date_candidate = _normalize_visit_date_candidate
+project_review_payload_to_canonical = _project_review_payload_to_canonical
+
 __all__ = [
     "ActiveInterpretationReview",
     "DocumentListItem",
@@ -62,6 +67,9 @@ __all__ = [
     "_locate_visit_date_occurrences_from_raw_text",
     "_normalize_visit_date_candidate",
     "_project_review_payload_to_canonical",
+    "locate_visit_date_occurrences_from_raw_text",
+    "normalize_visit_date_candidate",
+    "project_review_payload_to_canonical",
     "_resolve_human_edit_candidate_confidence",
     "apply_interpretation_edits",
     "get_document",

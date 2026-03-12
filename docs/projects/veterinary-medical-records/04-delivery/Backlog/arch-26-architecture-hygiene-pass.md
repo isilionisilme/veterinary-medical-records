@@ -33,4 +33,4 @@ After the ARCH-01 decomposition, three anti-patterns remain that an architecture
 - ARCH-01 (Done) — decomposition must be merged first.
 
 **Plan**
-[PLAN_2026-03-12_ARCH-HYGIENE-PASS.md](../plans/PLAN_2026-03-12_ARCH-HYGIENE-PASS.md)
+[PLAN_2026-03-12_ARCH-26_ARCH-HYGIENE-PASS.md](../plans/PLAN_2026-03-12_ARCH-26_ARCH-HYGIENE-PASS.md)
