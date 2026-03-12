@@ -51,6 +51,19 @@ class InterpretationEditOutcome:
     invalid_reason: str | None = None
 
 
+@dataclass(frozen=True, slots=True)
+class _EditMutationContext:
+    document_id: str
+    run_id: str
+    base_version_number: int
+    new_version_number: int
+    context_key: str
+    calibration_policy_version: str
+    neutral_candidate_confidence: float
+    now_iso: str
+    occurred_at: str
+
+
 def apply_interpretation_edits(
     *,
     run_id: str,
@@ -106,6 +119,17 @@ def apply_interpretation_edits(
     field_change_logs: list[dict[str, object]] = []
     now_iso = now_provider()
     occurred_at = _to_utc_z(now_iso)
+    edit_context = _EditMutationContext(
+        document_id=run.document_id,
+        run_id=run_id,
+        base_version_number=base_version_number,
+        new_version_number=active_version_number + 1,
+        context_key=context_key,
+        calibration_policy_version=calibration_policy_version,
+        neutral_candidate_confidence=neutral_candidate_confidence,
+        now_iso=now_iso,
+        occurred_at=occurred_at,
+    )
 
     for index, change in enumerate(changes):
         op_raw = change.get("op")
@@ -114,182 +138,38 @@ def apply_interpretation_edits(
             return InterpretationEditOutcome(result=None, invalid_reason=f"changes[{index}].op")
 
         if op == "ADD":
-            key = str(change.get("key", "")).strip()
-            if not key:
-                return InterpretationEditOutcome(
-                    result=None,
-                    invalid_reason=f"changes[{index}].key",
-                )
-            value_type = str(change.get("value_type", "")).strip() or VALUE_TYPE_BY_KEY.get(
-                key, "string"
+            add_outcome = _apply_add_change(
+                change=change,
+                index=index,
+                updated_fields=updated_fields,
+                field_change_logs=field_change_logs,
+                edit_context=edit_context,
             )
-            if "value" not in change:
-                return InterpretationEditOutcome(
-                    result=None,
-                    invalid_reason=f"changes[{index}].value",
-                )
-
-            new_field_id = str(uuid4())
-            new_candidate_confidence = neutral_candidate_confidence
-            new_review_history_adjustment = _sanitize_field_review_history_adjustment(0)
-            new_field = {
-                "field_id": new_field_id,
-                "key": key,
-                "value": change.get("value"),
-                "value_type": value_type,
-                "field_candidate_confidence": new_candidate_confidence,
-                "field_mapping_confidence": _compose_field_mapping_confidence(
-                    candidate_confidence=new_candidate_confidence,
-                    review_history_adjustment=new_review_history_adjustment,
-                ),
-                "text_extraction_reliability": _sanitize_text_extraction_reliability(None),
-                "field_review_history_adjustment": new_review_history_adjustment,
-                "context_key": context_key,
-                "mapping_id": None,
-                "policy_version": calibration_policy_version,
-                "is_critical": key in CRITICAL_KEYS,
-                "origin": "human",
-            }
-            new_field_key = new_field.get("key")
-            resolved_field_key = new_field_key if isinstance(new_field_key, str) else None
-            updated_fields.append(new_field)
-            field_change_logs.append(
-                _build_field_change_log(
-                    document_id=run.document_id,
-                    run_id=run_id,
-                    interpretation_id="",  # Filled after new interpretation id is generated.
-                    base_version_number=base_version_number,
-                    new_version_number=active_version_number + 1,
-                    field_id=new_field_id,
-                    field_key=resolved_field_key,
-                    value_type=value_type,
-                    old_value=None,
-                    new_value=change.get("value"),
-                    change_type="ADD",
-                    created_at=now_iso,
-                    occurred_at=occurred_at,
-                    context_key=context_key,
-                    mapping_id=None,
-                    policy_version=calibration_policy_version,
-                )
-            )
+            if add_outcome is not None:
+                return add_outcome
             continue
 
-        field_id = str(change.get("field_id", "")).strip()
-        if not field_id:
-            return InterpretationEditOutcome(
-                result=None,
-                invalid_reason=f"changes[{index}].field_id",
-            )
+        existing_field_state = _resolve_existing_field_state(
+            change=change,
+            index=index,
+            updated_fields=updated_fields,
+        )
+        if isinstance(existing_field_state, InterpretationEditOutcome):
+            return existing_field_state
 
-        existing_index = next(
-            (
-                row_index
-                for row_index, row in enumerate(updated_fields)
-                if row.get("field_id") == field_id
-            ),
-            None,
+        existing_index, existing_field = existing_field_state
+        existing_change_outcome = _apply_existing_field_change(
+            op=op,
+            change=change,
+            index=index,
+            existing_index=existing_index,
+            existing_field=existing_field,
+            updated_fields=updated_fields,
+            field_change_logs=field_change_logs,
+            edit_context=edit_context,
         )
-        if existing_index is None:
-            return InterpretationEditOutcome(
-                result=None, invalid_reason=f"changes[{index}].field_id_not_found"
-            )
-
-        existing_field = updated_fields[existing_index]
-        old_value = existing_field.get("value")
-        field_key = existing_field.get("key")
-        resolved_field_key = str(field_key) if isinstance(field_key, str) else None
-        existing_value_type = existing_field.get("value_type")
-        resolved_value_type = (
-            str(existing_value_type) if isinstance(existing_value_type, str) else None
-        )
-        if op == "DELETE":
-            mapping_id = normalize_mapping_id(existing_field.get("mapping_id"))
-            updated_fields.pop(existing_index)
-            field_change_logs.append(
-                _build_field_change_log(
-                    document_id=run.document_id,
-                    run_id=run_id,
-                    interpretation_id="",
-                    base_version_number=base_version_number,
-                    new_version_number=active_version_number + 1,
-                    field_id=field_id,
-                    field_key=resolved_field_key,
-                    value_type=resolved_value_type,
-                    old_value=old_value,
-                    new_value=None,
-                    change_type="DELETE",
-                    created_at=now_iso,
-                    occurred_at=occurred_at,
-                    context_key=context_key,
-                    mapping_id=mapping_id,
-                    policy_version=calibration_policy_version,
-                )
-            )
-            continue
-
-        if "value" not in change:
-            return InterpretationEditOutcome(
-                result=None,
-                invalid_reason=f"changes[{index}].value",
-            )
-        value_type = str(change.get("value_type", "")).strip()
-        if not value_type:
-            return InterpretationEditOutcome(
-                result=None,
-                invalid_reason=f"changes[{index}].value_type",
-            )
-        if _is_noop_update(
-            old_value=old_value,
-            new_value=change.get("value"),
-            existing_value_type=resolved_value_type,
-            incoming_value_type=value_type,
-        ):
-            continue
-
-        mapping_id = normalize_mapping_id(existing_field.get("mapping_id"))
-        next_candidate_confidence = _resolve_human_edit_candidate_confidence(
-            existing_field,
-            neutral_candidate_confidence=neutral_candidate_confidence,
-        )
-        next_review_history_adjustment = _sanitize_field_review_history_adjustment(0)
-        next_mapping_confidence = _compose_field_mapping_confidence(
-            candidate_confidence=next_candidate_confidence,
-            review_history_adjustment=next_review_history_adjustment,
-        )
-        updated_fields[existing_index] = {
-            **updated_fields[existing_index],
-            "value": change.get("value"),
-            "value_type": value_type,
-            "origin": "human",
-            "field_candidate_confidence": next_candidate_confidence,
-            "field_mapping_confidence": next_mapping_confidence,
-            "text_extraction_reliability": _sanitize_text_extraction_reliability(None),
-            "field_review_history_adjustment": next_review_history_adjustment,
-            "context_key": context_key,
-            "mapping_id": mapping_id,
-            "policy_version": calibration_policy_version,
-        }
-        field_change_logs.append(
-            _build_field_change_log(
-                document_id=run.document_id,
-                run_id=run_id,
-                interpretation_id="",
-                base_version_number=base_version_number,
-                new_version_number=active_version_number + 1,
-                field_id=field_id,
-                field_key=resolved_field_key,
-                value_type=value_type,
-                old_value=old_value,
-                new_value=change.get("value"),
-                change_type="UPDATE",
-                created_at=now_iso,
-                occurred_at=occurred_at,
-                context_key=context_key,
-                mapping_id=mapping_id,
-                policy_version=calibration_policy_version,
-            )
-        )
+        if existing_change_outcome is not None:
+            return existing_change_outcome
 
     new_interpretation_id = str(uuid4())
     for log in field_change_logs:
@@ -358,3 +238,195 @@ def _resolve_context_key_for_edit_scopes(
 
 def is_field_value_empty(value: object) -> bool:
     return _is_field_value_empty(value)
+
+
+def _apply_add_change(
+    *,
+    change: dict[str, object],
+    index: int,
+    updated_fields: list[dict[str, object]],
+    field_change_logs: list[dict[str, object]],
+    edit_context: _EditMutationContext,
+) -> InterpretationEditOutcome | None:
+    key = str(change.get("key", "")).strip()
+    if not key:
+        return InterpretationEditOutcome(result=None, invalid_reason=f"changes[{index}].key")
+
+    value_type = str(change.get("value_type", "")).strip() or VALUE_TYPE_BY_KEY.get(key, "string")
+    if "value" not in change:
+        return InterpretationEditOutcome(result=None, invalid_reason=f"changes[{index}].value")
+
+    new_field_id = str(uuid4())
+    new_candidate_confidence = edit_context.neutral_candidate_confidence
+    new_review_history_adjustment = _sanitize_field_review_history_adjustment(0)
+    new_field = {
+        "field_id": new_field_id,
+        "key": key,
+        "value": change.get("value"),
+        "value_type": value_type,
+        "field_candidate_confidence": new_candidate_confidence,
+        "field_mapping_confidence": _compose_field_mapping_confidence(
+            candidate_confidence=new_candidate_confidence,
+            review_history_adjustment=new_review_history_adjustment,
+        ),
+        "text_extraction_reliability": _sanitize_text_extraction_reliability(None),
+        "field_review_history_adjustment": new_review_history_adjustment,
+        "context_key": edit_context.context_key,
+        "mapping_id": None,
+        "policy_version": edit_context.calibration_policy_version,
+        "is_critical": key in CRITICAL_KEYS,
+        "origin": "human",
+    }
+    new_field_key = new_field.get("key")
+    resolved_field_key = new_field_key if isinstance(new_field_key, str) else None
+    updated_fields.append(new_field)
+    field_change_logs.append(
+        _build_field_change_log(
+            document_id=edit_context.document_id,
+            run_id=edit_context.run_id,
+            interpretation_id="",
+            base_version_number=edit_context.base_version_number,
+            new_version_number=edit_context.new_version_number,
+            field_id=new_field_id,
+            field_key=resolved_field_key,
+            value_type=value_type,
+            old_value=None,
+            new_value=change.get("value"),
+            change_type="ADD",
+            created_at=edit_context.now_iso,
+            occurred_at=edit_context.occurred_at,
+            context_key=edit_context.context_key,
+            mapping_id=None,
+            policy_version=edit_context.calibration_policy_version,
+        )
+    )
+    return None
+
+
+def _resolve_existing_field_state(
+    *,
+    change: dict[str, object],
+    index: int,
+    updated_fields: list[dict[str, object]],
+) -> tuple[int, dict[str, object]] | InterpretationEditOutcome:
+    field_id = str(change.get("field_id", "")).strip()
+    if not field_id:
+        return InterpretationEditOutcome(result=None, invalid_reason=f"changes[{index}].field_id")
+
+    existing_index = next(
+        (
+            row_index
+            for row_index, row in enumerate(updated_fields)
+            if row.get("field_id") == field_id
+        ),
+        None,
+    )
+    if existing_index is None:
+        return InterpretationEditOutcome(
+            result=None,
+            invalid_reason=f"changes[{index}].field_id_not_found",
+        )
+    return existing_index, updated_fields[existing_index]
+
+
+def _apply_existing_field_change(
+    *,
+    op: str,
+    change: dict[str, object],
+    index: int,
+    existing_index: int,
+    existing_field: dict[str, object],
+    updated_fields: list[dict[str, object]],
+    field_change_logs: list[dict[str, object]],
+    edit_context: _EditMutationContext,
+) -> InterpretationEditOutcome | None:
+    field_id = str(change.get("field_id", "")).strip()
+    old_value = existing_field.get("value")
+    field_key = existing_field.get("key")
+    resolved_field_key = str(field_key) if isinstance(field_key, str) else None
+    existing_value_type = existing_field.get("value_type")
+    resolved_value_type = str(existing_value_type) if isinstance(existing_value_type, str) else None
+    mapping_id = normalize_mapping_id(existing_field.get("mapping_id"))
+
+    if op == "DELETE":
+        updated_fields.pop(existing_index)
+        field_change_logs.append(
+            _build_field_change_log(
+                document_id=edit_context.document_id,
+                run_id=edit_context.run_id,
+                interpretation_id="",
+                base_version_number=edit_context.base_version_number,
+                new_version_number=edit_context.new_version_number,
+                field_id=field_id,
+                field_key=resolved_field_key,
+                value_type=resolved_value_type,
+                old_value=old_value,
+                new_value=None,
+                change_type="DELETE",
+                created_at=edit_context.now_iso,
+                occurred_at=edit_context.occurred_at,
+                context_key=edit_context.context_key,
+                mapping_id=mapping_id,
+                policy_version=edit_context.calibration_policy_version,
+            )
+        )
+        return None
+
+    if "value" not in change:
+        return InterpretationEditOutcome(result=None, invalid_reason=f"changes[{index}].value")
+
+    value_type = str(change.get("value_type", "")).strip()
+    if not value_type:
+        return InterpretationEditOutcome(result=None, invalid_reason=f"changes[{index}].value_type")
+
+    if _is_noop_update(
+        old_value=old_value,
+        new_value=change.get("value"),
+        existing_value_type=resolved_value_type,
+        incoming_value_type=value_type,
+    ):
+        return None
+
+    next_candidate_confidence = _resolve_human_edit_candidate_confidence(
+        existing_field,
+        neutral_candidate_confidence=edit_context.neutral_candidate_confidence,
+    )
+    next_review_history_adjustment = _sanitize_field_review_history_adjustment(0)
+    next_mapping_confidence = _compose_field_mapping_confidence(
+        candidate_confidence=next_candidate_confidence,
+        review_history_adjustment=next_review_history_adjustment,
+    )
+    updated_fields[existing_index] = {
+        **updated_fields[existing_index],
+        "value": change.get("value"),
+        "value_type": value_type,
+        "origin": "human",
+        "field_candidate_confidence": next_candidate_confidence,
+        "field_mapping_confidence": next_mapping_confidence,
+        "text_extraction_reliability": _sanitize_text_extraction_reliability(None),
+        "field_review_history_adjustment": next_review_history_adjustment,
+        "context_key": edit_context.context_key,
+        "mapping_id": mapping_id,
+        "policy_version": edit_context.calibration_policy_version,
+    }
+    field_change_logs.append(
+        _build_field_change_log(
+            document_id=edit_context.document_id,
+            run_id=edit_context.run_id,
+            interpretation_id="",
+            base_version_number=edit_context.base_version_number,
+            new_version_number=edit_context.new_version_number,
+            field_id=field_id,
+            field_key=resolved_field_key,
+            value_type=value_type,
+            old_value=old_value,
+            new_value=change.get("value"),
+            change_type="UPDATE",
+            created_at=edit_context.now_iso,
+            occurred_at=edit_context.occurred_at,
+            context_key=edit_context.context_key,
+            mapping_id=mapping_id,
+            policy_version=edit_context.calibration_policy_version,
+        )
+    )
+    return None
