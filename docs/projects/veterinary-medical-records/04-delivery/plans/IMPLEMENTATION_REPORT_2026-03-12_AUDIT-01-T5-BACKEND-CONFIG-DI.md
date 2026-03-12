@@ -11,7 +11,7 @@
 **Plan:** [PLAN_2026-03-12_AUDIT-01-T5-BACKEND-CONFIG-DI](PLAN_2026-03-12_AUDIT-01-T5-BACKEND-CONFIG-DI.md)
 **Track:** `AUDIT-01-T5`
 **Branch:** `improvement/audit-01-t5-backend-config-di`
-**Worktree:** `D:/Git/worktrees/1`
+**Worktree:** `D:/Git/worktrees/5`
 **Last updated:** 2026-03-12
 **Primary consumer agents:** Code review agent, master-plan audit review agent
 
@@ -44,28 +44,37 @@ Do not use this file for normative rules, router ownership, or product documenta
 
 ## Current Execution Snapshot
 
-**Overall plan status:** Not started
-**Completed implementation scope:** None recorded
-**Pending implementation scope:** B2 and B3
-**Current blocker status:** No implementation blocker recorded in this artifact yet.
+**Overall plan status:** In progress
+**Completed implementation scope:** B2 completed; B3 in progress
+**Pending implementation scope:** B3 parameter-object refactor and final PR metadata sync
+**Current blocker status:** No active blocker. B2 required one fallback-parity fix before validation passed.
 
 ---
 
 ## Implemented Scope
 
-No implementation has been recorded yet for this track.
+- B2 completed in commit `06c56205`.
+	- Extracted shared config helpers in `backend/app/config.py` for stripped-string normalization, bounded float parsing, band cutoff parsing, and rate-limit resolution.
+	- Preserved existing semantics for partial cutoff configuration: missing values still default individually, but any invalid configured cutoff falls back to the full default pair.
+	- Reused the same float helper for `human_edit_neutral_candidate_confidence()` and the same string normalization helper for confidence policy version resolution.
+	- Autonomous checkpoint decision: no user pause at the Phase 1 checkpoint because the diff is low-risk, behavior-preserving, and fully covered by local preflight.
 
 ---
 
 ## Files Changed So Far
 
-No track-specific implementation files recorded yet.
+- `backend/app/config.py`
+- `docs/projects/veterinary-medical-records/04-delivery/plans/PLAN_2026-03-12_AUDIT-01-T5-BACKEND-CONFIG-DI.md`
+- `docs/projects/veterinary-medical-records/04-delivery/plans/IMPLEMENTATION_REPORT_2026-03-12_AUDIT-01-T5-BACKEND-CONFIG-DI.md`
 
 ---
 
 ## Validation Executed
 
-No track-specific validation recorded yet.
+- `ruff check backend/app/config.py` — PASS
+- `pytest backend/tests/unit/test_config.py backend/tests/unit/test_confidence_config_and_fallback.py backend/tests/integration/test_rate_limiting.py -x --tb=short -q --no-cov` — PASS (`39 passed`)
+- `scripts/ci/test-L1.ps1 -BaseRef HEAD` — PASS
+- `scripts/ci/test-L2.ps1 -BaseRef main` — PASS (`709 passed, 2 xfailed`, coverage `91.70%`)
 
 ---
 
@@ -85,9 +94,10 @@ No track-specific validation recorded yet.
 ## Open Risks And Follow-Up
 
 - the refactors are mechanical in intent but still touch configuration semantics and function-call contracts, so final review should check for silent behavior drift
+- `confidence_policy_explicit_config_diagnostics_from_values` still triggers an existing complexity warning in the scoped complexity gate; this warning pre-existed the track and did not block L2.
 
 ---
 
 ## Next Expected Agent Action
 
-Start B2 implementation, then record changed files and validation outcomes in this report.
+Implement B3 in `backend/app/application/processing/confidence_scoring.py`, then rerun L1/L2 and record the second commit plus final validation.

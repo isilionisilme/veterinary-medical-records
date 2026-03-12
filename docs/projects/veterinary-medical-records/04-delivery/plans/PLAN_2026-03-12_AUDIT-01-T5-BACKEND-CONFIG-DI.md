@@ -5,7 +5,7 @@
 > **Master plan:** [AUDIT-01 Master](PLAN_2026-03-12_AUDIT-01-CODEBASE-QUALITY-MASTER.md)
 
 **Branch:** improvement/audit-01-t5-backend-config-di
-**Worktree:** D:/Git/worktrees/codex-permanent-1
+**Worktree:** D:/Git/worktrees/5
 **Execution Mode:** Autonomous
 **Model Assignment:** GPT-5.4
 **PR:** Pending (PR created on explicit user request)
@@ -223,21 +223,21 @@ Find all call sites of `_build_structured_field` and wrap their arguments in `Fi
 
 ### Phase 0 — Preflight
 
-- [ ] P0-A 🔄 — Create branch `improvement/audit-01-t5-backend-config-di` from latest `main`. Verify clean worktree. **AGENTE: GPT-5.4**
+- [x] P0-A 🔄 — Create branch `improvement/audit-01-t5-backend-config-di` from latest `main`. Verify clean worktree. **AGENTE: GPT-5.4** — ✅ `no-commit (branch created, clean worktree verified)`
 
 ### Phase 1 — B2: Config DRY
 
-- [ ] P1-A 🔄 — Extract `_parse_float_env` helper. **AGENTE: GPT-5.4**
-- [ ] P1-B 🔄 — Extract `_parse_band_cutoffs` helper. **AGENTE: GPT-5.4**
-- [ ] P1-C 🔄 — Refactor existing functions to use helpers. **AGENTE: GPT-5.4**
-- [ ] P1-D 🔄 — Run tests, verify all pass. **AGENTE: GPT-5.4**
-- [ ] P1-E 🚧 — Checkpoint: present diff for user review. **AGENTE: GPT-5.4**
+- [x] P1-A 🔄 — Extract `_parse_float_env` helper. **AGENTE: GPT-5.4** — ✅ `06c56205`
+- [x] P1-B 🔄 — Extract `_parse_band_cutoffs` helper. **AGENTE: GPT-5.4** — ✅ `06c56205`
+- [x] P1-C 🔄 — Refactor existing functions to use helpers. **AGENTE: GPT-5.4** — ✅ `06c56205`
+- [x] P1-D 🔄 — Run tests, verify all pass. **AGENTE: GPT-5.4** — ✅ `no-commit (ruff check backend/app/config.py; 39 focused tests passed; L2 backend suite 709 passed, 2 xfailed)`
+- [x] P1-E 🚧 — Checkpoint: present diff for user review. **AGENTE: GPT-5.4** — ✅ `no-commit (Autonomous mode: low-risk mechanical refactor accepted without pause)`
 
 ### Phase 2 — B3: Parameter Object
 
-- [ ] P2-A 🔄 — Create `FieldBuildContext` dataclass. **AGENTE: GPT-5.4**
-- [ ] P2-B 🔄 — Update `_build_structured_field` signature. **AGENTE: GPT-5.4**
-- [ ] P2-C 🔄 — Update all callers. **AGENTE: GPT-5.4**
+- [ ] P2-A 🔄 — Create `FieldBuildContext` dataclass. **AGENTE: GPT-5.4** ⏳ IN PROGRESS (GPT-5.4, 2026-03-12)
+- [ ] P2-B 🔄 — Update `_build_structured_field` signature. **AGENTE: GPT-5.4** ⏳ IN PROGRESS (GPT-5.4, 2026-03-12)
+- [ ] P2-C 🔄 — Update all callers. **AGENTE: GPT-5.4** ⏳ IN PROGRESS (GPT-5.4, 2026-03-12)
 - [ ] P2-D 🔄 — Run tests, verify all pass. **AGENTE: GPT-5.4**
 - [ ] P2-E 🚧 — Checkpoint: present diff for user review. **AGENTE: GPT-5.4**
 
