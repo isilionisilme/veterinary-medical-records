@@ -57,7 +57,8 @@ Backlog items will migrate to Linear, making in-repo Backlog docs legacy. Cleani
 
 - [x] S3-2 ✅ no-commit (validated via `--base-ref` and temporary Backlog file edit) — Run the guard script directly to confirm no false positives:
   ```powershell
-  python scripts/docs/check_doc_test_sync.py --changed-files "docs/projects/veterinary-medical-records/04-delivery/Backlog/arch-26-architecture-hygiene-pass.md"
+  $p = "docs/projects/veterinary-medical-records/04-delivery/Backlog/arch-26-architecture-hygiene-pass.md"
+  Add-Content -Path $p -Value "`n<!-- temp-doc-sync-check -->"; try { python scripts/docs/check_doc_test_sync.py --base-ref HEAD } finally { git restore -- $p }
   ```
   Expected: exit 0, no sync violations.
 
