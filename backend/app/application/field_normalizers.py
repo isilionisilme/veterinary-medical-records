@@ -13,6 +13,12 @@ from backend.app.application.extraction_constants import (
     WEIGHT_MIN_KG,
 )
 from backend.app.application.species_breed_normalizers import (
+    CANONICAL_SPECIES as CANONICAL_SPECIES,
+)
+from backend.app.application.species_breed_normalizers import (
+    SPECIES_TOKEN_TO_CANONICAL as SPECIES_TOKEN_TO_CANONICAL,
+)
+from backend.app.application.species_breed_normalizers import (
     _normalize_species_and_breed_pair,
     _normalize_species_value,
 )
