@@ -38,6 +38,38 @@ last-updated: 2026-03-02
 | CI/CD        | GitHub Actions (10 jobs)                 | Path-filtered, cached, cancel-in-progress                                               |
 | Containers   | Docker Compose                           | One-command `docker compose up --build`                                                 |
 
+## System context
+
+The system has a single external actor (the veterinarian/evaluator) and two
+internal persistence boundaries.
+
+```mermaid
+graph LR
+    User(("Veterinarian /<br/>Evaluator"))
+    subgraph System["Veterinary Medical Records"]
+        FE["Frontend SPA<br/>(React + TS)"]
+        BE["Backend API<br/>(FastAPI)"]
+        DB[("SQLite<br/>WAL mode")]
+        FS[("File Storage<br/>(PDFs)")]
+        FE -->|REST API| BE
+        BE --> DB
+        BE --> FS
+    end
+    User -->|HTTP| FE
+
+    style User fill:#2d333b,stroke:#6d5dfc,color:#e6edf3
+    style FE fill:#2d333b,stroke:#6d5dfc,color:#e6edf3
+    style BE fill:#2d333b,stroke:#6d5dfc,color:#e6edf3
+    style DB fill:#161b22,stroke:#30363d,color:#e6edf3
+    style FS fill:#161b22,stroke:#30363d,color:#e6edf3
+    style System fill:#161b22,stroke:#30363d,color:#8b949e
+```
+
+There are no external integrations, message queues, or third-party services.
+The system is fully self-contained by design
+([ADR-ARCH-0001](adr/ADR-ARCH-0001-modular-monolith.md),
+[ADR-ARCH-0004](adr/ADR-ARCH-0004-in-process-async-processing.md)).
+
 ## System diagram
 
 ```mermaid
@@ -109,6 +141,64 @@ frontend/src/
 └── types/         → shared TypeScript interfaces
 ```
 
+## Hexagonal component map
+
+The backend follows a hexagonal (ports-and-adapters) architecture. Dependencies
+point inward — outer layers depend on inner layers, never the reverse.
+
+```mermaid
+graph TB
+    subgraph API["api/ — Inbound adapters"]
+        R1["routes_documents"]
+        R2["routes_review"]
+        R3["routes_processing"]
+        R4["routes_calibration"]
+        R5["routes_health"]
+    end
+
+    subgraph APP["application/ — Use cases"]
+        SVC["document services<br/>(upload, query, edit, review)"]
+        ORCH["orchestrator"]
+        SCHED["scheduler"]
+        PROC["processing pipeline<br/>(extraction, interpretation,<br/>candidate mining, confidence)"]
+        OBS["extraction observability<br/>(snapshots, triage, ring buffer)"]
+    end
+
+    subgraph DOMAIN["domain/ — Core"]
+        MOD["models & enums"]
+        STATUS["status derivation"]
+    end
+
+    subgraph PORTS["ports/ — Interfaces"]
+        REPO["DocumentRepository"]
+        STORE["FileStorage"]
+    end
+
+    subgraph INFRA["infra/ — Outbound adapters"]
+        SQL1["sqlite_document_repo"]
+        SQL2["sqlite_run_repo"]
+        SQL3["sqlite_calibration_repo"]
+        FSIMPL["local_file_storage"]
+        DB[("SQLite")]
+        FS[("File System")]
+    end
+
+    API --> APP
+    APP --> DOMAIN
+    APP --> PORTS
+    INFRA -.->|implements| PORTS
+    SQL1 & SQL2 & SQL3 --> DB
+    FSIMPL --> FS
+
+    style API fill:#2d333b,stroke:#6d5dfc,color:#e6edf3
+    style APP fill:#2d333b,stroke:#6d5dfc,color:#e6edf3
+    style DOMAIN fill:#161b22,stroke:#6d5dfc,color:#e6edf3
+    style PORTS fill:#161b22,stroke:#30363d,color:#e6edf3
+    style INFRA fill:#2d333b,stroke:#30363d,color:#e6edf3
+```
+
+<!-- Sources: backend/app/ directory structure -->
+
 ## Quality metrics (post-Iteration 12)
 
 | Metric         | Value                      |
@@ -118,6 +208,40 @@ frontend/src/
 | E2E tests      | 65 (21 spec files)         |
 | CI jobs        | 10 (path-filtered, ~4 min) |
 | Lint errors    | 0                          |
+
+## Production scope boundaries
+
+This system is a **technical assessment project**, not a production deployment.
+The following architectural viewpoints are intentionally out of scope. Each
+subsection documents the current state and what a production evolution would
+require.
+
+### Security (V7) — Out of scope
+
+**Current state:**
+
+- Optional static bearer token via `AUTH_TOKEN` env var (disabled when unset).
+- Rate limiting on upload (10/min) and download (30/min) via `slowapi`.
+- UUID validation on all path parameters.
+- Non-root container execution.
+- `pip-audit` and `npm audit` in CI.
+
+**Production path:** OAuth 2.0 / JWT at API gateway, RBAC on endpoints, TLS
+termination, STRIDE threat model, per-user quotas, audit logging. The hexagonal
+architecture supports this without modifying domain or application layers.
+
+### Operational concerns (V8) — Out of scope
+
+**Current state:**
+
+- 17 structured loggers via `getLogger(__name__)`.
+- Health endpoint (`GET /health/ready`) with Docker healthcheck integration.
+- Extraction observability ring buffer (20-run history per document).
+- Build metadata embedded in image (`APP_VERSION`, `GIT_COMMIT`, `BUILD_DATE`).
+
+**Production path:** Prometheus/OpenTelemetry metrics, structured JSON logging,
+SLO definitions (availability, error rate, P95 latency), alerting rules,
+operational runbooks (backup, DB maintenance, failure modes).
 
 ## Related documentation
 

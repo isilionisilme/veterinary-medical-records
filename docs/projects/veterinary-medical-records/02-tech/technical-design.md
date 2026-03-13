@@ -229,6 +229,73 @@ Core concepts (conceptual overview):
 - **FieldEvidence**: lightweight links between structured fields and their source (page/snippet).
 - **RecordRevisions / FieldChangeLog**: append-only records of human edits.
 
+### Entity-Relationship Diagram
+
+The physical schema maps the conceptual model above into 5 SQLite tables. Artifacts
+(extracted text, structured interpretations) are stored as JSON payloads inside the
+`artifacts` table, scoped to a specific `processing_run`. Calibration aggregates
+track accept/edit statistics independently for confidence tuning.
+
+```mermaid
+erDiagram
+    documents {
+        TEXT document_id PK
+        TEXT original_filename
+        TEXT content_type
+        INTEGER file_size
+        TEXT storage_path
+        TEXT review_status
+        TEXT created_at
+        TEXT updated_at
+        TEXT reviewed_at
+        TEXT reviewed_by
+        TEXT reviewed_run_id
+    }
+
+    document_status_history {
+        TEXT id PK
+        TEXT document_id FK
+        TEXT status
+        TEXT run_id
+        TEXT created_at
+    }
+
+    processing_runs {
+        TEXT run_id PK
+        TEXT document_id FK
+        TEXT state
+        TEXT created_at
+        TEXT started_at
+        TEXT completed_at
+        TEXT failure_type
+    }
+
+    artifacts {
+        TEXT artifact_id PK
+        TEXT run_id FK
+        TEXT artifact_type
+        TEXT payload
+        TEXT created_at
+    }
+
+    calibration_aggregates {
+        TEXT context_key PK
+        TEXT field_key PK
+        TEXT mapping_id
+        TEXT mapping_id_scope_key PK
+        TEXT policy_version PK
+        INTEGER accept_count
+        INTEGER edit_count
+        TEXT updated_at
+    }
+
+    documents ||--o{ document_status_history : "status changes"
+    documents ||--o{ processing_runs : "processed by"
+    processing_runs ||--o{ artifacts : "produces"
+```
+
+<!-- Sources: backend/app/infra/database.py (schema init), backend/app/domain/models.py (domain dataclasses) -->
+
 This section provides conceptual orientation only.  
 Authoritative contracts and invariants are defined in
 **[Appendix A](#appendix-a--contracts-states--invariants-normative)** and
@@ -565,6 +632,25 @@ min_volume: 5
 
 ---
 
+## Cross-Cutting Concerns Summary
+
+This section consolidates references to cross-cutting concerns documented
+throughout this specification. Each concern is described in full at its
+canonical location; this summary provides a single V9 viewpoint index.
+
+| Concern                | Canonical Section                                  | Key Policy                                                        |
+| ---------------------- | -------------------------------------------------- | ----------------------------------------------------------------- |
+| Error handling         | [§8](#8-error-handling--states)                    | Failures explicit and classified; user-facing messages mapped     |
+| Observability & logging| [§9](#9-observability)                             | Structured logs only; never block processing                      |
+| Configuration          | [deployment.md §3](deployment.md#3-environment-variables) | All config via env vars; no hardcoded secrets                |
+| Rate limiting          | [§13](#13-security-boundary)                       | Upload 10/min, download 30/min via `slowapi`                      |
+| Security boundary      | [§13](#13-security-boundary)                       | Optional bearer token; UUID validation on all IDs                 |
+| Data versioning        | [§6](#6-data-persistence-rules)                    | Append-only; never overwrite artifacts                            |
+| Confidence policy      | [§7](#7-confidence-technical-contract)             | Per-field 0–1 score; band cutoffs configurable                    |
+| Scope ownership        | [§11](#11-scope-ownership)                         | Backend owns domain logic; frontend owns UX                       |
+
+---
+
 ## 8. Error Handling & States
 
 - Failures must be explicit and classified:
@@ -743,6 +829,23 @@ Each `ProcessingRun` has exactly one state at any time:
 - `COMPLETED`
 - `FAILED`
 - `TIMED_OUT`
+
+```mermaid
+stateDiagram-v2
+    [*] --> QUEUED : run created
+    QUEUED --> RUNNING : scheduler picks (only if no other RUNNING run)
+    RUNNING --> COMPLETED : all steps succeed
+    RUNNING --> FAILED : step fails / crash recovery (PROCESS_TERMINATED)
+    RUNNING --> TIMED_OUT : exceeds 120s wall-clock
+    COMPLETED --> [*]
+    FAILED --> [*]
+    TIMED_OUT --> [*]
+
+    note right of QUEUED : Multiple QUEUED runs may coexist.\nReprocess during RUNNING creates new QUEUED run.
+    note right of FAILED : failure_type recorded:\nEXTRACTION_FAILED\nEXTRACTION_LOW_QUALITY\nINTERPRETATION_FAILED\nPROCESS_TERMINATED
+```
+
+<!-- Sources: backend/app/domain/models.py (ProcessingRunState enum), backend/app/application/processing/orchestrator.py (transitions), backend/app/domain/status.py (failure types) -->
 
 #### Rules
 
@@ -1144,52 +1247,75 @@ authoritative structural contract.
 ```mermaid
 erDiagram
     Document ||--o{ ProcessingRun : "document_id (FK)"
-    ProcessingRun ||--o{ Artifacts : "run_id (FK)"
+    Document ||--o{ DocumentStatusHistory : "document_id (FK)"
+    ProcessingRun ||--o{ Artifact : "run_id (FK)"
     ProcessingRun ||--o{ InterpretationVersion : "run_id (FK)"
     InterpretationVersion ||--o{ FieldChangeLog : "interpretation_id (FK)"
 
     Document {
-        uuid document_id PK
-        string original_filename
-        string content_type
+        text document_id PK
+        text original_filename
+        text content_type
         int file_size
-        string storage_path
-        enum review_status "IN_REVIEW | REVIEWED"
-        string language_override "nullable"
+        text storage_path
+        text created_at
+        text updated_at
+        text review_status "IN_REVIEW | REVIEWED"
+        text reviewed_at "nullable"
+        text reviewed_by "nullable"
+        text reviewed_run_id "nullable"
+    }
+    DocumentStatusHistory {
+        text id PK
+        text document_id FK
+        text status
+        text run_id "nullable"
+        text created_at
     }
     ProcessingRun {
-        uuid run_id PK
-        uuid document_id FK
-        enum state "QUEUED | RUNNING | COMPLETED | FAILED | TIMED_OUT"
-        string failure_type "nullable"
-        string language_used
-        int schema_contract_used
+        text run_id PK
+        text document_id FK
+        text state "QUEUED | RUNNING | COMPLETED | FAILED | TIMED_OUT"
+        text created_at
+        text started_at "nullable"
+        text completed_at "nullable"
+        text failure_type "nullable"
     }
-    Artifacts {
-        uuid artifact_id PK
-        uuid run_id FK
-        enum artifact_type "RAW_TEXT | STEP_STATUS"
-        json payload
+    Artifact {
+        text artifact_id PK
+        text run_id FK
+        text artifact_type "RAW_TEXT | STEP_STATUS | STRUCTURED_INTERPRETATION"
+        text payload "JSON"
+        text created_at
     }
     InterpretationVersion {
-        uuid interpretation_id PK
-        uuid run_id FK
+        text interpretation_id PK
+        text run_id FK
         int version_number
-        json data
+        text data "JSON"
         bool is_active
     }
     FieldChangeLog {
-        uuid change_id PK
-        uuid interpretation_id FK
-        string field_path
-        string old_value
-        string new_value
-        string change_type
+        text change_id PK
+        text interpretation_id FK
+        text field_path
+        text old_value
+        text new_value
+        text change_type
+    }
+    CalibrationAggregate {
+        text context_key "PK (composite)"
+        text field_key "PK (composite)"
+        text mapping_id "nullable"
+        text mapping_id_scope_key "PK (composite)"
+        text policy_version "PK (composite)"
+        int accept_count
+        int edit_count
+        text updated_at
     }
 ```
 
-Core-model scope note:
-This ERD is intentionally limited to the 5 operational core entities required by ARCH-09. Additional governance/schema entities are specified normatively in B2.7-B2.9.
+This ERD shows the 7 persistent entities: 5 operational core entities (Document, ProcessingRun, Artifact, InterpretationVersion, FieldChangeLog) plus DocumentStatusHistory (audit trail) and CalibrationAggregate (confidence calibration). Column types reflect the SQLite implementation (`text` for UUIDs and timestamps, `int` for counters). See `backend/app/infra/database.py` for the authoritative SQL schema.
 
 ---
 

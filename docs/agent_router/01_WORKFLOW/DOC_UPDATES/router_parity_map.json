@@ -109,6 +109,30 @@
       ]
     },
     {
+      "source_doc": "docs/projects/veterinary-medical-records/02-tech/deployment.md",
+      "description": "Project DEPLOYMENT must remain discoverable from project docs entry.",
+      "router_modules": [
+        {
+          "path": "docs/agent_router/04_PROJECT/00_entry.md",
+          "required_terms": [
+            "Project Docs (Modules)"
+          ]
+        }
+      ]
+    },
+    {
+      "source_doc": "docs/projects/veterinary-medical-records/02-tech/event-architecture.md",
+      "description": "Project EVENT_ARCHITECTURE must remain discoverable from project docs entry.",
+      "router_modules": [
+        {
+          "path": "docs/agent_router/04_PROJECT/00_entry.md",
+          "required_terms": [
+            "Project Docs (Modules)"
+          ]
+        }
+      ]
+    },
+    {
       "source_doc": "docs/projects/veterinary-medical-records/04-delivery/delivery-summary.md",
       "description": "Project DELIVERY_SUMMARY must map to project owner entry module.",
       "router_modules": [

@@ -32,6 +32,11 @@ $confidencePolicyEnvKeys = @(
     "VET_RECORDS_CONFIDENCE_LOW_MAX",
     "VET_RECORDS_CONFIDENCE_MID_MAX"
 )
+$confidencePolicyDefaults = @{
+    "VET_RECORDS_CONFIDENCE_POLICY_VERSION" = "v1-local"
+    "VET_RECORDS_CONFIDENCE_LOW_MAX" = "0.50"
+    "VET_RECORDS_CONFIDENCE_MID_MAX" = "0.75"
+}
 
 $resizeWindowCommand = @'
 try {
@@ -312,10 +317,13 @@ try {
     $confidencePolicyValues = Read-DotEnvValues -Path $backendDotEnvFile -Keys $confidencePolicyEnvKeys
     $backendEnvAssignments = @("`$env:VET_RECORDS_EXTRACTION_OBS='1'")
     foreach ($key in $confidencePolicyEnvKeys) {
-        if (-not $confidencePolicyValues.ContainsKey($key)) {
-            continue
+        $rawValue = if ($confidencePolicyValues.ContainsKey($key)) {
+            [string]$confidencePolicyValues[$key]
+        } elseif ($confidencePolicyDefaults.ContainsKey($key)) {
+            [string]$confidencePolicyDefaults[$key]
+        } else {
+            ""
         }
-        $rawValue = [string]$confidencePolicyValues[$key]
         if ([string]::IsNullOrWhiteSpace($rawValue)) {
             continue
         }
