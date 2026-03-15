@@ -141,12 +141,11 @@ def test_adr_index_tracks_arch_0006_and_arch_0008() -> None:
     assert "ADR-ARCH-0008" in index_text
 
 
-def test_agents_routes_docs_updated_intent_to_doc_updates() -> None:
+def test_agents_no_longer_routes_docs_updated_intent_to_doc_updates() -> None:
     text = _read_text(ROOT_AGENTS)
     lower = text.lower()
-    assert "docs/agent_router/01_WORKFLOW/DOC_UPDATES/00_entry.md" in text
-    assert "documentation was updated" in lower
-    assert "run the doc_updates normalization pass once" in lower
+    assert "docs/agent_router/01_WORKFLOW/DOC_UPDATES/00_entry.md" not in text
+    assert "run the doc_updates normalization pass once" not in lower
 
 
 def test_doc_updates_entry_covers_triggers_and_summary_schema() -> None:
