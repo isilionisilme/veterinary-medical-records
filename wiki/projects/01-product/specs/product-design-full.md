@@ -17,7 +17,9 @@
     - [Confidence Propagation \& Calibration](#confidence-propagation--calibration)
       - [Future Improvements](#future-improvements)
     - [Governance and Safeguards (pending\_review, critical, non-reversible)](#governance-and-safeguards-pending_review-critical-non-reversible)
-  - [Appendix: Historical Global Schema Reference (Non-normative)](#appendix-historical-global-schema-reference-non-normative)
+  - [Appendix A — Global Schema (Canonical Field List — Medical Record MVP)](#appendix-a--global-schema-canonical-field-list--medical-record-mvp)
+  - [Appendix B — Medical Record MVP Panel Semantics (US-44)](#appendix-b--medical-record-mvp-panel-semantics-us-44)
+  - [Appendix C — Historical Global Schema Reference (Non-normative)](#appendix-c--historical-global-schema-reference-non-normative)
   - [Final Product Rule](#final-product-rule)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -29,8 +31,8 @@ This document provides **specification-level technical detail** that extends the
 
 For the complete product narrative — including problem framing, product goal, design premise, product principles,
 veterinarian and reviewer experience, confidence as a product signal, the conceptual model (Local Schema, Global Schema,
-Mapping, Context), learning and governance, deployment strategy, observability, Global Schema field list, and
-panel semantics — see [product-design.md](product-design).
+Mapping, Context), learning and governance, deployment strategy, and observability — see
+[product-design.md](product-design).
 
 The complete product design — including business considerations — is also maintained in:
 
@@ -38,7 +40,8 @@ The complete product design — including business considerations — is also ma
 
 **Authority boundaries:**
 
-- Product meaning, strategy, governance, Global Schema & panel semantics → [product-design.md](product-design)
+- Product meaning, strategy, governance → [product-design.md](product-design)
+- Global Schema field list & panel semantics → Appendix A and Appendix B below
 - UX layout, labels, and interaction patterns → [ux-design.md](ux-design)
 - Architecture, persistence, and API contracts → [technical-design.md](technical-design)
 - Implementation scope and sequencing → [implementation-plan.md](implementation-plan)
@@ -130,12 +133,96 @@ signals, critical concepts, and non-reversible changes policy, see the correspon
 
 ---
 
-For visit grouping, Global Schema field list, CRITICAL_KEYS, and Medical Record MVP panel semantics, see
-[product-design.md](product-design) Appendix A and Appendix B.
+## Appendix A — Global Schema (Canonical Field List — Medical Record MVP)
+
+Purpose: define the canonical contract-aligned field universe for the Medical Record panel.
+
+### Document-level sections (top-level fields)
+
+**A) Centro Veterinario**
+
+- `clinic_name` (string)
+- `clinic_address` (string)
+- `vet_name` (string)
+- `nhc` (string; canonical NHC concept)
+
+**B) Paciente**
+
+- `pet_name` (string)
+- `species` (string)
+- `breed` (string)
+- `sex` (string)
+- `age` (string)
+- `dob` (date)
+- `microchip_id` (string)
+- `weight` (string)
+- `reproductive_status` (string)
+
+**C) Propietario**
+
+- `owner_name` (string)
+- `owner_address` (string; real address concept)
+
+**D) Notas internas**
+
+- `notes` (string)
+
+**E) Información del informe**
+
+- `language` (string)
+
+### Visit-level fields
+
+- Visit-level clinical data is canonical in `canonical contract` under `visits[]` and `visits[].fields[]` (see Appendix
+  D9 in [technical-design.md](technical-design)).
+- Visit fields are not part of the document-level top-level list above.
+
+### Panel boundary (Medical Record MVP)
+
+- Non-clinical claim concepts are not part of this canonical panel field-set by definition.
+- Classification and taxonomy boundaries are defined by contract metadata in
+  [technical-design.md](technical-design), not by frontend denylists.
+
+### Product compatibility rule
+
+- `age` and `dob` may coexist; any derived display behavior is defined by UX and does not imply new extraction
+  requirements.
+
+### CRITICAL_KEYS (Authoritative, closed set)
+
+Historical continuity note: Appendix D7.4 keeps the same closed CRITICAL_KEYS set defined in the historical Global
+Schema. For Medical Record canonical contract critical/taxonomy semantics, the normative authority is
+[technical-design.md](technical-design) Appendix D9.
 
 ---
 
-## Appendix: Historical Global Schema Reference (Non-normative)
+## Appendix B — Medical Record MVP Panel Semantics (US-44)
+
+- The `Extracted Data / Informe` panel is a **clinical Medical Record view**.
+- The panel renders a **contract-defined Medical Record field-set and taxonomy** (document-level, visit-level, and
+  explicit other/unmapped bucket).
+- In `canonical contract`, required document-level panel fields (including missing-value slots) are defined by the
+  Technical contract template (`medical_record_view.field_slots[]`, Appendix D9).
+- Non-clinical claim concepts are out of scope for this panel and must not be rendered here.
+- Panel section order is fixed: `Centro Veterinario` → `Paciente` → `Propietario` → `Visitas` → `Notas internas` →
+  `Otros campos detectados` → `Información del informe`.
+- Labels/copy and empty-states for this panel are defined in [ux-design.md](ux-design).
+- `owner_id` is not part of Medical Record panel semantics; owner address is represented by `owner_address`.
+- NHC is part of `Centro Veterinario` panel semantics and must render with label `NHC` and tooltip
+  `Número de historial clínico`.
+- Product compatibility for age and birth date: both `age` and `dob` may coexist; any derived display behavior is
+  UX-defined and does not imply new extraction requirements.
+
+### Authority / cross-doc
+
+- [product-design.md](product-design) defines panel meaning and scope (clinical Medical Record view).
+- [ux-design.md](ux-design) defines layout, labels, and empty states.
+- [technical-design.md](technical-design) defines canonical payload contracts (`schema_contract` visit-grouped),
+  field taxonomy, and explicit `other/unmapped` contract bucket.
+
+---
+
+## Appendix C — Historical Global Schema Reference (Non-normative)
 
 Status:
 
