@@ -3,12 +3,13 @@
 - [Home](Home)
 - [Onboarding Guide](staff-engineer-guide)
 - [Sitemap](Sitemap)
-- 
+  
 ## Project Documentation
 
 **01 Product**
 - [Product Design](product-design)
 - [User Guide](user-guide)
+- [Staff Engineer Guide](staff-engineer-guide)
 - [Product Specs](product-specs)
 
 **02 Tech**
@@ -25,7 +26,6 @@
 - [Manual QA Checklist](Manual-QA-Regression-Checklist)
 - [E2E Test Coverage](plan-e2e-test-coverage)
 - [Architecture Audit](architecture-audit-process)
-- [Staff Engineer Guide](staff-engineer-guide)
 
 **04 Delivery**
 - [Implementation Plan](implementation-plan)

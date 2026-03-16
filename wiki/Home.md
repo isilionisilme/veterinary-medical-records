@@ -20,6 +20,7 @@ This wiki contains curated project documentation for technical evaluation.
 
 - [Product Design](product-design) — vision, strategy, human-in-the-loop philosophy, conceptual model
 - [User Guide](user-guide) — what the app does and how to try it
+- [Staff Engineer Guide](staff-engineer-guide) — evaluator-oriented deep dive with 15/30/45 min reading paths
 - [Product Specifications](product-specs) — full product design, UX design, design system
 
 ### 02 Tech

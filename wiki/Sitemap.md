@@ -6,6 +6,7 @@
   - **01-product/**
     - [product-design](product-design)
     - [user-guide](user-guide)
+    - [staff-engineer-guide](staff-engineer-guide)
     - **specs/**
       - [product-specs](product-specs)
       - [ux-design](ux-design)
@@ -38,7 +39,6 @@
     - [Manual-QA-Regression-Checklist](Manual-QA-Regression-Checklist)
     - [plan-e2e-test-coverage](plan-e2e-test-coverage)
     - [architecture-audit-process](architecture-audit-process)
-    - [staff-engineer-guide](staff-engineer-guide)
   - **04-delivery/**
     - [implementation-plan](implementation-plan)
     - [implementation-history](implementation-history)
@@ -52,6 +52,3 @@
     - [way-of-working](way-of-working)
     - [coding-standards](coding-standards)
     - [documentation-guidelines](documentation-guidelines)
-- **onboarding/**
-  - [Onboarding Index](onboarding-index)
-  - [Staff Engineer Guide](staff-engineer-guide)
