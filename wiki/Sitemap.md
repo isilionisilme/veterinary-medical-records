@@ -4,6 +4,7 @@
 - [Sitemap](Sitemap)
 - **projects/**
   - **01-product/**
+    - [product-design-executive](product-design-executive)
     - [product-design](product-design)
     - [user-guide](user-guide)
     - [staff-engineer-guide](staff-engineer-guide)

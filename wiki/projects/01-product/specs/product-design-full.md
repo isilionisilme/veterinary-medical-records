@@ -32,7 +32,8 @@ This document provides **specification-level technical detail** that extends the
 For the complete product narrative — including problem framing, product goal, design premise, product principles,
 veterinarian and reviewer experience, confidence as a product signal, the conceptual model (Local Schema, Global Schema,
 Mapping, Context), learning and governance, deployment strategy, and observability — see
-[product-design.md](product-design).
+[product-design.md](product-design). For a one-page business-level overview, see
+[Product Design — Executive Summary](product-design-executive).
 
 The complete product design — including business considerations — is also maintained in:
 

@@ -17,6 +17,7 @@
 > | **Observability**           | §10      | Degradation detection, guardrails, the learning test.             |
 >
 > **Authority boundaries:**
+> - Executive summary (one-page business overview) → [Product Design — Executive Summary](product-design-executive)
 > - Product design extended (appendices, full schema, panel semantics) → [Product Design Extended](product-design-full)
 > - UX interaction contract (full detail) → [specs/ux-design.md](ux-design)
 > - Visual design system → [specs/design-system.md](design-system)

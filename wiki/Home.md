@@ -3,11 +3,11 @@ This wiki contains curated project documentation for technical evaluation.
 
 ## Evaluator Reading Path
 
-| Evaluation axis | Recommended path |
+| Evaluation axis | Suggested path |
 |---|---|
 | **First steps** | [Deployment](deployment) → [User Guide](user-guide) |
 | **Architecture & design** | [Architecture](architecture) → [Technical Design](technical-design) → [ADRs](adr-index) |
-| **Key documentation** | [Product Design](product-design) → [Event Architecture](event-architecture) → [Extraction Quality](extraction-quality) |
+| **Key documentation** | [Product Design Executive Summary](product-design-executive) → [Product Design](product-design) → [Event Architecture](event-architecture) → [Extraction Quality](extraction-quality) |
 | **Iterative & incremental approach** | [Implementation Plan](implementation-plan) → [Implementation History](implementation-history) → [Quality Audit History](quality-audit-history) → [Future Improvements](future-improvements) |
 | **Post mortem** | [Post Mortem](post-mortem) |
 | **Additional reading** | [Staff Engineer Guide](staff-engineer-guide) — 15/30/45 min reading paths |
@@ -18,6 +18,7 @@ This wiki contains curated project documentation for technical evaluation.
 
 ### 01 Product
 
+- [Product Design Executive Summary](product-design-executive) — one-page, business-focused overview for evaluators and stakeholders
 - [Product Design](product-design) — vision, strategy, human-in-the-loop philosophy, conceptual model
 - [User Guide](user-guide) — what the app does and how to try it
 - [Staff Engineer Guide](staff-engineer-guide) — evaluator-oriented deep dive with 15/30/45 min reading paths

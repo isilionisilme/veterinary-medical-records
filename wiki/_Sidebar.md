@@ -7,6 +7,7 @@
 ## Project Documentation
 
 **01 Product**
+- [Product Design Executive Summary](product-design-executive)
 - [Product Design](product-design)
 - [User Guide](user-guide)
 - [Staff Engineer Guide](staff-engineer-guide)
