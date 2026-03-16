@@ -18,7 +18,7 @@ These items were evaluated and intentionally deferred. Each links to its authori
 | 16 | No persistent event tracing or Prometheus metrics | [ADR-structured-logging-no-metrics](ADR-structured-logging-no-metrics) |
 | 17 | No PostgreSQL adapter | [ADR-sqlite-database](ADR-sqlite-database) + [ADR-raw-sql-repository-pattern](ADR-raw-sql-repository-pattern) |
 | 18 | No schema migration tooling (Alembic) | [ADR-bootstrap-schema-no-migrations](ADR-bootstrap-schema-no-migrations) |
-| 21 | WCAG 2.1 AA limited to critical violations | Iteration 12 resolved critical path (axe-core + aria-labels); moderate/minor deferred — see [technical-design.md §14](../../02-tech/technical-design.md#14-known-limitations) |
+| 21 | WCAG 2.1 AA limited to critical violations | Iteration 12 resolved critical path (axe-core + aria-labels); moderate/minor deferred — see [technical-design.md §14](../02-tech/technical-design.md#14-known-limitations) |
 | 23 | Human-readable logs, no `/metrics` endpoint | [ADR-structured-logging-no-metrics](ADR-structured-logging-no-metrics) |
 | 24 | Single Python version CI, no deploy previews | [ADR-ci-single-python-version](ADR-ci-single-python-version) |
 

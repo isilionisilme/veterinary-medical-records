@@ -2,7 +2,7 @@
 
 # Frontend Implementation Notes
 
-**Breadcrumbs:** [Docs](../../../README.md) / [Projects](README) / veterinary-medical-records / 02-tech
+**Breadcrumbs:** [Docs](../../../../docs/README.md) / [Projects](Sitemap) / veterinary-medical-records / 02-tech
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -45,7 +45,7 @@
 
 This document describes **how the frontend should be implemented** to satisfy the UX and backend contracts defined
 elsewhere in the repository documentation. Reading order, document authority, and cross-document precedence are defined
-in [`docs/README.md`](../../../README.md). If anything here appears to conflict with other documentation, **STOP and ask**.
+in [`docs/README.md`](../../../../docs/README.md). If anything here appears to conflict with other documentation, **STOP and ask**.
 
 It must remain **implementation-only**:
 
@@ -102,7 +102,7 @@ The repository uses a single repo with explicit separation:
 
 - `/frontend` contains all React code.
 - `/backend` remains the FastAPI application.
-- `/docs` contains repository documentation (see [`docs/README.md`](../../../README.md) for structure and reading order).
+- `/docs` contains repository documentation (see [`docs/README.md`](../../../../docs/README.md) for structure and reading order).
 
 The frontend is built and served independently but lives in the same repository.
 
@@ -164,7 +164,7 @@ State rules:
 Document review is implemented using **evidence-based navigation**, not precise spatial annotation.
 
 The frontend must consume the "evidence" fields exactly as defined by backend contracts in the authoritative
-documentation (see [`docs/README.md`](../../../README.md)) (do not invent fields or semantics here).
+documentation (see [`docs/README.md`](../../../../docs/README.md)) (do not invent fields or semantics here).
 
 Frontend behavior:
 

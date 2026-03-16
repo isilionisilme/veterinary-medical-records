@@ -79,4 +79,4 @@ Warnings do not fail CI. Failures block the local preflight and the pull request
 ## Related Decisions
 - [ADR-modular-monolith: Modular Monolith over Microservices](ADR-modular-monolith)
 - [ADR-in-process-async-processing: In-Process Async Processing](ADR-in-process-async-processing)
-- [ARCH-03 backlog item](arch-03-add-ci-complexity-gates)
+- [ARCH-03 backlog item](implementation-plan)

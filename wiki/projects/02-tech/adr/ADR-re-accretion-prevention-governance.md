@@ -127,5 +127,5 @@ This creates a two-tier control model:
 
 - [ADR-complexity-gate-thresholds: Complexity Gate Thresholds for CI Enforcement](ADR-complexity-gate-thresholds)
 - [ADR-modular-monolith: Modular Monolith over Microservices](ADR-modular-monolith)
-- [Architecture Review 2026-03-09](architecture-review-2026-03-09)
-- [ARCH-03 backlog item](arch-03-add-ci-complexity-gates)
+- [Architecture Review 2026-03-09](quality-audit-history)
+- [ARCH-03 backlog item](implementation-plan)

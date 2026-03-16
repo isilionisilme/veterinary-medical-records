@@ -1,6 +1,6 @@
 # Product Design — Specification Detail
 
-**Breadcrumbs:** [Docs](../../../README.md) / [Projects](README) / veterinary-medical-records / 01-product / specs
+**Breadcrumbs:** [Docs](../../../../docs/README.md) / [Projects](Sitemap) / veterinary-medical-records / 01-product / specs
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 

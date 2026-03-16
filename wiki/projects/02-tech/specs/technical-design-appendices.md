@@ -2,7 +2,7 @@
 
 # Technical Design — Appendices
 
-**Breadcrumbs:** [Docs](../../../README.md) / [Projects](README) / veterinary-medical-records / 02-tech
+**Breadcrumbs:** [Docs](../../../../docs/README.md) / [Projects](Sitemap) / veterinary-medical-records / 02-tech
 
 These appendices contain the normative contracts, state models, API maps, schema definitions,
 and operational rules referenced by [technical-design.md](technical-design).
@@ -1873,7 +1873,7 @@ Rules:
 
 ## E3. Dependency Justification (Repository Requirement)
 
-The repository must include a short justification (e.g., in [`README.md`](README) or an ADR) explaining:
+The repository must include a short justification (e.g., in [`README.md`](../../../../README.md) or an ADR) explaining:
 
 - Why PyMuPDF was chosen for extraction,
 - Why langdetect was chosen for language detection.

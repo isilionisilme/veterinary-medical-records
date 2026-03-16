@@ -5,7 +5,7 @@
 > For the narrative flow of the processing pipeline (sequence diagrams, artifact
 > lifecycle), see [Event & Processing Architecture](event-architecture).
 
-**Breadcrumbs:** [Docs](../../../README.md) / [Projects](README) / veterinary-medical-records / 02-tech
+**Breadcrumbs:** [Docs](../../../../docs/README.md) / [Projects](Sitemap) / veterinary-medical-records / 02-tech
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -31,7 +31,7 @@
 This document is intended to provide **implementation guidance for backend work** and to provide structured context to
 an AI Coding Assistant during implementation.
 
-Reading order, document responsibilities, and precedence rules are defined in [`docs/README.md`](../../../README.md).
+Reading order, document responsibilities, and precedence rules are defined in [`docs/README.md`](../../../../docs/README.md).
 
 If any requirement here conflicts with a higher-precedence document, **STOP** and defer to the authority defined in the
 README.
@@ -75,7 +75,7 @@ This document translates the **authoritative system design** into backend implem
 
 ## Running The Backend
 
-Run instructions live in the repository root [`README.md`](README).
+Run instructions live in the repository root [`README.md`](../../../../README.md).
 
 ## Backend architecture
 

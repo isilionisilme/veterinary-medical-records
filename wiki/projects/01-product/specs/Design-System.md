@@ -2,7 +2,7 @@
 
 # Lean Design System (Tokens + Primitives)
 
-**Breadcrumbs:** [Docs](../../../README.md) / [Projects](README) / veterinary-medical-records / 01-product
+**Breadcrumbs:** [Docs](../../../../docs/README.md) / [Projects](Sitemap) / veterinary-medical-records / 01-product
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 

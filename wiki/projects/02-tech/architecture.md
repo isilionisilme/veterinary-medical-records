@@ -288,4 +288,4 @@ operational runbooks (backup, DB maintenance, failure modes).
 - [product-design.md](product-design) — Product intent and semantics
 - [ux-design.md](ux-design) — Interaction contract and confidence UX rules
 - [implementation-history.md](implementation-history) — Incremental delivery timeline and metrics
-- [ADR index](index) — All architecture decision records
+- [ADR index](adr-index) — All architecture decision records

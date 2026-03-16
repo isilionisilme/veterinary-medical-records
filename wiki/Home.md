@@ -9,7 +9,7 @@ This wiki contains curated project documentation for technical evaluation.
 | **Architecture & design** | [Architecture](architecture) → [Technical Design](technical-design) → [ADRs](adr-index) |
 | **Key documentation** | [Product Design Executive Summary](product-design-executive) → [Product Design](product-design) → [Event Architecture](event-architecture) → [Extraction Quality](extraction-quality) |
 | **Iterative & incremental approach** | [Implementation Plan](implementation-plan) → [Implementation History](implementation-history) → [Quality Audit History](quality-audit-history) → [Future Improvements](future-improvements) |
-| **Post mortem** | [Post Mortem](post-mortem) |
+| **Post mortem** | [Post Mortem](quality-audit-history) |
 | **Additional reading** | [Staff Engineer Guide](staff-engineer-guide) — 15/30/45 min reading paths |
 
 ---
