@@ -38,6 +38,7 @@
     - [Manual-QA-Regression-Checklist](Manual-QA-Regression-Checklist)
     - [plan-e2e-test-coverage](plan-e2e-test-coverage)
     - [architecture-audit-process](architecture-audit-process)
+    - [staff-engineer-guide](staff-engineer-guide)
   - **04-delivery/**
     - [implementation-plan](implementation-plan)
     - [implementation-history](implementation-history)
