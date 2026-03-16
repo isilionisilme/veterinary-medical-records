@@ -1,5 +1,7 @@
 # Product Specifications
 
+These specifications are intentionally detailed and normative. They serve as implementation guardrails for AI-assisted development, reducing semantic drift between the design intent and the generated code.
+
 <table>
 	<thead>
 		<tr>
