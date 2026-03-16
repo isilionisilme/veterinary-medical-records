@@ -1,7 +1,7 @@
 # E2E Test Coverage Plan
 
 ## Purpose
-comprehensive inventory of all user-facing functionalities and the Playwright end-to-end tests that cover them. Section 1 catalogues every testable interaction grouped by feature area; Section 2 specifies concrete test cases in Given/When/Then format, prioritised into smoke (P0), core workflow (P1), and extended coverage (P2) tiers.
+Comprehensive inventory of all user-facing functionalities and the Playwright end-to-end tests that cover them. Section 1 catalogues every testable interaction grouped by feature area; Section 2 specifies concrete test cases in Given/When/Then format, prioritised into smoke (P0), core workflow (P1), and extended coverage (P2) tiers.
 
 > **Audience**: QA, frontend engineers, and evaluators assessing test strategy.
 

@@ -1,7 +1,7 @@
 ---
 
 # Purpose
-user-centered manual regression checklist grouped by shared environment to minimize context switching between test cases.
+User-centered manual regression checklist grouped by shared environment to minimize context switching between test cases.
 
 ## Environment Blocks
 
