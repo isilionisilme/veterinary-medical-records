@@ -1,282 +1,62 @@
-# Product Design — Document Interpretation & Layout Evolution
+# Product Design — Specification Detail
 
-**Breadcrumbs:** [Docs](../../../README.md) / [Projects](README) / veterinary-medical-records / 01-product
+**Breadcrumbs:** [Docs](../../../README.md) / [Projects](README) / veterinary-medical-records / 01-product / specs
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 
 **Contents**
 
-- [Note for readers](#note-for-readers)
-- [High-level product approach](#high-level-product-approach)
-- [1. Core Product Strategy](#1-core-product-strategy)
-- [2. Human-in-the-Loop Philosophy (Product-Level)](#2-human-in-the-loop-philosophy-product-level)
-- [2.1 Confidence Principles (Product-Level)](#21-confidence-principles-product-level)
-- [3. Structural Signals & Pending Review](#3-structural-signals-pending-review)
-- [4. Critical Concepts](#4-critical-concepts)
-- [Conceptual Model: Local Schema, Global Schema, and Mapping](#conceptual-model-local-schema-global-schema-and-mapping)
-- [Visit grouping (MVP)](#visit-grouping-mvp)
-- [Global Schema (Canonical Field List — Medical Record MVP)](#global-schema-canonical-field-list-medical-record-mvp)
-- [Medical Record MVP panel semantics (US-44)](#medical-record-mvp-panel-semantics-us-44)
-- [Appendix: Historical Global Schema Reference (Non-normative)](#appendix-historical-global-schema-reference-non-normative)
-- [5. Separation of Responsibilities (Product-Level)](#5-separation-of-responsibilities-product-level)
-- [6. Learning & Governance](#6-learning-governance)
-- [7. Final Product Rule](#7-final-product-rule)
+- [Product Design — Specification Detail](#product-design--specification-detail)
+  - [Scope and relationship to Product Design](#scope-and-relationship-to-product-design)
+  - [Conceptual Model — Specification Detail](#conceptual-model--specification-detail)
+    - [Confidence Semantics (Stability, not Truth)](#confidence-semantics-stability-not-truth)
+    - [Context (Deterministic)](#context-deterministic)
+    - [Learnable Unit (`mapping_id`)](#learnable-unit-mapping_id)
+    - [Signals \& Weighting (qualitative)](#signals--weighting-qualitative)
+    - [Policy State (soft behavior)](#policy-state-soft-behavior)
+    - [Confidence Propagation \& Calibration](#confidence-propagation--calibration)
+      - [Future Improvements](#future-improvements)
+    - [Governance and Safeguards (pending\_review, critical, non-reversible)](#governance-and-safeguards-pending_review-critical-non-reversible)
+  - [Appendix: Historical Global Schema Reference (Non-normative)](#appendix-historical-global-schema-reference-non-normative)
+  - [Final Product Rule](#final-product-rule)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-## Note for readers
+## Scope and relationship to Product Design
 
-> **How to read this page**
-> This document defines the **product meaning** — what the system does and why — without prescribing
-> implementation or UI layout.
-> | Part                      | Sections                                                     | Focus                                                                                                                         |
-> | ------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-> | **Strategy & philosophy** | §1 – §4                                                      | Core product strategy, human-in-the-loop philosophy, confidence principles, structural signals, and critical concepts.        |
-> | **Conceptual model**      | "Conceptual Model: Local Schema, Global Schema, and Mapping" | How interpretation data is understood at product level — schemas, mapping, confidence semantics, calibration, and governance. |
-> | **MVP field spec**        | "Global Schema", "Medical Record MVP panel semantics"        | Canonical field list and panel rendering contract for the Medical Record MVP.                                                 |
-> | **Governance**            | §5 – §7                                                      | Separation of responsibilities, learning principles, and the final product rule.                                              |
-> **Authority boundaries:**
-> - UX layout, labels, and interaction patterns → [ux-design.md](ux-design)
-> - Architecture, persistence, and API contracts → [technical-design.md](technical-design)
-> - Implementation scope and sequencing → [implementation-plan.md](implementation-plan)
+This document provides **specification-level technical detail** that extends the canonical
+[Product Design](product-design) document.
 
-This repository includes a minimal summary of the product approach for technical context only.
+For the complete product narrative — including problem framing, product goal, design premise, product principles,
+veterinarian and reviewer experience, confidence as a product signal, the conceptual model (Local Schema, Global Schema,
+Mapping, Context), learning and governance, deployment strategy, observability, Global Schema field list, and
+panel semantics — see [product-design.md](product-design).
 
-The complete product design — including problem framing, user experience, rationale, and business considerations — is
-maintained as a single source of truth in the following document:
+The complete product design — including business considerations — is also maintained in:
 
 <https://docs.google.com/document/d/1eUCXDTYX3Vw_EJ_nfiJKlRghMO7mZOfitVpMrM5kjFc>
 
-Readers interested in the full product and user experience design should refer to that document.
+**Authority boundaries:**
+
+- Product meaning, strategy, governance, Global Schema & panel semantics → [product-design.md](product-design)
+- UX layout, labels, and interaction patterns → [ux-design.md](ux-design)
+- Architecture, persistence, and API contracts → [technical-design.md](technical-design)
+- Implementation scope and sequencing → [implementation-plan.md](implementation-plan)
 
 ---
 
-## High-level product approach
+## Conceptual Model — Specification Detail
 
-The product approach focuses on improving the interpretation of unstructured veterinary medical documents in a **safe,
-incremental, and non-disruptive way**.
+This section extends the [Conceptual Model](product-design#7-conceptual-model-from-document-interpretation-to-shared-meaning)
+in product-design.md with specification-level precision for confidence mechanics, context definition, mapping
+identification, signal weighting, and calibration rules.
 
-Instead of attempting full automation, the system:
+For the high-level definitions of Field, Local Schema, Global Schema, Mapping, and Context, see
+[product-design.md §7](product-design#7-conceptual-model-from-document-interpretation-to-shared-meaning).
 
-- assists veterinarians during document review,
-- makes uncertainty and confidence explicit,
-- and passively captures corrections as signals for gradual improvement.
-
-The key principle is to convert **inevitable human review work into cumulative system learning**, without changing how
-veterinarians work or introducing operational risk.
-
-This high-level approach informs the technical and implementation decisions described elsewhere in the repository.
-
-## 1. Core Product Strategy
-
-The system is designed to enable **incremental, human-in-the-loop automation** without disrupting existing veterinary
-workflows.
-
-The product assumes that:
-
-- deterministic checks can eventually be automated safely,
-- interpretative reasoning must remain **assistive**, never authoritative,
-- high-stakes or irreversible decisions always require **explicit human action**.
-
-The long-term goal is to convert **inevitable human corrections** into **cumulative system improvement**, without asking
-users to:
-
-- change how they work,
-- provide explicit feedback,
-- or take responsibility for system behavior.
-
-This strategy deliberately prioritizes:
-
-- safety over speed,
-- clarity over automation depth,
-- evolvability over premature optimization.
-
----
-
-## 2. Human-in-the-Loop Philosophy (Product-Level)
-
-Human involvement is not a fallback mechanism; it is a **first-class design choice**.
-
-Product-level rules:
-
-- The system may suggest, highlight, and assist.
-- The system must never silently decide or override.
-- All meaningful changes remain observable and auditable.
-- Human judgment always has the final word.
-
-Automation is introduced **incrementally**, and only where its behavior is well understood, explainable, and reversible.
-
----
-
-## 2.1 Confidence Principles (Product-Level)
-
-Confidence is a **signal about interpretation stability**, not a decision or a truth claim.
-
-Product guarantees:
-
-- Confidence guides attention and prioritization; it never blocks decisions or actions.
-- Confidence reflects consistency over time/context for similar interpretations.
-- Confidence may decrease faster than it increases when new contradictory evidence appears.
-- Detailed semantics for confidence in mapping context are defined in **Confidence Semantics (Stability, not Truth)**
-  below.
-
----
-
-## 3. Structural Signals & Pending Review
-
-Some human actions carry **system-level meaning** beyond a single document.
-
-These actions generate **structural signals**.
-
-### 3.1 Definition
-
-A structural signal represents a **repeated, semantically similar correction** observed across multiple documents under
-comparable conditions.
-
-Structural signals:
-
-- are accumulated over time,
-- are evaluated in aggregate,
-- never trigger automatic system changes.
-
-They exist to support **deliberate, informed human governance**.
-
----
-
-### 3.2 Pending Review State
-
-Structural signals may enter a `pending_review` state when they indicate a potential need for system-level intervention.
-
-Rules:
-
-- `pending_review` is an **internal system state**.
-- It never blocks or alters veterinary workflows.
-- It never affects previously processed documents.
-- It never triggers implicit reprocessing.
-
-Pending review exists solely to surface **candidates for human review**.
-
----
-
-### 3.3 Scope of Impact
-
-Any decision derived from structural signals:
-
-- applies **prospectively only**,
-- never modifies past interpretations,
-- never silently alters system behavior.
-
-The system must remain explainable at all times.
-
----
-
-## 4. Critical Concepts
-
-Some concepts are inherently **high-risk or high-impact** if misinterpreted.
-
-These are referred to as **critical concepts**.
-
-Examples include (non-exhaustive):
-
-- patient or pet identity,
-- species,
-- visit or invoice dates,
-- monetary amounts.
-
----
-
-### 4.1 Semantics
-
-Critical concepts:
-
-- are defined explicitly by product policy,
-- are not inferred dynamically by the system,
-- may evolve only through deliberate human review.
-
-The classification of a concept as “critical” is:
-
-- intentional,
-- explicit,
-- conservative by design.
-
----
-
-### 4.2 Interaction with Structural Signals
-
-Edits affecting critical concepts:
-
-- always apply **locally and immediately**,
-- generate **high-priority structural signals**,
-- never block document review or completion.
-
-No additional friction is introduced for operational users.
-
----
-
-### 4.3 Governance Boundary
-
-Critical concepts introduce a stricter governance threshold:
-
-- No automatic promotion to system-wide behavior.
-- Explicit human review is required before any global effect.
-- Decisions affect **future interpretations only**.
-
-Criticality is a governance concern, not a workflow constraint.
-
----
-
-### 4.4 Critical / Non-Reversible Changes Policy
-
-Some system-level changes are treated as **critical/non-reversible** because they can reshape future interpretation
-semantics and are costly to safely undo.
-
-Critical/non-reversible changes include (non-exhaustive):
-
-- schema-level key add/remove/rename decisions,
-- key remapping that changes canonical meaning,
-- changes affecting the definition/classification of critical concepts.
-
-Product guarantees:
-
-- Veterinarian workflow remains local to single-document resolution and never carries governance burden.
-- Reviewer governance handles cross-document/system-level policy decisions explicitly and prospectively.
-- Stricter handling applies only to governance decisions, never as added friction for veterinarians.
-
----
-
-## Conceptual Model: Local Schema, Global Schema, and Mapping
-
-This conceptual model defines how interpretation data is understood at product level. It does not prescribe storage
-tables or transport contracts.
-
-- **Local Schema (per document/run):** the structured interpretation for one case/run, with evidence + confidence,
-  editable without friction.
-- **Global Schema (canonical):** the standardized field set the system recognizes and presents consistently across
-  documents; it evolves safely and prospectively.
-- **Field:** semantic unit that can exist locally and/or globally.
-- **Mapping:** "this local field/value maps to this global key in this context"; context can include document type,
-  language, clinic, and similar operational conditions.
-
-```mermaid
-%%{init: {"theme":"base","themeVariables":{"primaryColor":"#eef4ff","primaryTextColor":"#1f2937","primaryBorderColor":"#4f6df5","lineColor":"#64748b","secondaryColor":"#ffffff","tertiaryColor":"#f8fafc","clusterBkg":"#f8fafc","clusterBorder":"#cbd5e1","edgeLabelBackground":"#ffffff","fontFamily":"Segoe UI, sans-serif"},"flowchart":{"curve":"linear"}}}%%
-flowchart LR
-    subgraph "Per document/run"
-        LS["Local Schema<br>fields + evidence + confidence"]
-    end
-    subgraph "System-wide"
-        GS["Global Schema<br>canonical field set"]
-    end
-
-    LS -- "mapping<br>(context-aware)" --> GS
-
-    VET["Veterinarian<br>corrections"] -.->|"weak signal"| CAL["Calibration<br>field_mapping_confidence"]
-    CAL -.->|"updates over time"| GS
-
-    style LS fill:#eef4ff,stroke:#4f6df5,color:#1f2937
-    style GS fill:#eef4ff,stroke:#4f6df5,color:#1f2937
-    style VET fill:#f8fafc,stroke:#94a3b8,color:#1f2937
-    style CAL fill:#f8fafc,stroke:#94a3b8,color:#1f2937
-```
+For product-level rules on strategy, principles, human-in-the-loop philosophy, confidence principles, structural
+signals, critical concepts, and non-reversible changes policy, see the corresponding sections in
+[product-design.md](product-design).
 
 ### Confidence Semantics (Stability, not Truth)
 
@@ -348,111 +128,12 @@ flowchart LR
 - Any change that can affect money, coverage, or medical/legal interpretation must not auto-promote.
 - `CRITICAL_KEYS` remains authoritative and closed.
 
-## Visit grouping (MVP)
+---
 
-- **Visita** means one care episode identified primarily by `visit_date`, with optional `admission_date`,
-  `discharge_date`, and `reason_for_visit`.
-- Clinical concepts are **visit-scoped**. In `canonical contract`, they are grouped under `visits[].fields[]` as defined
-  in [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design) Appendix D9.
-- The UI must not infer or heuristic-group visits. Grouping comes from the structured payload (`visits[]`).
-- MVP excludes cross-document deduplication, merge/reconciliation, and longitudinal visit tracking.
-- Review completion remains **document-level**: `Mark as reviewed` applies to the full document, including all its
-  visits.
+For visit grouping, Global Schema field list, CRITICAL_KEYS, and Medical Record MVP panel semantics, see
+[product-design.md](product-design) Appendix A and Appendix B.
 
-## Global Schema (Canonical Field List — Medical Record MVP)
-
-Canonical source location:
-
-- This section in `docs/projects/veterinary-medical-records/01-product/product-design.md` is the canonical product
-  source for the Global Schema Medical Record MVP field list.
-- The historical appendix in this document is reference-only and non-normative.
-
-Purpose: define the canonical contract-aligned field universe for the Medical Record panel.
-
-Document-level sections (top-level fields):
-
-A) Centro Veterinario
-
-- `clinic_name` (string)
-- `clinic_address` (string)
-- `vet_name` (string)
-- `nhc` (string; canonical NHC concept)
-
-B) Paciente
-
-- `pet_name` (string)
-- `species` (string)
-- `breed` (string)
-- `sex` (string)
-- `age` (string)
-- `dob` (date)
-- `microchip_id` (string)
-- `weight` (string)
-- `reproductive_status` (string)
-
-C) Propietario
-
-- `owner_name` (string)
-- `owner_address` (string; real address concept)
-
-D) Notas internas
-
-- `notes` (string)
-
-E) Información del informe
-
-- `language` (string)
-
-Visit-level fields:
-
-- Visit-level clinical data is canonical in `canonical contract` under `visits[]` and `visits[].fields[]` (see Appendix
-  D9 in [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design)).
-- Visit fields are not part of the document-level top-level list above.
-
-Panel boundary (Medical Record MVP):
-
-- Non-clinical claim concepts are not part of this canonical panel field-set by definition.
-- Classification and taxonomy boundaries are defined by contract metadata in
-  [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design), not by frontend
-  denylists.
-
-Product compatibility rule:
-
-- `age` and `dob` may coexist; any derived display behavior is defined by UX and does not imply new extraction
-  requirements.
-
-### CRITICAL_KEYS (Authoritative, closed set)
-
-Historical continuity note: Appendix D7.4 keeps the same closed CRITICAL_KEYS set defined in the historical Global
-Schema. For Medical Record canonical contract critical/taxonomy semantics, the normative authority is
-[`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design) Appendix D9.
-
-## Medical Record MVP panel semantics (US-44)
-
-- The `Extracted Data / Informe` panel is a **clinical Medical Record view**.
-- The panel renders a **contract-defined Medical Record field-set and taxonomy** (document-level, visit-level, and
-  explicit other/unmapped bucket).
-- In `canonical contract`, required document-level panel fields (including missing-value slots) are defined by the
-  Technical contract template (`medical_record_view.field_slots[]`, Appendix D9).
-- Non-clinical claim concepts are out of scope for this panel and must not be rendered here.
-- Panel section order is fixed: `Centro Veterinario` -> `Paciente` -> `Propietario` -> `Visitas` -> `Notas internas` ->
-  `Otros campos detectados` -> `Información del informe`.
-- Labels/copy and empty-states for this panel are defined in
-  [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design).
-- `owner_id` is not part of Medical Record panel semantics; owner address is represented by `owner_address`.
-- NHC is part of `Centro Veterinario` panel semantics and must render with label `NHC` and tooltip
-  `Número de historial clínico`.
-- Product compatibility for age and birth date: both `age` and `dob` may coexist; any derived display behavior is
-  UX-defined and does not imply new extraction requirements.
-
-### Authority / cross-doc
-
-- [`docs/projects/veterinary-medical-records/01-product/product-design.md`](product-design) defines panel meaning and
-  scope (clinical Medical Record view).
-- [`docs/projects/veterinary-medical-records/01-product/ux-design.md`](ux-design) defines layout, labels, and empty
-  states.
-- [`docs/projects/veterinary-medical-records/02-tech/technical-design.md`](technical-design) defines canonical
-  payload contracts (`schema_contract` visit-grouped), field taxonomy, and explicit `other/unmapped` contract bucket.
+---
 
 ## Appendix: Historical Global Schema Reference (Non-normative)
 
@@ -491,41 +172,14 @@ E) Clínico / revisión
   `imaging`
 - `notes`, `language`
 
-## 5. Separation of Responsibilities (Product-Level)
+---
 
-The product enforces a strict separation of responsibility:
-
-- **Veterinarians**
-  - Resolve individual documents.
-  - Correct and validate information locally.
-  - Never manage system behavior or learning.
-
-- **Reviewers**
-  - Oversee system-level meaning and evolution.
-  - Review aggregated patterns and signals.
-  - Never participate in operational document workflows.
-
-This separation is:
-
-- intentional,
-- asymmetric,
-- non-negotiable.
-
-No user is responsible for both document resolution and system governance within the same workflow.
+For separation of responsibilities and learning & governance, see
+[product-design.md](product-design) §5b, §8.
 
 ---
 
-## 6. Learning & Governance
-
-This project is designed to keep veterinary workflows operational and safe while enabling deliberate, auditable
-system-level evolution over time.
-
-Any change that affects global behavior or schema meaning should be introduced via explicit governance and corresponding
-product, UX, and technical design updates.
-
----
-
-## 7. Final Product Rule
+## Final Product Rule
 
 This document defines **what the system means and why**.
 

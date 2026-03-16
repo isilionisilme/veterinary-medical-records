@@ -1,9 +1,24 @@
 # Product Specifications
 
-Full product specifications preserved for reference. These documents contain the complete detail behind the
-condensed [product-design.md](product-design).
-
-| Document | Description |
-|----------|-------------|
-| [ux-design.md](ux-design) | UX interaction contract — user roles, review flow, rendering rules, label tables, confidence tooltip, reviewer model. |
-| [design-system.md](design-system) | Visual design system — CSS tokens, surface levels, component primitives, accessibility rules. |
+<table>
+	<thead>
+		<tr>
+			<th width="25%">Document</th>
+			<th>Description</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td><a href="product-design-full">Product Design Extended</a></td>
+			<td>Full product specifications index for this section; canonical entry point linking to complete product spec artifacts.</td>
+		</tr>
+		<tr>
+			<td><a href="ux-design">UX Design</a></td>
+			<td>UX interaction contract — user roles, review flow, rendering rules, label tables, confidence tooltip, reviewer model.</td>
+		</tr>
+		<tr>
+			<td><a href="design-system">Design System</a></td>
+			<td>Visual design system — CSS tokens, surface levels, component primitives, accessibility rules.</td>
+		</tr>
+	</tbody>
+</table>

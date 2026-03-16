@@ -8,14 +8,13 @@
 > | Part                        | Sections | Focus                                                              |
 > | --------------------------- | -------- | ------------------------------------------------------------------ |
 > | **Problem & goal**          | §1 – §3  | What problem we solve, for whom, and what success looks like.      |
-> | **Product principles**      | §4       | The four rules that govern every product decision.                 |
+> | **Product principles**      | §4       | The rules that govern our product decisions.                 |
 > | **Veterinarian experience** | §5       | Step-by-step review workflow from the user's perspective.          |
 > | **Confidence**              | §6       | What confidence means as a product signal.                        |
 > | **Conceptual model**        | §7       | Local/Global Schema and how meaning becomes shared.               |
 > | **Learning & governance**   | §8       | Structural signals, non-reversibility, safety boundaries.         |
 > | **Deployment strategy**     | §9       | Shadow mode, progressive automation, zero-friction introduction.  |
 > | **Observability**           | §10      | Degradation detection, guardrails, the learning test.             |
-> | **Final rule**              | §11      | The document's authority boundary.                                |
 >
 > **Authority boundaries:**
 > - UX interaction contract (full detail) → [specs/ux-design.md](ux-design)
@@ -523,13 +522,6 @@ The system is learning if:
 
 If automation rises but guardrails degrade, the system is not learning — it is drifting. The response is always
 to retract automation scope, never to suppress the signal.
-
----
-
-## 11. Final Rule
-
-This document defines **product meaning**. It does not prescribe implementation, UI layout, or technical
-contracts.
 
 ---
 
